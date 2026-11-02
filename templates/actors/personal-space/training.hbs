@@ -1,0 +1,53 @@
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="training">
+  <div class="cog-bg-surface" style="border: 1px solid var(--cog-info); border-radius: 6px; padding: 16px; margin-bottom: 14px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div class="cog-text-info" style="font-size: 18px; font-weight: bold;">
+          <i class="fa-solid fa-dumbbell"></i> DOWNTIME TRAINING FACILITY
+        </div>
+        <div class="cog-text-secondary" style="font-size: 12px; margin-top: 4px;">
+          Practice dummies, sparring arenas, and spell study desks allow training skills and spells safely.
+        </div>
+      </div>
+      <button class="cog-bg-info-fill cog-text-on-fill" type="button" data-action="launchGrind" style="border: 1px solid var(--cog-info-fill); border-radius: 4px; padding: 10px 18px; font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+        <i class="fa-solid fa-graduation-cap"></i> Launch Grinding Hub
+      </button>
+    </div>
+
+    <div class="cog-training-room cog-bg-window" style="margin-top: 14px; padding: 10px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+      <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase;">Train a Skill{{#if training.crawlerName}} ({{training.crawlerName}}){{/if}}</span>
+      {{#if training.hasRoom}}
+        <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">
+          {{training.sessions}} session(s) per {{training.windowHours}}h, {{training.hourCost}}h off the floor clock, {{#if training.rollBonus}}+{{training.rollBonus}} to the roll{{else}}no roll bonus{{/if}}{{#if training.advantage}}, Advantage{{/if}}.{{#if training.windowRemaining}} Window: {{training.windowRemaining}}.{{/if}}
+        </div>
+      {{else}}
+        <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">No Training Room upgrade installed. Training anyway asks for a Rule Break.</div>
+      {{/if}}
+      {{#if training.skills.length}}
+        <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+          <select class="cog-train-skill" id="cog-train-skill-{{actor.id}}" style="flex: 1;">
+            {{#each training.skills}}
+              <option value="{{this.id}}" {{#if @first}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+          <button type="button" class="cog-bg-info-fill cog-text-on-fill" data-action="trainSkill" style="border: 1px solid var(--cog-info-fill); border-radius: 4px; padding: 6px 14px; font-family: 'Oswald', sans-serif; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+            <i class="fa-solid fa-dumbbell"></i> Train Skill
+          </button>
+        </div>
+      {{else}}
+        <div class="cog-text-secondary" style="font-size: 11px; margin-top: 8px;">You have no crawler with skills in this space.</div>
+      {{/if}}
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--cog-panel-border);">
+      <div class="cog-bg-window" style="padding: 10px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+        <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase;">Banked Grind Hours per Rest</span>
+        <div class="cog-text-gold" style="font-size: 20px; font-weight: bold;">+{{system.effectiveTrainingBonusHours}} Hours</div>
+      </div>
+      <div class="cog-bg-window" style="padding: 10px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+        <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase;">Advancement Roll Bonus</span>
+        <div class="cog-text-success" style="font-size: 20px; font-weight: bold;">+{{system.effectiveTrainingAdvancementBonus}} to d20</div>
+      </div>
+    </div>
+  </div>
+</section>

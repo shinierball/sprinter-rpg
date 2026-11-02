@@ -1,0 +1,19 @@
+{
+  "book": "survival",
+  "entries": [
+    {"id":"dccdeb0000000003","anchor":{"kind":"heading","hash":"754a7b453d97b6480aebee9397c356af4bedbe639ca8a8460508e0bf63f3f8ef"},"pageHint":49,"prefixHash":"07665323dbfabea7ded5b727d673998f865648054711ad388468c538b2e5cf87","check":{"description":"2b742aad1ae30917","name":"6dc21afe4edec3c1","system.description":"2b742aad1ae30917","system.duration":"36b01cf37f7c68a5"}},
+    {"id":"dccdeb0000000010","anchor":{"kind":"heading","hash":"7e89b9e7c4836c6513521d91b1823318550f59835c8a9eeaa3c85a2b915ad61d"},"pageHint":50,"prefixHash":"c3a4ab670edbe89f66fc306dad07a43d922efd91c586c0a3b61bec0eb33d926a","check":{"description":"dffc7339ac654699","name":"8e4634b073446b13","system.description":"dffc7339ac654699","system.duration":"d31b15ec4f6216ee"}},
+    {"id":"dccdeb0000000015","anchor":{"kind":"heading","hash":"3786e75ef5484a7b549a02da895153d31120cca37000fe8f21b75e3da1dc1a2e"},"pageHint":49,"prefixHash":"bf6e02ceaf94d1bc4730577eb4dcd7e5f2cbbb614ffba51ae7296f1ccc8bb0d2","check":{"description":"0dbee7befe74a6ed","name":"2d72176e7ffdf9c1","system.description":"0dbee7befe74a6ed","system.duration":"5e1bb9dcfe3e826e"}},
+    {"id":"dccdeb0000000016","anchor":{"kind":"heading","hash":"3e65b4972d6dc49c00f964bf03768067854e5fb7dd232afc08ef0c327e3cc377"},"pageHint":49,"prefixHash":"ad46f66464568ed849f1454d5e57348ce9fddac884386568fd0a0ec2086ed511","check":{"description":"91de386289322cba","name":"df9995e5071ee277","system.description":"91de386289322cba","system.duration":"842de258f594f738"}},
+    {"id":"t-survival-1","anchor":{"kind":"table","number":1},"pageHint":15},
+    {"id":"t-survival-2","anchor":{"kind":"table","number":2},"pageHint":23},
+    {"id":"t-survival-3","anchor":{"kind":"table","number":3},"pageHint":23},
+    {"id":"t-survival-4","anchor":{"kind":"table","number":4},"pageHint":29},
+    {"id":"t-survival-5","anchor":{"kind":"table","number":5},"pageHint":30},
+    {"id":"t-survival-6","anchor":{"kind":"table","number":6},"pageHint":37},
+    {"id":"t-survival-7","anchor":{"kind":"table","number":7},"pageHint":40},
+    {"id":"t-survival-8","anchor":{"kind":"table","number":8},"pageHint":49},
+    {"id":"t-survival-9","anchor":{"kind":"table","number":9},"pageHint":54},
+    {"id":"t-survival-10","anchor":{"kind":"table","number":10},"pageHint":55}
+  ]
+}

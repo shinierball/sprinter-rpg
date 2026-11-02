@@ -1,0 +1,31 @@
+<div class="cog-tm-controls">
+  <div style="margin-bottom: 10px; display: flex; gap: 8px;">
+    <div style="flex: 1; position: relative;">
+      <input type="text" name="search" data-input-action="setSearch" class="cog-tag-search-input cog-field-input" placeholder="Search by tag ID or label..." value="{{searchQuery}}" style="width: 100%; font-size: 13px; padding: 6px 10px; border: 1px solid var(--cog-border-strong); box-sizing: border-box;" />
+    </div>
+    <button type="button" data-action="clearSearch" {{#unless searchQuery}}hidden{{/unless}} class="cog-btn cog-clear-search-btn cog-bg-neutral-fill cog-text-on-fill" style="border: 1px solid var(--cog-border-muted); padding: 4px 10px; font-family: 'Oswald', sans-serif; font-size: 12px; cursor: pointer; border-radius: 3px;">
+        Clear
+      </button>
+  </div>
+
+  {{!-- Target Item Context Banner --}}
+  {{#if targetItem}}
+    <div class="cog-tm-target-banner cog-bg-info-tint" style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--cog-info-border); border-radius: 3px; padding: 6px 10px; margin-bottom: 10px;">
+      <div>
+        <i class="fa-solid fa-crosshairs cog-text-info"></i> Managing Tags for: <strong class="cog-text-info">{{targetItem.name}}</strong>
+      </div>
+      <div class="cog-text-secondary" style="font-size: 11px;">
+        Check or uncheck tags below to assign or remove them.
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- Namespace Filter Tabs --}}
+  <div class="cog-tm-tabs" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--cog-divider); padding-bottom: 6px;">
+    {{#each namespaceTabs as |tab|}}
+      <button type="button" data-action="setNamespace" class="cog-tm-tab {{#if tab.active}}active{{/if}} {{#if tab.active}}cog-bg-accent-fill{{else}}cog-bg-surface{{/if}} {{#if tab.active}}cog-text-on-fill{{else}}cog-text-strong{{/if}}" data-namespace="{{tab.id}}" style="padding: 3px 8px; font-size: 11px; font-family: 'Oswald', sans-serif; text-transform: uppercase; border: 1px solid var(--cog-ink); cursor: pointer; border-radius: 2px;">
+        {{tab.label}} ({{tab.count}})
+      </button>
+    {{/each}}
+  </div>
+</div>

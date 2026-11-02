@@ -1,0 +1,57 @@
+import { BaseItemDataModel, tagQueryField } from './base-item-model.mjs';
+
+/**
+ * DataModel for space_upgrade items embedded on personal_space actors.
+ * Defines upgrade bonuses, training room mechanics, and crafting station hardpoints.
+ */
+export class SpaceUpgradeDataModel extends BaseItemDataModel {
+  /** @override */
+  static defineSchema() {
+    const fields = globalThis.foundry?.data?.fields;
+    if (!fields) return {};
+
+    return {
+      ...super.defineSchema(),
+      description: new fields.HTMLField({ initial: '' }),
+      tier: new fields.NumberField({ integer: true, min: 1, initial: 1 }),
+      cost: new fields.NumberField({ min: 0, initial: 0 }),
+      purchased: new fields.BooleanField({ initial: true }),
+      bonuses: new fields.SchemaField({
+        defenseBonus: new fields.NumberField({ integer: true, initial: 0 }),
+        stashCapacityBonus: new fields.NumberField({ integer: true, initial: 0 }),
+        restRecoveryBonus: new fields.NumberField({ integer: true, initial: 0 }),
+        workstationLevel: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        mercenaryCapacityBonus: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        petCapacityBonus: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        mountCapacityBonus: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        wellRestedBonus: new fields.NumberField({ integer: true, initial: 0 }),
+        bonusGrindHours: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        advancementBonus: new fields.NumberField({ integer: true, initial: 0 }),
+        bonusTempBars: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        tempBarsHpPerSlot: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        removesInjuriesOnRest: new fields.BooleanField({ initial: false }),
+        mercenaryDiscountPct: new fields.NumberField({ min: 0, max: 100, initial: 0 }),
+        buffs: new fields.ArrayField(new fields.StringField(), { initial: [] })
+      }),
+      training: new fields.SchemaField({
+        enabled: new fields.BooleanField({ initial: false }),
+        allowedSkillTags: tagQueryField(fields),
+        sessionsPerWindow: new fields.NumberField({ integer: true, min: 0, initial: 1 }),
+        windowHours: new fields.NumberField({ min: 1, initial: 30 }),
+        hourCost: new fields.NumberField({ min: 0, initial: 1 }),
+        rollBonus: new fields.NumberField({ integer: true, initial: 0 }),
+        advantage: new fields.BooleanField({ initial: false }),
+        dcModifier: new fields.NumberField({ integer: true, initial: 0 })
+      }),
+      craftingTable: new fields.SchemaField({
+        enabled: new fields.BooleanField({ initial: false }),
+        tableTypeTag: new fields.StringField({ initial: '' }),
+        baseTier: new fields.NumberField({ integer: true, min: 0, initial: 1 }),
+        purchasedTiers: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        couponTiers: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        acquiredAtFloor: new fields.NumberField({ integer: true, min: 1, initial: 1 }),
+        upgradeCostGold: new fields.NumberField({ min: 0, initial: 250000 })
+      })
+    };
+  }
+}

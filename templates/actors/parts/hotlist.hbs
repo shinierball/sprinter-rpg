@@ -1,0 +1,100 @@
+{{!-- HOTLIST COMPONENT (10 BOXES) --}}
+<div class="cog-stat-block cog-hotlist-section" style="margin-top: 14px;">
+  <div class="cog-banner-header red">
+    <span><i class="fa-solid fa-bolt"></i> HOTLIST</span>
+    <span style="font-size: 11px; font-weight: normal; opacity: 0.9; text-transform: none;">
+      Quick Access • Drag &amp; drop spells or inventory items, or choose from dropdown
+    </span>
+  </div>
+  <div class="cog-hotlist-grid">
+    {{#each hotlistSlots as |slot|}}
+      <div class="cog-hotlist-box {{#if slot.isEmpty}}is-empty{{else}}is-populated{{/if}}{{#if slot.itemId}} draggable{{/if}}" data-drop-target="hotlist" data-slot="{{slot.key}}" {{#if slot.itemId}}data-item-id="{{slot.itemId}}" draggable="true"{{/if}}>
+        <div class="cog-hotlist-header">
+          <span class="cog-hotlist-num">{{slot.index}}</span>
+          {{#if slot.badge}}
+            <span class="cog-badge {{#if slot.isSpell}}cog-badge-spell{{else if slot.isAttack}}cog-badge-attack{{else if slot.isGear}}cog-badge-gear{{else}}cog-badge-item{{/if}}">
+              {{slot.badge}}
+            </span>
+          {{/if}}
+          {{#unless slot.isEmpty}}
+            <a class="hotlist-clear" data-action="clearHotlistSlot" data-slot="{{slot.key}}" data-tooltip="Clear Slot"><i class="fa-solid fa-xmark"></i></a>
+          {{/unless}}
+        </div>
+
+        {{#if slot.isEmpty}}
+          <div class="cog-hotlist-empty">
+            <i class="fa-solid fa-plus"></i>
+            <span>Empty</span>
+          </div>
+        {{else}}
+          <div class="cog-hotlist-content">
+            <div class="cog-hotlist-item-info">
+              {{#if slot.img}}
+                <img class="cog-hotlist-img" src="{{slot.img}}" alt="{{slot.name}}" />
+              {{/if}}
+              <div class="cog-hotlist-text">
+                <span class="cog-hotlist-name" title="{{slot.name}}">{{slot.name}}</span>
+                {{#if slot.detail}}
+                  <span class="cog-hotlist-detail">{{slot.detail}}</span>
+                {{/if}}
+              </div>
+            </div>
+
+            {{#if slot.itemId}}
+              <div class="cog-hotlist-action-wrapper">
+                {{#if slot.isAttack}}
+                  <button type="button" class="cog-hotlist-btn cog-hotlist-btn-attack" data-action="hotlistAttack" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Roll Attack (To Hit): {{slot.name}}">
+                    <i class="fa-solid fa-dice-d20"></i> Attack
+                  </button>
+                  <button type="button" class="cog-hotlist-btn cog-hotlist-btn-attack" data-action="hotlistAttackDamage" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Roll Damage: {{slot.name}}">
+                    <i class="fa-solid fa-burst"></i> Dmg
+                  </button>
+                {{else if slot.isGear}}
+                  <button type="button" class="cog-hotlist-btn cog-hotlist-btn-gear {{#if slot.isEquipped}}is-equipped{{/if}}" data-action="hotlistToggleEquip" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="{{#if slot.isEquipped}}Unequip {{slot.name}}{{else}}Equip to {{upper slot.gearSlot}}{{/if}}">
+                    <i class="fa-solid {{#if slot.isEquipped}}fa-shield-halved{{else}}fa-shield{{/if}}"></i> {{#if slot.isEquipped}}Unequip{{else}}Equip{{/if}}
+                  </button>
+                  {{#if slot.canActivate}}
+                    <button type="button" class="cog-hotlist-btn cog-hotlist-btn-use" data-action="hotlistUse" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Use Item: {{slot.name}}">
+                      <i class="fa-solid fa-bolt"></i> Use
+                    </button>
+                  {{/if}}
+                {{else if slot.isSpell}}
+                  <button type="button" class="cog-hotlist-btn cog-hotlist-btn-spell" data-action="hotlistCastSpell" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Cast Spell: {{slot.name}}">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Cast
+                  </button>
+                  {{#if slot.hasDamage}}
+                    <button type="button" class="cog-hotlist-btn cog-hotlist-btn-attack" data-action="hotlistSpellDamage" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Roll Damage: {{slot.name}}">
+                      <i class="fa-solid fa-burst"></i> Dmg
+                    </button>
+                  {{/if}}
+                {{else}}
+                  <button type="button" class="cog-hotlist-btn cog-hotlist-btn-use" data-action="hotlistUse" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Use Item: {{slot.name}}">
+                    <i class="fa-solid fa-flask"></i> Use
+                  </button>
+                {{/if}}
+              </div>
+            {{/if}}
+          </div>
+        {{/if}}
+
+        <div class="cog-hotlist-select-wrapper">
+          <select class="hotlist-select" data-change-action="selectHotlistSlot" data-slot="{{slot.key}}">
+            <option value="">-- {{#if slot.isEmpty}}+ Assign Spell / Item{{else}}Change: {{slot.name}}{{/if}} --</option>
+            {{#each slot.groups as |group|}}
+              {{#if group.items.length}}
+                <optgroup label="{{group.label}}">
+                  {{#each group.items as |opt|}}
+                    <option value="{{opt.id}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                  {{/each}}
+                </optgroup>
+              {{/if}}
+            {{/each}}
+            {{#if slot.isCustom}}
+              <option value="{{slot.value}}" selected>✏️ {{slot.name}}</option>
+            {{/if}}
+          </select>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+</div>

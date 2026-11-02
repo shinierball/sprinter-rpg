@@ -1,0 +1,12 @@
+<header class="cog-item-header">
+  <img class="cog-item-header-img" src="{{item.img}}" data-action="editImage" data-edit="img" title="{{item.name}}" />
+  <div style="flex: 1;">
+    <h1 style="margin: 0; padding: 0; border: none;">
+      <input name="name" type="text" value="{{item.name}}" placeholder="Item Name" class="cog-field-input" style="font-size: 18px; font-weight: bold;" />
+    </h1>
+    <div class="cog-text-accent" style="font-family: 'Oswald', sans-serif; font-size: 12px; text-transform: uppercase; margin-top: 4px;">
+      Type: {{upper item.type}}
+      {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
+    </div>
+  </div>
+</header>

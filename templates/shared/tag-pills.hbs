@@ -1,0 +1,43 @@
+  {{!-- Explicit Tags List --}}
+  <div style="margin-bottom: 8px;">
+    <label class="cog-text-muted" style="font-family: 'Oswald', sans-serif; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 4px;">
+      Explicit Tags:
+    </label>
+    <div class="cog-tag-pills" style="display: flex; flex-wrap: wrap; gap: 4px;">
+      {{#each tagsData.explicitTags as |tag|}}
+        <span class="cog-tag-pill cog-bg-info-tint cog-text-info" style="display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--cog-info-border); padding: 2px 6px; border-radius: 12px; font-size: 11px; font-family: monospace;">
+          <span title="{{tag.id}}">{{#if tag.label}}{{tag.label}}{{else}}{{tag.id}}{{/if}}</span>
+          {{#if tag.descriptive}}<span class="cog-badge cog-tag-descriptive-badge cog-bg-surface-muted cog-text-secondary" title="{{localize 'COG.TagManager.DescriptiveHint'}}">{{localize 'COG.TagManager.DescriptiveBadge'}}</span>{{/if}}
+          {{#if tag.removable}}<a class="cog-text-accent" data-action="removeTag" data-tag-id="{{tag.id}}" title="Remove Tag" style="cursor: pointer; font-weight: bold; font-family: sans-serif;">&times;</a>{{else}}<i class="fa-solid fa-lock cog-text-muted cog-tag-locked" title="{{localize 'COG.Tags.GmOnlyPill'}}"></i>{{/if}}
+        </span>
+      {{else}}
+        <span class="cog-text-muted" style="font-size: 11px; font-style: italic;">No explicit tags defined.</span>
+      {{/each}}
+    </div>
+  </div>
+
+  {{!-- Add Tag Controls --}}
+  {{#if tagsData.canAdd}}
+  <div class="cog-add-tag-row" data-tag-entry style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+    <input type="text" class="cog-field-input" placeholder="{{#if tagsData.addPlaceholder}}{{localize tagsData.addPlaceholder}}{{else}}Add tag (e.g. element.fire, favored.mage){{/if}}" style="flex: 1; font-size: 11px; font-family: monospace;" />
+    <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="addTag" style="border: 1px solid var(--cog-success-fill); padding: 3px 10px; font-size: 11px; font-family: 'Oswald', sans-serif; cursor: pointer; border-radius: 3px;">
+      <i class="fa-solid fa-plus"></i> Add
+    </button>
+  </div>
+  {{/if}}
+
+  {{!-- Derived / Runtime Tags (Read-only) --}}
+  {{#if tagsData.derivedTags.length}}
+    <div class="cog-bg-surface-alt" style="margin-top: 6px; border: 1px dashed var(--cog-divider); padding: 6px 8px; border-radius: 3px;">
+      <label class="cog-text-muted" style="font-family: 'Oswald', sans-serif; font-size: 10px; text-transform: uppercase; display: block; margin-bottom: 4px;">
+        Derived & Identity Tags (Computed at Runtime):
+      </label>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+        {{#each tagsData.derivedTags as |tag|}}
+          <span class="cog-bg-surface-alt cog-text-secondary" title="{{tag.id}}" style="display: inline-block; border: 1px solid var(--cog-border-muted); padding: 1px 5px; border-radius: 10px; font-size: 10px; font-family: monospace;">
+            {{#if tag.label}}{{tag.label}}{{else}}{{tag.id}}{{/if}} <small class="cog-text-muted">[DERIVED]</small>{{#if tag.descriptive}} <span class="cog-badge cog-tag-descriptive-badge cog-bg-surface-muted cog-text-secondary" title="{{localize 'COG.TagManager.DescriptiveHint'}}">{{localize 'COG.TagManager.DescriptiveBadge'}}</span>{{/if}}
+          </span>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}

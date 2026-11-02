@@ -1,0 +1,33 @@
+{{!--
+  One of the creators' own grant lists: the stat pools or the rank bonuses. Each list is one rows form
+  (`data-perk-list`, no `data-perk-index`) whose inputs are named perkRows.<list>.grants.<i>.<field>; the grant row editor
+  runs with kind and mode locked. A row's cost is ledger-only and has no `name` (a `setRowField` change action).
+  Parameters: list ('statPools' | 'rankBonuses'), rows (statPoolRows | rankBonusRows), addAction, removeAction, addLabel.
+--}}
+<form class="cog-spec-grants-form" data-perk-list="{{list}}" autocomplete="off" onsubmit="return false">
+  <div class="cog-entry-list">
+    {{#each rows as |row|}}
+      <div class="cog-pb-row cog-spec-grant-row" data-row="{{../list}}" data-index="{{row.index}}">
+        {{> "systems/sprinter-rpg/templates/items/parts/grant-row.hbs" g=row.grant}}
+        <div class="cog-entry-adder-row">
+          {{#if (eq ../list "rankBonuses")}}
+            {{#if row.negative}}
+              <span class="cog-entry-cost refund">{{localize "COG.PointBuilder.EarnsExtra" count=row.earns}}</span>
+            {{else}}
+              <select id="{{@root.rootId}}-{{../list}}-{{row.index}}-cost" data-change-action="setRowField" data-row-field="cost" title="{{localize 'COG.PointBuilder.RankBonusCost'}}">
+                {{#each row.costOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+              </select>
+              <span class="cog-entry-cost">+{{row.cost}} BP</span>
+            {{/if}}
+          {{else}}
+            <span class="cog-entry-cost">+{{row.cost}} BP</span>
+          {{/if}}
+          <button type="button" class="cog-btn-icon cog-remove-{{../list}}-btn" data-action="{{../removeAction}}" data-index="{{row.index}}" title="Remove"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+</form>
+<div class="cog-entry-adder-row">
+  <button type="button" id="{{@root.rootId}}-add-{{list}}" class="cog-btn cog-add-{{list}}-btn" data-action="{{addAction}}"><i class="fa-solid fa-plus"></i> {{addLabel}}</button>
+</div>

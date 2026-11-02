@@ -1,0 +1,8 @@
+<footer class="cog-sourcery-footer cog-text cog-bg-window">
+  {{#if isBusy}}<progress class="cog-sourcery-bar" max="100" value="{{progressPct}}"></progress> <span>{{progressLabel}}</span>{{/if}}
+  {{#if isDone}}<span class="cog-text-success">Import written and loaded. The compendiums are ready to use.</span>{{/if}}
+  <span class="cog-sourcery-footer-spacer"></span>
+  <button type="button" class="cog-btn cog-btn-secondary" data-action="copyReport" {{#unless hasPlan}}disabled{{/unless}}><i class="fa-solid fa-copy"></i> Copy report</button>
+  <button type="button" class="cog-btn cog-btn-secondary" data-action="startOver" {{#if isBusy}}disabled{{/if}}>Start over</button>
+  <button type="button" class="cog-btn cog-btn-primary" data-action="commit" {{#unless canCommit}}disabled{{/unless}}><i class="fa-solid fa-download"></i> Import</button>
+</footer>

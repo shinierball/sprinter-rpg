@@ -1,0 +1,746 @@
+<section class="sheet-body creator-body">
+
+  {{!-- ========================================================= --}}
+  {{!-- TAB 1: IDENTITY & TIER                                    --}}
+  {{!-- ========================================================= --}}
+  {{#if (eq activeTab 'identity')}}
+  <div class="tab-pane active" data-tab="identity">
+    <section class="cog-builder-section creator-card">
+      <div class="cog-section-title">
+        <i class="fa-solid fa-fingerprint"></i> 1. Core Monster Identity
+      </div>
+      <div class="cog-form-grid">
+        <div class="cog-form-group">
+          <label>Mob Name</label>
+          <input type="text" name="creator-name" data-input-action="setProp" data-change-action="commitProp" data-prop="name" value="{{state.name}}" placeholder="e.g. Shadow Stalker, Cave Drake" required />
+        </div>
+        <div class="cog-form-group">
+          <label>Creature Type / Subtype</label>
+          <input type="text" name="creator-creatureType" data-input-action="setProp" data-change-action="commitProp" data-prop="creatureType" value="{{state.creatureType}}" placeholder="e.g. Beastly, Undead, Cybernetic Humanoid" />
+        </div>
+        <div class="cog-form-group">
+          <label>Level</label>
+          <input type="number" min="1" max="1000" name="creator-level" data-input-action="setProp" data-change-action="commitProp" data-prop="level" value="{{state.level}}" />
+        </div>
+        <div class="cog-form-group">
+          <label>Design Floor (Native Floor)</label>
+          <input type="number" min="1" max="18" name="creator-designFloor" data-input-action="setProp" data-change-action="commitProp" data-prop="designFloor" value="{{state.designFloor}}" />
+        </div>
+        <div class="cog-form-group">
+          <label>Creature Size Category</label>
+          <select name="creator-size" data-change-action="commitProp" data-prop="size">
+            {{#each sizeOptions}}
+              <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="cog-builder-section creator-card">
+      <div class="cog-section-title">
+        <i class="fa-solid fa-crown"></i> 2. Boss Hierarchy
+        <span class="cog-section-badge">Progression</span>
+      </div>
+      <div class="cog-form-grid">
+        <div class="cog-form-group cog-span-2">
+          <label>Boss Tier</label>
+          <select name="creator-bossTier" data-change-action="commitProp" data-prop="bossTier">
+            {{#each bossTierOptions}}
+              <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-form-group cog-span-2 checkbox-group">
+          <label class="cog-checkbox-label">
+            <input type="checkbox" name="creator-isUnique" data-change-action="commitProp" data-prop="isUnique" {{#if state.isUnique}}checked{{/if}} />
+            <span><strong>Unique Named Boss</strong> — Legendary dungeon figure with singular identity (adds <code>mob.unique</code> tag)</span>
+          </label>
+        </div>
+        <div class="cog-form-group cog-span-2 checkbox-group">
+          <label class="cog-checkbox-label">
+            <input type="checkbox" data-change-action="commitProp" data-prop="isSummoned" {{#if state.isSummoned}}checked{{/if}} />
+            <span><strong>Summoned</strong> &mdash; called into the fight by another creature (adds <code>mob.summoned</code> tag)</span>
+          </label>
+        </div>
+        <div class="cog-form-group cog-span-2 checkbox-group">
+          <label class="cog-checkbox-label">
+            <input type="checkbox" data-change-action="commitProp" data-prop="isMinion" {{#if state.isMinion}}checked{{/if}} />
+            <span><strong>Minion</strong> &mdash; serves a boss (adds <code>mob.minion</code> tag)</span>
+          </label>
+        </div>
+        <div class="cog-form-group cog-span-2">
+          {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=actorTagsPicker}}
+        </div>
+      </div>
+      {{#if isBoss}}
+        <div class="cog-callout info">
+          <div class="callout-heading"><i class="fa-solid fa-crown"></i> <strong>Boss Mechanics Applied:</strong></div>
+          <div class="callout-body">
+            Base Stat <strong>5</strong> &bull; <strong>{{budget.pointsPerLevel}}</strong> points per level &bull; HB Slots Base <strong>{{tierInfo.hbBase}}</strong> + Floor (<strong>{{effectiveBars}}</strong> total health bars) &bull; Actions: <code>max(2, crawler allies)</code> with <strong>NO attack cap</strong>!
+          </div>
+        </div>
+      {{/if}}
+    </section>
+  </div>
+  {{/if}}
+
+  {{!-- ========================================================= --}}
+  {{!-- TAB 2: STATS & BUDGET                                     --}}
+  {{!-- ========================================================= --}}
+  {{#if (eq activeTab 'stats')}}
+  <div class="tab-pane active" data-tab="stats">
+    <section class="cog-builder-section creator-card">
+      <div class="budget-header flexrow">
+        <div class="cog-section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+          <i class="fa-solid fa-scale-balanced"></i> Stat Point Budget
+        </div>
+        <div class="budget-summary flexrow">
+          <span class="budget-item">Base Stat: <strong>{{budget.base}}</strong></span>
+          <span class="budget-item">Budget: <strong>{{budget.points}} pts</strong></span>
+          <span class="budget-item">Spent: <strong>{{spent}} pts</strong></span>
+          <span class="budget-item">Remaining: <strong>{{remaining}} pts</strong></span>
+          {{#if overBudget}}
+            <span class="cog-badge over-budget-badge"><i class="fa-solid fa-triangle-exclamation"></i> OVER BUDGET (+{{sub spent budget.points}} pts)</span>
+          {{else}}
+            <span class="cog-badge legal-budget-badge"><i class="fa-solid fa-check"></i> LEGAL BUDGET</span>
+          {{/if}}
+        </div>
+      </div>
+      <p class="section-help">
+        Regular mobs have base 1 with 3 points per level. Bosses have base 5 with tier-scaled points (Area: 2, Neighborhood: 3, Borough: 4, City: 5, Province: 6, Country: 8, Floor: 10, Dungeon: 15 per level). Over-budget stats show clear warnings but are never hard-blocked.
+      </p>
+
+      <div class="ability-grid">
+        <div class="ability-card">
+          <div class="ability-label">STR</div>
+          <div class="ability-input-row">
+            <input type="number" min="1" max="500" name="creator-abilities-str" data-input-action="setProp" data-change-action="commitProp" data-prop="abilities.str" value="{{state.abilities.str}}" />
+            <span class="stat-mod">{{statMods.str}}</span>
+          </div>
+        </div>
+        <div class="ability-card">
+          <div class="ability-label">DEX</div>
+          <div class="ability-input-row">
+            <input type="number" min="1" max="500" name="creator-abilities-dex" data-input-action="setProp" data-change-action="commitProp" data-prop="abilities.dex" value="{{state.abilities.dex}}" />
+            <span class="stat-mod">{{statMods.dex}}</span>
+          </div>
+        </div>
+        <div class="ability-card">
+          <div class="ability-label">CON</div>
+          <div class="ability-input-row">
+            <input type="number" min="1" max="500" name="creator-abilities-con" data-input-action="setProp" data-change-action="commitProp" data-prop="abilities.con" value="{{state.abilities.con}}" />
+            <span class="stat-mod">{{statMods.con}}</span>
+          </div>
+        </div>
+        <div class="ability-card">
+          <div class="ability-label">INT</div>
+          <div class="ability-input-row">
+            <input type="number" min="1" max="500" name="creator-abilities-int" data-input-action="setProp" data-change-action="commitProp" data-prop="abilities.int" value="{{state.abilities.int}}" />
+            <span class="stat-mod">{{statMods.int}}</span>
+          </div>
+        </div>
+        <div class="ability-card">
+          <div class="ability-label">CHA</div>
+          <div class="ability-input-row">
+            <input type="number" min="1" max="500" name="creator-abilities-cha" data-input-action="setProp" data-change-action="commitProp" data-prop="abilities.cha" value="{{state.abilities.cha}}" />
+            <span class="stat-mod">{{statMods.cha}}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  {{/if}}
+
+  {{!-- ========================================================= --}}
+  {{!-- TAB 3: DEFENSES & BARS                                    --}}
+  {{!-- ========================================================= --}}
+  {{#if (eq activeTab 'defenses')}}
+  <div class="tab-pane active" data-tab="defenses">
+    <section class="cog-builder-section creator-card">
+      <div class="cog-section-title">
+        <i class="fa-solid fa-heart-pulse"></i> Health Bars &amp; Hit Points (Formula)
+      </div>
+      <div class="cog-form-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="cog-form-group">
+          <label>HP Per Bar (CON Mod)</label>
+          <input type="text" name="creator-hp-per-bar" readonly value="{{conMod}} HP" class="readonly-input" />
+          <small class="cog-label-hint">Determined by CON score modifier</small>
+        </div>
+        <div class="cog-form-group">
+          <label>Recommended HB Slots</label>
+          <input type="text" name="creator-hb-recommended" readonly value="{{hbSlotsBase}} Bars" class="readonly-input" />
+          <small class="cog-label-hint">Regular: Min(lvl, 10) | Boss: Base + Floor</small>
+        </div>
+        <div class="cog-form-group">
+          <label>Custom Bars Override</label>
+          <input type="number" min="1" max="200" name="creator-bars" data-input-action="setProp" data-change-action="commitProp" data-prop="bars" value="{{state.bars}}" placeholder="Auto ({{hbSlotsBase}})" />
+          <small class="cog-label-hint">Leave blank to use the standard formula</small>
+        </div>
+      </div>
+      <div class="calculated-preview-row">
+        <span>Effective Health Bars: <strong>{{effectiveBars}} Bars</strong></span>
+        <span>Total Hit Points: <strong>{{effectiveBars}} &times; {{conMod}} HP = {{maxHp}} HP</strong></span>
+      </div>
+    </section>
+
+    <section class="cog-builder-section creator-card">
+      <div class="cog-section-title">
+        <i class="fa-solid fa-shield"></i> Defenses, Evasion &amp; Floor Scaling (+F)
+      </div>
+      <div class="cog-form-grid">
+        <div class="cog-form-group">
+          <label>Evade Base (Defaults to 10 + DEX mod)</label>
+          <input type="number" min="1" max="100" name="creator-evadeBase" data-input-action="setProp" data-change-action="commitProp" data-prop="evadeBase" value="{{state.evadeBase}}" placeholder="{{defaultEvadeBase}}" />
+          <div class="metric-tag-row">
+            <span class="cog-badge stat-preview-badge">In-Play Evade DC: <strong>{{effectiveEvadeDC}}</strong> ({{evadeBaseVal}} + Floor {{state.designFloor}})</span>
+          </div>
+        </div>
+        <div class="cog-form-group">
+          <label>Surprise Base (Defaults to 10 + INT mod)</label>
+          <input type="number" min="1" max="100" name="creator-surpriseBase" data-input-action="setProp" data-change-action="commitProp" data-prop="surpriseBase" value="{{state.surpriseBase}}" placeholder="{{defaultSurpriseBase}}" />
+          <div class="metric-tag-row">
+            <span class="cog-badge stat-preview-badge">In-Play Surprise DC: <strong>{{effectiveSurpriseDC}}</strong> ({{surpriseBaseVal}} + Floor {{state.designFloor}})</span>
+          </div>
+        </div>
+        <div class="cog-form-group">
+          <label>Armor Damage Reduction (DR)</label>
+          <input type="number" min="0" max="100" name="creator-dr" data-input-action="setProp" data-change-action="commitProp" data-prop="dr" value="{{state.dr}}" />
+          <div class="metric-tag-row">
+            <span class="cog-badge stat-preview-badge">Total In-Play DR: <strong>{{add state.dr state.designFloor}} DR</strong> (Armor {{state.dr}} + Floor DR {{state.designFloor}})</span>
+          </div>
+        </div>
+        <div class="cog-form-group">
+          <label>Movement Speeds (Move / Step in Feet)</label>
+          <div class="flexrow" style="gap: 8px;">
+            <input type="number" min="0" name="creator-move" data-input-action="setProp" data-change-action="commitProp" data-prop="move" value="{{state.move}}" placeholder="Move: 20" title="Move Speed" />
+            <input type="number" min="0" name="creator-step" data-input-action="setProp" data-change-action="commitProp" data-prop="step" value="{{state.step}}" placeholder="Step: 10" title="Step Speed" />
+          </div>
+          <small class="cog-label-hint">Standard speeds: Move 20 ft, Step 10 ft</small>
+        </div>
+      </div>
+    </section>
+  </div>
+  {{/if}}
+
+  {{!-- ========================================================= --}}
+  {{!-- TAB 4: ATTACKS                                            --}}
+  {{!-- ========================================================= --}}
+  {{#if (eq activeTab 'attacks')}}
+  <div class="tab-pane active" data-tab="attacks">
+    <section class="cog-builder-section creator-card">
+      <div class="flexrow" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="cog-section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+          <i class="fa-solid fa-crosshairs"></i> Monster Attacks &amp; Actions
+        </div>
+        <div class="flexrow" style="gap: 8px; align-items: center;">
+          <button type="button" class="cog-btn open-tag-manager-btn" data-action="openTagManager" title="Open Tag Manager to browse canonical conditions and custom tags">
+            <i class="fa-solid fa-tags"></i> Tag Manager
+          </button>
+          <button type="button" class="cog-btn add-attack-btn" data-action="addAttack"><i class="fa-solid fa-plus"></i> Add Attack</button>
+        </div>
+      </div>
+
+      <div class="cog-callout info">
+        <strong>Damage Dice Guidance:</strong> Level {{state.level}} {{#if isBoss}}Boss{{else}}Mob{{/if}} recommends <strong>{{recommendedDiceCount}}d</strong> base dice (subtract 1 die for AoE shapes, subtract 1 die for condition riders).
+      </div>
+
+      <div class="attacks-list">
+        {{#each attackRows}}
+        <div class="attack-builder-item" data-index="{{@index}}">
+          <div class="attack-item-header flexrow">
+            <span class="attack-index">#{{add @index 1}}</span>
+            <input type="text" class="attack-name-input" id="{{@root.rootId}}-attack-{{@index}}-name" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="name" value="{{this.name}}" placeholder="Attack Name (e.g. Claws, Fire Breath)" />
+            <button type="button" class="remove-attack-btn" data-action="removeAttack" data-index="{{@index}}" title="Remove Attack"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <div class="form-grid-4">
+            <div class="cog-form-group">
+              <label>To-Hit Stat</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-toHitStat" data-change-action="setAttackField" data-attack-field="toHitStat">
+                <option value="dex" {{#if (eq this.toHitStat 'dex')}}selected{{/if}}>DEX</option>
+                <option value="str" {{#if (eq this.toHitStat 'str')}}selected{{/if}}>STR</option>
+                <option value="int" {{#if (eq this.toHitStat 'int')}}selected{{/if}}>INT</option>
+                <option value="con" {{#if (eq this.toHitStat 'con')}}selected{{/if}}>CON</option>
+                <option value="cha" {{#if (eq this.toHitStat 'cha')}}selected{{/if}}>CHA</option>
+              </select>
+            </div>
+            <div class="cog-form-group">
+              <label>Damage Dice</label>
+              <input type="text" id="{{@root.rootId}}-attack-{{@index}}-damageDice" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="damageDice" value="{{this.damageDice}}" placeholder="e.g. 3d6, 2d8" />
+            </div>
+            <div class="cog-form-group">
+              <label>Damage Stat</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-damageStat" data-change-action="setAttackField" data-attack-field="damageStat">
+                <option value="str" {{#if (eq this.damageStat 'str')}}selected{{/if}}>STR</option>
+                <option value="dex" {{#if (eq this.damageStat 'dex')}}selected{{/if}}>DEX</option>
+                <option value="con" {{#if (eq this.damageStat 'con')}}selected{{/if}}>CON</option>
+                <option value="int" {{#if (eq this.damageStat 'int')}}selected{{/if}}>INT</option>
+                <option value="cha" {{#if (eq this.damageStat 'cha')}}selected{{/if}}>CHA</option>
+                <option value="none" {{#if (eq this.damageStat 'none')}}selected{{/if}}>None</option>
+              </select>
+            </div>
+            <div class="cog-form-group">
+              <label>Damage Type</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-damageType" data-change-action="setAttackField" data-attack-field="damageType">
+                {{#each ../damageTypeOptions as |dt|}}
+                  <option value="{{dt.value}}" {{#if (eq ../damageType dt.value)}}selected{{/if}}>{{dt.label}}</option>
+                {{/each}}
+              </select>
+            </div>
+          </div>
+          <div class="form-grid-4" style="margin-top: 8px;">
+            <div class="cog-form-group">
+              <label>Hit Difficulty (before Floor)</label>
+              <input type="number" min="0" id="{{@root.rootId}}-attack-{{@index}}-hitDifficulty" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="hitDifficulty" value="{{this.hitDifficulty}}" placeholder="{{this.view.hitPlaceholder}}" />
+              <small class="cog-label-hint">Blank uses the mob's Evade DC.</small>
+            </div>
+            <div class="cog-form-group">
+              <label>Range (ft)</label>
+              <input type="number" min="0" id="{{@root.rootId}}-attack-{{@index}}-rangeFeet" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="rangeFeet" value="{{this.rangeFeet}}" placeholder="0" />
+            </div>
+            <div class="cog-form-group">
+              <label>Cooldown</label>
+              <input type="number" min="0" id="{{@root.rootId}}-attack-{{@index}}-cooldownValue" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="cooldown.value" value="{{this.cooldown.value}}" />
+            </div>
+            <div class="cog-form-group">
+              <label>Cooldown Unit</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-cooldownUnit" data-change-action="setAttackField" data-attack-field="cooldown.unit">
+                {{#each this.view.cooldownUnits as |unit|}}
+                  <option value="{{unit.value}}" {{#if unit.selected}}selected{{/if}}>{{unit.label}}</option>
+                {{/each}}
+              </select>
+            </div>
+          </div>
+          <div class="form-grid-4" style="margin-top: 8px;">
+            <div class="cog-form-group">
+              <label>Area Shape</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-areaShape" data-change-action="setAttackField" data-attack-field="area.shape">
+                {{#each this.view.shapeOptions as |shape|}}
+                  <option value="{{shape.value}}" {{#if shape.selected}}selected{{/if}}>{{shape.label}}</option>
+                {{/each}}
+              </select>
+            </div>
+            {{#if this.view.showRadius}}
+            <div class="cog-form-group">
+              <label>Radius (ft)</label>
+              <input type="number" min="0" id="{{@root.rootId}}-attack-{{@index}}-areaRadius" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="area.radius" value="{{this.area.radius}}" />
+            </div>
+            {{/if}}
+            {{#if this.view.showLength}}
+            <div class="cog-form-group">
+              <label>Length (ft)</label>
+              <input type="number" min="0" id="{{@root.rootId}}-attack-{{@index}}-areaLength" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="area.lineLength" value="{{this.area.lineLength}}" />
+            </div>
+            <div class="cog-form-group">
+              <label>Width (ft)</label>
+              <input type="number" min="0" id="{{@root.rootId}}-attack-{{@index}}-areaWidth" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="area.lineWidth" value="{{this.area.lineWidth}}" />
+            </div>
+            {{/if}}
+            {{#if this.view.hasShape}}
+            <div class="cog-form-group">
+              <label>Splash (ft)</label>
+              <input type="number" min="0" id="{{@root.rootId}}-attack-{{@index}}-areaSplash" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="area.splash" value="{{this.area.splash}}" />
+            </div>
+            {{/if}}
+            <div class="cog-form-group checkbox-group" style="padding-top: 18px;">
+              <label class="cog-checkbox-label">
+                <input type="checkbox" id="{{@root.rootId}}-attack-{{@index}}-ignoreDR" data-change-action="setAttackField" data-attack-field="ignoreDR" {{#if this.ignoreDR}}checked{{/if}} />
+                <span>Armor Piercing (Ignores DR)</span>
+              </label>
+            </div>
+          </div>
+          <div class="cog-form-grid" style="margin-top: 8px;">
+            <div class="cog-form-group cog-span-2">
+              {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=this.view.riders.picker}}
+              <label>{{localize "COG.OnHitRiders.Degree"}}</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-evadeFailDegree" data-change-action="setAttackField" data-attack-field="onHit.evadeFail.degree">
+                {{#each this.view.riders.degreeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+              <label>{{localize "COG.OnHitRiders.MinSlots"}}</label>
+              <input type="number" min="1" id="{{@root.rootId}}-attack-{{@index}}-slotLossMin" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="onHit.slotLoss.minSlotsLost" value="{{this.view.riders.minSlotsLost}}" />
+              <label>{{localize "COG.OnHitRiders.ModeHit"}}</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-onHitMode" data-change-action="setAttackField" data-attack-field="onHit.debuffMode">
+                {{#each this.view.riders.hitModeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+              <label>{{localize "COG.OnHitRiders.ModeEvade"}}</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-evadeFailMode" data-change-action="setAttackField" data-attack-field="onHit.evadeFail.mode">
+                {{#each this.view.riders.evadeModeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+              <label>{{localize "COG.OnHitRiders.ModeSlot"}}</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-slotLossMode" data-change-action="setAttackField" data-attack-field="onHit.slotLoss.mode">
+                {{#each this.view.riders.slotModeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+              <small class="cog-label-hint">{{localize "COG.OnHitRiders.Hint"}}</small>
+            </div>
+            <div class="cog-form-group">
+              <label>
+                <input type="checkbox" id="{{@root.rootId}}-attack-{{@index}}-contestHas" data-change-action="setAttackField" data-attack-field="contest.hasContest" {{#if this.contest.hasContest}}checked{{/if}} />
+                <i class="fa-solid fa-scale-balanced"></i> Stat-Check Save (no Evade)
+              </label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-contestStat" data-change-action="setAttackField" data-attack-field="contest.targetStat">
+                <option value="dex" {{#if (eq this.contest.targetStat 'dex')}}selected{{/if}}>DEX</option>
+                <option value="str" {{#if (eq this.contest.targetStat 'str')}}selected{{/if}}>STR</option>
+                <option value="int" {{#if (eq this.contest.targetStat 'int')}}selected{{/if}}>INT</option>
+                <option value="con" {{#if (eq this.contest.targetStat 'con')}}selected{{/if}}>CON</option>
+                <option value="cha" {{#if (eq this.contest.targetStat 'cha')}}selected{{/if}}>CHA</option>
+              </select>
+              <input type="number" min="0" id="{{@root.rootId}}-attack-{{@index}}-contestDC" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="contest.customDC" value="{{this.contest.customDC}}" placeholder="DC before the Floor (0 = default)" />
+              <small class="cog-label-hint">The target rolls this check; the Floor is added to the DC.</small>
+            </div>
+            <div class="cog-form-group">
+              <label><i class="fa-solid fa-skull"></i> On-Failed-Save Condition / Debuff</label>
+              <select id="{{@root.rootId}}-attack-{{@index}}-contestDebuff" data-change-action="setAttackField" data-attack-field="contest.onFailDebuff">
+                <option value="">-- None (No Condition) --</option>
+                {{#each ../conditionOptions as |cond|}}
+                  <option value="{{cond.identifier}}" {{#if (eq ../contest.onFailDebuff cond.identifier)}}selected{{/if}}>{{cond.label}}</option>
+                {{/each}}
+              </select>
+            </div>
+            {{#if this.view.readsAs}}
+            <div class="cog-form-group cog-span-2 attack-reads-as">
+              <label>Reads as</label>
+              <p class="cog-text-muted" data-reads-as>{{this.view.readsAs}}</p>
+            </div>
+            {{/if}}
+            <div class="cog-form-group cog-span-2">
+              <label>Effects &amp; Tactical Description Notes</label>
+              <textarea id="{{@root.rootId}}-attack-{{@index}}-effects" data-input-action="setAttackField" data-change-action="setAttackField" data-attack-field="effects" rows="2" placeholder="Prose only, e.g. Attacks cannot be redirected. The mechanics line above is generated.">{{this.effects}}</textarea>
+            </div>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </section>
+  </div>
+  {{/if}}
+
+  {{!-- ========================================================= --}}
+  {{!-- TAB 5: TRAITS                                             --}}
+  {{!-- ========================================================= --}}
+  {{#if (eq activeTab 'traits')}}
+  <div class="tab-pane active" data-tab="traits">
+    <section class="cog-builder-section creator-card">
+      <div class="flexrow" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="cog-section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+          <i class="fa-solid fa-dna"></i> Trait Presets &amp; Special Features
+        </div>
+        <div class="flexrow" style="gap: 8px; align-items: center;">
+          <select class="trait-preset-select" name="creator-trait-preset">
+            <option value="damage_multiplier">Preset: Damage Multiplier</option>
+            <option value="aura_buff">Preset: Aura Buff</option>
+            <option value="hot_buff">Preset: Heal-Over-Time</option>
+          </select>
+          <button type="button" class="cog-btn add-trait-preset-btn" data-action="addTraitPreset"><i class="fa-solid fa-plus"></i> Add Preset</button>
+          <button type="button" class="cog-btn add-custom-trait-btn" data-action="addCustomTrait"><i class="fa-solid fa-wand-sparkles"></i> Custom Trait</button>
+        </div>
+      </div>
+
+      <div class="traits-list">
+        {{#if (eq state.traits.length 0)}}
+          <div class="cog-empty-state"><i class="fa-solid fa-dna"></i> No traits or special features added. Choose a preset or click "+ Custom Trait".</div>
+        {{/if}}
+        {{#each traitRows}}
+        <div class="trait-builder-item" data-index="{{@index}}">
+          <div class="attack-item-header flexrow">
+            <span class="attack-index">#{{add @index 1}}</span>
+            <input type="text" class="trait-name-input" id="{{@root.rootId}}-trait-{{@index}}-name" data-input-action="setTraitField" data-change-action="setTraitField" data-trait-field="name" value="{{this.name}}" placeholder="Trait Name" />
+            <button type="button" class="remove-trait-btn" data-action="removeTrait" data-index="{{@index}}" title="Remove Trait"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <div class="cog-form-grid">
+            <div class="cog-form-group">
+              <label>Trait Type</label>
+              <select id="{{@root.rootId}}-trait-{{@index}}-type" data-input-action="setTraitField" data-change-action="setTraitField" data-trait-field="type">
+                {{#each this.view.typeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+            </div>
+            {{#if this.view.showDamageType}}
+            <div class="cog-form-group">
+              <label>Damage Type</label>
+              <select id="{{@root.rootId}}-trait-{{@index}}-damageType" data-input-action="setTraitField" data-change-action="setTraitField" data-trait-field="damageType">
+                {{#each this.view.damageTypeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+            </div>
+            {{/if}}
+            {{#if this.view.showMultiplier}}
+            <div class="cog-form-group">
+              <label>Multiplier</label>
+              <input type="number" step="any" id="{{@root.rootId}}-trait-{{@index}}-multiplier" data-input-action="setTraitField" data-change-action="setTraitField" data-trait-field="multiplier" value="{{this.view.multiplier}}" />
+            </div>
+            {{/if}}
+            {{#if this.view.showTags}}
+            <div class="cog-form-group cog-span-2">
+              {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=this.view.tagsPicker}}
+            </div>
+            {{/if}}
+            <div class="cog-form-group cog-span-2">
+              <label>Rules &amp; Effect Description</label>
+              <textarea id="{{@root.rootId}}-trait-{{@index}}-description" data-input-action="setTraitField" data-change-action="setTraitField" data-trait-field="description" rows="3" placeholder="Full rules text and mechanics for this special monster trait...">{{this.description}}</textarea>
+            </div>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </section>
+  </div>
+  {{/if}}
+
+  {{!-- ========================================================= --}}
+  {{!-- TAB: SPELLS                                               --}}
+  {{!-- ========================================================= --}}
+  {{#if (eq activeTab 'spells')}}
+  <div class="tab-pane active" data-tab="spells">
+    <section class="cog-builder-section creator-card">
+      <div class="flexrow" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="cog-section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+          <i class="fa-solid fa-wand-sparkles"></i> Spells ({{state.spells.length}})
+        </div>
+        <button type="button" class="cog-btn add-spell-btn" data-action="addSpell"><i class="fa-solid fa-plus"></i> Add Spell</button>
+      </div>
+
+      <div class="spells-list">
+        {{#if (eq state.spells.length 0)}}
+          <div class="cog-empty-state"><i class="fa-solid fa-wand-sparkles"></i> No spells. Click "+ Add Spell" to give this mob something to cast.</div>
+        {{/if}}
+        {{#each spellRows}}
+        <div class="spell-builder-item" data-index="{{@index}}">
+          <div class="attack-item-header flexrow">
+            <span class="attack-index">#{{add @index 1}}</span>
+            <input type="text" class="spell-name-input" id="{{@root.rootId}}-spell-{{@index}}-name" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="name" value="{{this.name}}" placeholder="Spell Name" />
+            <button type="button" class="remove-spell-btn" data-action="removeSpell" data-index="{{@index}}" title="Remove Spell"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <div class="cog-form-grid">
+            <div class="cog-form-group">
+              <label>Check Type</label>
+              <select id="{{@root.rootId}}-spell-{{@index}}-checkType" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="checkType">
+                {{#each this.view.checkTypeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+            </div>
+            <div class="cog-form-group">
+              <label>Mana Cost</label>
+              <input type="number" min="0" id="{{@root.rootId}}-spell-{{@index}}-manaCost" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="manaCost" value="{{this.manaCost}}" />
+            </div>
+            <div class="cog-form-group">
+              <label>Range</label>
+              <input type="text" id="{{@root.rootId}}-spell-{{@index}}-range" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="range" value="{{this.range}}" />
+            </div>
+            <div class="cog-form-group">
+              <label>Rank</label>
+              <input type="number" min="1" id="{{@root.rootId}}-spell-{{@index}}-rank" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="rank" value="{{this.rank}}" />
+            </div>
+            <div class="cog-form-group">
+              <label>Stat</label>
+              <select id="{{@root.rootId}}-spell-{{@index}}-stat" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="stat">
+                {{#each this.view.statOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+            </div>
+            <div class="cog-form-group">
+              <label>Base Damage Dice</label>
+              <input type="text" placeholder="e.g. 2d6" id="{{@root.rootId}}-spell-{{@index}}-baseDamage-dice" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="baseDamage.dice" value="{{this.baseDamage.dice}}" />
+            </div>
+            <div class="cog-form-group">
+              <label>Base Damage Stat</label>
+              <select id="{{@root.rootId}}-spell-{{@index}}-baseDamage-stat" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="baseDamage.stat">
+                {{#each this.view.baseStatOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+            </div>
+            <div class="cog-form-group">
+              <label>Damage Type</label>
+              <select id="{{@root.rootId}}-spell-{{@index}}-baseDamage-damageType" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="baseDamage.damageType">
+                {{#each this.view.damageTypeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+              </select>
+            </div>
+            <div class="cog-form-group cog-span-2">
+              <label>Description</label>
+              <textarea id="{{@root.rootId}}-spell-{{@index}}-description" data-input-action="setSpellField" data-change-action="setSpellField" data-spell-field="description" rows="3" placeholder="What the spell does.">{{this.description}}</textarea>
+            </div>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </section>
+  </div>
+  {{/if}}
+
+  {{!-- ========================================================= --}}
+  {{!-- TAB 6: LORE & LOOT                                        --}}
+  {{!-- ========================================================= --}}
+  {{#if (eq activeTab 'loot')}}
+  <div class="tab-pane active" data-tab="loot">
+    <!-- Section 1: Flavor, Lore & Dungeon AI Voice -->
+    <section class="cog-builder-section creator-card">
+      <div class="cog-section-title">
+        <i class="fa-solid fa-book-journal-whills"></i> 1. Monster Flavor, Lore &amp; Dungeon AI Voice
+        <span class="cog-section-badge">Narrative &amp; GM Reference</span>
+      </div>
+      <div class="cog-form-grid">
+        <!-- Column 1: Visual Description -->
+        <div class="cog-form-group">
+          <label><i class="fa-solid fa-eye"></i> Visual Description (GM &amp; Crawler Readout)</label>
+          <textarea name="creator-description" data-input-action="setProp" data-change-action="commitProp" data-prop="description" rows="7" placeholder="Visual description of the mob, anatomy, posture, smell, appearance, and sensory details encountered by crawlers...">{{state.description}}</textarea>
+          <small class="cog-label-hint">Read aloud to players upon encounter. Displayed in compendiums and sheet overview.</small>
+        </div>
+
+        <!-- Column 2: AI Announcement & Source -->
+        <div class="cog-form-group">
+          <label><i class="fa-solid fa-bullhorn"></i> Dungeon AI Announcement (Battle Voice)</label>
+          <textarea name="creator-aiDescription" data-input-action="setProp" data-change-action="commitProp" data-prop="aiDescription" class="cog-ai-announcement-input" rows="4" placeholder="Sarcastic, over-the-top Dungeon AI introduction broadcast over the floor loudspeakers when entering battle...">{{state.aiDescription}}</textarea>
+          <small class="cog-label-hint">Broadcast over dungeon audio upon boss entrance or combat engagement.</small>
+        </div>
+
+        <!-- Span 2: GM Tactical Notes -->
+        <div class="cog-form-group cog-span-2">
+          <label><i class="fa-solid fa-chess"></i> GM Tactical Notes &amp; Encounter Mechanics</label>
+          <textarea name="creator-notes" data-input-action="setProp" data-change-action="commitProp" data-prop="notes" rows="4" placeholder="AI behavior, target priorities, ambush triggers, environmental interactions, minion coordination, and phase shifts...">{{state.notes}}</textarea>
+          <small class="cog-label-hint">Private reference notes for the GM during encounter running.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Loot, Drops & Trophies -->
+    <section class="cog-builder-section creator-card">
+      <div class="flexrow" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="cog-section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+          <i class="fa-solid fa-sack-dollar"></i> 2. Loot, Drops &amp; Monster Trophies ({{state.loot.length}})
+        </div>
+        <button type="button" class="cog-btn add-loot-btn" data-action="addLoot"><i class="fa-solid fa-plus"></i> Add Loot Item</button>
+      </div>
+
+      {{#if (eq state.loot.length 0)}}
+        <div class="cog-empty-state">
+          <i class="fa-solid fa-sack-xmark"></i> No loot drops or trophies configured. Click <strong>"+ Add Loot Item"</strong> to add harvestable remains, currency, or gear.
+        </div>
+      {{else}}
+        <div class="loot-table-container">
+          <div class="loot-table-header flexrow">
+            <span class="col-name">ITEM / TROPHY NAME</span>
+            <span class="col-qty">QTY</span>
+            <span class="col-notes">DROP NOTES / SPECIAL EFFECTS / VALUE</span>
+            <span class="col-actions">ACTION</span>
+          </div>
+          <div class="loot-list">
+            {{#each state.loot}}
+            <div class="loot-builder-item flexrow" data-index="{{@index}}">
+              <input type="text" class="loot-name-input" id="{{@root.rootId}}-loot-{{@index}}-name" data-input-action="setLootField" data-change-action="setLootField" data-loot-field="name" value="{{this.name}}" placeholder="Item or Trophy Name" />
+              <input type="number" class="loot-qty-input" min="1" id="{{@root.rootId}}-loot-{{@index}}-quantity" data-input-action="setLootField" data-change-action="setLootField" data-loot-field="quantity" value="{{this.quantity}}" placeholder="1" />
+              <input type="text" class="loot-notes-input" id="{{@root.rootId}}-loot-{{@index}}-notes" data-input-action="setLootField" data-change-action="setLootField" data-loot-field="notes" value="{{this.notes}}" placeholder="Drop chance, harvest DC, crafting material, or sell value..." />
+              <textarea class="loot-description-input" rows="2" id="{{@root.rootId}}-loot-{{@index}}-description" data-input-action="setLootField" data-change-action="setLootField" data-loot-field="description" placeholder="Flavor text shown on the item.">{{this.description}}</textarea>
+              <button type="button" class="remove-loot-btn" data-action="removeLoot" data-index="{{@index}}" title="Remove Loot Item"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            {{/each}}
+          </div>
+        </div>
+      {{/if}}
+    </section>
+  </div>
+  {{/if}}
+
+  {{!-- ========================================================= --}}
+  {{!-- TAB 7: STAT BLOCK PREVIEW                                 --}}
+  {{!-- ========================================================= --}}
+  {{#if (eq activeTab 'preview')}}
+  <div class="tab-pane active" data-tab="preview">
+    <div class="statblock-card">
+      <div class="statblock-header">
+        <div class="statblock-title">{{state.name}}</div>
+        <div class="statblock-meta">
+          {{#if state.isUnique}}<span class="cog-badge unique-badge">[UNIQUE]</span>{{/if}}
+          {{#if isBoss}}
+            <span class="cog-badge boss-tier-badge">{{upper state.bossTier}} BOSS</span>
+          {{else}}
+            <span class="cog-badge mob-badge">MOB</span>
+          {{/if}}
+          Level {{state.level}} &bull; {{@root.sizeName}} {{state.creatureType}} &bull; Floor {{state.designFloor}} (Native)
+        </div>
+      </div>
+
+      <div class="statblock-vitals flexrow">
+        <div class="vital-item">
+          <span class="vital-label">HEALTH</span>
+          <span class="vital-val">{{maxHp}} HP</span>
+          <span class="vital-sub">({{effectiveBars}} Bars &times; {{conMod}} HP)</span>
+        </div>
+        <div class="vital-item">
+          <span class="vital-label">EVADE</span>
+          <span class="vital-val">{{effectiveEvadeDC}}</span>
+          <span class="vital-sub">Base {{evadeBaseVal}} + Floor {{state.designFloor}}</span>
+        </div>
+        <div class="vital-item">
+          <span class="vital-label">SURPRISE</span>
+          <span class="vital-val">{{effectiveSurpriseDC}}</span>
+          <span class="vital-sub">Base {{surpriseBaseVal}} + Floor {{state.designFloor}}</span>
+        </div>
+        <div class="vital-item">
+          <span class="vital-label">ARMOR DR</span>
+          <span class="vital-val">{{add state.dr state.designFloor}} DR</span>
+          <span class="vital-sub">Base {{state.dr}} + Floor DR {{state.designFloor}}</span>
+        </div>
+        <div class="vital-item">
+          <span class="vital-label">ACTIONS</span>
+          <span class="vital-val">{{#if isBoss}}max(2, crawlers){{else}}1 Action{{/if}}</span>
+          <span class="vital-sub">{{#if isBoss}}No Attack Caps{{else}}1 Attack Cap{{/if}}</span>
+        </div>
+      </div>
+
+      <div class="statblock-abilities flexrow">
+        <div class="statblock-stat">STR <strong>{{state.abilities.str}}</strong> ({{statMods.str}})</div>
+        <div class="statblock-stat">DEX <strong>{{state.abilities.dex}}</strong> ({{statMods.dex}})</div>
+        <div class="statblock-stat">CON <strong>{{state.abilities.con}}</strong> ({{statMods.con}})</div>
+        <div class="statblock-stat">INT <strong>{{state.abilities.int}}</strong> ({{statMods.int}})</div>
+        <div class="statblock-stat">CHA <strong>{{state.abilities.cha}}</strong> ({{statMods.cha}})</div>
+      </div>
+
+      <div class="statblock-section">
+        <div class="section-heading">ATTACKS</div>
+        <ul class="statblock-attacks-list">
+          {{#each state.attacks}}
+          <li>
+            <strong>{{this.name}}:</strong> to-hit {{upper this.toHitStat}}, {{this.damageDice}}{{#if (ne this.damageStat 'none')}} + {{upper this.damageStat}}{{/if}} {{this.damageType}}
+            {{#if this.area.shape}} [{{upper this.area.shape}} {{this.area.size}}]{{/if}}
+            {{#if this.ignoreDR}} [ARMOR PIERCING]{{/if}}
+            {{#if this.onHit.debuffId}} [Inflicts {{this.onHit.debuffId}}]{{/if}}
+            {{#if this.effects}} &mdash; <em>{{this.effects}}</em>{{/if}}
+          </li>
+          {{/each}}
+        </ul>
+      </div>
+
+      {{#if state.traits.length}}
+      <div class="statblock-section">
+        <div class="section-heading">TRAITS &amp; SPECIAL FEATURES</div>
+        <ul class="statblock-traits-list">
+          {{#each state.traits}}
+          <li><strong>{{this.name}}:</strong> {{this.description}}</li>
+          {{/each}}
+        </ul>
+      </div>
+      {{/if}}
+
+      {{#if state.description}}
+      <div class="statblock-section">
+        <div class="section-heading">DESCRIPTION</div>
+        <p>{{state.description}}</p>
+      </div>
+      {{/if}}
+
+      {{#if state.aiDescription}}
+      <div class="statblock-section">
+        <div class="section-heading">DUNGEON AI ANNOUNCEMENT</div>
+        <p class="ai-speech">&ldquo;{{state.aiDescription}}&rdquo;</p>
+      </div>
+      {{/if}}
+
+      {{#if state.loot.length}}
+      <div class="statblock-section">
+        <div class="section-heading">LOOT &amp; TROPHIES</div>
+        <ul class="statblock-loot-list">
+          {{#each state.loot}}
+          <li><strong>{{this.name}}</strong> &times; {{this.quantity}}{{#if this.notes}} &mdash; <em>{{this.notes}}</em>{{/if}}</li>
+          {{/each}}
+        </ul>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+  {{/if}}
+
+</section>

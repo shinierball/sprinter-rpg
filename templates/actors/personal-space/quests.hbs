@@ -1,0 +1,47 @@
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="quests">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <div class="cog-text-warning" style="font-size: 16px; font-weight: bold;">
+      <i class="fa-solid fa-network-wired"></i> JOB BOARD & BOUNTY TERMINAL
+    </div>
+  </div>
+
+  {{!-- QUESTS LIST --}}
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+    {{#each quests as |quest|}}
+      <div class="cog-bg-surface" style="border: 1px solid {{#if quest.completed}}var(--cog-success){{else}}var(--cog-panel-border){{/if}}; border-radius: 4px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div class="{{#if quest.completed}}cog-text-success{{else}}cog-text-on-fill{{/if}}" style="font-size: 14px; font-weight: bold;">
+            {{#if quest.completed}}<i class="fa-solid fa-circle-check"></i>{{else}}<i class="fa-regular fa-circle"></i>{{/if}}
+            {{quest.title}}
+          </div>
+          <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">
+            Source: <strong class="cog-text-warning">{{quest.source}}</strong> &bull; Reward: <strong class="cog-text-gold">{{quest.reward}}</strong>
+          </div>
+          {{#if quest.description}}
+            <div class="cog-text-secondary" style="font-size: 12px; margin-top: 4px;">{{quest.description}}</div>
+          {{/if}}
+        </div>
+        <button class="{{#if quest.completed}}cog-bg-success-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" type="button" data-action="toggleQuest" data-quest-id="{{quest.id}}" style="border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 6px 12px; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          {{#if quest.completed}}Completed{{else}}Mark Complete{{/if}}
+        </button>
+      </div>
+    {{else}}
+      <div class="cog-text-muted" style="text-align: center; padding: 24px;">No active quests or bounties logged on terminal.</div>
+    {{/each}}
+  </div>
+
+  {{!-- ADD NEW QUEST FORM --}}
+  <div class="cog-bg-surface" data-quest-form style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 12px;">
+    <div class="cog-text-warning" style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">
+      <i class="fa-solid fa-plus"></i> Post New Contract / Bounty
+    </div>
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px;">
+      <input type="text" class="new-quest-title cog-bg-window cog-text-strong" placeholder="Contract Title..." style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+      <input type="text" class="new-quest-reward cog-bg-window cog-text-strong" placeholder="Reward (e.g. 150 Gold)..." style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+    </div>
+    <textarea class="new-quest-desc cog-bg-window cog-text-strong" placeholder="Contract Objectives & Details..." style="width: 100%; box-sizing: border-box; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif; height: 50px; margin-bottom: 8px;"></textarea>
+    <button class="cog-bg-warning-fill cog-text-on-fill" type="button" data-action="addQuest" style="border: 1px solid var(--cog-warning-fill); border-radius: 3px; padding: 6px 14px; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+      Post Contract
+    </button>
+  </div>
+</section>

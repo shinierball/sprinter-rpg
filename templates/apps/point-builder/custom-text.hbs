@@ -1,0 +1,8 @@
+{{#if this.isSelected}}
+  <div class="cog-param-pickers cog-custom-text" data-entry="{{this.id}}">
+    <div class="cog-param-picker">
+      <label class="cog-param-label" for="{{@root.rootId}}-customtext-{{this.id}}">Wording on the sheet</label>
+      <input type="text" id="{{@root.rootId}}-customtext-{{this.id}}" data-input-action="setCatalogText" data-change-action="setCatalogText" data-list="{{listKey}}" data-id="{{this.id}}" value="{{this.customText}}" placeholder="{{this.name}}">
+    </div>
+  </div>
+{{/if}}

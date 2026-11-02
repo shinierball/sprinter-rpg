@@ -1,0 +1,20 @@
+<section class="cog-item-tags-section">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+    <h3 class="cog-text-strong" style="margin: 0; font-family: 'Oswald', sans-serif; font-size: 14px; text-transform: uppercase;">
+      <i class="fa-solid fa-tags cog-text-accent"></i> Tags & Taxonomy
+    </h3>
+    <button type="button" class="cog-btn cog-dark cog-bg-header-fill cog-text-on-fill" data-action="openTagManager" style="border: 1px solid var(--cog-panel-border); padding: 2px 8px; font-size: 11px; font-family: 'Oswald', sans-serif; cursor: pointer; border-radius: 3px;">
+      <i class="fa-solid fa-folder-tree"></i> Tag Manager
+    </button>
+  </div>
+
+  {{!-- Item Identifier Slug --}}
+  <div class="cog-bg-surface-alt" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border: 1px solid var(--cog-divider); padding: 4px 8px; border-radius: 3px;">
+    <label class="cog-text-secondary" style="font-family: 'Oswald', sans-serif; font-size: 11px; text-transform: uppercase; white-space: nowrap;" title="Derived from the name once, when the item is created, then fixed. Renaming never changes it; tags and references use it.">
+      Identifier Slug:
+    </label>
+    <input type="text" name="system.identifier" value="{{system.identifier}}" placeholder="derived from the name once, then fixed" title="Derived from the name once, when the item is created, then fixed. Renaming never changes it; tags and references use it." class="cog-field-input" style="flex: 1; font-size: 12px; font-family: monospace;" />
+  </div>
+
+  {{> "systems/sprinter-rpg/templates/shared/tag-pills.hbs"}}
+</section>

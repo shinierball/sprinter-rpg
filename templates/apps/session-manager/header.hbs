@@ -1,0 +1,57 @@
+{{!-- HEADER BAR --}}
+<header class="cog-session-header">
+  <div class="cog-session-title-group">
+    <i class="fa-solid fa-users-gear cog-header-icon"></i>
+    <div>
+      <h2 class="cog-app-title">PARTY PROGRESSION & SESSION MANAGER</h2>
+      <div class="cog-session-subheading">
+        Sprinter RPG &bull; Live Party Matrix & DM Balancing Console
+      </div>
+    </div>
+  </div>
+
+  <div class="cog-session-controls">
+    <div class="cog-floor-selector-wrap cog-bg-surface" style="display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+      <label class="cog-text-warning" for="cog-global-floor-select" style="font-size: 11px; font-weight: bold; margin: 0;"><i class="fa-solid fa-stairs"></i> Floor:</label>
+      <select data-change-action="setFloor" id="cog-global-floor-select" class="cog-select-floor cog-bg-surface-muted cog-text-strong" style="border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 6px; font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: bold;" title="Current Dungeon Floor (Global)">
+        {{#each floorOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>Floor {{this.value}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="cog-session-selector-wrap">
+      <label for="cog-session-select"><i class="fa-solid fa-calendar-days"></i> Session:</label>
+      <select data-change-action="selectSession" id="cog-session-select" class="cog-select-session">
+        {{#each sessions}}
+          <option value="{{this.id}}" {{#if (eq this.id ../currentSessionId)}}selected{{/if}}>
+            {{this.title}} {{#if (eq this.status 'active')}}🟢 [ACTIVE]{{else}}🔒 [ARCHIVED]{{/if}}
+          </option>
+        {{/each}}
+      </select>
+    </div>
+
+    <button data-action="newSession" type="button" class="cog-btn cog-btn-primary cog-new-session-btn" title="Start a New Session">
+      <i class="fa-solid fa-plus"></i> New Session
+    </button>
+
+    <button data-action="openRapidImport" type="button" class="cog-btn cog-btn-secondary cog-rapid-batch-btn" title="Rapidly import notes/rolls from in-person play">
+      <i class="fa-solid fa-bolt"></i> Rapid Import
+    </button>
+
+    {{#if session}}
+      {{#if isActiveSession}}
+        <button data-action="endSession" type="button" class="cog-btn cog-btn-danger cog-end-session-btn" data-session-id="{{session.id}}" title="Conclude and Archive this Session">
+          <i class="fa-solid fa-flag-checkered"></i> End Session
+        </button>
+      {{else}}
+        <button data-action="setActiveSession" type="button" class="cog-btn cog-btn-secondary cog-set-active-session-btn" data-session-id="{{session.id}}" title="Make this session the active session">
+          <i class="fa-solid fa-bolt"></i> Set Active
+        </button>
+        <button data-action="reopenSession" type="button" class="cog-btn cog-btn-secondary cog-reopen-session-btn" data-session-id="{{session.id}}" title="Reopen this archived session for editing">
+          <i class="fa-solid fa-lock-open"></i> Reopen
+        </button>
+      {{/if}}
+    {{/if}}
+  </div>
+</header>

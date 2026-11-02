@@ -1,0 +1,22 @@
+<header class="cog-studio-header">
+  <div class="cog-header-title-row">
+    <div class="cog-header-title">
+      <i class="fa-solid {{#if (eq builderType 'race')}}fa-dna{{else}}fa-shield-halved{{/if}}"></i>
+      <span>{{#if (eq builderType 'race')}}RACE{{else}}CLASS{{/if}} CREATOR STUDIO</span>
+    </div>
+    <div class="cog-header-subtitle">{{localize "COG.Content.PointBuildSubtitle"}}</div>
+  </div>
+  
+  <div class="cog-header-preset-row">
+    <label class="cog-preset-label"><i class="fa-solid fa-folder-open"></i> Load Template / Preset:</label>
+    <select class="cog-preset-select" name="preset" data-change-action="loadPresetSelect">
+      <option value="">{{#if presets.length}}{{#if (eq builderType 'race')}}-- Choose a Species or Preset --{{else}}-- Choose a Preset or Class --{{/if}}{{else}}{{localize "COG.Content.NoBuildPresets"}}{{/if}}</option>
+      {{#each presets}}
+        <option value="{{this.id}}">{{this.name}}</option>
+      {{/each}}
+    </select>
+    <button type="button" class="cog-btn cog-reset-btn" data-action="resetBlank" title="Reset all fields to blank">
+      <i class="fa-solid fa-rotate-left"></i> Reset Blank
+    </button>
+  </div>
+</header>

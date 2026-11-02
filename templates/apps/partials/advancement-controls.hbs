@@ -1,0 +1,37 @@
+{{!-- Shared GM controls for batch Skill Advancement Checks. Used by the Session Hub and the Grind app. Context: advancementControls. Interactive controls use data-action and carry no name attribute. --}}
+{{#if isGM}}
+<section class="cog-advancement-controls cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 10px 12px; margin: 8px 0; font-family: 'Oswald', sans-serif;">
+  <div class="cog-text-gold" style="font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+    <i class="fa-solid fa-graduation-cap"></i> Skill Advancement ({{count}} crawler{{#unless (eq count 1)}}s{{/unless}})
+  </div>
+  {{#if hasActors}}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <button type="button" class="cog-btn cog-btn-primary" data-action="runTwoHourCheck" data-tooltip="Rolls marked skills at Rank 4 or lower, plus untrained attempts from the session (Rank 0 checks), and clears those marks.">
+        <i class="fa-solid fa-hourglass-half"></i> 2-hour check ({{preview.twoHour}}{{#if preview.untrained}} + {{preview.untrained}} untrained{{/if}})
+      </button>
+      <button type="button" class="cog-btn cog-btn-secondary" data-action="runFloorCheck" data-tooltip="Rolls marked skills at Rank 5 or higher and clears those marks.">
+        <i class="fa-solid fa-stairs"></i> End of floor ({{preview.floor}})
+      </button>
+      <button type="button" class="cog-btn cog-btn-success" data-action="awardLevels" data-tooltip="Award Levels for play time, a quest, a boss or a crawler kill.">
+        <i class="fa-solid fa-arrow-up-right-dots"></i> Award Levels
+      </button>
+      {{#if skillGroups.length}}
+        <select class="cog-adv-skill-select" aria-label="Skill for a single advancement check">
+          {{#each skillGroups}}
+            <optgroup label="{{this.actorName}}">
+              {{#each this.skills}}
+                <option value="{{this.value}}">{{this.label}}</option>
+              {{/each}}
+            </optgroup>
+          {{/each}}
+        </select>
+        <button type="button" class="cog-btn cog-btn-secondary" data-action="runSkillCheck" data-tooltip="Roll one Skill Advancement Check now. An unmarked skill asks first.">
+          <i class="fa-solid fa-dice-d20"></i> Check skill
+        </button>
+      {{/if}}
+    </div>
+  {{else}}
+    <div class="cog-text-secondary" style="font-size: 11px;">No crawlers selected.</div>
+  {{/if}}
+</section>
+{{/if}}

@@ -1,0 +1,54 @@
+<div class="cog-awards-console">
+  <div class="cog-awards-header">
+    <i class="fa-solid fa-bullhorn cog-text-danger"></i>
+    <span>THE DUNGEON AI AWARD CONSOLE</span>
+  </div>
+
+  <div class="cog-awards-form-grid">
+    {{!-- Crawler Selector --}}
+    <div class="cog-form-group">
+      <label>Recipient:</label>
+      <select class="cog-award-recipient-select" name="recipientUuid">
+        <option value="">-- Select a crawler --</option>
+        {{#each recipients}}
+          <option value="{{this.uuid}}">{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    {{!-- Award Type --}}
+    <div class="cog-form-group">
+      <label>Award / Box:</label>
+      <select class="cog-award-type-select" name="awardType" data-change-action="toggleFavor">
+        <option value="bronze">Bronze Loot Box</option>
+        <option value="silver">Silver Loot Box</option>
+        <option value="gold">Gold Loot Box</option>
+        <option value="platinum">Platinum Loot Box</option>
+        <option value="legendary">Legendary Loot Box</option>
+        <option value="celestial">Celestial Boss Loot Box</option>
+        <option value="favor">AI Favor (+Favor)</option>
+        <option value="mvp">Floor Combat MVP</option>
+        <option value="custom">Custom Achievement</option>
+      </select>
+    </div>
+
+    {{!-- Favor Delta (hidden by default unless favor selected) --}}
+    <div class="cog-form-group cog-award-favor-group" style="display: none; max-width: 90px;">
+      <label>Favor +:</label>
+      <input type="number" class="cog-award-favor-input" name="favorAmount" value="5" min="1" max="100" />
+    </div>
+
+    {{!-- Custom Flavor Voice Line --}}
+    <div class="cog-form-group cog-form-quote-group">
+      <label>AI Voice Line (Optional):</label>
+      <input type="text" class="cog-award-quote-input" name="customQuote" placeholder="Leave blank for AI-generated commentary..." />
+    </div>
+
+    {{!-- Dispatch Button --}}
+    <div class="cog-form-group cog-form-btn-group">
+      <button type="button" class="cog-dispatch-award-btn" data-action="dispatchAward" title="Dispatch award to chat and update actor stats">
+        <i class="fa-solid fa-paper-plane"></i> DISPATCH AWARD
+      </button>
+    </div>
+  </div>
+</div>

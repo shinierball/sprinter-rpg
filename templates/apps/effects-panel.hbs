@@ -1,0 +1,66 @@
+<div class="cog-effects-list">
+  {{#each effects as |effect|}}
+    <div class="cog-effect-badge {{effect.typeClass}} {{#if effect.expanded}}is-expanded{{/if}}"
+         data-effect-id="{{effect.id}}"
+         data-item-id="{{effect.itemId}}"
+         data-actor-id="{{effect.actorId}}"
+         title="{{effect.name}} ({{effect.durationLabel}})">
+      
+      <div class="cog-effect-icon-wrap" data-action="toggleFlyout" data-effect-id="{{effect.id}}">
+        <img class="cog-effect-icon" src="{{effect.img}}" alt="{{effect.name}}" />
+        {{#if effect.durationLabel}}
+          <span class="cog-effect-duration-pill" title="{{effect.durationLabel}}">{{effect.durationLabel}}</span>
+        {{/if}}
+        {{#if effect.isAuraEmitter}}
+          <span class="cog-aura-emitter-ring" title="Aura Emitter"></span>
+        {{/if}}
+      </div>
+
+      {{#if effect.expanded}}
+        <div class="cog-effect-flyout">
+          <header class="cog-flyout-header">
+            <span class="cog-flyout-type-badge">{{effect.typeBadge}}</span>
+            <h4 class="cog-flyout-title">{{effect.name}}</h4>
+          </header>
+          <div class="cog-flyout-body">
+            <div class="cog-flyout-row">
+              <span class="cog-flyout-label">Source:</span>
+              <span class="cog-flyout-val">{{effect.sourceName}}</span>
+            </div>
+            <div class="cog-flyout-row">
+              <span class="cog-flyout-label">Duration:</span>
+              <span class="cog-flyout-val">{{effect.fullDurationText}}</span>
+            </div>
+            {{#if effect.remainingText}}
+            <div class="cog-flyout-row">
+              <span class="cog-flyout-label">Remaining:</span>
+              <span class="cog-flyout-val">{{effect.remainingText}}</span>
+            </div>
+            {{/if}}
+            {{#if effect.detailsText}}
+              <div class="cog-flyout-row cog-flyout-details">
+                <span class="cog-flyout-label">Effect:</span>
+                <span class="cog-flyout-val">{{effect.detailsText}}</span>
+              </div>
+            {{/if}}
+            {{#if effect.canRestore}}
+              <footer class="cog-flyout-footer">
+                <button type="button" class="cog-btn-dismiss-effect" data-action="restoreDispel" data-dispel-id="{{effect.dispelId}}" data-actor-id="{{effect.actorId}}">
+                  <i class="fa-solid fa-rotate-left"></i> Restore Buffs
+                </button>
+              </footer>
+            {{/if}}
+            {{#if effect.canDismiss}}
+              <footer class="cog-flyout-footer">
+                <button type="button" class="cog-btn-dismiss-effect" data-action="dismissEffect" data-item-id="{{effect.itemId}}" data-actor-id="{{effect.actorId}}">
+                  <i class="fa-solid fa-ban"></i> Dismiss Aura
+                </button>
+              </footer>
+            {{/if}}
+          </div>
+        </div>
+      {{/if}}
+
+    </div>
+  {{/each}}
+</div>

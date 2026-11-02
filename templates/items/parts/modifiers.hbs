@@ -1,0 +1,28 @@
+{{!--
+  The modifier row editors: one block per modifier array that has rows, then one "Add row" bar for
+  the arrays without. Rendered for any item whose schema has a modifier array (COGItemSheet.itemParts).
+  Context: rowEditors = { blocks, addBar, tagOptions } from buildRowEditorContext.
+--}}
+<div class="cog-modifiers">
+  <div class="cog-modifier-preview-bar">
+    {{#if rowEditors.preview.available}}
+      <a class="cog-modifier-preview-toggle {{#if rowEditors.preview.on}}active{{/if}}" data-action="previewRows"><i class="fa-solid fa-flask"></i> {{localize "COG.Rows.Preview.Button"}}</a>
+      {{#if rowEditors.preview.on}}
+        <span class="cog-modifier-hint">{{#if rowEditors.preview.noTarget}}{{localize "COG.Rows.Preview.NoTarget"}}{{else}}{{localize "COG.Rows.Preview.Against" value=rowEditors.preview.targetName}}{{/if}}</span>
+      {{/if}}
+    {{else}}
+      <span class="cog-modifier-hint"><i class="fa-solid fa-flask"></i> {{localize rowEditors.preview.unavailableKey}}</span>
+    {{/if}}
+  </div>
+  {{#each rowEditors.blocks as |block|}}
+    {{> "systems/sprinter-rpg/templates/items/parts/modifier-rows.hbs" block=block tagOptions=../rowEditors.tagOptions}}
+  {{/each}}
+  {{#if rowEditors.addBar.length}}
+    <div class="cog-modifier-addbar">
+      <span class="cog-field-label">{{localize "COG.Rows.AddRow"}}</span>
+      {{#each rowEditors.addBar as |b|}}
+        <a class="cog-modifier-add-chip" data-action="addRow" data-row-table="{{b.arrayKey}}"><i class="fa-solid {{b.icon}}"></i> {{localize b.labelKey}}</a>
+      {{/each}}
+    </div>
+  {{/if}}
+</div>

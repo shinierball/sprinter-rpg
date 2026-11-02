@@ -1,0 +1,1667 @@
+{
+  "COG": {
+    "Title": "Sprinter RPG",
+    "CheckType": {
+      "stat": "Stat Check",
+      "opposed": "Opposed Contest",
+      "attack": "Attack vs Evade",
+      "evade": "Evade",
+      "passive": "Passive",
+      "tool": "Tool / Crafting Check",
+      "none": "None"
+    },
+    "Usage": {
+      "reusable": "Reusable",
+      "rechargeable": "Rechargeable",
+      "consumable": "Consumable",
+      "UsedIntoDefault": "Default ({name})",
+      "ConflictWarning": "This item stores more than one usage tag. It is read as {kind}."
+    },
+    "SpellRole": {
+      "attack": "Attack",
+      "heal": "Heal",
+      "passive": "Passive",
+      "interrupt": "Interrupt",
+      "free_interrupt": "Free Interrupt",
+      "none": "Spell"
+    },
+    "Session": {
+      "LedgerEditNotOwner": "You can only edit ledger entries for crawlers you own."
+    },
+    "Heritage": {
+      "earth": {
+        "label": "Earth",
+        "group": "Earth Races (Earth Origin Box)",
+        "pill": "Earth Heritage (Earth Origin Box + Earth Classes)"
+      },
+      "alien": {
+        "label": "Alien",
+        "group": "Alien Races (Off-World Fanbase)",
+        "pill": "Alien Heritage (Off-World Fanbase Appeal)"
+      },
+      "pet": {
+        "label": "Pet & Companion",
+        "group": "Pet & Companion Races (Dungeon Pets)"
+      },
+      "custom": "(Custom)"
+    },
+    "Size": {
+      "tiny": "Tiny",
+      "small": "Small",
+      "petite": "Petite",
+      "medium": "Medium",
+      "large": "Large",
+      "huge": "Huge",
+      "colossal": "Colossal",
+      "gargantuan": "Gargantuan",
+      "noChange": "No change",
+      "custom": "(Custom)"
+    },
+    "TickedSubject": {
+      "Dropped": "Ticked {tick} dropped: target is {target}"
+    },
+    "AmazingSuccess": {
+      "Card": {
+        "FloorBadge": "+{floor} DMG",
+        "PreviewTitle": "Amazing Success (+{floor} Floor)",
+        "ApplyOff": "No Amazing Success",
+        "ApplyForce": "Amazing Success (+{floor})",
+        "ApplyOffTitle": "Apply without the Amazing Success bonus or its effect",
+        "ApplyForceTitle": "Apply as an Amazing Success to every clicked target (Floor bonus and the weapon's AS effect)"
+      },
+      "Editor": {
+        "Title": "AMAZING SUCCESS (AS) TRIGGER",
+        "Hint": "The book gives a weapon one AS effect. Extra damage is a damage row conditioned on Amazing Success; a debuff or a narrative effect goes here.",
+        "OverLimit": "This weapon has more than the one Amazing Success trigger the book allows (Rule Break).",
+        "Type": { "debuff": "Debuff", "narrative": "Narrative" },
+        "TypeLabel": "Effect",
+        "DebuffLabel": "Inflicts",
+        "ChooseDebuff": "(choose a debuff)",
+        "TextLabel": "Effect (for the GM)",
+        "TextPlaceholder": "What happens, as text the GM adjudicates",
+        "NameLabel": "Name",
+        "NamePlaceholder": "Rimshot",
+        "DamageRow": "Extra damage row",
+        "Add": "Add AS trigger",
+        "Remove": "Remove",
+        "RuleBreakTitle": "Amazing Success Trigger Limit",
+        "RuleBreakMessage": "Only one Amazing Success trigger is allowed per weapon. This weapon has {count}. Add another as a Rule Break?",
+        "RuleBreakReason": "Only one Amazing Success trigger is allowed per weapon. This weapon has {count}."
+      }
+    },
+    "Ability": {
+      "Str": "Strength",
+      "Int": "Intelligence",
+      "Con": "Constitution",
+      "Dex": "Dexterity",
+      "Cha": "Charisma",
+      "StrShort": "STR",
+      "IntShort": "INT",
+      "ConShort": "CON",
+      "DexShort": "DEX",
+      "ChaShort": "CHA"
+    },
+    "Item": {
+      "OutcomeDamageNoRoll": "Rolls no damage: enter dice as NdM",
+      "OutcomeDamageStat": "Damage stat",
+      "TypeSkill": "Skill",
+      "TypeAttack": "Attack",
+      "TypeGear": "Gear",
+      "TypeRace": "Race",
+      "TypeClass": "Class",
+      "TypeDeity": "Deity",
+      "TypeSponsor": "Sponsor",
+      "TypeLoot": "Loot",
+      "Light": {
+        "Title": "Light Source",
+        "Hint": "Radii are in feet. Leave both at 0 to use the system defaults.",
+        "Bright": "Bright radius (ft)",
+        "Dim": "Dim radius, total (ft)",
+        "Color": "Color",
+        "Animation": "Animation",
+        "AnimationNone": "None",
+        "Mode": "Mode",
+        "ModeCarried": "Carried (follows the owner)",
+        "ModeFree": "Free (stays where it is put)",
+        "Leash": "Leash (ft, 0 = no limit)",
+        "BurnTime": "Burns for",
+        "BurnTimeHint": "Leave the amount at 0 for a light that burns until put out.",
+        "Image": "Token image",
+        "RankBreak": "Light at this rank",
+        "BrightBonus": "+ Bright (ft)",
+        "DimBonus": "+ Dim (ft)",
+        "RankLeash": "Leash (ft, blank = unchanged)",
+        "RankMode": "Mode",
+        "ModeUnchanged": "Unchanged",
+        "CanDouble": "Can double the radius",
+        "CanAttach": "Can attach to a surface"
+      },
+      "Debuff": {
+        "Ends": {
+          "instant": "Instant (no timer)",
+          "rounds": "After a number of rounds",
+          "combat": "End of combat",
+          "short_rest": "Until a short rest",
+          "long_rest": "Until a long rest",
+          "full_day_rest": "Until a full day's rest",
+          "permanent": "Until removed"
+        }
+      }
+    },
+    "LootType": {
+      "scroll": "Spell scroll",
+      "wand": "Wand",
+      "scratch": "Lottery ticket",
+      "consumable": "Consumable"
+    },
+    "BuffCard": {
+      "AppliedOnUse": "Applied on use",
+      "DuplicateTitle": "Buff Already Applied",
+      "DuplicateMessage": "{actor} already has {buff}. Apply a second copy as a Rule Break?",
+      "RuleBreakLine": "{actor} took a second copy of {buff} as a Rule Break."
+    },
+    "ItemSummary": {
+      "Heading": "What this does",
+      "HeadingGrants": "What this grants",
+      "Empty": "No structured effects. See the description.",
+      "HealBarsOne": "1 Health Bar",
+      "HealBarsMany": "{n} Health Bars",
+      "TempBarsOne": "Grants 1 temporary Health Bar of {hp} HP",
+      "TempBarsMany": "Grants {slots} temporary Health Bars of {hp} HP",
+      "SpellSkill": {
+        "Stat": "Stat: {stat}",
+        "Rank": "Rank {n}",
+        "RankCeiling": "Rank {n} (ceiling {max})",
+        "CeilingOnly": "Rank ceiling {max}",
+        "BoonBonus": "{n} Rank from boons",
+        "NoRankGain": "Cannot gain Ranks by training",
+        "SpellRole": "{type} spell",
+        "SkillGroup": "Group: {group}",
+        "CheckTypeNoStat": "Check: {type}",
+        "AiFavor": "AI Favor {n}",
+        "ManaCost": "{n} Mana",
+        "ManaCostModified": "{n} Mana (base {base})",
+        "Damage": "Damage {formula}",
+        "DamageTyped": "Damage {formula} {type}",
+        "DamageParts": "Plus {parts} damage",
+        "IgnoresDr": "Ignores DR",
+        "CritFromRank": "Critical hits x{n} from Rank {rank}",
+        "Heal": "Heals {bars} ({targets})",
+        "HealOverTime": "Heals {bars} each round for {rounds} rounds ({targets})",
+        "Cleanse": "Cleanses {list}",
+        "Delivery": "Delivery: {label}",
+        "AreaAffects": "Affects {filter}",
+        "AreaPeriodic": "Each round: {formula} damage",
+        "AreaPeriodicTyped": "Each round: {formula} {type} damage",
+        "AreaInflicts": "Inflicts {list}",
+        "AreaPulse": "Each pulse inflicts {list}",
+        "AreaHeal": "Heals {bars}",
+        "AreaHealOverTime": "Heals {bars} each round for {rounds} rounds",
+        "AreaGrants": "Grants {list}",
+        "AreaResist": "Grants resistance to {list}",
+        "AreaImmune": "Grants immunity to {list}",
+        "AreaAbsorb": "Absorbs {element}",
+        "AreaEvade": "{n} to Evade",
+        "AreaAttack": "{n} to attacks",
+        "AreaDamageBonus": "{n} damage",
+        "Lifesteal": "Heals the attacker {heal} after the hit takes {min}+ slot(s)",
+        "DispelAll": "Dispels the target's Buffs until combat ends",
+        "DispelCount": "Dispels {n} of the target's Buff(s) until combat ends",
+        "DispelMatching": "{text} matching {query}",
+        "FumbleDebuff": "On a fumble: {debuff}",
+        "OptionalEffects": "Damage effects: {list}",
+        "Duration": "Duration: {text}",
+        "DurationBonus": "Duration: {text} (+{n} from Rank)",
+        "EndsWithCombat": "{text}, ends when combat ends",
+        "Cooldown": "Cooldown: {text}",
+        "Technique": "Technique",
+        "TechniqueDamage": "Damage effect technique",
+        "AppliesTo": "Applies to attacks matching {query}",
+        "Condition": "Takes effect when {query}",
+        "BaseDice": "Base dice count {mod}",
+        "BaseMultiplier": "Base damage result x {formula}",
+        "FlatDamage": "Flat damage {formula}",
+        "DamageBonus": "+{formula} damage",
+        "TechniqueType": "Damage type {type}",
+        "TechniqueDebuff": "Inflicts {label}",
+        "HealthMultiplier": "Total damage x{n} against targets at or below {percent}% Health (from Rank {rank})",
+        "Variant": "From Rank {rank}: {label}",
+        "VariantReplaces": "From Rank {rank}: {label} instead of damage",
+        "VariantDebuffs": "{text} ({list})",
+        "Assist": "Assist: adds {formula} to an ally's check",
+        "AssistWhen": "Assist: adds {formula} to an ally's check when {query}",
+        "QueryAll": "all of {tags}",
+        "QueryAny": "any of {tags}",
+        "QueryNone": "none of {tags}",
+        "AtRank": "At Rank {rank}: {text}",
+        "AtRankBand": "At Rank {rank}: {text}",
+        "FromRank": "From Rank {rank}: {text}",
+        "TierCrit": "Critical hits x{n}",
+        "TierBaseDice": "Base dice {mod}",
+        "TierDamageType": "{type} damage",
+        "TierIgnoresDr": "Ignores DR",
+        "TierTags": "Adds tags: {tags}",
+        "TierCooldown": "Cooldown: {text}",
+        "TierDuration": "Duration: {text}",
+        "TierInterruptRange": "+{n}ft interrupt range",
+        "TierInterruptDr": "+{n} DR while interrupting",
+        "TierInterruptIgnore": "Interrupt ignores debuffs",
+        "TierLightBright": "+{n}ft bright light",
+        "TierLightDim": "+{n}ft dim light",
+        "TierLightLeash": "Light leash {n}ft",
+        "TierLightMode": "Light {mode}",
+        "TierLightDouble": "Light can double",
+        "TierLightAttach": "Light can attach",
+        "Upgrades": "Upgrades: {text}"
+      },
+      "GearLoot": {
+        "Slot": "{slot} slot (only while equipped)",
+        "WieldOne": "One-handed",
+        "WieldTwo": "Two-handed",
+        "WieldTwoOrOne": "Two-handed; can be used one-handed at Disadvantage",
+        "WeaponFlag": "Counts as a weapon",
+        "WeaponClass": "Weapon: {text}",
+        "WeaponSkills": "Uses the skill: {skills}",
+        "WeaponSkillsHighest": "Uses the highest of: {skills}",
+        "WeaponSkillsManual": "Uses the chosen skill of: {skills}",
+        "ToHitOwned": "To hit: {formula} ({stat})",
+        "ToHitBase": "To hit: {stat} + Rank {rank}",
+        "ToHitBaseNoRank": "To hit: {stat}",
+        "Damage": "Damage: {text}",
+        "Crit": "Critical hits multiply damage by {n}",
+        "IgnoreDR": "Ignores DR",
+        "AbilityMod": "{value} {stat}",
+        "PersistentBuffs": "While equipped, grants: {list}",
+        "PersistentDebuffs": "While equipped, inflicts: {list}",
+        "Heal": "Heals {bars} each round",
+        "Cleanse": "Cleanses: {list}",
+        "Activated": "Has an activated ability",
+        "ModeAll": "Using it applies every outcome",
+        "ModeRandom": "Using it rolls one outcome at random",
+        "Charges": "{value}/{max} charges",
+        "LootType": "{type}",
+        "UsageReusable": "Reusable: using it spends nothing",
+        "UsageRechargeable": "Rechargeable: each use spends a charge; at 0 it still works as a Rule Break",
+        "UsageConsumable": "Consumable: each use spends one and leaves junk",
+        "UsedInto": "Leaves {name} when used up",
+        "Cooldown": "Cooldown: {text}",
+        "CastsSpell": "Casts {name}",
+        "OptionalEffects": "Can add techniques: {list}",
+        "OutcomeChance": "{text} ({percent}%)",
+        "OutcomeHeal": "Heals {bars}",
+        "OutcomeHot": "Heals {bars} each round for {rounds} rounds",
+        "OutcomeRestoreAll": "Restores all {resource}",
+        "OutcomeRestore": "Restores {amount} {resource}",
+        "OutcomeBuff": "Grants {name}",
+        "OutcomeDebuff": "Inflicts {name}",
+        "OutcomeCureAll": "Cures all debuffs",
+        "OutcomeCure": "Cures {name}",
+        "OutcomeMend": "Mends a {severity} injury",
+        "OutcomeSkillRank": "+{n} Rank in {name}",
+        "OutcomeStat": "Permanently {value} {stat}",
+        "OutcomeLearn": "Teaches {name} at Rank {rank}",
+        "OutcomeSpell": "Casts {name}",
+        "OutcomeDamage": "Deals {damage} {type} damage",
+        "OutcomeDamageNoRoll": "Rolls no damage: enter dice as NdM",
+        "OutcomeTable": "Rolls on {name}",
+        "OutcomeTableUnnamed": "Rolls on a table"
+      },
+      "Identity": {
+        "RankFloor": "Rank follows the current Floor",
+        "Archetype": "Archetype: {list}",
+        "Size": "Size: {size}",
+        "SizeByLevel": "Size by level: {stages}",
+        "SizeStage": "{size} from level {level}",
+        "GrantedBuff": "Grants buff: {name}",
+        "GrantedDebuff": "Grants debuff: {name}"
+      },
+      "Effects": {
+        "HealPerRound": "Heals {amount} HP each round",
+        "DamageType": "Damage type: {type}",
+        "DamagePerRound": "{amount} damage each round",
+        "DamagePerRoundTyped": "{amount} {type} damage each round",
+        "Severity": "{severity} severity",
+        "Limbs": "Limbs: {parts}",
+        "LimbArms": "Arms {delta}",
+        "LimbLegs": "Legs {delta}",
+        "LimbHands": "Hands {delta}",
+        "Duration": "Duration: {duration}",
+        "EndsWithCombat": "Ends when combat ends",
+        "InterruptTouch": "Interrupt at touch range of the {origin}",
+        "InterruptRange": "Interrupt within {feet} ft of the {origin}",
+        "InterruptUnlimited": "Interrupt at any range from the {origin}",
+        "InterruptWithEffects": "{reach}: {effects}",
+        "OriginDefender": "defender",
+        "OriginAttacker": "attacker",
+        "Light": "Emits light: {parts}",
+        "LightBright": "{feet} ft bright",
+        "LightDim": "{feet} ft dim",
+        "LightCarried": "follows its owner",
+        "LightFree": "stays where it is put",
+        "LightLeash": "at most {feet} ft from its owner",
+        "LightDuration": "burns for {duration}",
+        "Reward": "Reward: {reward}",
+        "Xp": "{amount} XP",
+        "Favor": "{amount} Favor",
+        "Tier": "Tier: {tier}",
+        "Category": "Category: {category}",
+        "Floor": "Floor: {floor}",
+        "SpaceTier": "Tier {tier}",
+        "SpaceCost": "Cost: {cost}",
+        "SpaceBonus": "{label} {amount}",
+        "SpaceBonusPct": "{label} {amount}%",
+        "SpaceInjuries": "Removes injuries on rest",
+        "SpaceBuffs": "Grants buffs: {buffs}",
+        "Training": "Training room: {parts}",
+        "TrainingSessions": "{sessions} {sessionUnit} per {hours} {hourUnit}",
+        "TrainingHourCost": "{hours} {hourUnit} per session",
+        "UnitHour": "hour",
+        "UnitHours": "hours",
+        "UnitSession": "session",
+        "UnitSessions": "sessions",
+        "TrainingRoll": "{amount} to the roll",
+        "TrainingDc": "{amount} to the DC",
+        "TrainingAdvantage": "advantage",
+        "TrainingSkills": "skills: {query}",
+        "TrainingAny": "any of {tags}",
+        "Crafting": "Crafting table: {parts}",
+        "CraftingType": "{type}",
+        "CraftingTier": "tier {tier}",
+        "CraftingUpgrade": "next tier costs {cost} gold"
+      }
+    },
+    "Feature": {
+      "Stat": "{value} {stat}",
+      "StatPool": "Distribute {value} points among {options}",
+      "StatCap": "{stat} cap {value}",
+      "SkillRank": "+{rank} {name}",
+      "SpellRank": "+{rank} {name}",
+      "GearRankBonus": "{value} Rank to {name}",
+      "GearSpellAtRank": "{name} at Rank {rank} if not known",
+      "SkillChoice": "Choose {count} skill(s) at +{rank}: {options}",
+      "SpellChoice": "Choose {count} spell(s) at +{rank}: {options}",
+      "RankBonus": "{value} rank to {target}",
+      "RankBonusFloor": "{text}, never below {floor}",
+      "RankBonusOwned": "{text}, only if owned",
+      "RankCap": "Rank cap {value}: {target}",
+      "RankCapChoice": "Rank cap {value} for {count} chosen skill(s)",
+      "Dr": "{value} DR",
+      "Walk": "{value} ft Walk speed",
+      "Speed": "{type} speed {value} ft",
+      "Darkvision": "Darkvision {range} ft",
+      "DarkvisionUnlimited": "Darkvision (unlimited)",
+      "VisionRange": "Vision range x{multiplier}",
+      "RequiresAll": "Requires {tags}",
+      "RequiresAny": "Requires one of {tags}",
+      "RequiresNone": "Cannot have {tags}",
+      "StartingItem": "Starting item: {name} x{quantity}",
+      "StartingChoice": "Starting item: choose one matching {tags}",
+      "ToHit": "{text} to hit",
+      "Checks": "{text} checks",
+      "ChecksStat": "{text} to checks",
+      "Advantage": "Advantage on {scope}",
+      "Disadvantage": "Disadvantage on {scope}",
+      "ScopeChecks": "checks",
+      "ScopeAttacks": "attacks",
+      "Scaled": "{text} {per}",
+      "ScaleInert": "{text} (cannot scale: does not apply)",
+      "Vulnerability": "Double damage{type}",
+      "SuppressDr": "DR does not apply{type}",
+      "ManaCostAdd": "{value} Mana cost",
+      "ManaCostMultiply": "x{multiplier} Mana cost",
+      "Recovery": "x{multiplier} {resource} recovery",
+      "StatSubstitution": "Use {to} instead of {from} for {scope}",
+      "Popularity": "{value} Popularity on {event}",
+      "AiFavor": "AI Favor {value}",
+      "PopularityEventCrit": "a Critical Hit",
+      "PopularityEventCritFail": "a Critical Fail",
+      "PopularityEventKill": "a kill",
+      "PopularityOncePerCombat": "once per combat",
+      "PopularityOncePerFloor": "once per floor",
+      "MaxRank": "if Rank ≤ {value}",
+      "MinRank": "if Rank ≥ {value}",
+      "UsesPerFloor": "once per floor",
+      "Limits": "{text} ({limits})",
+      "Condition": "{text} (when {tags})"
+    },
+    "Advancement": {
+      "FloorRowTitle": "Once Per Floor",
+      "FloorRowPrompt": "Which skill gets \"{label}\" this floor?",
+      "FloorRowPick": "Apply",
+      "FloorRowUsed": "{label} was already used this floor. Use it again as a Rule Break?"
+    },
+      "Contest": {
+        "Tracker": {
+          "Title": "Racing & Chasing Tracker",
+          "GmOnly": "Only a GM can change a contest.",
+          "CardMissing": "The contest card was deleted. Re-post it to continue.",
+          "Contest": "Contest",
+          "NewContest": "New contest",
+          "Kind": "Kind",
+          "Floor": "Floor",
+          "CatchAt": "Caught at Ground",
+          "LoseAt": "Lost at Ground",
+          "Repost": "Re-post contest card",
+          "Participants": "Participants",
+          "AddSelected": "Add selected tokens",
+          "AddCombatants": "Add combatants",
+          "NoTokens": "Select one or more tokens first.",
+          "NoCombatants": "There is no active combat.",
+          "NoActor": "no actor",
+          "Fixed": "Fixed",
+          "FixedHint": "A fixed participant does not roll: it takes 10 + Stat Mod + Floor + Move Rate Modifier. Mobs are always fixed.",
+          "Reinstate": "Reinstate",
+          "MarkOut": "Mark out",
+          "Remove": "Remove",
+          "NoParticipants": "Add the racers or the chasers and the quarry.",
+          "Legs": "Legs",
+          "AddLeg": "Add leg",
+          "Open": "Open",
+          "Close": "Close",
+          "DrawTable": "Obstacle table",
+          "DrawTableHint": "The RollTable that Draw obstacle draws from: the narrative becomes the leg's label, a skill option its skill.",
+          "TablesWorld": "World tables",
+          "DrawLeg": "Draw obstacle",
+          "DrawLegHint": "Draw a row from the chosen table into this leg.",
+          "NoTable": "Choose an obstacle table first.",
+          "DrawFailed": "That table could not be drawn from.",
+          "Skill": "Skill",
+          "Stat": "Stat",
+          "MoveMode": "Move",
+          "StatOnly": "Stat check (no skill)",
+          "SkillMovement": "Movement skills",
+          "SkillOther": "Other skills",
+          "SkillCustom": "Not in the catalog",
+          "Source": {
+            "roll": "rolled",
+            "fixed": "fixed",
+            "gm": "GM"
+          },
+          "RuleBreak": "Rule Break",
+          "GmResult": "GM result",
+          "GmResultHint": "Type a result for this participant. A GM result is not replaced by a roll.",
+          "NoOverride": "Leg skill",
+          "OverrideHint": "Use a different skill for this participant on this leg.",
+          "Proposes": "proposes",
+          "Accept": "Accept",
+          "Dismiss": "Dismiss",
+          "NoLegs": "Add at least one leg. Three is typical.",
+          "Ground": "Ground",
+          "End": "End contest",
+          "Post": "Post contest card",
+          "BadTotal": "That result is not a number."
+        }
+      },
+    "Content": {
+      "NoAchievementLibrary": "No achievement library is registered for the active content theme. Achievement items you create in the world appear here.",
+      "NoBuildPresets": "No presets are registered for the active content theme.",
+      "LoadoutExample": "Built-in example. A content module can register more starting options.",
+      "NoGrindComplications": "No grinding complications table is registered for the active content theme.",
+      "GrindComplicationsToggle": "Roll on {name} ({formula})",
+      "PdfNeedsSheet": "Save to PDF fills a fillable character sheet that the GM supplies. The GM needs to set the sheet PDF in the system settings. The publisher offers a fillable sheet as a free download on the game's site.",
+      "SheetPdfName": "Character sheet PDF",
+      "SheetPdfHint": "Path to your own fillable character sheet PDF. Save to PDF fills this file. Leave empty to turn the export off.",
+      "NoBackgroundTables": "No background tables are registered for the active content theme. Write the story traits by hand.",
+      "SourceryImportBackgrounds": "Import the core rulebook or the Crawlers book with Sourcery to fill the background tables.",
+      "SourceryThemeInactive": "Sourcery content is imported in this world, but the Active Content Theme is not Rulebook Content, so the creator shows the sample tables. Switch the theme in Configure Settings to use the imported content.",
+      "NoMercenaryCatalog": "No catalog mercenaries are registered for the active content theme. Use Recruit Custom Mercenary to create one.",
+      "SkillPickerTooltip": "Choose from the skill library",
+      "GrantCoreSkills": "Grant core skills",
+      "GrantCoreSkillsTooltip": "Add the core actions every crawler has (Intervene, Call a Play) if they are missing",
+      "CoreSkillsGranted": "Granted {count} core skill(s)",
+      "CoreSkillsNone": "Already has every core skill",
+      "SpellPickerTooltip": "Browse the spell compendium",
+      "SkillCompendiumBadge": "Skill from a content compendium",
+      "ItemCompendiumBadge": "Item from a content compendium",
+      "PointBuildSubtitle": "Custom Point Build System",
+      "BackgroundTablesHint": "Roll on each background table, pick an entry from the dropdown, or type custom text for maximum creativity.",
+      "JournalMagicIntro": "In Sprinter RPG, magic operates strictly under the system's own mechanics: <strong>no spell slots, no cantrips, and no D&amp;D rules</strong>. All spells cost Mana Points (MP) and can be cast at will provided the crawler has sufficient MP.",
+      "NoSkillsBefore": "No skills added yet. Click",
+      "SelectSkillAction": "Select Skill",
+      "NoSkillsAfter": "above to pick from the skill library, or drag & drop from a compendium.",
+      "NoSpellsBefore": "No spells known yet. Click",
+      "SpellCompendiumAction": "Spells Compendium",
+      "NoSpellsMiddle": "above to browse and drag spells, or click",
+      "CustomSpellAction": "+ Custom Spell",
+      "NoSpellsAfter": "to create your own.",
+      "GearPickerTooltip": "Choose from existing gear and equipment",
+      "ItemPickerTooltip": "Choose from existing items and gear",
+      "AddSkillFromCompendiumTooltip": "Select and add skills from the compendium (or drop a skill or spell on this sheet)",
+      "AddSkillFromCompendium": "Add Skill from Compendium",
+      "PickFromCompendium": "Pick from compendium",
+      "NoGearSkillBonuses": "No skill or spell bonuses. Click \"Add Skill from Compendium\" above, or drop a skill or spell on this sheet.",
+      "DamageReductionTooltip": "Damage Reduction (+1 DR per 2 BP, max +3 standard)",
+      "BenefitsCatalogHeading": "4. Benefits Catalog",
+      "BenefitsMenuHeading": "4. Benefits Menu",
+      "DetrimentsCatalog": "Detriments Catalog",
+      "DetrimentsCatalogHint": "Detriments Catalog (Drawbacks that grant Extra Build Points)"
+    },
+    "Popularity": {
+      "Award": "{name}: {value} Popularity ({label})",
+      "RuleBreakTitle": "Popularity Limit",
+      "RuleBreakMessage": "{label} already gave Popularity this {scope}. Award it again as a Rule Break?"
+    },
+    "RaceClass": {
+      "RuleBreakTitle": "Race and Class Not Unlocked",
+      "RuleBreakMessage": "Race and Class are chosen on Floor {floor}, and {actor} is on Floor {current}. Apply {name} anyway as a Rule Break?",
+      "RuleBreakReason": "Race and Class are chosen on Floor {floor}; {actor} is on Floor {current}.",
+      "UnlockHint": "Race and Class unlock on Floor {floor}",
+      "CreatorHint": "Race and Class are chosen on Floor {floor}.",
+      "SpeciesLabel": "Origin: {species}",
+      "NotApplied": "{name} was not applied. Choose it on the crawler sheet."
+    },
+    "AiFavorTally": {
+      "Title": "AI Favor Tally",
+      "Hint": "Proposed awards for this combat. Nothing is awarded until you press Apply.",
+      "Line": "{item}: AI Favor rating {value} ({k} of {m} attacks, {r} rounds)",
+      "Apply": "Apply +{value}",
+      "Applied": "Applied",
+      "BelowBook": "Does not meet the book conditions (3+ rounds, most of the attacks)",
+      "RuleBreakTitle": "AI Favor Tally",
+      "RuleBreakMessage": "{item} was {k} of {m} attacks over {r} rounds. Award +{value} AI Favor as a Rule Break?",
+      "RuleBreakReason": "{item} was {k} of {m} attacks over {r} rounds.",
+      "AlreadyApplied": "This line was already applied.",
+      "GmOnly": "Only the GM can apply the AI Favor tally.",
+      "NoActor": "The crawler for this line was not found.",
+      "Done": "{actor} gains +{value} AI Favor.",
+      "ChatReason": "Combat tally: {item}"
+    },
+    "FloorSim": {
+      "Title": "Floor Simulator",
+      "Resume": "Resume Floor Simulator",
+      "ResumeHint": "This crawler's floor run is not finished.",
+      "NoPendingRun": "No floor run is pending for this crawler",
+      "NotOwner": "You do not own this crawler.",
+      "Refused": "The Floor Simulator could not run this arrival.",
+      "Header": {
+        "State": "Level {level} · {floor}",
+        "Target": "Target floor",
+        "Finishes": "finishes the run",
+        "Run": "Run",
+        "RollMode": "Roll mode"
+      },
+      "RollMode": {
+        "publicroll": "Public Roll",
+        "gmroll": "Private GM Roll",
+        "blindroll": "Blind GM Roll",
+        "selfroll": "Self Roll"
+      },
+      "Rail": {
+        "Label": "Steps",
+        "OpenDice": "Dice still to roll",
+        "FollowNote": "Floor 4 (or 5) follows after Race and Class."
+      },
+      "RuleBreakBadge": "[RULE BREAK]",
+      "Roll": "Roll",
+      "RolledInApp": "Rolled here; the Roll is attached to the chat card.",
+      "Capped": "capped",
+      "Rank": "Rank",
+      "RankMax": "Rank {rank} maximum",
+      "Counter": "{count} of {max}",
+      "Step": {
+        "level": "Level",
+        "primaryBoost": "Primary boost",
+        "otherBoosts": "Other boosts",
+        "experiences": "Experiences",
+        "chosenSkills": "Chosen Skills",
+        "loot": "Starting loot",
+        "stats": "Stat points",
+        "aiFavor": "AI Favor",
+        "popularity": "Popularity",
+        "raceClass": "Race and Class",
+        "review": "Review"
+      },
+      "Level": {
+        "Summary": "Level {from} → {to} (+{levels} Levels, +{points} Stat points)",
+        "NoSkip": "The Level is part of every arrival and cannot be skipped."
+      },
+      "Primary": {
+        "Note": "Roll {formula} or enter a value. The primary attack Skill or Spell is preselected.",
+        "Item": "Skill or Spell"
+      },
+      "Others": {
+        "Note": "Every other Skill is preselected. Spells are never offered."
+      },
+      "Chosen": {
+        "Note": "Pick Skills or Spells. The die depends on the Rank each has after this arrival's experiences."
+      },
+      "Exp": {
+        "CustomOnly": "This arrival uses Custom mode: pick the table for each experience.",
+        "ModeLabel": "Experience mode",
+        "Mode": {
+          "variety": "Variety",
+          "random": "Total Randomness",
+          "custom": "Custom"
+        },
+        "Slot": "Experience {n}",
+        "Table": "Table",
+        "IndexRow": "Index row",
+        "Row": "Row",
+        "Swap": "Swap the dice between the two Skills",
+        "Custom": "Write-in",
+        "Choice": "Pick from the catalog",
+        "CustomName": "Name"
+      },
+      "Marker": {
+        "Rolled": "rolled",
+        "Chosen": "chosen",
+        "Open": "not rolled yet"
+      },
+      "Loot": {
+        "Reused": "Your earlier row {row} from Floor {floor}",
+        "TakeLabel": "Take",
+        "Take": {
+          "none": "Choose what to take",
+          "loot": "The loot",
+          "spells": "Spells instead"
+        },
+        "Option": "Choice",
+        "ScrollSpell": "Scroll spell",
+        "UpgradeRow": "Scroll of Upgrade row",
+        "UpgradeTrigger": "Amazing Success trigger",
+        "UpgradeName": "New weapon name",
+        "Variant": "Spells",
+        "Potions": "Mana Potions",
+        "Tome": "Tome",
+        "Duplicate": "Known spell: +1d2+1 Ranks",
+        "Rank": "Rank die",
+        "Substitute": "Substitute a spell",
+        "PickRow": "Roll or choose the loot row to see the four slots."
+      },
+      "Stats": {
+        "Pool": "{pool} to spend · {left} left",
+        "Note": "Points go to the Unenhanced score; the Enhanced score follows.",
+        "Enhanced": "Enhanced {from} → {to}",
+        "Leftover": "{left} points stay pending on the sheet."
+      },
+      "AiFavor": {
+        "Rating": "Weapon AI Favor rating",
+        "Note": "Pre-filled from the attack's AI Favor data (rating {rating}); change it if needed.",
+        "Base": "Base roll",
+        "Bonus": "Rating bonus"
+      },
+      "Popularity": {
+        "Summary": "Cha Mod {mod} × {multiplier} = {value}"
+      },
+      "RaceClass": {
+        "Race": "Race",
+        "Class": "Class",
+        "Later": "Choose later on the sheet",
+        "LaterNote": "Nothing is applied now; choose Race and Class on the crawler sheet."
+      },
+      "Review": {
+        "Breaks": "Rule Breaks (one confirmation at commit)",
+        "OpenDice": "{count} dice are still open. Commit rolls them."
+      },
+      "Preview": {
+        "Label": "Live preview",
+        "Title": "Preview",
+        "Level": "Level",
+        "Enhanced": "Enhanced {value}",
+        "PendingPoints": "{points} Stat points still pending",
+        "Skills": "Skills and Spells",
+        "NewItems": "New items",
+        "AiFavor": "AI Favor",
+        "Popularity": "Popularity",
+        "Warnings": "{count} notes",
+        "None": "Nothing to preview."
+      },
+      "Empty": {
+        "Title": "No floor run"
+      },
+      "Finish": {
+        "Title": "Finish the run",
+        "Note": "The chosen target floor is already reached. Finishing marks the run complete and changes nothing else."
+      },
+      "RollAll": "Roll everything remaining",
+      "Abandon": "Abandon remaining floors",
+      "Back": "Back",
+      "Next": "Next",
+      "Commit": "Commit Floor {floor} arrival",
+      "FinishRun": "Finish the run",
+      "Close": "Close"
+    },
+    "Tags": {
+      "ActorHeading": "Tags",
+      "School": "School",
+      "ActorHintOwner": "creature.<type>",
+      "ActorHintGm": "Add tag (e.g. creature.female)",
+      "ActorEditRefused": "Sprinter RPG | Only a GM can add or remove {tag} here. Owners may edit tags in identity namespaces such as creature.*.",
+      "ActorEditDerived": "Sprinter RPG | {tag} is derived and cannot be edited as a tag.",
+      "GmOnlyPill": "Only a GM can remove this tag."
+    },
+    "TagManager": {
+      "IdentityBadge": "[IDENTITY]",
+      "IdentityHint": "Owners may add or remove tags in this namespace on their actor's sheet.",
+      "RuleBadge": "[RULE]",
+      "RuleHint": "This tag carries rows or flags the engine reads.",
+      "DescriptiveBadge": "GM",
+      "DescriptiveHint": "Adjudicated by the GM; the system does not apply this.",
+      "Rules": "Rules",
+      "OpenRules": "Show the rows and flags this tag carries",
+      "Flags": "Flags",
+      "UndeclaredFlag": "This flag is not declared, so no gate reads it.",
+      "Reset": "Reset to default",
+      "GmOnly": "Sprinter RPG | Only a GM can change what a tag carries.",
+      "ReadOnly": "Only a GM can change what a tag carries.",
+      "OverrideHint": "Changes here override this tag for this world only; the built-in tag is not edited. Reset to default removes the override.",
+      "OverrideOnCustom": "A world override is replacing the rows and flags of this custom tag in play.",
+      "NoRows": "This tag carries no rows.",
+      "SelectHint": "Choose Rules on a tag to see the rows and flags it carries.",
+      "Provider": {
+        "override": "World override",
+        "custom": "Custom tag",
+        "registry": "Built in",
+        "none": "No behaviour"
+      }
+    },
+    "PointBuilder": {
+      "ChooseOne": "Choose...",
+      "Mechanics": "Mechanics ({count} rows)",
+      "MechanicsHint": "The rows this perk adds to the race or class. Everything here lands on the item exactly as the item sheet would write it.",
+      "PerkTagPlaceholder": "Add tag (e.g. element.fire, favored.mage)",
+    "StatPools": "Stat pools",
+    "AddStatPool": "Add Stat Pool",
+    "RankBonuses": "Rank bonuses",
+    "AddRankBonus": "Add Rank Bonus",
+    "RankBonusCost": "What this bonus costs",
+    "EarnsExtra": "Earns +{count} Extra BP",
+      "Unfilled": "Choose a value, or this perk adds no row (fix it on the sheet later)",
+      "Param": {
+        "creatureTag": "Creature type",
+        "skillTag": "Skill or discipline",
+        "groupTag": "Skill discipline",
+        "situation": "Situation",
+        "statTag": "Stat",
+        "clubTag": "Club",
+        "favoredTag": "Favored archetype",
+        "spellTag": "Spell category",
+        "weaponTag": "Weapon",
+        "tag": "Tag",
+        "stat": "Stat",
+        "from": "Replace stat",
+        "to": "With stat",
+        "skill": "Skill",
+        "damageType": "Damage type",
+        "label": "Label"
+      }
+    },
+    "AuraPulse": {
+      "Title": "Aura Pulses: Round {round}",
+      "Damage": "{amount} HP ({type})",
+      "NoBarLost": "no Health Bar lost ({type})",
+      "DamageRoll": "{aura}: {formula} = {total} {type}",
+      "Debuff": "+{debuff}",
+      "Heal": "+{bars} bars",
+      "Cleanse": "cleansed {debuff}",
+      "Failed": "{aura} failed on {name}: {message}"
+    },
+    "ZonePulse": {
+      "Title": "Zone Pulses: Round {round}",
+      "Condition": "+{condition}",
+      "Ended": "{zone} fades",
+      "Placed": "Area placed: {name}",
+      "PlacedRounds": "Lasts {rounds} round(s); it pulses at each Clean Up.",
+      "PlacedUntilDismissed": "Lasts until dismissed; it pulses at each Clean Up.",
+      "PlacedMarker": "Marks the area; it clears at the end of the round.",
+      "Dismiss": "Dismiss Zone"
+    },
+    "CombatStrip": {
+      "Title": "Damage Effects",
+      "Hint": "Pick one in the Attack Options window when you attack."
+    },
+    "Cameras": {
+      "Title": "Playing to the Cameras",
+      "None": "None",
+      "Hint": "Adds one Disadvantage, applied when the result is known.",
+      "Note": "{reason} (Disadvantage)",
+      "Armed": "Armed for the next roll: {label}",
+      "ArmLabel": "Play to the Cameras",
+      "ArmTitle": "Choose who to play to on your next Check or Attack (adds one Disadvantage)",
+      "HudTitle": "Play to the Cameras: {label} (click to change)",
+      "Awaiting": "Awaiting the result",
+      "Settled": "Settled: {changes} ({row})",
+      "SettledNone": "Settled ({row})",
+      "Line": "{reason}: {name} {changes} ({row})",
+      "LineNone": "{reason}: {name} ({row})",
+      "LineText": "{text}",
+      "Popularity": "{value} Popularity",
+      "AiFavor": "{value} AI Favor",
+      "Row1": "Amazing Success",
+      "Row2": "Success",
+      "Row3": "Failure",
+      "Row4": "Critical Failure",
+      "Pick1": "Amazing / Crit (beat by 10+ or Natural 20)",
+      "Pick2": "Success",
+      "Pick3": "Failure",
+      "Pick4": "Crit Fail (Natural 1)",
+      "PickLabel": "GM: what was the result?",
+      "Award": "Award",
+      "Withheld": "Award {n} AI Favor (barred today)",
+      "PromptTitle": "{reason}: {name} ({row}). GM choice:",
+      "Chosen": "Chosen: {choice}",
+      "ChoiceLine": "{reason}: {name}, {choice}",
+      "AlreadyResolved": "This choice was already made.",
+      "RowChanged": "The result of that roll changed; this choice no longer applies.",
+      "GmOnly": "Only the GM can do this.",
+      "NoActor": "The crawler for this card was not found.",
+      "Untrusted": "This card does not belong to the crawler, so nothing was awarded.",
+      "WithheldTitle": "No AI Favor Today",
+      "WithheldMessage": "{name} gets no AI Favor today. Award {n} anyway as a Rule Break?",
+      "SponsorLog": "Sponsors: {choice}"
+    },
+    "AiFavor": {
+      "BarTitle": "No AI Favor Today",
+      "BarMessage": "{name} gets no AI Favor today ({left} left). Award anyway as a Rule Break?"
+    },
+    "AttackOptions": {
+      "Title": "{name}: Attack Options",
+      "RollAttack": "Roll Attack",
+      "RollDamage": "Roll Damage",
+      "RollHitEffects": "Roll Hit Effects (no damage)",
+      "Cancel": "Cancel",
+      "Formula": "Plain roll: {formula}",
+      "DamageEffect": "Damage Effect",
+      "Maneuvers": "Maneuvers",
+      "Situations": "Situations",
+      "CalledPlay": "Called Play",
+      "Mark": "Mark for advancement",
+      "MarkAttack": "Attack skill",
+      "MarkEffect": "Damage Effect skill",
+      "None": "No Damage Effect",
+      "NoneDesc": "Standard attack without consuming an effect.",
+      "AiFavor": "AI Favor rating {n}",
+      "Rank": "R{n}",
+      "RuleBreak": "Rule Break",
+      "Untrained": "Untrained",
+      "AddAnother": "Add another (Rule Break)",
+      "VariantNormal": "Normal",
+      "VariantNeeds": "Rank {n}",
+      "From": "from {source}",
+      "Used": "(already used this floor: Rule Break)",
+      "ReadsAs": "Reads as: {text}",
+      "SkipHint": "Shift-click an attack to roll your last pick without this window."
+    },
+    "AttackProfile": {
+      "Title": "ATTACK PROFILE",
+      "ClickToConfigure": "CLICK TO CONFIGURE",
+      "HitDifficulty": "Hit Difficulty",
+      "HitDifficultyPlaceholder": "Mob's Evade",
+      "HitDifficultyHint": "Used when a mob makes this attack; the Floor is added. Leave blank to use the mob's Evade.",
+      "RangeFeet": "Range (ft)",
+      "HasArea": "Area attack",
+      "ReadsAs": "Reads as:",
+      "OtherEffects": "Other effects (text)"
+    },
+    "OnHitRiders": {
+      "Label": "Debuffs inflicted on the target",
+      "Empty": "None. Pick a debuff below, or type an identifier.",
+      "Choose": "+ Add debuff...",
+      "Placeholder": "Or an identifier, e.g. stage-fright",
+      "GroupHit": "On any hit",
+      "GroupEvadeFail": "On a failed Evade",
+      "GroupEvadeMajorFail": "On an Evade Major Fail or worse",
+      "GroupEvadeCriticalFail": "On an Evade Critical Fail",
+      "GroupSlotLoss": "On losing Health Bar slots",
+      "ButtonHit": "Hit",
+      "ButtonEvade": "Evade",
+      "ButtonSlot": "Slot loss",
+      "Degree": "Evade-gated debuffs apply when the target",
+      "DegreeFail": "Fails Evade",
+      "DegreeMajorFail": "Major Fails Evade or worse",
+      "DegreeCriticalFail": "Critically Fails Evade",
+      "MinSlots": "Slot-loss debuffs need at least (slots lost)",
+      "ModeHit": "Any-hit debuffs",
+      "ModeEvade": "Evade-gated debuffs",
+      "ModeSlot": "Slot-loss debuffs",
+      "ModeAll": "Apply all",
+      "ModePickOne": "Pick one",
+      "Hint": "A target that does not roll Evade (it declined, or it is a mob) counts as a failed Evade: it passes a failed-Evade gate and never a Major Fail gate."
+    },
+    "AttackRange": {
+      "Title": "Target Out of Range",
+      "One": "{name} is {feet}ft away; range {range}ft. The {what} fails against it. {verb} anyway as a Rule Break?",
+      "Many": "{list} are out of range (range {range}ft). The {what} fails against them. {verb} anyway as a Rule Break?",
+      "Entry": "{name} ({feet}ft)",
+      "Line": "Out of range, not hit: {list}.",
+      "Badge": "OUT OF RANGE",
+      "RowLine": "{feet}ft away; range {range}ft",
+      "NoRoll": "{name} was out of range of this attack, so there is nothing to roll."
+    },
+    "AttackMechanics": {
+      "ToHit":"{n}+F to hit",
+      "Range": "{n}ft range",
+      "AreaRadius": "{n}ft {label} radius",
+      "AreaSized": "{n}ft {label}",
+      "AreaWide": "{n}ft by {w}ft {label}",
+      "Splash": "+{n}ft Splash",
+      "OnHit": "On hit{rank}: {list}.",
+      "OnEvadeFail": "On a failed Evade{rank}: {list}.",
+      "OnEvadeMajorFail": "On an Evade Major Fail or worse{rank}: {list}.",
+      "OnEvadeCriticalFail": "On an Evade Critical Fail{rank}: {list}.",
+      "OnSlotLoss": "On losing a Health Bar slot{rank}: {list}.",
+      "OnSlotLossMany": "On losing {n}+ Health Bar slots{rank}: {list}.",
+      "Save": "{stat} check DC {n}+F.",
+      "SaveNoDC": "{stat} check.",
+      "SaveOpposed": "Opposed {stat} check.",
+      "SaveFail": "{save} On a fail: {list}.",
+      "Rank": " (Rank {n}+)",
+      "OneOf": "one of {list}",
+      "Or": " or "
+    },
+    "AttackChoices": {
+      "Hint": {
+        "NotOffered": "Your last pick is not available for this attack.",
+        "Untrained": "Last pick {name} is untrained now.",
+        "Cooldown": "Last pick {name} is on cooldown ({left}).",
+        "Variant": "Last pick variant not available at Rank {rank}."
+      },
+      "Reason": {
+        "Untrained": "{name} is untrained (Rank 0). A Passive Skill can't be used without Ranks.",
+        "Cooldown": "{name} is on cooldown ({left}).",
+        "Multiple": "More than one Damage Effect on one attack (only one is allowed).",
+        "NotOffered": "{name} does not apply to {attack}.",
+        "Variant": "{variant} needs {name} Rank {rank}."
+      },
+      "Confirm": {
+        "Title": "Rule Break Confirmation",
+        "Question": "Proceed as a Rule Break?"
+      }
+    },
+    "SpellCast": {
+      "Reason": {
+        "NotCast": "{name} was not cast."
+      },
+      "AttackTooltip": "Roll Spell Attack for the latest cast (1d20 + Rank {rank} + {stat} Mod)",
+      "HudAttack": "Roll Spell Attack: {name} (1d20 + Rank {rank} + {stat} Mod)",
+      "HudDamage": "Roll Spell Damage: {name} ({formula})",
+      "RollAttack": "Roll Spell Attack",
+      "DeclareAttack": "Declare Attack",
+      "NotOwner": "You do not own {name}."
+    },
+    "Combat": {
+      "RuleBreakTitle": "Rule Break",
+      "SkipStep": "Jumping from {from} to {to} skips a step of the round. Jump ahead as a Rule Break?",
+      "EndRoundOpenDeclarations": "{count} declared mob attack(s) are still unresolved. End the round anyway as a Rule Break?",
+      "Declarations": "Declared Attacks",
+      "NoDeclarations": "No mob attacks declared this round.",
+      "EvadeDC": "Evade DC {dc}",
+      "AreaShort": "Area",
+      "ResolveDeclared": "Resolve now (Step 3)",
+      "StepPrev": "Previous Combat Step",
+      "StepNext": "Next Combat Step",
+      "StepsReadOnly": "The GM moves the round along.",
+      "Resolved": "Resolved",
+      "Redirected": "Taunted",
+      "Intercepted": "Caught",
+      "BonusActionClaimed": "{name} has already claimed their AI Favor Bonus Action this round.",
+      "BonusActionNoFavor": "{name} does not have enough AI Favor ({favor} available, 1 required).",
+      "BonusActionAnyway": "Spend it anyway as a Rule Break?",
+      "BonusActionLedger": "Bonus Action ({name})",
+      "TargetStatus": {
+        "declared": "Awaiting Interrupt",
+        "evaded": "Evaded",
+        "evaded-half": "Evaded (half damage)",
+        "hit": "Evade failed",
+        "resolved": "Hit"
+      }
+    },
+    "MobAttack": {
+      "Header": "Mob Attack Declared \u2014 Hits Automatically",
+      "SpellHeader": "Mob Spell Declared \u2014 Hits Automatically",
+      "FloorBadge": "Floor {floor}",
+      "EvadeLabel": "Target Evade Difficulty:",
+      "EvadeDC": "Evade DC {dc}",
+      "EvadeBreakdown": "Base {base} + Floor {floor}",
+      "EvadeShift": "{sign}{n} ({label})",
+      "EvadeButton": "Roll Evade vs Attack (DC {dc})",
+      "EvadeButtonFree": "Roll Evade vs Attack (DC {dc}): first Evade free",
+      "FreeEvadeLine": "Free Evade: the attacker is at Disadvantage",
+      "SaveShift": "Save Difficulty {sign}{n} ({label})",
+      "EvadeHint": "Crawler rolls 1d20 + Dex Mod + Evade gear/buffs. Roll \u2265 {dc} succeeds.",
+      "AreaBadge": "AREA ATTACK: Successful evade takes 50% damage.",
+      "TauntButton": "Taunt: redirect this attack to your crawler",
+      "ResolveButton": "Resolve now (Step 3)",
+      "RollEvadeFor": "Roll Evade: {name} (DC {dc})",
+      "Redirected": "REDIRECTED: {from} \u2192 {to}. The attack hits automatically; {to} may Evade (DC {dc}) or take it.",
+      "Intercepted": "INTERCEPTED: {to} takes the hit meant for {from}.",
+      "RuleBreakTitle": "Rule Break",
+      "EvadeTwice": "{name} already rolled Evade against this attack. Roll again as a Rule Break?",
+      "TauntNoTag": "{name} has no Taunt interrupt. Taunt anyway as a Rule Break?",
+      "TauntNoRedirect": "This attack cannot be redirected. Taunt anyway as a Rule Break?",
+      "CatchEvaded": "{name} already evaded this attack. Catch it anyway as a Rule Break?",
+      "ResolvePending": "Crawlers can still Interrupt (Step {step}). Resolve the declared attacks now as a Rule Break?",
+      "PickCrawler": "Taunt with which crawler?",
+      "PickCrawlerHint": "No crawler is selected. Choose who taunts.",
+      "PickTarget": "Redirect the attack aimed at whom?",
+      "NoCrawler": "Sprinter RPG | Select or assign a crawler first.",
+      "NoTarget": "Sprinter RPG | This attack has no other target to taunt away from.",
+      "GmOnly": "Sprinter RPG | Only the GM resolves declared attacks.",
+      "NoDeclaration": "Sprinter RPG | This attack is not declared in the active combat.",
+      "ResolvedCount": "Sprinter RPG | Resolved {count} declared attack(s).",
+      "TauntName": "Taunt"
+    },
+    "Assist": {
+      "Title": "ASSIST",
+      "Formula": "Assist Dice",
+      "FormulaHint": "Rolled and added to an ally's check (Intervene) or to their next roll (Call a Play). Use @rank for this skill's Rank.",
+      "Invalid": "Not a valid roll formula",
+      "When": "Offered When (Tag Query)",
+      "WhenHint": "Check and outcome tags of the ally's roll, e.g. outcome.near_miss. Empty = always offered.",
+      "OffersTitle": "Assist",
+      "OffersHint": "Interrupt after the roll",
+      "OfferCost": "Interrupt, 1 Action",
+      "OfferCostFree": "Interrupt, Free",
+      "NoActions": "0 Actions",
+      "NearMiss": "NEAR MISS",
+      "AppliedTitle": "Assists",
+      "TotalChange": "Total {before} → {after}",
+      "LineInterrupt": "{skill} +{amount} ({name}, {formula}) → check",
+      "LineCalledPlay": "Called Play ({name}) {formula} = {amount}",
+      "ToCheck": "→ check",
+      "ToDamage": "→ damage",
+      "NotNeeded": "not needed (no damage)",
+      "Awaiting": "awaiting the GM: {total}, or {with} with it",
+      "AppliedBefore": "Damage was already applied; Undo and apply again to use this assist.",
+      "ApplyButton": "Apply to {name}'s check",
+      "NotApplied": "Not applied yet: no GM connected",
+      "CardTitle": "INTERRUPT: {skill} +{amount} → {name}'s check",
+      "NoActionsTitle": "Assist Rule Break",
+      "NoActionsReason": "No Actions left ({spent}/{max}).",
+      "NoActionsConfirm": "No Actions left ({spent}/{max}). {skill} anyway as a Rule Break?",
+      "NoGmAction": "No GM connected to record the Action.",
+      "NoGmApply": "Not applied: no GM connected. The GM can apply it from the assist card.",
+      "Refused": "The assist was not applied ({reason}).",
+      "InvalidFormula": "{skill}: not a valid roll formula.",
+      "RollFailed": "{skill}: the assist dice could not be rolled.",
+      "NotInCombat": "Assists are used in combat.",
+      "NoCheck": "This card has no check to assist.",
+      "NoSkill": "The assisting skill was not found.",
+      "SheetNote": "Use it from the Interrupt button on the ally's check card.",
+      "NoEffect": "No effect",
+      "ResolveFirst": "Resolve the Called Play before rolling damage.",
+      "CalledPlayTitle": "CALL A PLAY: {name} → {ally}: +{amount} ({formula}), for {ally}'s next skill or attack roll this round",
+      "CalledPlayTitleByHand": "CALL A PLAY: {name}: +{amount} ({formula})",
+      "CalledPlayByHand": "No combat: apply it by hand.",
+      "CalledPlayNote": "Called Play for {ally}",
+      "CalledPlayPickTitle": "Call a Play",
+      "CalledPlayPick": "Which ally is this play for?",
+      "CalledPlayPickOk": "Call it",
+      "CalledPlayNotCleared": "Called Play not cleared: no GM connected. It ends with the round.",
+      "NoGmStore": "The Called Play was rolled but not stored: no GM connected."
+    },
+    "Timing": {
+      "Cooldown": "Cooldown",
+      "Duration": "Duration",
+      "GrantCooldown": "Cooldown",
+      "RuleBreakUse": "The latest use went ahead as a Rule Break.",
+      "OverrideCooldown": "Override cooldown at this Rank",
+      "OverrideDuration": "Override duration at this Rank",
+      "OverrideHint": "Off: the base timing applies. On: this tier sets its own.",
+      "Amount": "Amount",
+      "None": "None",
+      "Custom": "{unit} (custom)",
+      "EndsWithCombat": "Ends with combat",
+      "EndsWithCombatHint": "The effect also ends when the combat ends, whichever comes first.",
+      "Unit": {
+        "Label": "Unit",
+        "seconds": "seconds",
+        "rounds": "rounds",
+        "minutes": "minutes",
+        "hours": "hours",
+        "day": "days (30 floor hours)",
+        "scene": "scene (combat)",
+        "floor": "floor",
+        "short_rest": "short rest",
+        "long_rest": "long rest",
+        "full_day_rest": "full day's rest",
+        "instant": "Instantaneous",
+        "combat": "Until the end of combat",
+        "permanent": "Until removed"
+      }
+    },
+    "NoBookText": {
+      "Badge": "[NO BOOK TEXT]",
+      "PartialBadge": "[PART BOOK TEXT]",
+      "Partial": "Imported from the book. The empty text fields are ones the provided PDFs gave no text for.",
+      "Unresolved": "This entry was not found in the provided PDFs, so it has no book text.",
+      "Redacted": "Book text for this entry has not been imported yet."
+    },
+    "Rows": {
+      "AddRow": "Add row:",
+      "Array": {
+        "Damage": {
+          "Title": "Damage modifiers",
+          "Add": "Add damage modifier",
+          "AddBar": "Damage",
+          "ConditionHint": "Applies when the action's tags match"
+        },
+        "Defense": {
+          "Title": "Defense modifiers",
+          "Add": "Add defense modifier",
+          "AddBar": "Defense",
+          "ConditionHint": "Applies when the incoming attack or the bearer has"
+        },
+        "Attack": {
+          "Title": "To-hit modifiers",
+          "Add": "Add to-hit modifier",
+          "AddBar": "To-hit",
+          "ConditionHint": "Applies when the attack's tags match"
+        },
+        "Check": {
+          "Title": "Check modifiers",
+          "Add": "Add check modifier",
+          "AddBar": "Checks",
+          "ConditionHint": "Applies when the check's tags match"
+        },
+        "ManaCost": {
+          "Title": "Mana cost modifiers",
+          "Add": "Add mana cost modifier",
+          "AddBar": "Mana cost",
+          "ConditionHint": "Applies when the spell's tags match"
+        },
+        "Recovery": {
+          "Title": "Recovery modifiers",
+          "Add": "Add recovery modifier",
+          "AddBar": "Recovery",
+          "ConditionHint": "Applies when the rest's situations match"
+        },
+        "AiFavor": {
+          "Title": "AI Favor ratings",
+          "Add": "Add AI Favor rating",
+          "AddBar": "AI Favor",
+          "ConditionHint": "Applies when the attack's tags match"
+        },
+        "Popularity": {
+          "Title": "Popularity triggers",
+          "Add": "Add popularity trigger",
+          "AddBar": "Popularity",
+          "ConditionHint": "Applies when the event's tags match"
+        },
+        "Substitution": {
+          "Title": "Stat substitutions",
+          "Add": "Add stat substitution",
+          "AddBar": "Stat substitution",
+          "ConditionHint": "Applies when the roll's tags match"
+        }
+      },
+      "Field": {
+        "label": "Label",
+        "kind": "Kind",
+        "disabled": "Disabled",
+        "disabledHint": "Off: the row stays but never applies",
+        "value": "Value",
+        "dice": "Dice",
+        "stat": "Stat mod",
+        "multiplier": "Multiplier",
+        "damageType": "Damage type",
+        "option": "Option",
+        "percent": "Reduction %",
+        "flat": "Flat reduction",
+        "rounding": "Rounding",
+        "advantage": "Advantage",
+        "resource": "Resource",
+        "event": "Event",
+        "oncePer": "Once per",
+        "scope": "Applies to",
+        "from": "Replace",
+        "to": "With",
+        "optional": "Optional",
+        "minRank": "Min rank",
+        "maxRank": "Max rank",
+        "usesPer": "Limit",
+        "FlatDamage": "Flat",
+        "Dr": "DR",
+        "TempHp": "Temp HP",
+        "EvadeBonus": "Evade bonus",
+        "ReflectMinSlots": "Slots lost in one blow (at least)",
+        "ReflectSlots": "Attacker loses (slots)",
+        "Bonus": "Bonus",
+        "Mana": "Mana",
+        "PopularityAmount": "Popularity",
+        "AiFavorAmount": "AI Favor rating",
+        "DamageTypeAdd": "Damage type",
+        "DamageTypeOnly": "Only damage type"
+      },
+      "Choice": {
+        "None": "None",
+        "KindDefault": "{value} (default)",
+        "NotDeclared": "{value} (not declared)",
+        "NotRegistered": "{value} (not registered)",
+        "rounding": {
+          "up": "Round up",
+          "down": "Round down"
+        },
+        "advantage": {
+          "advantage": "Advantage",
+          "disadvantage": "Disadvantage"
+        },
+        "resource": {
+          "mana": "Mana",
+          "hp": "Hit points"
+        },
+        "event": {
+          "crit": "a crit",
+          "critFail": "a critical fail",
+          "kill": "a kill"
+        },
+        "oncePer": {
+          "combat": "Combat",
+          "floor": "Floor"
+        },
+        "usesPer": {
+          "floor": "Once per floor"
+        },
+        "scope": {
+          "item": "Only when this item is used",
+          "owner": "Every roll of the owner",
+          "damage": "Damage",
+          "check": "Skill check",
+          "healthBar": "Health Bar",
+          "lift": "Lift limit"
+        }
+      },
+      "Blank": {
+        "AllDamage": "All damage",
+        "ActionType": "Action's own type"
+      },
+      "Placeholder": {
+        "Label": "Shown in the damage breakdown",
+        "NoCeiling": "No ceiling"
+      },
+      "Badge": {
+        "NotRegistered": "Row kind \"{value}\" is not registered",
+        "OptionNotDeclared": "Option \"{value}\" is not one the kind declares",
+        "OptionTooLong": "Option is longer than {value} characters",
+        "ScaleInert": "Cannot scale: does not apply",
+        "ScaleProblem": "{value}",
+        "ScaleCannotDefer": "Only damage add and multiply rows can scale by the target: this row will not apply",
+        "ScaleDiceNotScaled": "Dice are not scaled: only the flat value is",
+        "ScaleWhereRole": "Counted creature tags take no role prefix: drop it from {value}",
+        "RoleNeverSeen": "This array never sees the {value}: the tag never matches",
+        "UnprefixedCreature": "Whose tag is this? Creature tags need You, The target or The attacker",
+        "DoubleRole": "That tag already names whose it is; the chosen role was ignored",
+        "PerTarget": "Per target",
+        "FirstTarget": "Judged against the first target",
+        "Static": "Always on, judged on you",
+        "StaticUnconditional": "Always on (derived stats)",
+        "PerHit": "Per hit"
+      },
+      "Control": {
+        "MoveUp": "Move up (reordering rows while a damage card is open can change what it applies)",
+        "MoveDown": "Move down (reordering rows while a damage card is open can change what it applies)",
+        "Duplicate": "Duplicate",
+        "Delete": "Delete",
+        "Clear": "Clear"
+      },
+      "Leftover": {
+        "Title": "Set but not used by this kind:"
+      },
+      "Raw": {
+        "Title": "Set on this row (read-only):"
+      },
+      "Scale": {
+        "Label": "Scale",
+        "None": "Scale: none",
+        "Source": "Scale by",
+        "Scope": "Of",
+        "Stat": "Stat",
+        "Where": "Counting creatures that have",
+        "Per": "Per",
+        "Base": "Base",
+        "Min": "At least",
+        "Max": "At most",
+        "NoLimit": "No limit",
+        "WhenApplied": "(when applied)",
+        "AppliedReadout": "Worked out per target when damage is applied",
+        "NotRegistered": "{value} (not registered)"
+      },
+      "Preview": {
+        "Button": "Preview against target",
+        "NoActor": "Put this item on an actor to preview its rows",
+        "NoTarget": "No token is targeted: rows that look at the target will not match",
+        "Against": "Previewing for the owner against {value}",
+        "Title": "Preview:",
+        "Now": "Now: {value} ({note})",
+        "NowNoTarget": "Target a token to see the number",
+        "Unresolved": "The number cannot be worked out for this target",
+        "Status": {
+          "applies": "Applies",
+          "deferred": "Applies per target",
+          "inert": "Does not apply"
+        },
+        "Reason": {
+          "disabled": "The row is switched off",
+          "skipped": "The row is skipped",
+          "kind": "Its kind is not registered",
+          "minRank": "The skill is below the row's minimum Rank",
+          "maxRank": "The skill is above the row's maximum Rank",
+          "scale": "Its scale cannot be worked out",
+          "condition": "The condition is not met:",
+          "floorLimit": "Limited to once per floor"
+        },
+        "Failed": {
+          "all": "missing {value}",
+          "any": "has none of {value}",
+          "none": "has {value}, which it must not"
+        }
+      },
+      "Role": {
+        "Action": "The action",
+        "Self": "You",
+        "Subject": "The target",
+        "Attacker": "The attacker"
+      },
+      "Bucket": {
+        "All": "Must have all of",
+        "Any": "Must have any of",
+        "None": "Must not have"
+      },
+      "Query": {
+        "Unregistered": "Not a registered tag",
+        "RemoveTag": "Remove tag",
+        "NoRestriction": "No restriction",
+        "SelectTag": "+ Select Tag...",
+        "CustomId": "or custom ID (id.spell.my-spell)",
+        "Add": "+ Add",
+        "Role": "Whose tag",
+        "NewSituation": "+ New situation",
+        "SituationLabel": "Situation name"
+      },
+      "Grant": {
+        "Title": "Grants",
+        "Incomplete": "Fill this row in, or it adds nothing (fix it on the sheet later)",
+        "Choose": "Choose...",
+        "ChooseOne": "(choose)",
+        "NoStats": "No stats chosen",
+        "NoOptions": "Any matching skill or spell",
+        "CustomIdentifier": "or custom identifier",
+        "NoTag": "(no tag)",
+        "NoCategory": "(no category)",
+        "SkillOwnStat": "(the skill's own stat)",
+        "Field": {
+          "kind": "Grants",
+          "mode": "How",
+          "stat": "Stat",
+          "value": "Value",
+          "label": "Label",
+          "options": "Options",
+          "identifier": "Identifier",
+          "rank": "Rank",
+          "count": "How many",
+          "distinct": "Different ones",
+          "query": "Matching",
+          "category": "Category",
+          "tag": "Tag",
+          "floor": "Floor rank",
+          "onlyIfOwned": "Only if owned"
+        },
+        "Kind": {
+          "stat": "Stat",
+          "skill": "Skill",
+          "spell": "Spell",
+          "rank_bonus": "Rank bonus",
+          "rank_cap": "Rank cap"
+        },
+        "Mode": {
+          "fixed": "Fixed",
+          "choice": "Choose",
+          "pool": "Pool"
+        },
+        "Add": {
+          "stat_fixed": "Stat",
+          "stat_pool": "Stat pool",
+          "skill_fixed": "Skill",
+          "skill_choice": "Skill choice",
+          "spell_fixed": "Spell",
+          "spell_choice": "Spell choice",
+          "rank_bonus_fixed": "Rank bonus",
+          "rank_cap_fixed": "Rank cap",
+          "rank_cap_choice": "Rank cap choice"
+        }
+      },
+      "StartingItem": {
+        "Title": "Starting items",
+        "Add": "Starting item",
+        "Incomplete": "Name the item (or its tags), or this adds nothing (fix it on the sheet later)",
+        "Field": {
+          "itemType": "Item type",
+          "mode": "How",
+          "quantity": "How many",
+          "label": "Label",
+          "identifier": "Identifier",
+          "query": "Choose from"
+        },
+        "Mode": {
+          "fixed": "Fixed",
+          "choice": "Choose"
+        },
+        "Type": {
+          "skill": "Skill",
+          "spell": "Spell",
+          "attack": "Attack",
+          "gear": "Gear",
+          "buff": "Buff",
+          "debuff": "Debuff",
+          "loot": "Loot",
+          "space_upgrade": "Space upgrade",
+          "actor_pet": "Pet",
+          "actor_mount": "Mount"
+        }
+      },
+      "Identity": {
+        "senses": {
+          "Title": "Senses",
+          "Hint": "Blank stores nothing.",
+          "darkvision": "Darkvision range",
+          "darkvisionUnlimited": "Sees in total darkness",
+          "rangeMultiplier": "Vision range x"
+        },
+        "movement": {
+          "Title": "Movement",
+          "Hint": "Changes to the walking speed and extra modes. Blank stores nothing.",
+          "walkDelta": "Walk change",
+          "climb": "Climb",
+          "swim": "Swim",
+          "fly": "Fly",
+          "burrow": "Burrow"
+        },
+        "statCaps": {
+          "Title": "Stat caps",
+          "Hint": "The highest score a stat may have. Blank is no cap.",
+          "str": "STR",
+          "dex": "DEX",
+          "con": "CON",
+          "int": "INT",
+          "cha": "CHA"
+        },
+        "requires": {
+          "Title": "Requires",
+          "Hint": "Tags a crawler must (or must not) have to take this."
+        }
+      },
+      "Kind": {
+        "Damage": {
+          "add": {
+            "Label": "Add damage",
+            "OptionLabel": "Damage die",
+            "OptionHint": "A Rank damage die is not doubled on a Critical Hit.",
+            "Option": {
+              "standard": "Ordinary damage",
+              "rank": "Rank die (not doubled on a crit)"
+            }
+          },
+          "multiply": {
+            "Label": "Multiply damage"
+          },
+          "suppress_stat": {
+            "Label": "Suppress stat bonus"
+          }
+        },
+        "Defense": {
+          "resistance": {
+            "Label": "Resistance"
+          },
+          "immunity": {
+            "Label": "Immunity"
+          },
+          "tempHp": {
+            "Label": "Temp HP"
+          },
+          "reduction": {
+            "Label": "Reduction %"
+          },
+          "dr": {
+            "Label": "Damage Resist (DR)"
+          },
+          "evade": {
+            "Label": "Evade bonus"
+          },
+          "vulnerability": {
+            "Label": "Vulnerability"
+          },
+          "suppress_dr": {
+            "Label": "Suppress DR"
+          },
+          "reflect": {
+            "Label": "Damage Reflection",
+            "Hint": "When one blow costs the holder at least this many Health Bar slots, the holder may make the attacker lose slots."
+          },
+          "evadeOutcome": {
+            "Label": "Area Evade",
+            "Hint": "What a successful Evade does against an area attack.",
+            "Option": {
+              "full": "No damage",
+              "half": "Half damage",
+              "none": "Evade does not reduce damage"
+            },
+            "OptionLabel": "Area Evade"
+          }
+        },
+        "Roll": {
+          "bonus": {
+            "Label": "Bonus"
+          },
+          "advantage": {
+            "Label": "Advantage"
+          },
+          "assist": {
+            "Label": "Assist dice",
+            "Hint": "Changes the dice an assist skill (Call a Play, Intervene) rolls. Never touches ordinary checks.",
+            "OptionLabel": "Assist dice",
+            "Option": {
+              "replace": "Replace the formula",
+              "add": "Add to the formula"
+            }
+          }
+        },
+        "ManaCost": {
+          "add": {
+            "Label": "Add"
+          },
+          "multiply": {
+            "Label": "Multiply"
+          }
+        },
+        "Recovery": {
+          "default": {
+            "Label": "Recovery"
+          }
+        },
+        "AiFavor": {
+          "default": {
+            "Label": "AI Favor rating"
+          }
+        },
+        "Popularity": {
+          "default": {
+            "Label": "Popularity"
+          }
+        },
+        "Substitution": {
+          "default": {
+            "Label": "Stat substitution"
+          }
+        }
+      },
+      "Scalar": {
+        "hpSlotsLost": {
+          "Label": "Health Bar slots lost",
+          "Hint": "Empty Health Bars on the row owner, or on the target when damage is applied.",
+          "Scope": {
+            "self": "You",
+            "subject": "The target"
+          }
+        },
+        "rank": {
+          "Label": "Rank",
+          "Hint": "The Rank of the item carrying the row, the item used, the weapon skill, or an owned item.",
+          "Scope": {
+            "source": "This item",
+            "item": "The item used",
+            "skill": "The weapon skill",
+            "owned": "An owned item"
+          }
+        },
+        "floor": {
+          "Label": "Floor",
+          "Hint": "The current Floor Number."
+        },
+        "stat": {
+          "Label": "Stat Mod",
+          "Hint": "The row owner's modifier for the chosen stat."
+        },
+        "statValue": {
+          "Label": "Stat score",
+          "Hint": "The row owner's score (not the modifier) for the chosen stat, such as seconds equal to Intelligence."
+        },
+        "count": {
+          "Label": "Count of creatures",
+          "Hint": "Party members, allies, enemies or owned items matching a tag query.",
+          "Scope": {
+            "party": "Party members",
+            "allies": "Allies in this fight",
+            "enemies": "Enemies in this fight",
+            "items": "Owned items",
+            "targets": "Targets hit at once"
+          }
+        },
+        "move": {
+          "Label": "Move",
+          "Hint": "The row owner's Move in feet (write per: 0.1 for \"per 10ft\")."
+        }
+      },
+      "Reads": {
+        "Title": "Reads as",
+        "Nothing": "Does nothing yet"
+      }
+    }
+  },
+  "TYPES": {
+    "Actor": {
+      "crawler": "Crawler",
+      "pet": "Pet",
+      "mercenary": "Mercenary",
+      "mount_vehicle": "Mount / Vehicle",
+      "personal_space": "Personal Space",
+      "marker": "Light Marker",
+      "npc": "NPC / Creature",
+      "mob": "Mob"
+    },
+    "Item": {
+      "skill": "Skill",
+      "attack": "Attack",
+      "spell": "Spell",
+      "gear": "Gear",
+      "race": "Race",
+      "class": "Class",
+      "deity": "Deity",
+      "sponsor": "Sponsor",
+      "loot": "Loot",
+      "buff": "Buff",
+      "debuff": "Debuff",
+      "achievement": "Achievement",
+      "space_upgrade": "Space Upgrade"
+    }
+  }
+}

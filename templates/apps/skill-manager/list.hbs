@@ -1,0 +1,90 @@
+<div class="cog-sm-list-container">
+  {{#if skills.length}}
+    <table class="cog-sm-table">
+      <thead>
+        <tr>
+          {{#if isActorPicker}}
+            <th style="width: 5%; text-align: center;">Select</th>
+          {{/if}}
+          <th style="width: 28%;">Skill Name</th>
+          <th style="width: 10%; text-align: center;">Stat</th>
+          <th style="width: 14%;">Category</th>
+          <th style="width: 13%;">Check Type</th>
+          <th style="width: 10%; text-align: center;">Source</th>
+          <th style="width: {{#if isItemPicker}}20%{{else}}25%{{/if}};">Description & Mechanics</th>
+          {{#if isItemPicker}}
+            <th style="width: 10%; text-align: center;">Action</th>
+          {{else}}
+            <th style="width: 5%; text-align: center;"></th>
+          {{/if}}
+        </tr>
+      </thead>
+      <tbody>
+        {{#each skills as |skill|}}
+          <tr class="cog-sm-row {{#if skill.isAddedToActor}}is-added{{/if}} {{#if skill.isAddedToItem}}is-added{{/if}}">
+            {{#if ../isActorPicker}}
+              <td style="text-align: center;">
+                <input type="checkbox" data-change-action="toggleSkill" data-skill-id="{{skill.id}}" {{#if skill.isSelected}}checked{{/if}} {{#if skill.isAddedToActor}}disabled{{/if}} />
+              </td>
+            {{/if}}
+            <td>
+              <div class="cog-sm-name-cell">
+                <img src="{{skill.img}}" class="cog-sm-icon" />
+                <div style="display: flex; flex-direction: column;">
+                  <span class="cog-sm-name">{{skill.name}}</span>
+                  {{#if skill.isAddedToActor}}
+                    <span class="cog-sm-on-sheet-badge"><i class="fa-solid fa-check"></i> On Actor Sheet</span>
+                  {{/if}}
+                  {{#if skill.isAddedToItem}}
+                    <span class="cog-sm-on-gear-badge"><i class="fa-solid fa-shield-halved"></i> On This Gear</span>
+                  {{/if}}
+                </div>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="cog-sm-stat-badge stat-{{skill.system.stat}}">{{skill.statUpper}}</span>
+            </td>
+            <td>
+              <span class="cog-sm-category-tag">{{skill.groupLabel}}</span>
+            </td>
+            <td>
+              <span style="font-size: 11px;">{{skill.checkTypeLabel}}</span>
+            </td>
+            <td style="text-align: center;">
+              {{#if skill.isCompendium}}
+                <span class="cog-sm-source-badge compendium" title="{{localize "COG.Content.SkillCompendiumBadge"}}">COMPENDIUM</span>
+              {{else}}
+                <span class="cog-sm-source-badge world" title="Custom World Item Skill">WORLD</span>
+              {{/if}}
+            </td>
+            <td>
+              <span class="cog-sm-notes" title="{{skill.system.notes}}">{{skill.system.notes}}</span>
+            </td>
+            <td style="text-align: center; white-space: nowrap;">
+              {{#if ../isItemPicker}}
+                <button type="button" data-action="selectForItem" class="cog-sm-select-for-item" data-identifier="{{skill.system.identifier}}" data-name="{{skill.name}}"{{#unless skill.system.identifier}} disabled title="This skill has no identifier"{{/unless}}>
+                  <i class="fa-solid fa-check"></i> Select
+                </button>
+              {{else}}
+                {{#if skill.isWorld}}
+                  <a data-action="editSkill" class="cog-sm-edit-skill cog-text-info" data-id="{{skill.id}}" data-tooltip="Edit Custom Skill" style="cursor: pointer; margin-right: 6px;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </a>
+                  <a data-action="deleteSkill" class="cog-sm-delete-skill cog-text-accent" data-id="{{skill.id}}" data-tooltip="Delete Custom Skill" style="cursor: pointer;">
+                    <i class="fa-solid fa-trash"></i>
+                  </a>
+                {{/if}}
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <div class="cog-sm-empty-state">
+      <i class="fa-solid fa-magnifying-glass cog-text-secondary" style="font-size: 32px; margin-bottom: 8px;"></i>
+      <p style="font-weight: bold; margin-bottom: 4px;">No skills matched your search or filter.</p>
+      <p class="cog-text" style="font-size: 11px;">Try adjusting the search query, category, or stat filters, or click "+ New Custom Skill" to add one.</p>
+    </div>
+  {{/if}}
+</div>

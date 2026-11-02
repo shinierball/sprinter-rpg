@@ -1,0 +1,8 @@
+<nav class="cog-manager-nav cog-bg-surface-muted" style="display: flex; border-bottom: 1px solid var(--cog-panel-border);">
+  <a data-action="setTab" class="cog-nav-tab {{#if (eq activeTab 'library')}}active{{/if}} {{#if (eq activeTab 'library')}}cog-text-on-fill{{else}}cog-text-secondary{{/if}} cog-bg-dyn" data-tab="library" style="--cog-bg-dyn: {{#if (eq activeTab 'library')}}#c0392b{{else}}transparent{{/if}}; flex: 1; text-align: center; padding: 8px 12px; font-family: 'Oswald', sans-serif; font-weight: bold; font-size: 13px; text-transform: uppercase; cursor: pointer; text-decoration: none;">
+    <i class="fa-solid fa-book-bookmark"></i> Achievement Library ({{totalLibraryCount}})
+  </a>
+  <a data-action="setTab" class="cog-nav-tab {{#if (eq activeTab 'party')}}active{{/if}} {{#if (eq activeTab 'party')}}cog-text-on-fill{{else}}cog-text-secondary{{/if}} cog-bg-dyn" data-tab="party" style="--cog-bg-dyn: {{#if (eq activeTab 'party')}}#c0392b{{else}}transparent{{/if}}; flex: 1; text-align: center; padding: 8px 12px; font-family: 'Oswald', sans-serif; font-weight: bold; font-size: 13px; text-transform: uppercase; cursor: pointer; text-decoration: none;">
+    <i class="fa-solid fa-users"></i> Party Trophy Room ({{crawlers.length}} Crawlers)
+  </a>
+</nav>

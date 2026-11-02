@@ -1,0 +1,50 @@
+<div class="cog-award-levels cog-bg-window cog-text-strong" style="padding: 12px; font-family: 'Oswald', sans-serif;">
+  <div style="margin-bottom: 10px;">
+    <label class="cog-text-gold" for="cog-award-preset" style="font-size: 12px; font-weight: bold; text-transform: uppercase;">Award for</label>
+    <select id="cog-award-preset" data-change-action="selectPreset" style="width: 100%;">
+      {{#each presets}}
+        <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+      {{/each}}
+    </select>
+  </div>
+
+  {{#if isKill}}
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <label style="flex: 1; font-size: 12px;">Victim Level
+        <input type="number" id="cog-award-victim" min="1" value="{{victimLevel}}" data-change-action="setVictimLevel" />
+      </label>
+      <label style="flex: 1; font-size: 12px;">d6 (blank rolls it)
+        <input type="number" id="cog-award-d6" min="1" max="6" value="{{d6}}" data-change-action="setD6" />
+      </label>
+    </div>
+  {{else}}
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <label style="flex: 1; font-size: 12px;">Levels each
+        <input type="number" id="cog-award-amount" min="0" value="{{amount}}" data-change-action="setAmount" />
+      </label>
+      {{#if isCustom}}
+        <label style="flex: 2; font-size: 12px;">Reason
+          <input type="text" id="cog-award-label" value="{{label}}" data-change-action="setLabel" placeholder="Dungeon Boss" />
+        </label>
+      {{/if}}
+    </div>
+  {{/if}}
+
+  <div class="cog-text-gold" style="font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px;">
+    Crawlers ({{selectedCount}})
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px;">
+    {{#each crawlers}}
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+        <input type="checkbox" id="cog-award-crawler-{{this.id}}" data-change-action="toggleCrawler" data-actor-id="{{this.id}}" {{#if this.checked}}checked{{/if}} />
+        <span style="flex: 1;">{{this.name}} <span class="cog-text-secondary">Level {{this.level}}</span></span>
+        <strong class="cog-text-success">{{this.gain}}</strong>
+      </label>
+    {{/each}}
+  </div>
+
+  <div style="display: flex; justify-content: flex-end; gap: 8px;">
+    <button type="button" class="cog-btn cog-btn-secondary" data-action="cancelAward">Cancel</button>
+    <button type="button" class="cog-btn cog-btn-success" data-action="applyAward"><i class="fa-solid fa-check"></i> Apply</button>
+  </div>
+</div>

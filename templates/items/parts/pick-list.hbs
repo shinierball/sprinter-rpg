@@ -1,0 +1,40 @@
+{{!--
+  Shared multi-pick list: chips for the values of one or more string-array fields, an Add select with one
+  group per field, and an optional custom entry. Parameter: picker = buildPickList(...) (src/sheets/item/context-pick-list.mjs).
+  No control has a `name`: every chip, option and button names its field with `data-list` and is handled by the
+  PICK_LIST_ACTIONS delegates (src/sheets/item/actions-lists.mjs), so nothing here is harvested by the form.
+--}}
+<div class="cog-field-group cog-pick-list">
+  <span class="cog-field-label">{{#if picker.icon}}<i class="fa-solid {{picker.icon}}"></i> {{/if}}{{picker.label}}</span>
+  <div class="cog-pick-chips cog-bg-surface-alt">
+    {{#each picker.chips as |chip|}}
+      <span class="cog-badge cog-pick-chip cog-pick-chip-{{chip.list}}{{#if chip.unknown}} cog-pick-chip-unknown{{/if}}" data-tooltip="{{chip.value}}">
+        {{#if chip.badge}}<span class="cog-pick-chip-badge">[{{chip.badge}}]</span>{{/if}}
+        <span class="cog-pick-chip-label">{{chip.label}}</span>
+        <a class="cog-pick-chip-remove" data-action="removePick" data-list="{{chip.list}}" data-value="{{chip.value}}" aria-label="Remove {{chip.label}}">&times;</a>
+      </span>
+    {{else}}
+      <span class="cog-pick-empty cog-text-muted">{{picker.emptyText}}</span>
+    {{/each}}
+  </div>
+  <div class="cog-pick-entry" data-custom-entry>
+    <select class="cog-field-input cog-pick-select" data-change-action="addPick">
+      <option value="">{{picker.choose}}</option>
+      {{#each picker.groups as |group|}}
+        {{#if group.label}}
+          <optgroup label="{{group.label}}">
+            {{#each group.options as |opt|}}<option value="{{opt.value}}" data-list="{{opt.list}}">{{opt.label}}</option>{{/each}}
+          </optgroup>
+        {{else}}
+          {{#each group.options as |opt|}}<option value="{{opt.value}}" data-list="{{opt.list}}">{{opt.label}}</option>{{/each}}
+        {{/if}}
+      {{/each}}
+    </select>
+    {{#if picker.buttons.length}}
+      <input class="cog-field-input cog-pick-custom" type="text"{{#if picker.inputId}} id="{{picker.inputId}}"{{/if}} placeholder="{{picker.placeholder}}" />
+      {{#each picker.buttons as |button|}}
+        <button type="button" class="cog-btn cog-pick-add" data-action="addCustomPick" data-list="{{button.list}}">+ {{button.label}}</button>
+      {{/each}}
+    {{/if}}
+  </div>
+</div>

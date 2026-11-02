@@ -1,0 +1,27 @@
+{{!--
+  The race and class `grants` rows: one card per row with its kind and mode selects, the fields that kind
+  and mode show, a delete link, and an Add chip per kind and mode. Parameter: grants = identityRows.grants
+  (src/sheets/item/context-identity-rows.mjs). Writes go through the item's update, so a live sheet can include it later.
+  A half-filled row shows a chip; nothing here blocks an edit (CONTRIBUTING rule 2).
+--}}
+<div class="cog-modifier-block cog-grant-block" data-array="grants">
+  <div class="cog-banner-header cog-modifier-header">
+    <span><i class="fa-solid fa-gift"></i> {{localize "COG.Rows.Grant.Title"}}</span>
+  </div>
+  <div class="cog-modifier-body">
+    {{#each grants.rows as |g|}}
+      <div class="cog-modifier-card" data-modifier-index="{{g.index}}">
+        {{> "systems/sprinter-rpg/templates/items/parts/grant-row.hbs" g=g}}
+        <span class="cog-modifier-controls">
+          <a class="cog-modifier-delete" data-action="deleteRow" data-row-table="identityGrant" data-index="{{g.index}}" data-tooltip="{{localize 'COG.Rows.Control.Delete'}}"><i class="fa-solid fa-trash"></i></a>
+        </span>
+      </div>
+    {{/each}}
+    <div class="cog-modifier-addbar">
+      <span class="cog-field-label">{{localize "COG.Rows.AddRow"}}</span>
+      {{#each grants.addBar as |b|}}
+        <a class="cog-modifier-add-chip" data-action="addRow" data-row-table="identityGrant" data-kind-key="{{b.kindKey}}"><i class="fa-solid fa-plus"></i> {{localize b.labelKey}}</a>
+      {{/each}}
+    </div>
+  </div>
+</div>

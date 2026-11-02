@@ -1,0 +1,244 @@
+<div class="cog-studio-builder">
+  <!-- 1. Identity & Archetype -->
+  <section class="cog-builder-section">
+    <div class="cog-section-title">
+      <i class="fa-solid fa-id-card"></i> 1. Class Identity & Archetypes
+    </div>
+    <div class="cog-form-grid">
+      <div class="cog-form-group cog-span-2">
+        <label>Class Name</label>
+        <input type="text" name="name" data-change-action="setField" data-field="name" data-prop="name" value="{{name}}" placeholder="e.g. Cyber Berserker, Wand Savant" required>
+      </div>
+
+      <div class="cog-form-group cog-span-2">
+        <label>Class Archetype(s) <span class="cog-label-hint">(Multi-select or hybrid)</span></label>
+        <div class="cog-pills-row">
+          {{#each archetypePills}}
+            <button type="button" class="cog-type-pill {{#if this.isSelected}}selected{{/if}}" id="{{@root.rootId}}-type-{{this.id}}" data-action="toggleType" data-type="{{this.id}}" data-prop-list="archetypes" data-value="{{this.id}}">
+              {{#if this.isSelected}}<i class="fa-solid fa-check"></i>{{/if}} {{this.name}}
+            </button>
+          {{/each}}
+        </div>
+      </div>
+
+      <div class="cog-form-group">
+        <label>Earth Class Perks</label>
+        <label class="cog-checkbox-label">
+          <input type="checkbox" name="isEarthClass" data-change-action="setEarthClass" data-prop="isEarthClass" {{#if isEarthClass}}checked{{/if}}>
+          <span>Earth Origin Box & hobby skill potion</span>
+        </label>
+      </div>
+
+      <div class="cog-form-group">
+        <label>Prerequisites</label>
+        <input type="text" name="prerequisites" data-change-action="setField" data-field="prerequisites" data-prop="prerequisites" value="{{prerequisites}}" placeholder="e.g. Popularity 3+, Boom! Achievement">
+      </div>
+
+      <div class="cog-form-group cog-span-2">
+        <label>Class Concept & Background</label>
+        <textarea name="description" data-change-action="setField" data-field="description" data-prop="description" rows="2" placeholder="Describe the lore, meme inspiration, and flavor of this class...">{{description}}</textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Ability Score & Defense Adjustments -->
+  <section class="cog-builder-section">
+    <div class="cog-section-title">
+      <i class="fa-solid fa-bolt"></i> 2. Ability Score & Defense Adjustments
+      <span class="cog-section-badge">+1 BP per +1 Stat | 2 BP per +1 DR (Max +3) | -2 Stats = +1 Extra BP</span>
+    </div>
+    <div class="cog-stats-grid has-dr">
+      <!-- STR -->
+      <div class="cog-stat-box">
+        <div class="cog-stat-header">STR</div>
+        <div class="cog-stat-controls">
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-str-down" data-action="stepStat" data-stat="str" data-delta="-1" data-prop="stats.str" data-step="-1">-</button>
+          <span class="cog-stat-val {{#if (gt stats.str 0)}}positive{{/if}} {{#if (lt stats.str 0)}}negative{{/if}}">
+            {{#if (gt stats.str 0)}}+{{/if}}{{stats.str}}
+          </span>
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-str-up" data-action="stepStat" data-stat="str" data-delta="1" data-prop="stats.str" data-step="1">+</button>
+        </div>
+        <div class="cog-stat-cost-tag">
+          {{#if (gt stats.str 0)}}+{{stats.str}} BP{{else if (lt stats.str 0)}}Detriment{{else}}0 BP{{/if}}
+        </div>
+      </div>
+
+      <!-- DEX -->
+      <div class="cog-stat-box">
+        <div class="cog-stat-header">DEX</div>
+        <div class="cog-stat-controls">
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-dex-down" data-action="stepStat" data-stat="dex" data-delta="-1" data-prop="stats.dex" data-step="-1">-</button>
+          <span class="cog-stat-val {{#if (gt stats.dex 0)}}positive{{/if}} {{#if (lt stats.dex 0)}}negative{{/if}}">
+            {{#if (gt stats.dex 0)}}+{{/if}}{{stats.dex}}
+          </span>
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-dex-up" data-action="stepStat" data-stat="dex" data-delta="1" data-prop="stats.dex" data-step="1">+</button>
+        </div>
+        <div class="cog-stat-cost-tag">
+          {{#if (gt stats.dex 0)}}+{{stats.dex}} BP{{else if (lt stats.dex 0)}}Detriment{{else}}0 BP{{/if}}
+        </div>
+      </div>
+
+      <!-- CON -->
+      <div class="cog-stat-box">
+        <div class="cog-stat-header">CON</div>
+        <div class="cog-stat-controls">
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-con-down" data-action="stepStat" data-stat="con" data-delta="-1" data-prop="stats.con" data-step="-1">-</button>
+          <span class="cog-stat-val {{#if (gt stats.con 0)}}positive{{/if}} {{#if (lt stats.con 0)}}negative{{/if}}">
+            {{#if (gt stats.con 0)}}+{{/if}}{{stats.con}}
+          </span>
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-con-up" data-action="stepStat" data-stat="con" data-delta="1" data-prop="stats.con" data-step="1">+</button>
+        </div>
+        <div class="cog-stat-cost-tag">
+          {{#if (gt stats.con 0)}}+{{stats.con}} BP{{else if (lt stats.con 0)}}Detriment{{else}}0 BP{{/if}}
+        </div>
+      </div>
+
+      <!-- INT -->
+      <div class="cog-stat-box">
+        <div class="cog-stat-header">INT</div>
+        <div class="cog-stat-controls">
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-int-down" data-action="stepStat" data-stat="int" data-delta="-1" data-prop="stats.int" data-step="-1">-</button>
+          <span class="cog-stat-val {{#if (gt stats.int 0)}}positive{{/if}} {{#if (lt stats.int 0)}}negative{{/if}}">
+            {{#if (gt stats.int 0)}}+{{/if}}{{stats.int}}
+          </span>
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-int-up" data-action="stepStat" data-stat="int" data-delta="1" data-prop="stats.int" data-step="1">+</button>
+        </div>
+        <div class="cog-stat-cost-tag">
+          {{#if (gt stats.int 0)}}+{{stats.int}} BP{{else if (lt stats.int 0)}}Detriment{{else}}0 BP{{/if}}
+        </div>
+      </div>
+
+      <!-- CHA -->
+      <div class="cog-stat-box">
+        <div class="cog-stat-header">CHA</div>
+        <div class="cog-stat-controls">
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-cha-down" data-action="stepStat" data-stat="cha" data-delta="-1" data-prop="stats.cha" data-step="-1">-</button>
+          <span class="cog-stat-val {{#if (gt stats.cha 0)}}positive{{/if}} {{#if (lt stats.cha 0)}}negative{{/if}}">
+            {{#if (gt stats.cha 0)}}+{{/if}}{{stats.cha}}
+          </span>
+          <button type="button" class="cog-stat-step-btn" id="{{@root.rootId}}-stat-cha-up" data-action="stepStat" data-stat="cha" data-delta="1" data-prop="stats.cha" data-step="1">+</button>
+        </div>
+        <div class="cog-stat-cost-tag">
+          {{#if (gt stats.cha 0)}}+{{stats.cha}} BP{{else if (lt stats.cha 0)}}Detriment{{else}}0 BP{{/if}}
+        </div>
+      </div>
+
+      <!-- DR (Damage Reduction) -->
+      <div class="cog-stat-box cog-dr-box">
+        <div class="cog-stat-header" title="{{localize "COG.Content.DamageReductionTooltip"}}">DR</div>
+        <div class="cog-stat-controls">
+          <button type="button" class="cog-dr-step-btn" id="{{@root.rootId}}-dr-down" data-action="stepDR" data-delta="-1" data-prop="drBonus" data-step="-1" title="Decrease DR">-</button>
+          <span class="cog-stat-val {{#if (gt drBonus 0)}}positive{{/if}}">
+            +{{drBonus}}
+          </span>
+          <button type="button" class="cog-dr-step-btn" id="{{@root.rootId}}-dr-up" data-action="stepDR" data-delta="1" data-prop="drBonus" data-step="1" title="Increase DR">+</button>
+        </div>
+        <div class="cog-stat-cost-tag">
+          {{#if (gt drBonus 0)}}+{{drCost}} BP{{else}}0 BP{{/if}}
+        </div>
+      </div>
+    </div>
+
+    <div class="cog-subsection-title">{{localize "COG.PointBuilder.StatPools"}}</div>
+    {{> "systems/sprinter-rpg/templates/apps/point-builder/spec-grant-rows.hbs" list="statPools" rows=statPoolRows addAction="addStatPoolRow" removeAction="removeStatPoolRow" addLabel=(localize "COG.PointBuilder.AddStatPool")}}
+  </section>
+
+  {{> "systems/sprinter-rpg/templates/apps/point-builder/skill-rows.hbs"}}
+
+  <!-- 4. Benefit Catalog Accordion -->
+  <section class="cog-builder-section">
+    <div class="cog-section-title">
+      <i class="fa-solid fa-star"></i> {{localize "COG.Content.BenefitsCatalogHeading"}}
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="cog-catalog-controls">
+      <div class="cog-search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" class="cog-search-input" name="searchQuery" data-input-action="setSearch" value="{{searchQuery}}" placeholder="Filter perks (e.g. DR, healing, fly, club, advantage)...">
+      </div>
+      <div class="cog-filter-pills">
+        <button type="button" class="cog-filter-pill {{#if (eq activeTierFilter 'all')}}active{{/if}}" id="{{@root.rootId}}-filter-all" data-action="setFilter" data-filter="all">All</button>
+        <button type="button" class="cog-filter-pill {{#if (eq activeTierFilter 'minor')}}active{{/if}}" id="{{@root.rootId}}-filter-minor" data-action="setFilter" data-filter="minor">Minor (1)</button>
+        <button type="button" class="cog-filter-pill {{#if (eq activeTierFilter 'moderate')}}active{{/if}}" id="{{@root.rootId}}-filter-moderate" data-action="setFilter" data-filter="moderate">Mod (2)</button>
+        <button type="button" class="cog-filter-pill {{#if (eq activeTierFilter 'major')}}active{{/if}}" id="{{@root.rootId}}-filter-major" data-action="setFilter" data-filter="major">Major (3)</button>
+        <button type="button" class="cog-filter-pill {{#if (eq activeTierFilter 'extreme')}}active{{/if}}" id="{{@root.rootId}}-filter-extreme" data-action="setFilter" data-filter="extreme">Ext (4)</button>
+        <button type="button" class="cog-filter-pill {{#if (eq activeTierFilter 'epic')}}active{{/if}}" id="{{@root.rootId}}-filter-epic" data-action="setFilter" data-filter="epic">Epic (6)</button>
+      </div>
+    </div>
+
+    <!-- Tier Drawers -->
+    <div class="cog-accordion-container">
+      {{#each benefitTiers}}
+        <div class="cog-accordion-tier {{this.id}}">
+          <button type="button" class="cog-accordion-header" id="{{@root.rootId}}-acc-{{this.id}}" data-action="toggleAccordion" data-tier="{{this.id}}">
+            <span class="cog-chevron"><i class="fa-solid {{#if this.isOpen}}fa-chevron-down{{else}}fa-chevron-right{{/if}}"></i></span>
+            <span class="cog-tier-name">{{this.label}}</span>
+            <span class="cog-tier-cost-badge">{{this.cost}} BP each</span>
+            <span class="cog-tier-count">({{this.items.length}} items)</span>
+          </button>
+          {{#if this.isOpen}}
+            <div class="cog-accordion-body">
+              {{#each this.items}}
+                <label class="cog-perk-card {{#if this.isSelected}}selected{{/if}}">
+                  <input type="checkbox" class="cog-benefit-toggle" name="benefit-{{this.id}}" data-change-action="toggleBenefit" data-id="{{this.id}}" {{#if this.isSelected}}checked{{/if}}>
+                  <div class="cog-perk-content">
+                    <div class="cog-perk-header">
+                      <span class="cog-perk-name">{{this.name}}</span>
+                      <span class="cog-perk-category">{{this.category}}</span>
+                      <span class="cog-perk-cost">+{{this.cost}} BP</span>
+                    </div>
+                    <div class="cog-perk-desc">{{this.description}}</div>
+                  </div>
+                </label>
+              {{> "systems/sprinter-rpg/templates/apps/partials/point-build-params.hbs" this}}
+              {{> "systems/sprinter-rpg/templates/apps/point-builder/custom-text.hbs" listKey="selectedBenefits"}}
+              {{/each}}
+            </div>
+          {{/if}}
+        </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <!-- 5. Detriments Catalog -->
+  <section class="cog-builder-section">
+    <div class="cog-section-title">
+      <i class="fa-solid fa-skull"></i> 5. Detriments & Drawbacks
+      <span class="cog-section-badge">Grants Extra Build Points (Standard Cap: +5 BP)</span>
+    </div>
+
+    <div class="cog-accordion-tier detriments">
+      <button type="button" class="cog-accordion-header" id="{{@root.rootId}}-acc-detriments" data-action="toggleAccordion" data-tier="detriments">
+        <span class="cog-chevron"><i class="fa-solid {{#if detrimentsOpen}}fa-chevron-down{{else}}fa-chevron-right{{/if}}"></i></span>
+        <span class="cog-tier-name">{{localize "COG.Content.DetrimentsCatalog"}}</span>
+        <span class="cog-tier-cost-badge">+1 to +3 Extra BP</span>
+      </button>
+      {{#if detrimentsOpen}}
+        <div class="cog-accordion-body">
+          {{#each detrimentTiers}}
+            <div class="cog-subtier-label">{{this.label}} (+{{this.extraPoints}} Extra BP each)</div>
+            {{#each this.items}}
+              <label class="cog-perk-card detriment {{#if this.isSelected}}selected{{/if}}">
+                <input type="checkbox" class="cog-detriment-toggle" name="detriment-{{this.id}}" data-change-action="toggleDetriment" data-id="{{this.id}}" {{#if this.isSelected}}checked{{/if}}>
+                <div class="cog-perk-content">
+                  <div class="cog-perk-header">
+                    <span class="cog-perk-name">{{this.name}}</span>
+                    <span class="cog-perk-cost refund">+{{this.extraPoints}} Extra BP</span>
+                  </div>
+                  <div class="cog-perk-desc">{{this.description}}</div>
+                </div>
+              </label>
+              {{> "systems/sprinter-rpg/templates/apps/partials/point-build-params.hbs" this}}
+              {{> "systems/sprinter-rpg/templates/apps/point-builder/custom-text.hbs" listKey="selectedDetriments"}}
+            {{/each}}
+          {{/each}}
+        </div>
+      {{/if}}
+    </div>
+  </section>
+
+  {{> "systems/sprinter-rpg/templates/apps/point-builder/perk-rows.hbs"}}
+
+  {{> "systems/sprinter-rpg/templates/apps/point-builder/effect-rows.hbs"}}
+</div>

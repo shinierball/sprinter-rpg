@@ -1,0 +1,65 @@
+<div class="cog-manager-header cog-bg-window cog-text-strong" style="padding: 10px 14px; border-bottom: 2px solid var(--cog-accent);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i class="fa-solid fa-wand-magic-sparkles cog-text-danger" style="font-size: 18px;"></i>
+      <span style="font-size: 16px; font-weight: bold; letter-spacing: 0.5px;">SPELL LIBRARY &amp; COMPENDIUM</span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      {{#if actor}}
+        <div class="cog-text-gold" style="font-size: 12px;">
+          Browsing for: <strong>{{actor.name}}</strong>
+        </div>
+      {{/if}}
+      <button type="button" data-action="createCustomSpell" class="btn-create-custom-spell cog-btn cog-bg-magic-fill cog-text-on-fill" style="font-size: 11px; padding: 3px 8px; border: 1px solid var(--cog-ink); border-radius: 3px; cursor: pointer;">
+        <i class="fa-solid fa-plus"></i> Custom Spell
+      </button>
+    </div>
+  </div>
+
+  {{!-- Search and Filters Row --}}
+  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    <div style="flex: 2; position: relative; min-width: 200px;">
+      <input type="text" name="search" data-input-action="setSearch" class="spell-search-input cog-field-input cog-bg-surface cog-text-strong" placeholder="Search spells, damage types, quotes..." value="{{searchQuery}}" style="width: 100%; height: 30px; font-size: 12px; padding-right: 24px;" autofocus />
+      <a class="spell-search-clear cog-text-secondary" data-action="clearSearch" {{#unless searchQuery}}hidden{{/unless}} style="position: absolute; right: 8px; top: 6px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></a>
+    </div>
+
+    <div style="flex: 1; min-width: 130px;">
+      <select name="stat" data-change-action="setStat" class="spell-stat-filter cog-field-input" style="height: 30px; font-size: 12px; width: 100%;">
+        <option value="all" {{#if (eq activeStat 'all')}}selected{{/if}}>Stat: All</option>
+        <option value="int" {{#if (eq activeStat 'int')}}selected{{/if}}>INT (Intelligence)</option>
+        <option value="cha" {{#if (eq activeStat 'cha')}}selected{{/if}}>CHA (Charisma)</option>
+        <option value="str" {{#if (eq activeStat 'str')}}selected{{/if}}>STR (Strength)</option>
+        <option value="dex" {{#if (eq activeStat 'dex')}}selected{{/if}}>DEX (Dexterity)</option>
+        <option value="con" {{#if (eq activeStat 'con')}}selected{{/if}}>CON (Constitution)</option>
+      </select>
+    </div>
+
+    <div style="flex: 1; min-width: 130px;">
+      <select name="damageType" data-change-action="setDamageType" class="spell-damage-filter cog-field-input" style="height: 30px; font-size: 12px; width: 100%;">
+        <option value="all" {{#if (eq activeDamageType 'all')}}selected{{/if}}>Damage: All</option>
+        {{#each damageTypes as |dt|}}
+          <option value="{{dt}}" {{#if (eq ../activeDamageType dt)}}selected{{/if}}>{{dt}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+
+  {{!-- Category Pills --}}
+  <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+    <a data-action="setSpellType" class="spell-type-pill {{#if (eq activeSpellType 'all')}}is-active{{/if}} {{#if (eq activeSpellType 'all')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-type="all" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      All ({{counts.all}})
+    </a>
+    <a data-action="setSpellType" class="spell-type-pill {{#if (eq activeSpellType 'attack')}}is-active{{/if}} {{#if (eq activeSpellType 'attack')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-type="attack" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Attack ({{counts.attack}})
+    </a>
+    <a data-action="setSpellType" class="spell-type-pill {{#if (eq activeSpellType 'heal')}}is-active{{/if}} {{#if (eq activeSpellType 'heal')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-type="heal" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Heal ({{counts.heal}})
+    </a>
+    <a data-action="setSpellType" class="spell-type-pill {{#if (eq activeSpellType 'utility')}}is-active{{/if}} {{#if (eq activeSpellType 'utility')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-type="utility" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Utility ({{counts.utility}})
+    </a>
+    <a data-action="setSpellType" class="spell-type-pill {{#if (eq activeSpellType 'passive')}}is-active{{/if}} {{#if (eq activeSpellType 'passive')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-type="passive" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Passive ({{counts.passive}})
+    </a>
+  </div>
+</div>

@@ -1,0 +1,25 @@
+{{!--
+  One custom perk's Mechanics rows editor: the item sheet's modifier-rows partial and tag pills, run
+  against a PerkRowsHost. Parameter: mechanics = buildPerkMechanics(...). Every `name` is perkRows.<list>.<i>.<key>.<n>.<field>
+  (unique in the window, CONTRIBUTING §5); every other control is an action delegate resolved by the form's data-perk-* attributes.
+--}}
+{{#if mechanics.open}}
+  <form class="cog-perk-rows-form" data-perk-list="{{mechanics.list}}" data-perk-index="{{mechanics.index}}" autocomplete="off" onsubmit="return false">
+    <div class="cog-modifiers">
+      <div class="cog-modifier-hint">{{localize "COG.PointBuilder.MechanicsHint"}}</div>
+      {{#each mechanics.blocks as |block|}}
+        {{> "systems/sprinter-rpg/templates/items/parts/modifier-rows.hbs" block=block tagOptions=../mechanics.tagOptions}}
+      {{/each}}
+      {{#if mechanics.addBar.length}}
+        <div class="cog-modifier-addbar">
+          <span class="cog-field-label">{{localize "COG.Rows.AddRow"}}</span>
+          {{#each mechanics.addBar as |b|}}
+            <a class="cog-modifier-add-chip" data-action="addRow" data-row-table="{{b.arrayKey}}"><i class="fa-solid {{b.icon}}"></i> {{localize b.labelKey}}</a>
+          {{/each}}
+        </div>
+      {{/if}}
+      {{> "systems/sprinter-rpg/templates/items/parts/identity-rows.hbs" identityRows=mechanics.identityRows}}
+      {{> "systems/sprinter-rpg/templates/shared/tag-pills.hbs" tagsData=mechanics.tagsData}}
+    </div>
+  </form>
+{{/if}}

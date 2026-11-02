@@ -1,0 +1,30 @@
+{{!--
+  The shared cooldown / duration editor (src/sheets/item/context-timing.mjs).
+  Parameter: timing = TimingEditorView ({ label, valueName, value, unitName, unit.options, scale, tagOptions, endsWithCombat, readout }).
+  Every input carries a unique `name` built from the stored path; the scale editor is the scalar engine's own partial.
+--}}
+<div class="cog-timing-editor" data-timing="{{timing.use}}">
+  <span class="cog-field-label">{{timing.label}}</span>
+  <div class="cog-field-row" style="gap: 6px; flex-wrap: wrap; align-items: flex-end;">
+    <div class="cog-field-group small">
+      <span class="cog-field-label">{{localize "COG.Timing.Amount"}}</span>
+      <input class="cog-field-input" type="number" min="0" step="any" name="{{timing.valueName}}" value="{{timing.value}}" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.Timing.Unit.Label"}}</span>
+      <select class="cog-field-input" name="{{timing.unitName}}" style="font-size: 11px;">
+        {{#each timing.unit.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+      </select>
+    </div>
+    {{#if timing.endsWithCombat}}
+      <div class="cog-field-group small" style="text-align: center;">
+        <span class="cog-field-label" title="{{localize "COG.Timing.EndsWithCombatHint"}}">{{localize "COG.Timing.EndsWithCombat"}}</span>
+        <label style="display: flex; align-items: center; justify-content: center; height: 24px; cursor: pointer;">
+          <input class="cog-checkbox-lg" type="checkbox" name="{{timing.endsWithCombat.name}}" {{#if timing.endsWithCombat.checked}}checked{{/if}} />
+        </label>
+      </div>
+    {{/if}}
+  </div>
+  {{#if timing.scale}}{{> "systems/sprinter-rpg/templates/items/parts/row-scale-editor.hbs" scale=timing.scale tagOptions=timing.tagOptions}}{{/if}}
+  <div class="cog-modifier-hint cog-text-secondary" style="font-size: 10px;">{{timing.readout}}</div>
+</div>

@@ -1,0 +1,22 @@
+<div class="cog-rapid-import-root cog-rapid-footer cog-text cog-bg-window" style="font-family: 'Oswald', sans-serif; box-sizing: border-box; padding: 0 12px 12px;">
+  {{!-- FOOTER ACTION BAR --}}
+  <footer style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--cog-panel-border); padding-top: 10px;">
+    <div class="cog-text-secondary" style="font-size: 12px;">
+      {{#if hasEvents}}
+        Ready to import <strong class="cog-text-strong">{{totalEvents}}</strong> roll events to <strong>{{sessionTitle}}</strong>.
+      {{else}}
+        No events queued.
+      {{/if}}
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button type="button" data-action="close" class="cog-btn cog-rapid-cancel-btn cog-bg-surface-muted cog-text" style="border: 1px solid var(--cog-panel-border); padding: 6px 14px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 13px; cursor: pointer;">
+        Cancel
+      </button>
+
+      <button type="button" data-action="commit" class="cog-btn cog-rapid-commit-btn cog-bg-accent-fill cog-text-on-fill" {{#unless hasEvents}}disabled{{/unless}} style="border: 1px solid var(--cog-danger-fill); padding: 6px 18px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: bold;">
+        <i class="fa-solid fa-bolt"></i> ⚡ Import All to Session Ledger
+      </button>
+    </div>
+  </footer>
+</div>

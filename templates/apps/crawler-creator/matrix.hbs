@@ -1,0 +1,47 @@
+<section class="cog-creator-section cog-matrix-section">
+  <div class="cog-section-header flexrow">
+    <h3><i class="fa-solid fa-network-wired"></i> LIFE STAGE BACKGROUND MATRIX</h3>
+    <span class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> Choose 1 Background and exactly 2 Skills per stage</span>
+  </div>
+
+  <div class="cog-matrix-grid">
+    {{#each tiers}}
+      <div class="cog-tier-card flexcol {{#if this.isValid}}valid{{else}}invalid{{/if}}">
+        <div class="cog-tier-header flexrow">
+          <span class="tier-name">{{this.label}}</span>
+          <span class="tier-rank-pill">Rank {{this.rank}}</span>
+        </div>
+
+        <div class="cog-tier-select-wrapper">
+          <label class="tier-label">Background:</label>
+          <select class="cog-tier-bg-select" name="creator-bg-{{this.key}}" data-change-action="setTierBackground" data-tier="{{this.key}}" data-prop="tierSelections.{{this.key}}.backgroundId">
+            {{#each this.backgrounds}}
+              <option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="cog-tier-skills-wrapper flexcol">
+          <div class="skills-header flexrow">
+            <span class="skills-label">Skills (Pick 2):</span>
+            <span class="skills-counter {{#if this.isValid}}complete{{else}}incomplete{{/if}}">
+              {{this.selectedCount}} / 2 Selected
+            </span>
+          </div>
+
+          <div class="skills-checkbox-list flexcol">
+            {{#each this.skills}}
+              <label class="cog-skill-pill flexrow {{#if this.checked}}checked{{/if}}">
+                <input type="checkbox" class="cog-skill-checkbox" name="creator-skill-{{../key}}-{{@index}}" data-change-action="toggleSkill" data-tier="{{../key}}" data-skill="{{this.key}}" data-prop-list="tierSelections.{{../key}}.skills" data-value="{{this.key}}" {{#if this.checked}}checked{{/if}} />
+                <span class="skill-name">{{this.name}}</span>
+                <span class="stat-tag stat-{{this.stat}}">{{this.stat}}</span>
+              </label>
+            {{else}}
+              <p class="hint">This species has no backgrounds for this stage. Creating without 2 skills here is a Rule Break.{{#if @root.sourceryImportHint}} {{localize "COG.Content.SourceryImportBackgrounds"}}{{/if}}</p>
+            {{/each}}
+          </div>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+</section>

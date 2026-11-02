@@ -1,0 +1,45 @@
+<div class="cog-hud-content {{#if isCollapsed}}collapsed{{/if}}" data-tooltip="Floor Collapse Timer Clock">
+  {{#if isCollapsed}}
+    <div class="cog-hud-pill-collapsed" style="display: flex; align-items: center; gap: 6px; padding: 3px 8px;">
+      <button type="button" data-action="toggleCollapsed" class="cog-floor-hud-toggle-btn cog-bg-none cog-text-on-fill" title="Floor Timer Clock: {{floorTimerText}} Hours Remaining. Click to expand." style="border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: 'Oswald', sans-serif; font-size: 13px; padding: 0;">
+        <i class="fa-solid fa-hourglass-half fa-spin-pulse cog-text-warning" style="--fa-animation-duration: 4s;"></i>
+        <span class="cog-hud-collapsed-val cog-dark cog-text-warning" style="font-weight: bold;">{{floorTimerShort}}</span>
+      </button>
+    </div>
+  {{else}}
+    <div class="cog-floor-hud-inner">
+      <div class="cog-floor-hud-icon-wrap" title="Floor Collapse Clock">
+        <i class="fa-solid fa-hourglass-half fa-spin-pulse cog-text-warning" style="--fa-animation-duration: 4s; font-size: 15px;"></i>
+      </div>
+      <div class="cog-floor-hud-body">
+        <div class="cog-floor-hud-title">
+          <span class="cog-hud-floor-badge">Floor {{currentFloor}}</span>
+          <span class="cog-hud-label">Collapse Clock</span>
+        </div>
+        <div class="cog-floor-hud-time-row">
+          {{#if isGM}}
+            <button type="button" class="cog-hud-adj-btn" data-action="adjustTimer" data-delta="-5" title="Subtract 5 Hours">-5h</button>
+            <button type="button" class="cog-hud-adj-btn" data-action="adjustTimer" data-delta="-1" title="Subtract 1 Hour">-1h</button>
+            <button type="button" class="cog-hud-adj-btn" data-action="adjustTimer" data-delta="-0.1667" data-seconds="600" title="Let 10 minutes pass">-10m</button>
+            <input type="number" name="floorTimer" data-change-action="setTimer" class="cog-hud-time-input" value="{{floorTimer}}" min="0" title="Edit Floor Timer (Hours). Press Enter to save." />
+            <button type="button" class="cog-hud-adj-btn" data-action="adjustTimer" data-delta="1" title="Add 1 Hour">+1h</button>
+            <button type="button" class="cog-hud-adj-btn" data-action="adjustTimer" data-delta="5" title="Add 5 Hours">+5h</button>
+          {{else}}
+            <span class="cog-hud-time-display">{{floorTimerText}} <small>HRS</small></span>
+          {{/if}}
+        </div>
+        <div class="cog-floor-hud-time-row cog-hud-scene-row" title="A scene is bounded by a combat starting or ending, or the GM's New Scene button.">
+          <span class="cog-hud-label">Scene (combat) {{sceneNumber}} · Dungeon time {{dungeonTime}}</span>
+          {{#if isGM}}
+            <button type="button" class="cog-hud-scene-btn" data-action="newScene" title="Start a new scene: once-per-scene cooldowns come back">New Scene</button>
+          {{/if}}
+        </div>
+      </div>
+      <div class="cog-floor-hud-actions">
+        <button type="button" data-action="toggleCollapsed" class="cog-floor-hud-collapse-btn" title="Minimize Clock HUD">
+          <i class="fa-solid fa-chevron-up"></i>
+        </button>
+      </div>
+    </div>
+  {{/if}}
+</div>

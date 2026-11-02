@@ -1,0 +1,95 @@
+<div class="cog-grind-part cog-grind-party cog-bg-window cog-text-strong" style="padding: 0 12px; font-family: 'Oswald', sans-serif;">
+  {{!-- CRAWLER SUB-TABS (INSPECT & ALLOCATE PER CRAWLER) --}}
+  <div style="display: flex; gap: 4px; margin-bottom: 8px; border-bottom: 2px solid var(--cog-panel-border); padding-bottom: 2px;">
+    {{#each crawlers as |c|}}
+      <button type="button" data-action="selectCrawler" class="crawler-tab-btn {{#if c.isActive}}cog-grind-tab-active{{else}}cog-grind-tab-idle{{/if}}" data-actor-id="{{c.id}}" style="padding: 6px 12px; border-radius: 4px 4px 0 0; border: 1px solid; border-bottom: none; cursor: pointer; font-family: 'Oswald', sans-serif; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+        <img class="cog-bg-icon-box" src="{{c.img}}" style="width: 16px; height: 16px; border-radius: 2px; object-fit: cover;" />
+        <span>{{c.name}}</span>
+        <span class="cog-badge cog-bg-window cog-text-gold" style="font-size: 10px; padding: 1px 4px; border: 1px solid var(--cog-panel-border);">{{c.bankedHours}}h</span>
+      </button>
+    {{/each}}
+  </div>
+
+  {{!-- SKILL TRAINING & HOUR ALLOCATION FOR ACTIVE CRAWLER --}}
+  <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 6px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="cog-text-gold" style="font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+          <i class="fa-solid fa-graduation-cap"></i> {{actor.name}}'s Skills & Advancement
+        </span>
+        <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 8px; border-radius: 3px;">
+          Available Pool: <strong class="cog-text-on-fill" style="font-size: 13px;">{{bankedHours}} hrs</strong>
+        </span>
+      </div>
+      <span class="cog-text-muted" style="font-size: 11px;">
+        Marked <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 1px 4px; font-size: 9px;">CHECKED</span> skills used in play • Hours banked on skills persist across grinds
+      </span>
+    </div>
+
+    {{#if skills.length}}
+      <div class="cog-grind-skill-list" style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
+        {{#each skills as |sk|}}
+          <div data-action="selectSkill" class="grind-skill-option {{#if sk.canAdvance}}cog-grind-skill-ready{{else if sk.isSelected}}cog-grind-skill-selected{{else}}cog-grind-skill-idle{{/if}}" data-skill-id="{{sk.id}}" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 4px; transition: all 0.15s ease;">
+            
+            {{!-- Skill Info --}}
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 170px;">
+              <img class="cog-bg-icon-box" src="{{sk.img}}" style="width: 22px; height: 22px; border-radius: 3px; border: 1px solid var(--cog-panel-border); object-fit: contain;" />
+              <div>
+                <span class="cog-text-strong" style="font-weight: bold; font-size: 13px;">{{sk.name}}</span>
+                <span class="cog-text-secondary" style="font-size: 11px; margin-left: 4px;">({{sk.stat}})</span>
+              </div>
+              {{#if sk.checked}}
+                <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 5px; border-radius: 2px;" title="Used during play! Eligible for progression.">CHECKED</span>
+              {{/if}}
+            </div>
+
+            {{!-- Rank & Target --}}
+            <div style="display: flex; align-items: center; gap: 12px; margin-right: 10px;">
+              <div style="text-align: right; font-size: 11px;">
+                <span class="cog-text-secondary">Current:</span>
+                <strong class="cog-text-strong" style="font-size: 12px;">Rank {{sk.baseRank}}</strong>
+              </div>
+
+              <div style="text-align: right; font-size: 11px; min-width: 75px;">
+                <span class="cog-text-secondary">Target:</span>
+                <strong class="cog-text-strong">d20 &ge; {{sk.target}}</strong>
+              </div>
+            </div>
+
+            {{!-- Banked Progress Bar --}}
+            <div style="display: flex; flex-direction: column; min-width: 120px; gap: 2px; margin-right: 12px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span class="cog-text-secondary">Invested:</span>
+                <strong class="{{#if sk.canAdvance}}cog-text-success{{else}}cog-text-gold{{/if}}">{{sk.investedHours}} / {{sk.requiredHours}} hrs</strong>
+              </div>
+              <div class="cog-bg-window" style="height: 5px; border-radius: 3px; overflow: hidden; border: 1px solid var(--cog-panel-border);">
+                <div class="{{#if sk.canAdvance}}cog-bg-success-fill{{else}}cog-bg-warning-fill{{/if}}" style="width: {{sk.progressPct}}%; height: 100%;"></div>
+              </div>
+            </div>
+
+            {{!-- Allocation Controls --}}
+            <div style="display: flex; align-items: center; gap: 4px; margin-right: 10px;">
+              <button type="button" class="allocate-hours-btn cog-dim-when-disabled cog-bg-surface-strong cog-text-strong" data-skill-id="{{sk.id}}" data-action="allocateHours" data-mode="sub" {{#unless sk.canSubHour}}disabled{{/unless}} style="border: 1px solid var(--cog-panel-border); border-radius: 3px; width: 24px; height: 24px; padding: 0; font-weight: bold; cursor: pointer;" title="Remove 1 hour back to pool">-1</button>
+
+              <button type="button" class="allocate-hours-btn cog-dim-when-disabled cog-bg-success-fill cog-text-on-fill" data-skill-id="{{sk.id}}" data-action="allocateHours" data-mode="add" {{#unless sk.canAddHour}}disabled{{/unless}} style="border: 1px solid var(--cog-success-fill); border-radius: 3px; width: 24px; height: 24px; padding: 0; font-weight: bold; cursor: pointer;" title="Allocate 1 hour from pool">+1</button>
+
+              <button type="button" class="allocate-hours-btn cog-dim-when-disabled cog-bg-info-fill cog-text-on-fill" data-skill-id="{{sk.id}}" data-action="allocateHours" data-mode="max" {{#unless sk.canAddHour}}disabled{{/unless}} style="border: 1px solid var(--cog-info-fill); border-radius: 3px; padding: 2px 6px; font-size: 10px; font-weight: bold; cursor: pointer; height: 24px;" title="Fill to required hours">Fill</button>
+            </div>
+
+            {{!-- Action: Attempt Advancement or Status --}}
+            <div style="min-width: 140px; text-align: right;">
+              <button type="button" data-action="attemptAdvancement" class="attempt-advancement-btn {{#if sk.canAdvance}}cog-bg-grad-success cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-skill-id="{{sk.id}}" {{#unless sk.canAdvance}}title="Needs {{sk.neededHours}} more hrs. Rolling now is a Rule Break."{{/unless}} style="border: 1px solid var(--cog-success-fill); border-radius: 4px; padding: 4px 10px; font-size: 11px; font-weight: bold; cursor: pointer; font-family: 'Oswald', sans-serif; {{#if sk.canAdvance}}box-shadow: 0 0 8px rgba(46, 204, 113, 0.4); {{/if}}text-transform: uppercase;">
+                <i class="fa-solid fa-dice-d20"></i> Advance (d20&ge;{{sk.target}}){{#unless sk.canAdvance}} <span style="font-size: 9px;">needs {{sk.neededHours}} hrs</span>{{/unless}}
+              </button>
+            </div>
+
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="cog-text-muted" style="text-align: center; padding: 16px;">
+        No skills found on this character. Add skills from the Skill Library first.
+      </div>
+    {{/if}}
+  </div>
+</div>

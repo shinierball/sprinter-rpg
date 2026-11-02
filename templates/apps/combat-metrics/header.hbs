@@ -1,0 +1,59 @@
+<div class="cog-metrics-header-bar">
+  <div class="cog-metrics-title-group">
+    <i class="fa-solid fa-trophy cog-trophy-icon"></i>
+    <div>
+      <h2 class="cog-metrics-main-title">
+        COMBAT PERFORMANCE & AI AWARDS
+        {{#if isArchived}}
+          <span class="cog-badge-archived" title="Viewing Permanently Archived Encounter">
+            <i class="fa-solid fa-box-archive"></i> ARCHIVED
+          </span>
+        {{/if}}
+      </h2>
+      <span class="cog-metrics-subtitle">
+        {{#if isArchived}}
+          Post-Battle Analysis & Awarding • {{combatName}} ({{totalRounds}} Rounds • {{dateString}})
+        {{else}}
+          Crawler Performance Analysis • Real Damage Tracking
+        {{/if}}
+      </span>
+    </div>
+  </div>
+
+  <div class="cog-metrics-controls">
+    {{#if allCombats.length}}
+      <div class="cog-metrics-combat-select-wrapper">
+        <label><i class="fa-solid fa-swords"></i> Encounter:</label>
+        <select class="cog-combat-select" name="combatId" data-change-action="selectCombat">
+          {{#if activeCombats.length}}
+            <optgroup label="Active Encounters">
+              {{#each activeCombats}}
+                <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>
+                  ★ {{this.name}} (Round {{this.round}})
+                </option>
+              {{/each}}
+            </optgroup>
+          {{/if}}
+          {{#if archivedCombats.length}}
+            <optgroup label="Archived Battles (History)">
+              {{#each archivedCombats}}
+                <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>
+                  📜 {{this.name}} ({{this.dateString}} • {{this.totalRounds}} Rds)
+                </option>
+              {{/each}}
+            </optgroup>
+          {{/if}}
+        </select>
+      </div>
+    {{/if}}
+
+    {{#if hasCombat}}
+      <button type="button" class="cog-open-archive-btn" data-action="openArchive" title="Open in Combat Archive Dialog with round-by-round timeline">
+        <i class="fa-solid fa-clock-rotate-left"></i> Timeline
+      </button>
+      <button type="button" class="cog-reset-metrics-btn" data-action="resetMetrics" title="Reset all tracked metrics for this encounter">
+        <i class="fa-solid fa-rotate-left"></i> Reset
+      </button>
+    {{/if}}
+  </div>
+</div>

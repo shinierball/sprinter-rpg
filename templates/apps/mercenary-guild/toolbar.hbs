@@ -1,0 +1,35 @@
+<div class="cog-mercenary-guild-app cog-bg-window cog-text cog-guild-toolbar" style="font-family: 'Oswald', sans-serif;{{#if (eq activeTab 'roster')}} padding: 14px 14px 0;{{/if}}">
+    {{#if (eq activeTab 'roster')}}
+      {{!-- Filters & Search Toolbar --}}
+      <div class="cog-bg-window" style="border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+        {{!-- Role Filter Pills --}}
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; margin-right: 4px;">Role:</span>
+          <button type="button" data-action="setRole" class="role-filter-pill {{#if (eq selectedRole 'all')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface cog-text-strong{{/if}}" data-role="all" style="padding: 3px 10px; font-size: 11px; font-weight: bold; border-radius: 12px; cursor: pointer; border: 1px solid var(--cog-panel-border);">
+            All ({{roleCounts.all}})
+          </button>
+          <button type="button" data-action="setRole" class="role-filter-pill {{#if (eq selectedRole 'Tank')}}cog-bg-warning-fill cog-text-on-fill{{else}}cog-bg-surface cog-text-strong{{/if}}" data-role="Tank" style="padding: 3px 10px; font-size: 11px; font-weight: bold; border-radius: 12px; cursor: pointer; border: 1px solid var(--cog-panel-border);">
+            🛡️ Tank ({{roleCounts.Tank}})
+          </button>
+          <button type="button" data-action="setRole" class="role-filter-pill {{#if (eq selectedRole 'DPS')}}cog-bg-danger-fill cog-text-on-fill{{else}}cog-bg-surface cog-text-strong{{/if}}" data-role="DPS" style="padding: 3px 10px; font-size: 11px; font-weight: bold; border-radius: 12px; cursor: pointer; border: 1px solid var(--cog-panel-border);">
+            ⚔️ DPS ({{roleCounts.DPS}})
+          </button>
+          <button type="button" data-action="setRole" class="role-filter-pill {{#if (eq selectedRole 'Healer')}}cog-bg-success-fill cog-text-on-fill{{else}}cog-bg-surface cog-text-strong{{/if}}" data-role="Healer" style="padding: 3px 10px; font-size: 11px; font-weight: bold; border-radius: 12px; cursor: pointer; border: 1px solid var(--cog-panel-border);">
+            ✨ Healer ({{roleCounts.Healer}})
+          </button>
+          <button type="button" data-action="setRole" class="role-filter-pill {{#if (eq selectedRole 'Support')}}cog-bg-magic-fill cog-text-on-fill{{else}}cog-bg-surface cog-text-strong{{/if}}" data-role="Support" style="padding: 3px 10px; font-size: 11px; font-weight: bold; border-radius: 12px; cursor: pointer; border: 1px solid var(--cog-panel-border);">
+            📜 Support ({{roleCounts.Support}})
+          </button>
+          <button type="button" data-action="setRole" class="role-filter-pill {{#if (eq selectedRole 'Scout')}}cog-bg-info-fill cog-text-on-fill{{else}}cog-bg-surface cog-text-strong{{/if}}" data-role="Scout" style="padding: 3px 10px; font-size: 11px; font-weight: bold; border-radius: 12px; cursor: pointer; border: 1px solid var(--cog-panel-border);">
+            🎯 Scout ({{roleCounts.Scout}})
+          </button>
+        </div>
+
+        {{!-- Search --}}
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="text" name="search" data-input-action="setSearch" class="guild-search-input cog-bg-window cog-text-strong" value="{{searchQuery}}" placeholder="Search retainers..." style="border: 1px solid var(--cog-panel-border); padding: 4px 10px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 12px; width: 170px;" />
+        </div>
+      </div>
+
+    {{/if}}
+</div>

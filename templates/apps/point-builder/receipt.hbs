@@ -1,0 +1,98 @@
+<div class="cog-studio-sidebar">
+  <div class="cog-sticky-receipt">
+    <!-- Live Point Gauge Card -->
+    <div class="cog-receipt-header-card">
+      <div class="cog-gauge-title">POINT BUILD LEDGER</div>
+      <div class="cog-gauge-numbers">
+        <span class="cog-spent-num">{{ledger.pointsSpent}}</span>
+        <span class="cog-gauge-divider">/</span>
+        <span class="cog-budget-num">{{ledger.effectiveBudget}}</span>
+        <span class="cog-bp-label">BP</span>
+      </div>
+
+      <!-- Legality / Soft Limit Status Badge -->
+      <div class="cog-legality-badge {{#if ledger.isLegal}}legal{{else}}overbudget{{/if}}">
+        {{#if ledger.isLegal}}
+          <i class="fa-solid fa-circle-check"></i> LEGAL BUILD ({{ledger.balance}} BP Left)
+        {{else}}
+          <i class="fa-solid fa-triangle-exclamation"></i> OVER BUDGET (+{{ledger.overbudgetAmount}} BP)
+          <div class="cog-soft-hint">Soft limit: Not enforced (GM permitted)</div>
+        {{/if}}
+      </div>
+
+      <!-- Budget Breakdown Row -->
+      <div class="cog-budget-breakdown">
+        <div class="cog-breakdown-col">
+          <span class="cog-b-lbl">Base</span>
+          <span class="cog-b-val">{{ledger.baseBudget}}</span>
+        </div>
+        <div class="cog-breakdown-col">
+          <span class="cog-b-lbl">Detriments</span>
+          <span class="cog-b-val positive">+{{ledger.extraPoints}}</span>
+        </div>
+        <div class="cog-breakdown-col">
+          <span class="cog-b-lbl">Target</span>
+          <span class="cog-b-val">{{ledger.effectiveBudget}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Itemized Receipt Card -->
+    <div class="cog-receipt-items-card">
+      <div class="cog-items-title"><i class="fa-solid fa-receipt"></i> Itemized Point Contributions</div>
+      <div class="cog-receipt-list">
+        {{#if ledger.receiptItems.length}}
+          {{#each ledger.receiptItems}}
+            <div class="cog-receipt-row {{#if this.isExtra}}extra-point{{/if}}">
+              <span class="cog-r-label">{{this.label}}</span>
+              {{#if this.isExtra}}
+                <span class="cog-r-cost refund">+{{this.extraPoints}} Extra BP</span>
+              {{else if this.isPenalty}}
+                <span class="cog-r-cost">penalty</span>
+              {{else}}
+                <span class="cog-r-cost">+{{this.cost}} BP</span>
+              {{/if}}
+            </div>
+          {{/each}}
+        {{else}}
+          <div class="cog-receipt-empty">No attributes or perks added yet.</div>
+        {{/if}}
+      </div>
+    </div>
+
+    <!-- Crawler Sheet Direct Application -->
+    {{#if crawlers.length}}
+      <div class="cog-target-crawler-card">
+        <label><i class="fa-solid fa-person-running"></i> Apply to World Crawler:</label>
+        <select class="cog-target-crawler-select" name="targetCrawler" data-change-action="setTargetCrawler">
+          <option value="">-- Choose Crawler --</option>
+          {{#each crawlers}}
+            <option value="{{this.id}}" {{#if this.isSelected}}selected{{/if}}>{{this.name}}</option>
+          {{/each}}
+        </select>
+      </div>
+    {{/if}}
+
+    <!-- Action Buttons -->
+    <div class="cog-receipt-actions">
+      <button type="button" class="cog-btn cog-save-{{builderType}}-btn" data-action="saveItem" title="Create {{builderType}} item in Foundry Items directory">
+        <i class="fa-solid fa-floppy-disk"></i> Save as {{#if (eq builderType 'race')}}Race{{else}}Class{{/if}} Item
+      </button>
+
+      {{#if crawlers.length}}
+        <button type="button" class="cog-btn cog-apply-crawler-btn" data-action="applyToCrawler" title="Embed {{builderType}} and apply stat bonuses to crawler">
+          <i class="fa-solid fa-bolt"></i> Apply to Crawler
+        </button>
+      {{/if}}
+
+      <button type="button" class="cog-btn cog-export-json-btn" data-action="exportJson" title="Download JSON build specification">
+        <i class="fa-solid fa-file-export"></i> Export JSON
+      </button>
+
+      <button type="button" class="cog-btn cog-import-json-btn" data-action="importJson" title="Load a JSON build specification exported from this studio">
+        <i class="fa-solid fa-file-import"></i> Import JSON
+      </button>
+      <input type="file" class="cog-import-json-input" accept=".json,application/json" data-change-action="importJsonFile" hidden />
+    </div>
+  </div>
+</div>

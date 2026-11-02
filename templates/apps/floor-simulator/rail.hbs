@@ -1,0 +1,17 @@
+<nav class="cog-fsim-rail" aria-label="{{localize 'COG.FloorSim.Rail.Label'}}">
+  {{#unless empty}}
+    <ol class="cog-fsim-steps">
+      {{#each steps}}
+        <li>
+          <button type="button" class="cog-fsim-step {{status}}{{#if active}} active{{/if}}" data-action="goStep" data-step="{{id}}">
+            <span class="cog-fsim-step-mark">{{#if (eq status 'done')}}<i class="fa-solid fa-check"></i>{{else}}<i class="fa-regular fa-circle"></i>{{/if}}</span>
+            <span class="cog-fsim-step-label">{{localize labelKey}}</span>
+            {{#if breaks}}<span class="cog-fsim-badge break">{{localize 'COG.FloorSim.RuleBreakBadge'}}</span>{{/if}}
+            {{#if openDice}}<span class="cog-fsim-dice-count" title="{{localize 'COG.FloorSim.Rail.OpenDice'}}">{{openDice}}</span>{{/if}}
+          </button>
+        </li>
+      {{/each}}
+    </ol>
+    {{#if followNote}}<p class="cog-fsim-note">{{localize 'COG.FloorSim.Rail.FollowNote'}}</p>{{/if}}
+  {{/unless}}
+</nav>

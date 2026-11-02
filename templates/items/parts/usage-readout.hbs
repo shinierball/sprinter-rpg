@@ -1,0 +1,15 @@
+{{#if usageReadout}}
+<div class="cog-usage-readout cog-text-muted" style="font-size: 11px; margin: 2px 0 6px 0;" title="Set by a usage tag on the Tags tab: usage.reusable, usage.rechargeable or usage.consumable.">
+  {{#unless usageReadout.isJunk}}<strong>Use:</strong> {{usageReadout.label}}{{/unless}}
+  {{#if usageReadout.conflict}}<span class="cog-text-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{usageReadout.warning}}</span>{{/if}}
+  {{#if usageReadout.showUsedInto}}
+  <label style="margin-left: 10px;">
+    <strong>When used up, leaves:</strong>
+    <select class="cog-field-input" name="system.usedInto" style="font-size: 11px; width: auto;">
+      {{#each usedIntoOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+    </select>
+  </label>
+  {{/if}}
+  {{#if usedFromLabel}}<div><strong>Was:</strong> {{usedFromLabel}}</div>{{/if}}
+</div>
+{{/if}}

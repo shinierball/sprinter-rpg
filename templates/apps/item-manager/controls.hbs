@@ -1,0 +1,71 @@
+<div class="cog-manager-header cog-bg-window cog-text-strong" style="padding: 10px 14px; border-bottom: 2px solid var(--cog-accent);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i class="fa-solid fa-shield-halved cog-text-danger" style="font-size: 18px;"></i>
+      <span style="font-size: 16px; font-weight: bold; letter-spacing: 0.5px;">ITEM &amp; EQUIPMENT LIBRARY</span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      {{#if actor}}
+        <div class="cog-text-gold" style="font-size: 12px;">
+          Crawler: <strong>{{actor.name}}</strong>
+        </div>
+      {{/if}}
+      <button type="button" data-action="createCustomGear" class="btn-create-custom-gear cog-btn cog-bg-accent-fill cog-text-on-fill" style="font-size: 11px; padding: 3px 8px; border: 1px solid var(--cog-ink); border-radius: 3px; cursor: pointer;">
+        <i class="fa-solid fa-plus"></i> Custom Gear
+      </button>
+      <button type="button" data-action="createCustomLoot" class="btn-create-custom-loot cog-btn cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 3px 8px; border: 1px solid var(--cog-ink); border-radius: 3px; cursor: pointer;">
+        <i class="fa-solid fa-plus"></i> Custom Item
+      </button>
+    </div>
+  </div>
+
+  {{!-- Search and Slot Filter Row --}}
+  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    <div style="flex: 2; position: relative; min-width: 220px;">
+      <input type="text" name="search" data-input-action="setSearch" class="item-search-input cog-field-input cog-bg-surface cog-text-strong" placeholder="Search gear, weapons, potions, wands, scrolls, notes..." value="{{searchQuery}}" style="width: 100%; height: 30px; font-size: 12px; padding-right: 24px;" autofocus />
+      <a class="item-search-clear cog-text-secondary" data-action="clearSearch" {{#unless searchQuery}}hidden{{/unless}} style="position: absolute; right: 8px; top: 6px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></a>
+    </div>
+
+    <div style="flex: 1; min-width: 150px;">
+      <select name="slot" data-change-action="setSlot" class="item-slot-filter cog-field-input" style="height: 30px; font-size: 12px; width: 100%;">
+        {{#each slots as |slot|}}
+          <option value="{{slot.key}}" {{#if (eq ../activeSlot slot.key)}}selected{{/if}}>{{slot.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+
+  {{!-- Category Pills --}}
+  <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'all')}}is-active{{/if}} {{#if (eq activeCategory 'all')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="all" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      All ({{counts.all}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'gear')}}is-active{{/if}} {{#if (eq activeCategory 'gear')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="gear" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      All Gear ({{counts.gear}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'weapons')}}is-active{{/if}} {{#if (eq activeCategory 'weapons')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="weapons" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Weapons ({{counts.weapons}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'armor')}}is-active{{/if}} {{#if (eq activeCategory 'armor')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="armor" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Armor ({{counts.armor}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'accessories')}}is-active{{/if}} {{#if (eq activeCategory 'accessories')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="accessories" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Accessories ({{counts.accessories}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'loot')}}is-active{{/if}} {{#if (eq activeCategory 'loot')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="loot" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      All Items ({{counts.loot}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'consumables')}}is-active{{/if}} {{#if (eq activeCategory 'consumables')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="consumables" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Potions / Consumables ({{counts.consumables}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'scrolls')}}is-active{{/if}} {{#if (eq activeCategory 'scrolls')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="scrolls" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Scrolls ({{counts.scrolls}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'wands')}}is-active{{/if}} {{#if (eq activeCategory 'wands')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="wands" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Wands ({{counts.wands}})
+    </a>
+    <a data-action="setCategory" class="item-category-pill {{#if (eq activeCategory 'lottery')}}is-active{{/if}} {{#if (eq activeCategory 'lottery')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-category="lottery" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Lottery ({{counts.lottery}})
+    </a>
+  </div>
+</div>

@@ -1,0 +1,11 @@
+{
+  "book": "atlas",
+  "entries": [
+    {"id":"t-atlas-1","anchor":{"kind":"table","number":1},"pageHint":10},
+    {"id":"t-atlas-2","anchor":{"kind":"table","number":2},"pageHint":30},
+    {"id":"t-atlas-3","anchor":{"kind":"table","number":3},"pageHint":30},
+    {"id":"t-atlas-4","anchor":{"kind":"table","number":4},"pageHint":30},
+    {"id":"t-atlas-5","anchor":{"kind":"table","number":5},"pageHint":31},
+    {"id":"t-atlas-6","anchor":{"kind":"table","number":6},"pageHint":31}
+  ]
+}

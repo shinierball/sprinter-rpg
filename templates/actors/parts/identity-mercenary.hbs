@@ -1,0 +1,108 @@
+      <div class="cog-field-row">
+        <div class="cog-field-group flex-2">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="cog-field-label">Name</span>
+            {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
+          </div>
+          <input class="cog-field-input" name="name" type="text" value="{{actor.name}}" placeholder="Mercenary Name" />
+        </div>
+        <div class="cog-field-group flex-2">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="cog-field-label">Race / Ancestry</span>
+          </div>
+          <select class="cog-field-input" data-change-action="selectRace" title="Select Mercenary Race">
+            <option value="" {{#unless system.details.race}}selected{{/unless}}>-- None / Select Race --</option>
+            {{#if hasCustomRace}}
+              <option value="{{system.details.race}}" selected>{{currentRaceLabel}} (Custom)</option>
+            {{/if}}
+            {{#each raceOptions as |group|}}
+              <optgroup label="{{group.label}}">
+                {{#each group.options as |opt|}}
+                  <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                {{/each}}
+              </optgroup>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group flex-2">
+          <span class="cog-field-label">Class / Archetype</span>
+          <input class="cog-field-input cog-merc-class-input" type="text" name="system.details.class" value="{{system.details.class}}" placeholder="e.g. Bruiser, Warmage" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Role</span>
+          <select class="cog-field-input" name="system.details.role">
+            {{#each roleOptions as |r|}}
+              <option value="{{r.value}}" {{#if r.selected}}selected{{/if}}>{{r.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">Level</span>
+          <input class="cog-field-input" name="system.details.level" type="number" value="{{system.details.level}}" placeholder="1" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Daily Rate</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <input class="cog-field-input" name="system.details.dailyRate" type="number" value="{{system.details.dailyRate}}" placeholder="25" />
+            <span class="cog-text-warning" style="font-size: 11px; font-weight: bold;">GP/Day</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cog-field-row cog-bg-danger-tint" style="border: 1px solid var(--cog-danger-border); border-radius: 4px; padding: 6px 8px; margin-top: 4px; margin-bottom: 6px; align-items: center;">
+        <div class="cog-field-group flex-2">
+          <span class="cog-field-label">Contract Status</span>
+          <div style="display: flex; align-items: center; gap: 6px; height: 26px;">
+            {{#if isHired}}
+              <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">
+                <i class="fa-solid fa-file-contract"></i> ACTIVE ({{contractDays}} Days Left)
+              </span>
+              {{#if hasDiscount}}
+                <span class="cog-text-success" style="font-size: 10px; font-weight: bold;" title="Barracks Lodging Discount">(-{{discountPct}}% Barracks: {{effectiveDailyRate}} GP)</span>
+              {{/if}}
+            {{else}}
+              <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; letter-spacing: 0.5px;">
+                <i class="fa-solid fa-handshake"></i> AVAILABLE FOR HIRE
+              </span>
+            {{/if}}
+            <button type="button" class="cog-btn-xs cog-open-guild-btn cog-bg-accent-fill cog-text-on-fill" data-action="mercOpenGuild" style="padding: 2px 8px; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; cursor: pointer; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+              <i class="fa-solid fa-users"></i> Mercenary Guild
+            </button>
+          </div>
+        </div>
+
+        <div class="cog-field-group flex-2">
+          <span class="cog-field-label">Linked Employers</span>
+          <div style="display: flex; align-items: center; gap: 6px; height: 26px; flex-wrap: wrap;">
+            {{#each employers as |emp|}}
+              <span class="cog-bg-surface cog-text-strong" style="display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 1px 6px; font-size: 11px;">
+                <i class="fa-solid fa-user-check cog-text-success"></i> {{emp.name}}
+                <a class="cog-open-employer-btn cog-text-info" data-action="mercOpenEmployer" data-employer-id="{{emp.id}}" title="Open Crawler Sheet" style="cursor: pointer;"><i class="fa-solid fa-external-link"></i></a>
+                <a class="cog-unlink-employer-btn cog-text-danger" data-action="mercUnlinkEmployer" data-employer-id="{{emp.id}}" title="Unlink Crawler" style="cursor: pointer;"><i class="fa-solid fa-xmark"></i></a>
+              </span>
+            {{else}}
+              <span class="cog-text-secondary" style="font-style: italic; font-size: 11px;">Freelancer (No Employers)</span>
+            {{/each}}
+          </div>
+        </div>
+
+        <div class="cog-field-group flex-2">
+          <span class="cog-field-label">Safe Room / Barracks</span>
+          <div style="display: flex; align-items: center; gap: 6px; height: 26px;">
+            {{#if housedSpace}}
+              <span class="cog-text-magic" style="font-size: 11px; font-weight: bold;"><i class="fa-solid fa-bed"></i> Housed in {{housedSpace.name}} (Tier {{housedSpace.tier}})</span>
+            {{else}}
+              <span class="cog-text-secondary" style="font-style: italic; font-size: 11px;"><i class="fa-solid fa-campground"></i> Field Deployed / Unhoused</span>
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Floor</span>
+          <select class="cog-field-input" name="system.details.floor">
+            {{#each floorOptions as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>

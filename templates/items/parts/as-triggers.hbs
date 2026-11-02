@@ -1,0 +1,52 @@
+{{!-- AMAZING SUCCESS (AS) TRIGGER (E6.9): debuff / narrative entries; extra damage is a damage row conditioned on Amazing Success. --}}
+<details class="cog-collapsible-block" {{#if asTriggers.count}}open{{/if}}>
+  <summary class="cog-collapsible-summary cog-bg-accent-strong-fill">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-burst"></i> {{localize "COG.AmazingSuccess.Editor.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if asTriggers.count}}active{{/if}}">{{asTriggers.badge}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <p class="cog-text-secondary" style="font-size: 11px; margin: 0 0 6px;">{{localize "COG.AmazingSuccess.Editor.Hint"}}</p>
+    {{#if asTriggers.overLimit}}
+      <div style="margin-bottom: 6px;"><span class="cog-badge cog-badge-rule-break" title="{{localize 'COG.AmazingSuccess.Editor.OverLimit'}}">[RULE BREAK]</span></div>
+    {{/if}}
+    {{#each asTriggers.rows as |row|}}
+      <div class="cog-field-row" style="margin-bottom: 4px; font-size: 11px;">
+        <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.DamageRow"}}</span>
+        <span>{{row.label}} {{row.summary}}</span>
+      </div>
+    {{/each}}
+    {{#each asTriggers.entries as |entry|}}
+      <div class="cog-field-row" style="margin-bottom: 6px; align-items: flex-end;">
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.TypeLabel"}}</span>
+          <select name="system.asTriggers.{{entry.index}}.type" class="cog-field-input">
+            {{#each entry.typeOptions as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" {{#unless entry.isDebuff}}hidden{{/unless}}>
+          <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.DebuffLabel"}}</span>
+          <select name="system.asTriggers.{{entry.index}}.identifier" class="cog-field-input">
+            {{#each entry.debuffOptions as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" {{#unless entry.isNarrative}}hidden{{/unless}}>
+          <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.TextLabel"}}</span>
+          <input class="cog-field-input" type="text" name="system.asTriggers.{{entry.index}}.text" value="{{entry.text}}" maxlength="500" placeholder="{{localize 'COG.AmazingSuccess.Editor.TextPlaceholder'}}" />
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.NameLabel"}}</span>
+          <input class="cog-field-input" type="text" name="system.asTriggers.{{entry.index}}.label" value="{{entry.label}}" placeholder="{{localize 'COG.AmazingSuccess.Editor.NamePlaceholder'}}" />
+        </div>
+        {{#if entry.ruleBreak}}<span class="cog-badge cog-badge-rule-break">[RULE BREAK]</span>{{/if}}
+        <a class="cog-text-accent" data-action="removeAsTrigger" data-index="{{entry.index}}" data-tooltip="{{localize 'COG.AmazingSuccess.Editor.Remove'}}" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+      </div>
+    {{/each}}
+    <button type="button" class="cog-btn cog-bg-accent-strong-fill cog-text-on-fill" data-action="addAsTrigger" style="font-size: 11px; padding: 3px 6px; border: 1px solid var(--cog-ink); border-radius: 3px; cursor: pointer;">
+      <i class="fa-solid fa-plus"></i> {{localize "COG.AmazingSuccess.Editor.Add"}}
+    </button>
+  </div>
+</details>

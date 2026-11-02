@@ -1,0 +1,48 @@
+<section class="cog-creator-section cog-summary-tray">
+  {{#if warnings.length}}
+    <div class="cog-duplicate-warnings-box flexcol">
+      <div class="warnings-header flexrow">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <strong>NON-ADDITIVE SKILL DUPLICATION WARNING</strong>
+      </div>
+      <ul class="warnings-list">
+        {{#each warnings}}
+          <li>{{this}}</li>
+        {{/each}}
+      </ul>
+    </div>
+  {{/if}}
+
+  <div class="cog-resolved-skills-box">
+    <span class="resolved-header"><i class="fa-solid fa-list-check"></i> Final Crawler Skills &amp; Loadout:</span>
+    <div class="cog-resolved-pills-wrap flexrow">
+      <span class="resolved-pill inherent">
+        <i class="fa-solid fa-star"></i> {{speciesData.inherentSkill.name}} [Rank {{speciesData.inherentSkill.rank}}]
+      </span>
+      <span class="resolved-pill hp-pill" title="Starting Health: {{startingHp}} / {{startingHp}} (Current and Max Health equal)">
+        <i class="fa-solid fa-heart"></i> HP: {{startingHp}} / {{startingHp}}
+      </span>
+      <span class="resolved-pill mana-pill" title="Starting Mana: {{startingMana}} / {{startingMana}} (Current and Max Mana equal)">
+        <i class="fa-solid fa-bolt"></i> Mana: {{startingMana}} / {{startingMana}}
+      </span>
+      <span class="resolved-pill spell-pill">
+        <i class="fa-solid fa-hand-holding-heart"></i> Heal [Rank 1]
+      </span>
+      {{#if isStarterSpell}}
+        <span class="resolved-pill spell-pill">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> {{starterSpellName}} [Rank 3]
+        </span>
+        <span class="resolved-pill potion-pill">
+          <i class="fa-solid fa-flask"></i> {{starterPotionCount}}x {{starterPotion.name}}
+        </span>
+      {{/if}}
+      {{#each resolvedSkills}}
+        {{#unless (eq this.name ../speciesData.inherentSkill.name)}}
+          <span class="resolved-pill {{#if this.isStarter}}starter-skill{{/if}}">
+            {{this.name}} [Rank {{this.rank}}] <small>({{upper this.stat}})</small>
+          </span>
+        {{/unless}}
+      {{/each}}
+    </div>
+  </div>
+</section>

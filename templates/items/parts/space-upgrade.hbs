@@ -1,0 +1,109 @@
+<section class="cog-item-body cog-item-body-space-upgrade">
+  <div class="cog-field-row">
+    <div class="cog-field-group flex-1">
+      <span class="cog-field-label">Tier</span>
+      <input class="cog-field-input" type="number" min="1" step="1" name="system.tier" value="{{system.tier}}" />
+    </div>
+    <div class="cog-field-group flex-1">
+      <span class="cog-field-label">Cost (gold)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.cost" value="{{system.cost}}" />
+    </div>
+    <div class="cog-field-group flex-1">
+      <label class="cog-field-label">
+        <input type="checkbox" name="system.purchased" {{#if system.purchased}}checked{{/if}} />
+        Installed (counts toward the space)
+      </label>
+    </div>
+  </div>
+
+  <div class="cog-field-group">
+    <span class="cog-field-label">Description</span>
+    <textarea class="cog-field-input" name="system.description" rows="3">{{system.description}}</textarea>
+  </div>
+
+  <details class="cog-collapsible-block" open>
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-warehouse"></i> SPACE BONUSES</span>
+    </summary>
+    <div class="cog-collapsible-content">
+      <div class="cog-field-row">
+        {{#each bonusFields as |f|}}
+          <div class="cog-field-group flex-1">
+            <span class="cog-field-label">{{f.label}}</span>
+            <input class="cog-field-input" type="number" step="1" min="{{f.min}}" name="{{f.path}}" value="{{f.value}}" />
+          </div>
+        {{/each}}
+      </div>
+      <div class="cog-field-group">
+        <label class="cog-field-label">
+          <input type="checkbox" name="system.bonuses.removesInjuriesOnRest" {{#if system.bonuses.removesInjuriesOnRest}}checked{{/if}} />
+          Removes minor injuries on rest
+        </label>
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">Granted Buffs (comma separated)</span>
+        <input class="cog-field-input" type="text" name="system.bonuses.buffs" value="{{bonusBuffsString}}" />
+      </div>
+    </div>
+  </details>
+
+  <details class="cog-collapsible-block" {{#if hasTrainingConfigured}}open{{/if}}>
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-dumbbell"></i> TRAINING ROOM</span>
+      <span class="cog-toggle-indicator {{#if hasTrainingConfigured}}active{{/if}}">{{#if hasTrainingConfigured}}[TRAINING ROOM]{{else}}[CLICK TO CONFIGURE]{{/if}}</span>
+    </summary>
+    <div class="cog-collapsible-content">
+      <div class="cog-field-group">
+        <label class="cog-field-label">
+          <input type="checkbox" name="system.training.enabled" {{#if system.training.enabled}}checked{{/if}} />
+          This upgrade is a training room
+        </label>
+      </div>
+      <div class="cog-field-row">
+        {{#each trainingFields as |f|}}
+          <div class="cog-field-group flex-1">
+            <span class="cog-field-label">{{f.label}}</span>
+            <input class="cog-field-input" type="number" step="1" min="{{f.min}}" name="{{f.path}}" value="{{f.value}}" />
+          </div>
+        {{/each}}
+      </div>
+      <div class="cog-field-group">
+        <label class="cog-field-label">
+          <input type="checkbox" name="system.training.advantage" {{#if system.training.advantage}}checked{{/if}} />
+          Advantage on training rolls
+        </label>
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">Trainable skills (by tag; empty allows any)</span>
+        {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=trainingSkillQuery tagOptions=techniqueTagOptions}}
+      </div>
+    </div>
+  </details>
+
+  <details class="cog-collapsible-block" {{#if hasCraftingConfigured}}open{{/if}}>
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-hammer"></i> CRAFTING TABLE</span>
+      <span class="cog-toggle-indicator {{#if hasCraftingConfigured}}active{{/if}}">{{#if hasCraftingConfigured}}[CRAFTING TABLE]{{else}}[CLICK TO CONFIGURE]{{/if}}</span>
+    </summary>
+    <div class="cog-collapsible-content">
+      <div class="cog-field-group">
+        <label class="cog-field-label">
+          <input type="checkbox" name="system.craftingTable.enabled" {{#if system.craftingTable.enabled}}checked{{/if}} />
+          This upgrade is a crafting table
+        </label>
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">Table Type Tag</span>
+        <input class="cog-field-input" type="text" name="system.craftingTable.tableTypeTag" value="{{system.craftingTable.tableTypeTag}}" placeholder="crafting.table.alchemist" />
+      </div>
+      <div class="cog-field-row">
+        {{#each craftingFields as |f|}}
+          <div class="cog-field-group flex-1">
+            <span class="cog-field-label">{{f.label}}</span>
+            <input class="cog-field-input" type="number" step="1" min="{{f.min}}" name="{{f.path}}" value="{{f.value}}" />
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  </details>
+</section>

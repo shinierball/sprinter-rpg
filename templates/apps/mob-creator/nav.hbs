@@ -1,0 +1,26 @@
+<nav class="sheet-tabs tabs creator-nav flexrow" data-group="primary">
+  <a class="item tab-btn {{#if (eq activeTab 'identity')}}active{{/if}}" data-action="setTab" data-tab="identity">
+    <i class="fa-solid fa-id-card"></i> Identity &amp; Tier
+  </a>
+  <a class="item tab-btn {{#if (eq activeTab 'stats')}}active{{/if}}" data-action="setTab" data-tab="stats">
+    <i class="fa-solid fa-dumbbell"></i> Stats &amp; Budget
+  </a>
+  <a class="item tab-btn {{#if (eq activeTab 'defenses')}}active{{/if}}" data-action="setTab" data-tab="defenses">
+    <i class="fa-solid fa-shield-halved"></i> Defenses &amp; Bars
+  </a>
+  <a class="item tab-btn {{#if (eq activeTab 'attacks')}}active{{/if}}" data-action="setTab" data-tab="attacks">
+    <i class="fa-solid fa-burst"></i> Attacks ({{state.attacks.length}})
+  </a>
+  <a class="item tab-btn {{#if (eq activeTab 'traits')}}active{{/if}}" data-action="setTab" data-tab="traits">
+    <i class="fa-solid fa-dna"></i> Traits ({{state.traits.length}})
+  </a>
+  <a class="item tab-btn {{#if (eq activeTab 'spells')}}active{{/if}}" data-action="setTab" data-tab="spells">
+    <i class="fa-solid fa-wand-sparkles"></i> Spells ({{state.spells.length}})
+  </a>
+  <a class="item tab-btn {{#if (eq activeTab 'loot')}}active{{/if}}" data-action="setTab" data-tab="loot">
+    <i class="fa-solid fa-book-skull"></i> Lore &amp; Loot ({{state.loot.length}})
+  </a>
+  <a class="item tab-btn {{#if (eq activeTab 'preview')}}active{{/if}}" data-action="setTab" data-tab="preview">
+    <i class="fa-solid fa-eye"></i> Stat Block Preview
+  </a>
+</nav>

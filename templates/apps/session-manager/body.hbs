@@ -1,0 +1,434 @@
+<div class="cog-session-body">
+  {{!-- TAB 1: PARTY OVERVIEW --}}
+  {{#if (eq activeTab 'party')}}
+    <div class="cog-party-tab-content">
+      <div class="cog-tab-banner">
+        <div class="cog-banner-stats">
+          <span><strong class="cog-text-strong">{{session.title}}</strong> ({{#if isActiveSession}}<span class="cog-text-success">Active</span>{{else}}<span class="cog-text-muted">Archived</span>{{/if}})</span>
+          <span>Total Dmg Dealt: <strong class="cog-text-danger">{{session.summary.totalDamageDealt}}</strong></span>
+          <span>Total Dmg Taken: <strong class="cog-text-warning">{{session.summary.totalDamageTaken}}</strong></span>
+          <span>Kills: <strong class="cog-text-strong">{{session.summary.totalKills}}</strong></span>
+          <span>Untrained Checks: <strong class="cog-text-gold">{{session.summary.totalUntrainedAttempts}}</strong></span>
+        </div>
+      </div>
+
+      {{!-- Party & Roster Filter Toolbar --}}
+      <div class="cog-party-filter-toolbar">
+        <div class="cog-toolbar-group">
+          <label for="cog-filter-party"><i class="fa-solid fa-shield-halved"></i> Party:</label>
+          <select data-change-action="selectParty" id="cog-filter-party" class="cog-select-toolbar">
+            {{#each partyOptions}}
+              <option value="{{this.key}}" {{#if (eq ../filterParty this.key)}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+          <button data-action="createParty" type="button" class="cog-btn cog-btn-primary cog-create-party-btn" title="Create or Define a Named Party">
+            <i class="fa-solid fa-plus"></i> New Party
+          </button>
+        </div>
+
+        <div class="cog-toolbar-group cog-toggle-segment">
+          <button data-action="setTrackedOnly" type="button" class="cog-btn-tracked-toggle {{#if trackedOnly}}active{{/if}}" data-tracked-only="true" title="Show only tracked crawlers">
+            <i class="fa-solid fa-users"></i> Tracked Only ({{trackedCount}})
+          </button>
+          <button data-action="setTrackedOnly" type="button" class="cog-btn-tracked-toggle {{#unless trackedOnly}}active{{/unless}}" data-tracked-only="false" title="Show all world crawlers">
+            <i class="fa-solid fa-globe"></i> All Crawlers ({{allWorldCrawlersCount}})
+          </button>
+        </div>
+
+        <div class="cog-toolbar-group">
+          <button data-action="manageRoster" type="button" class="cog-btn cog-btn-secondary cog-manage-roster-btn" title="Open Party Roster Manager">
+            <i class="fa-solid fa-users-gear"></i> Manage Roster
+          </button>
+        </div>
+      </div>
+
+      {{> "systems/sprinter-rpg/templates/apps/partials/advancement-controls.hbs" advancementControls}}
+
+      <div class="cog-party-grid">
+        {{#if crawlersList.length}}
+        {{#each crawlersList}}
+          <div data-action="toggleCrawlerFilter" class="cog-crawler-card {{#if this.isSelected}}selected{{/if}} {{#unless this.isTracked}}untracked{{/unless}}" data-actor-id="{{this.actorId}}">
+            <div data-action="toggleCrawlerFilter" class="cog-crawler-card-header">
+              <img class="cog-crawler-avatar" src="{{this.img}}" alt="{{this.name}}" />
+              <div class="cog-crawler-identity">
+                <div class="cog-crawler-name-row">
+                  <h3 class="cog-crawler-name">{{this.name}}</h3>
+                  {{#if ../advancementControls.isGM}}
+                    <button data-action="awardLevels" type="button" class="cog-btn-toggle-track" data-actor-id="{{this.actorId}}" title="Award Levels to this crawler"><i class="fa-solid fa-arrow-up-right-dots"></i> Award</button>
+                  {{/if}}
+                  <button data-action="toggleTrack" type="button" class="cog-btn-toggle-track {{#if this.isTracked}}tracked{{else}}untracked{{/if}}" data-actor-id="{{this.actorId}}" title="{{#if this.isTracked}}Click to remove from tracked party{{else}}Click to add to tracked party{{/if}}">
+                    {{#if this.isTracked}}
+                      <i class="fa-solid fa-eye"></i> Tracked
+                    {{else}}
+                      <i class="fa-solid fa-eye-slash"></i> Untracked
+                    {{/if}}
+                  </button>
+                </div>
+                <div class="cog-crawler-meta">
+                  <span class="cog-badge-level">LVL {{this.level}}</span>
+                  {{#if this.party}}
+                    <span class="cog-badge-party"><i class="fa-solid fa-shield-halved"></i> {{this.party}}</span>
+                  {{/if}}
+                  <span class="cog-crawler-bars">{{this.hpBars}} Bars ({{this.hpValue}}/{{this.hpMax}} HP)</span>
+                  <span class="cog-crawler-mana">{{this.manaValue}}/{{this.manaMax}} MP</span>
+                </div>
+              </div>
+            </div>
+
+            {{!-- Combat stats row --}}
+            <div class="cog-card-metric-row">
+              <div class="cog-card-metric">
+                <span class="cog-metric-lbl">Dealt</span>
+                <span class="cog-metric-val dmg-dealt">{{this.damageDealt}}</span>
+                <div class="cog-quick-adjusts">
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="damageDealt" data-delta="-5">-5</button>
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="damageDealt" data-delta="5">+5</button>
+                </div>
+              </div>
+              <div class="cog-card-metric">
+                <span class="cog-metric-lbl">Taken</span>
+                <span class="cog-metric-val dmg-taken">{{this.damageTaken}}</span>
+                <div class="cog-quick-adjusts">
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="damageTaken" data-delta="-5">-5</button>
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="damageTaken" data-delta="5">+5</button>
+                </div>
+              </div>
+              <div class="cog-card-metric">
+                <span class="cog-metric-lbl">Kills</span>
+                <span class="cog-metric-val">{{this.kills}}</span>
+                <div class="cog-quick-adjusts">
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="kills" data-delta="-1">-1</button>
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="kills" data-delta="1">+1</button>
+                </div>
+              </div>
+            </div>
+
+            {{!-- Favor & Popularity row --}}
+            <div class="cog-card-metric-row secondary">
+              <div class="cog-card-metric">
+                <span class="cog-metric-lbl"><i class="fa-solid fa-hand-holding-heart"></i> AI Favor</span>
+                <span class="cog-metric-val favor {{#if (gte this.aiFavorDelta 0)}}pos{{else}}neg{{/if}}">
+                  {{#if (gte this.aiFavorDelta 0)}}+{{/if}}{{this.aiFavorDelta}}
+                </span>
+                <div class="cog-quick-adjusts">
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="aiFavorDelta" data-delta="-1">-1</button>
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="aiFavorDelta" data-delta="1">+1</button>
+                </div>
+              </div>
+              <div class="cog-card-metric">
+                <span class="cog-metric-lbl"><i class="fa-solid fa-star"></i> Popularity</span>
+                <span class="cog-metric-val pop {{#if (gte this.popularityDelta 0)}}pos{{else}}neg{{/if}}">
+                  {{#if (gte this.popularityDelta 0)}}+{{/if}}{{this.popularityDelta}}
+                </span>
+                <div class="cog-quick-adjusts">
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="popularityDelta" data-delta="-1">-1</button>
+                  <button data-action="adjustStat" type="button" class="cog-stat-adjust-btn" data-actor-id="{{this.actorId}}" data-stat="popularityDelta" data-delta="1">+1</button>
+                </div>
+              </div>
+            </div>
+
+            {{!-- Deeds & Untrained attempts badges --}}
+            <div class="cog-card-activity-summary">
+              <span class="cog-pill pill-skill" title="Trained Skills Used">
+                <i class="fa-solid fa-bolt"></i> {{this.totalSkillsCount}} Skills
+              </span>
+              <span class="cog-pill pill-untrained {{#if this.totalUntrainedCount}}highlight{{/if}}" title="Untrained Skills Attempted">
+                <i class="fa-solid fa-triangle-exclamation"></i> {{this.totalUntrainedCount}} Untrained
+              </span>
+              <span class="cog-pill pill-spell" title="Spells Cast">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> {{this.totalSpellsCount}} Spells
+              </span>
+              {{#if this.lootBoxesAwarded.length}}
+                <span class="cog-pill pill-loot" title="Loot Boxes">
+                  <i class="fa-solid fa-gift"></i> {{this.lootBoxesAwarded.length}} Boxes
+                </span>
+              {{/if}}
+            </div>
+          </div>
+        {{/each}}
+        {{else}}
+          <div class="cog-party-empty-state cog-bg-window cog-text-secondary" style="grid-column: 1 / -1; padding: 30px; text-align: center; border: 1px dashed var(--cog-panel-border); border-radius: 6px;">
+            <i class="fa-solid fa-users-slash cog-text-danger" style="font-size: 28px; margin-bottom: 10px; display: block;"></i>
+            <strong class="cog-text-strong" style="font-size: 14px; display: block; margin-bottom: 6px;">No Tracked Crawlers in View</strong>
+            <p style="font-size: 12px; margin: 0 0 14px 0;">
+              {{#if trackedOnly}}
+                There are no crawlers tracked in the active session for the selected party.
+              {{else}}
+                No world crawlers match the current party filter.
+              {{/if}}
+            </p>
+            <div style="display: flex; gap: 8px; justify-content: center;">
+              <button data-action="manageRoster" type="button" class="cog-btn cog-btn-primary cog-manage-roster-btn">
+                <i class="fa-solid fa-users-gear"></i> Manage Roster
+              </button>
+              <button data-action="createParty" type="button" class="cog-btn cog-btn-secondary cog-create-party-btn">
+                <i class="fa-solid fa-plus"></i> New Party
+              </button>
+            </div>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- TAB 2: ACTIVITY & ROLL LEDGER --}}
+  {{#if (eq activeTab 'ledger')}}
+    <div class="cog-ledger-tab-content">
+      {{!-- Filters bar --}}
+      <div class="cog-ledger-filter-bar">
+        <div class="cog-filter-item">
+          <label for="cog-filter-party-ledger">Party:</label>
+          <select data-change-action="setLedgerParty" id="cog-filter-party-ledger">
+            {{#each partyOptions}}
+              <option value="{{this.key}}" {{#if (eq ../filterParty this.key)}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="cog-filter-item">
+          <label for="cog-filter-crawler">Crawler:</label>
+          <select data-change-action="setFilterCrawler" id="cog-filter-crawler">
+            <option value="all">All Crawlers</option>
+            {{#each crawlersDropdownList}}
+              <option value="{{this.actorId}}" {{#if (eq ../filterCrawlerId this.actorId)}}selected{{/if}}>
+                {{this.name}}{{#if this.party}} ({{this.party}}){{/if}}{{#unless this.isTracked}} [UNTRACKED]{{/unless}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="cog-filter-item">
+          <label for="cog-filter-type">Action Type:</label>
+          <select data-change-action="setFilterType" id="cog-filter-type">
+            <option value="all">All Types</option>
+            <option value="skill" {{#if (eq filterType 'skill')}}selected{{/if}}>Trained Skill</option>
+            <option value="untrained_skill" {{#if (eq filterType 'untrained_skill')}}selected{{/if}}>Untrained Skill</option>
+            <option value="attack" {{#if (eq filterType 'attack')}}selected{{/if}}>Attack</option>
+            <option value="spell" {{#if (eq filterType 'spell')}}selected{{/if}}>Spell</option>
+            <option value="favor" {{#if (eq filterType 'favor')}}selected{{/if}}>AI Favor</option>
+            <option value="popularity" {{#if (eq filterType 'popularity')}}selected{{/if}}>Popularity</option>
+            <option value="damage_dealt" {{#if (eq filterType 'damage_dealt')}}selected{{/if}}>Damage Dealt</option>
+            <option value="damage_taken" {{#if (eq filterType 'damage_taken')}}selected{{/if}}>Damage Taken</option>
+            <option value="loot" {{#if (eq filterType 'loot')}}selected{{/if}}>Loot Box</option>
+            <option value="stat" {{#if (eq filterType 'stat')}}selected{{/if}}>Stat Check</option>
+            <option value="manual" {{#if (eq filterType 'manual')}}selected{{/if}}>Manual / Custom</option>
+          </select>
+        </div>
+
+        <div class="cog-filter-item">
+          <label for="cog-filter-outcome">Outcome:</label>
+          <select data-change-action="setFilterOutcome" id="cog-filter-outcome">
+            <option value="all">All Outcomes</option>
+            {{#each outcomeOptions}}
+              <option value="{{this.key}}" {{#if (eq ../filterOutcome this.key)}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="cog-filter-item search">
+          <input data-input-action="setLedgerSearch" type="text" id="cog-filter-search" placeholder="Search rolls or notes..." value="{{searchQuery}}" />
+        </div>
+
+        <button data-action="addEvent" type="button" class="cog-btn cog-btn-secondary cog-add-manual-event-btn">
+          <i class="fa-solid fa-pen-to-square"></i> + Add Event
+        </button>
+
+        <button data-action="openRapidImport" type="button" class="cog-btn cog-btn-primary cog-rapid-batch-btn cog-bg-accent-fill cog-text-on-fill" style="font-weight: bold; border: 1px solid var(--cog-danger-fill);" title="Rapidly import multiple rolls, voice transcripts, or play notes in batch">
+          <i class="fa-solid fa-bolt"></i> ⚡ Rapid Batch Import
+        </button>
+      </div>
+
+      {{!-- Table --}}
+      <div class="cog-ledger-table-wrap">
+        <table class="cog-ledger-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">Time</th>
+              <th style="width: 140px;">Crawler</th>
+              <th>Action & Details</th>
+              <th style="width: 90px;">Roll</th>
+              <th style="width: 70px;">DC / AC</th>
+              <th style="width: 150px;">7-Tier Outcome</th>
+              <th>Notes</th>
+              <th style="width: 65px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#if ledger.length}}
+              {{#each ledger}}
+                <tr class="cog-ledger-row" data-entry-id="{{this.id}}">
+                  <td class="cog-cell-time">{{this.dateFormatted}}</td>
+                  <td class="cog-cell-actor">
+                    <div class="cog-actor-pill">
+                      <img class="cog-bg-icon-box" src="{{this.actorImg}}" alt="" />
+                      <span>{{this.actorName}}</span>
+                    </div>
+                  </td>
+                  <td class="cog-cell-action">
+                    <strong>{{this.name}}</strong>
+                    {{#if this.isUntrained}}
+                      <span class="cog-badge-untrained">[UNTRAINED]</span>
+                    {{/if}}
+                    {{#if this.isKill}}
+                      <span class="cog-badge-kill cog-dark cog-bg-accent-strong-fill cog-text-on-fill" style="padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 2px;">[KILL]</span>
+                    {{/if}}
+                    {{#if this.damage}}
+                      <span class="cog-badge-dmg cog-bg-accent-strong-fill cog-text-on-fill" style="padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 2px;">{{this.damage}} DMG</span>
+                    {{/if}}
+                    {{#if this.healing}}
+                      <span class="cog-badge-heal cog-bg-success-fill cog-text-on-fill" style="padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 2px;">{{this.healing}} HEAL</span>
+                    {{/if}}
+                    {{#if this.mitigation}}
+                      <span class="cog-badge-mit cog-bg-info-fill cog-text-on-fill" style="padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 2px;">{{this.mitigation}} MIT</span>
+                    {{/if}}
+                    {{#if this.condition}}
+                      <span class="cog-badge-cond cog-bg-magic-fill cog-text-on-fill" style="padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 2px;">[{{upper this.conditionAction}}: {{this.condition}}]</span>
+                    {{/if}}
+                    <span class="cog-action-type-tag">[{{this.type}}]</span>
+                  </td>
+                  <td class="cog-cell-roll">
+                    <span class="cog-roll-total">{{this.total}}</span>
+                    <small class="cog-roll-formula">{{this.rollFormula}}</small>
+                  </td>
+                  <td class="cog-cell-dc">
+                    <input data-change-action="setEntryDC" type="number" class="cog-ledger-dc-input" data-entry-id="{{this.id}}" value="{{this.targetDC}}" placeholder="DC" />
+                  </td>
+                  <td class="cog-cell-outcome">
+                    <select data-change-action="setEntryOutcome" class="cog-ledger-outcome-select {{this.outcomeClass}}" data-entry-id="{{this.id}}">
+                      <option value="" {{#unless this.outcome}}selected{{/unless}}>None</option>
+                      {{#each ../outcomeOptions}}
+                        <option value="{{this.key}}" {{#if (eq this.key ../outcome)}}selected{{/if}}>{{this.label}}</option>
+                      {{/each}}
+                    </select>
+                  </td>
+                  <td class="cog-cell-notes">{{this.notes}}{{#if this.playerEditLabel}} <small class="cog-player-edit" title="Edited by a player through the GM">[{{this.playerEditLabel}}]</small>{{/if}}</td>
+                  <td class="cog-cell-actions" style="text-align: center; white-space: nowrap;">
+                    <button data-action="editEntry" type="button" class="cog-ledger-edit-btn cog-bg-transparent cog-text-info" data-entry-id="{{this.id}}" title="Edit Event" style="border: none; cursor: pointer; padding: 2px 4px; font-size: 12px;">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button data-action="deleteEntry" type="button" class="cog-ledger-delete-btn cog-bg-transparent cog-text-danger" data-entry-id="{{this.id}}" title="Delete entry" style="border: none; cursor: pointer; padding: 2px 4px; font-size: 12px;">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              {{/each}}
+            {{else}}
+              <tr>
+                <td colspan="8" class="cog-empty-state">
+                  No activity recorded in this session yet. Rolls from character sheets, attacks, and spells will automatically appear here!
+                </td>
+              </tr>
+            {{/if}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- TAB 3: END-OF-SESSION PROGRESSION --}}
+  {{#if (eq activeTab 'wrapup')}}
+    <div class="cog-wrapup-tab-content">
+      {{!-- SECTION A: UNTRAINED SKILL PROMOTIONS --}}
+      <section class="cog-wrapup-section">
+        <div class="cog-section-header">
+          <i class="fa-solid fa-book-sparkles"></i>
+          <h3>Untrained Skills Attempted — Field Training Opportunities</h3>
+        </div>
+        <p class="cog-section-desc">
+          In Sprinter RPG, crawlers learn through survival. Below are all untrained skills attempted during this session.
+          The DM can award field mastery, promoting an untrained skill to Rank 1 directly on the crawler's character sheet.
+        </p>
+
+        <div class="cog-untrained-grid">
+          {{#if untrainedSkillsReview.length}}
+            {{#each untrainedSkillsReview}}
+              <div class="cog-untrained-card">
+                <div class="cog-untrained-card-body">
+                  <span class="cog-untrained-actor"><strong>{{this.actorName}}</strong></span>
+                  <span class="cog-untrained-skill">{{this.skillName}}</span>
+                  <span class="cog-untrained-count">{{this.count}} attempt{{#if (not (eq this.count 1))}}s{{/if}}</span>
+                </div>
+                <button data-action="trainSkill" type="button" class="cog-btn cog-btn-success cog-train-skill-btn" data-actor-id="{{this.actorId}}" data-skill-identifier="{{this.skillIdentifier}}" data-skill-name="{{this.skillName}}">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Train to Rank 1
+                </button>
+              </div>
+            {{/each}}
+          {{else}}
+            <div class="cog-empty-box">
+              <i class="fa-solid fa-circle-check cog-text-success"></i> No untrained skill attempts recorded in this session.
+            </div>
+          {{/if}}
+        </div>
+      </section>
+
+      {{!-- SECTION B: SESSION XP DISTRIBUTION --}}
+      <section class="cog-wrapup-section">
+        <div class="cog-section-header">
+          <i class="fa-solid fa-trophy"></i>
+          <h3>Session Experience & Progression Pool</h3>
+        </div>
+        <p class="cog-section-desc">
+          Experience is pooled from total damage dealt, damage taken, tactical skills used, completed quests, and mob kills, then distributed proportionally.
+        </p>
+
+        <div class="cog-xp-wrapup-box">
+          <div class="cog-xp-input-group">
+            <label for="cog-bonus-xp-input">Milestone / Bonus XP:</label>
+            <input type="number" id="cog-bonus-xp-input" value="0" step="50" min="0" />
+          </div>
+          <button data-action="distributeXP" type="button" class="cog-btn cog-btn-primary cog-distribute-session-xp-btn">
+            <i class="fa-solid fa-coins"></i> Calculate & Award Session XP to Party
+          </button>
+        </div>
+      </section>
+
+      {{!-- SECTION C: BROADCAST & ARCHIVE --}}
+      <section class="cog-wrapup-section">
+        <div class="cog-section-header">
+          <i class="fa-solid fa-satellite-dish"></i>
+          <h3>Dungeon AI Broadcast & Session Finalization</h3>
+        </div>
+        <p class="cog-section-desc">
+          Post a Dungeon AI Performance Review card to chat highlighting MVP, crowd metrics, and loot dispatches, then seal the session into history.
+        </p>
+
+        <div class="cog-broadcast-actions">
+          <button data-action="broadcastReview" type="button" class="cog-btn cog-btn-gold cog-broadcast-review-btn">
+            <i class="fa-solid fa-bullhorn"></i> Broadcast Dungeon AI Review to Chat
+          </button>
+
+          {{#if isActiveSession}}
+            <button data-action="endSession" type="button" class="cog-btn cog-btn-danger cog-end-session-btn" data-session-id="{{session.id}}">
+              <i class="fa-solid fa-lock"></i> Conclude & Archive Session
+            </button>
+          {{/if}}
+        </div>
+      </section>
+    </div>
+  {{/if}}
+
+  {{!-- TAB 4: SESSION ARCHIVES --}}
+  {{#if (eq activeTab 'archive')}}
+    <div class="cog-archive-tab-content">
+      <div class="cog-archive-list">
+        {{#each sessions}}
+          <div class="cog-archive-card {{#if (eq this.id ../currentSessionId)}}selected{{/if}}">
+            <div class="cog-archive-card-header">
+              <div>
+                <h4>{{this.title}}</h4>
+                <small>{{#if (eq this.status 'active')}}<span class="cog-text-success">Active Session</span>{{else}}<span class="cog-text-muted">Archived</span>{{/if}}</small>
+              </div>
+              <span class="cog-archive-deeds">{{this.ledger.length}} Recorded Deeds</span>
+            </div>
+            <div class="cog-archive-card-stats">
+              <span>Dmg Dealt: <strong>{{this.summary.totalDamageDealt}}</strong></span>
+              <span>Dmg Taken: <strong>{{this.summary.totalDamageTaken}}</strong></span>
+              <span>Kills: <strong>{{this.summary.totalKills}}</strong></span>
+              <span>Untrained: <strong>{{this.summary.totalUntrainedAttempts}}</strong></span>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+</div>

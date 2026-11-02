@@ -1,0 +1,25 @@
+<section class="cog-item-body cog-item-body-traits">
+{{!-- DEITY TYPE --}}
+{{#if (eq item.type "deity")}}
+  <div class="cog-field-group" style="margin-bottom: 8px;">
+    <span class="cog-field-label">Boons & Perks</span>
+    <textarea class="cog-field-input" name="system.boons" style="height: 120px;">{{system.boons}}</textarea>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">Description</span>
+    <textarea class="cog-field-input" name="system.description" style="height: 100px;">{{system.description}}</textarea>
+  </div>
+{{/if}}
+
+{{!-- SPONSOR TYPE --}}
+{{#if (eq item.type "sponsor")}}
+  <div class="cog-field-group" style="margin-bottom: 8px;">
+    <span class="cog-field-label">Gifts & Conditions</span>
+    <textarea class="cog-field-input" name="system.gifts" style="height: 120px;">{{system.gifts}}</textarea>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">Notes</span>
+    <textarea class="cog-field-input" name="system.notes" style="height: 100px;">{{system.notes}}</textarea>
+  </div>
+{{/if}}
+</section>

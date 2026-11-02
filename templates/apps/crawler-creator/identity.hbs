@@ -1,0 +1,69 @@
+<header class="cog-creator-header">
+  <div class="cog-creator-title-row flexrow">
+    <div class="cog-creator-title">
+      <h2><i class="fa-solid fa-skull-crossbones"></i> CRAWLER INDUCTION TERMINAL</h2>
+      <span class="cog-creator-subtitle">BORG TELEPORTATION & BIOMETRIC REGISTRATION — FLOOR ENTRANCE</span>
+    </div>
+    <div class="cog-creator-quick-actions">
+      <button type="button" class="cog-randomize-btn" data-action="randomize" title="Generate a legal randomized Crawler">
+        <i class="fa-solid fa-dice-d20"></i> Randomize All
+      </button>
+      <button type="button" class="cog-reset-btn" data-action="resetDefaults" title="Reset selections to default">
+        <i class="fa-solid fa-rotate-left"></i> Reset
+      </button>
+    </div>
+  </div>
+
+  <div class="cog-creator-meta-grid">
+    <div class="cog-form-group">
+      <label><i class="fa-solid fa-user"></i> Crawler Name</label>
+      <input type="text" name="creator-name" data-input-action="setName" data-prop="name" value="{{name}}" placeholder="Enter Crawler Name..." required />
+    </div>
+
+    <div class="cog-form-group">
+      <label><i class="fa-solid fa-hashtag"></i> Crawler #</label>
+      <input type="text" name="creator-number" data-input-action="setNumber" data-prop="crawlerNumber" value="{{crawlerNumber}}" placeholder="#1001" />
+    </div>
+
+    <div class="cog-form-group">
+      <label title="Your origin at induction; Race and Class come later"><i class="fa-solid fa-dna"></i> Species (Origin)</label>
+      <div class="cog-species-toggles flexrow">
+        {{#each speciesOptions}}
+        <label class="cog-species-radio {{#if active}}active{{/if}}">
+          <input type="radio" name="creator-species" data-change-action="setSpecies" data-prop="species" value="{{id}}" {{#if active}}checked{{/if}} />
+          {{label}}
+        </label>
+        {{/each}}
+      </div>
+    </div>
+
+    <div class="cog-form-group">
+      <label><i class="fa-solid fa-arrows-up-down-left-right"></i> Size</label>
+      <select name="creator-size" data-change-action="setSize" data-prop="size">
+        {{#each sizeOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="cog-form-group">
+      <label><i class="fa-solid fa-dungeon"></i> Starting Floor</label>
+      <select name="creator-floor" data-change-action="setFloor" data-prop="floor">
+        {{#each floorOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="cog-species-perks flexrow">
+      <div class="cog-perk-badge favor-badge" title="AI Favor awarded based on species choice">
+        <i class="fa-solid fa-heart-pulse"></i> AI Favor: <strong>{{speciesData.aiFavor}}</strong>
+      </div>
+      {{#if speciesData.inherentSkill.name}}
+      <div class="cog-perk-badge skill-badge" title="Inherent species combat skill">
+        <i class="fa-solid fa-hand-fist"></i> Inherent: <strong>{{speciesData.inherentSkill.name}} (Rank {{speciesData.inherentSkill.rank}})</strong>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+</header>

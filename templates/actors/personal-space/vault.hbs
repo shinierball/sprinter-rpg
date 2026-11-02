@@ -1,0 +1,33 @@
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="vault">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <div class="cog-text-warning" style="font-size: 14px; font-weight: bold;">
+      <i class="fa-solid fa-boxes-stacked"></i> SECURE VAULT INVENTORY
+    </div>
+    <div class="cog-fg-dyn" style="--cog-fg-dyn: {{stashStats.color}}; font-size: 12px;">
+      Capacity: <strong>{{stashStats.count}} / {{stashStats.max}} Slots</strong> ({{stashStats.pct}}%)
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px;">
+    {{#each stashedItems.all as |item|}}
+      <div class="draggable cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 8px; display: flex; justify-content: space-between; align-items: center;" data-item-id="{{item.id}}">
+        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+          <img class="cog-bg-icon-box" src="{{item.img}}" width="32" height="32" style="border-radius: 3px; border: 1px solid var(--cog-panel-border); object-fit: cover;" />
+          <div style="min-width: 0;">
+            <div class="cog-text-strong" style="font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{item.name}}</div>
+            <div class="cog-text-muted" style="font-size: 10px; text-transform: uppercase;">
+              {{item.type}}{{#if item.system.quantity}} &bull; Qty: {{item.system.quantity}}{{/if}}
+            </div>
+          </div>
+        </div>
+        <button class="cog-bg-info-fill cog-text-on-fill" type="button" data-action="withdrawItem" data-item-id="{{item.id}}" style="border: 1px solid var(--cog-info-fill); border-radius: 3px; padding: 4px 8px; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          Take
+        </button>
+      </div>
+    {{else}}
+      <div class="cog-text-muted" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+        Vault is empty. Click <strong>[STASH MANAGER]</strong> above to deposit items from crawler inventory.
+      </div>
+    {{/each}}
+  </div>
+</section>

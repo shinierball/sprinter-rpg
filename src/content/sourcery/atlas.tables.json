@@ -1,0 +1,12 @@
+{
+  "book": "atlas",
+  "journal": {"_id":"dccjnl3bfc822444"},
+  "tables": [
+    {"id":"t-atlas-1","_id":"dcctbl48408ac695","number":1,"rollColumn":false,"columns":3,"rows":[{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}]},
+    {"id":"t-atlas-2","_id":"dcctbl944a7c4729","number":2,"rollColumn":true,"columns":1,"rows":[{"range":[1,2]},{"range":[3,4]},{"range":[5,6]}],"formula":"1d6"},
+    {"id":"t-atlas-3","_id":"dcctbl0c9ccafc97","number":3,"rollColumn":true,"columns":1,"rows":[{"range":[1,1]},{"range":[2,2]},{"range":[3,3]},{"range":[4,4]},{"range":[5,5]},{"range":[6,6],"links":[{"col":0,"kind":"table","id":"t-atlas-6"}]}],"formula":"1d6"},
+    {"id":"t-atlas-4","_id":"dcctbleca09e7c07","number":4,"rollColumn":true,"columns":1,"rows":[{"range":[1,1]},{"range":[2,2]},{"range":[3,3]},{"range":[4,4]},{"range":[5,5]},{"range":[6,6],"links":[{"col":0,"kind":"table","id":"t-atlas-6"}]}],"formula":"1d6"},
+    {"id":"t-atlas-5","_id":"dcctbldb4f064696","number":5,"rollColumn":true,"columns":1,"rows":[{"range":[1,1]},{"range":[2,2]},{"range":[3,3]},{"range":[4,4]},{"range":[5,5]},{"range":[6,6],"links":[{"col":0,"kind":"table","id":"t-atlas-6"}]}],"formula":"1d6"},
+    {"id":"t-atlas-6","_id":"dcctble7f51951ad","number":6,"rollColumn":true,"columns":1,"rows":[{"range":[1,1]},{"range":[2,2]},{"range":[3,3]},{"range":[4,4]},{"range":[5,5]},{"range":[6,6]}],"formula":"1d6"}
+  ]
+}

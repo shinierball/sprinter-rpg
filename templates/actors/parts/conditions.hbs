@@ -1,0 +1,151 @@
+{{!-- TAB 4: CONDITIONS & EFFECTS --}}
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="conditions">
+<div class="cog-page-container cog-conditions-container">
+
+  {{!-- TOP BANNER CONTROLS --}}
+  <div class="cog-stat-block" style="margin-bottom: 12px;">
+    <div class="cog-banner-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-shield-virus cog-text-accent"></i>
+        <span>ACTIVE CONDITIONS &amp; STATUS EFFECTS</span>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <a class="cog-dark cog-text-gold" data-action="openBuffPicker" data-tooltip="Browse Buffs Compendium" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-sparkles"></i> Browse Buffs
+        </a>
+        <a class="cog-dark cog-text-gold" data-action="openDebuffPicker" data-tooltip="Browse Conditions Compendium" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none; margin-left: 6px;">
+          <i class="fa-solid fa-book-skull"></i> Browse Debuffs
+        </a>
+        <a class="cog-text-on-fill" data-action="createItem" data-type="buff" data-tooltip="Create Custom Buff" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none; margin-left: 10px;">
+          <i class="fa-solid fa-plus"></i> New Buff
+        </a>
+        <a class="cog-text-on-fill" data-action="createItem" data-type="debuff" data-tooltip="Add Custom Debuff" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none; margin-left: 6px;">
+          <i class="fa-solid fa-plus"></i> New Debuff
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {{!-- CHARACTER BUFFS TABLE --}}
+  <div class="cog-stat-block" style="margin-bottom: 14px;">
+    <div class="cog-banner-header cog-bg-success-fill" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-sparkles"></i>
+        <span>CHARACTER BUFFS &amp; ACTIVE EFFECTS ({{buffs.length}})</span>
+      </div>
+      <a class="cog-text-on-fill" data-action="createItem" data-type="buff" data-tooltip="Add Buff" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none;">
+        <i class="fa-solid fa-plus"></i> Add Buff
+      </a>
+    </div>
+    <table class="cog-attacks-table">
+      <thead>
+        <tr>
+          <th style="width: 30%;">Buff Name</th>
+          <th style="width: 15%;">Type</th>
+          <th style="width: 25%;">Effects / Value</th>
+          <th style="width: 15%;">Duration</th>
+          <th style="width: 15%; text-align: center;">Assign / Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each buffs as |item|}}
+          <tr class="draggable{{#if item.isSuspended}} is-suspended{{/if}}" data-item-id="{{item.id}}" draggable="true"{{#if item.isSuspended}} style="opacity: 0.6;"{{/if}}>
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <img class="cog-condition-icon" src="{{item.img}}" />
+                <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;{{#if item.isSuspended}} text-decoration: line-through;{{/if}}">{{item.name}}</span>
+                {{#if item.isSuspended}}<span class="cog-state-badge cog-badge-undone" data-tooltip="Dispelled: suspended until the combat ends">[SUSPENDED]</span>{{/if}}
+              </div>
+            </td>
+            <td>
+              <span class="cog-badge cog-badge-spell" style="text-transform: uppercase; font-size: 9px;">{{item.kindLabel}}</span>
+            </td>
+            <td>
+              <span class="cog-text-success" style="font-size: 11px; font-weight: bold;">
+                {{#if item.summary}}{{item.summary}}{{else}}<span class="cog-feature-empty">{{@root.summaryEmptyText}}</span>{{/if}}
+              </span>
+            </td>
+            <td>
+              <span style="font-size: 11px;">{{item.system.duration}}</span>
+            </td>
+            <td style="text-align: center;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                <div class="cog-slot-assign-btn-group" title="Assign to Core Slot 1, 2, or 3">
+                  <button type="button" class="buff-assign-slot-btn {{#if item.isSlot1}}is-assigned{{/if}}" data-action="assignBuffSlot" data-item-id="{{item.id}}" data-slot="buff1" data-tooltip="{{#if item.isSlot1}}Slot 1 (Assigned - Click to toggle off){{else}}Assign to Slot 1{{/if}}">1</button>
+                  <button type="button" class="buff-assign-slot-btn {{#if item.isSlot2}}is-assigned{{/if}}" data-action="assignBuffSlot" data-item-id="{{item.id}}" data-slot="buff2" data-tooltip="{{#if item.isSlot2}}Slot 2 (Assigned - Click to toggle off){{else}}Assign to Slot 2{{/if}}">2</button>
+                  <button type="button" class="buff-assign-slot-btn {{#if item.isSlot3}}is-assigned{{/if}}" data-action="assignBuffSlot" data-item-id="{{item.id}}" data-slot="buff3" data-tooltip="{{#if item.isSlot3}}Slot 3 (Assigned - Click to toggle off){{else}}Assign to Slot 3{{/if}}">3</button>
+                </div>
+                <a class="item-edit" data-action="editItem" data-tooltip="Edit Buff" style="margin-left: 4px;"><i class="fa-solid fa-edit"></i></a>
+                <a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="Delete Buff" style="margin-left: 4px;"><i class="fa-solid fa-trash"></i></a>
+              </div>
+            </td>
+          </tr>
+        {{else}}
+          <tr>
+            <td class="cog-text" colspan="5" style="text-align: center; padding: 14px; font-style: italic;">
+              No character buffs defined. Click <strong>Browse Buffs</strong> or <strong>Add Buff</strong> to grant bonuses.
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+
+  {{!-- CHARACTER DEBUFFS TABLE --}}
+  <div class="cog-stat-block">
+    <div class="cog-banner-header cog-bg-accent-strong-fill" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-skull"></i>
+        <span>CHARACTER DEBUFFS &amp; CONDITIONS ({{debuffs.length}})</span>
+      </div>
+      <a class="cog-text-on-fill" data-action="createItem" data-type="debuff" data-tooltip="Add Custom Debuff" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none;">
+        <i class="fa-solid fa-plus"></i> Add Debuff
+      </a>
+    </div>
+    <table class="cog-attacks-table">
+      <thead>
+        <tr>
+          <th style="width: 30%;">Debuff / Condition</th>
+          <th style="width: 15%;">Severity</th>
+          <th style="width: 25%;">Effects &amp; Penalties</th>
+          <th style="width: 20%;">Duration</th>
+          <th style="width: 10%; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each debuffs as |item|}}
+          <tr class="draggable" data-item-id="{{item.id}}" draggable="true">
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <img class="cog-condition-icon" src="{{item.img}}" />
+                <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;">{{item.name}}</span>
+              </div>
+            </td>
+            <td>
+              <span class="cog-badge {{#if (eq item.system.severity 'Major')}}cog-badge-attack{{else}}cog-badge-item{{/if}}" style="font-size: 9px; padding: 2px 5px;">
+                {{upper item.system.severity}}
+              </span>
+            </td>
+            <td>
+              <span class="cog-text-accent" style="font-size: 11px; font-weight: bold;">{{#if item.summary}}{{item.summary}}{{else}}<span class="cog-feature-empty">{{@root.summaryEmptyText}}</span>{{/if}}</span>
+            </td>
+            <td>
+              <span style="font-size: 11px;">{{item.system.duration}}</span>
+            </td>
+            <td style="text-align: center;">
+              <a class="item-edit" data-action="editItem" data-tooltip="Edit Condition"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="Delete Condition" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        {{else}}
+          <tr>
+            <td class="cog-text" colspan="5" style="text-align: center; padding: 14px; font-style: italic;">
+              No active debuffs or negative conditions affecting this character.
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>

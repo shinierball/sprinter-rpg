@@ -1,0 +1,13 @@
+<footer class="cog-creator-footer flexrow">
+  <div class="footer-status">
+    {{#if canCreate}}
+      <span class="status-ready"><i class="fa-solid fa-circle-check"></i> Crawler is fully configured and ready to enter the dungeon.</span>
+    {{else}}
+      <span class="status-not-ready"><i class="fa-solid fa-triangle-exclamation"></i> Creating now is a Rule Break:{{#each ruleBreakReasons}} {{this}}{{/each}}</span>
+    {{/if}}
+  </div>
+
+  <button type="button" class="cog-create-crawler-btn {{#unless canCreate}}rule-break{{/unless}}" data-action="createCrawler">
+    <i class="fa-solid fa-door-open"></i> ENTER THE DUNGEON (CREATE CRAWLER)
+  </button>
+</footer>

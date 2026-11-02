@@ -1,0 +1,50 @@
+<aside class="cog-archive-sidebar">
+  <div class="cog-archive-sidebar-header">
+    <div class="cog-archive-sidebar-title">
+      <span>ALL ENCOUNTERS ({{combats.length}})</span>
+      {{#if isGM}}
+        {{#if hasCombats}}
+          <button type="button" class="cog-archive-clear-all-btn" data-action="clearAll" data-tooltip="Clear All Archived Encounters">
+            <i class="fa-solid fa-dumpster-fire"></i> Clear All
+          </button>
+        {{/if}}
+      {{/if}}
+    </div>
+    <div class="cog-archive-search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" class="cog-archive-search" name="search" data-input-action="setSearch" placeholder="Filter battles..." value="{{searchQuery}}" />
+    </div>
+  </div>
+
+  <ul class="cog-archive-list">
+    {{#if hasCombats}}
+      {{#each combats as |combat|}}
+        <li class="cog-archive-item {{#if (eq combat.id ../selectedCombat.id)}}active{{/if}}" data-action="selectCombat" data-combat-id="{{combat.id}}">
+          <div class="cog-archive-item-radio">
+            {{#if (eq combat.id ../selectedCombat.id)}}
+              <i class="fa-solid fa-circle-dot cog-text-accent"></i>
+            {{else}}
+              <i class="fa-regular fa-circle cog-text-muted"></i>
+            {{/if}}
+          </div>
+          <div class="cog-archive-item-content">
+            <div class="cog-archive-item-header">
+              <span class="cog-archive-item-name" title="{{combat.name}}">{{combat.name}}</span>
+              {{#if combat.isLive}}
+                <span class="cog-live-badge">LIVE</span>
+              {{else}}
+                <span class="cog-archive-item-rounds">{{combat.totalRounds}} Rds</span>
+              {{/if}}
+            </div>
+            <div class="cog-archive-item-meta">
+              <span class="cog-archive-item-date">{{combat.dateString}}</span>
+              <span class="cog-archive-item-count">{{combat.combatants.length}} Combatants</span>
+            </div>
+          </div>
+        </li>
+      {{/each}}
+    {{else}}
+      <li class="cog-archive-empty">No combat encounters match your search.</li>
+    {{/if}}
+  </ul>
+</aside>

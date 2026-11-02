@@ -1,0 +1,108 @@
+<div class="cog-hud-content {{#if isCollapsed}}is-collapsed{{/if}}" data-actor-id="{{actor.id}}">
+  <div class="cog-hotbar-hud-bar">
+    <div class="cog-hotbar-hud-header">
+      <div class="cog-hotbar-hud-title">
+        <i class="fa-solid fa-bolt"></i>
+        <span>{{crawlerName}} — HOTBAR</span>
+      </div>
+      <div class="cog-hotbar-hud-controls">
+        <button type="button" data-action="toggleCollapsed" class="cog-hotbar-hud-ctrl-btn cog-hotbar-toggle" title="Toggle Hotbar HUD">
+          <i class="fa-solid {{#if isCollapsed}}fa-chevron-up{{else}}fa-chevron-down{{/if}}"></i>
+        </button>
+      </div>
+    </div>
+
+    {{#unless isCollapsed}}
+    <div class="cog-hotbar-hud-grid">
+      {{#each slots as |slot|}}
+        <div class="cog-hotbar-hud-slot {{#if slot.isEmpty}}is-empty{{else}}is-populated{{/if}}" data-slot="{{slot.key}}" {{#if slot.itemId}}data-item-id="{{slot.itemId}}"{{/if}}>
+          <div class="cog-hotbar-slot-header">
+            <span class="cog-hotbar-slot-num">{{slot.index}}</span>
+            {{#if slot.badge}}
+              <span class="cog-hotbar-slot-badge {{slot.type}}">{{slot.badge}}</span>
+            {{/if}}
+            {{#unless slot.isEmpty}}
+              <a data-action="clearSlot" class="hotlist-slot-clear" data-slot="{{slot.key}}" title="Clear Slot"><i class="fa-solid fa-xmark"></i></a>
+            {{/unless}}
+          </div>
+
+          {{#if slot.isEmpty}}
+            <div class="cog-hotbar-slot-empty">
+              <span>(Empty)</span>
+            </div>
+          {{else}}
+            <div class="cog-hotbar-slot-body" title="{{slot.name}}">
+              <img class="cog-hotbar-slot-icon" src="{{slot.img}}" alt="{{slot.name}}" />
+              <div class="cog-hotbar-slot-info">
+                <span class="cog-hotbar-slot-name">{{slot.name}}</span>
+                {{#if slot.detail}}
+                  <span class="cog-hotbar-slot-detail">{{slot.detail}}</span>
+                {{/if}}
+              </div>
+            </div>
+
+            <div class="cog-hotbar-slot-actions">
+              {{#if slot.isAttack}}{{#unless slot.isSkill}}
+                <button type="button" data-action="attackHit" class="cog-hud-btn cog-hud-btn-hit roll-hotlist-attack" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Roll Attack (To Hit): {{slot.name}}">
+                  <i class="fa-solid fa-crosshairs"></i> Hit
+                </button>
+                <button type="button" data-action="attackDamage" class="cog-hud-btn cog-hud-btn-dmg roll-hotlist-attack-dmg" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Roll Damage: {{slot.name}}">
+                  <i class="fa-solid fa-burst"></i> Dmg
+                </button>
+              {{/unless}}{{/if}}
+
+              {{#if slot.isGear}}
+                <button type="button" data-action="toggleEquip" class="cog-hud-btn cog-hud-btn-gear toggle-hotlist-equip {{#if slot.isEquipped}}is-equipped{{/if}}" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="{{#if slot.isEquipped}}Unequip{{else}}Equip{{/if}} {{slot.name}}">
+                  <i class="fa-solid {{#if slot.isEquipped}}fa-shield{{else}}fa-shield-halved{{/if}}"></i> {{#if slot.isEquipped}}Equipped{{else}}Equip{{/if}}
+                </button>
+                {{#if slot.canActivate}}
+                  <button type="button" data-action="useItem" class="cog-hud-btn cog-hud-btn-use roll-hotlist-use" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Use Item: {{slot.name}}">
+                    <i class="fa-solid fa-bolt"></i> Use
+                  </button>
+                {{/if}}
+              {{/if}}
+
+              {{#if slot.isSpell}}
+                <button type="button" data-action="castSpell" class="cog-hud-btn cog-hud-btn-spell roll-hotlist-spell" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Cast Spell: {{slot.name}}">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Cast
+                </button>
+                {{#if slot.hasDamage}}
+                  <button type="button" data-action="spellDamage" class="cog-hud-btn cog-hud-btn-dmg cog-hud-btn-icon roll-hotlist-spell-dmg" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="{{slot.damageTitle}}" aria-label="Roll Spell Damage: {{slot.name}}">
+                    <i class="fa-solid fa-burst"></i>
+                  </button>
+                {{/if}}
+                {{#if slot.isAttackSpell}}
+                  <button type="button" data-action="spellAttack" class="cog-hud-btn cog-hud-btn-atk cog-hud-btn-icon roll-hotlist-spell-atk" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="{{slot.attackTitle}}" aria-label="Roll Spell Attack: {{slot.name}}">
+                    <i class="fa-solid fa-crosshairs"></i>
+                  </button>
+                {{/if}}
+              {{/if}}
+
+              {{#if slot.isLoot}}
+                <button type="button" data-action="useItem" class="cog-hud-btn cog-hud-btn-use roll-hotlist-use" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Use Item: {{slot.name}}">
+                  <i class="fa-solid fa-flask"></i> Use
+                </button>
+              {{/if}}
+
+              {{#if slot.isSkill}}
+                {{#if slot.hasDamage}}
+                  <button type="button" data-action="attackHit" class="cog-hud-btn cog-hud-btn-hit roll-hotlist-attack" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Roll Attack (To Hit): {{slot.name}}">
+                    <i class="fa-solid fa-crosshairs"></i> Hit
+                  </button>
+                  <button type="button" data-action="attackDamage" class="cog-hud-btn cog-hud-btn-dmg roll-hotlist-attack-dmg" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Roll Damage: {{slot.name}}">
+                    <i class="fa-solid fa-burst"></i> Dmg
+                  </button>
+                {{else}}
+                  <button type="button" data-action="useItem" class="cog-hud-btn cog-hud-btn-use roll-hotlist-use" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}" title="Roll Skill: {{slot.name}}">
+                    <i class="fa-solid fa-dice-d20"></i> Roll
+                  </button>
+                {{/if}}
+              {{/if}}
+            </div>
+          {{/if}}
+        </div>
+      {{/each}}
+    </div>
+    {{/unless}}
+  </div>
+</div>

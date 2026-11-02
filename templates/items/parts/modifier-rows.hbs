@@ -1,0 +1,93 @@
+{{!--
+  One modifier array: a banner with its Add link and one card per row.
+  Parameters: block = ArrayBlockView, tagOptions = registered tags grouped by namespace (from context-rows.mjs).
+  Every `name` comes from the context; the condition editor and all controls are action delegates without a `name`.
+--}}
+<div class="cog-modifier-block" data-array="{{block.arrayKey}}">
+  <div class="cog-banner-header cog-modifier-header">
+    <span><i class="fa-solid {{block.icon}}"></i> {{localize block.titleKey}}</span>
+    <a class="cog-modifier-add" data-action="addRow" data-row-table="{{block.arrayKey}}">
+      <i class="fa-solid fa-plus"></i> {{localize block.addKey}}
+    </a>
+  </div>
+  <div class="cog-modifier-body">
+    {{#each block.rows as |row|}}
+      <div class="cog-modifier-card" data-modifier-index="{{row.idx}}">
+        <div class="cog-field-row">
+          <div class="cog-field-group">
+            <span class="cog-field-label">{{localize row.label.labelKey}}</span>
+            <input class="cog-field-input" type="text" name="{{row.label.name}}" value="{{row.label.value}}" placeholder="{{localize 'COG.Rows.Placeholder.Label'}}" />
+          </div>
+          {{#if row.kind}}
+            <div class="cog-field-group">
+              <span class="cog-field-label">{{localize row.kind.labelKey}}</span>
+              <select class="cog-field-input" name="{{row.kind.name}}">
+                {{#each row.kind.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{localize o.label value=o.labelValue}}</option>{{/each}}
+              </select>
+            </div>
+          {{/if}}
+          {{#each row.badges as |b|}}<span class="cog-badge {{#if b.isInfo}}cog-badge-info{{else}}cog-bg-accent-fill cog-text-on-fill{{/if}}">{{localize b.key value=b.value}}</span>{{/each}}
+          {{#if row.disabled}}
+            <label class="cog-field-group small" data-tooltip="{{localize 'COG.Rows.Field.disabledHint'}}"><span class="cog-field-label">{{localize row.disabled.labelKey}}</span><input type="checkbox" name="{{row.disabled.name}}" {{#if row.disabled.checked}}checked{{/if}} /></label>
+          {{/if}}
+          <span class="cog-modifier-controls">
+            {{#unless row.isFirst}}<a class="cog-modifier-move" data-action="moveRow" data-direction="up" data-row-table="{{row.arrayKey}}" data-index="{{row.idx}}" data-tooltip="{{localize 'COG.Rows.Control.MoveUp'}}"><i class="fa-solid fa-arrow-up"></i></a>{{/unless}}
+            {{#unless row.isLast}}<a class="cog-modifier-move" data-action="moveRow" data-direction="down" data-row-table="{{row.arrayKey}}" data-index="{{row.idx}}" data-tooltip="{{localize 'COG.Rows.Control.MoveDown'}}"><i class="fa-solid fa-arrow-down"></i></a>{{/unless}}
+            <a class="cog-modifier-move" data-action="duplicateRow" data-row-table="{{row.arrayKey}}" data-index="{{row.idx}}" data-tooltip="{{localize 'COG.Rows.Control.Duplicate'}}"><i class="fa-solid fa-copy"></i></a>
+            <a class="cog-modifier-delete" data-action="deleteRow" data-row-table="{{row.arrayKey}}" data-index="{{row.idx}}" data-tooltip="{{localize 'COG.Rows.Control.Delete'}}"><i class="fa-solid fa-trash"></i></a>
+          </span>
+        </div>
+        {{#if row.kind.hintKey}}<div class="cog-modifier-hint">{{localize row.kind.hintKey}}</div>{{/if}}
+        <div class="cog-modifier-hint cog-modifier-reads-line"><span class="cog-field-label">{{localize "COG.Rows.Reads.Title"}}</span> {{#if row.reads}}{{row.reads}}{{else}}{{localize "COG.Rows.Reads.Nothing"}}{{/if}}</div>
+        {{#if row.preview}}
+          <div class="cog-modifier-hint cog-modifier-preview" data-preview-status="{{row.preview.status}}">
+            <span class="cog-field-label">{{localize "COG.Rows.Preview.Title"}}</span>
+            <span class="cog-badge {{#if (eq row.preview.status 'inert')}}cog-badge-info{{else}}cog-bg-accent-fill cog-text-on-fill{{/if}}">{{localize row.preview.statusKey}}</span>
+            {{#if row.preview.reasonKey}}<span>{{localize row.preview.reasonKey}}</span>{{/if}}
+            {{#each row.preview.failed as |f|}}<span>{{localize f.key value=f.tags}}</span>{{/each}}
+            {{#if row.preview.unresolved}}<span>{{localize "COG.Rows.Preview.Unresolved"}}</span>{{/if}}
+            {{#if row.preview.result}}<span class="cog-modifier-reads">{{row.preview.result}}</span>{{/if}}
+          </div>
+        {{/if}}
+        <div class="cog-field-row">
+          {{#each row.fields as |f|}}
+            <div class="cog-field-group small">
+              <span class="cog-field-label">{{localize f.labelKey}}</span>
+              {{#if f.isSelect}}
+                <select class="cog-field-input" name="{{f.name}}">
+                  {{#each f.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{localize o.label value=o.labelValue}}</option>{{/each}}
+                </select>
+              {{else if f.isCheckbox}}
+                <input type="checkbox" name="{{f.name}}" {{#if f.checked}}checked{{/if}} />
+              {{else if f.isNumber}}
+                <input class="cog-field-input" type="number" name="{{f.name}}" value="{{f.value}}"{{#if f.step}} step="{{f.step}}"{{/if}}{{#if (ne f.min '')}} min="{{f.min}}"{{/if}}{{#if (ne f.max '')}} max="{{f.max}}"{{/if}}{{#if f.placeholderKey}} placeholder="{{localize f.placeholderKey}}"{{/if}} />
+              {{else}}
+                <input class="cog-field-input" type="text" name="{{f.name}}" value="{{f.value}}" placeholder="{{f.placeholder}}" />
+              {{/if}}
+              {{#if f.hintKey}}<span class="cog-modifier-hint">{{localize f.hintKey}}</span>{{/if}}
+            </div>
+          {{/each}}
+        </div>
+        {{#if row.rawFields.length}}
+          <div class="cog-modifier-leftover">
+            <span class="cog-field-label">{{localize "COG.Rows.Raw.Title"}}</span>
+            {{#each row.rawFields as |r|}}<span class="cog-query-pill">{{localize r.labelKey}}: {{r.text}}</span>{{/each}}
+          </div>
+        {{/if}}
+        {{#if row.leftover.length}}
+          <div class="cog-modifier-leftover">
+            <span class="cog-field-label">{{localize "COG.Rows.Leftover.Title"}}</span>
+            {{#each row.leftover as |l|}}
+              <span class="cog-query-pill">{{localize l.labelKey}}: {{l.text}}
+                <a class="cog-query-pill-remove" data-action="clearRowField" data-row-table="{{row.arrayKey}}" data-index="{{row.idx}}" data-field="{{l.field}}" data-tooltip="{{localize 'COG.Rows.Control.Clear'}}">{{localize "COG.Rows.Control.Clear"}}</a>
+              </span>
+            {{/each}}
+          </div>
+        {{/if}}
+        {{#if row.scale}}{{> "systems/sprinter-rpg/templates/items/parts/row-scale-editor.hbs" scale=row.scale tagOptions=../tagOptions}}{{/if}}
+        <span class="cog-field-label">{{localize ../block.conditionHintKey}}</span>
+        {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=row.condition tagOptions=../tagOptions}}
+      </div>
+    {{/each}}
+  </div>
+</div>

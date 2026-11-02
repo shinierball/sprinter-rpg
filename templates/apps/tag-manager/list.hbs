@@ -1,0 +1,67 @@
+<div class="cog-tm-list cog-bg-surface" style="flex: 1; overflow-y: auto; border: 1px solid var(--cog-border-strong); padding: 8px; box-sizing: border-box; margin-bottom: 12px;">
+  {{#if tagsList.length}}
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+      <thead>
+        <tr class="cog-bg-surface-alt cog-text" style="border-bottom: 2px solid var(--cog-border-muted); text-align: left; font-family: 'Oswald', sans-serif; font-size: 11px; text-transform: uppercase;">
+          {{#if targetItem}}
+            <th style="padding: 6px 4px; text-align: center; width: 45px;">Apply</th>
+          {{/if}}
+          <th style="padding: 6px 8px;">Tag ID</th>
+          <th style="padding: 6px 8px;">Label</th>
+          <th style="padding: 6px 8px;">Namespace</th>
+          <th style="padding: 6px 8px; text-align: center;">Usage Count</th>
+          <th style="padding: 6px 8px; text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each tagsList as |tag|}}
+          <tr style="border-bottom: 1px solid var(--cog-divider);">
+            {{#if ../targetItem}}
+              <td style="padding: 6px 4px; text-align: center;">
+                <input type="checkbox" data-change-action="toggleAssign" class="cog-tag-assign-toggle" data-tag-id="{{tag.id}}" {{#if tag.isAssigned}}checked{{/if}} title="Assign {{tag.id}} to {{../targetItem.name}}" />
+              </td>
+            {{/if}}
+            <td class="cog-tm-tag-id-cell cog-text-info" style="padding: 6px 8px; font-family: monospace; font-weight: bold;">
+              {{tag.id}}
+              {{#if tag.isRule}}<span class="cog-badge cog-bg-accent-fill cog-text-on-fill cog-tm-rule-badge" title="{{localize 'COG.TagManager.RuleHint'}}">{{localize 'COG.TagManager.RuleBadge'}}</span>{{/if}}
+              {{#if tag.isDescriptive}}<span class="cog-badge cog-tag-descriptive-badge cog-bg-surface-muted cog-text-secondary" title="{{localize 'COG.TagManager.DescriptiveHint'}}">{{localize 'COG.TagManager.DescriptiveBadge'}}</span>{{/if}}
+            </td>
+            <td style="padding: 6px 8px;">
+              {{tag.label}}
+              {{#if tag.description}}
+                <div class="cog-tm-tag-desc cog-text-muted" style="font-size: 10px;">{{tag.description}}</div>
+              {{/if}}
+            </td>
+            <td style="padding: 6px 8px;">
+              <span class="cog-tm-namespace-pill cog-bg-info-tint cog-text-info" style="display: inline-block; padding: 1px 6px; font-size: 10px; text-transform: uppercase; border: 1px solid var(--cog-info-border); border-radius: 8px;">
+                {{tag.namespace}}
+              </span>
+              {{#if tag.isIdentityNamespace}}<span class="cog-badge cog-bg-surface-muted cog-text-secondary cog-tm-identity-badge" title="{{localize 'COG.TagManager.IdentityHint'}}">{{localize 'COG.TagManager.IdentityBadge'}}</span>{{/if}}
+            </td>
+            <td style="padding: 6px 8px; text-align: center;">
+              <span class="cog-tag-count-badge cog-bg-surface-muted cog-text" style="display: inline-block; padding: 1px 6px; font-size: 11px; font-weight: bold; border-radius: 10px;">
+                {{tag.count}}
+              </span>
+            </td>
+            <td style="padding: 6px 8px; text-align: right;">
+              <button type="button" data-action="selectTag" class="cog-btn cog-select-tag-btn" data-tag-id="{{tag.id}}" title="{{localize 'COG.TagManager.OpenRules'}}" style="padding: 2px 6px; font-size: 10px; cursor: pointer; border-radius: 2px;">
+                <i class="fa-solid {{#if tag.isSelected}}fa-folder-open{{else}}fa-sliders{{/if}}"></i> {{localize 'COG.TagManager.Rules'}}
+              </button>
+              {{#if tag.isCustom}}
+                <button type="button" data-action="deleteTag" class="cog-btn cog-delete-tag-btn cog-bg-accent-fill cog-text-on-fill" data-tag-id="{{tag.id}}" title="Delete Custom Tag" style="border: 1px solid var(--cog-accent-strong-fill); padding: 2px 6px; font-size: 10px; cursor: pointer; border-radius: 2px;">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              {{else}}
+                <span class="cog-text-muted" style="font-size: 10px; font-style: italic;">Core</span>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <div class="cog-text-muted" style="text-align: center; padding: 30px; font-style: italic;">
+      No tags match the current filter or search query.
+    </div>
+  {{/if}}
+</div>

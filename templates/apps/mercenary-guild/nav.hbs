@@ -1,0 +1,17 @@
+<div class="cog-mercenary-guild-app cog-bg-window cog-text cog-guild-nav" style="font-family: 'Oswald', sans-serif;">
+  <nav class="sheet-tabs tabs cog-dark cog-bg-window" style="display: flex; border-bottom: 1px solid var(--cog-panel-border); font-size: 12px; font-weight: bold; text-transform: uppercase;">
+    <a data-action="setTab" class="item guild-nav-tab {{#if (eq activeTab 'roster')}}active{{/if}} {{#if (eq activeTab 'roster')}}cog-text-on-fill{{else}}cog-text-muted{{/if}}" data-tab="roster" style="padding: 10px 18px; text-decoration: none; cursor: pointer;">
+      <i class="fa-solid fa-id-card-clip"></i> Available Retainers ({{mercenaries.length}})
+    </a>
+    <a data-action="setTab" class="item guild-nav-tab {{#if (eq activeTab 'contracts')}}active{{/if}} {{#if (eq activeTab 'contracts')}}cog-text-on-fill{{else}}cog-text-muted{{/if}}" data-tab="contracts" style="padding: 10px 18px; text-decoration: none; cursor: pointer;">
+      <i class="fa-solid fa-file-contract"></i> Active Contracts ({{activeContracts.length}})
+    </a>
+    <a data-action="setTab" class="item guild-nav-tab {{#if (eq activeTab 'barracks')}}active{{/if}} {{#if (eq activeTab 'barracks')}}cog-text-on-fill{{else}}cog-text-muted{{/if}}" data-tab="barracks" style="padding: 10px 18px; text-decoration: none; cursor: pointer;">
+      <i class="fa-solid fa-person-military-pointing"></i> Safe Room Barracks ({{spaces.length}})
+    </a>
+    <a data-action="setTab" class="item guild-nav-tab {{#if (eq activeTab 'recruit')}}active{{/if}} {{#if (eq activeTab 'recruit')}}cog-text-on-fill{{else}}cog-text-muted{{/if}}" data-tab="recruit" style="padding: 10px 18px; text-decoration: none; cursor: pointer;">
+      <i class="fa-solid fa-user-plus"></i> Recruit Custom Retainer
+    </a>
+  </nav>
+
+</div>

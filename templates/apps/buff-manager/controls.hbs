@@ -1,0 +1,41 @@
+<div class="cog-manager-header cog-bg-window cog-text-strong" style="padding: 10px 14px; border-bottom: 2px solid var(--cog-accent);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i class="fa-solid fa-shield-virus cog-text-danger" style="font-size: 18px;"></i>
+      <span style="font-size: 16px; font-weight: bold; letter-spacing: 0.5px;">BUFF &amp; CONDITION LIBRARY</span>
+    </div>
+    {{#if actor}}
+      <div class="cog-text-gold" style="font-size: 12px;">
+        Target Character: <strong>{{actor.name}}</strong>
+        {{#if targetSlot}}
+          <span class="cog-text-info" style="margin-left: 4px;">(Slot: {{upper targetSlot}})</span>
+        {{/if}}
+      </div>
+    {{/if}}
+  </div>
+
+  {{!-- Search Input --}}
+  <div style="position: relative; margin-bottom: 8px;">
+    <input type="text" name="search" data-input-action="setSearch" class="condition-search-input cog-field-input cog-bg-surface cog-text-strong" placeholder="Search conditions, debuffs, resistances, stat bonuses..." value="{{searchQuery}}" style="width: 100%; height: 30px; font-size: 12px; padding-right: 24px;" autofocus />
+    <a class="condition-search-clear cog-text-secondary" data-action="clearSearch" {{#unless searchQuery}}hidden{{/unless}} style="position: absolute; right: 8px; top: 6px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></a>
+  </div>
+
+  {{!-- Filter Tabs --}}
+  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+    <a data-action="setTab" class="condition-tab-pill {{#if (eq activeTab 'all')}}is-active{{/if}} {{#if (eq activeTab 'all')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-tab="all" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      All ({{counts.all}})
+    </a>
+    <a data-action="setTab" class="condition-tab-pill {{#if (eq activeTab 'buffs')}}is-active{{/if}} {{#if (eq activeTab 'buffs')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-tab="buffs" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      <i class="fa-solid fa-sparkles"></i> Buffs ({{counts.buffs}})
+    </a>
+    <a data-action="setTab" class="condition-tab-pill {{#if (eq activeTab 'debuffs')}}is-active{{/if}} {{#if (eq activeTab 'debuffs')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-tab="debuffs" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      <i class="fa-solid fa-skull"></i> Debuffs ({{counts.debuffs}})
+    </a>
+    <a data-action="setTab" class="condition-tab-pill {{#if (eq activeTab 'stat')}}is-active{{/if}} {{#if (eq activeTab 'stat')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-tab="stat" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Stat Modifiers ({{counts.stat}})
+    </a>
+    <a data-action="setTab" class="condition-tab-pill {{#if (eq activeTab 'defense')}}is-active{{/if}} {{#if (eq activeTab 'defense')}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-strong cog-text-strong{{/if}}" data-tab="defense" style="padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      Defenses &amp; Temp HP ({{counts.defense}})
+    </a>
+  </div>
+</div>

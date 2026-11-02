@@ -1,0 +1,285 @@
+<ol class="combat-tracker plain cog-combat-list">
+  {{#if hasCombat}}
+    {{#each phases as |phase|}}
+      <li class="cog-phase-section {{#if phase.isMob}}phase-mob{{else}}phase-crawler{{/if}} {{#if phase.isSurprise}}phase-surprise{{/if}}">
+        <!-- Phase Header Banner -->
+        <div class="cog-phase-header flexrow">
+          <span class="cog-phase-title">
+            <i class="{{phase.icon}}"></i> {{phase.name}}
+          </span>
+          <span class="cog-phase-badge">{{phase.badge}}</span>
+        </div>
+        <div class="cog-phase-subtitle">{{phase.subtitle}}</div>
+
+        <!-- Combatants in this Phase -->
+        <ul class="cog-combatant-group">
+          {{#if phase.turns.length}}
+            {{#each phase.turns as |turn|}}
+              <li class="combatant cog-combatant-row {{turn.css}} {{#if turn.isComplete}}turn-complete{{/if}} {{#if turn.isStepActive}}cog-step-active{{/if}}" data-combatant-id="{{turn.id}}">
+                
+                <div class="cog-combatant-main flexrow" data-action="activateCombatant" data-combatant-id="{{turn.id}}">
+                  <!-- Token Image -->
+                  <img class="token-image cog-combatant-img" src="{{turn.img}}" alt="{{turn.name}}" />
+
+                  <!-- Combatant Info -->
+                  <div class="cog-combatant-details flexcol">
+                    <div class="cog-combatant-name-row flexrow">
+                      <span class="token-name cog-combatant-name" title="{{turn.name}}">{{turn.name}}</span>
+                      {{#if turn.trophyBadges.hasBadges}}
+                        {{{turn.trophyBadges.html}}}
+                      {{/if}}
+                      <div class="cog-combatant-controls flexrow">
+                      {{#if @root.user.isGM}}
+                        <button type="button" class="inline-control combatant-control icon fa-solid fa-eye-slash {{#if turn.hidden}}active{{/if}}"
+                                data-action="toggleHidden" data-tooltip aria-label="{{#if turn.hidden}}{{localize 'COMBATANT.Show'}}{{else}}{{localize 'COMBATANT.Hide'}}{{/if}}"></button>
+                        <button type="button" class="inline-control combatant-control icon fa-solid fa-skull {{#if turn.isDefeated}}active{{/if}}"
+                                data-action="toggleDefeated" data-tooltip aria-label="{{#if turn.isDefeated}}{{localize 'COMBATANT.UnmarkDefeated'}}{{else}}{{localize 'COMBATANT.MarkDefeated'}}{{/if}}"></button>
+                      {{/if}}
+                      <a class="combatant-control cog-combatant-control cog-target-btn {{#if turn.isTargeted}}is-targeted active{{/if}}"
+                         data-action="targetCombatant"
+                         data-combatant-id="{{turn.id}}"
+                         data-tooltip="{{#if turn.isTargeted}}Untarget (Hold Alt/Shift to Solo-Target){{else}}Target (Adds to targets){{/if}}"
+                         aria-label="Target Combatant">
+                        <i class="fa-solid fa-crosshairs"></i>
+                      </a>
+                      <a class="combatant-control cog-combatant-control cog-ping-btn {{#unless turn.canPing}}is-unavailable{{/unless}}"
+                         data-action="pingCombatant"
+                         data-combatant-id="{{turn.id}}"
+                         data-tooltip="Ping Token on Canvas"
+                         aria-label="Ping Token">
+                        <i class="fa-solid fa-bullseye-arrow"></i>
+                      </a>
+                      {{#unless @root.user.isGM}}
+                        <button type="button" class="inline-control combatant-control icon fa-solid fa-arrows-to-eye"
+                                data-action="panToCombatant" data-tooltip aria-label="{{localize 'COMBATANT.PanTo'}}"></button>
+                      {{/unless}}
+                    </div>
+                    <span class="cog-type-badge {{#if turn.isMob}}badge-mob{{else}}badge-crawler{{/if}}">
+                        {{turn.actorTypeLabel}}
+                      </span>
+                    </div>
+
+                    <!-- Health Threshold Indicator (Cheat Sheet: Green / Yellow / Red) -->
+                    <div class="cog-combatant-hp-row flexrow">
+                      <span class="cog-hp-threshold-badge health-{{turn.healthThreshold.status}}" data-tooltip="Health Threshold: {{turn.healthThreshold.label}}">
+                        HP: {{turn.hpValue}}/{{turn.hpMax}}
+                        <span class="cog-hp-badge-pill">({{turn.healthThreshold.pct}}%)</span>
+                      </span>
+
+                      {{#if turn.hasTempBars}}
+                        <span class="cog-temp-bars-badge cog-bg-gold-tint cog-text-gold" style="border: 1px solid var(--cog-gold); padding: 1px 5px; border-radius: 3px; font-weight: bold; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;" data-tooltip="Temporary Health Bars: {{turn.tempBarsCount}} slots ({{turn.tempBarsHpPerSlot}} HP each, {{turn.tempBarsTotalHp}} Temp HP total){{#if turn.tempBarsSource}} from {{turn.tempBarsSource}}{{/if}}">
+                          <i class="fa-solid fa-shield-heart cog-text-gold"></i> +{{turn.tempBarsCount}} Bars ({{turn.tempBarsTotalHp}} HP)
+                        </span>
+                      {{else if turn.tempHp}}
+                        <span class="cog-temp-bars-badge cog-bg-success-tint cog-text-success" style="border: 1px solid var(--cog-success); padding: 1px 5px; border-radius: 3px; font-weight: bold; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;" data-tooltip="Temporary HP: {{turn.tempHp}}">
+                          <i class="fa-solid fa-shield"></i> +{{turn.tempHp}} Temp HP
+                        </span>
+                      {{/if}}
+
+                      <!-- Action Budget Counter -->
+                      <span class="cog-action-budget-counter {{#if turn.isComplete}}budget-empty{{else}}budget-active{{/if}}{{#unless turn.canEditActions}} is-inert{{/unless}}" {{#if turn.canEditActions}}data-action="toggleBudget"{{/if}} data-combatant-id="{{turn.id}}">
+                        <i class="fa-solid fa-clock"></i> {{turn.actions.spent}}/{{turn.actions.max}} ACTIONS
+                      </span>
+
+                      <!-- Interrupt Status Pill -->
+                      <button type="button" class="cog-interrupt-badge-btn {{#if turn.interruptReady}}interrupt-ready{{else}}interrupt-spent{{/if}}"
+                                data-action="openInterruptDrawer" data-popover-trigger
+                              data-combatant-id="{{turn.id}}"
+                              data-tooltip="{{#if turn.interruptReady}}Interrupt Ready: Click to trigger Quick Interrupt{{else}}Action Budget Depleted: Click to view Free Perks / Interrupt Options{{/if}}">
+                        <i class="fa-solid fa-bolt"></i> {{#if turn.interruptReady}}INTERRUPT READY{{else}}INTERRUPT SPENT{{/if}}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {{#if turn.calledPlays.length}}
+                  <div class="cog-called-plays flexrow">
+                    {{#each turn.calledPlays as |play|}}
+                      <span class="cog-called-play-pill" data-called-play-id="{{play.id}}" data-tooltip="{{play.title}}">
+                        <i class="fa-solid fa-bullhorn"></i> {{play.label}}
+                        {{#if play.canDiscard}}
+                          <button type="button" class="cog-called-play-discard" data-action="discardCalledPlay" data-combatant-id="{{../turn.id}}" data-called-play-id="{{play.id}}" data-tooltip="Discard this Called Play" aria-label="Discard this Called Play">&times;</button>
+                        {{/if}}
+                      </span>
+                    {{/each}}
+                  </div>
+                {{/if}}
+
+                <!-- Action Slots Row -->
+                <div class="cog-actions-row flexrow">
+                  <span class="cog-actions-label">ACTIONS:</span>
+                  <div class="cog-action-pips flexrow">
+                    {{#each turn.slotList as |slot|}}
+                      <button type="button" {{#unless turn.canEditActions}}disabled{{/unless}} data-action="toggleActionPip" data-filled="{{#if slot.filled}}true{{else}}false{{/if}}" class="cog-action-pip {{#if slot.filled}}pip-filled {{#if slot.isInterrupt}}pip-interrupt{{else if slot.isAttack}}pip-attack{{else}}pip-utility{{/if}}{{else}}pip-empty{{/if}} {{#if slot.isBonus}}pip-bonus{{/if}}{{#unless turn.canEditActions}} is-inert{{/unless}}"
+                              data-combatant-id="{{turn.id}}"
+                              data-slot-index="{{slot.index}}"
+                              data-tooltip="{{#if slot.filled}}{{slot.label}} (Click to change/clear){{else}}{{slot.label}} (Click to select action){{/if}}{{#unless turn.canEditActions}} (you do not control this combatant){{/unless}}">
+                        <i class="{{slot.icon}}"></i>
+                        <span class="cog-pip-text">{{slot.label}}</span>
+                      </button>
+                    {{/each}}
+                  </div>
+
+                  <!-- Quick Interrupt Button -->
+                  <button type="button" class="cog-open-interrupt-drawer-btn" data-action="openInterruptDrawer" data-popover-trigger data-combatant-id="{{turn.id}}" data-tooltip="Trigger Quick Interrupt">
+                    <i class="fa-solid fa-bolt cog-text-warning"></i> INTERRUPT
+                  </button>
+
+                  <!-- AI Favor Bonus Action Button for Crawlers -->
+                  {{#if turn.canSpendAIFavor}}
+                    <button type="button" class="cog-spend-favor-btn" data-action="spendFavor" data-combatant-id="{{turn.id}}" data-tooltip="Spend 1 AI Favor ({{turn.currentFavor}} available) for +1 Non-Attack Action this round">
+                      <i class="fa-solid fa-hand-holding-heart"></i> +1 ACTION (1 FAVOR)
+                    </button>
+                  {{/if}}
+                </div>
+
+                <!-- Quick Action Popover Menu (Toggled on pip click) -->
+                <div class="cog-action-picker-popover" data-combatant-id="{{turn.id}}" data-combatant-name="{{turn.name}}" data-slot-index="0" data-attack-capped="{{#if turn.mobAttackCapped}}true{{else}}false{{/if}}" style="display: none;">
+                  <div class="cog-popover-header flexrow">
+                    <span>SELECT ACTION FOR {{upper turn.name}}</span>
+                    <button type="button" class="cog-action-clear-opt" data-action="clearAction" data-tooltip="Clear this action slot">
+                      <i class="fa-solid fa-trash-can"></i> CLEAR
+                    </button>
+                  </div>
+
+                  <!-- Mob 1-Attack Notice -->
+                  {{#if turn.isMob}}
+                    {{#if turn.actions.hasAttacked}}
+                      <div class="cog-rule-warning">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Mob Attack Used! Next action must be Move or Skill.
+                      </div>
+                    {{/if}}
+                  {{/if}}
+
+                  <div class="cog-action-options-grid">
+                    <!-- Standard Actions -->
+                    <div class="cog-action-group-label">Standard Actions</div>
+                    
+                    <!-- Attack Button with Mob check -->
+                    <button type="button" class="cog-action-option opt-attack {{#if turn.mobAttackCapped}}rule-warn{{/if}}"
+                              data-action="pickAction" data-action-type="attack"
+                              {{#if turn.mobAttackCapped}}title="Mobs may only make 1 Attack per round (confirm to record it as a Rule Break)"{{/if}}>
+                        <i class="fa-solid fa-burst"></i> Attack {{#if turn.mobAttackCapped}}(USED){{/if}}
+                      </button>
+
+                    <button type="button" class="cog-action-option opt-move" data-action="pickAction" data-action-type="move">
+                      <i class="fa-solid fa-person-walking"></i> Move (20ft + 10ft Step)
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-cast" data-action="pickAction" data-action-type="cast">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> Cast Spell
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-check" data-action="pickAction" data-action-type="check">
+                      <i class="fa-solid fa-dice-d20"></i> Make a Check
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-item" data-action="pickAction" data-action-type="item">
+                      <i class="fa-solid fa-flask"></i> Use Hotlist Item
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-retrieve" data-action="pickAction" data-action-type="retrieve">
+                      <i class="fa-solid fa-box-open"></i> Retrieve
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-help" data-action="pickAction" data-action-type="help">
+                      <i class="fa-solid fa-handshake-angle"></i> Help
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-play" data-action="pickAction" data-action-type="play">
+                      <i class="fa-solid fa-clipboard-list"></i> Call a Play
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-clues" data-action="pickAction" data-action-type="clues">
+                      <i class="fa-solid fa-magnifying-glass"></i> Look for Clues
+                    </button>
+
+                    <!-- Interrupts -->
+                    <div class="cog-action-group-label" style="margin-top: 4px;">Interrupts / Defenses</div>
+
+                    <button type="button" class="cog-action-option opt-evade" data-action="pickAction" data-action-type="evade">
+                      <i class="fa-solid fa-shield-halved"></i> Evade
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-heal" data-action="pickAction" data-action-type="heal">
+                      <i class="fa-solid fa-heart-pulse"></i> Heal
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-taunt" data-action="pickAction" data-action-type="taunt">
+                      <i class="fa-solid fa-bullhorn"></i> Taunt
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-catcher" data-action="pickAction" data-action-type="catcher">
+                      <i class="fa-solid fa-person-falling-burst"></i> Catcher
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-intervene" data-action="pickAction" data-action-type="intervene">
+                      <i class="fa-solid fa-user-shield"></i> Intervene
+                    </button>
+
+                    <button type="button" class="cog-action-option opt-other" data-action="pickAction" data-action-type="other">
+                      <i class="fa-solid fa-ellipsis"></i> Other Action
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Quick Interrupt Drawer -->
+                <div class="cog-interrupt-drawer" data-combatant-id="{{turn.id}}" style="display: none;">
+                  <div class="cog-drawer-header flexrow">
+                    <span class="cog-drawer-title"><i class="fa-solid fa-bolt cog-text-warning"></i> QUICK INTERRUPT: {{upper turn.name}}</span>
+                    <span class="cog-drawer-budget">{{turn.remainingActions}} Actions Left</span>
+                    <button type="button" class="cog-drawer-close-btn" data-action="closeInterruptDrawer" data-tooltip="Close Drawer">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+
+                  <div class="cog-drawer-list">
+                    {{#if turn.availableInterrupts.length}}
+                      {{#each turn.availableInterrupts as |intr|}}
+                        <div class="cog-drawer-item {{#unless intr.canUse}}item-disabled{{/unless}}">
+                          <div class="cog-drawer-item-header flexrow">
+                            <span class="cog-drawer-item-name">
+                              <i class="{{intr.icon}}"></i> {{intr.name}}
+                            </span>
+                            <div class="cog-drawer-pills flexrow">
+                              <span class="cog-pill cog-pill-trigger">{{intr.triggerLabel}}</span>
+                              <span class="cog-pill {{#if intr.isFree}}cog-pill-free{{else}}cog-pill-cost{{/if}}">{{intr.costDesc}}</span>
+                            </div>
+                          </div>
+                          {{#if intr.description}}
+                            <div class="cog-drawer-item-desc">{{intr.description}}</div>
+                          {{/if}}
+                          <div class="cog-drawer-item-footer flexrow">
+                            {{#if intr.reasonCannotUse}}
+                              <span class="cog-drawer-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{intr.reasonCannotUse}}</span>
+                            {{/if}}
+                            <button type="button" class="cog-drawer-interrupt-btn {{#unless intr.canUse}}rule-warn{{/unless}}"
+                                  data-action="triggerInterrupt"
+                                  data-interrupt-id="{{intr.id}}"
+                                  data-can-use="{{#if intr.canUse}}true{{else}}false{{/if}}"
+                                  data-reason="{{intr.reasonCannotUse}}">
+                            <i class="fa-solid fa-bolt"></i> TRIGGER INTERRUPT
+                          </button>
+                          </div>
+                        </div>
+                      {{/each}}
+                    {{else}}
+                      <div class="cog-drawer-empty">No interrupt abilities configured on this combatant.</div>
+                    {{/if}}
+                  </div>
+                </div>
+
+              </li>
+            {{/each}}
+          {{else}}
+            <li class="cog-empty-phase">No combatants in this phase.</li>
+          {{/if}}
+        </ul>
+      </li>
+    {{/each}}
+  {{else}}
+    <li class="cog-no-combat-msg">
+      <p>No active combat encounter.</p>
+    </li>
+  {{/if}}
+</ol>

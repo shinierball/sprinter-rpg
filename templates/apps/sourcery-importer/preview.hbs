@@ -1,0 +1,31 @@
+<section class="cog-sourcery-preview cog-text cog-bg-window">
+  {{#if hasPlan}}
+    <p class="cog-sourcery-summary">Nothing is written until you press Import. Text the PDFs do not give is left empty and flagged.</p>
+    <div class="cog-sourcery-group">
+      <strong>Books</strong>
+      <ul class="cog-sourcery-books">
+        {{#each summary.books}}
+          <li class="cog-sourcery-book">
+            <strong>{{label}}</strong>:
+            {{#if provided}}found in {{file}}, matched {{pct}}% of its entries.{{else}}<span class="cog-text-muted">not provided</span>{{/if}}
+            {{#if note}}<span class="cog-text-warning">{{note}}</span>{{/if}}
+            {{#if tablesNote}}<span class="cog-text-muted">{{tablesNote}}</span>{{/if}}
+            {{#if differsNote}}<span class="cog-text-warning">{{differsNote}}</span>{{/if}}
+          </li>
+        {{/each}}
+      </ul>
+    </div>
+    <div class="cog-sourcery-group">
+      <strong>Text</strong>
+      <ul class="cog-sourcery-kinds">
+        {{#each summary.kinds}}
+          <li class="cog-sourcery-kind">
+            <strong>{{label}}</strong>: {{withText}} of {{asked}} get text{{#if waiting}}, <span class="cog-text-warning">{{waiting}} empty, waiting for a book not provided</span>{{/if}}{{#if notFound}}, <span class="cog-text-warning">{{notFound}} empty, not found in the provided book</span>{{/if}}{{#if noRecipe}}, <span class="cog-text-warning">{{noRecipe}} empty, not in the system's recipes</span>{{/if}}{{#if partial}}, <span class="cog-text-muted">{{partial}} only partly</span>{{/if}}
+          </li>
+        {{/each}}
+      </ul>
+      <p class="cog-text-muted">{{summary.totals.withText}} of {{summary.totals.asked}} documents get text; {{summary.totals.empty}} stay empty and flagged ({{summary.totals.waiting}} waiting for a book not provided, {{summary.totals.notFound}} not found in the provided book, {{summary.totals.noRecipe}} not in the system's recipes).</p>
+      <p class="cog-text-muted">Fields: {{summary.fields.fromBook}} filled from the book ({{summary.fields.verified}} verified against the reviewed text, {{summary.fields.unverified}} unverified and flagged), {{summary.fields.emptiedNow}} emptied and flagged because the book text did not parse, {{summary.fields.keptOurs}} still hold the system's own wording.</p>
+    </div>
+  {{/if}}
+</section>

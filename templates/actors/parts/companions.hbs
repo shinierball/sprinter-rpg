@@ -1,0 +1,169 @@
+{{!-- COMPANIONS & VEHICLES ROSTER (PAGE 5 / STORY & EXTRAS) --}}
+<div class="cog-stat-block cog-companions-manager" style="margin-bottom: 14px;">
+  <div class="cog-banner-header cog-bg-grad-success-info" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px;">
+    <span><i class="fa-solid fa-shield-cat"></i> BONDED COMPANIONS &amp; VEHICLES</span>
+    <div style="display: flex; gap: 8px;">
+      <button type="button" class="cog-btn-xs cog-bg-sheen-20 cog-text-on-fill" data-action="addPet" title="Create a new bonded Pet actor" style="border: 1px solid var(--cog-sheen); cursor: pointer; border-radius: 4px; padding: 2px 8px; font-size: 11px;">
+        <i class="fa-solid fa-plus"></i> New Pet
+      </button>
+      <button type="button" class="cog-btn-xs cog-bg-sheen-20 cog-text-on-fill" data-action="addVehicle" title="Create a new bonded Vehicle actor" style="border: 1px solid var(--cog-sheen); cursor: pointer; border-radius: 4px; padding: 2px 8px; font-size: 11px;">
+        <i class="fa-solid fa-plus"></i> New Vehicle
+      </button>
+    </div>
+  </div>
+
+  <div class="cog-block-content cog-companion-drop-zone cog-bg-shade-02" style="padding: 10px; min-height: 80px;">
+    {{!-- PETS SECTION --}}
+    <div class="cog-companion-section" style="margin-bottom: 12px;">
+      <div class="cog-text-success" style="font-weight: bold; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--cog-success-border); padding-bottom: 3px; margin-bottom: 8px; display: flex; justify-content: space-between;">
+        <span><i class="fa-solid fa-paw"></i> Pets &amp; Beasts</span>
+        <span style="font-size: 11px; opacity: 0.8;">({{bondedPets.length}} Active)</span>
+      </div>
+
+      {{#if bondedPets.length}}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
+          {{#each bondedPets as |pet|}}
+            <div class="cog-companion-card cog-bg-surface" data-companion-id="{{pet.id}}" style="border: 1px solid var(--cog-success); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <img class="cog-bg-icon-box" src="{{pet.img}}" width="36" height="36" style="border-radius: 4px; object-fit: cover; border: 1px solid var(--cog-divider);" />
+                <div style="flex: 1; min-width: 0;">
+                  <div class="cog-text" style="font-weight: bold; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{pet.name}}</div>
+                  <div class="cog-text-muted" style="font-size: 10px;">Lvl {{pet.level}} • {{pet.size}} {{pet.creatureType}}</div>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" class="cog-btn-xs cog-bg-success-fill cog-text-on-fill" data-action="openCompanion" data-companion-id="{{pet.id}}" title="Open Pet Sheet" style="padding: 3px 6px; border: none; border-radius: 3px; cursor: pointer;">
+                    <i class="fa-solid fa-up-right-from-square"></i>
+                  </button>
+                  <button type="button" class="cog-btn-xs cog-bg-danger-fill cog-text-on-fill" data-action="unlinkCompanion" data-companion-id="{{pet.id}}" title="Unbond Pet" style="padding: 3px 6px; border: none; border-radius: 3px; cursor: pointer;">
+                    <i class="fa-solid fa-link-slash"></i>
+                  </button>
+                </div>
+              </div>
+
+              {{!-- HP Bar --}}
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div class="cog-text-secondary" style="display: flex; justify-content: space-between; font-size: 10px; font-weight: bold;">
+                  <span>HP: {{pet.hp.value}} / {{pet.hp.max}}</span>
+                  <span>{{pet.hp.pct}}%</span>
+                </div>
+                <div class="cog-bg-surface-muted" style="height: 6px; border-radius: 3px; overflow: hidden;">
+                  <div class="cog-bg-dyn" style="--cog-bg-dyn: {{#if (gt pet.hp.pct 50)}}#27ae60{{else if (gt pet.hp.pct 25)}}#f39c12{{else}}#c0392b{{/if}}; height: 100%; width: {{pet.hp.pct}}%;"></div>
+                </div>
+              </div>
+
+              {{!-- Mount & Riding Status --}}
+              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding-top: 4px; border-top: 1px dashed var(--cog-divider);">
+                {{#if pet.isRidden}}
+                  <span class="cog-text-info" style="font-weight: bold;"><i class="fa-solid fa-horse"></i> Mounted by You</span>
+                  <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="toggleMount" data-pet-id="{{pet.id}}" data-mode="dismount" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">
+                    Dismount
+                  </button>
+                {{else if pet.isRideable}}
+                  <span class="cog-text-success" style="font-size: 10px;"><i class="fa-solid fa-check"></i> Rideable (Mount)</span>
+                  <button type="button" class="cog-btn-xs cog-bg-success-fill cog-text-on-fill" data-action="toggleMount" data-pet-id="{{pet.id}}" data-mode="mount" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">
+                    Mount
+                  </button>
+                {{else}}
+                  <span class="cog-text-muted" style="font-size: 10px;">Too small to ride</span>
+                {{/if}}
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="cog-text-muted" style="font-size: 11px; font-style: italic; padding: 6px 0;">
+          No pets bonded. Drag an existing Pet actor here, or click [+ New Pet] to create one.
+        </div>
+      {{/if}}
+    </div>
+
+    {{!-- VEHICLES SECTION --}}
+    <div class="cog-companion-section">
+      <div class="cog-text-info" style="font-weight: bold; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--cog-info-border); padding-bottom: 3px; margin-bottom: 8px; display: flex; justify-content: space-between;">
+        <span><i class="fa-solid fa-truck-monster"></i> Mounts &amp; Vehicles</span>
+        <span style="font-size: 11px; opacity: 0.8;">({{bondedVehicles.length}} Active)</span>
+      </div>
+
+      {{#if aboard}}
+        <div class="cog-vehicle-aboard" data-vehicle-uuid="{{aboard.vehicleUuid}}" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border: 1px solid var(--cog-info); border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; font-size: 11px;">
+          <img class="cog-bg-icon-box" src="{{aboard.img}}" width="24" height="24" style="border-radius: 3px; object-fit: cover;" />
+          <span class="cog-text" style="font-weight: bold;">Aboard {{aboard.name}}</span>
+          <span class="cog-text-muted">{{aboard.seatsLabel}}, {{aboard.hullLabel}}</span>
+          {{#if aboard.isPilot}}<span class="cog-badge cog-badge-info cog-bg-info-fill cog-text-on-fill">[DRIVER]</span>{{/if}}
+          <span style="flex: 1;"></span>
+          {{> "systems/sprinter-rpg/templates/actors/parts/vehicle-role-select.hbs" uuid=aboard.vehicleUuid options=aboard.roleOptions}}
+          {{#if aboard.canOpen}}
+            <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="openCompanion" data-companion-uuid="{{aboard.vehicleUuid}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Open</button>
+          {{/if}}
+          {{#if aboard.isPilot}}
+            <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="vehicleCrew" data-op="stepDown" data-vehicle-uuid="{{aboard.vehicleUuid}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Step Down</button>
+          {{else}}
+            <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="vehicleCrew" data-op="takeWheel" data-vehicle-uuid="{{aboard.vehicleUuid}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Take the Wheel</button>
+          {{/if}}
+          <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="vehicleCrew" data-op="disembark" data-vehicle-uuid="{{aboard.vehicleUuid}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Disembark</button>
+        </div>
+      {{/if}}
+
+      {{#if bondedVehicles.length}}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
+          {{#each bondedVehicles as |v|}}
+            <div class="cog-companion-card cog-bg-surface" data-companion-id="{{v.id}}" style="border: 1px solid var(--cog-info); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <img class="cog-bg-icon-box" src="{{v.img}}" width="36" height="36" style="border-radius: 4px; object-fit: cover; border: 1px solid var(--cog-divider);" />
+                <div style="flex: 1; min-width: 0;">
+                  <div class="cog-text" style="font-weight: bold; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{v.name}}</div>
+                  <div class="cog-text-muted" style="font-size: 10px;">{{v.size}} {{v.vehicleType}} • Move {{v.move}} • DR {{v.dr}}</div>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="openCompanion" data-companion-id="{{v.id}}" title="Open Vehicle Sheet" style="padding: 3px 6px; border: none; border-radius: 3px; cursor: pointer;">
+                    <i class="fa-solid fa-up-right-from-square"></i>
+                  </button>
+                  <button type="button" class="cog-btn-xs cog-bg-danger-fill cog-text-on-fill" data-action="unlinkCompanion" data-companion-id="{{v.id}}" title="Unbond Vehicle" style="padding: 3px 6px; border: none; border-radius: 3px; cursor: pointer;">
+                    <i class="fa-solid fa-link-slash"></i>
+                  </button>
+                </div>
+              </div>
+
+              {{!-- Durability Bar --}}
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div class="cog-text-secondary" style="display: flex; justify-content: space-between; font-size: 10px; font-weight: bold;">
+                  <span>Hull HP: {{v.hp.value}} / {{v.hp.max}}</span>
+                  <span>{{v.hp.pct}}%</span>
+                </div>
+                <div class="cog-bg-surface-muted" style="height: 6px; border-radius: 3px; overflow: hidden;">
+                  <div class="cog-bg-dyn" style="--cog-bg-dyn: {{#if (gt v.hp.pct 50)}}#2980b9{{else if (gt v.hp.pct 25)}}#f39c12{{else}}#c0392b{{/if}}; height: 100%; width: {{v.hp.pct}}%;"></div>
+                </div>
+              </div>
+
+              {{!-- Crew state: not aboard, aboard, driving (role and Disembark live on the Aboard strip too) --}}
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 11px; padding-top: 4px; border-top: 1px dashed var(--cog-divider);">
+                {{#if v.isPiloted}}
+                  <span class="cog-text-info" style="font-weight: bold;"><i class="fa-solid fa-id-badge"></i> You are driving</span>
+                {{else}}
+                  <span class="cog-text-muted" style="font-size: 10px;">{{#if v.pilotName}}Driver: {{v.pilotName}}{{else}}No driver{{/if}}</span>
+                {{/if}}
+                <div style="display: flex; gap: 4px;">
+                  {{#unless v.isAboard}}
+                    <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="vehicleCrew" data-op="embark" data-vehicle-id="{{v.id}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Embark</button>
+                  {{/unless}}
+                  {{#if v.isPiloted}}
+                    <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="vehicleCrew" data-op="stepDown" data-vehicle-id="{{v.id}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Step Down</button>
+                  {{else}}
+                    <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="vehicleCrew" data-op="takeWheel" data-vehicle-id="{{v.id}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Take the Wheel</button>
+                  {{/if}}
+                  {{#if v.isAboard}}
+                    <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="vehicleCrew" data-op="disembark" data-vehicle-id="{{v.id}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Disembark</button>
+                  {{/if}}
+                </div>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="cog-text-muted" style="font-size: 11px; font-style: italic; padding: 6px 0;">
+          No vehicles bonded. Drag an existing Vehicle actor here, or click [+ New Vehicle] to create one.
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>

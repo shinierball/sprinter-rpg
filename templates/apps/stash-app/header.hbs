@@ -1,0 +1,28 @@
+<div class="cog-stash-header cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+  <div>
+    <div class="cog-text-warning" style="font-size: 16px; font-weight: bold; letter-spacing: 1px;">
+      <i class="fa-solid fa-vault"></i> {{space.name}} — VAULT STORAGE
+    </div>
+    <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">
+      Owner: <strong class="cog-text-strong">{{crawler.name}}</strong> &bull; Tier {{space.system.tier}} {{space.system.size}} &bull; Defense: <strong class="cog-text-success">{{space.system.effectiveDefenseRating}}</strong>
+    </div>
+  </div>
+
+  {{!-- CAPACITY GAUGE --}}
+  <div style="min-width: 240px; margin: 0 16px;">
+    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+      <span class="cog-text-secondary">Stash Capacity</span>
+      <span class="cog-fg-dyn" style="--cog-fg-dyn: {{stashCapacity.color}}; font-weight: bold;">{{stashCapacity.current}} / {{stashCapacity.max}} Slots ({{stashCapacity.pct}}%)</span>
+    </div>
+    <div class="cog-bg-surface-muted" style="border-radius: 4px; height: 8px; overflow: hidden; border: 1px solid var(--cog-panel-border);">
+      <div class="cog-bg-dyn" style="--cog-bg-dyn: {{stashCapacity.color}}; width: {{stashCapacity.pct}}%; height: 100%; transition: width 0.3s ease;"></div>
+    </div>
+  </div>
+
+  {{!-- QUICK ACTIONS --}}
+  <div>
+    <button type="button" data-action="depositAll" class="stash-deposit-all-loot cog-bg-magic-fill cog-text-on-fill" style="border: 1px solid var(--cog-magic-fill); border-radius: 4px; padding: 6px 12px; font-family: 'Oswald', sans-serif; font-size: 11px; cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+      <i class="fa-solid fa-box-archive"></i> Deposit All Loot
+    </button>
+  </div>
+</div>

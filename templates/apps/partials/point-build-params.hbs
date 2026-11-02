@@ -1,0 +1,22 @@
+{{#if paramPickers.length}}
+  <div class="cog-param-pickers" data-entry="{{id}}">
+    {{#each paramPickers}}
+      <div class="cog-param-picker {{#if this.missing}}missing{{/if}}" data-param="{{this.name}}">
+        <label class="cog-param-label" for="{{@root.rootId}}-param-{{../id}}-{{this.name}}">{{localize this.labelKey}}</label>
+        {{#if this.isText}}
+          <input type="text" id="{{@root.rootId}}-param-{{../id}}-{{this.name}}" data-change-action="setParam" data-id="{{../id}}" data-param="{{this.name}}" value="{{this.value}}">
+        {{else}}
+          <select id="{{@root.rootId}}-param-{{../id}}-{{this.name}}" data-change-action="setParam" data-id="{{../id}}" data-param="{{this.name}}">
+            <option value="">{{localize "COG.PointBuilder.ChooseOne"}}</option>
+            {{#each this.groups}}
+              {{#if this.label}}<optgroup label="{{this.label}}">{{/if}}
+              {{#each this.options}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+              {{#if this.label}}</optgroup>{{/if}}
+            {{/each}}
+          </select>
+        {{/if}}
+        {{#if this.missing}}<span class="cog-param-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.PointBuilder.Unfilled"}}</span>{{/if}}
+      </div>
+    {{/each}}
+  </div>
+{{/if}}

@@ -1,0 +1,113 @@
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="barracks">
+  <div class="cog-bg-surface" style="border: 1px solid var(--cog-magic); border-radius: 6px; padding: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <div class="cog-text-magic" style="font-size: 16px; font-weight: bold;">
+        <i class="fa-solid fa-person-military-pointing"></i> SAFE ROOM BARRACKS &amp; RETAINER HOUSING
+      </div>
+      <div class="cog-text-secondary" style="font-size: 11px; margin-top: 4px;">
+        House hired mercenaries and allied NPCs between floors. Housed retainers gain safe resting and receive up to <strong>{{barracks.discountPct}}% off</strong> daily upkeep costs.
+      </div>
+    </div>
+    <div style="text-align: right;">
+      <div class="cog-text-strong" style="font-size: 12px; font-weight: bold;">
+        Capacity: <span class="{{#if barracks.isFull}}cog-text-danger{{else}}cog-text-success{{/if}}">{{barracks.housedCount}} / {{barracks.capacity}} Beds</span>
+      </div>
+      <button class="cog-bg-accent-fill cog-text-on-fill" type="button" data-action="openGuild" style="margin-top: 4px; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; padding: 3px 8px; font-size: 11px; cursor: pointer; font-family: 'Oswald', sans-serif; font-weight: bold; text-transform: uppercase;">
+        <i class="fa-solid fa-users"></i> Mercenary Guild
+      </button>
+    </div>
+  </div>
+
+  {{#unless barracks.hasBarracks}}
+    <div class="cog-bg-danger-tint cog-text-danger" style="border: 1px dashed var(--cog-danger); border-radius: 4px; padding: 12px; text-align: center; font-size: 12px; margin-bottom: 14px;">
+      <i class="fa-solid fa-triangle-exclamation"></i> No Barracks Upgrade Installed! Install a <strong>Retainer &amp; Mercenary Bunkhouse</strong> or higher in the <strong>Upgrades</strong> tab to house retainers.
+    </div>
+  {{/unless}}
+
+  {{!-- Housed Mercenaries Section --}}
+  <div style="margin-bottom: 16px;">
+    <div class="cog-text-warning" style="font-size: 13px; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+      <span><i class="fa-solid fa-shield-halved"></i> HOUSED MERCENARIES ({{barracks.mercenaries.length}})</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      {{#each barracks.mercenaries as |merc|}}
+        <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img class="cog-bg-icon-box" src="{{merc.img}}" width="32" height="32" style="border-radius: 3px; object-fit: cover;" />
+            <div>
+              <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">{{merc.name}}</div>
+              <div class="cog-text-muted" style="font-size: 11px;">
+                {{merc.race}} {{merc.class}} &bull; Level {{merc.level}} &bull; Role: <strong class="cog-text-info">{{merc.role}}</strong>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="cog-text-success" style="font-size: 11px; font-weight: bold;">
+              {{merc.effectiveDailyRate}} GP/Day {{#if ../barracks.discountPct}}<small class="cog-text-secondary">(was {{merc.dailyRate}})</small>{{/if}}
+            </span>
+            <button class="cog-bg-danger-fill cog-text-on-fill" type="button" data-action="unhouseMercenary" data-merc-id="{{merc.id}}" style="border: none; border-radius: 3px; padding: 4px 8px; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+              Deploy to Field
+            </button>
+          </div>
+        </div>
+      {{else}}
+        <div class="cog-text-muted" style="font-size: 12px; font-style: italic; padding: 6px 0;">No mercenaries currently housed in barracks.</div>
+      {{/each}}
+    </div>
+  </div>
+
+  {{!-- Housed NPCs Section --}}
+  <div style="margin-bottom: 16px;">
+    <div class="cog-text-info" style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">
+      <i class="fa-solid fa-user-group"></i> HOUSED ALLIED NPCS ({{barracks.npcs.length}})
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      {{#each barracks.npcs as |npc|}}
+        <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img class="cog-bg-icon-box" src="{{npc.img}}" width="32" height="32" style="border-radius: 3px; object-fit: cover;" />
+            <div>
+              <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">{{npc.name}}</div>
+              <div class="cog-text-muted" style="font-size: 11px;">Level {{npc.level}} NPC</div>
+            </div>
+          </div>
+          <button class="cog-bg-neutral-fill cog-text-on-fill" type="button" data-action="unhouseNpc" data-npc-id="{{npc.id}}" style="border: none; border-radius: 3px; padding: 4px 8px; font-size: 11px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+            Depart Barracks
+          </button>
+        </div>
+      {{else}}
+        <div class="cog-text-muted" style="font-size: 12px; font-style: italic; padding: 6px 0;">No allied NPCs currently housed.</div>
+      {{/each}}
+    </div>
+  </div>
+
+  {{!-- Assign Retainers to Available Beds --}}
+  {{#if (and barracks.hasBarracks (not barracks.isFull))}}
+    <div class="cog-bg-window" style="border: 1px dashed var(--cog-panel-border); border-radius: 6px; padding: 12px; margin-top: 14px;">
+      <div class="cog-text-secondary" style="font-size: 12px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;">
+        <i class="fa-solid fa-plus"></i> Assign Retainers to Empty Beds ({{barracks.housedCount}}/{{barracks.capacity}} Occupied)
+      </div>
+      {{#if availableForHousing.mercenaries.length}}
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+          {{#each availableForHousing.mercenaries as |merc|}}
+            <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="houseMercenary" data-merc-id="{{merc.id}}" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: 'Oswald', sans-serif; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-bed"></i> House Mercenary: {{merc.name}}
+            </button>
+          {{/each}}
+        </div>
+      {{/if}}
+      {{#if availableForHousing.npcs.length}}
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          {{#each availableForHousing.npcs as |npc|}}
+            <button class="cog-bg-info-fill cog-text-on-fill" type="button" data-action="houseNpc" data-npc-id="{{npc.id}}" style="border: 1px solid var(--cog-info-fill); border-radius: 3px; padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: 'Oswald', sans-serif; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-bed"></i> House NPC: {{npc.name}}
+            </button>
+          {{/each}}
+        </div>
+      {{/if}}
+      {{#unless (or availableForHousing.mercenaries.length availableForHousing.npcs.length)}}
+        <div class="cog-text-muted" style="font-size: 11px; font-style: italic;">No unhoused mercenaries or NPCs in the world. Hire mercenaries from the Mercenary Guild to lodge them here.</div>
+      {{/unless}}
+    </div>
+  {{/if}}
+</section>

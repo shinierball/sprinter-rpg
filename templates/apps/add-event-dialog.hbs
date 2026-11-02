@@ -1,0 +1,212 @@
+<div class="cog-add-event-form cog-text cog-bg-window" style="font-family: 'Oswald', sans-serif; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 4px; box-sizing: border-box; max-height: 85vh; overflow-y: auto;">
+  <div class="cog-text-gold" style="font-size: 13px; border-bottom: 2px solid var(--cog-accent); padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+    <i class="fa-solid fa-pen-to-square cog-text-danger"></i>
+    <span>{{#if isEdit}}Edit Session Ledger Event{{else}}Log Party or Crawler Event{{/if}}</span>
+  </div>
+
+  {{!-- Row 1: Crawler & Event Type --}}
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Crawler:</label>
+      <select name="actorId" class="cog-dialog-select cog-event-actor-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+        {{#each crawlers}}
+          <option value="{{this.actorId}}" {{#if (eq this.actorId ../currentCrawlerId)}}selected{{/if}}>{{this.name}} (Lvl {{this.level}}){{#if this.party}} [{{this.party}}]{{/if}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Action / Event Type:</label>
+      <select name="type" class="cog-dialog-select cog-event-type-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+        <optgroup label="Skills">
+          <option value="skill" {{#if (eq currentType 'skill')}}selected{{/if}}>Trained Skill Check</option>
+          <option value="untrained_skill" {{#if (eq currentType 'untrained_skill')}}selected{{/if}}>Untrained Skill Attempt (Disadvantage)</option>
+        </optgroup>
+        <optgroup label="Combat Events">
+          <option value="attack" {{#if (eq currentType 'attack')}}selected{{/if}}>Attack / Strike</option>
+          <option value="spell" {{#if (eq currentType 'spell')}}selected{{/if}}>Spell Cast</option>
+          <option value="damage_dealt" {{#if (eq currentType 'damage_dealt')}}selected{{/if}}>Damage Dealt</option>
+          <option value="damage_taken" {{#if (eq currentType 'damage_taken')}}selected{{/if}}>Damage Taken</option>
+          <option value="damage_mitigated" {{#if (eq currentType 'damage_mitigated')}}selected{{/if}}>Damage Mitigated</option>
+          <option value="healing" {{#if (eq currentType 'healing')}}selected{{/if}}>Healing Done</option>
+          <option value="condition_applied" {{#if (eq currentType 'condition_applied')}}selected{{/if}}>Condition Applied</option>
+          <option value="condition_removed" {{#if (eq currentType 'condition_removed')}}selected{{/if}}>Condition Removed / Cleansed</option>
+        </optgroup>
+        <optgroup label="Progression & Other">
+          <option value="favor" {{#if (eq currentType 'favor')}}selected{{/if}}>AI Favor Adjustment</option>
+          <option value="popularity" {{#if (eq currentType 'popularity')}}selected{{/if}}>Popularity Shift</option>
+          <option value="loot" {{#if (eq currentType 'loot')}}selected{{/if}}>Loot Box Awarded</option>
+          <option value="manual" {{#if (eq currentType 'manual')}}selected{{/if}}>Manual / Custom Event</option>
+        </optgroup>
+      </select>
+    </div>
+  </div>
+
+  {{!-- Loot box tier (options come from CONFIG.COG.lootBoxTiers); shown for new loot boxes only --}}
+  {{#unless isEdit}}
+  <div class="form-group cog-event-loot-tier-group" style="display: {{#if (eq currentType 'loot')}}flex{{else}}none{{/if}}; flex-direction: column; gap: 3px;">
+    <label class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-box-open"></i> Loot Box Tier:</label>
+    <select name="tier" class="cog-dialog-select cog-event-loot-tier-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+      {{#each lootTierOptions}}
+        <option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+      {{/each}}
+    </select>
+  </div>
+  {{/unless}}
+
+  {{!-- Row 2: Default Actions & Skills Quick Picker --}}
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">
+        <i class="fa-solid fa-list-check"></i> Quick Select Action / Skill:
+      </label>
+      <select id="cog-dialog-quick-action" class="cog-dialog-select cog-bg-surface-muted cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+        <option value="">-- Choose an Action, Skill, or Condition --</option>
+        <optgroup label="Default Actions & Interrupts">
+          {{#each actionOptions.defaults}}
+            <option value="{{this.name}}" data-type="{{this.type}}" data-untrained="{{this.isUntrained}}">{{this.name}} [{{this.category}}]</option>
+          {{/each}}
+        </optgroup>
+        {{#if actionOptions.trainedSkills.length}}
+          <optgroup label="Crawler's Trained Skills">
+            {{#each actionOptions.trainedSkills}}
+              <option value="{{this.name}}" data-type="skill" data-untrained="false">{{this.displayName}}</option>
+            {{/each}}
+          </optgroup>
+        {{/if}}
+        {{#if actionOptions.attacks.length}}
+          <optgroup label="Crawler's Attacks">
+            {{#each actionOptions.attacks}}
+              <option value="{{this.name}}" data-type="attack" data-untrained="false">{{this.name}}</option>
+            {{/each}}
+          </optgroup>
+        {{/if}}
+        {{#if actionOptions.spells.length}}
+          <optgroup label="Crawler's Spells">
+            {{#each actionOptions.spells}}
+              <option value="{{this.name}}" data-type="spell" data-untrained="false">{{this.name}}</option>
+            {{/each}}
+          </optgroup>
+        {{/if}}
+        <optgroup label="Common Untrained Skills">
+          {{#each actionOptions.untrained}}
+            <option value="{{this.name}}" data-type="untrained_skill" data-untrained="true">{{this.displayName}}</option>
+          {{/each}}
+        </optgroup>
+        <optgroup label="Conditions & Statuses">
+          {{#each actionOptions.conditions}}
+            <option value="{{this.name}}" data-type="condition_applied" data-condition="true">{{this.name}}</option>
+          {{/each}}
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Action / Event Name (or Type Custom):</label>
+      <input type="text" name="name" list="cog-dialog-actions-list" class="cog-dialog-input cog-bg-surface cog-text-strong" placeholder="e.g. Interrupt, Pugilism, Call a Play..." value="{{currentName}}" style="border: 1px solid var(--cog-panel-border); padding: 5px 6px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;" required />
+      <datalist id="cog-dialog-actions-list">
+        {{#each actionOptions.allFlat}}
+          <option value="{{this.name}}">{{this.displayName}}</option>
+        {{/each}}
+      </datalist>
+    </div>
+  </div>
+
+  {{!-- Row 3: Flags (Untrained Attempt & Killing Blow) --}}
+  <div class="cog-bg-surface" style="display: flex; gap: 16px; align-items: center; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <input type="checkbox" name="isUntrained" id="cog-event-is-untrained" {{#if isUntrained}}checked{{/if}} />
+      <label class="cog-text-warning" for="cog-event-is-untrained" style="font-size: 11px; cursor: pointer; font-weight: bold;">
+        <i class="fa-solid fa-graduation-cap"></i> Untrained Attempt (Tracks for Advancement)
+      </label>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <input type="checkbox" name="isKill" id="cog-event-is-kill" {{#if isKill}}checked{{/if}} />
+      <label class="cog-text-danger" for="cog-event-is-kill" style="font-size: 11px; cursor: pointer; font-weight: bold;">
+        <i class="fa-solid fa-skull"></i> Killing Blow
+      </label>
+    </div>
+  </div>
+
+  {{!-- Row 4: Combat Metrics (Damage, Mitigation, Healing) --}}
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-danger" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-burst"></i> Damage Dealt / Taken:</label>
+      <input class="cog-bg-surface cog-text-danger" type="number" name="damage" value="{{damage}}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+    </div>
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-info" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-shield-halved"></i> Damage Mitigated:</label>
+      <input class="cog-bg-surface cog-text-info" type="number" name="mitigation" value="{{mitigation}}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+    </div>
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-success" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-heart-pulse"></i> Healing Done:</label>
+      <input class="cog-bg-surface cog-text-success" type="number" name="healing" value="{{healing}}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+    </div>
+  </div>
+
+  {{!-- Row 5: Conditions (Applied / Removed) --}}
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-magic" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-biohazard"></i> Condition / Status Effect:</label>
+      <input class="cog-bg-surface cog-text-magic" type="text" name="condition" value="{{condition}}" placeholder="e.g. Stunned, Burning, Poisoned, Queasy, Held..." style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+    </div>
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase; font-weight: bold;">Condition Action:</label>
+      <select name="conditionAction" class="cog-dialog-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;">
+        <option value="applied" {{#if (eq conditionAction 'applied')}}selected{{/if}}>Applied / Inflicted</option>
+        <option value="removed" {{#if (eq conditionAction 'removed')}}selected{{/if}}>Removed / Cleansed</option>
+      </select>
+    </div>
+  </div>
+
+  {{!-- Row 6: Roll Formula, Total, and d20 Result --}}
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Formula:</label>
+      <input class="cog-bg-surface cog-text-strong" type="text" name="rollFormula" value="{{rollFormula}}" placeholder="1d20" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+    </div>
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Roll Total:</label>
+      <input class="cog-bg-surface cog-text-gold" type="number" name="total" value="{{total}}" placeholder="Total" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+    </div>
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Natural d20 (1-20):</label>
+      <input class="cog-bg-surface cog-text-strong" type="number" name="d20Result" value="{{d20Result}}" min="1" max="20" placeholder="Die face" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+    </div>
+  </div>
+
+  {{!-- Row 7: Target DC & Outcome --}}
+  <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px;">
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Target DC / AC:</label>
+      <input class="cog-bg-surface cog-text-strong" type="number" name="targetDC" value="{{targetDC}}" placeholder="e.g. 15" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+    </div>
+    <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+      <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Roll Outcome:</label>
+      <select name="outcome" class="cog-dialog-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;">
+        <option value="auto" {{#if (eq currentOutcome 'auto')}}selected{{/if}}>[Auto-Calculate from DC & Total]</option>
+        <option class="cog-text-gold" value="critical_success" {{#if (eq currentOutcome 'critical_success')}}selected{{/if}} style="font-weight: bold;">🌟 Critical Success (Nat 20)</option>
+        <option class="cog-text-success" value="success" {{#if (eq currentOutcome 'success')}}selected{{/if}}>🟢 Success</option>
+        <option class="cog-text-warning" value="failure" {{#if (eq currentOutcome 'failure')}}selected{{/if}}>🔴 Failure</option>
+        <option class="cog-text-danger" value="critical_failure" {{#if (eq currentOutcome 'critical_failure')}}selected{{/if}} style="font-weight: bold;">💀 Critical Failure (Nat 1)</option>
+        <option value="amazing_success" {{#if (eq currentOutcome 'amazing_success')}}selected{{/if}}>Amazing Success (+10)</option>
+        <option value="near_miss" {{#if (eq currentOutcome 'near_miss')}}selected{{/if}}>Near Miss (-1 to -3)</option>
+        <option value="major_failure" {{#if (eq currentOutcome 'major_failure')}}selected{{/if}}>Major Failure (-10)</option>
+        <option value="pending" {{#if (eq currentOutcome 'pending')}}selected{{/if}}>Pending DC</option>
+      </select>
+    </div>
+  </div>
+
+  {{!-- Row 8: Stat Delta (Favor / Pop) --}}
+  <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+    <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Stat / Resource Delta (+/- Favor, Popularity):</label>
+    <input class="cog-bg-surface cog-text-strong" type="number" name="statDelta" value="{{statDelta}}" placeholder="e.g. +5, -2, 20" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+  </div>
+
+  {{!-- Row 9: Notes --}}
+  <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+    <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Notes / Target Description:</label>
+    <textarea class="cog-bg-surface cog-text-strong" name="notes" rows="2" placeholder="Optional notes or details..." style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px; resize: vertical;">{{notes}}</textarea>
+  </div>
+</div>

@@ -1,0 +1,18 @@
+{{!--
+  Read-only list of what a race or class grants (describeGrantedFeatures, precomputed in the sheet context).
+  Parameters: features = [{ text, kind, badge, ruleText }], title (optional heading).
+  No inputs, so nothing here is harvested by the form. Descriptive lines carry their rules text as a tooltip.
+--}}
+{{#if features.length}}
+<div class="cog-feature-block">
+  {{#if title}}<div class="cog-banner-header cog-feature-header"><span>{{title}}</span></div>{{/if}}
+  <ul class="cog-feature-list">
+    {{#each features as |feature|}}
+      <li class="cog-feature-line"{{#if feature.ruleText}} data-tooltip="{{feature.ruleText}}"{{/if}}>
+        <span class="cog-badge cog-feature-badge cog-feature-badge-{{feature.kind}}">[{{feature.badge}}]</span>
+        <span class="cog-feature-text">{{feature.text}}</span>
+      </li>
+    {{/each}}
+  </ul>
+</div>
+{{/if}}

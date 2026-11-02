@@ -1,0 +1,40 @@
+<section class="cog-item-interrupt-section"{{#unless showInterruptRange}} hidden{{/unless}}>
+  {{#if showInterruptRange}}
+  <h3 class="cog-text-strong" style="margin: 0 0 8px 0; font-family: 'Oswald', sans-serif; font-size: 14px; text-transform: uppercase;">
+    <i class="fa-solid fa-bolt cog-text-warning"></i> Interrupt
+  </h3>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">Interrupt Range (ft, 0 = touch)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.interrupt.range" value="{{system.interrupt.range}}" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 14px;">
+        <input type="checkbox" name="system.interrupt.unlimited" {{#if system.interrupt.unlimited}}checked{{/if}} />
+        <span>Unlimited range</span>
+      </label>
+    </div>
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">Measured From</span>
+      <select name="system.interrupt.rangeFrom" style="font-size: 11px;">
+        {{#each interruptRangeFromOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">DR vs. the triggering attack (+N)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.interrupt.drBonus" value="{{system.interrupt.drBonus}}" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 14px;">
+        <input type="checkbox" name="system.interrupt.ignoreDebuffs" {{#if system.interrupt.ignoreDebuffs}}checked{{/if}} />
+        <span>Ignore debuffs attached to it</span>
+      </label>
+    </div>
+  </div>
+  <div class="cog-text-secondary" style="font-size: 11px; margin-top: 4px;">Triggers: {{interruptTriggerLabels}}</div>
+  {{/if}}
+</section>

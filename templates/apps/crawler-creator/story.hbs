@@ -1,0 +1,43 @@
+<section class="cog-creator-section cog-background-traits-section">
+  <div class="cog-section-header flexrow">
+    <h3><i class="fa-solid fa-masks-theater"></i> STEP 9: PSYCHOLOGICAL BACKGROUND &amp; STORY MATRICES</h3>
+    <div class="cog-section-actions flexrow">
+      <button type="button" class="cog-roll-all-traits-btn" data-action="rollAllTraits" title="Roll on all 3 background tables">
+        <i class="fa-solid fa-dice-d20"></i> Roll All 3 Tables
+      </button>
+    </div>
+  </div>
+  <span class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Content.BackgroundTablesHint"}}</span>
+
+  {{#if sourceryThemeInactive}}
+  <span class="cog-rule-hint"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.Content.SourceryThemeInactive"}}</span>
+  {{/if}}
+  {{#unless hasBackgroundTables}}
+  <span class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Content.NoBackgroundTables"}}</span>
+  {{/unless}}
+  <div class="cog-traits-grid flexrow">
+    {{#each storyTables}}
+    <div class="cog-trait-card flexcol">
+      <div class="cog-trait-card-header flexrow">
+        <span class="cog-trait-title"><i class="fa-solid {{this.icon}}"></i> {{this.label}}{{#if this.tableName}} ({{this.tableName}}){{/if}}</span>
+        <button type="button" class="cog-roll-trait-btn" data-action="rollTrait" data-trait="{{this.key}}" title="Roll on {{#if this.tableName}}{{this.tableName}}{{else}}{{this.label}}{{/if}}">
+          <i class="fa-solid fa-dice-d20"></i> Roll {{this.formula}}
+        </button>
+      </div>
+      <div class="cog-trait-select-wrapper">
+        <label><small>Choose from the table:</small></label>
+        <select class="cog-trait-select" name="creator-pick-{{this.key}}" data-change-action="pickTrait" data-trait="{{this.key}}" data-prop="{{this.key}}">
+          <option value="">— Choose from the table or edit below —</option>
+          {{#each this.options}}
+            <option value="{{this.text}}" {{#if this.selected}}selected{{/if}}>{{this.roll}}. {{this.text}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="cog-trait-input-wrapper flexcol">
+        <label><small>{{this.label}} Description (Editable):</small></label>
+        <textarea class="cog-trait-input" data-input-action="setTrait" data-trait="{{this.key}}" data-prop="{{this.key}}" name="{{this.inputName}}" rows="3" placeholder="{{this.placeholder}}">{{this.value}}</textarea>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+</section>

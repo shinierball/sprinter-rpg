@@ -1,0 +1,8 @@
+<div class="cog-stash-filters" style="display: flex; gap: 8px; align-items: center;">
+  <span class="cog-text-muted" style="font-size: 12px; text-transform: uppercase;">Filter:</span>
+  {{#each categories as |cat|}}
+  <button type="button" data-action="setCategory" data-category="{{cat.id}}" class="category-filter-pill {{#if cat.active}}cog-bg-accent-fill cog-text-on-fill{{else}}cog-bg-surface-muted cog-text-strong{{/if}}" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 3px 10px; font-size: 11px; cursor: pointer; font-family: 'Oswald', sans-serif;">
+    {{cat.label}}
+  </button>
+  {{/each}}
+</div>

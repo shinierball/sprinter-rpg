@@ -1,0 +1,42 @@
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="upgrades">
+  {{!-- INSTALLED UPGRADES --}}
+  <div class="cog-text-success" style="font-size: 15px; font-weight: bold; margin-bottom: 8px;">
+    <i class="fa-solid fa-circle-check"></i> INSTALLED MODULES & UPGRADES ({{installedUpgrades.length}})
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px;">
+    {{#each installedUpgrades as |up|}}
+      <div class="cog-bg-surface" style="border: 1px solid var(--cog-success); border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">{{up.name}}</div>
+          <div class="cog-text-secondary" style="font-size: 11px;">{{up.description}}</div>
+        </div>
+        <button class="cog-bg-accent-fill cog-text-on-fill" type="button" data-action="uninstallUpgrade" data-upgrade-id="{{up.id}}" style="border: 1px solid var(--cog-danger-fill); border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          Uninstall
+        </button>
+      </div>
+    {{else}}
+      <div class="cog-text-muted" style="font-size: 12px; padding: 12px;">No upgrades installed yet. Select from catalog below.</div>
+    {{/each}}
+  </div>
+
+  {{!-- AVAILABLE UPGRADES CATALOG --}}
+  <div class="cog-text-warning" style="font-size: 15px; font-weight: bold; margin-bottom: 8px;">
+    <i class="fa-solid fa-cart-shopping"></i> UPGRADES CATALOG
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 6px;">
+    {{#each availableUpgrades as |up|}}
+      <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="flex: 1; padding-right: 12px;">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="cog-text-gold" style="font-size: 13px; font-weight: bold;">{{up.name}}</span>
+            <span class="cog-bg-surface-strong cog-text-secondary" style="font-size: 10px; padding: 2px 6px; border-radius: 3px;">Tier {{up.tier}}</span>
+          </div>
+          <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">{{up.description}}</div>
+        </div>
+        <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="installUpgrade" data-upgrade-id="{{up.id}}" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif; white-space: nowrap;">
+          Install ({{up.cost}} GC)
+        </button>
+      </div>
+    {{/each}}
+  </div>
+</section>

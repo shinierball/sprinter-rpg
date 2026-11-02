@@ -1,0 +1,9 @@
+{{!--
+  The identity rows of a race or class: what the item sheet's modifier editor does not cover. Parameter:
+  identityRows = buildIdentityRowsContext(...) (src/sheets/item/context-identity-rows.mjs). The grant rows, starting items, senses, movement, stat caps and requires.
+--}}
+<div class="cog-identity-rows">
+  {{> "systems/sprinter-rpg/templates/items/parts/grant-rows.hbs" grants=identityRows.grants}}
+  {{> "systems/sprinter-rpg/templates/items/parts/starting-item-rows.hbs" startingItems=identityRows.startingItems}}
+  {{> "systems/sprinter-rpg/templates/items/parts/identity-scalars.hbs" identityRows=identityRows}}
+</div>

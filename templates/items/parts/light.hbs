@@ -1,0 +1,52 @@
+<section class="cog-item-light-section"{{#unless isLightItem}} hidden{{/unless}}>
+  {{#if isLightItem}}
+  <h3 class="cog-text-strong" style="margin: 0 0 8px 0; font-family: 'Oswald', sans-serif; font-size: 14px; text-transform: uppercase;">
+    <i class="fa-solid fa-lightbulb cog-text-warning"></i> {{localize "COG.Item.Light.Title"}}
+  </h3>
+  <div class="cog-text-secondary" style="font-size: 11px; margin-bottom: 4px;">{{localize "COG.Item.Light.Hint"}}</div>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.Bright"}}</span>
+      <input class="cog-field-input" type="number" min="0" name="system.light.bright" value="{{system.light.bright}}" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.Dim"}}</span>
+      <input class="cog-field-input" type="number" min="0" name="system.light.dim" value="{{system.light.dim}}" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.Color"}}</span>
+      <input class="cog-field-input" type="text" name="system.light.color" value="{{system.light.color}}" placeholder="#ff9900" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.Animation"}}</span>
+      <select name="system.light.animation" style="font-size: 11px;">
+        {{#each lightAnimationOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.Mode"}}</span>
+      <select name="system.light.mode" style="font-size: 11px;">
+        {{#each lightModeOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.Leash"}}</span>
+      <input class="cog-field-input" type="number" min="0" name="system.light.leash" value="{{system.light.leash}}" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="margin-bottom: 0; flex: 2;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.Image"}}</span>
+      <input class="cog-field-input" type="text" name="system.light.img" value="{{system.light.img}}" placeholder="icons/svg/light.svg" style="font-size: 11px;" />
+    </div>
+  </div>
+  <div style="margin-top: 6px;">
+    {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=lightDurationEditor}}
+    <div class="cog-text-secondary" style="font-size: 10px;">{{localize "COG.Item.Light.BurnTimeHint"}}</div>
+  </div>
+  {{/if}}
+</section>

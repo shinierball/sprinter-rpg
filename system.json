@@ -1,0 +1,351 @@
+{
+  "id": "sprinter-rpg",
+  "title": "Sprinter RPG",
+  "description": "A Foundry VTT system for crawler-style dungeon roleplaying games.",
+  "version": "5.11.0",
+  "url": "https://github.com/shinierball/sprinter-rpg",
+  "manifest": "https://github.com/shinierball/sprinter-rpg/releases/latest/download/system.json",
+  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v5.11.0/sprinter-rpg.zip",
+  "socket": true,
+  "relationships": {
+    "requires": [
+      {
+        "id": "socketlib",
+        "type": "module",
+        "manifest": "https://github.com/farling42/foundryvtt-socketlib/releases/latest/download/module.json",
+        "compatibility": {
+          "minimum": "1.1.0"
+        }
+      }
+    ]
+  },
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14",
+    "maximum": "16"
+  },
+  "documentTypes": {
+    "Actor": {
+      "crawler": {
+        "htmlFields": [
+          "details.notes",
+          "details.pastTrauma",
+          "details.looseEnds",
+          "details.regrets"
+        ]
+      },
+      "pet": {
+        "htmlFields": [
+          "special"
+        ]
+      },
+      "mercenary": {
+        "htmlFields": [
+          "details.notes",
+          "details.special"
+        ]
+      },
+      "mount_vehicle": {},
+      "marker": {},
+      "personal_space": {
+        "htmlFields": [
+          "details.notes"
+        ]
+      },
+      "npc": {
+        "htmlFields": [
+          "details.notes",
+          "details.special"
+        ]
+      },
+      "mob": {
+        "htmlFields": [
+          "details.notes",
+          "details.special",
+          "details.description",
+          "details.aiDescription",
+          "attributes.treasure"
+        ]
+      }
+    },
+    "Item": {
+      "skill": {
+        "htmlFields": [
+          "notes",
+          "description"
+        ]
+      },
+      "attack": {
+        "htmlFields": [
+          "effects"
+        ]
+      },
+      "spell": {
+        "htmlFields": [
+          "description",
+          "quote"
+        ]
+      },
+      "gear": {
+        "htmlFields": [
+          "notes",
+          "description"
+        ]
+      },
+      "race": {
+        "htmlFields": [
+          "abilities",
+          "description"
+        ]
+      },
+      "class": {
+        "htmlFields": [
+          "abilities",
+          "description"
+        ]
+      },
+      "deity": {
+        "htmlFields": [
+          "boons",
+          "description"
+        ]
+      },
+      "sponsor": {
+        "htmlFields": [
+          "gifts",
+          "notes"
+        ]
+      },
+      "loot": {
+        "htmlFields": [
+          "notes",
+          "description"
+        ]
+      },
+      "buff": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "debuff": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "achievement": {
+        "htmlFields": [
+          "description",
+          "quote",
+          "rewardContents"
+        ]
+      },
+      "space_upgrade": {}
+    }
+  },
+  "authors": [
+    {
+      "name": "shinierball and contributors"
+    }
+  ],
+  "license": "LICENSE",
+  "scripts": [
+    "lib/pdf-lib.min.js"
+  ],
+  "esmodules": [
+    "src/cog.mjs"
+  ],
+  "styles": [
+    "styles/cog.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "grid": {
+    "distance": 5,
+    "units": "ft"
+  },
+  "primaryTokenAttribute": "attributes.hp",
+  "packs": [
+    {
+      "name": "skills",
+      "label": "Skills",
+      "path": "packs/skills",
+      "type": "Item",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "spells",
+      "label": "Spells",
+      "path": "packs/spells",
+      "type": "Item",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "buffs",
+      "label": "Buffs & Debuffs",
+      "path": "packs/buffs",
+      "type": "Item",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "macros",
+      "label": "Macros",
+      "path": "packs/macros",
+      "type": "Macro",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "mobs",
+      "label": "Mobs",
+      "path": "packs/mobs",
+      "type": "Actor",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "pets",
+      "label": "Example Pets",
+      "path": "packs/pets",
+      "type": "Actor",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "mercenaries",
+      "label": "Mercenaries",
+      "path": "packs/mercenaries",
+      "type": "Actor",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "items",
+      "label": "Items & Loot",
+      "path": "packs/items",
+      "type": "Item",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "races",
+      "label": "Races",
+      "path": "packs/races",
+      "type": "Item",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "classes",
+      "label": "Classes",
+      "path": "packs/classes",
+      "type": "Item",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "floor-tables",
+      "label": "Floor Tables",
+      "path": "packs/floor-tables",
+      "type": "RollTable",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "journals",
+      "label": "Guides & Journals",
+      "path": "packs/journals",
+      "type": "JournalEntry",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "examples-items",
+      "label": "Example Items",
+      "path": "packs/examples-items",
+      "type": "Item",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "examples-actors",
+      "label": "Example Actors",
+      "path": "packs/examples-actors",
+      "type": "Actor",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "examples-tables",
+      "label": "Example Tables",
+      "path": "packs/examples-tables",
+      "type": "RollTable",
+      "system": "sprinter-rpg",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    }
+  ],
+  "packFolders": [
+    {
+      "name": "Example Content",
+      "sorting": "a",
+      "color": "#962d22",
+      "packs": [
+        "examples-items",
+        "examples-actors",
+        "examples-tables"
+      ]
+    }
+  ]
+}

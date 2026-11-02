@@ -1,0 +1,6 @@
+{{!-- A crew member's role. Not a schema input (no name): the change goes through the GM relay. Params: uuid, options. --}}
+<select class="cog-field-input cog-vehicle-role" data-change-action="vehicleCrewRole" data-uuid="{{uuid}}" title="Role aboard" style="width: auto; padding: 0 4px; height: 20px; font-size: 10px;">
+  {{#each options as |opt|}}
+    <option value="{{opt.id}}" title="{{opt.hint}}" {{#if opt.selected}}selected{{/if}} {{#if opt.disabled}}disabled{{/if}}>{{opt.label}}</option>
+  {{/each}}
+</select>

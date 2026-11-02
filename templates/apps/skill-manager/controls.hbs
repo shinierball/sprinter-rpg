@@ -1,0 +1,58 @@
+<div class="cog-sm-controls">
+  <div class="cog-sm-search-row">
+    <div class="cog-sm-search-wrapper">
+      <i class="fa-solid fa-magnifying-glass cog-sm-search-icon"></i>
+      <input type="text" name="search" data-input-action="setSearch" class="cog-sm-search" placeholder="Search skills by name, stat, category, or mechanics..." value="{{searchQuery}}" autofocus />
+      <a class="cog-sm-search-clear cog-text-secondary" data-action="clearSearch" {{#unless searchQuery}}hidden{{/unless}} style="position: absolute; right: 10px; cursor: pointer;" title="Clear search"><i class="fa-solid fa-xmark"></i></a>
+    </div>
+
+    {{#if isActorPicker}}
+      <button type="button" data-action="addToActor" class="cog-sm-action-btn cog-sm-add-to-actor cog-bg-success-fill">
+        <i class="fa-solid fa-user-plus"></i> Add Selected to {{actor.name}}
+      </button>
+    {{/if}}
+
+    {{#if isItemPicker}}
+      <div class="cog-sm-gear-bonus-box">
+        <label>Rank Bonus:</label>
+        <input type="number" id="cog-sm-gear-bonus" value="1" min="1" />
+      </div>
+    {{/if}}
+
+    {{#if canCreate}}
+      <button type="button" data-action="createSkill" class="cog-sm-action-btn cog-sm-create-skill-btn">
+        <i class="fa-solid fa-plus"></i> New Custom Skill
+      </button>
+    {{/if}}
+  </div>
+
+  {{!-- CATEGORY FILTER TABS --}}
+  <div class="cog-sm-categories">
+    <button type="button" data-action="setCategory" class="cog-sm-category-btn {{#if (eq activeCategory 'all')}}active{{/if}}" data-category="all">
+      All Skills <span class="cog-sm-count-badge">{{counts.all}}</span>
+    </button>
+    <button type="button" data-action="setCategory" class="cog-sm-category-btn {{#if (eq activeCategory 'utility')}}active{{/if}}" data-category="utility">
+      Exploration & Survival <span class="cog-sm-count-badge">{{counts.utility}}</span>
+    </button>
+    <button type="button" data-action="setCategory" class="cog-sm-category-btn {{#if (eq activeCategory 'combat')}}active{{/if}}" data-category="combat">
+      Combat Maneuvers <span class="cog-sm-count-badge">{{counts.combat}}</span>
+    </button>
+    <button type="button" data-action="setCategory" class="cog-sm-category-btn {{#if (eq activeCategory 'passive')}}active{{/if}}" data-category="passive">
+      Passive Perks <span class="cog-sm-count-badge">{{counts.passive}}</span>
+    </button>
+    <button type="button" data-action="setCategory" class="cog-sm-category-btn {{#if (eq activeCategory 'world')}}active{{/if}}" data-category="world">
+      World / Custom Skills <span class="cog-sm-count-badge">{{counts.world}}</span>
+    </button>
+  </div>
+
+  {{!-- STAT FILTER PILLS --}}
+  <div class="cog-sm-stat-pills">
+    <span class="cog-sm-stat-label">Stat Filter:</span>
+    <button type="button" data-action="setStat" class="cog-sm-stat-pill {{#if (eq activeStat 'all')}}active{{/if}}" data-stat="all">ALL</button>
+    <button type="button" data-action="setStat" class="cog-sm-stat-pill {{#if (eq activeStat 'str')}}active{{/if}}" data-stat="str">STR</button>
+    <button type="button" data-action="setStat" class="cog-sm-stat-pill {{#if (eq activeStat 'dex')}}active{{/if}}" data-stat="dex">DEX</button>
+    <button type="button" data-action="setStat" class="cog-sm-stat-pill {{#if (eq activeStat 'con')}}active{{/if}}" data-stat="con">CON</button>
+    <button type="button" data-action="setStat" class="cog-sm-stat-pill {{#if (eq activeStat 'int')}}active{{/if}}" data-stat="int">INT</button>
+    <button type="button" data-action="setStat" class="cog-sm-stat-pill {{#if (eq activeStat 'cha')}}active{{/if}}" data-stat="cha">CHA</button>
+  </div>
+</div>

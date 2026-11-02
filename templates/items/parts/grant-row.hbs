@@ -1,0 +1,67 @@
+{{!--
+  One `system.grants` row. Parameter: g = grantRowView(...) (src/sheets/item/grant-row-fields.mjs).
+  Inputs are named by the context (`<rowPath>.<field>`); the query editor and the options list are action delegates
+  without a `name`. The wrapper carries data-grant-path / data-grant-index so row-level pick lists find their row.
+--}}
+<div class="cog-grant-row{{#if g.incomplete}} cog-grant-row-incomplete{{/if}}" data-grant-path="{{g.path}}" data-grant-index="{{g.index}}" data-grant-key="{{g.key}}">
+  {{#unless g.locked}}
+    <div class="cog-field-row cog-grant-head">
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.Rows.Grant.Field.kind"}}</span>
+        <select class="cog-field-input" name="{{g.kindName}}" data-row-field="kind">
+          {{#each g.kindOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{localize o.labelKey}}</option>{{/each}}
+        </select>
+      </div>
+      {{#if g.showModes}}
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.Rows.Grant.Field.mode"}}</span>
+          <select class="cog-field-input" name="{{g.modeName}}" data-row-field="mode">
+            {{#each g.modeOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{localize o.labelKey}}</option>{{/each}}
+          </select>
+        </div>
+      {{/if}}
+    </div>
+  {{/unless}}
+  {{#if g.incomplete}}
+    <span class="cog-param-warning" title="{{g.problem}}"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.Rows.Grant.Incomplete"}}</span>
+  {{/if}}
+  <div class="cog-field-row cog-grant-fields">
+    {{#each g.fields as |f|}}
+      {{#if f.isQuery}}
+        <div class="cog-field-group cog-grant-query" data-row-field="{{f.field}}">
+          <span class="cog-field-label">{{localize f.label}}</span>
+          {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=f.query tagOptions=f.tagOptions}}
+        </div>
+      {{else if f.isPicker}}
+        <div class="cog-grant-options" data-row-field="{{f.field}}">
+          {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=f.picker}}
+        </div>
+      {{else}}
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize f.label}}</span>
+          {{#if f.isSelect}}
+            <select class="cog-field-input" name="{{f.name}}" data-row-field="{{f.field}}">
+              {{#each f.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+            </select>
+          {{else if f.isTag}}
+            <select class="cog-field-input" name="{{f.name}}" data-row-field="{{f.field}}">
+              <option value="">{{f.blank}}</option>
+              {{#if f.custom}}<option value="{{f.custom.value}}" selected>{{f.custom.label}}</option>{{/if}}
+              {{#each f.groups as |group|}}
+                <optgroup label="{{group.label}}">
+                  {{#each group.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+                </optgroup>
+              {{/each}}
+            </select>
+          {{else if f.isCheckbox}}
+            <input type="checkbox" name="{{f.name}}" data-row-field="{{f.field}}" {{#if f.checked}}checked{{/if}} />
+          {{else if f.isNumber}}
+            <input class="cog-field-input" type="number" name="{{f.name}}" data-row-field="{{f.field}}" value="{{f.value}}"{{#if f.step}} step="{{f.step}}"{{/if}}{{#if f.minAttr}} min="{{f.minAttr}}"{{/if}} />
+          {{else}}
+            <input class="cog-field-input" type="text" name="{{f.name}}" data-row-field="{{f.field}}" value="{{f.value}}" placeholder="{{localize 'COG.Rows.Placeholder.Label'}}" />
+          {{/if}}
+        </div>
+      {{/if}}
+    {{/each}}
+  </div>
+</div>

@@ -1,0 +1,372 @@
+{{!-- PAGE 4: EQUIPMENT & INVENTORY --}}
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="page4">
+<div class="cog-page-container cog-equipment-inventory-container">
+  
+  {{#if system.attributes.limbs.exceededHands}}
+    <div class="cog-hands-warning-banner" role="alert" style="margin-bottom: 8px;">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span><strong>WARNING — HANDS LIMIT EXCEEDED:</strong> Wielding gear in <strong>{{system.attributes.limbs.usedHands}}</strong> hands, but only <strong>{{system.attributes.limbs.maxHands}}</strong> hands available!</span>
+    </div>
+  {{/if}}
+
+  {{!-- TOP GROUPING: EQUIPPED GEAR SLOTS / TATTOOS / PATCHES (FULL WIDTH) --}}
+  <div class="cog-stat-block cog-equipped-gear-block" style="width: 100%; box-sizing: border-box;">
+    <div class="cog-banner-header">
+      <span><i class="fa-solid fa-shield-halved"></i> EQUIPPED GEAR SLOTS</span>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <a class="cog-dark cog-text-gold" data-action="openGearPicker" data-tooltip="{{localize "COG.Content.GearPickerTooltip"}}" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-shirt"></i> Select Gear
+        </a>
+        <a class="cog-text-on-fill" data-action="createItem" data-type="gear" data-tooltip="Create custom gear" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-plus"></i> Custom Gear
+        </a>
+      </div>
+    </div>
+    <div class="cog-limbs-bar cog-bg-surface-muted" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--cog-panel-border); padding: 6px 12px; margin-bottom: 4px;">
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="cog-text-strong" style="font-weight: bold; font-size: 11px;"><i class="fa-solid fa-hand"></i> Hands:</span>
+          {{#if isGM}}
+            <input class="cog-bg-window cog-text-strong" type="number" name="system.attributes.limbs.hands" value="{{system.attributes.limbs.hands}}" min="0" style="width: 44px; text-align: center; height: 20px; font-size: 11px; border: 1px solid var(--cog-panel-border); border-radius: 3px;" title="GM Editable Base Hands" />
+          {{else}}
+            <span class="cog-text-strong" style="font-weight: bold; font-size: 11px;">{{system.attributes.limbs.hands}}</span>
+          {{/if}}
+          <span class="{{#if system.attributes.limbs.exceededHands}}cog-text-danger{{else}}cog-text-secondary{{/if}}" style="font-size: 11px;">(Wielding: <strong>{{system.attributes.limbs.usedHands}}</strong> / Max: <strong>{{system.attributes.limbs.maxHands}}</strong>)</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="cog-text-strong" style="font-weight: bold; font-size: 11px;"><i class="fa-solid fa-person-walking"></i> Arms:</span>
+          {{#if isGM}}
+            <input class="cog-bg-window cog-text-strong" type="number" name="system.attributes.limbs.arms" value="{{system.attributes.limbs.arms}}" min="0" style="width: 44px; text-align: center; height: 20px; font-size: 11px; border: 1px solid var(--cog-panel-border); border-radius: 3px;" title="GM Editable Base Arms" />
+          {{else}}
+            <span class="cog-text-strong" style="font-weight: bold; font-size: 11px;">{{system.attributes.limbs.arms}}</span>
+          {{/if}}
+          <span class="cog-text-secondary" style="font-size: 11px;">(Max: <strong>{{system.attributes.limbs.maxArms}}</strong>)</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="cog-text-strong" style="font-weight: bold; font-size: 11px;"><i class="fa-solid fa-shoe-prints"></i> Legs:</span>
+          {{#if isGM}}
+            <input class="cog-bg-window cog-text-strong" type="number" name="system.attributes.limbs.legs" value="{{system.attributes.limbs.legs}}" min="0" style="width: 44px; text-align: center; height: 20px; font-size: 11px; border: 1px solid var(--cog-panel-border); border-radius: 3px;" title="GM Editable Base Legs" />
+          {{else}}
+            <span class="cog-text-strong" style="font-weight: bold; font-size: 11px;">{{system.attributes.limbs.legs}}</span>
+          {{/if}}
+          <span class="cog-text-secondary" style="font-size: 11px;">(Max: <strong>{{system.attributes.limbs.maxLegs}}</strong>)</span>
+        </div>
+      </div>
+      {{#if isGM}}
+        <span class="cog-text-gold" style="font-size: 10px; font-style: italic;"><i class="fa-solid fa-crown"></i> GM Limb Config</span>
+      {{/if}}
+    </div>
+    <div class="cog-gear-slots-list cog-gear-slots-grid" style="padding: 8px;">
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Head</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.head}}
+            <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.head.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.head.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.head" value="{{system.gearSlots.head}}" placeholder="{{#if equippedBySlot.head}}{{equippedBySlot.head.name}}{{else}}Notes...{{/if}}" />
+        </div>
+      </div>
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Torso</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.torso}}
+            <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.torso.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.torso.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.torso" value="{{system.gearSlots.torso}}" placeholder="{{#if equippedBySlot.torso}}{{equippedBySlot.torso.name}}{{else}}Notes...{{/if}}" />
+        </div>
+      </div>
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Arms</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.arms}}
+            <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.arms.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.arms.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.arms" value="{{system.gearSlots.arms}}" placeholder="{{#if equippedBySlot.arms}}{{equippedBySlot.arms.name}}{{else}}Notes...{{/if}}" />
+        </div>
+      </div>
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Hands/Holding</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.hands}}
+            <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.hands.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.hands.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.hands" value="{{system.gearSlots.hands}}" placeholder="{{#if equippedBySlot.hands}}{{equippedBySlot.hands.name}}{{else}}Notes...{{/if}}" />
+        </div>
+      </div>
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Legs</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.legs}}
+            <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.legs.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.legs.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.legs" value="{{system.gearSlots.legs}}" placeholder="{{#if equippedBySlot.legs}}{{equippedBySlot.legs.name}}{{else}}Notes...{{/if}}" />
+        </div>
+      </div>
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Feet</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.feet}}
+            <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.feet.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.feet.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.feet" value="{{system.gearSlots.feet}}" placeholder="{{#if equippedBySlot.feet}}{{equippedBySlot.feet.name}}{{else}}Notes...{{/if}}" />
+        </div>
+      </div>
+      {{#if isPet}}
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Collar</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.collar}}
+            <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.collar.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.collar.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.collar" value="{{system.gearSlots.collar}}" placeholder="{{#if equippedBySlot.collar}}{{equippedBySlot.collar.name}}{{else}}Collar...{{/if}}" />
+        </div>
+      </div>
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Barding</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.barding}}
+            <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.barding.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.barding.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.barding" value="{{system.gearSlots.barding}}" placeholder="{{#if equippedBySlot.barding}}{{equippedBySlot.barding.name}}{{else}}Barding...{{/if}}" />
+        </div>
+      </div>
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Saddle</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.saddle}}
+            <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.saddle.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.saddle.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.saddle" value="{{system.gearSlots.saddle}}" placeholder="{{#if equippedBySlot.saddle}}{{equippedBySlot.saddle.name}}{{else}}Saddle...{{/if}}" />
+        </div>
+      </div>
+      <div class="cog-gear-row">
+        <span class="cog-gear-label">Pack</span>
+        <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
+          {{#if equippedBySlot.pack}}
+            <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.pack.bonusesSummary}}">
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.pack.name}}
+            </span>
+          {{/if}}
+          <input class="cog-field-input" type="text" name="system.gearSlots.pack" value="{{system.gearSlots.pack}}" placeholder="{{#if equippedBySlot.pack}}{{equippedBySlot.pack.name}}{{else}}Pack...{{/if}}" />
+        </div>
+      </div>
+      {{/if}}
+      <div class="cog-gear-row cog-gear-row-full" style="grid-column: 1 / -1;">
+        <span class="cog-gear-label">Accessories (Max 10)</span>
+        <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+          {{#if equippedBySlot.accessory.length}}
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+              {{#each equippedBySlot.accessory as |acc|}}
+                <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 1px 5px; font-size: 9px; border-radius: 2px;" title="{{acc.bonusesSummary}}">
+                  {{acc.name}}
+                </span>
+              {{/each}}
+            </div>
+          {{/if}}
+          <textarea class="cog-field-input" name="system.gearSlots.accessories" style="height: 80px; resize: vertical;">{{system.gearSlots.accessories}}</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- GOLD (editable by the owner and the GM; the Mercenary Guild reads and deducts it) --}}
+  <div class="cog-gold-row">
+    <label for="{{id}}-gold"><i class="fa-solid fa-coins"></i> Gold</label>
+    <input id="{{id}}-gold" class="cog-field-input cog-gold-input" name="system.currency.gold" type="number" min="0" step="1" value="{{system.currency.gold}}" />
+  </div>
+
+  {{!-- BOTTOM GROUPING: INVENTORY & BACKPACK ITEMS (FULL WIDTH, BELOW GEAR SLOTS) --}}
+  <div class="cog-stat-block cog-inventory-backpack-block" style="width: 100%; box-sizing: border-box;">
+    <div class="cog-banner-header">
+      <span><i class="fa-solid fa-boxes-stacked"></i> INVENTORY &amp; BACKPACK</span>
+      {{#if system.attributes.liftMax}}<span class="cog-text-on-fill" style="font-size: 11px;" title="Lift limit: {{upper system.attributes.liftStat}} score x 15 lb">Lift: {{system.attributes.liftMax}} lb</span>{{/if}}
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label class="cog-text-on-fill" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px; margin: 0; cursor: pointer;">
+          <i class="fa-solid fa-arrow-down-short-wide"></i> Sort:
+          <select class="inventory-sort-select cog-bg-surface-muted cog-text-strong" data-change-action="sortInventory" style="border: 1px solid var(--cog-panel-border); border-radius: 3px; font-size: 11px; padding: 1px 4px; cursor: pointer;">
+            <option value="default" {{#if (eq inventorySort "default")}}selected{{/if}}>Manual / Default</option>
+            <option value="name" {{#if (eq inventorySort "name")}}selected{{/if}}>Name (A-Z)</option>
+            {{#if canSortByValue}}
+              <option value="value-desc" {{#if (eq inventorySort "value-desc")}}selected{{/if}}>Value (High to Low)</option>
+              <option value="value-asc" {{#if (eq inventorySort "value-asc")}}selected{{/if}}>Value (Low to High)</option>
+            {{else}}
+              <option value="" disabled title="Requires the Determine Value skill">🔒 Value (Req. skill)</option>
+            {{/if}}
+          </select>
+        </label>
+        <a class="cog-dark cog-text-gold" data-action="openItemPicker" data-tooltip="{{localize "COG.Content.ItemPickerTooltip"}}" style="cursor: pointer; margin-left: 6px; font-size: 12px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-box-open"></i> Select Item/Gear
+        </a>
+        <a class="cog-text-on-fill" data-action="createItem" data-type="gear" data-tooltip="Create custom gear" style="cursor: pointer; margin-left: 4px; font-size: 12px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-shield"></i> Custom Gear
+        </a>
+        <a class="cog-text-on-fill" data-action="createItem" data-type="loot" data-tooltip="Create custom item" style="cursor: pointer; margin-left: 4px; font-size: 12px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-plus"></i> Custom Item
+        </a>
+      </div>
+    </div>
+
+    <table class="cog-attacks-table" style="width: 100%;">
+      <thead>
+        <tr>
+          <th style="width: 36%;">Item</th>
+          <th style="width: 10%;">Qty</th>
+          <th style="width: 14%; text-align: center;"><i class="fa-solid fa-coins cog-text-gold"></i> Value</th>
+          <th style="width: 28%;">Notes / Slot</th>
+          <th style="width: 12%; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{!-- Gear Items --}}
+        {{#each gear as |item|}}
+          <tr class="draggable {{#if item.system.equipped}}cog-bg-danger-tint{{/if}}" data-item-id="{{item.id}}" draggable="true">
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button class="cog-bg-none" type="button" data-action="toggleGearEquipped" data-tooltip="{{#if item.system.equipped}}Equipped to {{upper item.system.slot}} (Click to unequip){{else}}Unequipped (Click to equip to {{upper item.system.slot}}){{/if}}" style="border: none; cursor: pointer; padding: 2px 4px; font-size: 14px;">
+                  {{#if item.system.equipped}}
+                    <i class="fa-solid fa-shield-halved cog-text-accent"></i>
+                  {{else}}
+                    <i class="fa-regular fa-circle cog-text-secondary"></i>
+                  {{/if}}
+                </button>
+                <div>
+                  <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;">{{item.name}}</span>
+                  <span class="cog-stat-sublabel" style="display: inline-block; margin-left: 4px; text-transform: uppercase;">[{{item.system.slot}}]</span>
+                  {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=item.cooldownBadge}}
+                  {{#if item.system.equipped}}
+                    <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px; margin-left: 4px;">EQUIPPED</span>
+                  {{/if}}
+                  {{#if item.displayEffects}}<div class="cog-text cog-attack-effects" style="font-size: 10px; margin-top: 2px;">{{item.displayEffects}}</div>{{/if}}
+                  {{#if item.bonusesSummary}}
+                    <div class="cog-text" style="font-size: 10px; margin-top: 2px;">
+                      <i class="fa-solid fa-sparkles cog-text-accent"></i> {{item.bonusesSummary}}
+                    </div>
+                  {{/if}}
+                </div>
+              </div>
+            </td>
+            <td>
+              <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.quantity" value="{{item.system.quantity}}" style="width: 44px;" />
+            </td>
+            <td style="text-align: center; white-space: nowrap;">
+              {{#if ../canSeeItemValue}}
+                <span class="cog-gold-value cog-text-gold" style="font-weight: bold; font-size: 11px;">
+                  <i class="fa-solid fa-coins cog-text-gold" style="font-size: 10px;"></i> {{item.system.value}} GP
+                </span>
+              {{else}}
+                <span class="cog-gold-value-hidden cog-text" style="font-style: italic; font-size: 11px;" title="Requires Determine Value Rank 15 to identify gold value">
+                  <i class="fa-solid fa-eye-slash" style="font-size: 10px;"></i> ???
+                </span>
+              {{/if}}
+            </td>
+            <td>
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{item.system.notes}}" placeholder="Notes..." />
+            </td>
+            <td style="text-align: center;">
+              {{#if item.canActivate}}
+                <a class="cog-text-accent" data-action="useItem" data-tooltip="Activate Gear" style="cursor: pointer; margin-right: 6px;"><i class="fa-solid fa-bolt"></i></a>
+              {{/if}}
+              <a class="item-edit" data-action="editItem" data-tooltip="Edit"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete" data-action="deleteItem" data-tooltip="Delete" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        {{/each}}
+
+        {{!-- Loot / Other Items --}}
+        {{#each loot as |item|}}
+          <tr class="draggable" data-item-id="{{item.id}}" draggable="true">
+            <td>
+              <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;">{{item.name}}</span>
+              {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=item.cooldownBadge}}
+            </td>
+            <td>
+              <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.quantity" value="{{item.system.quantity}}" style="width: 44px;" />
+            </td>
+            <td style="text-align: center; white-space: nowrap;">
+              {{#if ../canSeeItemValue}}
+                <span class="cog-gold-value cog-text-gold" style="font-weight: bold; font-size: 11px;">
+                  <i class="fa-solid fa-coins cog-text-gold" style="font-size: 10px;"></i> {{item.system.value}} GP
+                </span>
+              {{else}}
+                <span class="cog-gold-value-hidden cog-text" style="font-style: italic; font-size: 11px;" title="Requires Determine Value Rank 15 to identify gold value">
+                  <i class="fa-solid fa-eye-slash" style="font-size: 10px;"></i> ???
+                </span>
+              {{/if}}
+            </td>
+            <td>
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{item.system.notes}}" placeholder="Notes..." />
+            </td>
+            <td style="text-align: center;">
+              <a class="cog-text-info" data-action="useItem" data-tooltip="Use Item" style="cursor: pointer; margin-right: 6px;"><i class="fa-solid fa-flask"></i></a>
+              <a class="item-edit" data-action="editItem" data-tooltip="Edit"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete" data-action="deleteItem" data-tooltip="Delete" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        {{/each}}
+
+        {{#unless gear.length}}
+          {{#unless loot.length}}
+            <tr>
+              <td class="cog-text" colspan="5" style="text-align: center; padding: 14px;">
+                Inventory is empty. Drag and drop items or click <strong>Add Gear</strong> / <strong>Add Item</strong>.
+              </td>
+            </tr>
+          {{/unless}}
+        {{/unless}}
+      </tbody>
+    </table>
+  </div>
+
+  {{!-- Junk that used-up consumables leave behind (3.76 B2): collapsed, no Use button --}}
+  {{#if usedLoot.length}}
+  <details class="cog-collapsible-block cog-used-group" style="margin-top: 8px;">
+    <summary class="cog-text-muted" style="cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;">
+      <i class="fa-solid fa-recycle"></i> Used ({{usedLootCount}})
+    </summary>
+    <table class="cog-attacks-table">
+      <tbody>
+        {{#each usedLoot as |item|}}
+          <tr class="draggable" data-item-id="{{item.id}}" draggable="true">
+            <td>
+              <span style="font-weight: bold;">{{item.name}}</span>
+              {{#if item.usedFromLabel}}<span class="cog-text-muted" style="font-size: 11px;"> (was {{item.usedFromLabel}})</span>{{/if}}
+            </td>
+            <td>
+              <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.quantity" value="{{item.system.quantity}}" style="width: 44px;" />
+            </td>
+            <td>
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{item.system.notes}}" placeholder="Notes..." />
+            </td>
+            <td style="text-align: center;">
+              <a class="item-edit" data-action="editItem" data-tooltip="Edit"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete" data-action="deleteItem" data-tooltip="Delete" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </details>
+  {{/if}}
+
+</div>
+</section>

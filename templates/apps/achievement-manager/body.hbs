@@ -1,0 +1,169 @@
+<div class="cog-manager-body cog-bg-window" style="padding: 12px; flex: 1; min-height: 0; overflow-y: auto;">
+
+  {{!-- TAB 1: CANONICAL LIBRARY --}}
+  {{#if (eq activeTab 'library')}}
+    {{!-- Filters Bar --}}
+    <div class="cog-bg-surface-muted" style="display: flex; gap: 10px; margin-bottom: 12px; padding: 8px 10px; border-radius: 4px; border: 1px solid var(--cog-panel-border); align-items: center;">
+      <div style="flex: 1; position: relative;">
+        <input type="text" name="search" data-input-action="setSearch" class="cog-search-input cog-bg-window cog-text-strong" placeholder="Search achievements by name, quote, reward, or tag..." value="{{searchQuery}}" style="width: 100%; border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 6px 10px; font-size: 12px;" />
+      </div>
+      <div>
+        <select name="tier" data-change-action="setTier" class="cog-tier-select cog-bg-window cog-text-strong" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 6px 10px; font-size: 12px; font-family: 'Oswald', sans-serif;">
+          {{#each tierOptions}}
+            <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+
+    {{#if showLibraryHint}}
+      {{> "systems/sprinter-rpg/templates/shared/content-hint.hbs" key="COG.Content.NoAchievementLibrary"}}
+    {{/if}}
+
+    {{!-- Achievements Grid --}}
+    <div class="cog-library-grid" style="display: flex; flex-direction: column; gap: 10px;">
+      {{#each libraryAchievements}}
+        <div class="cog-library-card cog-bg-surface-muted" style="border: 1.5px solid {{this.tierConfig.borderColor}}; border-radius: 6px; padding: 10px 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.4); position: relative;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="{{this.tierConfig.icon}} cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{this.tierConfig.color}}; font-size: 18px;"></i>
+              <h3 class="cog-text-strong" style="margin: 0; font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: bold; letter-spacing: 0.5px;">
+                {{this.name}}
+              </h3>
+              <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{this.tierConfig.color}}; font-size: 10px; text-transform: uppercase; font-weight: bold; padding: 2px 6px; border-radius: 3px; border: 1px solid {{this.tierConfig.borderColor}};">
+                {{this.tierConfig.label}}
+              </span>
+              {{#if this.system.category}}
+                <span class="cog-bg-surface-strong cog-text-secondary" style="font-size: 10px; text-transform: uppercase; padding: 2px 6px; border-radius: 3px;">
+                  {{this.system.category}}
+                </span>
+              {{/if}}
+            </div>
+
+            {{!-- Grant Button --}}
+            <button type="button" data-action="awardAchievement" class="cog-grant-achievement-btn cog-bg-accent-fill cog-text-on-fill" data-ach-id="{{this.key}}" style="border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 4px 10px; font-family: 'Oswald', sans-serif; font-size: 11px; text-transform: uppercase; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <i class="fa-solid fa-gift"></i> Award to Selected Crawler
+            </button>
+          </div>
+
+          {{!-- AI Quote --}}
+          {{#if this.system.quote}}
+            <div class="cog-bg-surface-muted cog-text" style="border-left: 3px solid var(--cog-accent); padding: 6px 10px; font-style: italic; font-size: 12px; margin-bottom: 8px; line-height: 1.4;">
+              “{{this.system.quote}}”
+            </div>
+          {{/if}}
+
+          {{!-- Details & Reward Footer --}}
+          <div class="cog-bg-surface" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 6px 10px; font-size: 11px;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div>
+                <span class="cog-text-secondary" style="text-transform: uppercase;">Reward:</span>
+                <strong class="cog-text-success" style="margin-left: 4px;">{{this.system.reward}}</strong>
+              </div>
+              {{#if this.system.favor}}
+                <div class="cog-text-gold">
+                  <i class="fa-solid fa-hand-sparkles"></i> +{{this.system.favor}} Favor
+                </div>
+              {{/if}}
+              {{#if this.system.xp}}
+                <div class="cog-text-info">
+                  <i class="fa-solid fa-bolt"></i> +{{this.system.xp}} XP
+                </div>
+              {{/if}}
+            </div>
+
+            {{#if this.system.rewardContents}}
+              <div class="cog-text-secondary">
+                <strong>Contents:</strong> {{this.system.rewardContents}}
+              </div>
+            {{/if}}
+          </div>
+        </div>
+      {{else}}
+        <div class="cog-text-secondary" style="text-align: center; padding: 30px;">
+          <i class="fa-solid fa-trophy cog-text-secondary" style="font-size: 32px; margin-bottom: 8px;"></i>
+          <p>No achievements match the selected filters.</p>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{!-- TAB 2: PARTY TROPHY ROOM --}}
+  {{#if (eq activeTab 'party')}}
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      {{#each partyData}}
+        <div class="cog-crawler-trophy-block cog-bg-surface-muted" style="border: 1.5px solid var(--cog-panel-border); border-radius: 6px; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,0.5);">
+          {{!-- Crawler Banner --}}
+          <div class="cog-bg-window" style="border-bottom: 2px solid var(--cog-accent); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img class="cog-bg-icon-box" src="{{this.actorImg}}" style="width: 32px; height: 32px; border-radius: 4px; border: 1.5px solid var(--cog-accent); object-fit: cover;" />
+              <div>
+                <h3 class="cog-text-strong" style="margin: 0; font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: bold;">
+                  {{this.actorName}}
+                </h3>
+                <span class="cog-text-secondary" style="font-size: 10px;">Floor: {{this.floor}}</span>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="cog-bg-surface-strong cog-text-strong" style="padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+                <i class="fa-solid fa-trophy cog-text-gold"></i> {{this.count}} Trophies
+              </span>
+              {{#if this.totalFavor}}
+                <span class="cog-dark cog-bg-header-fill cog-text-gold" style="padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+                  <i class="fa-solid fa-hand-sparkles"></i> +{{this.totalFavor}} Favor
+                </span>
+              {{/if}}
+            </div>
+          </div>
+
+          {{!-- Achievements List for this Crawler --}}
+          <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+            {{#each this.achievements}}
+              <div class="cog-bg-surface" style="border: 1px solid {{this.tierConfig.borderColor}}; border-radius: 4px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                    <i class="{{this.tierConfig.icon}} cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{this.tierConfig.color}};"></i>
+                    <strong class="cog-text-strong" style="font-family: 'Oswald', sans-serif; font-size: 14px;">{{this.name}}</strong>
+                    <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{this.tierConfig.color}}; font-size: 9px; text-transform: uppercase; padding: 1px 5px; border-radius: 2px; border: 1px solid {{this.tierConfig.borderColor}};">
+                      {{this.tierConfig.label}}
+                    </span>
+                    {{#if this.system.floor}}
+                      <span class="cog-text-secondary" style="font-size: 10px;">({{this.system.floor}})</span>
+                    {{/if}}
+                  </div>
+                  {{#if this.system.quote}}
+                    <div class="cog-text-secondary" style="font-size: 11px; font-style: italic; margin-bottom: 4px;">
+                      “{{this.system.quote}}”
+                    </div>
+                  {{/if}}
+                  <div class="cog-text-success" style="font-size: 11px;">
+                    <i class="fa-solid fa-gift"></i> {{this.system.reward}}
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <button type="button" data-action="announceAchievement" class="cog-party-announce-btn cog-bg-success-fill cog-text-on-fill" data-actor-id="{{../actorId}}" data-item-id="{{this.id}}" title="Announce to Chat" style="border: none; border-radius: 3px; padding: 3px 8px; font-size: 11px; cursor: pointer;">
+                    <i class="fa-solid fa-bullhorn"></i> Announce
+                  </button>
+                  <button type="button" data-action="deleteAchievement" class="cog-party-delete-btn cog-bg-accent-fill cog-text-on-fill" data-actor-id="{{../actorId}}" data-item-id="{{this.id}}" title="Delete Achievement" style="border: none; border-radius: 3px; padding: 3px 6px; font-size: 11px; cursor: pointer;">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            {{else}}
+              <div class="cog-text-secondary" style="text-align: center; padding: 12px; font-style: italic; font-size: 12px;">
+                No achievements collected yet. Time to enter the dungeon and earn some glory!
+              </div>
+            {{/each}}
+          </div>
+        </div>
+      {{else}}
+        <div class="cog-text-secondary" style="text-align: center; padding: 40px;">
+          <p>No active crawlers found in the world.</p>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+
+</div>

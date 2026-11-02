@@ -1,0 +1,50 @@
+{{!--
+  The scale (`scaleBy`) of one modifier row.
+  Parameters: scale = ScaleView from context-scale.mjs ({ state: 'collapsed' | 'full', source, ... }),
+              tagOptions = registered tags grouped by namespace.
+  Schema inputs carry a unique `name`; the `where` pill editor is made of action delegates without one.
+--}}
+<div class="cog-modifier-scale" data-scale-state="{{scale.state}}">
+  <div class="cog-field-row">
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{#if scale.recipe}}{{localize "COG.Rows.Scale.Source"}}{{else}}{{localize "COG.Rows.Scale.None"}}{{/if}}</span>
+      <select class="cog-field-input" name="{{scale.source.name}}">
+        {{#each scale.source.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{localize o.label value=o.labelValue}}</option>{{/each}}
+      </select>
+    </div>
+    {{#if scale.scope}}
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.Rows.Scale.Scope"}}</span>
+        <select class="cog-field-input" name="{{scale.scope.name}}">
+          {{#each scale.scope.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{localize o.label}}{{#if o.applied}} {{localize "COG.Rows.Scale.WhenApplied"}}{{/if}}</option>{{/each}}
+        </select>
+      </div>
+    {{/if}}
+    {{#if scale.stat}}
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.Rows.Scale.Stat"}}</span>
+        <select class="cog-field-input" name="{{scale.stat.name}}">
+          {{#each scale.stat.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{localize o.label}}</option>{{/each}}
+        </select>
+      </div>
+    {{/if}}
+    {{#each scale.numbers as |n|}}
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize n.labelKey}}</span>
+        <input class="cog-field-input" type="number" step="any" name="{{n.name}}" value="{{n.value}}" placeholder="{{#if n.placeholderKey}}{{localize n.placeholderKey}}{{else}}{{n.placeholder}}{{/if}}" />
+      </div>
+    {{/each}}
+  </div>
+  {{#if scale.recipe}}
+    <div class="cog-modifier-hint">
+      <span class="cog-field-label">{{localize "COG.Rows.Scale.Label"}}</span> <span class="cog-modifier-reads">{{scale.recipe}}</span>
+      {{#if scale.applyTime}}<span>{{localize "COG.Rows.Scale.AppliedReadout"}}</span>{{/if}}
+      {{#if scale.readout}}<span class="cog-modifier-now">{{#if scale.readout.value}}{{localize "COG.Rows.Preview.Now" value=scale.readout.value note=scale.readout.note}}{{else}}{{localize "COG.Rows.Preview.NowNoTarget"}}{{/if}}</span>{{/if}}
+      {{#each scale.badges as |b|}}<span class="cog-badge cog-bg-accent-fill cog-text-on-fill">{{localize b.key value=b.value}}</span>{{/each}}
+    </div>
+  {{/if}}
+  {{#if scale.where}}
+    <span class="cog-field-label">{{localize "COG.Rows.Scale.Where"}}</span>
+    {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=scale.where tagOptions=tagOptions}}
+  {{/if}}
+</div>

@@ -1,0 +1,3 @@
+{{!-- Cooldown badges for an item row (src/utils/cooldown-badge.mjs). Param: badge = { cooldown: { text, title }|null, ruleBreak }. --}}
+{{#if badge.cooldown}}<span class="cog-badge cog-badge-cooldown" title="{{badge.cooldown.title}}">[{{badge.cooldown.text}}]</span>{{/if}}
+{{#if badge.ruleBreak}}<span class="cog-badge cog-badge-rule-break" title="{{localize "COG.Timing.RuleBreakUse"}}">[RULE BREAK]</span>{{/if}}

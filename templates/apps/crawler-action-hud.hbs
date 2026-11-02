@@ -1,0 +1,97 @@
+<div class="cog-hud-content {{#if isCollapsed}}is-collapsed{{/if}}" data-actor-id="{{actor.id}}">
+  <div class="cog-action-hud-panel">
+    <div class="cog-action-hud-header">
+      <div class="cog-action-hud-title">
+        <i class="fa-solid fa-skull-crossbones"></i>
+        <span>{{crawlerName}} • ACTIONS</span>
+      </div>
+      <div class="cog-action-hud-controls">
+        {{#if cameraArm}}
+        <button type="button" data-action="cycleCameras" class="cog-action-hud-toggle cog-camera-arm {{#if cameraArm.active}}is-armed{{/if}}" title="{{cameraArm.title}}">
+          <i class="fa-solid fa-video"></i>{{#if cameraArm.active}} {{cameraArm.label}}{{/if}}
+        </button>
+        {{/if}}
+        <button type="button" data-action="resetPosition" class="cog-action-hud-toggle cog-action-hud-reset" title="Reset position (drag the header to move this panel)">
+          <i class="fa-solid fa-arrows-to-dot"></i>
+        </button>
+        <button type="button" data-action="toggleCollapsed" class="cog-action-hud-toggle cog-action-hud-collapse" title="Toggle Actions Panel">
+          <i class="fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-left{{/if}}"></i>
+        </button>
+      </div>
+    </div>
+
+    {{#unless isCollapsed}}
+    <div class="cog-action-hud-content">
+      {{!-- ATTACKS SECTION --}}
+      <div class="cog-action-hud-section">
+        <div class="cog-action-section-header">
+          <span class="cog-action-section-title"><i class="fa-solid fa-crosshairs"></i> ATTACKS ({{attackCount}})</span>
+        </div>
+        <div class="cog-action-list">
+          {{#each attacks as |atk|}}
+            <div class="cog-action-item" data-item-id="{{atk.id}}">
+              <div class="cog-action-item-info">
+                <img class="cog-action-item-icon" src="{{atk.img}}" alt="{{atk.name}}" />
+                <div class="cog-action-item-details">
+                  <span class="cog-action-item-name" title="{{atk.name}}">{{atk.name}}</span>
+                  {{#if atk.formula}}
+                    <span class="cog-action-item-sub">{{atk.formula}}</span>
+                  {{/if}}
+                </div>
+              </div>
+              <div class="cog-action-item-btns">
+                <button type="button" data-action="attackHit" class="cog-hud-btn cog-hud-btn-hit roll-attack-hit" title="Roll Attack (To Hit): {{atk.name}}">
+                  <i class="fa-solid fa-crosshairs"></i> Hit
+                </button>
+                <button type="button" data-action="attackDamage" class="cog-hud-btn cog-hud-btn-dmg roll-attack-dmg" title="Roll Damage: {{atk.name}}">
+                  <i class="fa-solid fa-burst"></i> Dmg
+                </button>
+              </div>
+            </div>
+          {{else}}
+            <div class="cog-action-empty">No attacks found.</div>
+          {{/each}}
+        </div>
+      </div>
+
+      {{!-- ACTIVE SKILLS SECTION --}}
+      <div class="cog-action-hud-section">
+        <div class="cog-action-section-header">
+          <span class="cog-action-section-title"><i class="fa-solid fa-dice-d20"></i> ACTIVE SKILLS ({{skillCount}})</span>
+        </div>
+        <div class="cog-action-list">
+          {{#each skills as |sk|}}
+            <div class="cog-action-item" data-item-id="{{sk.id}}">
+              <div class="cog-action-item-info">
+                <img class="cog-action-item-icon" src="{{sk.img}}" alt="{{sk.name}}" />
+                <div class="cog-action-item-details">
+                  <span class="cog-action-item-name" title="{{sk.name}}">{{sk.name}}</span>
+                  <span class="cog-action-item-sub">Rank {{sk.rank}} ({{sk.totalSkillStr}} {{sk.stat}})</span>
+                </div>
+              </div>
+              <div class="cog-action-item-btns">
+                {{#if sk.isAttack}}
+                  <button type="button" data-action="rollSkill" class="cog-hud-btn cog-hud-btn-hit roll-skill" title="Roll Attack Check: {{sk.name}}">
+                    <i class="fa-solid fa-crosshairs"></i> Hit
+                  </button>
+                  {{#if sk.hasDamage}}
+                    <button type="button" data-action="skillDamage" class="cog-hud-btn cog-hud-btn-dmg roll-skill-dmg" title="Roll Damage: {{sk.name}}">
+                      <i class="fa-solid fa-burst"></i> Dmg
+                    </button>
+                  {{/if}}
+                {{else}}
+                  <button type="button" data-action="rollSkill" class="cog-hud-btn cog-hud-btn-use roll-skill" title="Roll Skill Check: {{sk.name}}">
+                    <i class="fa-solid fa-dice-d20"></i> Roll
+                  </button>
+                {{/if}}
+              </div>
+            </div>
+          {{else}}
+            <div class="cog-action-empty">No active skills found.</div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+    {{/unless}}
+  </div>
+</div>

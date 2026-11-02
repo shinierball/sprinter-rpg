@@ -1,0 +1,23 @@
+<footer class="cog-fsim-footer">
+  {{#if empty}}
+    <button type="button" class="cog-fsim-btn" data-action="closeWindow"><i class="fa-solid fa-xmark"></i> {{localize 'COG.FloorSim.Close'}}</button>
+  {{else}}
+    <div class="cog-fsim-footer-left">
+      <button type="button" class="cog-fsim-btn" data-action="rollAll" {{#if finishing}}disabled{{/if}}><i class="fa-solid fa-dice"></i> {{localize 'COG.FloorSim.RollAll'}}{{#if openDice}} ({{openDice}}){{/if}}</button>
+      <button type="button" class="cog-fsim-btn danger" data-action="abandon"><i class="fa-solid fa-ban"></i> {{localize 'COG.FloorSim.Abandon'}}</button>
+    </div>
+    <div class="cog-fsim-footer-right">
+      <button type="button" class="cog-fsim-btn" data-action="prevStep" {{#unless canBack}}disabled{{/unless}}><i class="fa-solid fa-chevron-left"></i> {{localize 'COG.FloorSim.Back'}}</button>
+      {{#if onReview}}
+        <button type="button" class="cog-fsim-btn primary{{#if hasBreaks}} rule-break{{/if}}" data-action="commit"><i class="fa-solid fa-check"></i> {{localize 'COG.FloorSim.Commit' floor=header.arrival}}</button>
+      {{else}}
+        {{#if finishing}}
+          <button type="button" class="cog-fsim-btn primary" data-action="commit"><i class="fa-solid fa-flag-checkered"></i> {{localize 'COG.FloorSim.FinishRun'}}</button>
+        {{else}}
+          <button type="button" class="cog-fsim-btn" data-action="nextStep" {{#unless canNext}}disabled{{/unless}}>{{localize 'COG.FloorSim.Next'}} <i class="fa-solid fa-chevron-right"></i></button>
+        {{/if}}
+      {{/if}}
+      <button type="button" class="cog-fsim-btn" data-action="closeWindow"><i class="fa-solid fa-xmark"></i> {{localize 'COG.FloorSim.Close'}}</button>
+    </div>
+  {{/if}}
+</footer>

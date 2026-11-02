@@ -1,0 +1,120 @@
+{{!-- PAGE: SPELLS --}}
+<div class="cog-page-container">
+  <div class="cog-stat-block">
+    <div class="cog-banner-header">
+      <span><i class="fa-solid fa-wand-magic-sparkles"></i> SPELLS</span>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <a class="cog-dark cog-text-gold" data-action="openSpellPicker" data-tooltip="{{localize "COG.Content.SpellPickerTooltip"}}" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-book-bookmark"></i> {{localize "COG.Content.SpellCompendiumAction"}}
+        </a>
+        <a class="cog-text-on-fill" data-action="createItem" data-type="spell" data-tooltip="Create a custom spell" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-plus"></i> Custom Spell
+        </a>
+      </div>
+    </div>
+
+    <table class="cog-attacks-table cog-spells-table">
+      <thead>
+        <tr>
+          <th style="width: 18%;">Spell Name</th>
+          <th style="width: 5%; text-align: center;" title="Spell Rank">Rank</th>
+          <th style="width: 6%; text-align: center;" title="Mana Cost">Mana</th>
+          <th style="width: 9%;">Stat & Mod</th>
+          <th style="width: 9%;">Range</th>
+          <th style="width: 9%;">Duration</th>
+          <th style="width: 12%;">Damage / Effect</th>
+          <th style="width: 14%;">Notes / Upgrades</th>
+          <th style="width: 18%; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each spells as |spell|}}
+          <tr class="draggable" data-item-id="{{spell.id}}" draggable="true">
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <img class="cog-bg-icon-box" src="{{spell.img}}" style="width: 22px; height: 22px; border: 1px solid var(--cog-panel-border); border-radius: 3px; object-fit: contain;" />
+                <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="name" value="{{spell.name}}"{{#if spell.summaryTip}} data-tooltip="{{spell.summaryTip}}"{{/if}} style="font-weight: bold; flex: 1;" />
+                {{#if spell.isGranted}}
+                  <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;" title="Granted by equipped gear: {{spell.itemSources}}">[EQUIPPED GEAR]</span>
+                {{/if}}
+                {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=spell.cooldownBadge}}
+                <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;" title="Spell role: {{spell.roleLabel}}">{{upper spell.roleLabel}}</span>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              {{#if spell.isGranted}}
+                <span class="cog-text-success" style="font-weight: bold;" title="Granted Rank {{spell.system.rank}} (by {{spell.itemSources}})">{{spell.system.rank}}</span>
+              {{else}}
+                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 2px;">
+                  <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.rank" value="{{spell.system.rank}}" style="width: 32px; text-align: center;" title="Spell Rank" />
+                  {{#if spell.itemBonus}}
+                    <span class="cog-text-success" style="font-size: 10px; font-weight: bold;" title="Gear Bonus: +{{spell.itemBonus}} (Total: {{spell.modifiedRank}})">+{{spell.itemBonus}}</span>
+                  {{/if}}
+                </div>
+              {{/if}}
+            </td>
+            <td style="text-align: center;">
+              <div style="display: inline-flex; align-items: center; justify-content: center; gap: 2px;">
+                <input class="cog-stat-input cog-text-info" data-change-action="editItemField" type="number" data-field="system.manaCost" value="{{spell.system.manaCost}}" style="width: 36px; text-align: center; font-weight: bold;" title="Mana Cost" />
+                <span class="cog-text" style="font-size: 10px;">MP</span>
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <select data-change-action="editItemField" data-field="system.stat" style="font-family: 'Oswald', sans-serif; font-size: 11px;">
+                  <option value="int" {{#if (eq spell.system.stat "int")}}selected{{/if}}>INT</option>
+                  <option value="cha" {{#if (eq spell.system.stat "cha")}}selected{{/if}}>CHA</option>
+                  <option value="str" {{#if (eq spell.system.stat "str")}}selected{{/if}}>STR</option>
+                  <option value="con" {{#if (eq spell.system.stat "con")}}selected{{/if}}>CON</option>
+                  <option value="dex" {{#if (eq spell.system.stat "dex")}}selected{{/if}}>DEX</option>
+                </select>
+                <span class="cog-text-accent" style="font-size: 11px; font-weight: bold;" title="{{upper spell.system.stat}} Stat Mod: {{spell.statModStr}}">{{spell.statModStr}}</span>
+              </div>
+            </td>
+            <td>
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.range" value="{{spell.system.range}}" placeholder="Range..." style="font-size: 11px;" />
+            </td>
+            <td>
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.duration" value="{{spell.system.duration}}" placeholder="Duration..." style="font-size: 11px;" />
+            </td>
+            <td>
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.baseDamage.dice" value="{{spell.system.baseDamage.dice}}" placeholder="Damage / Effect..." style="font-size: 11px; font-weight: bold;" />
+            </td>
+            <td>
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{spell.system.notes}}" placeholder="Notes..." style="font-size: 11px;" title="{{spell.system.notes}}" />
+            </td>
+            <td style="text-align: center; white-space: nowrap;">
+              <div class="item-actions">
+                <button type="button" class="cog-attack-roll-btn roll-spell" data-action="rollSpell" data-tooltip="Cast Spell: {{spell.name}}" style="font-size: 10px; padding: 2px 6px;">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </button>
+                {{#if spell.hasDamage}}
+                  <button type="button" class="cog-attack-roll-btn roll-spell-dmg cog-bg-accent-fill cog-text-on-fill" data-action="rollSpellDamage" data-tooltip="Roll Damage ({{spell.damageFormula}})" style="font-size: 10px; padding: 2px 6px;">
+                    <i class="fa-solid fa-burst"></i>
+                  </button>
+                {{/if}}
+                {{#if spell.isAttack}}
+                  <button type="button" class="cog-attack-roll-btn cog-bg-info-fill cog-text-on-fill" data-action="rollSpellAttack" data-tooltip="{{spell.attackTooltip}}" style="font-size: 10px; padding: 2px 6px;">
+                    <i class="fa-solid fa-crosshairs"></i>
+                  </button>
+                {{/if}}
+                {{#if spell.isGranted}}
+                  <span class="cog-text-muted" style="font-size: 10px; font-style: italic;" title="Granted by equipped gear: {{spell.itemSources}}">Equipped</span>
+                {{else}}
+                  <a class="item-edit" data-action="editItem" data-item-id="{{spell.id}}" data-tooltip="Edit Spell Details & Upgrades" title="Edit Spell Details"><i class="fa-solid fa-edit"></i></a>
+                  <a class="item-delete" data-action="deleteItem" data-item-id="{{spell.id}}" data-tooltip="Delete Spell" title="Delete Spell"><i class="fa-solid fa-trash"></i></a>
+                {{/if}}
+              </div>
+            </td>
+          </tr>
+        {{else}}
+          <tr>
+            <td class="cog-text" colspan="9" style="text-align: center; padding: 18px;">
+              {{localize "COG.Content.NoSpellsBefore"}} <strong class="cog-text-accent">{{localize "COG.Content.SpellCompendiumAction"}}</strong> {{localize "COG.Content.NoSpellsMiddle"}} <strong>{{localize "COG.Content.CustomSpellAction"}}</strong> {{localize "COG.Content.NoSpellsAfter"}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,86 @@
+      <div class="cog-field-row">
+        <div class="cog-field-group flex-2">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="cog-field-label">Name</span>
+            {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
+          </div>
+          <input class="cog-field-input" name="name" type="text" value="{{actor.name}}" placeholder="Pet Name" />
+        </div>
+        <div class="cog-field-group flex-2">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="cog-field-label">Race / Species</span>
+          </div>
+          <select class="cog-field-input" data-change-action="selectRace" title="Select Pet Race">
+            <option value="" {{#unless system.details.race}}selected{{/unless}}>-- None / Select Race --</option>
+            {{#if hasCustomRace}}
+              <option value="{{system.details.race}}" selected>{{currentRaceLabel}} (Custom)</option>
+            {{/if}}
+            {{#each raceOptions as |group|}}
+              <optgroup label="{{group.label}}">
+                {{#each group.options as |opt|}}
+                  <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                {{/each}}
+              </optgroup>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Creature Type</span>
+          <input class="cog-field-input" name="system.details.creatureType" type="text" value="{{system.details.creatureType}}" placeholder="Beast" />
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">Level</span>
+          <input class="cog-field-input" name="system.details.level" type="number" value="{{system.details.level}}" placeholder="1" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Combat Mount</span>
+          <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; height: 26px;">
+            <input type="checkbox" name="system.details.isMount" {{checked system.details.isMount}} />
+            <span class="cog-text-info" style="font-size: 11px; font-weight: bold;">Rideable</span>
+          </label>
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Floor</span>
+          <select class="cog-field-input" name="system.details.floor">
+            {{#each floorOptions as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+
+      <div class="cog-field-row">
+        <div class="cog-field-group flex-2">
+          <span class="cog-field-label">Bonded Owner</span>
+          <div style="display: flex; align-items: center; gap: 6px; height: 26px;">
+            {{#if owner}}
+              <span class="cog-text-success" style="font-weight: bold; font-size: 12px;"><i class="fa-solid fa-link"></i> {{owner.name}}</span>
+              <button type="button" class="cog-btn-xs cog-bg-success-fill cog-text-on-fill" data-action="petOpenOwner" title="Open Owner Sheet" style="padding: 1px 6px; border: none; border-radius: 3px; cursor: pointer;">
+                <i class="fa-solid fa-external-link"></i>
+              </button>
+              <button type="button" class="cog-btn-xs cog-bg-danger-fill cog-text-on-fill" data-action="petUnlinkOwner" title="Unlink Owner" style="padding: 1px 6px; border: none; border-radius: 3px; cursor: pointer;">
+                <i class="fa-solid fa-unlink"></i>
+              </button>
+            {{else}}
+              <span class="cog-text-muted" style="font-style: italic; font-size: 12px;">Unbonded Companion</span>
+            {{/if}}
+          </div>
+        </div>
+        <div class="cog-field-group flex-2">
+          <span class="cog-field-label">Active Rider</span>
+          <div style="display: flex; align-items: center; gap: 6px; height: 26px;">
+            {{#if rider}}
+              <span class="cog-text-warning" style="font-weight: bold; font-size: 12px;"><i class="fa-solid fa-horse"></i> {{rider.name}}</span>
+              <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="petDismountRider" title="Dismount Rider" style="padding: 1px 6px; border: none; border-radius: 3px; cursor: pointer;">
+                Dismount
+              </button>
+            {{else}}
+              <span class="cog-text-muted" style="font-style: italic; font-size: 12px;">None Mounted</span>
+            {{/if}}
+          </div>
+        </div>
+        <div class="cog-field-group flex-2">
+          <span class="cog-field-label">Special Trait / Attack</span>
+          <input class="cog-field-input" name="system.details.special" type="text" value="{{system.details.special}}" placeholder="Signature Trait..." />
+        </div>
+      </div>

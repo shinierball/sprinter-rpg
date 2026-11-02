@@ -1,0 +1,46 @@
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="rest">
+  <div class="cog-bg-surface" style="border: 1px solid var(--cog-success); border-radius: 6px; padding: 16px; margin-bottom: 14px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div class="cog-text-success" style="font-size: 18px; font-weight: bold;">
+          <i class="fa-solid fa-bed"></i> CERTIFIED SAFE ROOM REST STATION
+        </div>
+        <div class="cog-text-secondary" style="font-size: 12px; margin-top: 4px;">
+          Crawler sanctuary protected by Safe Zone protocols. Restores all 10 Health Bars and full Mana.
+        </div>
+      </div>
+      <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="restInSpace" style="border: 1px solid var(--cog-success-fill); border-radius: 4px; padding: 10px 18px; font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+        <i class="fa-solid fa-moon"></i> Take {{restHours}}h Safe Rest
+      </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--cog-panel-border);">
+      <div class="cog-bg-window" style="padding: 8px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+        <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase;">Rest Duration</span>
+        <div class="cog-text-gold" style="font-size: 16px; font-weight: bold;">{{restHours}} Hours</div>
+        <div class="cog-text-secondary" style="font-size: 10px;">{{#if hasRestReduction}}Reduced by {{system.effectiveRestHoursReduction}}h{{else}}Standard 8h safe rest{{/if}}</div>
+      </div>
+      <div class="cog-bg-window" style="padding: 8px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+        <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase;">Well-Rested Perk</span>
+        <div class="cog-text-success" style="font-size: 16px; font-weight: bold;">+{{system.effectiveWellRestedBonus}} Check Bonus</div>
+        <div class="cog-text-secondary" style="font-size: 10px;">Applies until end of next rest</div>
+      </div>
+      <div class="cog-bg-window" style="padding: 8px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+        <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase;">Training Bonus</span>
+        <div class="cog-text-info" style="font-size: 16px; font-weight: bold;">+{{system.effectiveTrainingBonusHours}} Banked Hours</div>
+        <div class="cog-text-secondary" style="font-size: 10px;">Accrues during downtime</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cog-text-warning" style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">
+    <i class="fa-solid fa-sparkles"></i> ACTIVE REST AMENITIES
+  </div>
+  <div class="cog-text-secondary cog-bg-surface" style="font-size: 12px; line-height: 1.6; padding: 12px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+    {{#if system.details.amenities}}
+      {{system.details.amenities}}
+    {{else}}
+      Standard safe room foam bunk and decontamination shower.
+    {{/if}}
+  </div>
+</section>

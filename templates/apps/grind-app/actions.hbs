@@ -1,0 +1,30 @@
+<div class="cog-grind-part cog-grind-actions cog-bg-window cog-text-strong" style="padding: 0 12px 12px; font-family: 'Oswald', sans-serif;">
+  {{!-- COMPLICATIONS & REST OPTIONS --}}
+  <div class="cog-bg-surface" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 8px 12px;">
+    <label class="cog-text" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px;">
+      <input type="checkbox" name="complication" data-change-action="setComplication" class="complication-toggle cog-ac-accent" {{#if rollComplication}}checked{{/if}} {{#if noComplicationTable}}disabled{{/if}} />
+      <span><i class="fa-solid fa-dice-d20 cog-text-gold"></i> {{#if complicationTable}}{{localize "COG.Content.GrindComplicationsToggle" name=complicationTable.name formula=complicationTable.formula}}{{else}}{{localize "COG.Content.NoGrindComplications"}}{{/if}}</span>
+    </label>
+
+    <div class="cog-text-muted" style="font-size: 11px;">
+      Advances Floor Clock: <strong class="cog-text-warning">-{{hours}} Hours</strong>
+    </div>
+  </div>
+
+  {{> "systems/sprinter-rpg/templates/apps/partials/advancement-controls.hbs" advancementControls}}
+
+  {{!-- ACTION BUTTONS --}}
+  <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end;">
+    <button type="button" data-action="safeRoomRest" class="safe-room-rest-btn cog-bg-success-fill cog-text-on-fill" style="border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: 'Oswald', sans-serif;">
+      <i class="fa-solid fa-bed"></i> Safe Room Rest (8 hrs)
+    </button>
+
+    <button type="button" data-action="executeGrind" class="execute-grind-btn cog-bg-grad-accent-warning cog-text-on-fill" style="border: 1px solid var(--cog-danger-fill); padding: 8px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; font-family: 'Oswald', sans-serif; box-shadow: 0 2px 6px rgba(0,0,0,0.4); text-transform: uppercase;">
+      <i class="fa-solid fa-play"></i> Start Grind ({{selectedCount}} Crawlers, {{hours}} hrs)
+    </button>
+
+    <button type="button" data-action="close" class="close-grind-hub-btn cog-bg-surface-strong cog-text-secondary" style="border: 1px solid var(--cog-panel-border); padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Oswald', sans-serif;">
+      Done
+    </button>
+  </div>
+</div>

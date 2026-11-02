@@ -1,0 +1,85 @@
+{{!-- Shared "On Hit" block (attack, gear, skill, spell): applied to the TARGET of a damaging hit. Context: onHit (context-on-hit.mjs). --}}
+<details class="cog-collapsible-block" {{#if onHit.configured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-droplet"></i> ON HIT (TARGET)</span>
+    <span class="cog-toggle-indicator {{#if onHit.configured}}active{{/if}}">{{#if onHit.configured}}[ON-HIT CONFIGURED]{{else}}[CLICK TO CONFIGURE ON-HIT EFFECTS]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row">
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">Min Rank to Inflict</span>
+        <input class="cog-field-input" type="number" name="system.onHit.debuffMinRank" value="{{onHit.debuffMinRank}}" placeholder="0" min="0" style="font-size: 11px;" />
+      </div>
+    </div>
+    {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=onHit.debuffPicker.picker}}
+    <div class="cog-field-row">
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">{{localize "COG.OnHitRiders.Degree"}}</span>
+        <select class="cog-field-input" name="system.onHit.evadeFail.degree" style="font-size: 11px;">
+          {{#each onHit.debuffPicker.degreeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">{{localize "COG.OnHitRiders.MinSlots"}}</span>
+        <input class="cog-field-input" type="number" name="system.onHit.slotLoss.minSlotsLost" value="{{onHit.debuffPicker.minSlotsLost}}" placeholder="1" min="1" style="font-size: 11px;" />
+      </div>
+    </div>
+    <div class="cog-field-row">
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">{{localize "COG.OnHitRiders.ModeHit"}}</span>
+        <select class="cog-field-input" name="system.onHit.debuffMode" style="font-size: 11px;">
+          {{#each onHit.debuffPicker.hitModeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">{{localize "COG.OnHitRiders.ModeEvade"}}</span>
+        <select class="cog-field-input" name="system.onHit.evadeFail.mode" style="font-size: 11px;">
+          {{#each onHit.debuffPicker.evadeModeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">{{localize "COG.OnHitRiders.ModeSlot"}}</span>
+        <select class="cog-field-input" name="system.onHit.slotLoss.mode" style="font-size: 11px;">
+          {{#each onHit.debuffPicker.slotModeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+        </select>
+      </div>
+    </div>
+    <div class="cog-text-muted" style="font-size: 11px; padding-bottom: 4px;">{{localize "COG.OnHitRiders.Hint"}}</div>
+    <div class="cog-field-row">
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-accent"></i> Life Drain: heal the attacker (Health Bar slots)</span>
+        <input class="cog-field-input" type="number" name="system.onHit.lifesteal.heal" value="{{onHit.lifesteal.heal}}" placeholder="0" min="0" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">Only if the target loses at least (slots)</span>
+        <input class="cog-field-input" type="number" name="system.onHit.lifesteal.minSlotsLost" value="{{onHit.lifesteal.minSlotsLost}}" placeholder="1" min="1" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">Min Rank for Life Drain</span>
+        <input class="cog-field-input" type="number" name="system.onHit.lifesteal.minRank" value="{{onHit.lifesteal.minRank}}" placeholder="0" min="0" style="font-size: 11px;" />
+      </div>
+    </div>
+    <div class="cog-field-row">
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label"><i class="fa-solid fa-wand-sparkles cog-text-accent"></i> Dispel: suspend the target's Buffs until the combat ends</span>
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">
+          <input type="checkbox" name="system.onHit.dispel.enabled" {{#if onHit.dispel.enabled}}checked{{/if}} />
+          <span>Dispels on hit</span>
+        </label>
+      </div>
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">Buffs suspended (0 = every matching Buff)</span>
+        <input class="cog-field-input" type="number" name="system.onHit.dispel.count" value="{{onHit.dispel.count}}" placeholder="0" min="0" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">Min Rank to Dispel</span>
+        <input class="cog-field-input" type="number" name="system.onHit.dispel.minRank" value="{{onHit.dispel.minRank}}" placeholder="0" min="0" style="font-size: 11px;" />
+      </div>
+    </div>
+    <div class="cog-field-group">
+      <span class="cog-field-label">Dispel only Buffs with these tags (empty = every Buff)</span>
+      {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=onHit.dispelQuery tagOptions=techniqueTagOptions}}
+    </div>
+    {{#if onHit.rankNote}}<div class="cog-text-muted" style="font-size: 11px; padding-top: 4px;">{{onHit.rankNote}}</div>{{/if}}
+  </div>
+</details>

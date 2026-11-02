@@ -1,0 +1,71 @@
+{{!--
+  The selected tag's rows and flags. Context: tagEditor from buildTagEditorContext (null = nothing selected).
+  A GM edits the rows through the item sheet's modifier-rows partial (names rows.<array>.<i>.<field>); a player sees them read-only.
+  Flag checkboxes and every button are action delegates without a `name`.
+--}}
+<div class="cog-tm-rules">
+  {{#if tagEditor}}
+    <div class="cog-banner-header cog-tm-rules-header">
+      <span>
+        <i class="fa-solid fa-sliders"></i> {{tagEditor.label}} <code>{{tagEditor.id}}</code>
+        {{#if tagEditor.isRule}}<span class="cog-badge cog-bg-accent-fill cog-text-on-fill">{{localize 'COG.TagManager.RuleBadge'}}</span>{{/if}}
+        <span class="cog-badge cog-badge-info">{{localize tagEditor.providerKey}}</span>
+      </span>
+      {{#if tagEditor.canReset}}
+        <button type="button" class="cog-btn cog-reset-override-btn" data-action="resetOverride">{{localize 'COG.TagManager.Reset'}}</button>
+      {{/if}}
+    </div>
+    {{#if tagEditor.overrideOnCustom}}<div class="cog-modifier-hint">{{localize 'COG.TagManager.OverrideOnCustom'}}</div>{{/if}}
+    {{#if tagEditor.editable}}
+      {{#unless tagEditor.isCustom}}<div class="cog-modifier-hint">{{localize 'COG.TagManager.OverrideHint'}}</div>{{/unless}}
+    {{else}}
+      <div class="cog-modifier-hint">{{localize 'COG.TagManager.ReadOnly'}}</div>
+    {{/if}}
+    {{#each tagEditor.errors as |err|}}
+      <div class="cog-badge cog-bg-accent-fill cog-text-on-fill cog-tm-rules-error"><i class="fa-solid fa-triangle-exclamation"></i> {{err}}</div>
+    {{/each}}
+
+    <div class="cog-field-row cog-tm-flags">
+      <span class="cog-field-label">{{localize 'COG.TagManager.Flags'}}</span>
+      {{#each tagEditor.flags as |f|}}
+        <label class="cog-field-group small" data-tooltip="{{f.hint}}">
+          <input type="checkbox" class="cog-tm-flag" data-change-action="toggleFlag" data-flag="{{f.id}}" {{#if f.checked}}checked{{/if}} {{#unless ../tagEditor.editable}}disabled{{/unless}} />
+          <span class="cog-field-label">{{f.label}}{{#if f.undeclared}} <i class="fa-solid fa-triangle-exclamation" title="{{localize 'COG.TagManager.UndeclaredFlag'}}"></i>{{/if}}</span>
+        </label>
+      {{/each}}
+    </div>
+
+    {{#if tagEditor.editable}}
+      <form class="cog-tm-rules-form" autocomplete="off" onsubmit="return false">
+        <div class="cog-modifiers">
+          {{#each tagEditor.rowEditors.blocks as |block|}}
+            {{> "systems/sprinter-rpg/templates/items/parts/modifier-rows.hbs" block=block tagOptions=../tagEditor.rowEditors.tagOptions}}
+          {{/each}}
+          {{#if tagEditor.rowEditors.addBar.length}}
+            <div class="cog-modifier-addbar">
+              <span class="cog-field-label">{{localize "COG.Rows.AddRow"}}</span>
+              {{#each tagEditor.rowEditors.addBar as |b|}}
+                <a class="cog-modifier-add-chip" data-action="addRow" data-row-table="{{b.arrayKey}}"><i class="fa-solid {{b.icon}}"></i> {{localize b.labelKey}}</a>
+              {{/each}}
+            </div>
+          {{/if}}
+        </div>
+      </form>
+    {{else}}
+      <div class="cog-tm-rules-readonly">
+        {{#each tagEditor.readOnly as |block|}}
+          <div class="cog-modifier-block">
+            <div class="cog-banner-header cog-modifier-header"><span><i class="fa-solid {{block.icon}}"></i> {{localize block.titleKey}}</span></div>
+            {{#each block.rows as |row|}}
+              <div class="cog-modifier-hint">{{#if row.label}}<strong>{{row.label}}</strong> {{/if}}{{row.reads}}{{#if row.disabled}} ({{localize 'COG.Rows.Field.disabled'}}){{/if}}</div>
+            {{/each}}
+          </div>
+        {{else}}
+          <div class="cog-modifier-hint">{{localize 'COG.TagManager.NoRows'}}</div>
+        {{/each}}
+      </div>
+    {{/if}}
+  {{else}}
+    <div class="cog-modifier-hint">{{localize 'COG.TagManager.SelectHint'}}</div>
+  {{/if}}
+</div>

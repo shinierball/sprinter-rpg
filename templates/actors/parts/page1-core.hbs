@@ -1,0 +1,938 @@
+{{!-- PAGE 1: CORE CHARACTER SHEET --}}
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="page1">
+<div class="cog-page1-container">
+  {{!-- HEADER --}}
+  <header class="cog-header-grid">
+    <div class="cog-logo-box">
+      <div class="cog-logo-title">Sprinter</div>
+      <div class="cog-logo-subtitle">Roleplaying Game</div>
+      <button type="button" class="cog-btn-save-pdf" data-action="exportPdf" title="Save Crawler to Fillable PDF">
+        <i class="fa-solid fa-file-pdf"></i> Save to PDF
+      </button>
+    </div>
+    
+    <div class="cog-details-container">
+      {{#if isMob}}
+      <div class="cog-field-row">
+        <div class="cog-field-group flex-2">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="cog-field-label">Name</span>
+            {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
+          </div>
+          <input class="cog-field-input" name="name" type="text" value="{{actor.name}}" placeholder="Mob Name" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Boss Tier</span>
+          <select class="cog-field-input" name="bossTier">
+            {{#each mobBossTiers as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">Level</span>
+          <input class="cog-field-input" name="system.details.level" type="number" value="{{system.details.level}}" placeholder="1" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Creature Type</span>
+          <select class="cog-field-input" name="system.details.creatureType">
+            <option value="">-- None / Unknown --</option>
+            {{#each mobCreatureTypes as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+
+      <div class="cog-field-row">
+        <div class="cog-field-group small">
+          <span class="cog-field-label">Design Floor</span>
+          <input class="cog-field-input" name="system.details.designFloor" type="number" value="{{system.details.designFloor}}" placeholder="1" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Floor</span>
+          <select class="cog-field-input" name="system.details.floor">
+            {{#each floorOptions as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">XP Value</span>
+          <input class="cog-field-input" name="system.attributes.xp" type="number" value="{{system.attributes.xp}}" placeholder="0" />
+        </div>
+        <div class="cog-field-group flex-2">
+          <span class="cog-field-label">Treasure</span>
+          <input class="cog-field-input" name="system.attributes.treasure" type="text" value="{{system.attributes.treasure}}" placeholder="Treasure Drop" />
+        </div>
+      {{else if isPet}}
+        {{> "systems/sprinter-rpg/templates/actors/parts/identity-pet.hbs"}}
+      {{else if isMercenary}}
+        {{> "systems/sprinter-rpg/templates/actors/parts/identity-mercenary.hbs"}}
+      {{else if isVehicle}}
+        {{> "systems/sprinter-rpg/templates/actors/parts/identity-vehicle.hbs"}}
+      {{else}}
+      {{#if canResumeFloorSim}}
+      <div class="cog-field-row cog-fsim-resume-row">
+        <button type="button" class="cog-fsim-btn primary" data-action="resumeFloorSim"><i class="fa-solid fa-stairs"></i> {{localize 'COG.FloorSim.Resume'}}</button>
+        <span class="cog-rule-hint">{{localize 'COG.FloorSim.ResumeHint'}}</span>
+      </div>
+      {{/if}}
+      <div class="cog-field-row">
+        <div class="cog-field-group flex-2">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="cog-field-label">Name</span>
+            {{#if trophyBadges.hasBadges}}
+              {{{trophyBadges.html}}}
+            {{/if}}
+            {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
+          </div>
+          <input class="cog-field-input" name="name" type="text" value="{{actor.name}}" placeholder="Crawler Name" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Party / Team</span>
+          <input class="cog-field-input" name="system.details.party" type="text" value="{{system.details.party}}" placeholder="Party / Team" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="cog-field-label">Race</span>
+            {{#if speciesLabel}}<span class="cog-soft-hint cog-species-label" title="Species: origin at induction, not a race">{{speciesLabel}}</span>{{/if}}
+          </div>
+          <select class="cog-field-input" data-change-action="selectRace" title="Select Character Race">
+            <option value="" {{#unless currentRace}}selected{{/unless}}>-- None / Select Race --</option>
+            {{#if hasCustomRace}}
+              <option value="{{currentRace}}" selected>{{currentRaceLabel}} (Custom)</option>
+            {{/if}}
+            {{#each raceOptions as |group|}}
+              <optgroup label="{{group.label}}">
+                {{#each group.options as |opt|}}
+                  <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                {{/each}}
+              </optgroup>
+            {{/each}}
+          </select>
+          {{#if raceClassHint}}<span class="cog-rule-hint cog-race-class-hint"><i class="fa-solid fa-circle-info"></i> {{raceClassHint}}</span>{{/if}}
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Gender/Pronouns</span>
+          <input class="cog-field-input" name="system.details.gender" type="text" value="{{system.details.gender}}" placeholder="Gender/Pronouns" />
+        </div>
+      </div>
+
+      <div class="cog-field-row">
+        <div class="cog-field-group small">
+          <span class="cog-field-label">Level</span>
+          <input class="cog-field-input" name="system.details.level" type="number" value="{{system.details.level}}" placeholder="1" />
+        </div>
+        <div class="cog-field-group cog-xp-field-group">
+          <div class="cog-xp-label-row">
+            <span class="cog-field-label">Experience</span>
+            <span class="cog-xp-pct-label">{{system.details.xp.pct}}%</span>
+          </div>
+          <div class="cog-xp-input-wrapper">
+            <input class="cog-field-input cog-xp-input" name="system.details.xp.value" type="number" value="{{system.details.xp.value}}" placeholder="0" />
+            <span class="cog-xp-max-sep">/</span>
+            <span class="cog-xp-max-val" title="Next Level at {{system.details.xp.max}} XP">{{system.details.xp.max}}</span>
+          </div>
+          <div class="cog-xp-bar-track" title="{{system.details.xp.toNext}} XP to Next Level">
+            <div class="cog-xp-bar-fill" style="width: {{system.details.xp.pct}}%;"></div>
+          </div>
+        </div>
+        <div class="cog-field-group">
+          <span class="cog-field-label">Crawler Number</span>
+          <input class="cog-field-input" name="system.details.crawlerNumber" type="text" value="{{system.details.crawlerNumber}}" placeholder="#12345" />
+        </div>
+        <div class="cog-field-group">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="cog-field-label">Class</span>
+          </div>
+          <select class="cog-field-input" data-change-action="selectClass" title="Select Character Class">
+            <option value="" {{#unless currentClass}}selected{{/unless}}>-- None / Select Class --</option>
+            {{#if hasCustomClass}}
+              <option value="{{currentClass}}" selected>{{currentClassLabel}} (Custom)</option>
+            {{/if}}
+            {{#each classOptions as |group|}}
+              <optgroup label="{{group.label}}">
+                {{#each group.options as |opt|}}
+                  <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                {{/each}}
+              </optgroup>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group">
+          <span class="cog-field-label">Floor</span>
+          <select class="cog-field-input" name="system.details.floor">
+            {{#each floorOptions as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      {{/if}}
+    </div>
+  </header>
+
+  {{!-- ACTOR TAGS: identity tags for the owner and GM; everything else GM-only (E8.8) --}}
+  {{#if showActorTags}}
+  <section class="cog-actor-tags-section">
+    <h3 class="cog-text-strong" style="margin: 0 0 4px; font-family: 'Oswald', sans-serif; font-size: 13px; text-transform: uppercase;">
+      <i class="fa-solid fa-tags cog-text-accent"></i> {{localize 'COG.Tags.ActorHeading'}}
+    </h3>
+    {{> "systems/sprinter-rpg/templates/shared/tag-pills.hbs"}}
+  </section>
+  {{/if}}
+
+  {{!-- HEALTH BAR --}}
+  <div class="cog-health-section">
+    <div class="cog-hp-numeric-row">
+      <span class="cog-field-label" style="margin-right: 6px;">Health</span>
+      <div class="cog-hp-input-group">
+        <input class="cog-hp-input" name="system.attributes.hp.value" type="number" value="{{system.attributes.hp.value}}" title="Current HP" />
+        <span class="cog-hp-slash">/</span>
+        <input class="cog-hp-input" name="system.attributes.hp.max" type="number" value="{{system.attributes.hp.max}}" title="Max HP ({{#if isMob}}{{system.attributes.hp.bars}} bars × {{system.attributes.hp.hpPerBar}} HP{{else}}10 × CON Mod{{/if}})" readonly />
+      </div>
+      {{#if isMob}}
+      <span class="cog-field-label" style="margin-left: 10px; margin-right: 4px;">Bars:</span>
+      <button type="button" data-action="stepMobBars" data-delta="-1" title="Decrease Health Bar Slots (-1)" style="padding: 1px 5px; font-size: 11px; cursor: pointer;">-</button>
+      <input class="cog-hp-input" name="system.attributes.hp.bars" type="number" value="{{system.attributes.hp.bars}}" min="1" placeholder="{{system.attributes.hp.derivedBars}}" style="border: 1px solid var(--cog-border); width: 44px;" title="Health Bar Slots (Derived: {{system.attributes.hp.derivedBars}})" />
+      <button type="button" data-action="stepMobBars" data-delta="1" title="Increase Health Bar Slots (+1)" style="padding: 1px 5px; font-size: 11px; cursor: pointer;">+</button>
+      <button type="button" data-action="resetMobBars" title="Reset Health Bar Slots to Auto ({{system.attributes.hp.derivedBars}})" style="padding: 1px 5px; font-size: 10px; cursor: pointer;">Auto</button>
+      <span class="cog-field-label" style="margin-left: 8px; margin-right: 4px;">HP/Bar:</span>
+      <input class="cog-hp-input" name="system.attributes.hp.hpPerBar" type="number" value="{{system.attributes.hp.hpPerBar}}" placeholder="{{system.abilities.con.mod}}" style="border: 1px solid var(--cog-border); width: 44px;" title="HP Per Bar (Defaults to CON Mod: {{system.abilities.con.mod}})" />
+      {{/if}}
+      <span class="cog-field-label" style="margin-left: 10px; margin-right: 4px;">Temp:</span>
+      <input class="cog-hp-input" name="system.attributes.hp.temp" type="number" value="{{system.attributes.hp.temp}}" placeholder="0" style="border: 1px solid var(--cog-border); width: 44px;" />
+      {{#if hasTempBars}}
+      <span class="cog-temp-bars-badge cog-bg-gold-tint cog-text-gold" style="margin-left: 6px; border: 1.5px solid var(--cog-gold); padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="{{tempBarsSource}} ({{system.attributes.hp.tempBars.count}} / {{system.attributes.hp.tempBars.maxCount}} slots)">
+        <i class="fa-solid fa-shield-heart cog-text-gold"></i> +{{system.attributes.hp.tempBars.count}} Bonus Bars ({{system.attributes.hp.temp}} HP)
+      </span>
+      {{/if}}
+
+      {{#unless isMob}}
+      <div class="cog-rest-buttons-group">
+        <span class="cog-rest-label" title="Rest to recover Health and Mana"><i class="fa-solid fa-bed"></i> Rest:</span>
+        <button type="button" class="cog-rest-btn" data-action="rest" data-rest-type="1hour" data-tooltip="1-Hour Non-Combat Rest: Recovers 1 Health Bar slot (+{{hpPerBar}} HP) and 5 Mana." title="1-Hour Non-Combat Rest: +1 HB slot (+{{hpPerBar}} HP) and +5 Mana">
+          1h
+        </button>
+        <button type="button" class="cog-rest-btn" data-action="rest" data-rest-type="short" data-tooltip="2-Hour Short Rest: Recovers 5 Health Bar slots (+{{fiveHpBars}} HP) and half Mana (round down)." title="2-Hour Short Rest: +5 HB slots (+{{fiveHpBars}} HP) and half Mana">
+          2h Short
+        </button>
+        <button type="button" class="cog-rest-btn" data-action="rest" data-rest-type="long" data-tooltip="8-Hour Safe Room Long Rest: Fully restores all 10 Health Bars and Mana. Clears all stacked Fatigued debuffs." title="8-Hour Safe Room Long Rest: Full HP/Mana and clears fatigue">
+          8h Safe Room
+        </button>
+        <button type="button" class="cog-rest-btn" data-action="rest" data-rest-type="fullDay" data-tooltip="30-Hour Full Day Rest: Complete regeneration. Restores Health, Mana, clears fatigue, and recovers from all Injuries." title="30-Hour Full Day Rest: Full HP/Mana, clear fatigue, and heal all injuries">
+          30h Full Day
+        </button>
+
+        {{!-- Start Grinding Button --}}
+        <button type="button" class="cog-start-grind-btn" data-action="openGrindApp" data-tooltip="Start Grind: Open Party Grinding & Downtime Hub (train skills, earn hours, advance ranks)" title="Start Grinding & Downtime Session">
+          <i class="fa-solid fa-dumbbell"></i> Start Grind
+        </button>
+      </div>
+      {{/unless}}
+    </div>
+
+    {{#if hasTempBars}}
+    <div class="cog-temp-bars-container" data-tooltip="Temporary Shield: {{tempBarsSource}} ({{system.attributes.hp.tempBars.count}} active slots)">
+      <div class="cog-temp-bars-header">
+        <span class="cog-temp-bars-title"><i class="fa-solid fa-shield-halved"></i> Temporary Shield: {{tempBarsSource}}</span>
+        <span class="cog-temp-bars-count">{{system.attributes.hp.tempBars.count}} / {{system.attributes.hp.tempBars.maxCount}} Slots ({{system.attributes.hp.tempBars.currentSlotHp}} / {{system.attributes.hp.tempBars.hpPerSlot}} HP in current slot)</span>
+      </div>
+      <div class="cog-temp-bars-grid" style="grid-template-columns: repeat({{tempBarSlots.length}}, 1fr);">
+        {{#each tempBarSlots}}
+        <div class="cog-temp-bar-slot {{#if this.isDepleted}}depleted{{else if this.isCurrentActive}}active{{else}}full{{/if}}" data-tooltip="Slot {{this.index}}: {{this.label}} HP">
+          <div class="cog-temp-bar-fill" style="width: {{this.fillPct}}%;"></div>
+          <span class="cog-temp-bar-label">{{this.label}}</span>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    <div class="cog-health-bar-wrapper" style="--hp-val: {{system.attributes.hp.value}}; --hp-max: {{system.attributes.hp.max}}; --hp-pct: {{system.attributes.hp.pct}}; --hp-segments: {{healthSegments.length}};" data-tooltip="HP: {{system.attributes.hp.value}} / {{system.attributes.hp.max}} ({{hpPerBar}} HP per bar)">
+      <div class="cog-health-fill-overlay"></div>
+      <div class="cog-health-segments" style="grid-template-columns: repeat({{healthSegments.length}}, 1fr);">
+        {{#each healthSegments}}
+        <div class="cog-hp-seg">
+          {{#if this.showHp}}<span class="cog-hp-seg-hp">{{this.hpPerBar}}</span>{{/if}}
+          <span class="cog-hp-seg-pct">{{this.label}}</span>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+
+  {{#if system.details.pendingStatPoints}}
+  <div class="cog-pending-stat-points" data-tooltip="Earned with Levels (3 each). Spend them in a saferoom.">
+    <i class="fa-solid fa-circle-plus"></i> <strong>{{system.details.pendingStatPoints}}</strong> Stat point{{#unless (eq system.details.pendingStatPoints 1)}}s{{/unless}} to spend (saferoom)
+  </div>
+  {{/if}}
+
+  {{!-- MAIN GRID --}}
+  <div class="cog-main-grid">
+    {{!-- LEFT COLUMN: 5 STATS --}}
+    <div class="cog-attributes-column">
+      {{!-- Strength --}}
+      <div class="cog-attribute-card">
+        <div class="cog-attribute-title">Strength{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="str" data-tooltip="Spend a pending Stat point on Strength"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
+        <div class="cog-attribute-values">
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.str.value" type="number" value="{{system.abilities.str.value}}" readonly title="Enhanced: {{system.abilities.str.unenhanced}} base{{#if system.abilities.str.gearBonus}} ({{#if (gt system.abilities.str.gearBonus 0)}}+{{/if}}{{system.abilities.str.gearBonus}} gear){{/if}}" />
+            <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
+          </div>
+          <span class="cog-stat-slash">/</span>
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.str.unenhanced" type="number" value="{{system.abilities.str.unenhanced}}" placeholder="10" title="Base Unenhanced Score" />
+            <span class="cog-stat-sublabel cog-stat-unenhanced-label">Unenhanced</span>
+            {{#if system.abilities.str.statCap}}<span class="cog-stat-sublabel cog-stat-cap{{#if system.abilities.str.overCap}} cog-over-cap{{/if}}" data-tooltip="Race/class cap">cap {{system.abilities.str.statCap}}{{#if system.abilities.str.overCap}} OVER CAP{{/if}}</span>{{/if}}
+          </div>
+        </div>
+        <div class="cog-attribute-mod-container">
+          <span class="cog-mod-label">STR MOD</span>
+          <a class="cog-mod-value" data-action="rollStat" data-stat="str" data-tooltip="Roll Strength Check">{{numberFormat system.abilities.str.mod sign=true}}</a>
+        </div>
+      </div>
+
+      {{!-- Intelligence --}}
+      <div class="cog-attribute-card">
+        <div class="cog-attribute-title">Intelligence{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="int" data-tooltip="Spend a pending Stat point on Intelligence"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
+        <div class="cog-attribute-values">
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.int.value" type="number" value="{{system.abilities.int.value}}" readonly title="Enhanced: {{system.abilities.int.unenhanced}} base{{#if system.abilities.int.gearBonus}} ({{#if (gt system.abilities.int.gearBonus 0)}}+{{/if}}{{system.abilities.int.gearBonus}} gear){{/if}}" />
+            <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
+          </div>
+          <span class="cog-stat-slash">/</span>
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.int.unenhanced" type="number" value="{{system.abilities.int.unenhanced}}" placeholder="10" title="Base Unenhanced Score" />
+            <span class="cog-stat-sublabel cog-stat-unenhanced-label">Unenhanced</span>
+            {{#if system.abilities.int.statCap}}<span class="cog-stat-sublabel cog-stat-cap{{#if system.abilities.int.overCap}} cog-over-cap{{/if}}" data-tooltip="Race/class cap">cap {{system.abilities.int.statCap}}{{#if system.abilities.int.overCap}} OVER CAP{{/if}}</span>{{/if}}
+          </div>
+        </div>
+        <div class="cog-attribute-mod-container">
+          <span class="cog-mod-label">INT MOD</span>
+          <a class="cog-mod-value" data-action="rollStat" data-stat="int" data-tooltip="Roll Intelligence Check">{{numberFormat system.abilities.int.mod sign=true}}</a>
+        </div>
+      </div>
+
+      {{!-- Constitution --}}
+      <div class="cog-attribute-card">
+        <div class="cog-attribute-title">Constitution{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="con" data-tooltip="Spend a pending Stat point on Constitution"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
+        <div class="cog-attribute-values">
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.con.value" type="number" value="{{system.abilities.con.value}}" readonly title="Enhanced: {{system.abilities.con.unenhanced}} base{{#if system.abilities.con.gearBonus}} ({{#if (gt system.abilities.con.gearBonus 0)}}+{{/if}}{{system.abilities.con.gearBonus}} gear){{/if}}" />
+            <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
+          </div>
+          <span class="cog-stat-slash">/</span>
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.con.unenhanced" type="number" value="{{system.abilities.con.unenhanced}}" placeholder="10" title="Base Unenhanced Score" />
+            <span class="cog-stat-sublabel cog-stat-unenhanced-label">Unenhanced</span>
+            {{#if system.abilities.con.statCap}}<span class="cog-stat-sublabel cog-stat-cap{{#if system.abilities.con.overCap}} cog-over-cap{{/if}}" data-tooltip="Race/class cap">cap {{system.abilities.con.statCap}}{{#if system.abilities.con.overCap}} OVER CAP{{/if}}</span>{{/if}}
+          </div>
+        </div>
+        <div class="cog-attribute-mod-container">
+          <span class="cog-mod-label">CON MOD</span>
+          <a class="cog-mod-value" data-action="rollStat" data-stat="con" data-tooltip="Roll Constitution Check">{{numberFormat system.abilities.con.mod sign=true}}</a>
+        </div>
+      </div>
+
+      {{!-- Dexterity --}}
+      <div class="cog-attribute-card">
+        <div class="cog-attribute-title">Dexterity{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="dex" data-tooltip="Spend a pending Stat point on Dexterity"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
+        <div class="cog-attribute-values">
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.dex.value" type="number" value="{{system.abilities.dex.value}}" readonly title="Enhanced: {{system.abilities.dex.unenhanced}} base{{#if system.abilities.dex.gearBonus}} ({{#if (gt system.abilities.dex.gearBonus 0)}}+{{/if}}{{system.abilities.dex.gearBonus}} gear){{/if}}" />
+            <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
+          </div>
+          <span class="cog-stat-slash">/</span>
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.dex.unenhanced" type="number" value="{{system.abilities.dex.unenhanced}}" placeholder="10" title="Base Unenhanced Score" />
+            <span class="cog-stat-sublabel cog-stat-unenhanced-label">Unenhanced</span>
+            {{#if system.abilities.dex.statCap}}<span class="cog-stat-sublabel cog-stat-cap{{#if system.abilities.dex.overCap}} cog-over-cap{{/if}}" data-tooltip="Race/class cap">cap {{system.abilities.dex.statCap}}{{#if system.abilities.dex.overCap}} OVER CAP{{/if}}</span>{{/if}}
+          </div>
+        </div>
+        <div class="cog-attribute-mod-container">
+          <span class="cog-mod-label">DEX MOD</span>
+          <a class="cog-mod-value" data-action="rollStat" data-stat="dex" data-tooltip="Roll Dexterity Check">{{numberFormat system.abilities.dex.mod sign=true}}</a>
+        </div>
+      </div>
+
+      {{!-- Charisma --}}
+      <div class="cog-attribute-card">
+        <div class="cog-attribute-title">Charisma{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="cha" data-tooltip="Spend a pending Stat point on Charisma"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
+        <div class="cog-attribute-values">
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.cha.value" type="number" value="{{system.abilities.cha.value}}" readonly title="Enhanced: {{system.abilities.cha.unenhanced}} base{{#if system.abilities.cha.gearBonus}} ({{#if (gt system.abilities.cha.gearBonus 0)}}+{{/if}}{{system.abilities.cha.gearBonus}} gear){{/if}}" />
+            <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
+          </div>
+          <span class="cog-stat-slash">/</span>
+          <div class="cog-stat-box">
+            <input class="cog-stat-input" name="system.abilities.cha.unenhanced" type="number" value="{{system.abilities.cha.unenhanced}}" placeholder="10" title="Base Unenhanced Score" />
+            <span class="cog-stat-sublabel cog-stat-unenhanced-label">Unenhanced</span>
+            {{#if system.abilities.cha.statCap}}<span class="cog-stat-sublabel cog-stat-cap{{#if system.abilities.cha.overCap}} cog-over-cap{{/if}}" data-tooltip="Race/class cap">cap {{system.abilities.cha.statCap}}{{#if system.abilities.cha.overCap}} OVER CAP{{/if}}</span>{{/if}}
+          </div>
+        </div>
+        <div class="cog-attribute-mod-container">
+          <span class="cog-mod-label">CHA MOD</span>
+          <a class="cog-mod-value" data-action="rollStat" data-stat="cha" data-tooltip="Roll Charisma Check">{{numberFormat system.abilities.cha.mod sign=true}}</a>
+        </div>
+      </div>
+    </div>
+
+    {{!-- MIDDLE COMBAT COLUMN --}}
+    <div class="cog-combat-column">
+      {{!-- EVADE --}}
+      <div class="cog-stat-block">
+        <div class="cog-banner-header">
+          <span>EVADE</span>
+          <a class="cog-text-on-fill" data-action="rollEvade" data-tooltip="Roll Evade Check" style="cursor: pointer;"><i class="fa-solid fa-dice-d20"></i></a>
+        </div>
+        <div class="cog-formula-row">
+          <span class="cog-formula-operator">d20 +</span>
+          <div class="cog-formula-item">
+            <input class="cog-box-input small" type="number" value="{{system.abilities.dex.mod}}" readonly />
+            <span class="cog-stat-sublabel">DEX Mod</span>
+          </div>
+          <span class="cog-formula-operator">+</span>
+          <div class="cog-formula-item">
+            <input class="cog-box-input small" type="number" value="{{system.attributes.evade.items}}" readonly title="Items / Equipped Gear Bonus" />
+            <span class="cog-stat-sublabel">Items</span>
+          </div>
+          <span class="cog-formula-operator">+</span>
+          <div class="cog-formula-item">
+            <input class="cog-box-input small" name="system.attributes.evade.buffs" type="number" value="{{system.attributes.evade.buffs}}" placeholder="0" />
+            <span class="cog-stat-sublabel">Buffs</span>
+          </div>
+          <span class="cog-formula-operator">=</span>
+          <div class="cog-formula-item">
+            <input class="cog-box-input medium" type="number" value="{{system.attributes.evade.total}}" readonly />
+            <span class="cog-stat-sublabel">Evade Total</span>
+          </div>
+        </div>
+      </div>
+
+      {{!-- DAMAGE RESISTANCE --}}
+      <div class="cog-stat-block">
+        <div class="cog-banner-header">DAMAGE RESISTANCE</div>
+        <div class="cog-formula-row">
+          <div class="cog-formula-item">
+            <input class="cog-box-input medium" name="system.attributes.dr.armor" type="number" value="{{system.attributes.dr.armor}}" placeholder="0" />
+            <span class="cog-stat-sublabel">Armor</span>
+          </div>
+          <span class="cog-formula-operator">+</span>
+          <div class="cog-formula-item">
+            <input class="cog-box-input small" type="number" value="{{system.attributes.dr.items}}" readonly title="Items / Equipped Gear DR Bonus" />
+            <span class="cog-stat-sublabel">Items</span>
+          </div>
+          <span class="cog-formula-operator">+</span>
+          <div class="cog-formula-item">
+            <input class="cog-box-input medium" name="system.attributes.dr.buffs" type="number" value="{{system.attributes.dr.buffs}}" placeholder="0" />
+            <span class="cog-stat-sublabel">Buffs</span>
+          </div>
+          {{#if isMob}}
+          <span class="cog-formula-operator">+</span>
+          <div class="cog-formula-item">
+            <input class="cog-box-input small" type="number" value="{{system.attributes.dr.floor}}" readonly title="Floor DR (Current Floor: {{currentFloor}})" />
+            <span class="cog-stat-sublabel">Floor (F)</span>
+          </div>
+          {{/if}}
+          <span class="cog-formula-operator">=</span>
+          <div class="cog-formula-item">
+            <input class="cog-box-input medium" type="number" value="{{system.attributes.dr.total}}" readonly />
+            <span class="cog-stat-sublabel">DR Total</span>
+          </div>
+        </div>
+      </div>
+
+      {{!-- MOVEMENT & CHARACTER ATTRIBUTES --}}
+      <div class="cog-sub-combat-grid">
+        <div class="cog-stat-block">
+          <div class="cog-banner-header">MOVEMENT</div>
+          <div class="cog-formula-row cog-centered-row">
+            <div class="cog-formula-item">
+              <input class="cog-box-input medium" name="system.attributes.speed.move" type="number" value="{{system.attributes.speed.move}}" placeholder="20" />
+              <span class="cog-stat-sublabel">Move (ft)</span>
+            </div>
+            <div class="cog-formula-item">
+              <input class="cog-box-input medium" name="system.attributes.speed.step" type="number" value="{{system.attributes.speed.step}}" placeholder="10" />
+              <span class="cog-stat-sublabel">Step (ft)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cog-stat-block">
+          <div class="cog-banner-header">AI FAVOR &amp; SIZE</div>
+          <div class="cog-formula-row cog-centered-row">
+            <div class="cog-formula-item">
+              <input class="cog-box-input medium" name="system.attributes.aiFavor" type="number" value="{{system.attributes.aiFavor}}" placeholder="0" />
+              <span class="cog-stat-sublabel">AI Favor</span>
+            </div>
+            <div class="cog-formula-item">
+              <select class="cog-box-input cog-size-select" name="system.attributes.size" title="Creature Size Category">
+                {{#each sizeOptions}}
+                  <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                {{/each}}
+              </select>
+              <span class="cog-stat-sublabel">Size</span>
+            </div>
+            {{#if cameraArm}}
+            <div class="cog-formula-item">
+              <button type="button" class="cog-camera-arm {{#if cameraArm.active}}is-armed{{/if}}" data-action="armCameras" title="{{cameraArm.title}}">
+                <i class="fa-solid fa-video"></i> {{cameraArm.label}}
+              </button>
+              <span class="cog-stat-sublabel">Cameras</span>
+            </div>
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="cog-stat-block">
+          <div class="cog-banner-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>LIMBS &amp; PHYSIOLOGY</span>
+            {{#if isGM}}<span class="cog-dark cog-text-gold" style="font-size: 9px;"><i class="fa-solid fa-crown"></i> GM</span>{{/if}}
+          </div>
+          <div class="cog-formula-row cog-centered-row">
+            <div class="cog-formula-item" title="Hands: {{system.attributes.limbs.usedHands}} used of {{system.attributes.limbs.maxHands}} max">
+              {{#if isGM}}
+                <input class="cog-box-input small {{#if system.attributes.limbs.exceededHands}}is-exceeded-input{{/if}}" data-change-action="editLimb" data-field="system.attributes.limbs.hands" type="number" value="{{system.attributes.limbs.hands}}" min="0" />
+              {{else}}
+                <input class="cog-box-input small {{#if system.attributes.limbs.exceededHands}}is-exceeded-input{{/if}}" type="number" value="{{system.attributes.limbs.hands}}" readonly disabled />
+              {{/if}}
+              <span class="cog-stat-sublabel">Hands ({{system.attributes.limbs.usedHands}}/{{system.attributes.limbs.maxHands}})</span>
+            </div>
+            <div class="cog-formula-item" title="Arms: Base {{system.attributes.limbs.arms}} (Max: {{system.attributes.limbs.maxArms}})">
+              {{#if isGM}}
+                <input class="cog-box-input small" data-change-action="editLimb" data-field="system.attributes.limbs.arms" type="number" value="{{system.attributes.limbs.arms}}" min="0" />
+              {{else}}
+                <input class="cog-box-input small" type="number" value="{{system.attributes.limbs.arms}}" readonly disabled />
+              {{/if}}
+              <span class="cog-stat-sublabel">Arms ({{system.attributes.limbs.maxArms}})</span>
+            </div>
+            <div class="cog-formula-item" title="Legs: Base {{system.attributes.limbs.legs}} (Max: {{system.attributes.limbs.maxLegs}})">
+              {{#if isGM}}
+                <input class="cog-box-input small" data-change-action="editLimb" data-field="system.attributes.limbs.legs" type="number" value="{{system.attributes.limbs.legs}}" min="0" />
+              {{else}}
+                <input class="cog-box-input small" type="number" value="{{system.attributes.limbs.legs}}" readonly disabled />
+              {{/if}}
+              <span class="cog-stat-sublabel">Legs ({{system.attributes.limbs.maxLegs}})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{#if isMob}}
+      <div class="cog-stat-block" style="margin-top: 8px;">
+        <div class="cog-banner-header">
+          <span>DIFFICULTIES &amp; COMBAT VALUES</span>
+        </div>
+        <div class="cog-formula-row cog-centered-row">
+          <div class="cog-formula-item">
+            <input class="cog-box-input small" name="system.attributes.evadeBase" type="number" value="{{system.attributes.evadeBase}}" placeholder="10+D" title="Evade Base (empty = 10 + DEX mod) — Effective DC {{system.attributes.effectiveEvadeDC}} on Floor {{currentFloor}}" />
+            <span class="cog-stat-sublabel">Evade (DC {{mobEvade.dc}}){{#if mobEvade.shifted}} <span class="cog-mob-shift" title="Stat block {{mobEvade.base}}; {{mobEvade.title}}">[{{mobEvade.title}}]</span>{{/if}}</span>
+          </div>
+          <div class="cog-formula-item">
+            <input class="cog-box-input small" name="system.attributes.surpriseBase" type="number" value="{{system.attributes.surpriseBase}}" placeholder="10+I" title="Surprise Base (empty = 10 + INT mod) — Effective DC {{system.attributes.effectiveSurpriseDC}} on Floor {{currentFloor}}" />
+            <span class="cog-stat-sublabel">Surprise (DC {{mobSurprise.dc}}){{#if mobSurprise.shifted}} <span class="cog-mob-shift" title="Stat block {{mobSurprise.base}}; {{mobSurprise.title}}">[{{mobSurprise.title}}]</span>{{/if}}</span>
+          </div>
+        </div>
+        <div class="cog-bg-surface" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 11px; border-top: 1px solid var(--cog-divider);">
+          <div>
+            {{#if mobStatOverBudget}}
+              <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="font-weight: bold;" title="Stat points spent exceed the budget!">
+                <i class="fa-solid fa-triangle-exclamation"></i> OVER BUDGET: {{mobStatSpent}} / {{mobStatBudget.points}}
+              </span>
+            {{else}}
+              <span class="cog-badge cog-bg-success-fill cog-text-on-fill" title="Stat points spent within budget">
+                Points: {{mobStatSpent}} / {{mobStatBudget.points}}
+              </span>
+            {{/if}}
+          </div>
+          {{#if system.isBoss}}
+            <div class="cog-text-accent-strong" style="font-weight: bold;" title="{{#if mobBossCrawlerSide}}Boss action budget: the larger of 2 and the {{mobBossCrawlerSide}} crawler-side combatants in this combat{{else}}Boss action budget: the larger of 2 and the crawler-side combatants in the combat (minimum 2 shown; add this mob to a combat for the live count){{/if}}">
+              <i class="fa-solid fa-bolt"></i> Boss Actions: {{mobBossActionBudget}}
+            </div>
+          {{/if}}
+        </div>
+      </div>
+      {{/if}}
+
+      {{!-- MANA & DEBUFFS --}}
+      <div class="cog-mana-debuffs">
+        <div class="cog-mana-box">
+          <span class="cog-field-label">Current Mana / Max Mana</span>
+          <div class="cog-mana-values">
+            <input class="cog-stat-input" name="system.attributes.mana.value" type="number" value="{{system.attributes.mana.value}}" placeholder="10" title="Current Mana" />
+            <span class="cog-stat-slash">/</span>
+            <input class="cog-stat-input" name="system.attributes.mana.max" type="number" value="{{system.attributes.mana.max}}" title="Max Mana (Enhanced INT)" readonly />
+          </div>
+        </div>
+        <div class="cog-debuffs-box">
+          <div class="cog-banner-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>DEBUFFS & CONDITIONS</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <a class="cog-dark cog-text-gold" data-action="openDebuffPicker" data-tooltip="Browse Conditions Compendium" style="cursor: pointer; font-size: 10px; font-weight: normal; text-transform: none;">
+                <i class="fa-solid fa-book-skull"></i> Browse
+              </a>
+              <a class="cog-text-on-fill" data-action="createItem" data-type="debuff" data-tooltip="Add Custom Debuff" style="cursor: pointer; font-size: 10px; font-weight: normal; text-transform: none;">
+                <i class="fa-solid fa-plus"></i> Add
+              </a>
+            </div>
+          </div>
+          {{#if debuffs.length}}
+            <div class="cog-debuff-chips-container cog-bg-danger-tint" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 6px; border: 1px solid var(--cog-danger); border-radius: 3px; margin-bottom: 4px;">
+              {{#each debuffs as |deb|}}
+                <div class="cog-debuff-chip {{deb.severityClass}} {{#if (eq deb.severityClass 'is-major')}}cog-bg-accent-fill{{else}}cog-bg-warning-fill{{/if}} cog-text-on-fill" data-item-id="{{deb.id}}" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 3px; font-size: 10px;" title="{{deb.name}}{{#if deb.system.duration}} • {{deb.system.duration}}{{/if}}">
+                  <span class="item-edit" data-action="editItem"{{#if deb.summaryTip}} data-tooltip="{{deb.summaryTip}}"{{/if}} style="cursor: pointer; font-weight: bold;">{{deb.name}}</span>
+                  {{#if deb.summary}}<span style="opacity: 0.85; font-size: 9px;">({{deb.summary}})</span>{{/if}}
+                  <a class="item-delete cog-text-strong" data-action="deleteItem" data-tooltip="Remove {{deb.name}}" style="cursor: pointer; margin-left: 2px;"><i class="fa-solid fa-xmark"></i></a>
+                </div>
+              {{/each}}
+            </div>
+          {{/if}}
+          <textarea class="cog-debuffs-input" name="system.attributes.debuffs" placeholder="Debuffs, conditions, notes...">{{system.attributes.debuffs}}</textarea>
+        </div>
+      </div>
+    </div>
+
+    {{!-- RIGHT COLUMN: PORTRAIT & BUFFS --}}
+    <div class="cog-right-column">
+      <div class="cog-portrait-box">
+        <img class="cog-bg-icon-box" src="{{actor.img}}" data-action="editImage" data-edit="img" title="{{actor.name}}" />
+      </div>
+
+      <div class="cog-external-buffs-box">
+        <div class="cog-banner-header" style="font-size: 11px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+          <span>EXTERNAL BUFFS (MAX 3)</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <a class="cog-dark cog-text-gold" data-action="openBuffPicker" data-tooltip="Browse Buffs Compendium" style="font-size: 10px; cursor: pointer;"><i class="fa-solid fa-sparkles"></i> Browse</a>
+            <a class="cog-text-on-fill" data-action="createItem" data-type="buff" data-tooltip="Create New Buff" style="font-size: 10px; cursor: pointer;"><i class="fa-solid fa-plus"></i> New Buff</a>
+            <span style="font-size: 9px; font-weight: normal; opacity: 0.85;">Active Effects</span>
+          </div>
+        </div>
+        <div class="cog-buff-slots-container">
+          {{#each externalBuffSlots as |slot|}}
+            <div class="cog-buff-slot-entry {{#if slot.isEmpty}}is-empty{{else}}is-active{{/if}}" data-drop-target="externalBuff" data-slot="{{slot.key}}">
+              <div class="cog-buff-slot-header">
+                <span class="cog-buff-num">{{slot.index}}.</span>
+                {{#if slot.badge}}
+                  <span class="cog-buff-badge {{slot.badgeClass}}">{{slot.badge}}</span>
+                {{/if}}
+                {{#unless slot.isEmpty}}
+                  <span class="cog-buff-name" title="{{slot.name}}">{{slot.name}}</span>
+                  {{#if slot.detail}}
+                    <span class="cog-buff-detail">{{slot.detail}}</span>
+                  {{/if}}
+                  <a class="external-buff-clear" data-action="clearExternalBuff" data-slot="{{slot.key}}" data-tooltip="Clear Buff"><i class="fa-solid fa-xmark"></i></a>
+                {{/unless}}
+              </div>
+              <div class="cog-buff-select-wrapper">
+                <select class="external-buff-select" data-change-action="selectExternalBuff" data-slot="{{slot.key}}">
+                  <option value="">-- {{#if slot.isEmpty}}Select Buff {{slot.index}}...{{else}}Change Buff...{{/if}} --</option>
+                  {{#each slot.groups as |group|}}
+                    {{#if group.items.length}}
+                      <optgroup label="{{group.label}}">
+                        {{#each group.items as |opt|}}
+                          <option value="{{opt.id}}" {{#if opt.selected}}selected{{/if}} {{#if opt.disabled}}disabled{{/if}}>{{opt.label}}{{#if opt.disabled}} (Assigned in Slot {{opt.assignedSlot}}){{/if}}</option>
+                        {{/each}}
+                      </optgroup>
+                    {{/if}}
+                  {{/each}}
+                  {{#if slot.isCustom}}
+                    <option value="{{slot.value}}" selected>✏️ {{slot.name}}</option>
+                  {{/if}}
+                </select>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- ATTACKS SECTION (BOTTOM) --}}
+  {{#if system.attributes.limbs.exceededHands}}
+    <div class="cog-hands-warning-banner" role="alert" style="margin-bottom: 6px;">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span><strong>WARNING — HANDS LIMIT EXCEEDED:</strong> Wielding gear in <strong>{{system.attributes.limbs.usedHands}}</strong> hands, but only <strong>{{system.attributes.limbs.maxHands}}</strong> hands available!</span>
+    </div>
+  {{/if}}
+  <div class="cog-attacks-section" data-section="attacks" id="attacks-section">
+    <div class="cog-banner-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span>ATTACKS</span>
+        <span class="cog-badge {{#if system.attributes.limbs.exceededHands}}cog-badge-danger{{else}}cog-badge-dark{{/if}} cog-bg-dyn cog-text-on-fill" style="--cog-bg-dyn: {{#if system.attributes.limbs.exceededHands}}#c0392b{{else}}rgba(0,0,0,0.3){{/if}}; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: normal;" title="Equipped Weapons/Gear: {{system.attributes.limbs.usedHands}} / {{system.attributes.limbs.maxHands}} Available Hands">
+          <i class="fa-solid fa-hand"></i> Hands: {{system.attributes.limbs.usedHands}}/{{system.attributes.limbs.maxHands}}
+        </span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        {{#if stowedAttacksCount}}
+          <a class="cog-text-on-fill" data-action="toggleStowedAttacks" style="cursor: pointer; font-size: 11px; text-decoration: none;" data-tooltip="Toggle Stowed / Unequipped Attacks">
+            <i class="fa-solid {{#if showStowedAttacks}}fa-eye-slash{{else}}fa-box-archive{{/if}}"></i> Stowed ({{stowedAttacksCount}})
+          </a>
+        {{/if}}
+        <a class="cog-text-on-fill" data-action="openSkillPicker" data-category="combat" data-tooltip="Select Attack Skill from Library" style="cursor: pointer; text-decoration: none;"><i class="fa-solid fa-hand-fist"></i> Select Attack</a>
+        <a class="cog-text-on-fill" data-action="createItem" data-type="attack" data-tooltip="Add Custom Attack" style="cursor: pointer;"><i class="fa-solid fa-plus"></i> Add Attack</a>
+      </div>
+    </div>
+    <table class="cog-attacks-table">
+      <thead>
+        <tr>
+          <th style="width: 30%;">Name</th>
+          <th style="width: 25%;">TO HIT<br/><small style="font-weight: normal; font-size: 10px;">Rank + Stat Mod</small></th>
+          <th style="width: 35%;">DAMAGE<br/><small style="font-weight: normal; font-size: 10px;">Dice + Stat Mod</small></th>
+          <th style="width: 10%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each attacks as |attack|}}
+          <tr class="draggable" data-item-id="{{attack.id}}" draggable="true">
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button class="cog-bg-none" type="button" data-action="toggleAttackEquipped" data-tooltip="Equipped / Readied (Click to unequip / stow)" style="border: none; cursor: pointer; padding: 2px 4px; font-size: 14px;">
+                  <i class="fa-solid fa-shield-halved cog-text-accent"></i>
+                </button>
+                <div>
+                  <a data-action="rollAttackHit" data-tooltip="Roll To Hit{{#if attack.summaryTip}}<br>{{attack.summaryTip}}{{/if}}" style="font-weight: bold; cursor: pointer;">{{attack.name}}</a>
+                  {{#if attack.isWeaponGear}}
+                    <span class="cog-stat-sublabel" style="display: inline-block; margin-left: 2px; font-size: 9px; text-transform: uppercase;">[WEAPON]</span>
+                  {{/if}}
+                  {{#if attack.isSkillAttack}}
+                    <span class="cog-stat-sublabel cog-bg-success-fill cog-text-on-fill" style="display: inline-block; margin-left: 2px; font-size: 9px; text-transform: uppercase; padding: 1px 3px; border-radius: 2px;">[SKILL]</span>
+                  {{/if}}
+                  {{#if attack.cooldownBadge}}{{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=attack.cooldownBadge}}{{/if}}
+                  {{#if attack.displayEffects}}<div class="cog-text cog-attack-effects" style="font-size: 10px; margin-top: 2px;">{{attack.displayEffects}}</div>{{/if}}
+                </div>
+              </div>
+            </td>
+            <td>
+              <button type="button" class="cog-formula-link" data-action="rollAttackHit" data-tooltip="Roll To Hit: {{#if attack.toHitFormula}}{{attack.toHitFormula}}{{else if attack.displayToHit}}{{attack.displayToHit}}{{/if}}{{#if attack.displayToHit}} ({{attack.displayToHit}}){{/if}}">
+                {{#if attack.toHitFormula}}{{attack.toHitFormula}}{{else if attack.displayToHit}}{{attack.displayToHit}}{{else}}{{upper attack.system.toHitStat}} ({{attack.system.toHitRank}}){{/if}}
+              </button>
+            </td>
+            <td>
+              <button type="button" class="cog-formula-link" data-action="rollAttackDamage">
+                {{attack.displayDamage}}
+              </button>
+            </td>
+            <td>
+              <a class="item-edit" data-action="editItem" data-tooltip="Edit Attack" style="margin-right: 4px;"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete" data-action="deleteItem" data-tooltip="Delete Attack"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        {{else}}
+          <tr>
+            <td class="cog-text" colspan="4" style="text-align: center; padding: 10px;">
+              No attacks or weapons equipped. Equip a weapon in <strong>Inventory</strong>, click <strong>Add Attack</strong> above, or expand Stowed Attacks.
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    {{!-- Damage Effects reference strip: read-only (3.22). Effects are picked in the Attack Options pop-up. --}}
+    {{#if combatTechniques.length}}
+      <div class="cog-combat-techniques-strip">
+        <div class="cog-technique-strip-head">
+          <span class="cog-text-accent cog-technique-strip-title">
+            <i class="fa-solid fa-bolt"></i> {{localize "COG.CombatStrip.Title"}}
+          </span>
+          <span class="cog-text-secondary cog-technique-strip-hint">{{localize "COG.CombatStrip.Hint"}}</span>
+        </div>
+        <div class="cog-technique-strip-list">
+          {{#each combatTechniques as |tech|}}
+            <button type="button" class="cog-technique-pill" data-action="editItem" data-item-id="{{tech.id}}"
+              data-tooltip="{{tech.name}}: {{tech.summary}}{{#if tech.notes}} — {{tech.notes}}{{/if}}{{#if tech.appliesTo}} ({{tech.appliesTo}}){{/if}}">
+              <i class="fa-solid {{tech.icon}}"></i>
+              <span class="cog-tech-name">{{tech.name}}</span>
+              {{#if tech.untrained}}<span class="cog-badge cog-badge-untrained">{{localize "COG.AttackOptions.Untrained"}}</span>{{else}}<span class="cog-badge cog-bg-success-fill cog-text-on-fill">{{tech.rankText}}</span>{{/if}}
+              <span class="cog-tech-summary">{{tech.summary}}</span>
+              {{#if tech.cooldownBadge}}{{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=tech.cooldownBadge}}{{/if}}
+              {{#if tech.appliesTo}}<span class="cog-tech-applies">{{tech.appliesTo}}</span>{{/if}}
+            </button>
+          {{/each}}
+        </div>
+      </div>
+    {{/if}}
+
+    {{#if showStowedAttacks}}
+      <div class="cog-stat-block cog-bg-danger-tint" style="margin-top: 6px; border: 1px dashed var(--cog-accent); padding: 6px;">
+        <div class="cog-text-accent" style="font-size: 11px; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
+          <span><i class="fa-solid fa-box-archive"></i> STOWED / UNEQUIPPED ATTACKS &amp; WEAPONS</span>
+          <span class="cog-text" style="font-size: 10px; font-weight: normal;">Click to ready in combat</span>
+        </div>
+        <table class="cog-attacks-table" style="margin: 0; font-size: 11px;">
+          <tbody>
+            {{#each stowedAttacks as |stowed|}}
+              <tr data-item-id="{{stowed.id}}">
+                <td style="width: 35%;">
+                  <button class="cog-bg-none" type="button" data-action="toggleAttackEquipped" data-tooltip="Equip / Ready Attack" style="border: none; cursor: pointer; padding: 2px 4px;">
+                    <i class="fa-regular fa-circle cog-text-secondary"></i>
+                  </button>
+                  <span{{#if stowed.summaryTip}} data-tooltip="{{stowed.summaryTip}}"{{/if}} style="font-weight: bold;">{{stowed.name}}</span>
+                  {{#if stowed.isWeaponGear}}
+                    <span class="cog-stat-sublabel" style="font-size: 9px; text-transform: uppercase;">[{{stowed.system.slot}}]</span>
+                  {{/if}}
+                  {{#if stowed.displayEffects}}<div class="cog-text cog-attack-effects" style="font-size: 10px; margin-top: 2px;">{{stowed.displayEffects}}</div>{{/if}}
+                </td>
+                <td style="width: 35%;">
+                  <span class="cog-text" style="font-size: 10px;">
+                    {{stowed.displayDamage}}
+                  </span>
+                </td>
+                <td style="width: 30%; text-align: right;">
+                  <button type="button" class="cog-btn cog-bg-accent-fill cog-text-on-fill" data-action="toggleAttackEquipped" style="font-size: 10px; padding: 2px 6px; border: 1px solid var(--cog-accent-strong-fill); border-radius: 2px; cursor: pointer;">
+                    <i class="fa-solid fa-shield-halved"></i> Ready / Equip
+                  </button>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    {{/if}}
+  </div>
+
+  {{#if spells.length}}
+  {{!-- SPELLS & MAGIC SECTION (PAGE 1 QUICK-ACCESS) --}}
+  <div class="cog-attacks-section mob-spells-section" style="margin-top: 8px;">
+    <div class="cog-banner-header cog-bg-grad-info" style="display: flex; justify-content: space-between; align-items: center;">
+      <span><i class="fa-solid fa-wand-magic-sparkles"></i> SPELLS &amp; MAGIC</span>
+      <a class="cog-text-on-fill" data-action="createItem" data-type="spell" data-tooltip="Add Spell" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none;">
+        <i class="fa-solid fa-plus"></i> Add Spell
+      </a>
+    </div>
+    <table class="cog-attacks-table">
+      <thead>
+        <tr>
+          <th style="width: 25%;">Spell</th>
+          <th style="width: 14%;">Cost / Stat</th>
+          <th style="width: 20%;">Damage / Effect</th>
+          <th style="width: 26%;">Range &amp; Details</th>
+          <th style="width: 15%; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each spells as |spell|}}
+          <tr class="draggable" data-item-id="{{spell.id}}" draggable="true">
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <img class="cog-bg-icon-box" src="{{spell.img}}" width="20" height="20" style="border: none; border-radius: 2px;" />
+                <a class="roll-spell cog-text-info" data-action="rollSpell" data-tooltip="Cast {{spell.name}}{{#if spell.summaryTip}}<br>{{spell.summaryTip}}{{/if}}" style="font-weight: bold; cursor: pointer;">{{spell.name}}</a>
+              </div>
+            </td>
+            <td>
+              <span class="cog-text-info" style="font-size: 11px; font-weight: bold;">{{spell.system.manaCost}} MP</span>
+              <small class="cog-text">({{upper spell.system.stat}} {{spell.statModStr}})</small>
+            </td>
+            <td>
+              {{#if spell.hasDamage}}
+                <button type="button" class="cog-attack-roll-btn roll-spell-dmg cog-bg-accent-fill cog-text-on-fill" data-action="rollSpellDamage" data-tooltip="Roll Damage ({{spell.damageFormula}})" style="font-size: 10px; padding: 2px 6px;">
+                  {{spell.damageDice}} {{spell.damageType}}
+                </button>
+              {{else}}
+                <span style="font-size: 11px;">{{spell.roleLabel}}</span>
+              {{/if}}
+            </td>
+            <td>
+              <span style="font-size: 11px;">{{#if spell.system.range}}{{spell.system.range}} &bull; {{/if}}{{spell.system.description}}</span>
+            </td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button type="button" class="cog-attack-roll-btn roll-spell" data-action="rollSpell" data-tooltip="Cast {{spell.name}}" style="font-size: 10px; padding: 2px 6px;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Cast
+              </button>
+              <a class="item-edit" data-action="editItem" data-tooltip="Edit Spell" style="margin-left: 3px; cursor: pointer;"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="Delete Spell" style="margin-left: 3px; cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+  {{/if}}
+
+  {{#if isMob}}
+  {{!-- MOB TREASURE & LOOT DROPS (PAGE 1 COMBAT QUICK-ACCESS) --}}
+  <div class="cog-stat-block mob-loot-block" style="margin-top: 8px;">
+    <div class="cog-banner-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <span><i class="fa-solid fa-sack-dollar"></i> TREASURE &amp; LOOT DROPS</span>
+      <a class="cog-text-on-fill" data-action="createItem" data-type="loot" data-tooltip="Add Loot Item" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none;">
+        <i class="fa-solid fa-plus"></i> Add Loot
+      </a>
+    </div>
+    <table class="cog-attacks-table">
+      <thead>
+        <tr>
+          <th style="width: 35%;">Item</th>
+          <th style="width: 15%;">Quantity</th>
+          <th style="width: 40%;">Description / Notes</th>
+          <th style="width: 10%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each loot as |item|}}
+          <tr class="draggable" data-item-id="{{item.id}}" draggable="true">
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <img class="cog-bg-icon-box" src="{{item.img}}" width="20" height="20" style="border: none; border-radius: 2px;" />
+                <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;">{{item.name}}</span>
+              </div>
+            </td>
+            <td>
+              <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.quantity" value="{{item.system.quantity}}" style="width: 44px;" />
+            </td>
+            <td>
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{#if item.system.notes}}{{item.system.notes}}{{else}}{{item.system.description}}{{/if}}" placeholder="Loot notes..." />
+            </td>
+            <td>
+              {{#unless item.system.used}}
+              <a class="cog-text-info" data-action="useItem" data-tooltip="Use / Drop in Chat" style="cursor: pointer; margin-right: 6px;"><i class="fa-solid fa-box-open"></i></a>
+              {{/unless}}
+              <a class="item-edit" data-action="editItem" data-tooltip="Edit"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete" data-action="deleteItem" data-tooltip="Delete" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+            </td>
+          </tr>
+        {{else}}
+          <tr>
+            <td class="cog-text" colspan="4" style="text-align: center; padding: 10px;">
+              No loot items configured. Click <strong>Add Loot</strong> above or drop Loot items.
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+  {{/if}}
+
+  {{#if isMob}}
+  {{!-- MOB LORE, AI BROADCAST & SPECIAL TRAITS --}}
+  <div class="cog-stat-block mob-lore-block" style="margin-top: 8px;">
+    <div class="cog-banner-header">
+      <span><i class="fa-solid fa-scroll"></i> MOB LORE, AI BROADCAST &amp; SPECIAL TRAITS</span>
+    </div>
+    <div style="padding: 8px; display: flex; flex-direction: column; gap: 8px;">
+      <div>
+        <span class="cog-field-label cog-text" style="display: block; margin-bottom: 2px; font-weight: bold;">MOB DESCRIPTION</span>
+        <textarea class="cog-field-input" name="system.details.description" rows="3" placeholder="Mob visual description, characteristics, and biology...">{{system.details.description}}</textarea>
+      </div>
+      <div class="cog-bg-danger-tint" style="border: 1px solid var(--cog-danger); border-radius: 4px; padding: 6px 8px;">
+        <span class="cog-field-label cog-text-accent" style="display: block; margin-bottom: 2px; font-weight: bold;"><i class="fa-solid fa-tower-broadcast"></i> DUNGEON AI ANNOUNCEMENT</span>
+        <textarea class="cog-field-input cog-text-accent-strong" name="system.details.aiDescription" rows="3" style="font-style: italic;" placeholder="Dungeon AI announcement quote...">{{system.details.aiDescription}}</textarea>
+      </div>
+      <div>
+        <span class="cog-field-label cog-text" style="display: block; margin-bottom: 2px; font-weight: bold;">SPECIAL TRAITS &amp; RULES</span>
+        <textarea class="cog-field-input" name="system.details.special" rows="3" placeholder="Special immunities, vulnerabilities, passives, and unique mechanics...">{{system.details.special}}</textarea>
+      </div>
+      <div>
+        <span class="cog-field-label cog-text" style="display: block; margin-bottom: 2px; font-weight: bold;">TACTICS &amp; GENERAL NOTES</span>
+        <textarea class="cog-field-input" name="system.details.notes" rows="3" placeholder="Mob behavior, positioning, combat sequence, and notes...">{{system.details.notes}}</textarea>
+      </div>
+    </div>
+  </div>
+  {{/if}}
+
+  {{#unless isMob}}
+  {{!-- HOTLIST (BOTTOM OF MAIN CHARACTER SHEET) --}}
+  {{> "systems/sprinter-rpg/templates/actors/parts/hotlist.hbs"}}
+  {{/unless}}
+</div>
+</section>

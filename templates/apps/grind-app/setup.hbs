@@ -1,0 +1,67 @@
+<div class="cog-grind-part cog-grind-setup cog-bg-window cog-text-strong" style="padding: 0 12px; font-family: 'Oswald', sans-serif;">
+  {{!-- SESSION SETUP --}}
+  <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+    <div style="display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+      
+      {{!-- Hours Selector --}}
+      <div style="flex: 1; min-width: 200px;">
+        <label class="cog-text-secondary" style="display: block; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">
+          Grinding Duration: <strong class="cog-text-strong" style="font-size: 15px;">{{hours}} Hours</strong>
+          <span class="cog-text-warning" style="font-size: 11px; margin-left: 6px;">(Floor Clock: {{floorTimer}} &rarr; <strong>{{resultingFloorTimer}} hrs</strong>)</span>
+        </label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="range" name="hoursSlider" data-change-action="setHours" class="grind-hours-input cog-ac-accent" min="1" max="12" step="1" value="{{hours}}" style="flex: 1; cursor: pointer;" />
+          <input type="number" name="hoursNumber" data-change-action="setHours" class="grind-hours-input cog-bg-window cog-text-strong" min="1" max="24" value="{{hours}}" style="width: 50px; border: 1px solid var(--cog-panel-border); text-align: center; border-radius: 3px; font-weight: bold;" />
+        </div>
+      </div>
+
+      {{!-- Floor --}}
+      <div style="width: 100px;">
+        <label class="cog-text-secondary" style="display: block; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">
+          Floor
+        </label>
+        <input type="number" name="floorNumber" data-change-action="setFloor" class="grind-floor-input cog-bg-window cog-text-strong" min="1" max="18" value="{{floorNumber}}" style="width: 100%; border: 1px solid var(--cog-panel-border); text-align: center; border-radius: 3px; font-weight: bold; padding: 4px;" />
+      </div>
+
+      {{!-- Guide Bonus --}}
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label class="cog-text-secondary" style="font-size: 12px; text-transform: uppercase;">Guide Insight</label>
+        <label class="cog-text cog-bg-surface-muted" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; padding: 5px 8px; border-radius: 4px; border: 1px solid var(--cog-panel-border); height: 32px; box-sizing: border-box;">
+          <input type="checkbox" name="guideBonus" data-change-action="setGuideBonus" class="guide-bonus-toggle" {{#if hasGuideBonus}}checked{{/if}} />
+          <span>+1 Safe Hr (Guide)</span>
+        </label>
+      </div>
+
+      {{!-- Area Map Bonus --}}
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label class="cog-text-secondary" style="font-size: 12px; text-transform: uppercase;">Area Map</label>
+        <select name="mapType" data-change-action="setMapType" class="grind-map-select cog-bg-surface-muted cog-text-strong" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 5px 8px; font-size: 12px; font-family: 'Oswald', sans-serif; cursor: pointer; height: 32px; box-sizing: border-box;">
+          <option value="none" {{#if isMapNone}}selected{{/if}}>No Map (+0 hrs)</option>
+          <option value="neighborhood" {{#if isMapNeighborhood}}selected{{/if}}>Neighborhood Map (+1 Safe Hr)</option>
+          <option value="borough" {{#if isMapBorough}}selected{{/if}}>Borough Map (+2 Safe Hrs)</option>
+        </select>
+      </div>
+
+    </div>
+
+    {{!-- Threshold & Fatigue Warning Status --}}
+    <div class="{{#if (gt excessHours 0)}}cog-grind-hours-over{{else}}cog-grind-hours-ok{{/if}}" style="margin-top: 10px; padding: 8px 10px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <i class="fa-solid {{#if (gt excessHours 0)}}fa-triangle-exclamation{{else}}fa-shield-halved{{/if}} {{#if (gt excessHours 0)}}cog-text-danger{{else}}cog-text-success{{/if}}" style="margin-right: 6px;"></i>
+        <span>Safe Limit: <strong>{{safeThreshold}} Hours</strong>
+          <span style="font-size: 11px; opacity: 0.85; margin-left: 4px;">(Base 5h{{#if hasGuideBonus}} + 1h Guide{{/if}}{{#if (gt mapBonus 0)}} + {{mapBonus}}h Map{{/if}})</span>
+        </span>
+        {{#if (gt excessHours 0)}}
+          <span class="cog-text-danger" style="margin-left: 8px;">
+            (<strong>{{excessHours}} Excess Hours</strong>: each participating crawler rolls their own Endurance checks!)
+          </span>
+        {{else}}
+          <span class="cog-text-success" style="margin-left: 8px;">(No exhaustion checks required)</span>
+        {{/if}}
+      </div>
+      <div class="cog-text-secondary" style="font-size: 11px;">
+        Active ({{actor.name}}) Endurance: <strong class="cog-text-gold">{{enduranceBonusStr}}</strong> (Rank {{enduranceRank}} + CON {{conMod}})
+      </div>
+    </div>
+  </div>
+</div>

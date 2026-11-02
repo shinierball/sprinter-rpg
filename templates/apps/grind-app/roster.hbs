@@ -1,0 +1,31 @@
+<div class="cog-grind-part cog-grind-roster cog-bg-window cog-text-strong" style="padding: 0 12px; font-family: 'Oswald', sans-serif;">
+  {{!-- PARTY ROSTER SELECTION --}}
+  <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 4px;">
+      <span class="cog-text-gold" style="font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+        <i class="fa-solid fa-users"></i> Participating Party Crawlers ({{selectedCount}} Selected)
+      </span>
+      <span class="cog-text-secondary" style="font-size: 11px;">
+        Select crawlers participating in this grind session. Unspent pool hours reset at start (use it or lose it).
+      </span>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      {{#each crawlers as |c|}}
+        <label class="{{#if c.isSelected}}cog-grind-chip-on{{else}}cog-grind-chip-off{{/if}}" style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          <input type="checkbox" name="select-{{c.id}}" data-change-action="toggleCrawler" class="crawler-select-checkbox cog-ac-info" data-actor-id="{{c.id}}" {{#if c.isSelected}}checked{{/if}} />
+          <img class="cog-bg-icon-box" src="{{c.img}}" style="width: 20px; height: 20px; border-radius: 3px; object-fit: cover;" />
+          <span class="cog-text-strong" style="font-weight: bold;">{{c.name}}</span>
+          <span class="cog-badge cog-bg-window cog-text-gold" style="font-size: 10px; padding: 1px 4px; border: 1px solid var(--cog-panel-border);">
+            <i class="fa-solid fa-vault"></i> {{c.bankedHours}}h
+          </span>
+        </label>
+        {{#if c.isSelected}}
+          <label class="cog-text-secondary" style="display: flex; align-items: center; gap: 4px; font-size: 10px; cursor: pointer;" title="Level {{c.level}}: {{c.grindLevelHours}}/{{c.level}} grind hours toward the next Level. Tick for the lowest-Level party member: a Level from grinding becomes 1d2 Levels.">
+            <input type="checkbox" name="lowest-bonus-{{c.id}}" data-change-action="toggleLowestBonus" data-actor-id="{{c.id}}" {{#if c.lowestLevelBonus}}checked{{/if}} />
+            Lvl {{c.level}} ({{c.grindLevelHours}}/{{c.level}}h) &middot; Lowest-Level: roll 1d2
+          </label>
+        {{/if}}
+      {{/each}}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,51 @@
+<div class="cog-manager-body cog-bg-surface-muted" style="flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+  {{#each conditions as |cond|}}
+    <div class="cog-condition-card-row cog-bg-surface-muted cog-text" style="border: 1px solid var(--cog-panel-border); border-left: 4px solid {{#if cond.isBuff}}var(--cog-success){{else}}var(--cog-accent){{/if}}; border-radius: 4px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+        <img class="cog-bg-icon-box" src="{{cond.img}}" style="width: 32px; height: 32px; border: 1px solid var(--cog-ink); border-radius: 3px; object-fit: contain;" />
+        <div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="cog-text-strong" style="font-size: 14px; font-weight: bold;">{{cond.name}}</span>
+            <span class="cog-badge {{#if cond.isBuff}}cog-badge-spell{{else}}cog-badge-attack{{/if}}" style="font-size: 9px; padding: 1px 4px;">
+              {{upper cond.type}}
+            </span>
+            {{#if cond.system.severity}}
+              <span class="cog-badge {{#if (eq cond.system.severity 'Major')}}cog-badge-attack{{else}}cog-badge-item{{/if}}" style="font-size: 9px; padding: 1px 4px;">
+                {{upper cond.system.severity}}
+              </span>
+            {{/if}}
+            {{#if cond.system.duration}}
+              <span class="cog-text-secondary" style="font-size: 10px;">({{cond.system.duration}})</span>
+            {{/if}}
+          </div>
+          <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">
+            {{#if cond.summary}}
+              <span class="{{#if cond.isBuff}}cog-text-success{{else}}cog-text-danger{{/if}}" style="font-weight: bold;">{{cond.summary}}</span>
+            {{/if}}
+            {{#if cond.descriptionText}}
+              <span class="cog-text-secondary" style="margin-left: 4px;">— {{cond.descriptionText}}</span>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        {{#if ../actor}}
+          {{#if cond.isActive}}
+            <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 4px 8px;">
+              <i class="fa-solid fa-check"></i> Active
+            </span>
+          {{else}}
+            <button type="button" data-action="applyCondition" class="btn-apply-condition cog-btn {{#if cond.isBuff}}cog-bg-success-fill{{else}}cog-bg-accent-fill{{/if}} cog-text-on-fill" data-id="{{cond.id}}" data-type="{{cond.type}}" style="font-size: 11px; padding: 4px 10px; border: 1px solid var(--cog-ink); border-radius: 3px; font-weight: bold; cursor: pointer;">
+              <i class="fa-solid fa-plus"></i> Apply
+            </button>
+          {{/if}}
+        {{/if}}
+      </div>
+    </div>
+  {{else}}
+    <div class="cog-text-secondary" style="text-align: center; padding: 40px; font-size: 14px;">
+      No buffs or conditions match the search criteria.
+    </div>
+  {{/each}}
+</div>

@@ -1,0 +1,17 @@
+{{!--
+  Read-only "what this does" block under the item header, for every item type
+  Context: summaryTitle, summaryLines (FeatureLine[]), summaryEmpty,
+  summaryEmptyText. The lines render through the shared feature-list partial. An item with no structured effects
+  shows one muted line built from the empty result, never from its description. No inputs, so nothing is harvested
+  by the form.
+--}}
+<section class="cog-item-summary-section">
+  {{#if summaryEmpty}}
+  <div class="cog-feature-block">
+    <div class="cog-banner-header cog-feature-header"><span>{{summaryTitle}}</span></div>
+    <p class="cog-feature-empty">{{summaryEmptyText}}</p>
+  </div>
+  {{else}}
+  {{> "systems/sprinter-rpg/templates/items/parts/feature-list.hbs" features=summaryLines title=summaryTitle}}
+  {{/if}}
+</section>

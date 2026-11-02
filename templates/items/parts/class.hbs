@@ -1,0 +1,140 @@
+<section class="cog-item-body cog-item-body-class">
+{{!-- CLASS ITEM SHEET PARTIAL --}}
+<div class="cog-class-sheet">
+  {{!-- HEADER METADATA BADGES & SETTINGS --}}
+  <div class="cog-field-row" style="margin-bottom: 8px;">
+    <div class="cog-field-group small">
+      <span class="cog-field-label">Archetype</span>
+      <multi-select class="cog-field-input" name="system.archetypes" style="font-weight: bold; font-family: 'Oswald', sans-serif;">
+        {{#each archetypeTagOptions as |opt|}}
+          <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+        {{/each}}
+      </multi-select>
+    </div>
+    <div class="cog-field-group small" style="max-width: 90px;">
+      <span class="cog-field-label">DR Bonus</span>
+      <input class="cog-field-input" type="number" name="system.drBonus" value="{{#if parsedBonuses.drBonus}}{{parsedBonuses.drBonus}}{{else}}{{system.drBonus}}{{/if}}" placeholder="0" />
+    </div>
+    <div class="cog-field-group small" style="max-width: 110px;">
+      <span class="cog-field-label">Walk Move (+/-)</span>
+      <input class="cog-field-input" type="number" name="system.movement.walkDelta" value="{{#if parsedBonuses.movement.walkDelta}}{{parsedBonuses.movement.walkDelta}}{{else}}{{system.movement.walkDelta}}{{/if}}" placeholder="+0ft" />
+    </div>
+  </div>
+
+  {{!-- MOVEMENT MODES PILLS --}}
+  {{#if (or parsedBonuses.movement.climb parsedBonuses.movement.swim parsedBonuses.movement.fly parsedBonuses.movement.burrow system.movement.climb system.movement.swim system.movement.fly system.movement.burrow)}}
+  <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+    {{#if (or parsedBonuses.movement.climb system.movement.climb)}}
+      <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 3px;">
+        <i class="fa-solid fa-person-climbing"></i> Climb Speed: {{#if parsedBonuses.movement.climb}}{{parsedBonuses.movement.climb}}{{else}}{{system.movement.climb}}{{/if}} ft
+      </span>
+    {{/if}}
+    {{#if (or parsedBonuses.movement.swim system.movement.swim)}}
+      <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 3px;">
+        <i class="fa-solid fa-person-swimming"></i> Swim Speed: {{#if parsedBonuses.movement.swim}}{{parsedBonuses.movement.swim}}{{else}}{{system.movement.swim}}{{/if}} ft
+      </span>
+    {{/if}}
+    {{#if (or parsedBonuses.movement.fly system.movement.fly)}}
+      <span class="cog-badge cog-bg-magic-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 3px;">
+        <i class="fa-solid fa-feather-pointed"></i> Flight Speed: {{#if parsedBonuses.movement.fly}}{{parsedBonuses.movement.fly}}{{else}}{{system.movement.fly}}{{/if}} ft
+      </span>
+    {{/if}}
+    {{#if (or parsedBonuses.movement.burrow system.movement.burrow)}}
+      <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 3px;">
+        <i class="fa-solid fa-mound"></i> Burrow Speed: {{#if parsedBonuses.movement.burrow}}{{parsedBonuses.movement.burrow}}{{else}}{{system.movement.burrow}}{{/if}} ft
+      </span>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{!-- PREREQUISITES --}}
+  {{#if prerequisites}}
+  <div class="cog-bg-gold-tint" style="border-left: 4px solid var(--cog-warning); padding: 6px 10px; margin-bottom: 8px; font-size: 12px;">
+    <strong><i class="fa-solid fa-triangle-exclamation"></i> Prerequisites:</strong> {{prerequisites}}
+  </div>
+  {{/if}}
+
+  {{!-- STAT MODIFIERS DISPLAY --}}
+  <div class="cog-stat-block" style="margin-bottom: 10px; border: 1px solid var(--cog-accent);">
+    <div class="cog-banner-header cog-bg-accent-fill" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
+      <span><i class="fa-solid fa-bolt"></i> CLASS ABILITY STAT MODIFIERS</span>
+      <span class="cog-text-on-fill" style="font-size: 10px; font-weight: normal;">Applied directly to Crawler Core Stats</span>
+    </div>
+    <div class="cog-bg-surface-alt" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 6px;">
+      <div class="cog-bg-surface" style="text-align: center; border: 1px solid var(--cog-border-muted); padding: 4px; border-radius: 3px;">
+        <div class="cog-text-secondary" style="font-family: 'Oswald', sans-serif; font-size: 11px;">STR</div>
+        <div class="{{#if parsedBonuses.stats.str}}cog-text-accent{{else}}cog-text-muted{{/if}}" style="font-size: 16px; font-weight: bold;">
+          {{#if parsedBonuses.stats.str}}{{#if (gte parsedBonuses.stats.str 1)}}+{{/if}}{{parsedBonuses.stats.str}}{{else}}+0{{/if}}
+        </div>
+      </div>
+      <div class="cog-bg-surface" style="text-align: center; border: 1px solid var(--cog-border-muted); padding: 4px; border-radius: 3px;">
+        <div class="cog-text-secondary" style="font-family: 'Oswald', sans-serif; font-size: 11px;">DEX</div>
+        <div class="{{#if parsedBonuses.stats.dex}}cog-text-accent{{else}}cog-text-muted{{/if}}" style="font-size: 16px; font-weight: bold;">
+          {{#if parsedBonuses.stats.dex}}{{#if (gte parsedBonuses.stats.dex 1)}}+{{/if}}{{parsedBonuses.stats.dex}}{{else}}+0{{/if}}
+        </div>
+      </div>
+      <div class="cog-bg-surface" style="text-align: center; border: 1px solid var(--cog-border-muted); padding: 4px; border-radius: 3px;">
+        <div class="cog-text-secondary" style="font-family: 'Oswald', sans-serif; font-size: 11px;">CON</div>
+        <div class="{{#if parsedBonuses.stats.con}}cog-text-accent{{else}}cog-text-muted{{/if}}" style="font-size: 16px; font-weight: bold;">
+          {{#if parsedBonuses.stats.con}}{{#if (gte parsedBonuses.stats.con 1)}}+{{/if}}{{parsedBonuses.stats.con}}{{else}}+0{{/if}}
+        </div>
+      </div>
+      <div class="cog-bg-surface" style="text-align: center; border: 1px solid var(--cog-border-muted); padding: 4px; border-radius: 3px;">
+        <div class="cog-text-secondary" style="font-family: 'Oswald', sans-serif; font-size: 11px;">INT</div>
+        <div class="{{#if parsedBonuses.stats.int}}cog-text-accent{{else}}cog-text-muted{{/if}}" style="font-size: 16px; font-weight: bold;">
+          {{#if parsedBonuses.stats.int}}{{#if (gte parsedBonuses.stats.int 1)}}+{{/if}}{{parsedBonuses.stats.int}}{{else}}+0{{/if}}
+        </div>
+      </div>
+      <div class="cog-bg-surface" style="text-align: center; border: 1px solid var(--cog-border-muted); padding: 4px; border-radius: 3px;">
+        <div class="cog-text-secondary" style="font-family: 'Oswald', sans-serif; font-size: 11px;">CHA</div>
+        <div class="{{#if parsedBonuses.stats.cha}}cog-text-accent{{else}}cog-text-muted{{/if}}" style="font-size: 16px; font-weight: bold;">
+          {{#if parsedBonuses.stats.cha}}{{#if (gte parsedBonuses.stats.cha 1)}}+{{/if}}{{parsedBonuses.stats.cha}}{{else}}+0{{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- GRANTED SKILLS & SPELLS --}}
+  {{#if (or parsedBonuses.skills.length parsedBonuses.spells.length)}}
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+    {{#if parsedBonuses.skills.length}}
+    <div class="cog-bg-surface" style="border: 1px solid var(--cog-success); border-radius: 3px; overflow: hidden;">
+      <div class="cog-bg-success-fill cog-text-on-fill" style="font-family: 'Oswald', sans-serif; font-size: 11px; padding: 3px 6px;">
+        <i class="fa-solid fa-award"></i> GRANTED SKILLS
+      </div>
+      <div style="padding: 6px; display: flex; flex-direction: column; gap: 4px;">
+        {{#each parsedBonuses.skills as |sk|}}
+          <div class="cog-bg-success-tint" style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--cog-success-border); padding: 3px 6px; border-radius: 3px; font-size: 11px;">
+            <span class="cog-text-success" style="font-weight: bold;">{{sk.name}}</span>
+            <span class="cog-bg-success-fill cog-text-on-fill" style="font-weight: bold; padding: 1px 5px; border-radius: 2px;">+{{sk.rank}}</span>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{#if parsedBonuses.spells.length}}
+    <div class="cog-bg-surface" style="border: 1px solid var(--cog-info); border-radius: 3px; overflow: hidden;">
+      <div class="cog-bg-info-fill cog-text-on-fill" style="font-family: 'Oswald', sans-serif; font-size: 11px; padding: 3px 6px;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> GRANTED SPELLS
+      </div>
+      <div style="padding: 6px; display: flex; flex-direction: column; gap: 4px;">
+        {{#each parsedBonuses.spells as |sp|}}
+          <div class="cog-bg-info-tint" style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--cog-info-border); padding: 3px 6px; border-radius: 3px; font-size: 11px;">
+            <span class="cog-text-info" style="font-weight: bold;">{{sp.name}}</span>
+            <span class="cog-bg-info-fill cog-text-on-fill" style="font-weight: bold; padding: 1px 5px; border-radius: 2px;">Rank {{sp.rank}}</span>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{!-- LORE EDITABLE FIELDS --}}
+  <div class="cog-field-group">
+    <span class="cog-field-label">Description & Lore</span>
+    <textarea class="cog-field-input" name="system.description" style="height: 90px;">{{system.description}}</textarea>
+  </div>
+</div>
+</section>

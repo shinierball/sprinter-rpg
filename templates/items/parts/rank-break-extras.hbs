@@ -1,0 +1,111 @@
+{{!-- Rank-break fields shared by the spell and skill sheets. Params: key (rank5..rank20), data (the stored break), view (precomputed options), withDamageType, withBaseDiceCountMod. --}}
+<div class="cog-rank-break-extras" style="border-top: 1px dashed var(--cog-border-muted); margin-top: 4px; padding-top: 4px;">
+  <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; flex-wrap: wrap;">
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">Base Dice Multiplier</span>
+      <input class="cog-field-input" type="number" min="1" name="system.rankBreaks.{{key}}.baseDiceMultiplier" value="{{view.baseDiceMultiplier}}" style="font-size: 11px;" />
+    </div>
+    {{#if withBaseDiceCountMod}}
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">Base Dice Count Mod</span>
+      <input class="cog-field-input" type="text" name="system.rankBreaks.{{key}}.baseDiceCountMod" value="{{data.baseDiceCountMod}}" placeholder="e.g. +1" style="font-size: 11px;" />
+    </div>
+    {{/if}}
+    {{#if withDamageType}}
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">Damage Type</span>
+      <select class="cog-field-input" name="system.rankBreaks.{{key}}.damageType" style="font-size: 11px;">
+        <option value="">-- Skill damage type --</option>
+        {{#each view.damageTypeOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+    {{/if}}
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">Debuff Timing</span>
+      <select class="cog-field-input" name="system.rankBreaks.{{key}}.debuffOn" style="font-size: 11px;">
+        {{#each view.debuffOnOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+  {{#each view.timingOverrides as |override|}}
+  <div class="cog-rank-break-timing" data-timing-override="{{override.field}}" style="margin-bottom: 4px;">
+    <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer;" title="{{localize "COG.Timing.OverrideHint"}}">
+      <input type="checkbox" data-action="toggleRankBreakTiming" data-rank-key="{{override.rankKey}}" data-field="{{override.field}}" {{#if override.hasOverride}}checked{{/if}} />
+      <span>{{override.label}}</span>
+    </label>
+    {{#if override.editor}}{{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=override.editor}}{{/if}}
+  </div>
+  {{/each}}
+  <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; flex-wrap: wrap;">
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">Check bonus (all rolls of this {{#if withDamageType}}skill{{else}}spell{{/if}}, including attacks)</span>
+      <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.checkBonus" value="{{data.checkBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">To-hit bonus (attacks only)</span>
+      <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.toHitBonus" value="{{data.toHitBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">+ Range (ft)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.rangeBonus" value="{{data.rangeBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">+ Duration (rounds)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.durationBonus" value="{{data.durationBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label" title="Extra Health Bar slots the On Hit lifesteal heals (needs a lifesteal amount in the On Hit block)">+ Life Drain heal (slots)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.onHit.healBonus" value="{{data.onHit.healBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+  </div>
+  <div class="cog-field-row" style="margin-bottom: 0; gap: 6px; flex-wrap: wrap;">
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">+ Line Length (ft)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.area.lineLengthBonus" value="{{data.area.lineLengthBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">+ Line Width (ft)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.area.lineWidthBonus" value="{{data.area.lineWidthBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">+ Splash (ft)</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.area.splashBonus" value="{{data.area.splashBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+  </div>
+  {{#if view.showLight}}
+  <div class="cog-field-row" style="margin: 4px 0 0; gap: 6px; flex-wrap: wrap;">
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.BrightBonus"}}</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.light.brightBonus" value="{{data.light.brightBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.DimBonus"}}</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.light.dimBonus" value="{{data.light.dimBonus}}" placeholder="0" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.RankLeash"}}</span>
+      <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.light.leash" value="{{data.light.leash}}" style="font-size: 11px;" />
+    </div>
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">{{localize "COG.Item.Light.RankMode"}}</span>
+      <select name="system.rankBreaks.{{key}}.light.mode" style="font-size: 11px;">
+        {{#each view.lightModeOptions}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 14px;">
+      <input type="checkbox" name="system.rankBreaks.{{key}}.light.canDouble" {{#if data.light.canDouble}}checked{{/if}} />
+      <span>{{localize "COG.Item.Light.CanDouble"}}</span>
+    </label>
+    <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 14px;">
+      <input type="checkbox" name="system.rankBreaks.{{key}}.light.canAttach" {{#if data.light.canAttach}}checked{{/if}} />
+      <span>{{localize "COG.Item.Light.CanAttach"}}</span>
+    </label>
+  </div>
+  {{/if}}
+</div>

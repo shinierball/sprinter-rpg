@@ -1,0 +1,213 @@
+{{!-- PAGE 3: SKILLS & SPELLS --}}
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="page3">
+<div class="cog-page-container">
+  <div class="cog-stat-block">
+    <div class="cog-banner-header">
+      <span>SKILLS</span>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        {{#if bankedGrindHours}}
+          <span class="cog-badge cog-bg-window cog-text-gold" style="border: 1px solid var(--cog-gold); font-size: 11px; padding: 2px 7px; text-transform: uppercase;" title="Banked Grinding Hours Pool">
+            <i class="fa-solid fa-vault"></i> Pool: <strong>{{bankedGrindHours}} hrs</strong>
+          </span>
+        {{/if}}
+        <a class="cog-dark cog-text-gold" data-action="grantCoreSkills" data-tooltip="{{localize "COG.Content.GrantCoreSkillsTooltip"}}" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-hand-holding-heart"></i> {{localize "COG.Content.GrantCoreSkills"}}
+        </a>
+        <a class="cog-dark cog-text-gold" data-action="openSkillPicker" data-tooltip="{{localize "COG.Content.SkillPickerTooltip"}}" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-book-bookmark"></i> {{localize "COG.Content.SelectSkillAction"}}
+        </a>
+        <a class="cog-text-on-fill" data-action="createItem" data-type="skill" data-tooltip="Create a custom skill" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-plus"></i> Custom Skill
+        </a>
+      </div>
+    </div>
+
+    <table class="cog-attacks-table cog-skills-table">
+      <thead>
+        <tr>
+          <th style="width: 5%; text-align: center;" title="Marked when you use the skill in play. A marked skill gets a Skill Advancement Check at the next 2-hour check (Rank 4 or lower) or end of floor (Rank 5 or higher).">Used</th>
+          <th style="width: 25%;">Skill Name</th>
+          <th style="width: 6%; text-align: center;" title="Base Trained Rank">Base</th>
+          <th style="width: 10%; text-align: center;" title="Bonuses from equipped gear, generic weapon groups, and boons">Item / Group / Boon</th>
+          <th style="width: 7%; text-align: center;" title="Calculated rank after boons, items, and weapon group bonuses">Mod Rank</th>
+          <th style="width: 9%;">Stat & Mod</th>
+          <th style="width: 7%; text-align: center;" title="Total Skill Check Bonus (Modified Rank + Stat Mod)">Total</th>
+          <th style="width: 8%;">Check Type</th>
+          <th style="width: 10%;">Notes & Upgrades</th>
+          <th style="width: 13%; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each skills as |skill|}}
+          <tr class="draggable {{#if skill.isGranted}}cog-bg-warning-tint{{/if}}" data-item-id="{{skill.id}}" draggable="true">
+            <td style="text-align: center;">
+              {{#if (or skill.isGranted skill.isCore)}}
+                <span class="cog-text-secondary" style="font-size: 11px;">—</span>
+              {{else}}
+                <input class="cog-field-input cog-ac-success cog-checkbox-center" data-change-action="editItemField" type="checkbox" data-field="system.checked" {{#if skill.isChecked}}checked{{/if}} title="Marked when you use the skill in play. A marked skill gets a Skill Advancement Check at the next 2-hour check (Rank 4 or lower) or end of floor (Rank 5 or higher)." />
+              {{/if}}
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <img class="cog-bg-icon-box" src="{{skill.img}}" style="width: 20px; height: 20px; border: 1px solid var(--cog-panel-border); border-radius: 3px; object-fit: contain;" />
+                {{#if skill.isGranted}}
+                  <span style="font-weight: bold; flex: 1;" title="Granted by equipped gear: {{skill.itemSources}}"{{#if skill.summaryTip}} data-tooltip="{{skill.summaryTip}}"{{/if}}>{{skill.name}}</span>
+                  <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;" title="Granted by equipped gear: {{skill.itemSources}}">GEAR</span>
+                {{else}}
+                  <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="name" value="{{skill.name}}"{{#if skill.summaryTip}} data-tooltip="{{skill.summaryTip}}"{{/if}} style="font-weight: bold; flex: 1;" />
+                {{/if}}
+                {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=skill.cooldownBadge}}
+                {{#if skill.isCore}}
+                  <span class="cog-badge cog-badge-core" title="Core action: every crawler has it. It has no Ranks.">[CORE]</span>
+                {{/if}}
+                {{#if skill.isUnusable}}
+                  <span class="cog-badge cog-badge-danger cog-bg-accent-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px; font-weight: bold;" title="Animal Skill: you are no longer an animal. Using it is a Rule Break.">[UNUSABLE]</span>
+                {{/if}}
+                {{#if skill.groupLabel}}
+                  <span class="cog-badge cog-dark cog-bg-header-fill cog-text" style="font-size: 8px; padding: 1px 3px; border-radius: 2px;" title="Skill Group: {{skill.groupLabel}}">
+                    {{upper skill.groupLabel}}
+                  </span>
+                {{/if}}
+              </div>
+            </td>
+            <td style="text-align: center;">
+              {{#if skill.isCore}}
+                <span class="cog-text-secondary" style="font-size: 11px;">—</span>
+              {{else if skill.isGranted}}
+                <span class="cog-text" style="font-size: 11px;" title="Base Rank 0 (Granted by gear)">0</span>
+              {{else}}
+                <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.rank" value="{{skill.baseRank}}" style="width: 32px; text-align: center;" title="Base Trained Rank (Rank 0 = Untrained)" />
+              {{/if}}
+            </td>
+            {{#if skill.isCore}}
+            <td style="text-align: center;" colspan="2"><span class="cog-text-secondary" style="font-size: 11px;">—</span></td>
+            {{else}}
+            <td style="text-align: center;">
+              <div style="display: inline-flex; align-items: center; gap: 3px; justify-content: center; flex-wrap: wrap;">
+                {{#if skill.itemBonus}}
+                  <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 9px; padding: 2px 4px; border-radius: 2px; font-weight: bold;" title="Equipped Gear: +{{skill.itemBonus}} ({{skill.itemSources}})">
+                    <i class="fa-solid fa-shield-halved"></i> +{{skill.itemBonus}}
+                  </span>
+                {{/if}}
+                {{#if skill.boonBonus}}
+                  <span class="cog-badge cog-bg-magic-fill cog-text-on-fill" style="font-size: 9px; padding: 2px 4px; border-radius: 2px; font-weight: bold;" title="Boon / Deity Bonus: +{{skill.boonBonus}}">
+                    <i class="fa-solid fa-sparkles"></i> +{{skill.boonBonus}}
+                  </span>
+                {{/if}}
+                {{#unless (or skill.itemBonus skill.boonBonus)}}
+                  <span class="cog-text-secondary" style="font-size: 11px;">—</span>
+                {{/unless}}
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="cog-stat-input cog-bg-gold-tint cog-text-accent" style="display: inline-block; width: 34px; text-align: center; font-weight: 800; font-size: 12px; border: 1.5px solid var(--cog-danger); border-radius: 3px; line-height: 18px;" title="Modified Rank: {{skill.modifiedRank}} (Base {{skill.baseRank}} + Items {{skill.itemBonus}} + Boons {{skill.boonBonus}})">
+                {{skill.modifiedRank}}
+              </span>
+            </td>
+            {{/if}}
+            <td>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                {{#if skill.isGranted}}
+                  <span style="font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold;">{{upper skill.system.stat}}</span>
+                {{else}}
+                  <select data-change-action="editItemField" data-field="system.stat" style="font-family: 'Oswald', sans-serif; font-size: 11px;">
+                    <option value="str" {{#if (eq skill.system.stat "str")}}selected{{/if}}>STR</option>
+                    <option value="int" {{#if (eq skill.system.stat "int")}}selected{{/if}}>INT</option>
+                    <option value="con" {{#if (eq skill.system.stat "con")}}selected{{/if}}>CON</option>
+                    <option value="dex" {{#if (eq skill.system.stat "dex")}}selected{{/if}}>DEX</option>
+                    <option value="cha" {{#if (eq skill.system.stat "cha")}}selected{{/if}}>CHA</option>
+                  </select>
+                {{/if}}
+                <span class="cog-text-accent" style="font-size: 11px; font-weight: bold;" title="{{upper skill.system.stat}} Stat Mod: {{skill.statModStr}}">{{skill.statModStr}}</span>
+              </div>
+            </td>
+            <td style="text-align: center;">
+              <span class="cog-text-strong cog-bg-surface-alt" style="font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 800; display: inline-block; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--cog-border-muted); text-align: center; min-width: 28px;" title="Total Skill: Modified Rank ({{skill.modifiedRank}}) + Stat Mod ({{skill.statModStr}}) = {{skill.totalSkillStr}}">
+                {{skill.totalSkillStr}}
+              </span>
+            </td>
+            <td>
+              {{#if skill.isGranted}}
+                <span style="font-size: 11px;">{{skill.checkTypeLabel}}</span>
+              {{else}}
+                <select class="cog-field-input" data-change-action="editItemField" data-field="system.checkType" style="font-size: 11px;">
+                  {{#each skill.checkTypeOptions as |ct|}}
+                    <option value="{{ct.value}}" {{#if ct.selected}}selected{{/if}}>{{ct.label}}</option>
+                  {{/each}}
+                </select>
+              {{/if}}
+            </td>
+            <td>
+              {{#if skill.isGranted}}
+                <span class="cog-text" style="font-size: 11px; font-style: italic;">{{skill.system.notes}}</span>
+              {{else}}
+                <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{skill.system.notes}}" placeholder="Notes..." />
+                {{#if (and (not skill.isCore) (or skill.investedHours ../bankedGrindHours skill.canAdvance))}}
+                  <div class="cog-skill-grind-inline" style="display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 10px;">
+                    <span class="{{#if skill.canAdvance}}cog-text-success{{else}}cog-text-warning{{/if}}" style="font-weight: bold;" title="Invested Hours / Required: {{skill.investedHours}} / {{skill.requiredGrindHours}} hrs">
+                      ⏳ {{skill.investedHours}}/{{skill.requiredGrindHours}}h
+                    </span>
+                    {{#if ../bankedGrindHours}}
+                      <button type="button" class="cog-dim-when-disabled cog-bg-surface-strong cog-text-strong" data-action="allocateGrindHours" data-skill-id="{{skill.id}}" data-mode="sub" {{#unless skill.canSubHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-panel-border); border-radius: 2px; cursor: pointer;" title="Remove 1 hour back to pool">-1</button>
+                      <button type="button" class="cog-dim-when-disabled cog-bg-success-fill cog-text-on-fill" data-action="allocateGrindHours" data-skill-id="{{skill.id}}" data-mode="add" {{#unless skill.canAddHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-success-fill); border-radius: 2px; cursor: pointer;" title="Allocate 1 hour from pool">+1</button>
+                      <button type="button" class="cog-dim-when-disabled cog-bg-info-fill cog-text-on-fill" data-action="allocateGrindHours" data-skill-id="{{skill.id}}" data-mode="max" {{#unless skill.canAddHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-info-fill); border-radius: 2px; cursor: pointer;" title="Fill to required hours">Fill</button>
+                    {{/if}}
+                  </div>
+                {{/if}}
+              {{/if}}
+            </td>
+            <td style="text-align: center; white-space: nowrap;">
+              <div class="item-actions">
+                {{#if skill.isAttack}}
+                  <button type="button" class="cog-attack-roll-btn" data-action="rollSkill" data-tooltip="Roll Attack (To Hit): 1d20 + Rank {{skill.modifiedRank}} + {{skill.statModStr}} vs Target Evade" style="font-size: 10px; padding: 2px 6px;">
+                    <i class="fa-solid fa-dice-d20"></i>
+                  </button>
+                {{else}}
+                  <button type="button" class="cog-attack-roll-btn" data-action="rollSkill" data-tooltip="Roll Skill Check: 1d20 + Total ({{skill.totalSkillStr}}) | Modified Rank: {{skill.modifiedRank}}" style="font-size: 10px; padding: 2px 6px;">
+                    <i class="fa-solid fa-dice-d20"></i>
+                  </button>
+                {{/if}}
+                {{#if skill.hasDamage}}
+                  <button type="button" class="cog-attack-roll-btn cog-bg-accent-fill cog-text-on-fill" data-action="rollSkillDamage" data-tooltip="Roll Attack Damage: {{skill.damageFormulaWithStat}}" style="font-size: 10px; padding: 2px 6px;">
+                    <i class="fa-solid fa-burst"></i>
+                  </button>
+                {{/if}}
+                {{#unless skill.isCore}}
+                  <button type="button" class="cog-attack-roll-btn cog-bg-success-fill cog-text-on-fill" data-action="advanceSkill" data-skill-id="{{skill.id}}" data-tooltip="Test Skill Advancement: Roll 1d20 &ge; {{skill.advancementTarget}}{{#unless skill.canAdvance}} (needs {{skill.neededHours}} more grind hrs: a Rule Break){{/unless}}" style="font-size: 10px; padding: 2px 6px;">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                  </button>
+                {{/unless}}
+                {{#unless (or skill.isGranted skill.isCore)}}
+                  <button type="button" class="cog-attack-roll-btn cog-bg-info-fill cog-text-on-fill" data-action="advancementCheck" data-item-id="{{skill.id}}" data-tooltip="Skill Advancement Check: roll d20 &ge; Rank {{skill.baseRank}}. Clears the Used mark." style="font-size: 10px; padding: 2px 6px;">
+                    <i class="fa-solid fa-chart-line"></i>
+                  </button>
+                {{/unless}}
+                {{#if skill.isChecked}}
+                  <button type="button" class="cog-attack-roll-btn cog-bg-warning-fill cog-text-on-fill" data-action="grindSkill" data-item-id="{{skill.id}}" data-tooltip="Grind this skill: Rank {{skill.baseRank}} requires {{skill.requiredGrindHours}} hrs (Target: d20 &ge; {{skill.advancementTarget}})" style="font-size: 10px; padding: 2px 6px;">
+                    <i class="fa-solid fa-dumbbell"></i>
+                  </button>
+                {{/if}}
+                {{#if skill.isGranted}}
+                  <span class="cog-stat-sublabel cog-text" style="font-size: 9px;" title="Granted by gear ({{skill.itemSources}}). Unequip gear to remove.">GEAR</span>
+                {{else}}
+                  <a class="item-edit" data-action="editItem" data-item-id="{{skill.id}}" data-tooltip="Edit Skill" title="Edit Skill"><i class="fa-solid fa-edit"></i></a>
+                  <a class="item-delete" data-action="deleteItem" data-item-id="{{skill.id}}" data-tooltip="Delete Skill" title="Delete Skill"><i class="fa-solid fa-trash"></i></a>
+                {{/if}}
+              </div>
+            </td>
+          </tr>
+        {{else}}
+          <tr>
+            <td class="cog-text" colspan="10" style="text-align: center; padding: 18px;">
+              {{localize "COG.Content.NoSkillsBefore"}} <strong class="cog-text-accent">{{localize "COG.Content.SelectSkillAction"}}</strong> {{localize "COG.Content.NoSkillsAfter"}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="cog-spells-section" style="margin-top: 14px;">
+  {{> "systems/sprinter-rpg/templates/actors/parts/spells.hbs"}}
+</div>
+</section>

@@ -1,0 +1,60 @@
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="settings">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+    <div class="cog-field-group">
+      <span class="cog-field-label">Space Classification</span>
+      <select name="system.spaceType" class="cog-field-input cog-bg-window cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
+        {{#each spaceTypes as |t|}}
+          <option value="{{t.value}}" {{#if t.selected}}selected{{/if}}>{{t.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="cog-field-group">
+      <span class="cog-field-label">Space Size Label</span>
+      <input name="system.size" type="text" value="{{system.size}}" class="cog-field-input cog-bg-window cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+    </div>
+  </div>
+
+  <div style="margin-bottom: 14px;">
+    <span class="cog-field-label">Notes & Layout Description</span>
+    <textarea class="cog-bg-window cog-text-strong" name="system.details.notes" style="width: 100%; height: 80px; border: 1px solid var(--cog-panel-border); padding: 8px; border-radius: 3px; font-family: 'Oswald', sans-serif;">{{system.details.notes}}</textarea>
+  </div>
+
+  <div class="cog-space-occupants-title">
+    <i class="fa-solid fa-users"></i> CO-TENANTS & AUTHORIZED OCCUPANTS
+  </div>
+  <div class="cog-space-occupants">
+    {{#each occupants as |occ|}}
+      <div class="cog-space-occupant" data-crawler-uuid="{{occ.uuid}}">
+        <div class="cog-space-occupant-who">
+          <img class="cog-bg-icon-box" src="{{occ.img}}" width="28" height="28" />
+          <span class="cog-space-occupant-name">{{occ.name}}</span>
+          {{#if occ.isOwner}}<span class="cog-space-owner-tag">PRIMARY OWNER</span>{{/if}}
+        </div>
+        <div class="cog-space-occupant-actions">
+          {{#if occ.canRemove}}
+            <button type="button" data-action="removeOccupant" data-crawler-uuid="{{occ.uuid}}" title="Remove from this space">
+              <i class="fa-solid fa-user-minus"></i> Remove
+            </button>
+          {{else if occ.canLeave}}
+            <button type="button" data-action="leaveSpace" data-crawler-uuid="{{occ.uuid}}" title="Leave this space">
+              <i class="fa-solid fa-door-open"></i> Leave
+            </button>
+          {{/if}}
+        </div>
+      </div>
+    {{else}}
+      <div class="cog-space-empty">No occupants listed.</div>
+    {{/each}}
+  </div>
+  {{#if availableOccupants.length}}
+    <div class="cog-space-occupant-add">
+      <select class="occupant-select cog-field-input">
+        {{#each availableOccupants as |c|}}
+          <option value="{{c.uuid}}">{{c.name}}</option>
+        {{/each}}
+      </select>
+      <button type="button" data-action="addOccupant"><i class="fa-solid fa-user-plus"></i> Add Occupant</button>
+    </div>
+  {{/if}}
+</section>

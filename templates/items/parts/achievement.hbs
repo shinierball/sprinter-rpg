@@ -1,0 +1,89 @@
+<section class="cog-item-body cog-item-body-achievement">
+<div class="cog-achievement-item-sheet">
+
+  {{!-- TIER & LOCATION ROW --}}
+  <div class="cog-field-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+    <div class="cog-field-group flex-1">
+      <span class="cog-field-label" style="font-weight: bold;">Trophy Tier</span>
+      <select class="cog-field-input" name="system.tier" style="font-family: 'Oswald', sans-serif;">
+        <option value="bronze" {{#if (eq system.tier "bronze")}}selected{{/if}}>Bronze</option>
+        <option value="silver" {{#if (eq system.tier "silver")}}selected{{/if}}>Silver</option>
+        <option value="gold" {{#if (eq system.tier "gold")}}selected{{/if}}>Gold</option>
+        <option value="platinum" {{#if (eq system.tier "platinum")}}selected{{/if}}>Platinum</option>
+        <option value="legendary" {{#if (eq system.tier "legendary")}}selected{{/if}}>Legendary</option>
+        <option value="celestial" {{#if (eq system.tier "celestial")}}selected{{/if}}>Celestial</option>
+        <option value="quest" {{#if (eq system.tier "quest")}}selected{{/if}}>Quest</option>
+        <option value="secret" {{#if (eq system.tier "secret")}}selected{{/if}}>Secret</option>
+        <option value="special" {{#if (eq system.tier "special")}}selected{{/if}}>Special</option>
+      </select>
+    </div>
+
+    <div class="cog-field-group flex-1">
+      <span class="cog-field-label" style="font-weight: bold;">Floor Unlocked</span>
+      <select class="cog-field-input" name="system.floor">
+        <option value="">-- None / Any --</option>
+        {{#each floorOptions as |fOpt|}}
+          <option value="{{fOpt.value}}" {{#if fOpt.selected}}selected{{/if}}>{{fOpt.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div class="cog-field-group flex-1">
+      <span class="cog-field-label" style="font-weight: bold;">Date / Session</span>
+      <input class="cog-field-input" type="text" name="system.dateEarned" value="{{system.dateEarned}}" placeholder="e.g. Session 3" />
+    </div>
+  </div>
+
+  {{!-- DUNGEON AI QUOTE --}}
+  <div class="cog-field-group" style="margin-bottom: 10px;">
+    <span class="cog-field-label cog-text-accent" style="font-weight: bold;">
+      <i class="fa-solid fa-bullhorn"></i> Dungeon AI Announcement Quote
+    </span>
+    <textarea class="cog-field-input cog-bg-surface-alt" name="system.quote" rows="3" placeholder="“Congratulations on the ceremonial first step. The staircase thanks you for your service.”" style="font-style: italic;">{{system.quote}}</textarea>
+  </div>
+
+  {{!-- REWARD & CONTENTS --}}
+  <div class="cog-field-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+    <div class="cog-field-group flex-2">
+      <span class="cog-field-label cog-text-success" style="font-weight: bold;">
+        <i class="fa-solid fa-gift"></i> Reward Granted
+      </span>
+      <input class="cog-field-input" type="text" name="system.reward" value="{{system.reward}}" placeholder="e.g. Bronze Box" />
+    </div>
+
+    <div class="cog-field-group flex-1">
+      <span class="cog-field-label cog-text-gold" style="font-weight: bold;">
+        <i class="fa-solid fa-hand-sparkles"></i> AI Favor
+      </span>
+      <input class="cog-field-input" type="number" name="system.favor" value="{{system.favor}}" placeholder="0" />
+    </div>
+
+    <div class="cog-field-group flex-1">
+      <span class="cog-field-label cog-text-info" style="font-weight: bold;">
+        <i class="fa-solid fa-bolt"></i> XP
+      </span>
+      <input class="cog-field-input" type="number" name="system.xp" value="{{system.xp}}" placeholder="0" />
+    </div>
+  </div>
+
+  {{!-- REWARD CONTENTS --}}
+  <div class="cog-field-group" style="margin-bottom: 10px;">
+    <span class="cog-field-label" style="font-weight: bold;">Reward Contents / Loot Box Details</span>
+    <textarea class="cog-field-input" name="system.rewardContents" rows="2" placeholder="e.g. A novelty hat, a coupon, or another small prize.">{{system.rewardContents}}</textarea>
+  </div>
+
+  {{!-- DESCRIPTION / BACKGROUND --}}
+  <div class="cog-field-group" style="margin-bottom: 12px;">
+    <span class="cog-field-label" style="font-weight: bold;">Achievement Description / Unlock Condition</span>
+    <textarea class="cog-field-input" name="system.description" rows="2" placeholder="Unlock conditions, backstory, or player notes...">{{system.description}}</textarea>
+  </div>
+
+  {{!-- BROADCAST ACTION BUTTON --}}
+  <div style="border-top: 2px solid var(--cog-divider); padding-top: 10px; text-align: center;">
+    <button class="cog-bg-accent-fill cog-text-on-fill" type="button" data-action="broadcastAchievement" style="border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 8px 16px; font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: bold; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+      <i class="fa-solid fa-bullhorn"></i> Broadcast Announcement to Chat
+    </button>
+  </div>
+
+</div>
+</section>

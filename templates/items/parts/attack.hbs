@@ -1,0 +1,283 @@
+<section class="cog-item-body cog-item-body-attack">
+<div class="cog-field-row" style="margin-bottom: 8px;">
+  <div class="cog-field-group small" style="text-align: center; max-width: 70px;">
+    <span class="cog-field-label">Equipped</span>
+    <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;">
+      <input class="cog-checkbox-lg" type="checkbox" name="system.equipped" {{#if (ne system.equipped false)}}checked{{/if}} />
+    </label>
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">To-Hit Rank</span>
+    <input class="cog-field-input" type="number" name="system.toHitRank" value="{{system.toHitRank}}" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">To-Hit Stat</span>
+    <select name="system.toHitStat" class="cog-field-input">
+      <option value="str" {{#if (eq system.toHitStat "str")}}selected{{/if}}>STR</option>
+      <option value="dex" {{#if (eq system.toHitStat "dex")}}selected{{/if}}>DEX</option>
+      <option value="con" {{#if (eq system.toHitStat "con")}}selected{{/if}}>CON</option>
+      <option value="int" {{#if (eq system.toHitStat "int")}}selected{{/if}}>INT</option>
+      <option value="cha" {{#if (eq system.toHitStat "cha")}}selected{{/if}}>CHA</option>
+    </select>
+  </div>
+  <div class="cog-field-group small" style="text-align: center; max-width: 80px;">
+    <span class="cog-field-label">Armor Pierce</span>
+    <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;" title="Check if this attack ignores Damage Resistance (DR)">
+      <input class="cog-checkbox-lg" type="checkbox" name="system.ignoreDR" {{#if system.ignoreDR}}checked{{/if}} />
+    </label>
+  </div>
+</div>
+
+{{!-- WEAPON PROFICIENCY & HANDLING --}}
+<details class="cog-collapsible-block" {{#if hasProficiencyConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary cog-bg-accent-strong-fill">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-crosshairs"></i> WEAPON PROFICIENCY & HANDLING</span>
+    <span class="cog-toggle-indicator {{#if hasProficiencyConfigured}}active{{/if}}">{{#if hasProficiencyConfigured}}[{{or system.weaponCategory system.weaponType "CONFIGURED"}}]{{else}}[CLICK TO CONFIGURE PROFICIENCY]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row" style="margin-bottom: 6px;">
+      <div class="cog-field-group">
+        <span class="cog-field-label">Weapon Category</span>
+        <select name="system.weaponCategory" class="cog-field-input" style="font-size: 11px;">
+          <option value="">-- None / Generic --</option>
+          {{#each weaponCategories as |cat|}}
+            <option value="{{cat}}" {{#if (eq ../system.weaponCategory cat)}}selected{{/if}}>{{cat}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">Weapon Type / Model</span>
+        <select name="system.weaponType" class="cog-field-input" style="font-size: 11px;">
+          <option value="">-- None / Custom --</option>
+          {{#each weaponTypeOptions as |wt|}}
+            <option value="{{wt.value}}" {{#if wt.selected}}selected{{/if}}>{{wt.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">Wielding Requirement</span>
+        <select name="system.wieldMode" class="cog-field-input" style="font-size: 11px;">
+          {{#each wieldModes as |wm|}}
+            <option value="{{wm.id}}" {{#if (eq ../system.wieldMode wm.id)}}selected{{/if}}>{{wm.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      {{#if (eq system.wieldMode "two_handed_disadv_1h")}}
+      <div class="cog-field-group">
+        <label><input type="checkbox" name="system.wieldedOneHanded" {{checked system.wieldedOneHanded}}> Wielded one-handed (disadvantage)</label>
+      </div>
+      {{/if}}
+    </div>
+
+    {{!-- ASSOCIATED SKILLS DATA-DRIVEN PICKER --}}
+    <div class="cog-bg-surface" style="margin-bottom: 8px; border: 1px solid var(--cog-border-muted); border-radius: 3px; padding: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span class="cog-field-label cog-text" style="font-weight: bold;"><i class="fa-solid fa-graduation-cap"></i> Associated Weapon Skills</span>
+        <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="applyRecommendedSkills" title="Auto-populate recommended skills for this weapon type" style="font-size: 10px; padding: 2px 6px; border: 1px solid var(--cog-success-fill); border-radius: 3px; cursor: pointer;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Suggest Skills
+        </button>
+      </div>
+
+      {{!-- Selected skills as removable tags --}}
+      <div class="cog-associated-skills-pills cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; min-height: 24px; padding: 3px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+        {{#if associatedSkillsPills.length}}
+          {{#each associatedSkillsPills as |sk|}}
+            <span class="cog-badge cog-skill-pill cog-dark cog-bg-header-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">
+              {{sk.label}}
+              <a class="cog-text-danger" data-action="removeAssociatedSkill" data-skill="{{sk.value}}" title="Remove skill" style="cursor: pointer; font-weight: bold; text-decoration: none;">&times;</a>
+            </span>
+          {{/each}}
+        {{else}}
+          <span class="cog-text-muted" style="font-size: 10px; font-style: italic; align-self: center;">No associated skills selected yet. Select from the dropdown below or click Auto-Suggest.</span>
+        {{/if}}
+      </div>
+
+      {{!-- Add Skill Controls --}}
+      <div data-custom-entry style="display: flex; gap: 6px; align-items: center;">
+        <div style="flex: 2;">
+          <select class="cog-field-input" data-change-action="addAssociatedSkill" style="font-size: 11px; width: 100%;">
+            <option value="">+ Select Existing Skill to Associate...</option>
+            {{#each availableSkills as |s|}}
+              <option value="{{#if s.system.identifier}}{{s.system.identifier}}{{else}}{{s.name}}{{/if}}">{{s.name}} ({{upper s.system.stat}} - {{s.groupLabel}})</option>
+            {{/each}}
+          </select>
+        </div>
+        <div style="flex: 1;">
+          <input class="cog-field-input" type="text" placeholder="Or custom name..." style="font-size: 11px; width: 100%;" />
+        </div>
+        <button type="button" class="cog-btn cog-dark cog-bg-header-fill cog-text-on-fill" data-action="addCustomAssociatedSkill" style="font-size: 11px; padding: 3px 6px; border: 1px solid var(--cog-ink); border-radius: 3px; cursor: pointer;">
+          + Add
+        </button>
+      </div>
+
+    </div>
+
+    <div class="cog-field-row" style="margin-bottom: 6px;">
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label">Proficiency Mode</span>
+        <select name="system.proficiencyMode" class="cog-field-input" style="font-size: 11px;">
+          {{#each proficiencyModes as |pm|}}
+            <option value="{{pm.id}}" {{#if (eq ../system.proficiencyMode pm.id)}}selected{{/if}}>{{pm.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+
+    {{!-- OPTIONAL EFFECTS / COMBAT TECHNIQUES DATA-DRIVEN PICKER --}}
+    <div class="cog-bg-surface" style="margin-bottom: 8px; border: 1px solid var(--cog-border-muted); border-radius: 3px; padding: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span class="cog-field-label cog-text-accent" style="font-weight: bold;"><i class="fa-solid fa-burst"></i> Optional Effects / Combat Techniques</span>
+        <button type="button" class="cog-btn cog-bg-warning-fill cog-text-on-fill" data-action="applyRecommendedEffects" title="Auto-populate recommended techniques for this weapon" style="font-size: 10px; padding: 2px 6px; border: 1px solid var(--cog-warning-fill); border-radius: 3px; cursor: pointer;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Suggest Techniques
+        </button>
+      </div>
+
+      {{!-- Selected techniques as removable tags --}}
+      <div class="cog-optional-effects-pills cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; min-height: 24px; padding: 3px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+        {{#if optionalEffectsList.length}}
+          {{#each optionalEffectPills as |ef|}}
+            <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">
+              {{ef.label}}
+              <a class="cog-dark cog-text-gold" data-action="removeOptionalEffect" data-effect="{{ef.id}}" title="Remove technique" style="cursor: pointer; font-weight: bold; text-decoration: none;">&times;</a>
+            </span>
+          {{/each}}
+        {{else}}
+          <span class="cog-text-muted" style="font-size: 10px; font-style: italic; align-self: center;">No optional effects or techniques associated.</span>
+        {{/if}}
+      </div>
+
+      {{!-- Add Technique Controls --}}
+      <div data-custom-entry style="display: flex; gap: 6px; align-items: center;">
+        <div style="flex: 2;">
+          <select class="cog-field-input" data-change-action="addOptionalEffect" style="font-size: 11px; width: 100%;">
+            <option value="">+ Select Existing Technique / Maneuver...</option>
+            {{#each availableTechniques as |t|}}
+              <option value="{{t.system.identifier}}">{{t.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div style="flex: 1;">
+          <input class="cog-field-input" type="text" placeholder="Or technique identifier..." style="font-size: 11px; width: 100%;" />
+        </div>
+        <button type="button" class="cog-btn cog-bg-accent-fill cog-text-on-fill" data-action="addCustomOptionalEffect" style="font-size: 11px; padding: 3px 6px; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; cursor: pointer;">
+          + Add
+        </button>
+      </div>
+
+    </div>
+  </div>
+</details>
+
+{{> "systems/sprinter-rpg/templates/items/parts/on-hit.hbs"}}
+
+{{> "systems/sprinter-rpg/templates/items/parts/contest.hbs"}}
+
+{{!-- MULTI-TYPED DAMAGE PARTS --}}
+
+<details class="cog-collapsible-block" {{#if hasDamagePartsConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-burst"></i> DAMAGE PARTS & TYPED DAMAGE</span>
+    <span class="cog-toggle-indicator {{#if hasDamagePartsConfigured}}active{{/if}}">{{#if hasDamagePartsConfigured}}[{{system.damageParts.length}} TYPED PARTS]{{else}}[CLICK TO ADD COMPOSITE DAMAGE]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 6px;">
+      <a class="cog-text-on-fill cog-dark cog-bg-header-fill" data-action="addRow" data-row-table="damagePart" style="font-size: 11px; cursor: pointer; font-weight: bold; padding: 3px 8px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">
+        <i class="fa-solid fa-plus"></i> Add Damage Part
+      </a>
+    </div>
+    {{#if system.damageParts.length}}
+      <table class="cog-table" style="margin: 0; font-size: 11px;">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Dice</th>
+            <th style="width: 20%;">Stat</th>
+            <th style="width: 30%;">Damage Type</th>
+            <th style="width: 20%;">Flat Value</th>
+            <th style="width: 5%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each system.damageParts as |part idx|}}
+            <tr>
+              <td>
+                <input class="cog-field-input" type="text" name="system.damageParts.{{idx}}.dice" value="{{part.dice}}" placeholder="1d6" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td>
+                <select class="cog-field-input" name="system.damageParts.{{idx}}.stat" style="font-size: 11px;">
+                  <option value="" {{#if (not part.stat)}}selected{{/if}}>None</option>
+                  <option value="str" {{#if (eq part.stat "str")}}selected{{/if}}>STR</option>
+                  <option value="dex" {{#if (eq part.stat "dex")}}selected{{/if}}>DEX</option>
+                  <option value="con" {{#if (eq part.stat "con")}}selected{{/if}}>CON</option>
+                  <option value="int" {{#if (eq part.stat "int")}}selected{{/if}}>INT</option>
+                  <option value="cha" {{#if (eq part.stat "cha")}}selected{{/if}}>CHA</option>
+                </select>
+              </td>
+              <td>
+                <select class="cog-field-input" name="system.damageParts.{{idx}}.type" style="font-size: 11px;">
+                  <option value="" {{#if (not part.type)}}selected{{/if}}>Physical</option>
+                  {{#each ../damageTypes as |dt|}}
+                    <option value="{{dt}}" {{#if (eq part.type dt)}}selected{{/if}}>{{dt}}</option>
+                  {{/each}}
+                </select>
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.damageParts.{{idx}}.value" value="{{part.value}}" placeholder="0" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td style="text-align: center;">
+                <a class="cog-text-accent" data-action="deleteRow" data-row-table="damagePart" data-index="{{idx}}" data-tooltip="Delete" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="cog-text-secondary cog-bg-surface" style="text-align: center; font-style: italic; font-size: 11px; padding: 6px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+        No damage parts: this attack uses the default damage.
+      </div>
+    {{/if}}
+  </div>
+</details>
+
+{{!-- ATTACK PROFILE (3.48): hit difficulty, range, area and cooldown as structured fields --}}
+<details class="cog-collapsible-block" {{#if hasAttackProfileConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-bullseye"></i> {{localize "COG.AttackProfile.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if hasAttackProfileConfigured}}active{{/if}}">{{#if hasAttackProfileConfigured}}[{{attackMechanicsText}}]{{else}}[{{localize "COG.AttackProfile.ClickToConfigure"}}]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row" style="margin-bottom: 6px;">
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.AttackProfile.HitDifficulty"}}</span>
+        <input class="cog-field-input" type="number" min="0" step="1" name="system.hitDifficulty" value="{{system.hitDifficulty}}" placeholder="{{localize "COG.AttackProfile.HitDifficultyPlaceholder"}}" />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.AttackProfile.RangeFeet"}}</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rangeFeet" value="{{system.rangeFeet}}" />
+      </div>
+    </div>
+    <div class="cog-modifier-hint cog-text-secondary" style="font-size: 10px; margin-bottom: 6px;">{{localize "COG.AttackProfile.HitDifficultyHint"}}</div>
+
+    <div class="cog-field-row" style="margin-bottom: 6px; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <label class="cog-text" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
+        <input type="checkbox" name="system.area.hasArea" {{#if system.area.hasArea}}checked{{/if}} />
+        <span>{{localize "COG.AttackProfile.HasArea"}}</span>
+      </label>
+      {{> "systems/sprinter-rpg/templates/items/parts/area-shape.hbs" hideAbsorb=true}}
+    </div>
+
+    {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=cooldownEditor}}
+
+    {{#if attackMechanicsText}}
+    <div class="cog-text cog-attack-reads-as" style="font-size: 11px; margin-top: 6px;">{{localize "COG.AttackProfile.ReadsAs"}} {{attackMechanicsText}}</div>
+    {{/if}}
+  </div>
+</details>
+
+{{> "systems/sprinter-rpg/templates/items/parts/as-triggers.hbs"}}
+
+<div class="cog-field-group" style="margin-bottom: 8px;">
+  <span class="cog-field-label">{{localize "COG.AttackProfile.OtherEffects"}}</span>
+  <input class="cog-field-input" type="text" name="system.effects" value="{{system.effects}}" placeholder="Knockdown, Fire, Piercing..." />
+</div>
+
+</section>

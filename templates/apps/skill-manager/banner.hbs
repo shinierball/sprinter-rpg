@@ -1,0 +1,20 @@
+<div class="cog-banner-header" style="padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <i class="fa-solid fa-book-bookmark cog-dark cog-text-gold" style="font-size: 16px;"></i>
+    <span style="font-size: 15px; font-weight: 700; letter-spacing: 0.5px;">SKILL LIBRARY & MANAGER</span>
+  </div>
+
+  {{#if isActorPicker}}
+    <span class="cog-bg-warning-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 8px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
+      SELECTING FOR CRAWLER: {{actor.name}}
+    </span>
+  {{else if isItemPicker}}
+    <span class="cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 8px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
+      SELECTING MODIFIER FOR: {{item.name}}
+    </span>
+  {{else}}
+    <span class="cog-dark cog-text-secondary" style="font-size: 11px; font-family: 'Oswald', sans-serif;">
+      CENTRALIZED SKILL REPOSITORY
+    </span>
+  {{/if}}
+</div>

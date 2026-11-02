@@ -1,0 +1,86 @@
+<div class="cog-rapid-import-root cog-rapid-input cog-text cog-bg-window" style="font-family: 'Oswald', sans-serif; box-sizing: border-box; padding: 0 12px 12px;">
+  {{!-- INPUT SECTION --}}
+  <section class="cog-bg-surface" style="display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 10px; position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <label class="cog-text-gold" for="cog-rapid-raw-input" style="font-size: 12px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-pen-nib"></i> Raw Notes / Voice-to-Text Transcript (1 Event Per Line):
+      </label>
+
+      {{!-- Default Crawler fallback --}}
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase;">Default Crawler:</span>
+        <select name="defaultCrawler" data-change-action="setDefaultCrawler" class="cog-rapid-default-crawler cog-bg-surface-muted cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 2px 6px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+          {{#each crawlers}}
+            <option value="{{this.id}}" {{#if (eq this.id ../defaultActorId)}}selected{{/if}}>{{this.name}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+
+    {{!-- QUICK INSERT CHIPS BAR --}}
+    <div class="cog-rapid-chips-bar cog-bg-window" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+      <span class="cog-text-muted" style="font-size: 10px; font-weight: bold; text-transform: uppercase; margin-right: 4px;">Quick Insert:</span>
+
+      {{!-- Crawlers --}}
+      {{#each quickChips.crawlers}}
+        <button type="button" data-action="insertChip" class="cog-rapid-chip cog-bg-danger-tint cog-text-danger" data-insert="{{this.insert}}" style="border: 1px solid var(--cog-accent); padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: 'Oswald', sans-serif; cursor: pointer;" title="Insert Crawler: {{this.label}}">
+          <i class="fa-solid fa-user" style="font-size: 9px;"></i> {{this.label}}
+        </button>
+      {{/each}}
+
+      <span class="cog-text-secondary" style="margin: 0 2px;">|</span>
+
+      {{!-- Tactical Actions --}}
+      {{#each quickChips.tactical}}
+        <button type="button" data-action="insertChip" class="cog-rapid-chip cog-bg-info-tint cog-text-info" data-insert="{{this.insert}}" style="border: 1px solid var(--cog-info); padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: 'Oswald', sans-serif; cursor: pointer;" title="Insert Action: {{this.label}}">
+          <i class="fa-solid fa-shield-halved" style="font-size: 9px;"></i> {{this.label}}
+        </button>
+      {{/each}}
+
+      <span class="cog-text-secondary" style="margin: 0 2px;">|</span>
+
+      {{!-- Outcomes & Crits --}}
+      {{#each quickChips.outcomes}}
+        <button type="button" data-action="insertChip" class="cog-rapid-chip cog-bg-gold-tint cog-text-gold" data-insert="{{this.insert}}" style="border: 1px solid var(--cog-warning); padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: 'Oswald', sans-serif; cursor: pointer;" title="Insert: {{this.label}}">
+          <i class="fa-solid fa-star" style="font-size: 9px;"></i> {{this.label}}
+        </button>
+      {{/each}}
+
+      <span class="cog-text-secondary" style="margin: 0 2px;">|</span>
+
+      {{!-- Metrics & Flags --}}
+      {{#each quickChips.metrics}}
+        <button type="button" data-action="insertChip" class="cog-rapid-chip cog-bg-magic-tint cog-text-magic" data-insert="{{this.insert}}" style="border: 1px solid var(--cog-magic); padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: 'Oswald', sans-serif; cursor: pointer;" title="Insert: {{this.label}}">
+          <i class="fa-solid fa-bolt" style="font-size: 9px;"></i> {{this.label}}
+        </button>
+      {{/each}}
+
+      <span class="cog-text-secondary" style="margin: 0 2px;">|</span>
+
+      {{!-- Conditions --}}
+      {{#each quickChips.conditions}}
+        <button type="button" data-action="insertChip" class="cog-rapid-chip cog-bg-success-tint cog-text-success" data-insert="{{this.insert}}" style="border: 1px solid var(--cog-success); padding: 2px 6px; border-radius: 3px; font-size: 10px; font-family: 'Oswald', sans-serif; cursor: pointer;" title="Insert Condition: {{this.label}}">
+          <i class="fa-solid fa-biohazard" style="font-size: 9px;"></i> {{this.label}}
+        </button>
+      {{/each}}
+    </div>
+
+    {{!-- TEXTAREA CONTAINER --}}
+    <div style="position: relative;">
+      <textarea id="cog-rapid-raw-input" name="rawText" data-input-action="setRawText" data-action="refreshAutocomplete" class="cog-rapid-textarea cog-bg-window cog-text" rows="4" placeholder="Type or paste in-person rolls (e.g. 'Rosa Dodge 16 vs 14 blocked 5 dmg', 'Dex Magic Missile 18 vs 12 hit 14 dmg', 'Rosa applied Stunned on Elite Goblin', 'Bo Headbutt nat 20 crit 35 dmg killing blow', 'Ana Lockpicking 9 vs 15 untrained fail')..." style="width: 100%; min-height: 90px; max-height: 140px; box-sizing: border-box; border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.4; resize: vertical;">{{rawText}}</textarea>
+
+      {{!-- AUTOCOMPLETE FLOATING DROPDOWN --}}
+      <div class="cog-rapid-autocomplete-dropdown cog-bg-window" style="display: none; position: absolute; left: 0; right: 0; bottom: 100%; z-index: 9999; flex-direction: column; gap: 2px; border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 4px; box-shadow: 0 8px 16px rgba(0,0,0,0.7); max-height: 160px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+      <div class="cog-text-muted" style="font-size: 11px;">
+        💡 Auto-detects: <em>Characters first &rarr; Actions second &rarr; Outcomes, Metrics, Conditions & Kills third</em>. Use <kbd class="cog-bg-surface-muted cog-text-secondary" style="padding: 1px 4px; border-radius: 3px; border: 1px solid var(--cog-panel-border);">Tab</kbd> or <kbd class="cog-bg-surface-muted cog-text-secondary" style="padding: 1px 4px; border-radius: 3px; border: 1px solid var(--cog-panel-border);">Enter</kbd> to autocomplete.
+      </div>
+      <button type="button" data-action="parseText" class="cog-btn cog-rapid-parse-btn cog-bg-accent-fill cog-text-on-fill" style="border: 1px solid var(--cog-danger-fill); padding: 5px 14px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Parse Text into Preview
+      </button>
+    </div>
+  </section>
+</div>

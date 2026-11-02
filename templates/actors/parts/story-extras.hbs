@@ -1,0 +1,254 @@
+{{!-- TAB 5: STORY, COMPANIONS & SPONSORS --}}
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="story">
+<div class="cog-page-container cog-story-extras-container">
+
+  {{!-- TOP SECTION: STORY & PSYCHOLOGICAL BACKGROUND --}}
+  <div class="cog-stat-block" style="margin-bottom: 14px;">
+    <div class="cog-banner-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-feather-pointed"></i>
+        <span>NARRATIVE &amp; PSYCHOLOGICAL BACKGROUND</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="cog-field-label cog-text-on-fill" style="margin: 0; font-size: 11px;">Popularity:</span>
+        <input class="cog-field-input cog-bg-surface" type="number" step="1" name="system.details.popularity" value="{{system.details.popularity}}" placeholder="0" style="width: 120px; height: 22px; font-size: 11px;" />
+        <span class="cog-achievements-badge cog-bg-surface-muted cog-text-gold" style="border: 1px solid var(--cog-gold); padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; cursor: default;" title="Total Achievements Unlocked">
+          <i class="fa-solid fa-trophy"></i> {{achievements.length}}
+        </span>
+      </div>
+    </div>
+    <div style="padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+      {{#each storyTables}}
+      <div class="cog-story-box">
+        <div class="cog-story-box-header flexrow">
+          <span class="cog-field-label cog-story-box-title {{color}}"><i class="fa-solid {{icon}}"></i> {{heading}}</span>
+          {{#if hasTable}}
+          <button type="button" class="cog-roll-story-table-btn" data-action="rollStoryTable" data-table="{{key}}" title="{{rollTitle}}">
+            <i class="fa-solid fa-dice-d20"></i> {{rollLabel}}
+          </button>
+          {{/if}}
+        </div>
+        <textarea class="cog-field-input" name="system.details.{{key}}" rows="4" placeholder="{{placeholder}}">{{value}}</textarea>
+      </div>
+      {{/each}}
+    </div>
+    {{#unless isMob}}{{!-- Mobs edit system.details.notes on page 1 (CONTRIBUTING §5: one input per name). --}}
+    <div style="padding: 0 10px 10px 10px;">
+      <span class="cog-field-label cog-text" style="font-weight: bold;"><i class="fa-solid fa-notes"></i> CHARACTER &amp; SESSION NOTES</span>
+      <textarea class="cog-field-input" name="system.details.notes" rows="3" placeholder="General crawler notes, tactics, session developments...">{{system.details.notes}}</textarea>
+    </div>
+    {{/unless}}
+  </div>
+
+  {{!-- MIDDLE SECTION: COMPANIONS & PERSONAL SPACE --}}
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+    {{!-- BONDED COMPANIONS & VEHICLES --}}
+    {{> "systems/sprinter-rpg/templates/actors/parts/companions.hbs"}}
+  </div>
+
+    {{!-- PERSONAL SPACE & DEITY --}}
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      {{!-- PERSONAL SPACE BLOCK --}}
+      <div class="cog-stat-block cog-personal-space-dock">
+        <div class="cog-banner-header cog-bg-magic-fill" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px;">
+          <span><i class="fa-solid fa-door-closed"></i> PERSONAL SAFE SPACE</span>
+          {{#if personalSpace}}
+            <div style="display: flex; gap: 4px;">
+              <button class="cog-bg-sheen-20 cog-text-on-fill" type="button" data-action="openSpace" title="Open Safe Space Sheet" style="border: 1px solid var(--cog-sheen); cursor: pointer; border-radius: 3px; padding: 1px 6px; font-size: 10px;">
+                <i class="fa-solid fa-up-right-from-square"></i> Sheet
+              </button>
+              {{#if canUnlinkOwnedSpace}}
+              <button class="cog-bg-danger-fill cog-text-on-fill" type="button" data-action="unlinkSpace" data-space-uuid="{{personalSpace.uuid}}" title="Unlink Personal Space (GM only)" style="border: 1px solid var(--cog-sheen); cursor: pointer; border-radius: 3px; padding: 1px 6px; font-size: 10px;">
+                <i class="fa-solid fa-link-slash"></i>
+              </button>
+              {{/if}}
+            </div>
+          {{/if}}
+        </div>
+        <div class="cog-block-content" style="padding: 10px;">
+          {{#if personalSpace}}
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+              <img class="cog-personal-space-icon" src="{{personalSpace.img}}" width="40" height="40" />
+              <div style="flex: 1; min-width: 0;">
+                <div class="cog-text-warning" style="font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{personalSpace.name}}</div>
+                <div class="cog-text-muted" style="font-size: 11px;">Tier {{personalSpace.tier}} {{personalSpace.size}} &bull; Defense: <strong class="cog-text-success">{{personalSpace.defense}}</strong></div>
+              </div>
+            </div>
+
+            {{#if personalSpace.amenities}}
+              <div class="cog-personal-space-amenities cog-text-muted" style="font-size: 11px; margin-bottom: 8px;"><span class="cog-text-muted">Amenities:</span> {{personalSpace.amenities}}</div>
+            {{/if}}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; font-size: 11px;">
+              <div class="cog-bg-surface-alt" style="border: 1px solid var(--cog-divider); padding: 4px 6px; border-radius: 3px;">
+                <span class="cog-text-muted">Stash:</span> <strong>{{personalSpace.stashCount}} / {{personalSpace.stashMax}}</strong> ({{personalSpace.stashPct}}%)
+              </div>
+              <div class="cog-bg-surface-alt" style="border: 1px solid var(--cog-divider); padding: 4px 6px; border-radius: 3px;">
+                <span class="cog-text-muted">Rest:</span> <strong>{{personalSpace.restHours}}h Safe Rest</strong>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 6px;">
+              <button class="cog-bg-warning-fill cog-text-on-fill" type="button" data-action="openStash" style="flex: 1; border: 1px solid var(--cog-warning-fill); border-radius: 3px; padding: 6px; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+                <i class="fa-solid fa-boxes-stacked"></i> Stash Vault
+              </button>
+              <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="restInSpace" style="flex: 1; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 6px; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+                <i class="fa-solid fa-bed"></i> Safe Rest ({{personalSpace.restHours}}h)
+              </button>
+            </div>
+          {{else}}
+            <div style="text-align: center; padding: 6px 4px 10px 4px;">
+              <p class="cog-text-muted" style="font-size: 11px; margin: 0 0 8px 0;">No personal space actor linked. Click to auto-provision:</p>
+              <button class="cog-bg-magic-fill cog-text-on-fill" type="button" data-action="acquireSpace" style="border: 1px solid var(--cog-magic-fill); border-radius: 4px; padding: 5px 12px; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                <i class="fa-solid fa-key"></i> Acquire Safe Space (1-Click)
+              </button>
+            </div>
+          {{/if}}
+
+          {{#if linkedSpaces.length}}
+            <div class="cog-linked-spaces">
+              <span class="cog-field-label">Linked spaces</span>
+              {{#each linkedSpaces as |ls|}}
+                <div class="cog-linked-space">
+                  <span class="cog-linked-space-name" title="{{ls.name}}">{{ls.name}}</span>
+                  {{#if ls.ownerName}}<span class="cog-linked-space-hint">{{ls.ownerName}}</span>{{/if}}
+                  {{#if ls.extraOwned}}<span class="cog-badge cog-badge-rule-break">Rule Break</span>{{/if}}
+                  {{#unless ls.canView}}<span class="cog-linked-space-hint">Waiting for the GM to share it</span>{{/unless}}
+                  <button type="button" data-action="openSpace" data-space-uuid="{{ls.uuid}}" title="Open"><i class="fa-solid fa-up-right-from-square"></i></button>
+                  <button type="button" data-action="restInSpace" data-space-uuid="{{ls.uuid}}" title="Safe Rest here"><i class="fa-solid fa-bed"></i></button>
+                  <button type="button" data-action="unlinkSpace" data-space-uuid="{{ls.uuid}}" title="Leave this space"><i class="fa-solid fa-door-open"></i></button>
+                </div>
+              {{/each}}
+            </div>
+          {{/if}}
+        </div>
+      </div>
+
+      {{!-- DEITY BLOCK --}}
+      <div class="cog-stat-block">
+        <div class="cog-banner-header cog-bg-warning-fill" style="display: flex; justify-content: space-between; align-items: center;">
+          <span><i class="fa-solid fa-sun"></i> DEITY / PATRON</span>
+          <a class="cog-text-on-fill" data-action="createItem" data-type="deity" data-tooltip="Add Deity Item" style="cursor: pointer;"><i class="fa-solid fa-plus"></i></a>
+        </div>
+        <div class="cog-block-content" style="padding: 8px;">
+          {{#each deities as |item|}}
+            <div class="cog-bg-surface" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; padding: 4px; border: 1px solid var(--cog-divider); border-radius: 3px;" data-item-id="{{item.id}}">
+              <span style="font-weight: bold;">{{item.name}}</span>
+              <div>
+                <a class="item-edit" data-action="editItem" data-tooltip="Edit"><i class="fa-solid fa-edit"></i></a>
+                <a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="Delete" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+              </div>
+            </div>
+          {{/each}}
+          <div class="cog-field-row">
+            <div class="cog-field-group flex-1">
+              <span class="cog-field-label">Granted Boons</span>
+              <input class="cog-field-input" type="text" name="system.details.deityBoons" value="{{system.details.deityBoons}}" placeholder="Divine blessings, passive perks..." />
+            </div>
+          </div>
+          <div class="cog-field-row" style="margin-top: 6px;">
+            <div class="cog-field-group flex-1">
+              <span class="cog-field-label">Offerings &amp; Sins</span>
+              <input class="cog-field-input" type="text" name="system.details.deitySins" value="{{system.details.deitySins}}" placeholder="Required sacrifices, forbidden actions..." />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- BOTTOM SECTION: RACIAL & CLASS ABILITIES & SPONSORS --}}
+  <div class="cog-stat-block">
+    <div class="cog-banner-header cog-dark cog-bg-window">
+      <span><i class="fa-solid fa-star"></i> CHARACTER FEATURES &amp; CORPORATE SPONSORS</span>
+    </div>
+    <div class="cog-race-class-readout cog-text" style="padding: 8px 10px 0; font-size: 12px;">
+      <strong>Race:</strong> <span class="cog-race-readout">{{#if currentRaceLabel}}{{currentRaceLabel}}{{else}}None{{/if}}</span>
+      &nbsp;&middot;&nbsp;
+      <strong>Class:</strong> <span class="cog-class-readout">{{#if currentClassLabel}}{{currentClassLabel}}{{else}}None{{/if}}</span>
+      <span style="font-size: 10px; margin-left: 6px;">(read-only, from the applied race and class items. Select them on the Core tab.)</span>
+    </div>
+    <div style="padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+      {{!-- RACIAL & CLASS ABILITIES --}}
+      <div>
+        {{!-- Race Block --}}
+        <div class="cog-banner-header" style="font-size: 11px; padding: 4px 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+          <span>RACIAL TRAITS &amp; ABILITIES</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <a class="cog-text-on-fill" data-action="createItem" data-type="race" data-tooltip="Add Race" style="cursor: pointer;"><i class="fa-solid fa-plus"></i></a>
+          </div>
+        </div>
+        <div style="margin-bottom: 10px;">
+          {{#each races as |item|}}
+            <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider); border-radius: 3px; margin-bottom: 4px;" data-item-id="{{item.id}}">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <span style="font-weight: bold; font-size: 12px;">{{item.name}}</span>
+                  {{#if item.system.description}}<span class="cog-text" style="font-size: 11px; margin-left: 6px;">— {{item.system.description}}</span>{{/if}}
+                </div>
+                <div>
+                  <a class="item-edit" data-action="editItem"><i class="fa-solid fa-edit"></i></a>
+                  <a class="item-delete cog-text-accent" data-action="deleteItem" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+                </div>
+              </div>
+              {{> "systems/sprinter-rpg/templates/items/parts/feature-list.hbs" features=item.featureLines}}
+            </div>
+          {{else}}
+            <span class="cog-text" style="font-size: 11px;">No race item yet. Add one with + to list its abilities here.</span>
+          {{/each}}
+        </div>
+
+        {{!-- Class Block --}}
+        <div class="cog-banner-header" style="font-size: 11px; padding: 4px 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+          <span>CLASS FEATURES &amp; TALENTS</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <a class="cog-text-on-fill" data-action="createItem" data-type="class" data-tooltip="Add Class" style="cursor: pointer;"><i class="fa-solid fa-plus"></i></a>
+          </div>
+        </div>
+        <div>
+          {{#each classes as |item|}}
+            <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider); border-radius: 3px; margin-bottom: 4px;" data-item-id="{{item.id}}">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <span style="font-weight: bold; font-size: 12px;">{{item.name}}</span>
+                  {{#if item.system.description}}<span class="cog-text" style="font-size: 11px; margin-left: 6px;">— {{item.system.description}}</span>{{/if}}
+                </div>
+                <div>
+                  <a class="item-edit" data-action="editItem"><i class="fa-solid fa-edit"></i></a>
+                  <a class="item-delete cog-text-accent" data-action="deleteItem" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+                </div>
+              </div>
+              {{> "systems/sprinter-rpg/templates/items/parts/feature-list.hbs" features=item.featureLines}}
+            </div>
+          {{else}}
+            <span class="cog-text" style="font-size: 11px;">No class item yet. Add one with + to list its abilities here.</span>
+          {{/each}}
+        </div>
+      </div>
+
+      {{!-- SPONSORS --}}
+      <div>
+        <div class="cog-banner-header" style="font-size: 11px; padding: 4px 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+          <span>CORPORATE SPONSORS (Max 3)</span>
+          <a class="cog-text-on-fill" data-action="createItem" data-type="sponsor" data-tooltip="Add Sponsor" style="cursor: pointer;"><i class="fa-solid fa-plus"></i></a>
+        </div>
+        {{#each sponsors as |item|}}
+          <div class="cog-bg-surface-alt" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border: 1px solid var(--cog-divider); border-radius: 3px; margin-bottom: 4px;" data-item-id="{{item.id}}">
+            <span style="font-weight: bold; font-size: 12px;">{{item.name}}</span>
+            <div>
+              <a class="item-edit" data-action="editItem"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete cog-text-accent" data-action="deleteItem" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+            </div>
+          </div>
+        {{/each}}
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+          <input class="cog-field-input" type="text" name="system.details.sponsor1" value="{{system.details.sponsor1}}" placeholder="Sponsor 1 details..." />
+          <input class="cog-field-input" type="text" name="system.details.sponsor2" value="{{system.details.sponsor2}}" placeholder="Sponsor 2 details..." />
+          <input class="cog-field-input" type="text" name="system.details.sponsor3" value="{{system.details.sponsor3}}" placeholder="Sponsor 3 details..." />
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>

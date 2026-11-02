@@ -1,0 +1,909 @@
+<section class="cog-item-body cog-item-body-spell">
+{{#if system.quote}}
+  <div class="cog-spell-quote-box cog-bg-surface cog-text-gold" style="font-style: italic; padding: 8px 12px; border-left: 4px solid var(--cog-danger); border-radius: 4px; margin-bottom: 10px; font-size: 13px; font-family: 'Gelasio', Georgia, serif;">
+    “{{system.quote}}”
+  </div>
+{{/if}}
+
+<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
+  <div class="cog-field-group small">
+    <span class="cog-field-label">Mana Cost</span>
+    <input class="cog-field-input cog-text-info" type="number" name="system.manaCost" value="{{system.manaCost}}" style="font-weight: bold;" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">Range</span>
+    <input class="cog-field-input" type="text" name="system.range" value="{{system.range}}" placeholder="30 feet" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">Duration (text, optional)</span>
+    <input class="cog-field-input" type="text" name="system.duration" value="{{system.duration}}" placeholder="Instantaneous" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">AI Favor</span>
+    <input class="cog-field-input cog-text-warning" type="number" name="system.aiFavor" value="{{system.aiFavor}}" placeholder="0" />
+  </div>
+</div>
+
+<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
+  {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=cooldownEditor}}
+  {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=durationEditor}}
+</div>
+
+<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
+  <div class="cog-field-group small">
+    <span class="cog-field-label">Check Type</span>
+    <select class="cog-field-input" name="system.checkType">
+      {{#each checkTypeOptions as |ct|}}
+        <option value="{{ct.value}}" {{#if ct.selected}}selected{{/if}}>{{ct.label}}</option>
+      {{/each}}
+    </select>
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">Stat</span>
+    <select name="system.stat" class="cog-field-input">
+      <option value="int" {{#if (eq system.stat "int")}}selected{{/if}}>INT</option>
+      <option value="cha" {{#if (eq system.stat "cha")}}selected{{/if}}>CHA</option>
+      <option value="con" {{#if (eq system.stat "con")}}selected{{/if}}>CON</option>
+      <option value="str" {{#if (eq system.stat "str")}}selected{{/if}}>STR</option>
+      <option value="dex" {{#if (eq system.stat "dex")}}selected{{/if}}>DEX</option>
+    </select>
+  </div>
+  {{> "systems/sprinter-rpg/templates/items/parts/base-damage.hbs"}}
+  <div class="cog-field-group small" style="text-align: center; max-width: 90px;">
+    <span class="cog-field-label">Armor Pierce</span>
+    <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;" title="Check if this spell penetrates armor and ignores Damage Resistance (DR)">
+      <input class="cog-checkbox-lg" type="checkbox" name="system.ignoreDR" {{#if system.ignoreDR}}checked{{/if}} />
+    </label>
+  </div>
+</div>
+
+<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
+  <div class="cog-field-group" style="flex: 1;" data-tag-entry>
+    <span class="cog-field-label">Favored Class (tags)</span>
+    <div class="cog-favored-picker cog-tag-pills" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+      {{#each favoredPicker.tags as |tag|}}
+        <span class="cog-tag-pill cog-bg-info-tint cog-text-info" style="display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--cog-info-border); padding: 2px 6px; border-radius: 12px; font-size: 11px;" title="{{tag.id}}">
+          <span>{{tag.label}}</span>
+          <a class="cog-text-accent" data-action="removeTag" data-tag-id="{{tag.id}}" title="Remove Favored Class" style="cursor: pointer; font-weight: bold;">&times;</a>
+        </span>
+      {{else}}
+        <span class="cog-text-muted" style="font-size: 11px; font-style: italic;">None / Universal</span>
+      {{/each}}
+      {{#if favoredPicker.options.length}}
+        <select class="cog-field-input" style="width: auto; font-size: 11px;">
+          {{#each favoredPicker.options as |opt|}}
+            <option value="{{opt.id}}">{{opt.label}}</option>
+          {{/each}}
+        </select>
+        <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="addTag" style="border: 1px solid var(--cog-success-fill); padding: 2px 8px; font-size: 11px; cursor: pointer; border-radius: 3px;">
+          <i class="fa-solid fa-plus"></i> Add
+        </button>
+      {{/if}}
+    </div>
+  </div>
+  <div class="cog-field-group" style="flex: 2;">
+    <span class="cog-field-label">Limitations</span>
+    <input class="cog-field-input" type="text" name="system.limitations" value="{{system.limitations}}" placeholder="None" />
+  </div>
+</div>
+
+<div class="cog-field-group" style="margin-bottom: 8px;">
+  <span class="cog-field-label">Effect Description</span>
+  <textarea class="cog-field-input" name="system.description" style="height: 90px;">{{system.description}}</textarea>
+</div>
+
+{{!-- HEALING, HEALTH BARS & CLEANSING CONFIGURATION (COLLAPSIBLE WITH PROGRESSIVE DISCLOSURE) --}}
+<details class="cog-collapsible-block" {{#if hasHealingConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary cog-bg-success-fill">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-heart-pulse"></i> HEALING, HEALTH BARS & CLEANSING CONFIGURATION</span>
+    <span class="cog-toggle-indicator {{#if hasHealingConfigured}}active{{/if}}">{{#if hasHealingConfigured}}[HEALING CONFIGURED]{{else}}[CLICK TO CONFIGURE HEALING / CLEANSING]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row" style="margin-bottom: 6px; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <label class="cog-text-success" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
+        <input type="checkbox" name="system.healing.hasHealing" {{#if system.healing.hasHealing}}checked{{/if}} />
+        <span>Restores Health Bars</span>
+      </label>
+      <div class="cog-field-group small" style="flex: 1;">
+        <span class="cog-field-label">Bars Formula</span>
+        <input class="cog-field-input" type="text" name="system.healing.barsFormula" value="{{#if system.healing.barsFormula}}{{system.healing.barsFormula}}{{else}}2{{/if}}" placeholder="2 or 2 + int" style="font-size: 11px; font-weight: bold;" />
+      </div>
+      <div class="cog-field-group small" style="flex: 1;">
+        <span class="cog-field-label">Target Filter</span>
+        <select class="cog-field-input" name="system.healing.targetFilter" style="font-size: 11px;">
+          <option value="allies" {{#if (eq system.healing.targetFilter "allies")}}selected{{/if}}>Allies</option>
+          <option value="self" {{#if (eq system.healing.targetFilter "self")}}selected{{/if}}>Self Only</option>
+          <option value="all" {{#if (eq system.healing.targetFilter "all")}}selected{{/if}}>Any Target</option>
+        </select>
+      </div>
+      <label class="cog-text-info" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
+        <input type="checkbox" name="system.healing.isHoT" {{#if system.healing.isHoT}}checked{{/if}} />
+        <span>Heal Over Time (HoT)</span>
+      </label>
+      <div class="cog-field-group small" style="width: 80px;">
+        <span class="cog-field-label">HoT Rounds</span>
+        <input class="cog-field-input" type="number" name="system.healing.hotRounds" value="{{#if system.healing.hotRounds}}{{system.healing.hotRounds}}{{else}}3{{/if}}" min="1" style="font-size: 11px;" />
+      </div>
+    </div>
+    <div class="cog-field-row" style="margin-bottom: 0;">
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Cleanse Debuffs</span>
+        <div class="cog-cleanse-debuffs-pills cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; min-height: 24px; padding: 3px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+          {{#if cleanseDebuffsList.length}}
+            {{#each cleanseDebuffPills as |deb|}}
+              <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">
+                {{deb.label}}
+                <a class="cog-dark cog-text-gold" data-action="removeCleanseDebuff" data-debuff="{{deb.ref}}" title="Remove debuff" style="cursor: pointer; font-weight: bold; text-decoration: none;">&times;</a>
+              </span>
+            {{/each}}
+          {{else}}
+            <span class="cog-text-muted" style="font-size: 10px; font-style: italic; align-self: center;">No debuffs selected to cleanse. Select from the dropdown below or enter a custom debuff.</span>
+          {{/if}}
+        </div>
+        <div data-custom-entry style="display: flex; gap: 6px; align-items: center;">
+          <div style="flex: 2;">
+            <select class="cog-field-input" data-change-action="addCleanseDebuff" style="font-size: 11px; width: 100%;">
+              <option value="">+ Select Debuff to Cleanse...</option>
+              {{#each availableDebuffs as |d|}}
+                <option value="{{d.system.identifier}}">{{d.name}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <input class="cog-field-input" type="text" placeholder="Or custom debuff..." style="font-size: 11px; width: 100%;" />
+          </div>
+          <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="addCustomCleanseDebuff" style="font-size: 11px; padding: 3px 6px; border: 1px solid var(--cog-success-fill); border-radius: 3px; cursor: pointer;">
+            + Add
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+{{!-- AURA & AREA OF EFFECT CONFIGURATION (COLLAPSIBLE WITH PROGRESSIVE DISCLOSURE) --}}
+<details class="cog-collapsible-block" {{#if hasAuraConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-circle-notch"></i> AURA & AREA OF EFFECT CONFIGURATION</span>
+    <span class="cog-toggle-indicator {{#if hasAuraConfigured}}active{{/if}}">{{#if hasAuraConfigured}}[AURA / AOE CONFIGURED]{{else}}[CLICK TO CONFIGURE AURA / AOE]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+
+    {{!-- Enable Aura Toggle & Scope --}}
+    <div class="cog-field-row" style="margin-bottom: 6px; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <label class="cog-text" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
+        <input type="checkbox" name="system.area.hasArea" {{#if system.area.hasArea}}checked{{/if}} />
+        <span>Emits Aura / Area Effect</span>
+      </label>
+      {{> "systems/sprinter-rpg/templates/items/parts/area-shape.hbs"}}
+      <div class="cog-field-group small" style="flex: 1.2;">
+        <span class="cog-field-label">Target Filter</span>
+        <select class="cog-field-input" name="system.area.targetFilter" style="font-size: 11px;">
+          <option value="allies" {{#if (eq system.area.targetFilter "allies")}}selected{{/if}}>Allies Only</option>
+          <option value="enemies" {{#if (eq system.area.targetFilter "enemies")}}selected{{/if}}>Enemies Only</option>
+          <option value="both" {{#if (eq system.area.targetFilter "both")}}selected{{/if}}>Both (Allies & Enemies)</option>
+        </select>
+      </div>
+    </div>
+
+    {{!-- Allied Protection / Temp Health Bars Sub-Block --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 6px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-success); padding: 6px; border-radius: 3px;">
+      <div class="cog-text-success" style="font-weight: bold; font-size: 11px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+        <span><i class="fa-solid fa-shield-halved"></i> Allied Protection & Temporary Health Bars</span>
+        <label class="cog-text" style="font-size: 10px; font-weight: normal; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="checkbox" name="system.tempBars.hasTempBars" {{#if system.tempBars.hasTempBars}}checked{{/if}} />
+          <span>Enable Bonus Health Bars</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="gap: 6px;">
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">Bar Slots Formula / Stat</span>
+          <select class="cog-field-input" name="system.tempBars.slotsFormula" style="font-size: 11px;">
+            <option value="" {{#unless system.tempBars.slotsFormula}}selected{{/unless}}>Not set (1 Bar)</option>
+            <option value="cha" {{#if (eq system.tempBars.slotsFormula "cha")}}selected{{/if}}>CHA Mod (Default)</option>
+            <option value="con" {{#if (eq system.tempBars.slotsFormula "con")}}selected{{/if}}>CON Mod</option>
+            <option value="int" {{#if (eq system.tempBars.slotsFormula "int")}}selected{{/if}}>INT Mod</option>
+            <option value="str" {{#if (eq system.tempBars.slotsFormula "str")}}selected{{/if}}>STR Mod</option>
+            <option value="dex" {{#if (eq system.tempBars.slotsFormula "dex")}}selected{{/if}}>DEX Mod</option>
+            <option value="1" {{#if (eq system.tempBars.slotsFormula "1")}}selected{{/if}}>Fixed 1 Bar</option>
+            <option value="2" {{#if (eq system.tempBars.slotsFormula "2")}}selected{{/if}}>Fixed 2 Bars</option>
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Base HP Per Bar</span>
+          <input class="cog-field-input" type="number" name="system.tempBars.hpPerSlot" value="{{system.tempBars.hpPerSlot}}" placeholder="2" min="0" style="font-size: 11px;" />
+        </div>
+      </div>
+    </div>
+
+    {{!-- Aura Combat Bonuses, Resistances & Granted Buffs Sub-Block --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 6px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-info); padding: 6px; border-radius: 3px;">
+      <div class="cog-text-info" style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">
+        <i class="fa-solid fa-sparkles"></i> Aura Combat Bonuses, Resistances & Granted Buffs
+      </div>
+      <div class="cog-field-row" style="gap: 6px; margin-bottom: 4px;">
+        <div class="cog-field-group small" style="flex: 1;">
+          <span class="cog-field-label">Evade Bonus</span>
+          <input class="cog-field-input" type="number" name="system.area.evadeBonus" value="{{system.area.evadeBonus}}" placeholder="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group small" style="flex: 1;">
+          <span class="cog-field-label">Attack Bonus</span>
+          <input class="cog-field-input" type="number" name="system.area.attackBonus" value="{{system.area.attackBonus}}" placeholder="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group small" style="flex: 1;">
+          <span class="cog-field-label">Damage Bonus</span>
+          <input class="cog-field-input" type="number" name="system.area.damageBonus" value="{{system.area.damageBonus}}" placeholder="0" style="font-size: 11px;" />
+        </div>
+      </div>
+      <div class="cog-field-row cog-pick-row">
+        {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedResistancesPicker}}
+        {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedImmunitiesPicker}}
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Granted Buffs to Characters Inside Aura (Comma-Separated)</span>
+        <input class="cog-field-input" type="text" name="system.area.grantedBuffs" value="{{areaGrantedBuffsString}}" placeholder="buff identifiers, e.g. strength-buff, blessed" list="cog-available-buffs-list-{{item.id}}" style="font-size: 11px;" />
+      </div>
+    </div>
+
+    {{!-- Aura Healing & Cleansing Sub-Block --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 6px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-success); padding: 6px; border-radius: 3px;">
+      <div class="cog-text-success" style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">
+        <i class="fa-solid fa-heart-pulse"></i> Aura Healing & Cleansing
+      </div>
+      <div class="cog-field-row" style="gap: 6px; margin-bottom: 4px; align-items: center;">
+        <div class="cog-field-group small" style="width: 80px;">
+          <span class="cog-field-label">Healing Bars</span>
+          <input class="cog-field-input" type="number" name="system.area.healingBars" value="{{system.area.healingBars}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <label class="cog-text-info" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer; margin-top: 10px;">
+          <input type="checkbox" name="system.area.isHoT" {{#if system.area.isHoT}}checked{{/if}} />
+          <span>Heal Over Time (HoT)</span>
+        </label>
+        <div class="cog-field-group small" style="width: 80px;">
+          <span class="cog-field-label">HoT Rounds</span>
+          <input class="cog-field-input" type="number" name="system.area.hotRounds" value="{{#if system.area.hotRounds}}{{system.area.hotRounds}}{{/if}}" placeholder="3" min="1" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Cleanse Debuffs Inside Aura</span>
+          <input class="cog-field-input" type="text" name="system.area.cleanseDebuffs" value="{{areaCleanseDebuffsString}}" placeholder="e.g. Bleeding, Burned" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
+        </div>
+      </div>
+    </div>
+
+    {{!-- Enemy Hazard / Periodic Aura Damage Sub-Block --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-accent); padding: 6px; border-radius: 3px;">
+      <div class="cog-text-accent" style="font-weight: bold; font-size: 11px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+        <span><i class="fa-solid fa-burst"></i> Enemy Hazard (Periodic Damage & Debuffs in Radius)</span>
+        <label class="cog-text" style="font-size: 10px; font-weight: normal; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="checkbox" name="system.area.hasPeriodicDamage" {{#if system.area.hasPeriodicDamage}}checked{{/if}} />
+          <span>Enable Periodic Aura Damage</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="gap: 6px; margin-bottom: 4px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Tick Damage Formula</span>
+          <input class="cog-field-input" type="text" name="system.area.periodicDamageFormula" value="{{system.area.periodicDamageFormula}}" placeholder="e.g. 1d6" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Damage Element</span>
+          <select class="cog-field-input" name="system.area.periodicDamageType" style="font-size: 11px;">
+            <option value="">-- Damage Type --</option>
+            {{#each damageTypes as |dt|}}
+              <option value="{{dt}}" {{#if (eq ../system.area.periodicDamageType dt)}}selected{{/if}}>{{dt}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label"><i class="fa-solid fa-skull cog-text-accent"></i> Inflicted Aura Debuffs & Conditions (Comma-Separated)</span>
+        <input class="cog-field-input" type="text" name="system.area.inflictedDebuffs" value="{{areaInflictedDebuffsString}}" placeholder="e.g. Fear, Charmed, Asleep, Paralyzed" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label"><i class="fa-solid fa-hourglass-half cog-text-accent"></i> Conditions Applied Each Pulse (Comma-Separated)</span>
+        <input class="cog-field-input" type="text" name="system.area.pulseConditions" value="{{areaPulseConditionsString}}" placeholder="e.g. condition.burned, condition.blinded" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
+      </div>
+    </div>
+
+  </div>
+</details>
+
+{{!-- SPELL CONDITION TRIGGERS & DEBUFFS --}}
+<details class="cog-collapsible-block" {{#if hasConditionTriggersConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-crosshairs"></i> SPELL CONDITION TRIGGERS & DEBUFFS</span>
+    <span class="cog-toggle-indicator {{#if hasConditionTriggersConfigured}}active{{/if}}">{{#if hasConditionTriggersConfigured}}[CONDITIONS CONFIGURED]{{else}}[CLICK TO CONFIGURE DEBUFF TRIGGERS]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row" style="margin-bottom: 6px;">
+      <div class="cog-field-group" style="flex: 1.5;">
+        <span class="cog-field-label"><i class="fa-solid fa-triangle-exclamation cog-text-warning"></i> Fumble Consequence (Self Debuff)</span>
+        <select class="cog-field-input" name="system.fumbleDebuff" style="font-size: 11px;">
+          <option value="">-- None --</option>
+          {{#each availableDebuffs as |deb|}}
+            <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.fumbleDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+  </div>
+</details>
+
+{{> "systems/sprinter-rpg/templates/items/parts/on-hit.hbs"}}
+
+{{!-- SPELL DAMAGE PROGRESSION (RANK GATED) --}}
+<details class="cog-collapsible-block" {{#if hasRankDamagePartsConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-bolt"></i> SPELL RANK DAMAGE PARTS (RANK-GATED)</span>
+    <span class="cog-toggle-indicator {{#if hasRankDamagePartsConfigured}}active{{/if}}">{{#if hasRankDamagePartsConfigured}}[{{system.rankDamageParts.length}} RANK DAMAGE PARTS]{{else}}[CLICK TO CONFIGURE RANK SCALING]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 6px;">
+      <a class="cog-text-on-fill cog-dark cog-bg-header-fill" data-action="addRow" data-row-table="rankDamagePart" style="font-size: 11px; cursor: pointer; font-weight: bold; padding: 3px 8px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">
+        <i class="fa-solid fa-plus"></i> Add Rank Damage Part
+      </a>
+    </div>
+    {{#if system.rankDamageParts.length}}
+      <table class="cog-table" style="margin: 0; font-size: 11px;">
+        <thead>
+          <tr>
+            <th style="width: 30%;">Damage Type</th>
+            <th style="width: 20%;">Fixed Bonus</th>
+            <th style="width: 25%;">Dice (Optional)</th>
+            <th style="width: 20%;">Min Rank</th>
+            <th style="width: 5%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each system.rankDamageParts as |mod idx|}}
+            <tr>
+              <td>
+                <select class="cog-field-input" name="system.rankDamageParts.{{idx}}.type" style="font-size: 11px;">
+                  {{#each ../damageTypes as |dt|}}
+                    <option value="{{dt}}" {{#if (eq mod.type dt)}}selected{{/if}}>{{dt}}</option>
+                  {{/each}}
+                </select>
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.rankDamageParts.{{idx}}.value" value="{{mod.value}}" placeholder="0" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td>
+                <input class="cog-field-input" type="text" name="system.rankDamageParts.{{idx}}.dice" value="{{mod.dice}}" placeholder="1d12" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.rankDamageParts.{{idx}}.minRank" value="{{mod.minRank}}" placeholder="0" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td style="text-align: center;">
+                <a class="cog-text-accent" data-action="deleteRow" data-row-table="rankDamagePart" data-index="{{idx}}" data-tooltip="Delete" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="cog-text-secondary cog-bg-surface" style="font-style: italic; font-size: 11px; text-align: center; padding: 6px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+        No rank damage parts added. (Uses Base Damage / Formula)
+      </div>
+    {{/if}}
+  </div>
+</details>
+
+{{!-- OPTIONAL EFFECTS & METAMAGIC RIDERS --}}
+<div class="cog-field-group" style="margin-bottom: 8px;">
+  <span class="cog-field-label"><i class="fa-solid fa-wand-magic"></i> Selectable Spell Riders / Metamagic (Comma-Separated)</span>
+  <input class="cog-field-input" type="text" name="system.optionalEffects" value="{{optionalEffectsString}}" placeholder="Overcharge, Concentrated Beam, Wide Dispersion" />
+</div>
+
+{{> "systems/sprinter-rpg/templates/items/parts/contest.hbs"}}
+
+{{!-- RANK MILESTONES & BREAK CONFIGURATIONS (RANKS 1–20) --}}
+<details class="cog-collapsible-block" {{#if hasRankBreaksConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-layer-group"></i> RANK BREAK CONFIGURATIONS (MILESTONES 1–20)</span>
+    <span class="cog-toggle-indicator {{#if hasRankBreaksConfigured}}active{{/if}}">{{#if hasRankBreaksConfigured}}[RANK BREAKS CONFIGURED]{{else}}[CLICK TO CONFIGURE MILESTONE BREAKS]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-rank-break-hint cog-text-secondary" style="font-size: 11px; margin-bottom: 6px;">
+      <i class="fa-solid fa-circle-info"></i> Each reached break adds to the ones before it. Write the increment from the previous break, not the new total.
+    </div>
+    <div style="margin-bottom: 6px;">
+      <button type="button" class="cog-btn" data-action="parseRankBreaks" title="Fill the empty rank-break fields below from the Rank 5/10/15 upgrade text. Review the result, then save."><i class="fa-solid fa-wand-magic-sparkles"></i> Parse upgrade text into rank breaks</button>
+    </div>
+    {{!-- Break 1 --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 8px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-success); padding: 6px; border-radius: 3px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <div class="cog-text-success" style="font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-medal"></i> Milestone Break
+          <label class="cog-text" style="display: inline-flex; align-items: center; gap: 4px; font-weight: normal;">
+            <span style="font-size: 11px;">Rank:</span>
+            <select class="cog-text-success" name="system.rankBreaks.rank5.rank" style="font-size: 11px; font-weight: bold; padding: 1px 4px; border: 1px solid var(--cog-success); border-radius: 3px;">
+              {{#each availableRanks as |r|}}
+                <option value="{{r}}" {{#if (eq (or ../system.rankBreaks.rank5.rank 5) r)}}selected{{/if}}>Rank {{r}}</option>
+              {{/each}}
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Additional Damage Dice</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.rank5.damageDice" value="{{system.rankBreaks.rank5.damageDice}}" placeholder="e.g. 1d6" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Damage Type</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank5.damageType" style="font-size: 11px;">
+            <option value="">-- Spell damage type --</option>
+            {{#each damageTypes as |dt|}}
+              <option value="{{dt}}" {{#if (eq ../system.rankBreaks.rank5.damageType dt)}}selected{{/if}}>{{dt}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Add'l Rank Damage Dies</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.rankDamageDice" value="{{system.rankBreaks.rank5.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> Crit Multiplier</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.critMultiplier" value="{{#if system.rankBreaks.rank5.critMultiplier}}{{system.rankBreaks.rank5.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="Critical Hit Multiplier (e.g. 2x, 4x, 8x)" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">Buffs / Resistances</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.rank5.buffsResistances" value="{{system.rankBreaks.rank5.buffsResistances}}" placeholder="e.g. Fire Resistance, +2 INT" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">On-Hit Target Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank5.debuff" style="font-size: 11px;">
+            <option value="">-- None --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank5.debuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-circle-notch"></i> + Radius Bonus (ft)</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.area.radiusBonus" value="{{system.rankBreaks.rank5.area.radiusBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> Upgraded Temp HP/Bar</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.tempBars.hpPerSlot" value="{{system.rankBreaks.rank5.tempBars.hpPerSlot}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> + Healing Bars</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.healing.barsBonus" value="{{system.rankBreaks.rank5.healing.barsBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Cleanse Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank5.healing.cleanseDebuff" style="font-size: 11px;">
+            <option value="">-- None --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank5.healing.cleanseDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px;">
+          <input type="checkbox" name="system.rankBreaks.rank5.isArmorPiercing" {{#if system.rankBreaks.rank5.isArmorPiercing}}checked{{/if}} />
+          <span>Armor Piercing</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-scale-balanced cog-text-magic"></i> + Contest DC Bonus</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.contest.dcBonus" value="{{system.rankBreaks.rank5.contest.dcBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-skull cog-text-magic"></i> Upgraded Fail Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank5.contest.onFailDebuff" style="font-size: 11px;">
+            <option value="">-- Keep Base --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank5.contest.onFailDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Non-Defined Abilities / Milestone Notes</span>
+        <input class="cog-field-input" type="text" name="system.rankBreaks.rank5.notes" value="{{system.rankBreaks.rank5.notes}}" placeholder="e.g. Doubles radius, allows higher mana spend..." style="font-size: 11px;" />
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/rank-break-extras.hbs" key="rank5" data=system.rankBreaks.rank5 view=rankBreakViews.rank5 withBaseDiceCountMod=true}}
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Tags Gained at This Rank</span>
+        <input class="cog-field-input" data-change-action="setRankBreakTags" type="text" data-rank-break="rank5" value="{{rankBreakTagText.rank5}}" placeholder="e.g. action.free_interrupt, trigger.on_attack" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Interrupt Range Bonus (ft)</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.rank5.interrupt.rangeBonus" value="{{system.rankBreaks.rank5.interrupt.rangeBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Interrupt DR vs. the Triggering Attack (+N)</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.rank5.interrupt.drBonus" value="{{system.rankBreaks.rank5.interrupt.drBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">
+          <input type="checkbox" name="system.rankBreaks.rank5.interrupt.ignoreDebuffs" {{#if system.rankBreaks.rank5.interrupt.ignoreDebuffs}}checked{{/if}} />
+          <span>Interrupt ignores debuffs attached to the attack</span>
+        </label>
+      </div>
+    </div>
+
+    {{!-- Break 2 --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 8px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-info); padding: 6px; border-radius: 3px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <div class="cog-text-info" style="font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-medal"></i> Milestone Break
+          <label class="cog-text" style="display: inline-flex; align-items: center; gap: 4px; font-weight: normal;">
+            <span style="font-size: 11px;">Rank:</span>
+            <select class="cog-text-info" name="system.rankBreaks.rank10.rank" style="font-size: 11px; font-weight: bold; padding: 1px 4px; border: 1px solid var(--cog-info); border-radius: 3px;">
+              {{#each availableRanks as |r|}}
+                <option value="{{r}}" {{#if (eq (or ../system.rankBreaks.rank10.rank 10) r)}}selected{{/if}}>Rank {{r}}</option>
+              {{/each}}
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Additional Damage Dice</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.rank10.damageDice" value="{{system.rankBreaks.rank10.damageDice}}" placeholder="e.g. 1d6" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Damage Type</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank10.damageType" style="font-size: 11px;">
+            <option value="">-- Spell damage type --</option>
+            {{#each damageTypes as |dt|}}
+              <option value="{{dt}}" {{#if (eq ../system.rankBreaks.rank10.damageType dt)}}selected{{/if}}>{{dt}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Add'l Rank Damage Dies</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.rankDamageDice" value="{{system.rankBreaks.rank10.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> Crit Multiplier</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.critMultiplier" value="{{#if system.rankBreaks.rank10.critMultiplier}}{{system.rankBreaks.rank10.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="Critical Hit Multiplier (e.g. 2x, 4x, 8x)" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">Buffs / Resistances</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.rank10.buffsResistances" value="{{system.rankBreaks.rank10.buffsResistances}}" placeholder="e.g. Electric Resistance" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">On-Hit Target Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank10.debuff" style="font-size: 11px;">
+            <option value="">-- None --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank10.debuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-circle-notch"></i> + Radius Bonus (ft)</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.area.radiusBonus" value="{{system.rankBreaks.rank10.area.radiusBonus}}" placeholder="5" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> Upgraded Temp HP/Bar</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.tempBars.hpPerSlot" value="{{system.rankBreaks.rank10.tempBars.hpPerSlot}}" placeholder="6" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> + Healing Bars</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.healing.barsBonus" value="{{system.rankBreaks.rank10.healing.barsBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Cleanse Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank10.healing.cleanseDebuff" style="font-size: 11px;">
+            <option value="">-- None --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank10.healing.cleanseDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px;">
+          <input type="checkbox" name="system.rankBreaks.rank10.isArmorPiercing" {{#if system.rankBreaks.rank10.isArmorPiercing}}checked{{/if}} />
+          <span>Armor Piercing</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-scale-balanced cog-text-magic"></i> + Contest DC Bonus</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.contest.dcBonus" value="{{system.rankBreaks.rank10.contest.dcBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-skull cog-text-magic"></i> Upgraded Fail Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank10.contest.onFailDebuff" style="font-size: 11px;">
+            <option value="">-- Keep Base --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank10.contest.onFailDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Non-Defined Abilities / Milestone Notes</span>
+        <input class="cog-field-input" type="text" name="system.rankBreaks.rank10.notes" value="{{system.rankBreaks.rank10.notes}}" placeholder="e.g. Targets gain Burned debuff, chains to second target..." style="font-size: 11px;" />
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/rank-break-extras.hbs" key="rank10" data=system.rankBreaks.rank10 view=rankBreakViews.rank10 withBaseDiceCountMod=true}}
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Tags Gained at This Rank</span>
+        <input class="cog-field-input" data-change-action="setRankBreakTags" type="text" data-rank-break="rank10" value="{{rankBreakTagText.rank10}}" placeholder="e.g. action.free_interrupt, trigger.on_attack" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Interrupt Range Bonus (ft)</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.rank10.interrupt.rangeBonus" value="{{system.rankBreaks.rank10.interrupt.rangeBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Interrupt DR vs. the Triggering Attack (+N)</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.rank10.interrupt.drBonus" value="{{system.rankBreaks.rank10.interrupt.drBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">
+          <input type="checkbox" name="system.rankBreaks.rank10.interrupt.ignoreDebuffs" {{#if system.rankBreaks.rank10.interrupt.ignoreDebuffs}}checked{{/if}} />
+          <span>Interrupt ignores debuffs attached to the attack</span>
+        </label>
+      </div>
+    </div>
+
+    {{!-- Break 3 --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 8px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-magic); padding: 6px; border-radius: 3px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <div class="cog-text-magic" style="font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-medal"></i> Milestone Break
+          <label class="cog-text" style="display: inline-flex; align-items: center; gap: 4px; font-weight: normal;">
+            <span style="font-size: 11px;">Rank:</span>
+            <select class="cog-text-magic" name="system.rankBreaks.rank15.rank" style="font-size: 11px; font-weight: bold; padding: 1px 4px; border: 1px solid var(--cog-magic); border-radius: 3px;">
+              {{#each availableRanks as |r|}}
+                <option value="{{r}}" {{#if (eq (or ../system.rankBreaks.rank15.rank 15) r)}}selected{{/if}}>Rank {{r}}</option>
+              {{/each}}
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Additional Damage Dice</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.rank15.damageDice" value="{{system.rankBreaks.rank15.damageDice}}" placeholder="e.g. 1d6" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Damage Type</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank15.damageType" style="font-size: 11px;">
+            <option value="">-- Spell damage type --</option>
+            {{#each damageTypes as |dt|}}
+              <option value="{{dt}}" {{#if (eq ../system.rankBreaks.rank15.damageType dt)}}selected{{/if}}>{{dt}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Add'l Rank Damage Dies</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.rankDamageDice" value="{{system.rankBreaks.rank15.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> Crit Multiplier</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.critMultiplier" value="{{#if system.rankBreaks.rank15.critMultiplier}}{{system.rankBreaks.rank15.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="Critical Hit Multiplier (e.g. 2x, 4x, 8x)" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">Buffs / Resistances</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.rank15.buffsResistances" value="{{system.rankBreaks.rank15.buffsResistances}}" placeholder="e.g. Fire Immunity" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">On-Hit Target Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank15.debuff" style="font-size: 11px;">
+            <option value="">-- None --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank15.debuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-circle-notch"></i> + Radius Bonus (ft)</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.area.radiusBonus" value="{{system.rankBreaks.rank15.area.radiusBonus}}" placeholder="10" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> Upgraded Temp HP/Bar</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.tempBars.hpPerSlot" value="{{system.rankBreaks.rank15.tempBars.hpPerSlot}}" placeholder="8" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> + Healing Bars</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.healing.barsBonus" value="{{system.rankBreaks.rank15.healing.barsBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Cleanse Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank15.healing.cleanseDebuff" style="font-size: 11px;">
+            <option value="">-- None --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank15.healing.cleanseDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px;">
+          <input type="checkbox" name="system.rankBreaks.rank15.isArmorPiercing" {{#if system.rankBreaks.rank15.isArmorPiercing}}checked{{/if}} />
+          <span>Armor Piercing</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-scale-balanced cog-text-magic"></i> + Contest DC Bonus</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.contest.dcBonus" value="{{system.rankBreaks.rank15.contest.dcBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-skull cog-text-magic"></i> Upgraded Fail Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank15.contest.onFailDebuff" style="font-size: 11px;">
+            <option value="">-- Keep Base --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank15.contest.onFailDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Non-Defined Abilities / Milestone Notes</span>
+        <input class="cog-field-input" type="text" name="system.rankBreaks.rank15.notes" value="{{system.rankBreaks.rank15.notes}}" placeholder="e.g. Multiplies base damage dice, converts damage type..." style="font-size: 11px;" />
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/rank-break-extras.hbs" key="rank15" data=system.rankBreaks.rank15 view=rankBreakViews.rank15 withBaseDiceCountMod=true}}
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Tags Gained at This Rank</span>
+        <input class="cog-field-input" data-change-action="setRankBreakTags" type="text" data-rank-break="rank15" value="{{rankBreakTagText.rank15}}" placeholder="e.g. action.free_interrupt, trigger.on_attack" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Interrupt Range Bonus (ft)</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.rank15.interrupt.rangeBonus" value="{{system.rankBreaks.rank15.interrupt.rangeBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Interrupt DR vs. the Triggering Attack (+N)</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.rank15.interrupt.drBonus" value="{{system.rankBreaks.rank15.interrupt.drBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">
+          <input type="checkbox" name="system.rankBreaks.rank15.interrupt.ignoreDebuffs" {{#if system.rankBreaks.rank15.interrupt.ignoreDebuffs}}checked{{/if}} />
+          <span>Interrupt ignores debuffs attached to the attack</span>
+        </label>
+      </div>
+    </div>
+
+    {{!-- Break 4 --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 0; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-warning); padding: 6px; border-radius: 3px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <div class="cog-text-warning" style="font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-trophy"></i> Milestone Break
+          <label class="cog-text" style="display: inline-flex; align-items: center; gap: 4px; font-weight: normal;">
+            <span style="font-size: 11px;">Rank:</span>
+            <select class="cog-text-warning" name="system.rankBreaks.rank20.rank" style="font-size: 11px; font-weight: bold; padding: 1px 4px; border: 1px solid var(--cog-warning); border-radius: 3px;">
+              {{#each availableRanks as |r|}}
+                <option value="{{r}}" {{#if (eq (or ../system.rankBreaks.rank20.rank 20) r)}}selected{{/if}}>Rank {{r}}</option>
+              {{/each}}
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Additional Damage Dice</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.rank20.damageDice" value="{{system.rankBreaks.rank20.damageDice}}" placeholder="e.g. 2d12" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Damage Type</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank20.damageType" style="font-size: 11px;">
+            <option value="">-- Spell damage type --</option>
+            {{#each damageTypes as |dt|}}
+              <option value="{{dt}}" {{#if (eq ../system.rankBreaks.rank20.damageType dt)}}selected{{/if}}>{{dt}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">Add'l Rank Damage Dies</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.rankDamageDice" value="{{system.rankBreaks.rank20.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> Crit Multiplier</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.critMultiplier" value="{{#if system.rankBreaks.rank20.critMultiplier}}{{system.rankBreaks.rank20.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="Critical Hit Multiplier (e.g. 2x, 4x, 8x)" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">Buffs / Resistances</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.rank20.buffsResistances" value="{{system.rankBreaks.rank20.buffsResistances}}" placeholder="e.g. Prismatic Shield" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">On-Hit Target Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank20.debuff" style="font-size: 11px;">
+            <option value="">-- None --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank20.debuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-circle-notch"></i> + Radius Bonus (ft)</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.area.radiusBonus" value="{{system.rankBreaks.rank20.area.radiusBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> Upgraded Temp HP/Bar</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.tempBars.hpPerSlot" value="{{system.rankBreaks.rank20.tempBars.hpPerSlot}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> + Healing Bars</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.healing.barsBonus" value="{{system.rankBreaks.rank20.healing.barsBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Cleanse Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank20.healing.cleanseDebuff" style="font-size: 11px;">
+            <option value="">-- None --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank20.healing.cleanseDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px;">
+          <input type="checkbox" name="system.rankBreaks.rank20.isArmorPiercing" {{#if system.rankBreaks.rank20.isArmorPiercing}}checked{{/if}} />
+          <span>Armor Piercing</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-scale-balanced cog-text-magic"></i> + Contest DC Bonus</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.contest.dcBonus" value="{{system.rankBreaks.rank20.contest.dcBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-skull cog-text-magic"></i> Upgraded Fail Debuff</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank20.contest.onFailDebuff" style="font-size: 11px;">
+            <option value="">-- Keep Base --</option>
+            {{#each availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../system.rankBreaks.rank20.contest.onFailDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Non-Defined Abilities / Milestone Notes</span>
+        <input class="cog-field-input" type="text" name="system.rankBreaks.rank20.notes" value="{{system.rankBreaks.rank20.notes}}" placeholder="e.g. Ultimate spell ascension perk..." style="font-size: 11px;" />
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/rank-break-extras.hbs" key="rank20" data=system.rankBreaks.rank20 view=rankBreakViews.rank20 withBaseDiceCountMod=true}}
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Tags Gained at This Rank</span>
+        <input class="cog-field-input" data-change-action="setRankBreakTags" type="text" data-rank-break="rank20" value="{{rankBreakTagText.rank20}}" placeholder="e.g. action.free_interrupt, trigger.on_attack" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Interrupt Range Bonus (ft)</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.rank20.interrupt.rangeBonus" value="{{system.rankBreaks.rank20.interrupt.rangeBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">Interrupt DR vs. the Triggering Attack (+N)</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.rank20.interrupt.drBonus" value="{{system.rankBreaks.rank20.interrupt.drBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">
+          <input type="checkbox" name="system.rankBreaks.rank20.interrupt.ignoreDebuffs" {{#if system.rankBreaks.rank20.interrupt.ignoreDebuffs}}checked{{/if}} />
+          <span>Interrupt ignores debuffs attached to the attack</span>
+        </label>
+      </div>
+    </div>
+  </div>
+</details>
+
+<button type="button" class="cog-btn cog-dark cog-bg-header-fill cog-text-on-fill" data-action="rollSpell" style="width: 100%; border: 2px solid var(--cog-ink); padding: 6px; font-weight: bold; cursor: pointer; border-radius: 4px;">
+  <i class="fa-solid fa-wand-magic-sparkles"></i> Cast Spell / Post to Chat
+</button>
+{{#if hasDamage}}
+  <button type="button" class="cog-btn cog-bg-accent-fill cog-text-on-fill" data-action="rollSpellDamage" style="width: 100%; margin-top: 6px; border: 2px solid var(--cog-ink); padding: 6px; font-weight: bold; cursor: pointer; border-radius: 4px;">
+    <i class="fa-solid fa-burst"></i> Roll Spell Damage{{#if damageFormula}} ({{damageFormula}}){{/if}}
+  </button>
+{{/if}}
+
+{{#if availableBuffs.length}}
+  <datalist id="cog-available-buffs-list-{{item.id}}">
+    {{#each availableBuffs as |b|}}
+      <option value="{{b.system.identifier}}">{{b.name}}</option>
+    {{/each}}
+  </datalist>
+{{/if}}
+
+{{#if availableDebuffs.length}}
+  <datalist id="cog-available-debuffs-list-{{item.id}}">
+    {{#each availableDebuffs as |d|}}
+      <option value="{{d.system.identifier}}">{{d.name}}</option>
+    {{/each}}
+  </datalist>
+{{/if}}
+</section>

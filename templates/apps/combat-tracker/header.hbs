@@ -1,0 +1,184 @@
+<header class="combat-tracker-header">
+  {{!-- Encounter navigation (core actions: createCombat, cycleCombat, trackerSettings) --}}
+  {{#if user.isGM}}
+    <nav class="encounters {{css}}" aria-label="{{localize 'COMBAT.NavLabel'}}">
+      {{#if displayCycle}}
+        <button type="button" class="inline-control icon fa-solid fa-plus" data-action="createCombat"
+                data-tooltip aria-label="{{localize 'COMBAT.Create'}}"></button>
+        <div class="cycle-combats">
+          <button type="button" class="inline-control icon fa-solid fa-caret-left" data-action="cycleCombat"
+                  {{#if previousId}}data-combat-id="{{previousId}}"{{else}}disabled{{/if}}
+                  data-tooltip aria-label="{{localize 'COMBAT.EncounterPrevious'}}"></button>
+          <div class="encounter-count">
+            <span class="value">{{currentIndex}}</span>
+            <span class="separator">&sol;</span>
+            <span class="max">{{combats.length}}</span>
+          </div>
+          <button type="button" class="inline-control icon fa-solid fa-caret-right" data-action="cycleCombat"
+                  {{#if nextId}}data-combat-id="{{nextId}}"{{else}}disabled{{/if}}
+                  data-tooltip aria-label="{{localize 'COMBAT.EncounterNext'}}"></button>
+        </div>
+        <button type="button" class="inline-control icon fa-solid fa-gear" data-action="trackerSettings"
+                data-tooltip aria-label="{{localize 'COMBAT.Settings'}}"></button>
+      {{else if combats.length}}
+        <button type="button" class="inline-control icon fa-solid fa-plus" data-action="createCombat"
+                data-tooltip aria-label="{{localize 'COMBAT.Create'}}"></button>
+        {{#each combats}}
+          <button type="button" class="inline-control {{#if active}}active{{/if}}" data-action="cycleCombat"
+                  data-combat-id="{{id}}" {{#if name}}data-tooltip aria-label="{{name}}"{{/if}}>
+            {{label}}
+          </button>
+        {{/each}}
+        <button type="button" class="inline-control icon fa-solid fa-gear" data-action="trackerSettings"
+                data-tooltip aria-label="{{localize 'COMBAT.Settings'}}"></button>
+      {{else}}
+        <button type="button" class="combat-control-lg" data-action="createCombat">
+          <i class="fa-solid fa-plus" inert></i>
+          <span>{{localize 'COMBAT.Create'}}</span>
+        </button>
+      {{/if}}
+    </nav>
+  {{/if}}
+
+  {{#if combat.name}}
+    <h2 class="encounter-name">{{combat.name}}</h2>
+  {{/if}}
+
+  <div class="encounter-controls {{#if hasCombat}}combat{{/if}}">
+    {{#if isCarlCombat}}
+      <div class="cog-round-stepper flexrow">
+        <button type="button" class="cog-step-round-btn prev-round" data-action="viewPrevRound" data-tooltip="View Previous Round History" {{#unless canStepPrev}}disabled{{/unless}}>
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <h4 class="encounter-title noborder cog-encounter-title {{#if isViewingHistory}}is-history{{/if}}">
+          {{#if isSurpriseRound}}
+            <span class="cog-surprise-badge"><i class="fa-solid fa-bolt"></i> SURPRISE RD {{viewedRound}}</span>
+          {{else}}
+            <span>ROUND {{viewedRound}}</span>
+          {{/if}}
+          {{#if isViewingHistory}}
+            <span class="cog-history-tag">(PAST)</span>
+          {{else}}
+            <span class="cog-live-tag">(LIVE)</span>
+          {{/if}}
+        </h4>
+        <button type="button" class="cog-step-round-btn next-round" data-action="viewNextRound" data-tooltip="View Next Round" {{#unless canStepNext}}disabled{{/unless}}>
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    {{else}}
+      <strong class="encounter-title">NO ACTIVE COMBAT</strong>
+    {{/if}}
+
+    <div class="control-buttons right flexrow">
+      <button type="button" class="encounter-context-menu inline-control combat-control icon fa-solid fa-ellipsis-vertical"
+              {{#unless (and user.isGM hasCombat)}}disabled{{/unless}}></button>
+    </div>
+  </div>
+
+  {{#if isCarlCombat}}
+    {{#if isViewingHistory}}
+      <div class="cog-history-banner flexrow">
+        <span class="cog-history-banner-text">
+          <i class="fa-solid fa-clock-rotate-left"></i> Viewing Past Round {{viewedRound}} History
+        </span>
+        <button type="button" class="cog-return-live-btn" data-action="returnLive" data-tooltip="Jump back to live active round {{round}}">
+          <i class="fa-solid fa-play"></i> LIVE RD {{round}}
+        </button>
+      </div>
+    {{/if}}
+
+    <div class="cog-combat-action-bar flexrow">
+      <button type="button" class="cog-surprise-toggle {{#if isSurpriseRound}}active{{/if}}" data-action="toggleSurprise" data-tooltip="Toggle Surprise Round (Crawlers Act First)">
+        <i class="fa-solid {{#if isSurpriseRound}}fa-bolt{{else}}fa-triangle-exclamation{{/if}}"></i>
+        {{#if isSurpriseRound}}
+          SURPRISE: CRAWLERS FIRST!
+        {{else}}
+          NORMAL (MOBS FIRST)
+        {{/if}}
+      </button>
+      {{#if isGM}}
+      <button type="button" class="cog-reset-round-actions-btn" data-action="resetRoundActions" data-tooltip="Reset Action Budgets for Current Round">
+        <i class="fa-solid fa-rotate-left"></i> RESET ACTIONS
+      </button>
+      {{/if}}
+    </div>
+
+    <div class="cog-combat-stepper flexcol {{#unless isGM}}read-only{{/unless}}">
+      <div class="cog-stepper-header flexrow">
+        {{#if isGM}}
+        <button type="button" class="cog-step-nav-btn prev-step" data-action="stepPrev" data-tooltip="{{localize 'COG.Combat.StepPrev'}}">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        {{/if}}
+        <div class="cog-step-current-banner">
+          <span class="cog-step-badge">{{currentStepDefinition.shortLabel}}</span>
+          <span class="cog-step-desc">{{currentStepDefinition.desc}}</span>
+        </div>
+        {{#if isGM}}
+        <button type="button" class="cog-step-nav-btn next-step" data-action="stepNext" data-tooltip="{{localize 'COG.Combat.StepNext'}}">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        {{/if}}
+      </div>
+      <div class="cog-step-pills flexrow">
+        {{#each stepperItems as |st|}}
+          {{#if ../isGM}}
+          <button type="button" class="cog-step-pill {{#if st.isActive}}active{{/if}} {{#if st.isPast}}past{{/if}} side-{{st.activeSide}}"
+                  data-action="setStep"
+                  data-step-id="{{st.id}}"
+                  data-tooltip="{{st.label}}: {{st.desc}}">
+            {{st.shortLabel}}
+          </button>
+          {{else}}
+          <span class="cog-step-pill {{#if st.isActive}}active{{/if}} {{#if st.isPast}}past{{/if}} side-{{st.activeSide}}"
+                data-step-id="{{st.id}}"
+                data-tooltip="{{st.label}}: {{st.desc}}">
+            {{st.shortLabel}}
+          </span>
+          {{/if}}
+        {{/each}}
+      </div>
+      {{#if hasDeclarations}}
+      <div class="cog-declarations flexcol">
+        <div class="cog-declarations-head flexrow">
+          <span class="cog-declarations-title">{{localize 'COG.Combat.Declarations'}}</span>
+          {{#if canResolveDeclared}}
+          <button type="button" class="cog-resolve-declared-btn" data-action="resolveDeclared">
+            <i class="fa-solid fa-burst"></i> {{localize 'COG.Combat.ResolveDeclared'}}
+          </button>
+          {{/if}}
+        </div>
+        {{#each declarations as |decl|}}
+        <div class="cog-declaration {{#if decl.isResolved}}resolved{{/if}}" data-declaration-id="{{decl.id}}">
+          <div class="cog-declaration-line flexrow">
+            <span class="cog-declaration-attack">{{decl.attackerName}}: {{decl.itemName}}</span>
+            <span class="cog-declaration-dc">{{decl.evadeLabel}}{{#if decl.isArea}} ({{localize 'COG.Combat.AreaShort'}}){{/if}}</span>
+          </div>
+          {{#each decl.targets as |t|}}
+          <div class="cog-declaration-target flexrow">
+            <span class="cog-declaration-target-name">{{t.name}}{{#if t.viaLabel}} <em>({{t.viaLabel}})</em>{{/if}}</span>
+            <span class="cog-target-status status-{{t.status}}">{{t.statusLabel}}</span>
+          </div>
+          {{/each}}
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+    </div>
+  {{/if}}
+
+  <div class="cog-combat-nav-buttons flexrow">
+    <button type="button" class="cog-combat-awards-btn" data-action="openAwards" data-tooltip="Open AI Performance & Awards Dashboard">
+      <i class="fa-solid fa-trophy cog-dark cog-text-gold"></i> AI AWARDS
+    </button>
+    <button type="button" class="cog-combat-archive-btn" data-action="openArchive" data-tooltip="Open Archived Battles History">
+      <i class="fa-solid fa-book-skull cog-text-danger"></i> ARCHIVED BATTLES
+    </button>
+    {{#if user.isGM}}
+      <button type="button" class="cog-session-manager-header-btn" data-action="openSessionManager" data-tooltip="Party Progression & Session Manager">
+        <i class="fa-solid fa-users-gear cog-text-gold"></i> SESSIONS
+      </button>
+    {{/if}}
+  </div>
+</header>

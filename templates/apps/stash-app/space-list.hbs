@@ -1,0 +1,23 @@
+<div class="cog-stash-pane-list cog-stash-space-list cog-bg-surface">
+  {{#each spaceItems as |item|}}
+    <div class="cog-bg-surface-muted" style="display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 6px 10px;">
+      <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+        <img class="cog-bg-icon-box" src="{{item.img}}" width="28" height="28" style="border-radius: 3px; border: 1px solid var(--cog-border-muted); object-fit: cover;" />
+        <div style="min-width: 0;">
+          <div class="cog-text-strong" style="font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{item.name}}</div>
+          <div class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">
+            {{item.type}}{{#if item.system.quantity}} &bull; Qty: {{item.system.quantity}}{{/if}}
+          </div>
+        </div>
+      </div>
+      <button type="button" data-action="withdraw" data-item-id="{{item.id}}" class="stash-withdraw-btn cog-bg-info-fill cog-text-on-fill" style="border: 1px solid var(--cog-info-fill); border-radius: 3px; padding: 4px 8px; font-size: 11px; font-family: 'Oswald', sans-serif; font-weight: bold; cursor: pointer; text-transform: uppercase; white-space: nowrap; margin-left: 8px;">
+        <i class="fa-solid fa-arrow-left"></i> Take
+      </button>
+    </div>
+  {{else}}
+    <div class="cog-text-muted" style="text-align: center; font-size: 12px; margin-top: 30px;">
+      Vault is currently empty.
+    </div>
+  {{/each}}
+  <div class="cog-text-secondary" style="font-size: 11px; text-align: right;">{{spaceItems.length}} / {{stashCapacity.max}} Stashed</div>
+</div>

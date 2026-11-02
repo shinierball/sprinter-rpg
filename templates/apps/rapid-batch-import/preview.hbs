@@ -1,0 +1,149 @@
+<div class="cog-rapid-import-root cog-rapid-preview cog-text cog-bg-window" style="font-family: 'Oswald', sans-serif; box-sizing: border-box; padding: 0 12px 12px; flex: 1; min-height: 0; display: flex; flex-direction: column;">
+  {{!-- PREVIEW TABLE SECTION --}}
+  <section class="cog-bg-surface" style="display: flex; flex-direction: column; flex: 1; min-height: 0; border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <div class="cog-text-gold" style="font-size: 12px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-list-check"></i> Event Preview & Inline Editor ({{totalEvents}} parsed)
+      </div>
+      <button type="button" data-action="addRow" class="cog-btn cog-rapid-add-row-btn cog-bg-surface-muted cog-text" style="border: 1px solid var(--cog-panel-border); padding: 2px 8px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px; cursor: pointer;">
+        <i class="fa-solid fa-plus"></i> Add Blank Row
+      </button>
+    </div>
+
+    <div class="cog-rapid-preview-scroll cog-bg-window" style="flex: 1; overflow-y: auto; overflow-x: auto; border: 1px solid var(--cog-panel-border); border-radius: 4px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <thead>
+          <tr class="cog-bg-surface cog-text" style="border-bottom: 1px solid var(--cog-panel-border); text-align: left; text-transform: uppercase; font-size: 11px;">
+            <th style="padding: 6px 4px; text-align: center; width: 28px;">#</th>
+            <th style="padding: 6px 6px; width: 120px;">Crawler</th>
+            <th style="padding: 6px 6px; width: 105px;">Type</th>
+            <th style="padding: 6px 6px; width: 130px;">Action / Name</th>
+            <th style="padding: 6px 4px; text-align: center; width: 48px;" title="Roll Total">Roll</th>
+            <th style="padding: 6px 4px; text-align: center; width: 48px;" title="Target DC / AC">DC</th>
+            <th style="padding: 6px 6px; width: 115px;">Outcome</th>
+            <th style="padding: 6px 4px; text-align: center; width: 45px;" title="Damage Dealt">DMG</th>
+            <th style="padding: 6px 4px; text-align: center; width: 45px;" title="Healing Done">HEAL</th>
+            <th style="padding: 6px 4px; text-align: center; width: 45px;" title="Damage Mitigated">MIT</th>
+            <th style="padding: 6px 4px; width: 115px;" title="Condition Applied / Removed">Condition</th>
+            <th style="padding: 6px 4px; text-align: center; width: 35px;" title="Killing Blow">Kill</th>
+            <th style="padding: 6px 4px; text-align: center; width: 35px;" title="Untrained Skill">U/T</th>
+            <th style="padding: 6px 6px;">Notes</th>
+            <th style="padding: 6px 4px; width: 26px; text-align: center;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#if hasEvents}}
+            {{#each parsedEvents}}
+              <tr class="cog-bg-window" style="border-bottom: 1px solid var(--cog-panel-border);">
+                <td class="cog-text-muted" style="padding: 4px; text-align: center; font-size: 10px;">{{this.displayIndex}}</td>
+                
+                {{!-- Crawler Select --}}
+                <td style="padding: 4px;">
+                  <select class="cog-rapid-row-input cog-bg-surface-muted cog-text-strong" name="row{{this.index}}-actorId" data-change-action="editRow" data-index="{{this.index}}" data-field="actorId" style="width: 100%; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 4px; font-family: 'Oswald', sans-serif; font-size: 11px;">
+                    {{#each ../crawlers}}
+                      <option value="{{this.id}}" {{#if (eq this.id ../actorId)}}selected{{/if}}>{{this.name}}</option>
+                    {{/each}}
+                  </select>
+                </td>
+
+                {{!-- Action Type --}}
+                <td style="padding: 4px;">
+                  <select class="cog-rapid-row-input cog-bg-surface-muted cog-text-strong" name="row{{this.index}}-type" data-change-action="editRow" data-index="{{this.index}}" data-field="type" style="width: 100%; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 4px; font-family: 'Oswald', sans-serif; font-size: 11px;">
+                    {{#each ../typeOptions}}
+                      <option value="{{this.key}}" {{#if (eq this.key ../type)}}selected{{/if}}>{{this.label}}</option>
+                    {{/each}}
+                  </select>
+                  {{!-- Loot box tier: options from CONFIG.COG.lootBoxTiers, loot rows only --}}
+                  <select class="cog-rapid-row-input cog-bg-surface-muted cog-text-strong" name="row{{this.index}}-tier" data-change-action="editRow" data-index="{{this.index}}" data-field="tier" data-tier-select {{#unless this.isLoot}}hidden{{/unless}} style="width: 100%; margin-top: 3px; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 4px; font-family: 'Oswald', sans-serif; font-size: 11px;">
+                    {{#each this.lootTierOptions}}
+                      <option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                    {{/each}}
+                  </select>
+                </td>
+
+                {{!-- Action Name --}}
+                <td style="padding: 4px;">
+                  <input type="text" class="cog-rapid-row-input cog-bg-surface-muted cog-text-strong" name="row{{this.index}}-name" data-change-action="editRow" data-index="{{this.index}}" data-field="name" value="{{this.name}}" style="width: 100%; box-sizing: border-box; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 5px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+                </td>
+
+                {{!-- Total --}}
+                <td style="padding: 4px; text-align: center;">
+                  <input type="number" class="cog-rapid-row-input cog-bg-surface-muted cog-text-gold" name="row{{this.index}}-total" data-change-action="editRow" data-index="{{this.index}}" data-field="total" value="{{this.total}}" style="width: 44px; text-align: center; font-weight: bold; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 2px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+                </td>
+
+                {{!-- Target DC --}}
+                <td style="padding: 4px; text-align: center;">
+                  <input type="number" class="cog-rapid-row-input cog-bg-surface-muted cog-text-secondary" name="row{{this.index}}-targetDC" data-change-action="editRow" data-index="{{this.index}}" data-field="targetDC" value="{{this.targetDC}}" placeholder="DC" style="width: 44px; text-align: center; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 2px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+                </td>
+
+                {{!-- Outcome --}}
+                <td style="padding: 4px;">
+                  <select class="cog-rapid-row-input {{this.outcomeClass}} cog-bg-surface-muted cog-text-strong" name="row{{this.index}}-outcome" data-change-action="editRow" data-index="{{this.index}}" data-field="outcome" style="width: 100%; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 4px; font-family: 'Oswald', sans-serif; font-size: 11px;">
+                    {{#each ../outcomeOptions}}
+                      <option value="{{this.key}}" {{#if (eq this.key ../outcome)}}selected{{/if}}>{{this.label}}</option>
+                    {{/each}}
+                  </select>
+                </td>
+
+                {{!-- Damage --}}
+                <td style="padding: 4px; text-align: center;">
+                  <input type="number" class="cog-rapid-row-input cog-bg-surface-muted cog-text-danger" name="row{{this.index}}-damage" data-change-action="editRow" data-index="{{this.index}}" data-field="damage" value="{{this.damage}}" min="0" style="width: 38px; text-align: center; font-weight: bold; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 2px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+                </td>
+
+                {{!-- Healing --}}
+                <td style="padding: 4px; text-align: center;">
+                  <input type="number" class="cog-rapid-row-input cog-bg-surface-muted cog-text-success" name="row{{this.index}}-healing" data-change-action="editRow" data-index="{{this.index}}" data-field="healing" value="{{this.healing}}" min="0" style="width: 38px; text-align: center; font-weight: bold; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 2px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+                </td>
+
+                {{!-- Mitigation --}}
+                <td style="padding: 4px; text-align: center;">
+                  <input type="number" class="cog-rapid-row-input cog-bg-surface-muted cog-text-info" name="row{{this.index}}-mitigation" data-change-action="editRow" data-index="{{this.index}}" data-field="mitigation" value="{{this.mitigation}}" min="0" style="width: 38px; text-align: center; font-weight: bold; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 2px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+                </td>
+
+                {{!-- Condition --}}
+                <td style="padding: 4px;">
+                  <div style="display: flex; gap: 3px; align-items: center;">
+                    <input type="text" class="cog-rapid-row-input cog-bg-surface-muted cog-text-warning" name="row{{this.index}}-condition" data-change-action="editRow" data-index="{{this.index}}" data-field="condition" value="{{this.condition}}" placeholder="Cond..." style="width: 62px; box-sizing: border-box; font-weight: bold; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 4px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+                    <select class="cog-rapid-row-input cog-bg-surface-muted cog-text-secondary" name="row{{this.index}}-conditionAction" data-change-action="editRow" data-index="{{this.index}}" data-field="conditionAction" style="width: 48px; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 1px; font-family: 'Oswald', sans-serif; font-size: 10px;">
+                      <option value="applied" {{#if (eq this.conditionAction "applied")}}selected{{/if}}>Apply</option>
+                      <option value="removed" {{#if (eq this.conditionAction "removed")}}selected{{/if}}>Cure</option>
+                    </select>
+                  </div>
+                </td>
+
+                {{!-- Kill --}}
+                <td style="padding: 4px; text-align: center;">
+                  <input type="checkbox" class="cog-rapid-row-input" name="row{{this.index}}-isKill" data-change-action="editRow" data-index="{{this.index}}" data-field="isKill" {{#if this.isKill}}checked{{/if}} title="Killing blow" />
+                </td>
+
+                {{!-- Untrained --}}
+                <td style="padding: 4px; text-align: center;">
+                  <input type="checkbox" class="cog-rapid-row-input" name="row{{this.index}}-isUntrained" data-change-action="editRow" data-index="{{this.index}}" data-field="isUntrained" {{#if this.isUntrained}}checked{{/if}} title="Untrained attempt" />
+                </td>
+
+                {{!-- Notes --}}
+                <td style="padding: 4px;">
+                  <input type="text" class="cog-rapid-row-input cog-bg-surface-muted cog-text" name="row{{this.index}}-notes" data-change-action="editRow" data-index="{{this.index}}" data-field="notes" value="{{this.notes}}" placeholder="Notes..." style="width: 100%; box-sizing: border-box; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 5px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+                </td>
+
+                {{!-- Delete --}}
+                <td style="padding: 4px; text-align: center;">
+                  <button type="button" data-action="deleteRow" class="cog-rapid-delete-row-btn cog-bg-transparent cog-text-danger" data-index="{{this.index}}" title="Delete row" style="border: none; cursor: pointer; padding: 2px 4px; font-size: 12px;">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </td>
+              </tr>
+            {{/each}}
+          {{else}}
+            <tr>
+              <td class="cog-text-muted" colspan="15" style="text-align: center; padding: 30px;">
+                <i class="fa-solid fa-arrow-up cog-text-secondary" style="display: block; font-size: 20px; margin-bottom: 8px;"></i>
+                Type or paste notes into the box above, or click <strong>Load Sample Notes</strong> to preview.
+              </td>
+            </tr>
+          {{/if}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

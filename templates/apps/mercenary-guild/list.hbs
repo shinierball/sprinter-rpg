@@ -1,0 +1,246 @@
+<div class="cog-mercenary-guild-app cog-bg-window cog-text cog-guild-scroll" style="font-family: 'Oswald', sans-serif;{{#unless (eq activeTab 'recruit')}} flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px 14px;{{/unless}}">
+    {{!-- ==================================================== --}}
+    {{!-- TAB 1: ROSTER / BROWSE & HIRE MERCENARIES            --}}
+    {{!-- ==================================================== --}}
+    {{#if (eq activeTab 'roster')}}
+      {{#unless hasCatalogMercenaries}}
+        <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Content.NoMercenaryCatalog"}}</p>
+      {{/unless}}
+      {{!-- Mercenary Cards Grid --}}
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 12px;">
+        {{#each mercenaries as |m|}}
+          <div class="cog-bg-window" style="border: 1px solid {{#if m.isHired}}var(--cog-success){{else}}var(--cog-panel-border){{/if}}; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+
+            {{!-- Top Info Row --}}
+            <div>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <img class="cog-bg-icon-box" src="{{m.img}}" width="56" height="56" style="border-radius: 4px; border: 1px solid var(--cog-panel-border); object-fit: cover;" />
+                <div style="flex: 1; min-width: 0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      {{m.name}}
+                    </h3>
+                    {{#if m.isHired}}
+                      <span class="cog-bg-success-fill cog-text-on-fill" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: bold; letter-spacing: 0.5px;">
+                        HIRED ({{m.contractDays}}d)
+                      </span>
+                    {{else}}
+                      <span class="cog-bg-warning-fill cog-text-on-fill" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: bold; letter-spacing: 0.5px;">
+                        AVAILABLE
+                      </span>
+                    {{/if}}
+                  </div>
+
+                  <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px; flex-wrap: wrap;">
+                    <span class="cog-text-info" style="font-size: 11px; font-weight: bold;">{{m.race}}</span>
+                    <span class="cog-text-muted">&bull;</span>
+                    <span class="cog-text-warning" style="font-size: 11px; font-weight: bold;">{{m.class}}</span>
+                    <span class="cog-text-muted">&bull;</span>
+                    <span class="cog-bg-surface-muted cog-text-secondary" style="font-size: 10px; padding: 1px 5px; border-radius: 2px;">Lvl {{m.level}}</span>
+                    <span class="cog-bg-info-fill cog-text-on-fill" style="font-size: 10px; padding: 1px 5px; border-radius: 2px;">{{m.role}}</span>
+                  </div>
+
+                  {{!-- Price per day --}}
+                  <div style="margin-top: 4px; font-size: 12px; font-weight: bold;">
+                    Rate: <span class="cog-text-warning">{{m.effectiveDailyRate}} Gold / Day</span>
+                    {{#if m.hasDiscount}}
+                      <span class="cog-text-success" style="font-size: 10px; font-weight: normal;">(-{{m.discountPct}}% Barracks Lodging)</span>
+                    {{/if}}
+                  </div>
+                </div>
+              </div>
+
+              {{!-- Stats & Ability Bar --}}
+              <div class="cog-bg-window" style="display: flex; justify-content: space-between; border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 4px 8px; margin: 8px 0; font-size: 11px;">
+                <span><strong>HP:</strong> {{m.hp.value}}/{{m.hp.max}}</span>
+                <span><strong>MP:</strong> {{m.mana.value}}/{{m.mana.max}}</span>
+                <span><strong>Evade:</strong> +{{m.evade}}</span>
+                <span><strong>STR:</strong> +{{m.str}}</span>
+                <span><strong>INT:</strong> +{{m.int}}</span>
+                <span><strong>CON:</strong> +{{m.con}}</span>
+                <span><strong>DEX:</strong> +{{m.dex}}</span>
+                <span><strong>CHA:</strong> +{{m.cha}}</span>
+              </div>
+
+              {{!-- Arsenal / Traits summary --}}
+              <div class="cog-text-secondary" style="font-size: 11px; margin-bottom: 8px;">
+                {{#if m.weapons.length}}
+                  <div><strong>Weapons:</strong> {{m.weaponsText}}</div>
+                {{/if}}
+                {{#if m.skills.length}}
+                  <div><strong>Skills:</strong> {{m.skillsText}}</div>
+                {{/if}}
+                {{#if m.spells.length}}
+                  <div><strong>Spells:</strong> {{m.spellsText}}</div>
+                {{/if}}
+                {{#if m.employers.length}}
+                  <div class="cog-text-success" style="margin-top: 4px;">
+                    <strong>Employed by:</strong>
+                    {{#each m.employers as |emp|}}
+                      <span class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); padding: 1px 4px; border-radius: 2px; margin-right: 4px;">{{emp.name}}</span>
+                    {{/each}}
+                  </div>
+                {{/if}}
+                {{#if m.housedSpace}}
+                  <div class="cog-text-magic" style="margin-top: 2px;">
+                    <i class="fa-solid fa-bed"></i> <strong>Lodge:</strong> {{m.housedSpace.name}}
+                  </div>
+                {{/if}}
+              </div>
+            </div>
+
+            {{!-- Action Controls Footer --}}
+            <div style="border-top: 1px solid var(--cog-panel-border); padding-top: 8px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+              {{#if m.isCatalog}}
+                <button type="button" data-action="enlist" class="guild-enlist-catalog-btn cog-bg-success-fill cog-text-on-fill" data-cat-id="{{m.id}}" style="flex: 1; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 5px; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+                  <i class="fa-solid fa-file-signature"></i> Enlist into Guild Roster
+                </button>
+              {{else}}
+                {{!-- Hiring Form Row --}}
+                <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
+                  <input type="number" name="hireDays-{{m.id}}" class="hire-days-input cog-bg-window cog-text-strong" data-merc-id="{{m.id}}" value="3" min="1" max="90" style="width: 48px; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 3px; font-family: 'Oswald', sans-serif; font-size: 11px; text-align: center;" title="Contract Days" />
+                  <span class="cog-text-muted" style="font-size: 11px;">Days</span>
+
+                  <label class="cog-text-secondary" style="display: flex; align-items: center; gap: 3px; font-size: 10px; cursor: pointer;">
+                    <input type="checkbox" name="linkAll-{{m.id}}" class="hire-link-all-check" data-merc-id="{{m.id}}" />
+                    Link All
+                  </label>
+
+                  <button type="button" data-action="hire" class="guild-hire-dialog-btn cog-bg-accent-fill cog-text-on-fill" data-merc-id="{{m.id}}" style="flex: 1; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; padding: 5px 8px; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+                    <i class="fa-solid fa-file-contract"></i> Sign Contract
+                  </button>
+                </div>
+              {{/if}}
+
+              {{#unless m.isCatalog}}
+                <button type="button" data-action="openSheet" class="guild-open-sheet-btn cog-bg-surface-strong cog-text-strong" data-merc-id="{{m.id}}" style="border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 4px 8px; font-size: 11px; cursor: pointer;" title="Open Sheet">
+                  <i class="fa-solid fa-address-card"></i>
+                </button>
+              {{/unless}}
+            </div>
+
+          </div>
+        {{else}}
+          <div class="cog-text-muted" style="grid-column: 1 / -1; text-align: center; padding: 50px;">
+            No mercenaries found matching your criteria. Try adjusting role/search filters or recruit a custom mercenary!
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+    {{!-- ==================================================== --}}
+    {{!-- TAB 2: ACTIVE CONTRACTS & PARTY RETAINERS            --}}
+    {{!-- ==================================================== --}}
+    {{#if (eq activeTab 'contracts')}}
+      <div class="cog-text-success" style="margin-bottom: 14px; font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+        <span><i class="fa-solid fa-file-contract"></i> ACTIVE PARTY CONTRACTS ({{activeContracts.length}} Retainers Hired)</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {{#each activeContracts as |c|}}
+          <div class="cog-bg-window" style="border: 1px solid var(--cog-success); border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img class="cog-bg-icon-box" src="{{c.img}}" width="48" height="48" style="border-radius: 4px; border: 1px solid var(--cog-border-muted); object-fit: cover;" />
+              <div>
+                <div class="cog-text-strong" style="font-size: 15px; font-weight: bold;">{{c.name}}</div>
+                <div class="cog-text-secondary" style="font-size: 11px;">
+                  {{c.race}} {{c.class}} &bull; Lvl {{c.level}} &bull; Role: <strong class="cog-text-info">{{c.role}}</strong>
+                </div>
+                <div class="cog-text-success" style="font-size: 11px; margin-top: 2px;">
+                  Contract: <strong>{{c.contractDays}} Days Remaining</strong> ({{c.effectiveDailyRate}} GP/Day)
+                </div>
+              </div>
+            </div>
+
+            {{!-- Linked Employers & Housing Dropdown --}}
+            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 200px;">
+              <div class="cog-text-secondary" style="font-size: 11px;">
+                <strong>Linked Employers:</strong>
+                {{#each c.employers as |emp|}}
+                  <span class="cog-bg-window" style="border: 1px solid var(--cog-panel-border); padding: 1px 4px; border-radius: 2px;">{{emp.name}}</span>
+                {{else}}
+                  <span style="font-style: italic;">All Party Crawlers</span>
+                {{/each}}
+              </div>
+
+              {{!-- Assign Safe Room Barracks --}}
+              <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;">
+                <span class="cog-text-magic" style="font-size: 10px; font-weight: bold;"><i class="fa-solid fa-bed"></i> Barracks:</span>
+                <select name="barracks-{{c.id}}" data-change-action="assignBarracks" class="guild-assign-barracks-select cog-bg-window cog-text-strong" data-merc-id="{{c.id}}" style="border: 1px solid var(--cog-panel-border); padding: 2px 6px; font-size: 11px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
+                  <option value="">-- Field Deployed / Unhoused --</option>
+                  {{#each ../spaces as |sp|}}
+                    <option value="{{sp.id}}" {{#if (eq sp.id c.housedSpace.id)}}selected{{/if}}>
+                      {{sp.name}} ({{sp.housedCount}}/{{sp.capacity}} Beds -{{sp.discountPct}}%)
+                    </option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+
+            {{!-- Actions --}}
+            <div style="display: flex; gap: 6px;">
+              {{#if c.canManage}}
+                <button type="button" data-action="extend" class="guild-extend-btn cog-bg-info-fill cog-text-on-fill" data-merc-id="{{c.id}}" data-days="3" style="border: none; border-radius: 3px; padding: 6px 10px; font-size: 11px; font-weight: bold; cursor: pointer;">
+                  +3 Days
+                </button>
+              {{/if}}
+              <button type="button" data-action="openSheet" class="guild-open-sheet-btn cog-bg-surface-strong cog-text-strong" data-merc-id="{{c.id}}" style="border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 6px 10px; font-size: 11px; cursor: pointer;">
+                Sheet
+              </button>
+              {{#if c.canManage}}
+                <button type="button" data-action="dismiss" class="guild-dismiss-btn cog-bg-danger-fill cog-text-on-fill" data-merc-id="{{c.id}}" style="border: none; border-radius: 3px; padding: 6px 10px; font-size: 11px; font-weight: bold; cursor: pointer;">
+                  Dismiss
+                </button>
+              {{/if}}
+            </div>
+          </div>
+        {{else}}
+          <div class="cog-text-muted" style="text-align: center; padding: 50px;">
+            No active mercenary contracts found. Browse the roster tab to hire retainers!
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+    {{!-- ==================================================== --}}
+    {{!-- TAB 3: BARRACKS & PERSONAL SPACES                   --}}
+    {{!-- ==================================================== --}}
+    {{#if (eq activeTab 'barracks')}}
+      <div class="cog-text-magic" style="margin-bottom: 14px; font-size: 14px; font-weight: bold;">
+        <i class="fa-solid fa-person-military-pointing"></i> PERSONAL SPACE BARRACKS &amp; RETAINER HOUSING
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 12px;">
+        {{#each spaces as |sp|}}
+          <div class="cog-bg-window" style="border: 1px solid {{#if sp.hasBarracks}}var(--cog-magic){{else}}var(--cog-panel-border){{/if}}; border-radius: 6px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">{{sp.name}}</h3>
+              <span class="cog-bg-magic-fill cog-text-on-fill" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: bold;">
+                Tier {{sp.tier}} {{sp.size}}
+              </span>
+            </div>
+
+            <div style="font-size: 12px; margin-bottom: 8px;">
+              {{#if sp.hasBarracks}}
+                <div class="{{#if sp.isFull}}cog-text-danger{{else}}cog-text-success{{/if}}" style="font-weight: bold;">
+                  Barracks Capacity: {{sp.housedCount}} / {{sp.capacity}} Retainers Housed
+                </div>
+                <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">
+                  Upkeep Discount: <strong>{{sp.discountPct}}% off</strong> daily rates for housed mercenaries
+                </div>
+              {{else}}
+                <div class="cog-text-warning" style="font-style: italic;">
+                  No Barracks installed. Install Bunkhouse or Quarters upgrades on this space's sheet.
+                </div>
+              {{/if}}
+            </div>
+          </div>
+        {{else}}
+          <div class="cog-text-muted" style="grid-column: 1 / -1; text-align: center; padding: 50px;">
+            No Personal Spaces found. Acquire safe room spaces to house retainers between levels!
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+</div>

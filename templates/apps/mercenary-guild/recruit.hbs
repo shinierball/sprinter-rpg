@@ -1,0 +1,110 @@
+<div class="cog-mercenary-guild-app cog-bg-window cog-text cog-guild-scroll" style="font-family: 'Oswald', sans-serif;{{#if (eq activeTab 'recruit')}} flex: 1; min-height: 0; overflow-y: auto; padding: 14px;{{/if}}">
+    {{!-- ==================================================== --}}
+    {{!-- TAB 4: RECRUIT CUSTOM MERCENARY                      --}}
+    {{!-- ==================================================== --}}
+    {{#if (eq activeTab 'recruit')}}
+      <div class="cog-bg-window" style="border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 16px; max-width: 680px; margin: 0 auto;">
+        <h3 class="cog-text-accent" style="margin-top: 0; font-size: 16px; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 8px;">
+          <i class="fa-solid fa-user-plus"></i> Recruit Freelance Mercenary
+        </h3>
+        <p class="cog-text-secondary" style="font-size: 11px; margin-top: 4px;">
+          Mercenaries can be composed using any crawler race, skills, spells, and equipment without artificial restriction.
+        </p>
+
+        <div class="guild-recruit-form" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+            <div>
+              <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Name</label>
+              <input class="cog-bg-window cog-text-strong" type="text" name="name" placeholder="Mercenary Name" required style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+            </div>
+            <div>
+              <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Level</label>
+              <input class="cog-bg-window cog-text-strong" type="number" name="level" value="1" min="1" max="20" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+            <div>
+              <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Crawler Race</label>
+              <select class="cog-bg-window cog-text-strong" name="race" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
+                {{#each raceOptions as |group|}}
+                  <optgroup label="{{group.label}}">
+                    {{#each group.options as |opt|}}
+                      <option value="{{opt.value}}">{{opt.label}}</option>
+                    {{/each}}
+                  </optgroup>
+                {{/each}}
+              </select>
+            </div>
+            <div>
+              <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Class / Archetype</label>
+              <input class="cog-bg-window cog-text-strong" type="text" name="class" value="Bruiser" placeholder="e.g. Bruiser, Warmage" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+            </div>
+            <div>
+              <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Role</label>
+              <select class="cog-bg-window cog-text-strong" name="role" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
+                <option value="Tank">Tank</option>
+                <option value="DPS" selected>DPS</option>
+                <option value="Healer">Healer</option>
+                <option value="Support">Support</option>
+                <option value="Scout">Scout</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Daily Rate (Gold / Day)</label>
+              <input class="cog-bg-window cog-text-strong" type="number" name="dailyRate" value="25" min="0" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+            </div>
+            <div>
+              <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Avatar Image Path</label>
+              <input class="cog-bg-window cog-text-strong" type="text" name="img" placeholder="icons/svg/mystery-man.svg" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+            </div>
+          </div>
+
+          {{!-- Ability Scores (Strictly >= 0, standard values) --}}
+          <div>
+            <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Core Ability Scores</label>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 4px;">
+              <div>
+                <span class="cog-text-secondary" style="font-size: 10px;">STR</span>
+                <input class="cog-bg-window cog-text-strong" type="number" name="str" value="10" min="1" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; text-align: center; font-family: 'Oswald', sans-serif;" />
+              </div>
+              <div>
+                <span class="cog-text-secondary" style="font-size: 10px;">INT</span>
+                <input class="cog-bg-window cog-text-strong" type="number" name="int" value="10" min="1" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; text-align: center; font-family: 'Oswald', sans-serif;" />
+              </div>
+              <div>
+                <span class="cog-text-secondary" style="font-size: 10px;">CON</span>
+                <input class="cog-bg-window cog-text-strong" type="number" name="con" value="10" min="1" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; text-align: center; font-family: 'Oswald', sans-serif;" />
+              </div>
+              <div>
+                <span class="cog-text-secondary" style="font-size: 10px;">DEX</span>
+                <input class="cog-bg-window cog-text-strong" type="number" name="dex" value="10" min="1" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; text-align: center; font-family: 'Oswald', sans-serif;" />
+              </div>
+              <div>
+                <span class="cog-text-secondary" style="font-size: 10px;">CHA</span>
+                <input class="cog-bg-window cog-text-strong" type="number" name="cha" value="10" min="1" style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; text-align: center; font-family: 'Oswald', sans-serif;" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Special Traits</label>
+            <input class="cog-bg-window cog-text-strong" type="text" name="special" placeholder="e.g. Shield Wall, Backstab..." style="width: 100%; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+          </div>
+
+          <div>
+            <label class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Background / Contract Notes</label>
+            <textarea class="cog-bg-window cog-text-strong" name="notes" placeholder="Notes on personality, terms, or past crawls..." style="width: 100%; height: 60px; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;"></textarea>
+          </div>
+
+          <button class="cog-bg-accent-fill cog-text-on-fill" type="button" data-action="recruit" style="border: 1px solid var(--cog-accent-strong-fill); padding: 10px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px;">
+            <i class="fa-solid fa-file-signature"></i> Ratify &amp; Enlist Mercenary
+          </button>
+        </div>
+      </div>
+    {{/if}}
+
+</div>

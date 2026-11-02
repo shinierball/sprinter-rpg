@@ -1,0 +1,12 @@
+<div class="cog-manager-footer cog-bg-window cog-text-secondary" style="padding: 6px 14px; border-top: 1px solid var(--cog-panel-border); font-size: 11px; display: flex; justify-content: space-between; align-items: center;">
+  <div>
+    Showing <strong>{{items.length}}</strong> items. Drag items directly onto character sheets or maps.
+  </div>
+  <div>
+    {{#if canSeeValue}}
+      <span class="cog-text-gold"><i class="fa-solid fa-check-circle"></i> Determine Value active (Gold visible)</span>
+    {{else}}
+      <span class="cog-text-secondary"><i class="fa-solid fa-lock"></i> Value hidden (Requires Determine Value Rank 15)</span>
+    {{/if}}
+  </div>
+</div>

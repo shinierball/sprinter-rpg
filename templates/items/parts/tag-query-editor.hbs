@@ -1,0 +1,50 @@
+{{!--
+  Tag query editor (pill lists plus a role select and a tag picker per bucket).
+  Parameters: query = { path, roleOptions, canCreateSituation, buckets: [{ bucket, path, label, tags: [{ id, label, unregistered, badges }] }] }
+                from buildQueryView (roleOptions is null where the query has no roles; New situation is GM only),
+              tagOptions = registered tags grouped by namespace.
+  `label` is an i18n key. None of these controls has a `name`: they are action delegates, not form inputs.
+--}}
+<div class="cog-query-editor">
+  {{#each query.buckets as |b|}}
+    <span class="cog-field-label">{{localize b.label}}</span>
+    <div class="cog-applies-query-row" data-bucket="{{b.bucket}}">
+      <div class="cog-query-pills">
+        {{#each b.tags as |t|}}
+          <span class="cog-query-pill {{#if t.unregistered}}cog-query-pill-warn{{/if}}">
+            {{t.label}}
+            {{#if t.unregistered}}<i class="fa-solid fa-triangle-exclamation" title="{{localize 'COG.Rows.Query.Unregistered'}}"></i>{{/if}}
+            {{#each t.badges as |pb|}}<i class="fa-solid fa-circle-exclamation cog-query-pill-flag" title="{{localize pb.key value=pb.value}}"></i>{{/each}}
+            <a class="cog-query-pill-remove" data-action="removeQueryTag" data-path="{{b.path}}" data-bucket="{{b.bucket}}" data-tag="{{t.id}}" title="{{localize 'COG.Rows.Query.RemoveTag'}}">&times;</a>
+          </span>
+        {{else}}
+          <span class="cog-query-empty">{{localize "COG.Rows.Query.NoRestriction"}}</span>
+        {{/each}}
+      </div>
+      <div class="cog-query-add">
+        {{#if ../query.roleOptions}}
+          <select class="cog-field-input cog-query-role" title="{{localize 'COG.Rows.Query.Role'}}">
+            {{#each ../query.roleOptions as |r|}}
+              <option value="{{r.value}}" {{#if r.selected}}selected{{/if}}>{{localize r.labelKey}}</option>
+            {{/each}}
+          </select>
+        {{/if}}
+        <select class="cog-field-input cog-query-tag">
+          <option value="">{{localize "COG.Rows.Query.SelectTag"}}</option>
+          {{#each ../tagOptions}}
+            <optgroup label="{{label}}">
+              {{#each tags}}
+                <option value="{{id}}">{{label}}</option>
+              {{/each}}
+            </optgroup>
+          {{/each}}
+        </select>
+        <input class="cog-field-input cog-query-custom" type="text" placeholder="{{localize 'COG.Rows.Query.CustomId'}}" />
+        <button type="button" class="cog-btn cog-query-add-btn" data-action="addQueryTag" data-path="{{b.path}}" data-bucket="{{b.bucket}}">{{localize "COG.Rows.Query.Add"}}</button>
+        {{#if ../query.canCreateSituation}}
+          <button type="button" class="cog-btn cog-query-add-btn" data-action="createSituationTag" data-path="{{b.path}}" data-bucket="{{b.bucket}}">{{localize "COG.Rows.Query.NewSituation"}}</button>
+        {{/if}}
+      </div>
+    </div>
+  {{/each}}
+</div>

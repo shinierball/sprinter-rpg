@@ -1,0 +1,202 @@
+<div class="cog-contest-tracker cog-bg-window cog-text-strong">
+  {{!-- Contest chooser and setup --}}
+  <div class="cog-ct-bar">
+    <label class="cog-ct-field">{{localize "COG.Contest.Tracker.Contest"}}
+      <select data-change-action="selectContest">
+        <option value="" {{#unless running}}selected{{/unless}}>{{localize "COG.Contest.Tracker.NewContest"}}</option>
+        {{#each contests}}
+          <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </label>
+    <label class="cog-ct-field">{{localize "COG.Contest.Tracker.Kind"}}
+      <select data-change-action="editField" data-scope="meta" data-field="kind" {{#if running}}disabled{{/if}}>
+        {{#each kinds}}
+          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+        {{/each}}
+      </select>
+    </label>
+    <span class="cog-ct-floor">{{localize "COG.Contest.Tracker.Floor"}} <strong>{{floor}}</strong></span>
+    <span class="cog-ct-status">[{{status}}]</span>
+  </div>
+  {{#if kindHint}}<div class="cog-ct-hint">{{kindHint}}</div>{{/if}}
+
+  {{#if isChase}}
+    <div class="cog-ct-bar">
+      <label class="cog-ct-field">{{localize "COG.Contest.Tracker.CatchAt"}}
+        <input type="number" min="1" value="{{thresholds.catch}}" data-change-action="editField" data-scope="meta" data-field="catch" {{#if running}}disabled{{/if}} />
+      </label>
+      <label class="cog-ct-field">{{localize "COG.Contest.Tracker.LoseAt"}}
+        <input type="number" max="-1" value="{{thresholds.lose}}" data-change-action="editField" data-scope="meta" data-field="lose" {{#if running}}disabled{{/if}} />
+      </label>
+    </div>
+  {{/if}}
+
+  {{#if missing}}
+    <div class="cog-ct-warning">
+      <span>{{localize "COG.Contest.Tracker.CardMissing"}}</span>
+      <button type="button" class="cog-btn" data-action="repostCard"><i class="fa-solid fa-rotate"></i> {{localize "COG.Contest.Tracker.Repost"}}</button>
+    </div>
+  {{/if}}
+
+  {{!-- Participants --}}
+  <div class="cog-ct-section">
+    <div class="cog-ct-section-head">
+      <span>{{localize "COG.Contest.Tracker.Participants"}} ({{participants.length}})</span>
+      <span class="cog-ct-actions">
+        <button type="button" class="cog-btn" data-action="addSelected"><i class="fa-solid fa-bullseye"></i> {{localize "COG.Contest.Tracker.AddSelected"}}</button>
+        <button type="button" class="cog-btn" data-action="addCombatants"><i class="fa-solid fa-swords"></i> {{localize "COG.Contest.Tracker.AddCombatants"}}</button>
+      </span>
+    </div>
+    {{#if hasParticipants}}
+      <table class="cog-ct-table">
+        <tbody>
+          {{#each participants}}
+            <tr class="cog-ct-participant {{#if this.derivedOut}}cog-ct-out{{/if}}" data-participant-id="{{this.id}}">
+              <td>
+                <input type="text" value="{{this.name}}" data-change-action="editField" data-scope="participant" data-id="{{this.id}}" data-field="name" />
+                {{#if this.missingActor}}<span class="cog-ct-badge">{{localize "COG.Contest.Tracker.NoActor"}}</span>{{/if}}
+              </td>
+              <td>
+                <select data-change-action="editField" data-scope="participant" data-id="{{this.id}}" data-field="role">
+                  {{#each this.roles}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+                </select>
+              </td>
+              <td>
+                <label class="cog-ct-check" title="{{localize 'COG.Contest.Tracker.FixedHint'}}">
+                  <input type="checkbox" data-change-action="editField" data-scope="participant" data-id="{{this.id}}" data-field="mode" {{#unless this.rolls}}checked{{/unless}} {{#if this.fixedLocked}}disabled{{/if}} />
+                  {{localize "COG.Contest.Tracker.Fixed"}}
+                </label>
+              </td>
+              <td class="cog-ct-actions">
+                {{#if ../running}}
+                  {{#if this.isOut}}
+                    <span class="cog-ct-badge">{{this.outText}}</span>
+                    <button type="button" class="cog-btn" data-action="clearOut" data-participant-id="{{this.id}}">{{localize "COG.Contest.Tracker.Reinstate"}}</button>
+                  {{else}}
+                    <button type="button" class="cog-btn" data-action="markOut" data-participant-id="{{this.id}}">{{localize "COG.Contest.Tracker.MarkOut"}}</button>
+                  {{/if}}
+                {{/if}}
+                <button type="button" class="cog-btn" data-action="removeParticipant" data-participant-id="{{this.id}}" title="{{localize 'COG.Contest.Tracker.Remove'}}"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="cog-ct-hint">{{localize "COG.Contest.Tracker.NoParticipants"}}</div>
+    {{/if}}
+  </div>
+
+  {{!-- Legs --}}
+  <div class="cog-ct-section">
+    <div class="cog-ct-section-head">
+      <span>{{localize "COG.Contest.Tracker.Legs"}} ({{legs.length}})</span>
+      <span class="cog-ct-actions">
+        {{#if hasTables}}
+          <select class="cog-ct-table-pick" title="{{localize 'COG.Contest.Tracker.DrawTableHint'}}" data-change-action="selectTable">
+            <option value="" {{#if tableBlank}}selected{{/if}}>{{localize "COG.Contest.Tracker.DrawTable"}}</option>
+            {{#each tableGroups}}
+              <optgroup label="{{this.label}}">
+                {{#each this.options}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+              </optgroup>
+            {{/each}}
+          </select>
+        {{/if}}
+        <button type="button" class="cog-btn" data-action="addLeg"><i class="fa-solid fa-plus"></i> {{localize "COG.Contest.Tracker.AddLeg"}}</button>
+      </span>
+    </div>
+    {{#each legs}}
+      <div class="cog-ct-leg" data-leg-id="{{this.id}}" data-leg-status="{{this.status}}">
+        <div class="cog-ct-leg-head">
+          <input type="text" value="{{this.label}}" data-change-action="editField" data-scope="leg" data-id="{{this.id}}" data-field="label" />
+          <span class="cog-ct-status">[{{this.status}}]</span>
+          {{#if this.canOpen}}<button type="button" class="cog-btn" data-action="openLeg" data-leg-id="{{this.id}}"><i class="fa-solid fa-play"></i> {{localize "COG.Contest.Tracker.Open"}}</button>{{/if}}
+          {{#if this.canClose}}<button type="button" class="cog-btn {{#if this.allIn}}cog-ct-ready{{/if}}" data-action="closeLeg" data-leg-id="{{this.id}}"><i class="fa-solid fa-flag-checkered"></i> {{localize "COG.Contest.Tracker.Close"}}</button>{{/if}}
+          {{#unless this.isClosed}}{{#if ../hasTables}}<button type="button" class="cog-btn" data-action="drawLeg" data-leg-id="{{this.id}}" title="{{localize 'COG.Contest.Tracker.DrawLegHint'}}"><i class="fa-solid fa-dice-d20"></i> {{localize "COG.Contest.Tracker.DrawLeg"}}</button>{{/if}}{{/unless}}
+          {{#if this.isPending}}<button type="button" class="cog-btn" data-action="removeLeg" data-leg-id="{{this.id}}" title="{{localize 'COG.Contest.Tracker.Remove'}}"><i class="fa-solid fa-trash"></i></button>{{/if}}
+        </div>
+        <div class="cog-ct-leg-check">
+          <label class="cog-ct-field">{{localize "COG.Contest.Tracker.Skill"}}
+            <select data-change-action="editField" data-scope="leg" data-id="{{this.id}}" data-field="skill" {{#if this.isClosed}}disabled{{/if}}>
+              <option value="" {{#if this.skillBlank}}selected{{/if}}>{{localize "COG.Contest.Tracker.StatOnly"}}</option>
+              {{#each this.skillGroups}}
+                <optgroup label="{{this.label}}">
+                  {{#each this.options}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+                </optgroup>
+              {{/each}}
+            </select>
+          </label>
+          <label class="cog-ct-field">{{localize "COG.Contest.Tracker.Stat"}}
+            <select data-change-action="editField" data-scope="leg" data-id="{{this.id}}" data-field="stat" {{#if this.isClosed}}disabled{{/if}}>
+              {{#each this.stats}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+            </select>
+          </label>
+          <label class="cog-ct-field">{{localize "COG.Contest.Tracker.MoveMode"}}
+            <select data-change-action="editField" data-scope="leg" data-id="{{this.id}}" data-field="moveMode" {{#if this.isClosed}}disabled{{/if}}>
+              {{#each this.moveModes}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+            </select>
+          </label>
+        </div>
+        {{#unless this.isClosed}}
+          <table class="cog-ct-table">
+            <tbody>
+              {{#each this.rows}}
+                <tr data-participant-id="{{this.participantId}}">
+                  <td>{{this.name}}</td>
+                  <td>
+                    {{#if this.result}}
+                      <strong>{{this.result.total}}</strong>
+                      {{#if this.sourceLabel}}<em>({{this.sourceLabel}})</em>{{/if}}
+                      {{#if this.result.ruleBreak}}<span class="cog-ct-badge cog-ct-rulebreak">{{localize "COG.Contest.Tracker.RuleBreak"}}</span>{{/if}}
+                    {{else}}<span class="cog-ct-hint">&mdash;</span>{{/if}}
+                  </td>
+                  <td>
+                    {{#if ../../running}}
+                      <input type="number" class="cog-ct-result" placeholder="{{localize 'COG.Contest.Tracker.GmResult'}}" title="{{localize 'COG.Contest.Tracker.GmResultHint'}}" data-change-action="setResult" data-leg-id="{{../id}}" data-participant-id="{{this.participantId}}" />
+                    {{/if}}
+                  </td>
+                  <td>
+                    {{#if this.overridable}}
+                      <select class="cog-ct-override" title="{{localize 'COG.Contest.Tracker.OverrideHint'}}" data-change-action="setOverride" data-leg-id="{{../id}}" data-participant-id="{{this.participantId}}">
+                        <option value="" {{#if this.overrideBlank}}selected{{/if}}>{{localize "COG.Contest.Tracker.NoOverride"}}</option>
+                        {{#each this.overrideGroups}}
+                          <optgroup label="{{this.label}}">
+                            {{#each this.options}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+                          </optgroup>
+                        {{/each}}
+                      </select>
+                    {{/if}}
+                    {{#if this.proposal}}
+                      <span class="cog-ct-proposal">{{localize "COG.Contest.Tracker.Proposes"}} <strong>{{this.proposalName}}</strong></span>
+                      <button type="button" class="cog-btn" data-action="acceptProposal" data-leg-id="{{../id}}" data-participant-id="{{this.participantId}}"><i class="fa-solid fa-check"></i> {{localize "COG.Contest.Tracker.Accept"}}</button>
+                      <button type="button" class="cog-btn" data-action="dismissProposal" data-leg-id="{{../id}}" data-participant-id="{{this.participantId}}"><i class="fa-solid fa-xmark"></i> {{localize "COG.Contest.Tracker.Dismiss"}}</button>
+                    {{/if}}
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        {{/unless}}
+      </div>
+    {{else}}
+      <div class="cog-ct-hint">{{localize "COG.Contest.Tracker.NoLegs"}}</div>
+    {{/each}}
+  </div>
+
+  {{#if standings.length}}
+    <ul class="cog-ct-standings">
+      {{#each standings}}<li><strong>{{this.name}}</strong>: {{this.text}}</li>{{/each}}
+    </ul>
+  {{/if}}
+
+  <div class="cog-ct-footer">
+    {{#if running}}
+      <button type="button" class="cog-btn" data-action="newContest"><i class="fa-solid fa-file"></i> {{localize "COG.Contest.Tracker.NewContest"}}</button>
+      <button type="button" class="cog-btn" data-action="repostCard"><i class="fa-solid fa-rotate"></i> {{localize "COG.Contest.Tracker.Repost"}}</button>
+      {{#unless done}}<button type="button" class="cog-btn" data-action="endContest"><i class="fa-solid fa-stop"></i> {{localize "COG.Contest.Tracker.End"}}</button>{{/unless}}
+    {{else}}
+      <button type="button" class="cog-btn cog-btn-success" data-action="postContest" {{#unless canPost}}disabled{{/unless}}><i class="fa-solid fa-paper-plane"></i> {{localize "COG.Contest.Tracker.Post"}}</button>
+    {{/if}}
+  </div>
+</div>

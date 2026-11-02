@@ -1,0 +1,51 @@
+<!-- 6. Custom Perks: inline rows and each perk's Mechanics rows editor (D5). -->
+<section class="cog-builder-section">
+  <div class="cog-section-title">
+    <i class="fa-solid fa-pen-ruler"></i> 6. Custom Homebrew Perks
+    <span class="cog-section-badge">Custom Benefits & Drawbacks</span>
+  </div>
+
+  <div class="cog-custom-adder-box">
+    <div class="cog-entry-list">
+      {{#each customBenefitRows}}
+        <div class="cog-perk-entry">
+        <div class="cog-entry-adder-row cog-pb-row" data-row="customBenefits" data-index="{{@index}}">
+          <input type="text" id="{{@root.rootId}}-customBenefits-{{@index}}-name" data-input-action="setRowField" data-change-action="setRowField" data-row-field="name" value="{{this.name}}" placeholder="Custom benefit name">
+          <select id="{{@root.rootId}}-customBenefits-{{@index}}-cost" data-change-action="setRowField" data-row-field="cost">
+            {{#each this.costOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+          </select>
+          {{#if this.unfilled}}<span class="cog-param-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.PointBuilder.Unfilled"}}</span>{{/if}}
+          <span class="cog-entry-cost">+{{this.cost}} BP</span>
+          <button type="button" class="cog-btn cog-perk-rows-toggle{{#if this.mechanics.open}} active{{/if}}" id="{{@root.rootId}}-customBenefits-{{@index}}-mechanics" data-action="togglePerkRows" data-list="customBenefits" data-index="{{@index}}" aria-expanded="{{#if this.mechanics.open}}true{{else}}false{{/if}}"><i class="fa-solid fa-gears"></i> {{localize "COG.PointBuilder.Mechanics" count=this.mechanics.count}}</button>
+          <button type="button" class="cog-btn-icon cog-remove-custom-benefit-btn" data-action="removeCustomBenefitRow" data-index="{{@index}}" title="Remove"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        {{> "systems/sprinter-rpg/templates/apps/point-builder/perk-mechanics.hbs" mechanics=this.mechanics}}
+        </div>
+      {{/each}}
+    </div>
+    <div class="cog-entry-adder-row">
+      <button type="button" id="{{@root.rootId}}-add-custom-benefit" class="cog-btn cog-add-custom-benefit-btn" data-action="addCustomBenefitRow"><i class="fa-solid fa-plus"></i> Add Benefit</button>
+    </div>
+
+    <div class="cog-entry-list">
+      {{#each customDetrimentRows}}
+        <div class="cog-perk-entry">
+        <div class="cog-entry-adder-row cog-pb-row" data-row="customDetriments" data-index="{{@index}}">
+          <input type="text" id="{{@root.rootId}}-customDetriments-{{@index}}-name" data-input-action="setRowField" data-change-action="setRowField" data-row-field="name" value="{{this.name}}" placeholder="Custom detriment name">
+          <select id="{{@root.rootId}}-customDetriments-{{@index}}-extraPoints" data-change-action="setRowField" data-row-field="extraPoints">
+            {{#each this.costOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+          </select>
+          {{#if this.unfilled}}<span class="cog-param-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.PointBuilder.Unfilled"}}</span>{{/if}}
+          <span class="cog-entry-cost refund">+{{this.extraPoints}} Extra BP</span>
+          <button type="button" class="cog-btn cog-perk-rows-toggle{{#if this.mechanics.open}} active{{/if}}" id="{{@root.rootId}}-customDetriments-{{@index}}-mechanics" data-action="togglePerkRows" data-list="customDetriments" data-index="{{@index}}" aria-expanded="{{#if this.mechanics.open}}true{{else}}false{{/if}}"><i class="fa-solid fa-gears"></i> {{localize "COG.PointBuilder.Mechanics" count=this.mechanics.count}}</button>
+          <button type="button" class="cog-btn-icon cog-remove-custom-detriment-btn" data-action="removeCustomDetrimentRow" data-index="{{@index}}" title="Remove"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        {{> "systems/sprinter-rpg/templates/apps/point-builder/perk-mechanics.hbs" mechanics=this.mechanics}}
+        </div>
+      {{/each}}
+    </div>
+    <div class="cog-entry-adder-row">
+      <button type="button" id="{{@root.rootId}}-add-custom-detriment" class="cog-btn cog-add-custom-detriment-btn" data-action="addCustomDetrimentRow"><i class="fa-solid fa-plus"></i> Add Detriment</button>
+    </div>
+  </div>
+</section>

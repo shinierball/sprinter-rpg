@@ -1,0 +1,47 @@
+<div class="cog-archive-top">
+  <!-- Top App Header -->
+  <header class="cog-archive-header">
+    <h2><i class="fa-solid fa-book-skull"></i> ARCHIVED BATTLES & ENCOUNTER HISTORY</h2>
+    {{#if selectedCombat}}
+      <div class="cog-archive-header-actions">
+        {{#if selectedCombat.isLive}}
+          <button type="button" class="cog-archive-save-live-btn" data-action="saveLive" data-tooltip="Save this active encounter snapshot to permanent archive">
+            <i class="fa-solid fa-floppy-disk"></i> Save to Archive
+          </button>
+        {{/if}}
+        {{#if isGM}}
+          {{#if selectedCombat.isArchived}}
+            <button type="button" class="cog-archive-delete-btn" data-action="deleteBattle" data-tooltip="Delete this archived encounter">
+              <i class="fa-solid fa-trash"></i> Delete Battle
+            </button>
+          {{/if}}
+        {{/if}}
+      </div>
+    {{/if}}
+  </header>
+
+  <!-- Quick Combat Selector Bar -->
+  <nav class="cog-archive-nav-bar">
+    <div class="cog-archive-encounter-picker">
+      <span class="cog-picker-label"><i class="fa-solid fa-swords"></i> SELECT ENCOUNTER:</span>
+      <button type="button" class="cog-archive-nav-btn prev-combat" data-action="selectCombat" data-tooltip="Previous Encounter" data-combat-id="{{prevCombat.id}}" {{#unless prevCombat}}disabled{{/unless}}>
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <select class="cog-archive-combat-select" name="combatId" data-change-action="selectCombatFromSelect" aria-label="Select Combat Encounter">
+        {{#if hasCombats}}
+          {{#each combatOptions as |combat|}}
+            <option value="{{combat.id}}" {{#if combat.selected}}selected{{/if}}>
+              {{combat.name}} — {{combat.dateString}} ({{combat.totalRounds}} Rds){{#if combat.isLive}} [ACTIVE]{{/if}}
+            </option>
+          {{/each}}
+        {{else}}
+          <option value="">No combat encounters found</option>
+        {{/if}}
+      </select>
+      <button type="button" class="cog-archive-nav-btn next-combat" data-action="selectCombat" data-tooltip="Next Encounter" data-combat-id="{{nextCombat.id}}" {{#unless nextCombat}}disabled{{/unless}}>
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+    <span class="cog-archive-count-badge">{{combats.length}} Battle{{#unless (eq combats.length 1)}}s{{/unless}}</span>
+  </nav>
+</div>

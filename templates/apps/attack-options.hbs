@@ -1,0 +1,117 @@
+{{!-- Attack Options pop-up. Context: src/apps/attack-options-dialog.mjs `buildDialogContext`.
+     Inputs live in the dialog's own form; the controls without a name use data-action delegates. --}}
+<div class="cog-attack-options-form">
+  <header class="cog-attack-options-header">
+    <strong class="cog-attack-options-title">{{attackName}}</strong>
+    {{#if plainFormula}}<span class="cog-attack-options-formula">{{text.formula}}</span>{{/if}}
+    {{#each hints}}<p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{this}}</p>{{/each}}
+  </header>
+
+  {{#if showEffects}}
+  <fieldset class="cog-attack-options-section cog-attack-effects">
+    <legend>{{text.damageEffect}}</legend>
+    <label class="cog-attack-option cog-attack-option-none" data-effect="none">
+      <span class="cog-attack-option-head">
+        <input type="radio" name="damageEffect" value="none" {{#if noneChecked}}checked{{/if}}>
+        <strong class="cog-attack-option-name">{{text.none}}</strong>
+        {{#if aiFavorIfNone}}<span class="cog-badge cog-badge-favor">{{text.aiFavor}}</span>{{/if}}
+      </span>
+      <span class="cog-attack-option-desc">{{text.noneDesc}}</span>
+    </label>
+    {{#each effects}}
+    <label class="cog-attack-option cog-attack-effect" data-effect="{{identifier}}">
+      <span class="cog-attack-option-head">
+        <input type="radio" name="damageEffect" value="{{identifier}}" {{#if checked}}checked{{/if}}>
+        <i class="fa-solid {{icon}}"></i>
+        <strong class="cog-attack-option-name">{{name}}</strong>
+        {{#if untrained}}<span class="cog-badge cog-badge-untrained">{{../text.untrained}}</span>{{/if}}
+        <span class="cog-badge cog-badge-success">{{rankText}}</span>
+        {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=cooldownBadge}}
+      </span>
+      {{#if summary}}<span class="cog-attack-option-desc">{{summary}}</span>{{/if}}
+      {{#if preview}}<span class="cog-attack-option-formula">{{preview}}</span>{{/if}}
+    </label>
+    {{#if variants.length}}
+    <div class="cog-attack-variants" data-variants-for="{{identifier}}" {{#unless checked}}hidden{{/unless}}>
+      <label class="cog-attack-variant">
+        <input type="radio" name="variant-{{identifier}}" value="" {{#unless variantChecked}}checked{{/unless}}> {{../text.variantNormal}}
+      </label>
+      {{#each variants}}
+      <label class="cog-attack-variant">
+        <input type="radio" name="variant-{{../identifier}}" value="{{id}}" {{#if checked}}checked{{/if}}> {{label}}
+        {{#if minRankText}}<span class="cog-badge cog-badge-success">{{minRankText}}</span>{{/if}}
+      </label>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{/each}}
+    {{#if effects.length}}
+    <button type="button" class="cog-attack-add-another cog-badge cog-badge-rule-break" data-action="addAnotherEffect">{{text.addAnother}}</button>
+    {{/if}}
+  </fieldset>
+  {{/if}}
+
+  {{#if maneuvers.length}}
+  <fieldset class="cog-attack-options-section cog-attack-maneuvers">
+    <legend>{{text.maneuvers}}</legend>
+    {{#each maneuvers}}
+    <label class="cog-situation-toggle cog-attack-maneuver" data-maneuver="{{tag}}">
+      <input type="checkbox" name="maneuver" value="{{tag}}" {{#if checked}}checked{{/if}}>
+      {{label}}
+      {{#if rankText}}<span class="cog-badge cog-badge-success">{{rankText}}</span>{{/if}}
+      {{#if note}}<span class="cog-badge cog-badge-warning">{{note}}</span>{{/if}}
+      {{#if fromText}}<small class="cog-situation-source">{{fromText}}</small>{{/if}}
+      {{#if readsText}}<small class="cog-situation-source">{{readsText}}</small>{{/if}}
+    </label>
+    {{/each}}
+  </fieldset>
+  {{/if}}
+
+  {{#if situations.length}}
+  <fieldset class="cog-attack-options-section cog-attack-situations">
+    <legend>{{text.situations}}</legend>
+    {{#each situations}}
+    <label class="cog-situation-toggle">
+      <input type="checkbox" name="situation" value="{{tag}}" {{#if checked}}checked{{/if}}>
+      {{label}}
+      {{#if fromText}}<small class="cog-situation-source">{{fromText}}</small>{{/if}}
+      {{#if used}}<small class="cog-situation-source">{{../text.used}}</small>{{/if}}
+      {{#if readsText}}<small class="cog-situation-source">{{readsText}}</small>{{/if}}
+    </label>
+    {{/each}}
+  </fieldset>
+  {{/if}}
+
+  {{#if calledPlays.length}}
+  <fieldset class="cog-attack-options-section cog-called-play-toggles">
+    <legend>{{text.calledPlay}}</legend>
+    {{#each calledPlays}}
+    <label class="cog-situation-toggle cog-called-play-toggle">
+      <input type="checkbox" name="calledPlay" value="{{id}}" checked> {{label}}
+    </label>
+    {{/each}}
+  </fieldset>
+  {{/if}}
+
+  {{#if showCameras}}
+  <fieldset class="cog-attack-options-section cog-camera-toggles">
+    <legend>{{text.cameras}}</legend>
+    {{#each cameras}}
+    <label class="cog-situation-toggle cog-camera-toggle">
+      <input type="radio" name="cameras" value="{{id}}" {{#if checked}}checked{{/if}}> {{label}}
+    </label>
+    {{/each}}
+    <small class="cog-situation-source">{{text.camerasHint}}</small>
+  </fieldset>
+  {{/if}}
+
+  {{#if showEffects}}
+  <fieldset class="cog-attack-options-section cog-damage-effect-mark" {{#if noneChecked}}hidden{{/if}}>
+    <legend>{{text.mark}}</legend>
+    <label class="cog-attack-mark-choice"><input type="radio" name="markTarget" value="attack" {{#if markAttack}}checked{{/if}}> {{text.markAttack}}</label>
+    <label class="cog-attack-mark-choice"><input type="radio" name="markTarget" value="effect" {{#unless markAttack}}checked{{/unless}}> {{text.markEffect}}</label>
+  </fieldset>
+  {{/if}}
+
+  <p class="cog-rule-hint cog-attack-options-footer">{{text.skipHint}}</p>
+</div>

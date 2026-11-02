@@ -1,0 +1,21 @@
+<header class="cog-mob-creator-header flexrow">
+  <div class="header-title-group">
+    <h1 class="creator-title">
+      <i class="fa-solid fa-skull-crossbones"></i>
+      {{#if isTuning}}
+        TUNE MOB: <span class="highlight-actor">{{actorName}}</span>
+      {{else}}
+        MOB CREATOR &amp; BOSS BALANCER STUDIO
+      {{/if}}
+    </h1>
+    <div class="creator-subtitle">
+      {{#if isBoss}}
+        <span class="cog-badge boss-tier-badge"><i class="fa-solid fa-crown"></i> {{upper state.bossTier}} BOSS</span>
+      {{else}}
+        <span class="cog-badge mob-badge"><i class="fa-solid fa-shield"></i> REGULAR MOB</span>
+      {{/if}}
+      <span class="cog-badge floor-badge"><i class="fa-solid fa-dungeon"></i> FLOOR {{state.designFloor}} (NATIVE)</span>
+      <span class="cog-badge level-badge"><i class="fa-solid fa-bolt"></i> LEVEL {{state.level}}</span>
+    </div>
+  </div>
+</header>

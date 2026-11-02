@@ -1,0 +1,65 @@
+{{!--
+  The race and class `startingItems` rows: one card per entry with its item type, how (fixed or choose),
+  quantity and label, then the item's identifier (a text input with a datalist of the catalog's identifiers; any other
+  identifier may be typed) or, for a choice, the tag query it picks from. Parameter: startingItems =
+  identityRows.startingItems (src/sheets/item/context-identity-rows.mjs). Writes go through the item's update.
+  A half-filled entry shows a chip and the builder leaves it out (CONTRIBUTING rule 2).
+--}}
+<div class="cog-modifier-block cog-starting-item-block" data-array="startingItems">
+  <div class="cog-banner-header cog-modifier-header">
+    <span><i class="fa-solid fa-box-open"></i> {{localize "COG.Rows.StartingItem.Title"}}</span>
+  </div>
+  <div class="cog-modifier-body">
+    {{#each startingItems.rows as |r|}}
+      <div class="cog-modifier-card{{#if r.incomplete}} cog-grant-row-incomplete{{/if}}" data-modifier-index="{{r.index}}" data-starting-item-path="{{r.path}}">
+        {{#if r.incomplete}}
+          <span class="cog-param-warning" title="{{r.problem}}"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.Rows.StartingItem.Incomplete"}}</span>
+        {{/if}}
+        <div class="cog-field-row">
+          <div class="cog-field-group small">
+            <span class="cog-field-label">{{localize "COG.Rows.StartingItem.Field.itemType"}}</span>
+            <select class="cog-field-input" name="{{r.itemTypeName}}" data-row-field="itemType">
+              {{#each r.itemTypeOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+            </select>
+          </div>
+          <div class="cog-field-group small">
+            <span class="cog-field-label">{{localize "COG.Rows.StartingItem.Field.mode"}}</span>
+            <select class="cog-field-input" name="{{r.modeName}}" data-row-field="mode">
+              {{#each r.modeOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{localize o.labelKey}}</option>{{/each}}
+            </select>
+          </div>
+          <div class="cog-field-group small">
+            <span class="cog-field-label">{{localize "COG.Rows.StartingItem.Field.quantity"}}</span>
+            <input class="cog-field-input" type="number" min="1" step="1" name="{{r.quantityName}}" data-row-field="quantity" value="{{r.quantity}}" />
+          </div>
+          <div class="cog-field-group small">
+            <span class="cog-field-label">{{localize "COG.Rows.StartingItem.Field.label"}}</span>
+            <input class="cog-field-input" type="text" name="{{r.labelName}}" data-row-field="label" value="{{r.label}}" placeholder="{{localize 'COG.Rows.Placeholder.Label'}}" />
+          </div>
+          {{#unless r.isChoice}}
+            <div class="cog-field-group small">
+              <span class="cog-field-label">{{localize "COG.Rows.StartingItem.Field.identifier"}}</span>
+              <input class="cog-field-input" type="text" name="{{r.identifierName}}" data-row-field="identifier" value="{{r.identifier}}" list="{{r.listId}}" />
+              <datalist id="{{r.listId}}">
+                {{#each r.suggestions as |s|}}<option value="{{s.value}}">{{s.label}}</option>{{/each}}
+              </datalist>
+            </div>
+          {{/unless}}
+        </div>
+        {{#if r.isChoice}}
+          <div class="cog-field-group cog-grant-query" data-row-field="query">
+            <span class="cog-field-label">{{localize "COG.Rows.StartingItem.Field.query"}}</span>
+            {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=r.query tagOptions=r.tagOptions}}
+          </div>
+        {{/if}}
+        <span class="cog-modifier-controls">
+          <a class="cog-modifier-delete" data-action="deleteRow" data-row-table="startingItem" data-index="{{r.index}}" data-tooltip="{{localize 'COG.Rows.Control.Delete'}}"><i class="fa-solid fa-trash"></i></a>
+        </span>
+      </div>
+    {{/each}}
+    <div class="cog-modifier-addbar">
+      <span class="cog-field-label">{{localize "COG.Rows.AddRow"}}</span>
+      <a class="cog-modifier-add-chip" data-action="addRow" data-row-table="{{startingItems.addKey}}"><i class="fa-solid fa-plus"></i> {{localize "COG.Rows.StartingItem.Add"}}</a>
+    </div>
+  </div>
+</div>

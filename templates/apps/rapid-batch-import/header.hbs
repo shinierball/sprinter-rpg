@@ -1,0 +1,25 @@
+<div class="cog-rapid-import-root cog-rapid-header cog-text cog-bg-window" style="font-family: 'Oswald', sans-serif; box-sizing: border-box; padding: 12px 12px 12px;">
+  {{!-- TOP BAR / BANNER --}}
+  <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--cog-accent); padding-bottom: 8px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <i class="fa-solid fa-bolt cog-text-danger" style="font-size: 22px;"></i>
+      <div>
+        <h2 class="cog-text-strong" style="margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 0.5px;">
+          Rapid Batch Roll & Event Importer
+        </h2>
+        <div class="cog-text-muted" style="font-size: 11px;">
+          Fast In-Person Play Transcription &bull; Session: <strong class="cog-text-gold">{{sessionTitle}}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <button type="button" data-action="loadSample" class="cog-btn cog-rapid-sample-btn cog-bg-success-fill cog-text-on-fill" style="border: 1px solid var(--cog-success-fill); padding: 4px 10px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: bold; cursor: pointer;" title="Load example shorthand notes">
+        <i class="fa-solid fa-file-import"></i> Load Sample Notes
+      </button>
+      <button type="button" data-action="clearAll" class="cog-btn cog-rapid-clear-btn cog-bg-surface-muted cog-text" style="border: 1px solid var(--cog-panel-border); padding: 4px 10px; border-radius: 4px; font-family: 'Oswald', sans-serif; font-size: 12px; cursor: pointer;" title="Clear input text and table">
+        <i class="fa-solid fa-trash-can"></i> Clear
+      </button>
+    </div>
+  </header>
+</div>

@@ -1,0 +1,159 @@
+<div class="cog-metrics-body">
+  {{#if hasCombat}}
+    {{!-- Post-Battle XP & Level Progression Banner --}}
+    {{#if xpInfo}}
+      <div class="cog-metrics-xp-banner">
+        <div class="cog-xp-banner-info">
+          <i class="fa-solid fa-graduation-cap cog-xp-cap-icon"></i>
+          <div>
+            <div class="cog-xp-banner-title">
+              Encounter Experience Pool: <strong>{{xpInfo.totalPool}} XP</strong>
+              {{#if isArchived}}
+                <span class="cog-xp-status-tag cog-dark cog-bg-header-fill cog-text-on-fill" style="font-size: 10px; padding: 1px 6px; border-radius: 2px; margin-left: 6px;">
+                  <i class="fa-solid fa-calendar-days"></i> {{dateString}}
+                </span>
+              {{/if}}
+            </div>
+            <span class="cog-xp-banner-desc">
+              {{xpInfo.mobs.length}} Defeated Mobs • {{xpInfo.crawlers.length}} Participating Crawlers
+            </span>
+          </div>
+        </div>
+        <div class="cog-xp-banner-actions">
+          {{#if xpInfo.isAwarded}}
+            <span class="cog-xp-awarded-pill"><i class="fa-solid fa-check"></i> XP AWARDED</span>
+            <button type="button" class="cog-undo-encounter-xp-btn" data-action="undoEncounterXP" title="Undo this encounter's XP award">
+              <i class="fa-solid fa-rotate-left"></i> Undo XP
+            </button>
+          {{else}}
+            <button type="button" class="cog-award-encounter-xp-btn" data-action="awardEncounterXP" title="Calculate and allocate experience to all participating crawlers">
+              <i class="fa-solid fa-award"></i> Award Encounter XP (+{{xpInfo.totalPool}} XP)
+            </button>
+          {{/if}}
+        </div>
+      </div>
+    {{/if}}
+
+    {{!-- Previously Dispatched AI Awards --}}
+    {{#if hasPreviousAwards}}
+      <div class="cog-previous-awards-section">
+        <h4 class="cog-section-label"><i class="fa-solid fa-trophy cog-text-gold"></i> AI Awards Dispatched In This Battle</h4>
+        <div class="cog-previous-awards-list">
+          {{#each previousAwards}}
+            <div class="cog-previous-award-pill" title="{{this.quote}}">
+              <strong>{{this.recipientName}}</strong>: <span class="cog-text-success">{{this.rewardText}}</span>
+              {{#if this.title}}<span class="cog-text-secondary" style="font-size: 10px;">({{this.title}})</span>{{/if}}
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    {{/if}}
+
+    {{#if hasCrawlers}}
+      <div class="cog-crawler-metrics-grid">
+        {{#each crawlers}}
+          <div class="cog-crawler-card" data-actor-id="{{this.actorId}}">
+            {{!-- Card Header --}}
+            <div class="cog-crawler-card-header">
+              <img class="cog-crawler-avatar" src="{{this.img}}" alt="{{this.name}}" />
+              <div class="cog-crawler-info">
+                <h3 class="cog-crawler-name">{{this.name}}</h3>
+                <div class="cog-crawler-meta">
+                  <span class="cog-badge-level">Lv. {{this.level}} {{this.type}}</span>
+                  <span class="cog-badge-favor" title="Current AI Favor"><i class="fa-solid fa-hand-holding-heart"></i> Favor: {{this.aiFavor}}</span>
+                </div>
+              </div>
+              <div class="cog-crawler-stat-banner">
+                <div class="cog-stat-box cog-stat-damage">
+                  <span class="cog-stat-number">{{this.totalDamage}}</span>
+                  <span class="cog-stat-label">Net Damage</span>
+                </div>
+                <div class="cog-stat-box cog-stat-damage-taken">
+                  <span class="cog-stat-number cog-text-info">{{this.damageTaken}}</span>
+                  <span class="cog-stat-label">Damage Taken</span>
+                </div>
+              </div>
+            </div>
+
+            {{!-- Key Performance Indicators --}}
+            <div class="cog-kpi-row">
+              <div class="cog-kpi-pill" title="Highest single attack damage dealt">
+                <i class="fa-solid fa-burst cog-text-warning"></i>
+                <span>Peak Hit: <strong>{{this.highestHit}}</strong></span>
+              </div>
+              <div class="cog-kpi-pill" title="Enemies finished off (HP reduced to 0)">
+                <i class="fa-solid fa-skull cog-text-accent"></i>
+                <span>Kills: <strong>{{this.kills}}</strong></span>
+              </div>
+              <div class="cog-kpi-pill" title="Total damage sustained / tanked">
+                <i class="fa-solid fa-shield-halved cog-text-info"></i>
+                <span>Tanked: <strong>{{this.damageTaken}}</strong></span>
+              </div>
+              <button type="button" class="cog-adjust-damage-btn" data-action="adjustDamage" data-actor-id="{{this.actorId}}" title="Manually adjust damage total">
+                <i class="fa-solid fa-pen-to-square"></i> Adjust
+              </button>
+            </div>
+
+            {{!-- Attacks Breakdown Table --}}
+            <div class="cog-metrics-attacks-section">
+              <h4 class="cog-section-label"><i class="fa-solid fa-hand-fist"></i> Applied Attacks</h4>
+              {{#if this.hasAttacks}}
+                <table class="cog-metrics-attacks-table">
+                  <thead>
+                    <tr>
+                      <th>Attack</th>
+                      <th>Type</th>
+                      <th style="text-align: center;">Hits</th>
+                      <th style="text-align: right;">Total Dmg</th>
+                      <th style="text-align: right;">Avg</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{#each this.attacks}}
+                      <tr>
+                        <td class="cog-attack-name"><strong>{{this.name}}</strong></td>
+                        <td><span class="cog-attack-type-tag">{{this.type}}</span></td>
+                        <td style="text-align: center;">{{this.count}}</td>
+                        <td class="cog-text-accent" style="text-align: right; font-weight: bold;">{{this.damage}}</td>
+                        <td class="cog-text-muted" style="text-align: right;">{{this.avg}}</td>
+                      </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              {{else}}
+                <div class="cog-empty-hint">No attack damage recorded in this combat.</div>
+              {{/if}}
+            </div>
+
+            {{!-- Tactical Skills Section --}}
+            <div class="cog-skills-section">
+              <h4 class="cog-section-label"><i class="fa-solid fa-bolt"></i> Tactical Skills Used</h4>
+              {{#if this.hasSkills}}
+                <div class="cog-skills-badge-list">
+                  {{#each this.skills}}
+                    <span class="cog-skill-pill">
+                      <strong>{{this.name}}</strong> <span class="cog-skill-count">×{{this.count}}</span>
+                    </span>
+                  {{/each}}
+                </div>
+              {{else}}
+                <div class="cog-empty-hint">No tactical skills recorded in this combat yet.</div>
+              {{/if}}
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="cog-empty-state">
+        <i class="fa-solid fa-users-slash"></i>
+        <p>No crawlers found in this encounter.</p>
+      </div>
+    {{/if}}
+  {{else}}
+    <div class="cog-empty-state">
+      <i class="fa-solid fa-swords"></i>
+      <h3>NO COMBAT ENCOUNTER SELECTED</h3>
+      <p>Select an active encounter or an archived battle from the dropdown above, or start a new encounter in Foundry's Combat Tracker!</p>
+    </div>
+  {{/if}}
+</div>

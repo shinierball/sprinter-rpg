@@ -1,0 +1,334 @@
+<main class="cog-archive-content">
+  {{#if selectedCombat}}
+    <!-- Encounter Meta Banner (Compact) -->
+    <div class="cog-archive-encounter-hero">
+      <div class="cog-hero-title-row">
+        <div class="cog-hero-title-group">
+          <h3 class="cog-hero-title">{{selectedCombat.name}}</h3>
+          {{#if selectedCombat.isLive}}
+            <span class="cog-live-tag">ACTIVE COMBAT</span>
+          {{else}}
+            <span class="cog-archived-tag">ARCHIVED</span>
+          {{/if}}
+          {{#if selectedCombat.isSurpriseRound}}
+            <span class="cog-surprise-badge"><i class="fa-solid fa-bolt"></i> SURPRISE ROUND</span>
+          {{/if}}
+        </div>
+        <div class="cog-hero-stats">
+          <span class="cog-hero-stat"><i class="fa-regular fa-calendar"></i> {{selectedCombat.dateString}}</span>
+          <span class="cog-hero-stat"><i class="fa-solid fa-hourglass-half"></i> {{selectedCombat.totalRounds}} Rds</span>
+          {{#if selectedCombat.metrics.totalDamageDealt}}
+            <span class="cog-hero-stat stat-highlight"><i class="fa-solid fa-burst"></i> {{selectedCombat.metrics.totalDamageDealt}} Dmg</span>
+          {{/if}}
+          {{#if selectedCombat.metrics.mvp}}
+            <span class="cog-hero-stat stat-mvp"><i class="fa-solid fa-trophy"></i> MVP: {{selectedCombat.metrics.mvp.name}}</span>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+
+    <!-- Mode Navigation Tabs: Timeline vs Experience & Level Tracker -->
+    <div class="cog-archive-tab-bar">
+      <button type="button" data-action="setView" class="cog-archive-tab-btn {{#if (eq activeView 'timeline')}}active{{/if}}" data-view="timeline">
+        <i class="fa-solid fa-clock-rotate-left"></i> ROUND ACTIONS TIMELINE
+      </button>
+      <button type="button" data-action="setView" class="cog-archive-tab-btn {{#if (eq activeView 'experience')}}active{{/if}}" data-view="experience">
+        <i class="fa-solid fa-trophy"></i> EXPERIENCE & LEVEL TRACKER
+        {{#if xpSummary.isAwarded}}
+          <span class="cog-xp-awarded-pill"><i class="fa-solid fa-circle-check"></i> AWARDED</span>
+        {{/if}}
+      </button>
+    </div>
+
+    {{#if (eq activeView 'timeline')}}
+      <!-- Round Inspector Selector -->
+      <div class="cog-archive-round-selector">
+        <span class="cog-round-selector-label"><i class="fa-solid fa-clock-rotate-left"></i> ROUND INSPECTOR:</span>
+        <div class="cog-round-nav">
+          {{#each roundsList as |r|}}
+            <button type="button" data-action="selectRound" class="cog-archive-round-btn {{#if r.active}}active{{/if}}" data-round="{{r.round}}">
+              ROUND {{r.round}}
+            </button>
+          {{/each}}
+        </div>
+      </div>
+
+      <!-- Round Timeline & Combatant Actions for Selected Round -->
+      <div class="cog-archive-round-detail">
+        <!-- Mob Phase -->
+        <div class="cog-archive-phase mob-phase">
+          <div class="cog-archive-phase-header">
+            <span><i class="fa-solid fa-skull"></i> HOSTILE MOBS — ROUND {{selectedRound}}</span>
+            <span class="cog-archive-phase-badge">{{mobCombatants.length}} MOBS</span>
+          </div>
+
+          <div class="cog-archive-combatants-list">
+            {{#if mobCombatants.length}}
+              {{#each mobCombatants as |c|}}
+                <div class="cog-archive-combatant-card">
+                  <img class="cog-bg-icon-box cog-archive-combatant-img" src="{{c.img}}" alt="{{c.name}}" />
+                  <div class="cog-archive-combatant-info">
+                    <div class="cog-archive-combatant-name">
+                      <strong class="cog-combatant-title">{{c.name}}</strong>
+                      <span class="cog-archive-actions-spent">{{c.roundActions.spent}} / {{c.roundActions.max}} Actions Used</span>
+                    </div>
+                    <div class="cog-archive-slots">
+                      {{#each c.slotList as |s|}}
+                        <span class="cog-archive-slot {{#if s.filled}}filled{{else}}empty{{/if}} {{#if s.isAttack}}is-attack{{/if}} {{#if s.isBonus}}is-bonus{{/if}}" title="{{s.label}}">
+                          <i class="{{s.icon}}"></i> {{s.label}}
+                        </span>
+                      {{/each}}
+                    </div>
+                  </div>
+                </div>
+              {{/each}}
+            {{else}}
+              <div class="cog-archive-no-combatants">No hostiles recorded for this round.</div>
+            {{/if}}
+          </div>
+        </div>
+
+        <!-- Crawler Phase -->
+        <div class="cog-archive-phase crawler-phase">
+          <div class="cog-archive-phase-header">
+            <span><i class="fa-solid fa-shield-halved"></i> CRAWLERS & ALLIES — ROUND {{selectedRound}}</span>
+            <span class="cog-archive-phase-badge">{{crawlerCombatants.length}} CRAWLERS</span>
+          </div>
+
+          <div class="cog-archive-combatants-list">
+            {{#if crawlerCombatants.length}}
+              {{#each crawlerCombatants as |c|}}
+                <div class="cog-archive-combatant-card">
+                  <img class="cog-bg-icon-box cog-archive-combatant-img" src="{{c.img}}" alt="{{c.name}}" />
+                  <div class="cog-archive-combatant-info">
+                    <div class="cog-archive-combatant-name">
+                      <strong class="cog-combatant-title">{{c.name}}</strong>
+                      <span class="cog-archive-actions-spent">{{c.roundActions.spent}} / {{c.roundActions.max}} Actions Used</span>
+                    </div>
+                    <div class="cog-archive-slots">
+                      {{#each c.slotList as |s|}}
+                        <span class="cog-archive-slot {{#if s.filled}}filled{{else}}empty{{/if}} {{#if s.isAttack}}is-attack{{/if}} {{#if s.isBonus}}is-bonus{{/if}}" title="{{s.label}}">
+                          <i class="{{s.icon}}"></i> {{s.label}}
+                        </span>
+                      {{/each}}
+                    </div>
+                  </div>
+                </div>
+              {{/each}}
+            {{else}}
+              <div class="cog-archive-no-combatants">No crawlers recorded for this round.</div>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+
+    {{else}}
+      <!-- EXPERIENCE & LEVEL PROGRESSION PANEL -->
+      <div class="cog-archive-xp-panel">
+        <!-- Pool & Action Header -->
+        <div class="cog-xp-pool-card">
+          <div class="cog-xp-pool-info">
+            <div class="cog-xp-pool-badge-wrapper">
+              <span class="cog-xp-pool-label"><i class="fa-solid fa-coins"></i> ENCOUNTER XP POOL:</span>
+              {{#if isGM}}
+                <input type="number" class="cog-xp-pool-input" name="xpPool" data-change-action="setXPPool" value="{{customXPPool}}" placeholder="{{xpSummary.calculatedMobPool}}" title="Override Total Encounter XP Pool" />
+                <span class="cog-xp-pool-unit">XP</span>
+              {{else}}
+                <strong class="cog-xp-pool-val">{{xpSummary.totalPool}} XP</strong>
+              {{/if}}
+            </div>
+            <div class="cog-xp-pool-meta">
+              <span>Based on <strong>{{xpSummary.mobs.length}}</strong> Defeated Mob{{#unless (eq xpSummary.mobs.length 1)}}s{{/unless}}</span>
+              <span>Total Crawler Damage Dealt: <strong>{{xpSummary.totals.damageDealt}} HP</strong></span>
+              <span>Total Crawler Damage Taken: <strong>{{xpSummary.totals.damageTaken}} HP</strong></span>
+            </div>
+          </div>
+
+          {{#if isGM}}
+            <div class="cog-xp-actions-group">
+              {{#if xpSummary.isAwarded}}
+                <div class="cog-xp-awarded-banner">
+                  <i class="fa-solid fa-circle-check"></i> XP AWARDED
+                </div>
+                <button type="button" class="cog-archive-undo-xp-btn" data-action="undoXP" title="Undo experience distribution for this battle">
+                  <i class="fa-solid fa-rotate-left"></i> Undo Award
+                </button>
+              {{else}}
+                <button type="button" class="cog-archive-award-xp-btn" data-action="awardXP" title="Distribute calculated XP to all crawlers">
+                  <i class="fa-solid fa-award"></i> Award Experience to Crawlers
+                </button>
+              {{/if}}
+            </div>
+          {{/if}}
+        </div>
+
+        <!-- Configurable XP Allocation Weights Bar (GM Controls) -->
+        {{#if isGM}}
+          <div class="cog-xp-weights-card">
+            <div class="cog-xp-weights-header">
+              <span class="cog-weights-title"><i class="fa-solid fa-sliders"></i> XP ALLOCATION WEIGHTS</span>
+              <div class="cog-weights-actions">
+                <button type="button" class="cog-xp-reset-weights-btn" data-action="resetWeights" title="Reset Weights to Defaults">
+                  <i class="fa-solid fa-arrow-rotate-left"></i> Reset Defaults
+                </button>
+                <button type="button" class="cog-xp-save-defaults-btn" data-action="saveDefaults" title="Save current weights as system defaults">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Defaults
+                </button>
+              </div>
+            </div>
+            <div class="cog-xp-weights-grid">
+              <div class="cog-xp-weight-col">
+                <span class="cog-weight-label">Damage Dealt</span>
+                <div class="cog-weight-input-wrapper">
+                  <input type="number" class="cog-xp-weight-input" name="weight_damageDealt" data-change-action="setXPWeight" data-weight-key="damageDealt" value="{{customXPWeights.damageDealt}}" min="0" max="100" />
+                  <span>%</span>
+                </div>
+              </div>
+              <div class="cog-xp-weight-col">
+                <span class="cog-weight-label">Damage Taken</span>
+                <div class="cog-weight-input-wrapper">
+                  <input type="number" class="cog-xp-weight-input" name="weight_damageTaken" data-change-action="setXPWeight" data-weight-key="damageTaken" value="{{customXPWeights.damageTaken}}" min="0" max="100" />
+                  <span>%</span>
+                </div>
+              </div>
+              <div class="cog-xp-weight-col">
+                <span class="cog-weight-label">Defensive Skills</span>
+                <div class="cog-weight-input-wrapper">
+                  <input type="number" class="cog-xp-weight-input" name="weight_defensive" data-change-action="setXPWeight" data-weight-key="defensive" value="{{customXPWeights.defensive}}" min="0" max="100" />
+                  <span>%</span>
+                </div>
+                <span class="cog-weight-hint">Taunt, Catcher, Evade</span>
+              </div>
+              <div class="cog-xp-weight-col">
+                <span class="cog-weight-label">Tactical Skills</span>
+                <div class="cog-weight-input-wrapper">
+                  <input type="number" class="cog-xp-weight-input" name="weight_tactical" data-change-action="setXPWeight" data-weight-key="tactical" value="{{customXPWeights.tactical}}" min="0" max="100" />
+                  <span>%</span>
+                </div>
+                <span class="cog-weight-hint">Call a Play, Intervene, Clues</span>
+              </div>
+              <div class="cog-xp-weight-col">
+                <span class="cog-weight-label">Buffing / Support</span>
+                <div class="cog-weight-input-wrapper">
+                  <input type="number" class="cog-xp-weight-input" name="weight_buff" data-change-action="setXPWeight" data-weight-key="buff" value="{{customXPWeights.buff}}" min="0" max="100" />
+                  <span>%</span>
+                </div>
+                <span class="cog-weight-hint">Heal, Help, Buff Spells</span>
+              </div>
+            </div>
+          </div>
+        {{/if}}
+
+        <!-- Crawler Experience Distribution Table -->
+        <div class="cog-xp-table-wrapper">
+          <table class="cog-xp-table">
+            <thead>
+              <tr>
+                <th style="width: 170px;">Crawler</th>
+                <th style="text-align: center;">Damage Done</th>
+                <th style="text-align: center;">Damage Taken</th>
+                <th style="text-align: center;">Defensive</th>
+                <th style="text-align: center;">Tactical / Buff</th>
+                <th style="text-align: center;">Share %</th>
+                <th style="text-align: center;">XP Award</th>
+                <th style="width: 190px;">Level Progression</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#if xpSummary.crawlers.length}}
+                {{#each xpSummary.crawlers as |c|}}
+                  <tr class="{{#if c.willLevelUp}}is-level-up{{/if}}">
+                    <td>
+                      <div class="cog-xp-crawler-cell">
+                        <img class="cog-bg-icon-box cog-xp-avatar" src="{{c.img}}" alt="{{c.name}}" />
+                        <div class="cog-xp-crawler-name-group">
+                          <strong>{{c.name}}</strong>
+                          <span class="cog-xp-current-level">Level {{c.currentLevel}}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="text-align: center;">
+                      <strong class="cog-stat-val">{{c.damageDealt}} HP</strong>
+                      <span class="cog-stat-sub">({{c.pctDamageDealt}}%)</span>
+                    </td>
+                    <td style="text-align: center;">
+                      <strong class="cog-stat-val">{{c.damageTaken}} HP</strong>
+                      <span class="cog-stat-sub">({{c.pctDamageTaken}}%)</span>
+                    </td>
+                    <td style="text-align: center;">
+                      <span class="cog-action-badge defensive" title="Defensive skill uses (Taunt, Catcher, Evade)">
+                        <i class="fa-solid fa-shield-halved"></i> {{c.defensiveCount}}
+                      </span>
+                    </td>
+                    <td style="text-align: center;">
+                      <div class="cog-action-badge-group">
+                        <span class="cog-action-badge tactical" title="Tactical skill uses (Call a Play, Intervene, Clues)">
+                          <i class="fa-solid fa-clipboard-list"></i> {{c.tacticalCount}}
+                        </span>
+                        <span class="cog-action-badge buff" title="Buffing skill uses (Heal, Help)">
+                          <i class="fa-solid fa-hand-holding-medical"></i> {{c.buffCount}}
+                        </span>
+                      </div>
+                    </td>
+                    <td style="text-align: center;">
+                      <strong class="cog-share-pct">{{c.pct}}%</strong>
+                    </td>
+                    <td style="text-align: center;">
+                      <strong class="cog-xp-award-val">+{{c.xpAward}} XP</strong>
+                    </td>
+                    <td>
+                      <div class="cog-xp-progress-cell">
+                        <div class="cog-xp-level-preview">
+                          <span>Lv. {{c.currentLevel}}</span>
+                          {{#if c.willLevelUp}}
+                            <i class="fa-solid fa-arrow-right"></i>
+                            <strong class="cog-level-up-tag"><i class="fa-solid fa-angles-up"></i> LV. {{c.projectedLevel}}!</strong>
+                          {{else}}
+                            <span class="cog-xp-to-next">({{c.projectedXP}} XP)</span>
+                          {{/if}}
+                        </div>
+                        <div class="cog-xp-dual-bar">
+                          <div class="cog-xp-fill-current" style="width: 100%;"></div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {{/each}}
+              {{else}}
+                <tr>
+                  <td colspan="8" class="cog-archive-empty">No crawlers participated in this battle.</td>
+                </tr>
+              {{/if}}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobs Fought Breakdown Section -->
+        {{#if xpSummary.mobs.length}}
+          <div class="cog-xp-mobs-card">
+            <div class="cog-xp-mobs-title">
+              <i class="fa-solid fa-skull"></i> DEFEATED MOBS & BASE XP BREAKDOWN
+            </div>
+            <div class="cog-xp-mobs-list">
+              {{#each xpSummary.mobs as |m|}}
+                <div class="cog-mob-xp-pill">
+                  <img class="cog-bg-icon-box cog-mob-xp-img" src="{{m.img}}" alt="{{m.name}}" />
+                  <div class="cog-mob-xp-info">
+                    <strong>{{m.name}}</strong>
+                    <span>Lv. {{m.level}} • {{m.maxHp}} HP</span>
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        {{/if}}
+      </div>
+    {{/if}}
+
+  {{else}}
+    <div class="cog-archive-empty-placeholder">
+      <i class="fa-solid fa-book-open-reader"></i>
+      <p>No encounters found. Run and end a combat encounter to view its action history here.</p>
+    </div>
+  {{/if}}
+</main>

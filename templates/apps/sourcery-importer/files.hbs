@@ -1,0 +1,30 @@
+<section class="cog-sourcery-files cog-text cog-bg-window">
+  {{#if isPick}}
+    <label class="cog-btn cog-btn-primary cog-sourcery-pick">
+      <i class="fa-solid fa-folder-open"></i> Choose PDF files
+      <input type="file" accept=".pdf,application/pdf" multiple data-change-action="filesChosen" class="cog-sourcery-file-input">
+    </label>
+  {{/if}}
+  {{#if files.length}}
+    <ul class="cog-sourcery-file-list">
+      {{#each files}}
+        <li class="cog-sourcery-file {{#if isError}}cog-sourcery-file-error{{/if}}">
+          <span class="cog-sourcery-file-name">{{name}}</span>
+          <span class="cog-text-muted">{{sizeLabel}}</span>
+          {{#if isIndexing}}<progress class="cog-sourcery-bar" max="100" value="{{pct}}"></progress><span>{{page}} / {{pages}}</span>{{else}}<span class="cog-sourcery-file-status">{{status}}</span>{{/if}}
+          {{#if isError}}<span class="cog-text-danger">{{error}}</span>{{/if}}
+        </li>
+      {{/each}}
+    </ul>
+  {{/if}}
+  {{#if unrecognised.length}}
+    <ul class="cog-sourcery-unrecognised">
+      {{#each unrecognised}}<li class="cog-text-warning">{{file}}: not recognised as a rulebook (best match {{pct}}%)</li>{{/each}}
+    </ul>
+  {{/if}}
+  {{#if alsoMatched.length}}
+    <ul class="cog-sourcery-also-matched">
+      {{#each alsoMatched}}<li class="cog-text-muted">{{file}}: also matched {{label}}, not used</li>{{/each}}
+    </ul>
+  {{/if}}
+</section>

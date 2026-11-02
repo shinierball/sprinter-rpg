@@ -1,0 +1,38 @@
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="feed">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <div class="cog-text-magic" style="font-size: 16px; font-weight: bold;">
+      <i class="fa-solid fa-tv"></i> UNIVERSAL BROADCAST & OUTSIDE WORLD FEED
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+    {{#each outsideFeed as |msg|}}
+      <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 10px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="cog-text-gold" style="font-size: 13px; font-weight: bold;">
+            <i class="fa-solid fa-satellite"></i> {{msg.title}}
+          </span>
+          <span class="cog-text-muted" style="font-size: 10px;">{{msg.channel}}</span>
+        </div>
+        <div class="cog-text" style="font-size: 12px; margin-top: 4px; line-height: 1.5;">{{msg.message}}</div>
+      </div>
+    {{else}}
+      <div class="cog-text-muted" style="text-align: center; padding: 24px;">No broadcast messages available.</div>
+    {{/each}}
+  </div>
+
+  {{!-- BROADCAST POST FORM --}}
+  <div class="cog-bg-surface" data-feed-form style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 12px;">
+    <div class="cog-text-magic" style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">
+      <i class="fa-solid fa-bullhorn"></i> Transmit Message
+    </div>
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px;">
+      <input type="text" class="new-feed-title cog-bg-window cog-text-strong" placeholder="Broadcast Headline..." style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+      <input type="text" class="new-feed-channel cog-bg-window cog-text-strong" placeholder="Channel (e.g. Universal TV)..." style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+    </div>
+    <textarea class="new-feed-msg cog-bg-window cog-text-strong" placeholder="Message content..." style="width: 100%; box-sizing: border-box; border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif; height: 50px; margin-bottom: 8px;"></textarea>
+    <button class="cog-bg-magic-fill cog-text-on-fill" type="button" data-action="addFeedMessage" style="border: 1px solid var(--cog-magic-fill); border-radius: 3px; padding: 6px 14px; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+      Send Broadcast
+    </button>
+  </div>
+</section>

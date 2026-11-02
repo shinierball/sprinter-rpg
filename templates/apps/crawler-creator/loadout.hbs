@@ -1,0 +1,78 @@
+<section class="cog-creator-section cog-starter-section">
+  <div class="cog-section-header flexrow">
+    <h3><i class="fa-solid fa-shield-halved"></i> LEVEL 1 STARTER COMBAT LOADOUT</h3>
+    <span class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> Choose a Weapon, Starter Spell (+5 Mana Potions), or Unarmed Combat package</span>
+  </div>
+
+  <div class="cog-starter-deck flexcol">
+    <div class="cog-starter-mode-pills flexrow">
+      {{#each starterModeOptions}}
+        <label class="cog-starter-mode-label {{#if this.selected}}active{{/if}}">
+          <input type="radio" name="creator-starter-mode" data-change-action="setStarterMode" data-prop="starterMode" value="{{this.key}}" {{#if this.selected}}checked{{/if}} />
+          <i class="{{this.icon}}"></i>
+          <div class="mode-text">
+            <strong>{{this.label}}</strong>
+            <small>{{this.desc}}</small>
+          </div>
+        </label>
+      {{/each}}
+    </div>
+
+    <div class="cog-starter-choice-body">
+      {{#if isStarterWeapon}}
+        <div class="cog-starter-choice-row flexrow">
+          <div class="cog-choice-field flexcol">
+            <label><i class="fa-solid fa-sword"></i> Select Starting Weapon Skill (Rank 3):</label>
+            <select name="creator-starter-weapon" data-change-action="setStarterWeapon" data-prop="starterWeapon" class="cog-creator-select">
+              {{#each starterWeaponOptions}}
+                <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="cog-choice-perk-badge">
+            <i class="fa-solid fa-check"></i> Grants <strong>{{starterWeaponName}}</strong> skill at <strong>Rank 3</strong>, equips weapon in inventory, and adds attack.
+          </div>
+        </div>
+      {{/if}}
+
+      {{#if isStarterSpell}}
+        <div class="cog-starter-choice-row flexrow">
+          <div class="cog-choice-field flexcol">
+            <label><i class="fa-solid fa-wand-magic-sparkles"></i> Select Starting Spell (Rank 3):</label>
+            <select name="creator-starter-spell" data-change-action="setStarterSpell" data-prop="starterSpell" class="cog-creator-select">
+              {{#each starterSpellOptions}}
+                <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+              {{/each}}
+            </select>
+            {{#if loadoutExampleOnly}}{{> "systems/sprinter-rpg/templates/shared/content-hint.hbs" key="COG.Content.LoadoutExample"}}{{/if}}
+          </div>
+          <div class="cog-choice-perk-badge mana-potion-badge">
+            <i class="fa-solid fa-flask"></i> Includes <strong>{{starterPotionCount}} {{starterPotion.name}}</strong> in inventory &amp; Hotlist (refills mana to 100%).
+          </div>
+        </div>
+      {{/if}}
+
+      {{#if isStarterUnarmed}}
+        <div class="cog-starter-choice-row flexrow">
+          <div class="cog-choice-field flexcol">
+            <label><i class="fa-solid fa-hand-fist"></i> Select Hand-to-Hand &amp; Damage Effect Package (Both Rank 3):</label>
+            <select name="creator-starter-unarmed" data-change-action="setStarterUnarmed" data-prop="starterUnarmed" class="cog-creator-select">
+              {{#each starterUnarmedOptions}}
+                <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+              {{/each}}
+            </select>
+            {{#if loadoutExampleOnly}}{{> "systems/sprinter-rpg/templates/shared/content-hint.hbs" key="COG.Content.LoadoutExample"}}{{/if}}
+          </div>
+          <div class="cog-choice-perk-badge unarmed-badge">
+            <i class="fa-solid fa-burst"></i> Both H2H skill &amp; Damage Effect granted at <strong>Rank 3</strong>.
+          </div>
+        </div>
+      {{/if}}
+
+      <div class="cog-baseline-spell-badge flexrow">
+        <i class="fa-solid fa-hand-holding-heart"></i>
+        <span>Universal Crawler Baseline: All crawlers enter the dungeon with <strong>Heal (Rank 1)</strong> inscribed and hotlisted!</span>
+      </div>
+    </div>
+  </div>
+</section>

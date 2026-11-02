@@ -1,0 +1,28 @@
+<div class="cog-tm-create-box cog-bg-surface" style="border: 2px solid var(--cog-border-strong); padding: 8px 10px; box-sizing: border-box;">
+  <h4 class="cog-text-strong" style="margin: 0 0 6px 0; font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 12px;">
+    <i class="fa-solid fa-plus-circle cog-text-success"></i> Register New Custom Tag
+  </h4>
+  <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+    <input type="text" name="customTagId" class="cog-custom-tag-id cog-field-input" placeholder="Tag ID (e.g. custom.toxic_spit)" style="flex: 2; min-width: 160px; font-size: 11px; font-family: monospace;" />
+    <input type="text" name="customTagLabel" class="cog-custom-tag-label cog-field-input" placeholder="Display Label (e.g. Toxic Spit)" style="flex: 2; min-width: 140px; font-size: 11px;" />
+    <select name="customTagNamespace" class="cog-custom-tag-namespace cog-field-input" style="flex: 1; min-width: 100px; font-size: 11px;">
+      <option value="custom">custom</option>
+      <option value="element">element</option>
+      <option value="action">action</option>
+      <option value="archetype">archetype</option>
+      <option value="stat">stat</option>
+      <option value="skillGroup">skillGroup</option>
+      <option value="weaponClass">weaponClass</option>
+      <option value="technique">technique</option>
+      <option value="rule">rule</option>
+    </select>
+    {{#if targetItem}}
+      <label class="cog-custom-tag-apply-label">
+        <input type="checkbox" name="customTagApply" class="cog-custom-tag-apply-item" checked /> Apply to {{targetItem.name}}
+      </label>
+    {{/if}}
+    <button type="button" data-action="registerTag" class="cog-btn cog-register-custom-tag-btn cog-bg-success-fill cog-text-on-fill" style="border: 1px solid var(--cog-success-fill); padding: 4px 12px; font-family: 'Oswald', sans-serif; font-size: 11px; text-transform: uppercase; cursor: pointer; border-radius: 2px;">
+      Register Tag
+    </button>
+  </div>
+</div>

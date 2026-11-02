@@ -1,0 +1,56 @@
+<div class="cog-grind-part cog-grind-header cog-bg-window cog-text-strong" style="padding: 12px 12px 0; font-family: 'Oswald', sans-serif;">
+  {{!-- HEADER --}}
+  <div class="cog-dark cog-bg-grad-accent-magic" style="padding: 8px 14px; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i class="fa-solid fa-dumbbell cog-dark cog-text-gold" style="font-size: 18px;"></i>
+      <span style="font-size: 16px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">Party Grinding & Downtime Hub</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="cog-badge cog-bg-window cog-text-gold" style="border: 1px solid var(--cog-gold); padding: 2px 8px; font-size: 11px; text-transform: uppercase;">
+        <i class="fa-solid fa-vault"></i> {{actor.name}} Pool: <strong>{{bankedHours}} hrs</strong>
+      </span>
+      <div class="cog-bg-shade-50" style="display: flex; align-items: center; gap: 6px; border: 1px solid var(--cog-warning); border-radius: 4px; padding: 2px 8px;" title="Floor Timer Clock: Hours remaining until Floor Collapse. Can be manually set.">
+        <i class="fa-solid fa-hourglass-half cog-text-warning" style="font-size: 12px;"></i>
+        <span class="cog-dark cog-text" style="font-size: 11px; text-transform: uppercase;">Clock:</span>
+        {{#if isGM}}
+        <input type="number" name="floorTimer" data-change-action="setFloorTimer" class="floor-timer-clock-input cog-bg-window cog-text-warning" value="{{floorTimer}}" min="0" style="width: 52px; border: 1px solid var(--cog-panel-border); border-radius: 3px; font-weight: bold; text-align: center; font-size: 12px; padding: 1px 2px;" title="Floor Timer Clock (Hours remaining). Editable." />
+        {{else}}
+        <strong class="floor-timer-clock-readout cog-dark cog-text-warning" style="min-width: 52px; text-align: center; font-size: 12px;" title="Floor Timer Clock (Hours remaining). Only the GM can change it.">{{floorTimer}}</strong>
+        {{/if}}
+        <span class="cog-dark cog-text-secondary" style="font-size: 11px;">hrs</span>
+      </div>
+      <div class="cog-dark cog-text-gold" style="font-size: 12px; text-transform: uppercase;">
+        Floor {{floorNumber}}
+      </div>
+    </div>
+  </div>
+
+  {{!-- RECENT GRIND RESULT ALERT --}}
+  {{#if lastGrindResult}}
+    <div class="cog-bg-success-tint" style="border: 1.5px solid var(--cog-success); border-radius: 4px; padding: 8px 12px; margin-bottom: 12px; display: flex; align-items: flex-start; justify-content: space-between;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-circle-check cog-text-success" style="margin-right: 4px;"></i>
+          <strong class="cog-text-success" style="font-size: 13px;">Grind Executed!</strong>
+          <span>Ground for <strong>{{lastGrindResult.hours}} Hours</strong></span>
+          {{#if (gt lastGrindResult.bonusHours 0)}}
+            <span class="cog-text-gold" style="margin-left: 4px;">(+{{lastGrindResult.bonusHours}} Bonus Hr{{#if (gt lastGrindResult.bonusHours 1)}}s{{/if}}{{#if lastGrindResult.mapBonusHours}} [{{lastGrindResult.mapBonusHours}}h Map]{{/if}}{{#if lastGrindResult.eventBonusHours}} [{{lastGrindResult.eventBonusHours}}h Event]{{/if}})</span>
+          {{/if}}
+          <span class="cog-text-warning" style="margin-left: 8px;"><i class="fa-solid fa-hourglass-half"></i> Floor Clock: -{{lastGrindResult.nonBonusHours}}h ({{lastGrindResult.floorTimer}} hrs left)</span>
+        </div>
+        {{#if lastGrindResult.crawlerResults}}
+          <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px;">
+            {{#each lastGrindResult.crawlerResults as |cr|}}
+              <span class="cog-badge cog-bg-surface cog-text" style="border: 1px solid var(--cog-panel-border); font-size: 11px; padding: 2px 6px;">
+                <strong>{{cr.name}}:</strong> +{{cr.totalEarnedHours}}h (Pool: {{cr.bankedHours}}h)
+                {{#if (gt cr.fatigueGained 0)}}<span class="cog-text-danger" style="margin-left: 3px;"><i class="fa-solid fa-triangle-exclamation"></i> +{{cr.fatigueGained}} Fatigue</span>{{/if}}
+                {{#if cr.forfeitedHours}}<span class="cog-text-muted" style="margin-left: 3px;">({{cr.forfeitedHours}}h forfeited)</span>{{/if}}
+              </span>
+            {{/each}}
+          </div>
+        {{/if}}
+      </div>
+      <button type="button" data-action="dismissAlert" class="dismiss-grind-alert-btn cog-bg-none cog-text-secondary" style="border: none; cursor: pointer; font-size: 16px;" title="Dismiss">&times;</button>
+    </div>
+  {{/if}}
+</div>

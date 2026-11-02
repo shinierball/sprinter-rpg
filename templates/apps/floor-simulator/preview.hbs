@@ -1,0 +1,48 @@
+<aside class="cog-fsim-preview" aria-label="{{localize 'COG.FloorSim.Preview.Label'}}">
+  <h3>{{localize 'COG.FloorSim.Preview.Title'}}</h3>
+  {{#if preview.available}}
+    {{#with preview as |v|}}
+      <p class="cog-fsim-previewline"><strong>{{localize 'COG.FloorSim.Preview.Level'}}</strong> {{v.level}} &middot; {{v.floorLabel}}</p>
+      <table class="cog-fsim-table small">
+        <tbody>
+          {{#each v.abilities}}
+            <tr class="{{#if changed}}changed{{/if}}">
+              <th scope="row">{{upper key}}</th>
+              <td>{{before}} <i class="fa-solid fa-arrow-right"></i> <strong>{{unenhanced}}</strong></td>
+              <td class="cog-fsim-muted">{{localize 'COG.FloorSim.Preview.Enhanced' value=enhanced}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      {{#if v.pendingStatPoints}}<p class="cog-fsim-note">{{localize 'COG.FloorSim.Preview.PendingPoints' points=v.pendingStatPoints}}</p>{{/if}}
+      {{#if v.skills.length}}
+        <h4>{{localize 'COG.FloorSim.Preview.Skills'}}</h4>
+        <ul class="cog-fsim-previewlist">
+          {{#each v.skills}}
+            <li>{{#if isSpell}}<span class="cog-fsim-badge spell">[SPELL]</span> {{/if}}{{name}}: {{before}} <i class="fa-solid fa-arrow-right"></i> <strong>{{after}}</strong>{{#if capped}} <span class="cog-fsim-badge cap">{{localize 'COG.FloorSim.Capped'}}</span>{{/if}}{{#if note}} <em>{{note}}</em>{{/if}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
+      {{#if v.newItems.length}}
+        <h4>{{localize 'COG.FloorSim.Preview.NewItems'}}</h4>
+        <ul class="cog-fsim-previewlist">
+          {{#each v.newItems}}<li><span class="cog-fsim-badge">[{{type}}]</span> {{name}}</li>{{/each}}
+        </ul>
+      {{/if}}
+      <p class="cog-fsim-previewline">{{localize 'COG.FloorSim.Preview.AiFavor'}} <strong>{{v.aiFavor}}</strong> &middot; {{localize 'COG.FloorSim.Preview.Popularity'}} <strong>{{v.popularity}}</strong></p>
+      {{#if v.ruleBreaks.length}}
+        <div class="cog-fsim-breaks">
+          <strong><span class="cog-fsim-badge break">{{localize 'COG.FloorSim.RuleBreakBadge'}}</span> {{localize 'COG.FloorSim.Review.Breaks'}}</strong>
+          <ul>{{#each v.ruleBreaks}}<li>{{reason}}</li>{{/each}}</ul>
+        </div>
+      {{/if}}
+      {{#if v.warnings.length}}
+        <details class="cog-fsim-warnings"><summary>{{localize 'COG.FloorSim.Preview.Warnings' count=v.warnings.length}}</summary>
+          <ul>{{#each v.warnings}}<li>{{message}}</li>{{/each}}</ul>
+        </details>
+      {{/if}}
+    {{/with}}
+  {{else}}
+    <p class="cog-fsim-note">{{#if preview.error}}{{preview.error}}{{else}}{{localize 'COG.FloorSim.Preview.None'}}{{/if}}</p>
+  {{/if}}
+</aside>

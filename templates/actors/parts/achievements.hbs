@@ -1,0 +1,296 @@
+{{!-- TAB 6: ACHIEVEMENTS & TROPHY ROOM --}}
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="achievements">
+<div class="cog-page-container cog-achievements-container">
+
+  {{!-- BOSS STARS & CRAWLER SKULLS (PUBLIC NOTORIETY & INFAMY) --}}
+  <div class="cog-trophy-manager-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--cog-accent); padding-bottom: 6px; margin-bottom: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-star cog-text-gold" style="font-size: 16px;"></i>
+        <span class="cog-text-strong" style="font-family: 'Oswald', sans-serif; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;">
+          Public Notoriety: Boss Stars &amp; Crawler Skulls
+        </span>
+        {{#if trophyBadges.hasBadges}}
+          <span style="margin-left: 6px;">{{{trophyBadges.html}}}</span>
+        {{/if}}
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button class="cog-dark cog-bg-header-fill cog-text-gold" type="button" data-action="recordBossKill" style="border: 1px solid var(--cog-warning); border-radius: 3px; padding: 3px 8px; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold; cursor: pointer;">
+          <i class="fa-solid fa-star"></i> Record Boss Kill
+        </button>
+        <button class="cog-dark cog-bg-header-fill cog-text-danger" type="button" data-action="recordCrawlerKill" style="border: 1px solid var(--cog-accent); border-radius: 3px; padding: 3px 8px; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: bold; cursor: pointer;">
+          <i class="fa-solid fa-skull"></i> Record Crawler Kill
+        </button>
+      </div>
+    </div>
+
+    {{!-- Star Tiers & Skull Grid --}}
+    <div class="cog-trophy-tier-grid">
+      {{#each trophyTiers as |t|}}
+        <div class="cog-trophy-tier-card" style="--cog-bd-dyn: {{t.color}}; border-left: 3px solid var(--cog-bd-dyn);">
+          <div class="cog-trophy-tier-header">
+            <i class="fa-solid fa-star {{t.class}} cog-tier-chip"></i>
+            <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{t.color}};">{{t.label}}</span>
+          </div>
+          <div class="cog-trophy-tier-scope">{{t.bossLevel}}</div>
+          <div class="cog-trophy-tier-controls">
+            <button type="button" class="cog-trophy-step-btn" data-action="adjustTrophy" data-tier="{{t.id}}" data-delta="-1" title="Decrement">-</button>
+            <span class="cog-trophy-count-pill">{{t.count}}</span>
+            <button type="button" class="cog-trophy-step-btn" data-action="adjustTrophy" data-tier="{{t.id}}" data-delta="1" title="Increment">+</button>
+          </div>
+        </div>
+      {{/each}}
+
+      {{!-- Crawler Skulls Card --}}
+      <div class="cog-trophy-tier-card" style="border-left: 3px solid var(--cog-accent);">
+        <div class="cog-trophy-tier-header">
+          <i class="fa-solid fa-skull crawler-skull cog-tier-chip"></i>
+          <span class="cog-text">Crawler Skulls</span>
+        </div>
+        <div class="cog-trophy-tier-scope">Slain Crawlers (PvP)</div>
+        <div class="cog-trophy-tier-controls">
+          <button type="button" class="cog-trophy-step-btn" data-action="adjustTrophy" data-tier="crawlers" data-delta="-1" title="Decrement">-</button>
+          <span class="cog-trophy-count-pill cog-text-danger">{{crawlerKillCount}}</span>
+          <button type="button" class="cog-trophy-step-btn" data-action="adjustTrophy" data-tier="crawlers" data-delta="1" title="Increment">+</button>
+        </div>
+      </div>
+    </div>
+
+    {{!-- Kill Logs Collapsible / Tables --}}
+    {{#if bossLog.length}}
+      <div style="margin-top: 10px; border-top: 1px solid var(--cog-panel-border); padding-top: 6px;">
+        <span class="cog-text-gold" style="font-family: 'Oswald', sans-serif; font-size: 11px; text-transform: uppercase; font-weight: bold;">
+          <i class="fa-solid fa-list"></i> Boss Kill Log ({{bossLog.length}})
+        </span>
+        <table class="cog-trophy-log-table">
+          <thead>
+            <tr>
+              <th style="width: 25%;">Boss Name</th>
+              <th style="width: 25%;">Tier / Scope</th>
+              <th style="width: 20%;">Floor</th>
+              <th style="width: 20%;">Date</th>
+              <th style="width: 10%; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each bossLog as |k|}}
+              <tr>
+                <td><strong>{{k.name}}</strong></td>
+                <td>
+                  <i class="fa-solid fa-star star-{{k.tier}}"></i>
+                  <span style="text-transform: capitalize;">{{k.tier}} ({{k.bossLevel}})</span>
+                </td>
+                <td>{{k.floor}}</td>
+                <td class="cog-text-muted">{{k.date}}</td>
+                <td style="text-align: center;">
+                  <a class="cog-text-danger" data-action="deleteBossKill" data-kill-id="{{k.id}}" title="Remove Logged Kill" style="cursor: pointer;">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </a>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    {{/if}}
+
+    {{#if crawlerLog.length}}
+      <div style="margin-top: 10px; border-top: 1px solid var(--cog-panel-border); padding-top: 6px;">
+        <span class="cog-text-danger" style="font-family: 'Oswald', sans-serif; font-size: 11px; text-transform: uppercase; font-weight: bold;">
+          <i class="fa-solid fa-skull"></i> Crawler Kill Log ({{crawlerLog.length}})
+        </span>
+        <table class="cog-trophy-log-table">
+          <thead>
+            <tr>
+              <th style="width: 35%;">Crawler Name</th>
+              <th style="width: 20%;">Crawler #</th>
+              <th style="width: 20%;">Floor</th>
+              <th style="width: 15%;">Date</th>
+              <th style="width: 10%; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each crawlerLog as |ck|}}
+              <tr>
+                <td><strong class="cog-text">{{ck.name}}</strong></td>
+                <td class="cog-text-warning">{{ck.crawlerNumber}}</td>
+                <td>{{ck.floor}}</td>
+                <td class="cog-text-muted">{{ck.date}}</td>
+                <td style="text-align: center;">
+                  <a class="cog-text-danger" data-action="deleteCrawlerKill" data-kill-id="{{ck.id}}" title="Remove Logged Kill" style="cursor: pointer;">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </a>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    {{/if}}
+  </div>
+
+  {{!-- TOP BANNER: TROPHY ROOM SUMMARY METRICS --}}
+  <div class="cog-stat-block" style="margin-bottom: 12px;">
+    <div class="cog-banner-header cog-dark cog-bg-window" style="border-bottom: 2px solid var(--cog-accent); display: flex; justify-content: space-between; align-items: center; padding: 6px 12px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-trophy cog-dark cog-text-gold" style="font-size: 16px;"></i>
+        <span class="cog-text-on-fill" style="font-family: 'Oswald', sans-serif; font-size: 14px; letter-spacing: 1px;">
+          DUNGEON AI TROPHY ROOM &amp; HALL OF ACCOMPLISHMENTS
+        </span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="cog-bg-accent-fill cog-text-on-fill" style="font-family: 'Oswald', sans-serif; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: bold;">
+          {{achievements.length}} ACHIEVEMENTS UNLOCKED
+        </span>
+        {{#if achievementStats.totalFavor}}
+          <span class="cog-dark cog-bg-header-fill cog-text-gold" style="font-family: 'Oswald', sans-serif; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: bold;">
+            <i class="fa-solid fa-hand-sparkles"></i> +{{achievementStats.totalFavor}} FAVOR
+          </span>
+        {{/if}}
+      </div>
+    </div>
+
+    {{!-- Tier Breakdown Pills --}}
+    <div class="cog-bg-surface" style="padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 1px solid var(--cog-panel-border);">
+      <span class="cog-text-muted" style="font-size: 11px; font-family: 'Oswald', sans-serif; text-transform: uppercase;">Trophy Tiers:</span>
+      <span class="cog-tier-pill cog-text-gold cog-bg-gold-tint" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--cog-gold); font-weight: bold;">
+        <i class="fa-solid fa-medal"></i> Bronze: {{achievementStats.byTier.bronze}}
+      </span>
+      <span class="cog-tier-pill cog-text-secondary cog-bg-surface-muted" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--cog-border-muted); font-weight: bold;">
+        <i class="fa-solid fa-shield"></i> Silver: {{achievementStats.byTier.silver}}
+      </span>
+      <span class="cog-tier-pill cog-text-gold cog-bg-gold-tint" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--cog-gold); font-weight: bold;">
+        <i class="fa-solid fa-trophy"></i> Gold: {{achievementStats.byTier.gold}}
+      </span>
+      <span class="cog-tier-pill cog-text-info cog-bg-info-tint" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--cog-info); font-weight: bold;">
+        <i class="fa-solid fa-gem"></i> Platinum: {{achievementStats.byTier.platinum}}
+      </span>
+      <span class="cog-tier-pill cog-text-warning cog-bg-warning-tint" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--cog-warning); font-weight: bold;">
+        <i class="fa-solid fa-dragon"></i> Legendary: {{achievementStats.byTier.legendary}}
+      </span>
+      <span class="cog-tier-pill cog-text-magic cog-bg-magic-tint" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--cog-magic); font-weight: bold;">
+        <i class="fa-solid fa-crown"></i> Celestial: {{achievementStats.byTier.celestial}}
+      </span>
+    </div>
+  </div>
+
+  {{!-- ACTION BAR: FILTERS & BUTTONS --}}
+  <div class="cog-bg-surface-muted" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; padding: 8px 10px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+    <div style="display: flex; gap: 8px; flex: 1; align-items: center;">
+      <input type="text" class="cog-field-input cog-bg-window cog-text-strong" id="{{rootId}}-achievement-search" data-input-action="filterAchievements" data-filter="query" value="{{achievementFilter.query}}" placeholder="Search achievements by name, quote, reward..." style="flex: 1; height: 26px; font-size: 11px; border: 1px solid var(--cog-panel-border);" />
+      <select class="cog-bg-window cog-text-strong" data-change-action="filterAchievements" data-filter="tier" style="height: 26px; font-size: 11px; border: 1px solid var(--cog-panel-border); border-radius: 3px; font-family: 'Oswald', sans-serif;">
+        {{#each achievementTierOptions as |opt|}}
+          <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <button class="cog-dark cog-bg-header-fill cog-text-on-fill" type="button" data-action="openAchievementPicker" title="Browse the Achievement Catalog & Grant Presets" style="border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 3px 8px; font-size: 11px; font-family: 'Oswald', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+        <i class="fa-solid fa-book-bookmark"></i> Achievement Catalog
+      </button>
+      <a class="cog-btn cog-bg-accent-fill cog-text-on-fill" data-action="createItem" data-type="achievement" title="Create Custom Achievement" style="border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; padding: 3px 8px; font-size: 11px; font-family: 'Oswald', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 4px; text-decoration: none;">
+        <i class="fa-solid fa-plus"></i> New Achievement
+      </a>
+    </div>
+  </div>
+
+  {{!-- ACHIEVEMENTS LIST --}}
+  <div class="cog-achievements-list" style="display: flex; flex-direction: column; gap: 10px;">
+    {{#each achievements as |item|}}
+      <div class="cog-achievement-card-entry cog-bg-surface-muted" data-item-id="{{item.id}}" data-tier="{{item.system.tier}}" style="border: 1.5px solid {{item.tierColor}}; border-radius: 5px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.5); position: relative;">
+        
+        {{!-- Top Row: Title, Tier, Badges, and Action Buttons --}}
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <i class="{{item.tierIcon}} cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{item.tierColor}}; font-size: 18px;"></i>
+            <h4 class="cog-text-strong" style="margin: 0; font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: bold; letter-spacing: 0.5px;">
+              {{item.name}}
+            </h4>
+            <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{item.tierColor}}; font-size: 10px; font-family: 'Oswald', sans-serif; text-transform: uppercase; font-weight: bold; padding: 1px 6px; border-radius: 3px; border: 1px solid {{item.tierColor}};">
+              {{item.tierLabel}}
+            </span>
+            {{#if item.system.floor}}
+              <span class="cog-text-secondary cog-bg-window" style="font-size: 10px; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--cog-panel-border);">
+                <i class="fa-solid fa-layer-group"></i> {{item.system.floor}}
+              </span>
+            {{/if}}
+            {{#if item.system.dateEarned}}
+              <span class="cog-text-muted" style="font-size: 10px;">
+                <i class="fa-regular fa-clock"></i> {{item.system.dateEarned}}
+              </span>
+            {{/if}}
+          </div>
+
+          {{!-- Action Buttons --}}
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="announceAchievement" title="Announce Achievement to Chat" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 2px 8px; font-size: 10px; font-family: 'Oswald', sans-serif; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <i class="fa-solid fa-bullhorn"></i> Announce
+            </button>
+            <a class="item-edit cog-text-secondary" data-action="editItem" title="Edit Achievement" style="cursor: pointer; padding: 2px 4px;"><i class="fa-solid fa-edit"></i></a>
+            <a class="item-delete cog-text-accent" data-action="deleteItem" title="Delete Achievement" style="cursor: pointer; padding: 2px 4px;"><i class="fa-solid fa-trash"></i></a>
+          </div>
+        </div>
+
+        {{!-- Dungeon AI Announcement Quote --}}
+        {{#if item.system.quote}}
+          <div class="cog-bg-surface-muted cog-text" style="border-left: 3px solid var(--cog-accent); padding: 6px 10px; font-style: italic; font-size: 12px; margin-bottom: 8px; line-height: 1.45;">
+            “{{item.system.quote}}”
+          </div>
+        {{/if}}
+
+        {{!-- Reward & Contents Bar --}}
+        <div class="cog-bg-window" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 6px 10px; font-size: 11px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div>
+              <span class="cog-text-muted" style="text-transform: uppercase; font-size: 10px;">Reward:</span>
+              <strong class="cog-text-success" style="font-size: 12px; margin-left: 4px;">
+                <i class="fa-solid fa-gift"></i> {{item.system.reward}}
+              </strong>
+            </div>
+            {{#if item.system.favor}}
+              <div class="cog-text-gold" style="font-weight: bold;">
+                <i class="fa-solid fa-hand-sparkles"></i> +{{item.system.favor}} Favor
+              </div>
+            {{/if}}
+            {{#if item.system.xp}}
+              <div class="cog-text-info" style="font-weight: bold;">
+                <i class="fa-solid fa-bolt"></i> +{{item.system.xp}} XP
+              </div>
+            {{/if}}
+          </div>
+
+          {{#if item.system.rewardContents}}
+            <div class="cog-text-secondary">
+              <span class="cog-text-muted">Contents:</span> {{item.system.rewardContents}}
+            </div>
+          {{/if}}
+        </div>
+
+        {{!-- Additional Notes / Description if present --}}
+        {{#if item.system.description}}
+          <div class="cog-text-secondary" style="margin-top: 6px; font-size: 11px; font-style: italic;">
+            {{item.system.description}}
+          </div>
+        {{/if}}
+
+      </div>
+    {{else}}
+      {{!-- Empty State --}}
+      <div class="cog-bg-surface cog-text-muted" style="text-align: center; padding: 40px 20px; border: 2px dashed var(--cog-panel-border); border-radius: 6px;">
+        <i class="fa-solid fa-trophy cog-text-secondary" style="font-size: 36px; margin-bottom: 10px;"></i>
+        <h3 class="cog-text-strong" style="margin: 0 0 6px 0; font-family: 'Oswald', sans-serif; font-size: 18px;">
+          NO ACHIEVEMENTS UNLOCKED YET
+        </h3>
+        <p style="margin: 0 0 14px 0; font-size: 12px; font-style: italic; max-width: 440px; margin-left: auto; margin-right: auto; line-height: 1.4;">
+          “The Dungeon AI sees all, Crawler. And so far, it hasn't seen you do anything worth commemorating. Go kill a boss, blow something up, or humiliate yourself on live camera.”
+        </p>
+        <button class="cog-bg-accent-fill cog-text-on-fill" type="button" data-action="openAchievementPicker" style="border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 6px 14px; font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: bold; cursor: pointer;">
+          <i class="fa-solid fa-book-bookmark"></i> Open Achievement Catalog
+        </button>
+      </div>
+    {{/each}}
+  </div>
+
+</div>
+</section>

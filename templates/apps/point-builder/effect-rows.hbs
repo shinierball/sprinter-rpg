@@ -1,0 +1,55 @@
+<!-- 7. Unique Permanent Buffs & Debuffs: inline rows. A catalog pick copies the whole payload. -->
+<section class="cog-builder-section">
+  <div class="cog-section-title">
+    <i class="fa-solid fa-shield-heart"></i> 7. Unique Permanent Buffs & Debuffs
+    <span class="cog-section-badge">Granted Status Conditions</span>
+  </div>
+
+  <div class="cog-custom-adder-box">
+    <div class="cog-entry-list">
+      {{#each buffRows}}
+        <div class="cog-entry-adder-row cog-pb-row" data-row="buffs" data-index="{{@index}}">
+          <select id="{{@root.rootId}}-buffs-{{@index}}-identifier" data-change-action="setRowField" data-row-field="identifier" title="Pick a buff from the catalog, or type your own">
+            {{#each this.identifierOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+          </select>
+          <input type="text" id="{{@root.rootId}}-buffs-{{@index}}-name" data-input-action="setRowField" data-change-action="setRowField" data-row-field="name" value="{{this.name}}" placeholder="Buff name">
+          {{#unless this.picked}}
+            <input type="text" id="{{@root.rootId}}-buffs-{{@index}}-description" data-input-action="setRowField" data-change-action="setRowField" data-row-field="description" value="{{this.description}}" placeholder="Description / Effect">
+          {{/unless}}
+          <select id="{{@root.rootId}}-buffs-{{@index}}-tier" data-change-action="setRowField" data-row-field="tier">
+            {{#each this.tierOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+          </select>
+          {{#if this.unfilled}}<span class="cog-param-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.PointBuilder.Unfilled"}}</span>{{/if}}
+          <span class="cog-entry-cost">+{{this.cost}} BP</span>
+          <button type="button" class="cog-btn-icon cog-remove-buff-btn" data-action="removeBuffRow" data-index="{{@index}}" title="Remove"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      {{/each}}
+    </div>
+    <div class="cog-entry-adder-row">
+      <button type="button" id="{{@root.rootId}}-add-buff" class="cog-btn cog-add-buff-btn" data-action="addBuffRow"><i class="fa-solid fa-plus"></i> Add Buff</button>
+    </div>
+
+    <div class="cog-entry-list">
+      {{#each debuffRows}}
+        <div class="cog-entry-adder-row cog-pb-row" data-row="debuffs" data-index="{{@index}}">
+          <select id="{{@root.rootId}}-debuffs-{{@index}}-identifier" data-change-action="setRowField" data-row-field="identifier" title="Pick a debuff from the catalog, or type your own">
+            {{#each this.identifierOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+          </select>
+          <input type="text" id="{{@root.rootId}}-debuffs-{{@index}}-name" data-input-action="setRowField" data-change-action="setRowField" data-row-field="name" value="{{this.name}}" placeholder="Debuff name">
+          {{#unless this.picked}}
+            <input type="text" id="{{@root.rootId}}-debuffs-{{@index}}-description" data-input-action="setRowField" data-change-action="setRowField" data-row-field="description" value="{{this.description}}" placeholder="Description / Drawback">
+          {{/unless}}
+          <select id="{{@root.rootId}}-debuffs-{{@index}}-tier" data-change-action="setRowField" data-row-field="tier">
+            {{#each this.tierOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+          </select>
+          {{#if this.unfilled}}<span class="cog-param-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.PointBuilder.Unfilled"}}</span>{{/if}}
+          <span class="cog-entry-cost refund">+{{this.extraPoints}} Extra BP</span>
+          <button type="button" class="cog-btn-icon cog-remove-debuff-btn" data-action="removeDebuffRow" data-index="{{@index}}" title="Remove"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      {{/each}}
+    </div>
+    <div class="cog-entry-adder-row">
+      <button type="button" id="{{@root.rootId}}-add-debuff" class="cog-btn cog-add-debuff-btn" data-action="addDebuffRow"><i class="fa-solid fa-plus"></i> Add Debuff</button>
+    </div>
+  </div>
+</section>

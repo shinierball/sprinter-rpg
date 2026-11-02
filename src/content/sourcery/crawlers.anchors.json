@@ -1,0 +1,20 @@
+{
+  "book": "crawlers",
+  "entries": [
+    {"id":"dccspl0000000015","anchor":{"kind":"heading","hash":"599f8341fe3e0fd23de7d89500b8224965ab536307049a175bcd30331d0918c5"},"pageHint":42,"more":[{"anchor":{"kind":"heading","hash":"140bedbf9c3f6d56a9846d2ba7088798683f4da0c248231336e6a05679e4fdfe"},"pageHint":42,"fields":["fields.rank5"],"pick":[{"hash":"140bedbf9c3f6d56","into":"fields.rank5"}]},{"anchor":{"kind":"heading","hash":"140bedbf9c3f6d56a9846d2ba7088798683f4da0c248231336e6a05679e4fdfe"},"pageHint":42,"fields":["fields.rank10"],"pick":[{"hash":"140bedbf9c3f6d56","into":"fields.rank10"}]},{"anchor":{"kind":"heading","hash":"140bedbf9c3f6d56a9846d2ba7088798683f4da0c248231336e6a05679e4fdfe"},"pageHint":42,"fields":["fields.rank15"],"pick":[{"hash":"140bedbf9c3f6d56","into":"fields.rank15"}]}],"check":{"name":"421acf13c1cb044e","system.quote":"f4f7111be2879173","system.rankBreaks.rank10.notes":"dc937b59892604f5","system.rankBreaks.rank15.notes":"dc937b59892604f5","system.rankBreaks.rank5.notes":"dc937b59892604f5","system.upgrades.rank10":"dc937b59892604f5","system.upgrades.rank15":"dc937b59892604f5","system.upgrades.rank5":"dc937b59892604f5"}},
+    {"id":"t-crawlers-1","anchor":{"kind":"table","number":1},"pageHint":12},
+    {"id":"t-crawlers-2","anchor":{"kind":"table","number":2},"pageHint":12},
+    {"id":"t-crawlers-3","anchor":{"kind":"table","number":3},"pageHint":13},
+    {"id":"t-crawlers-4","anchor":{"kind":"table","number":4},"pageHint":13},
+    {"id":"t-crawlers-5","anchor":{"kind":"table","number":5},"pageHint":14},
+    {"id":"t-crawlers-6","anchor":{"kind":"table","number":6},"pageHint":14},
+    {"id":"t-crawlers-7","anchor":{"kind":"table","number":7},"pageHint":15},
+    {"id":"t-crawlers-8","anchor":{"kind":"table","number":8},"pageHint":15},
+    {"id":"t-crawlers-9","anchor":{"kind":"table","number":9},"pageHint":18},
+    {"id":"t-crawlers-10","anchor":{"kind":"table","number":10},"pageHint":20},
+    {"id":"t-crawlers-11","anchor":{"kind":"table","number":11},"pageHint":21},
+    {"id":"t-crawlers-12","anchor":{"kind":"table","number":12},"pageHint":21},
+    {"id":"t-crawlers-13","anchor":{"kind":"table","number":13},"pageHint":22},
+    {"id":"t-crawlers-14","anchor":{"kind":"table","number":14},"pageHint":26}
+  ]
+}

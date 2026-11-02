@@ -1,0 +1,107 @@
+<section class="cog-item-body cog-item-body-buff">
+{{#if showBuffAuraNote}}
+<div class="cog-buff-aura-note cog-bg-warning-tint cog-text-warning" style="margin-bottom: 8px; padding: 6px 8px; border-left: 3px solid var(--cog-warning); font-size: 11px;">
+  <i class="fa-solid fa-circle-info"></i> Buffs cannot emit an aura. Make the aura a spell or skill and list this buff in its area's Granted Buffs.
+</div>
+{{/if}}
+<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
+  <div class="cog-field-group small">
+    <span class="cog-field-label">Healing Per Round</span>
+    <input class="cog-field-input" type="text" name="system.healingPerRound" value="{{system.healingPerRound}}" placeholder="1d4 / 1 bar" title="Health restored to bearer at end of each combat round" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">Damage Type</span>
+    <select name="system.damageType" class="cog-field-input">
+      <option value="">All / None</option>
+      {{#each damageTypes as |dt|}}
+        <option value="{{dt}}" {{#if (eq ../system.damageType dt)}}selected{{/if}}>{{dt}}</option>
+      {{/each}}
+    </select>
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">Duration (text, optional)</span>
+    <input name="system.duration" class="cog-field-input" type="text" value="{{system.duration}}" placeholder="1 Hour" />
+  </div>
+</div>
+<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
+  {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=durationEditor}}
+</div>
+
+{{!-- MULTIPLE STAT MODIFIERS --}}
+<div class="cog-stat-block" style="margin-bottom: 10px;">
+  <div class="cog-banner-header" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
+    <span>STAT MODIFIERS</span>
+    <a class="cog-text-on-fill" data-action="addRow" data-row-table="statGrant" style="font-size: 10px; cursor: pointer;">
+      <i class="fa-solid fa-plus"></i> Add Stat Modifier
+    </a>
+  </div>
+  <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
+    {{#if statGrantRows.length}}
+      <table class="cog-table" style="margin: 0; font-size: 11px;">
+        <thead>
+          <tr>
+            <th style="width: 55%;">Ability / Stat</th>
+            <th style="width: 35%;">Bonus Value (+/-)</th>
+            <th style="width: 10%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each statGrantRows as |mod|}}
+            <tr>
+              <td>
+                <select class="cog-field-input" name="system.grants.{{mod.idx}}.stat" style="font-size: 11px;">
+                  {{#each mod.options as |opt|}}
+                    <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                  {{/each}}
+                </select>
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.grants.{{mod.idx}}.value" value="{{mod.value}}" placeholder="2" style="width: 100%; font-size: 11px; text-align: center;" />
+              </td>
+              <td style="text-align: center;">
+                <a class="cog-text-accent" data-action="deleteRow" data-row-table="grant" data-index="{{mod.idx}}" data-tooltip="Delete" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="cog-text" style="text-align: center; font-style: italic; font-size: 11px; padding: 6px;">
+        No additional stat modifiers. Click "Add Stat Modifier" above to grant stat bonuses (e.g. +2 STR, +2 DEX).
+      </div>
+    {{/if}}
+  </div>
+</div>
+
+
+{{!-- LIMB MODIFIERS (ARMS, LEGS, HANDS) --}}
+<div class="cog-stat-block" style="margin-bottom: 10px;">
+  <div class="cog-banner-header cog-bg-info-fill" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
+    <span><i class="fa-solid fa-person-walking"></i> LIMB MODIFIERS (ARMS, LEGS, HANDS)</span>
+  </div>
+  <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
+    <div class="cog-field-row" style="margin-bottom: 4px; align-items: center; gap: 12px;">
+      <div class="cog-field-group small">
+        <span class="cog-field-label">Hands (+/-)</span>
+        <input class="cog-field-input" type="number" name="system.limbModifiers.hands" value="{{system.limbModifiers.hands}}" placeholder="0" style="font-size: 11px; text-align: center;" />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">Arms (+/-)</span>
+        <input class="cog-field-input" type="number" name="system.limbModifiers.arms" value="{{system.limbModifiers.arms}}" placeholder="0" style="font-size: 11px; text-align: center;" />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">Legs (+/-)</span>
+        <input class="cog-field-input" type="number" name="system.limbModifiers.legs" value="{{system.limbModifiers.legs}}" placeholder="0" style="font-size: 11px; text-align: center;" />
+      </div>
+    </div>
+    <div class="cog-text-secondary" style="font-size: 10px; font-style: italic;">
+      Modifies the actor's available limb and wielding hand count while this Buff is active or assigned to an External Buff slot.
+    </div>
+  </div>
+</div>
+
+<div class="cog-field-group">
+  <span class="cog-field-label">Description</span>
+  <textarea class="cog-field-input" name="system.description" style="height: 100px;">{{system.description}}</textarea>
+</div>
+</section>
