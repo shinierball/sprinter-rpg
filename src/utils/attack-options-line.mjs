@@ -18,7 +18,7 @@ function tagTail(tag) {
   return tail ? tail.charAt(0).toUpperCase() + tail.slice(1) : '';
 }
 
-/** The effect chip text: `Iron Punch R5`, then the variant label if one is picked. */
+/** The effect chip text: `Mic Drop R5`, then the variant label if one is picked. */
 function effectText(effect) {
   const name = text(effect.name) || text(effect.identifier);
   const rank = Number.isFinite(Number(effect.rank)) ? Number(effect.rank) : 0;
@@ -74,7 +74,7 @@ export async function attackOptionsLineHtml(flag) {
 }
 
 /**
- * The damage button's label: `Roll Damage (2d2 + 1d4 + 4) · Iron Punch`, `Resolve: Stun instead of damage` for a
+ * The damage button's label: `Roll Damage (2d2 + 1d4 + 4) · Mic Drop`, `Resolve: Stun instead of damage` for a
  * variant that replaces the damage, or `Roll Hit Effects (no damage)` for an attack whose only effect is its On Hit
  * riders (its zero-damage card applies them).
  * @param {object} args

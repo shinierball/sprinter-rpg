@@ -15,14 +15,14 @@ import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
 import { PACK_SPECS } from '../content/specs/index.mjs';
 import { buildIndex } from '../sourcery/indexer.mjs';
 import { PdfJsTextSource, openPdfJsDocument } from '../sourcery/pdfjs-source.mjs';
-import { compileCanon, WORLD_PACK_PREFIX } from '../sourcery/canon.mjs';
+import { compileCanon, WORLD_PACK_PREFIX, BOOKS } from '../sourcery/canon.mjs';
 import { loadRecipes } from '../sourcery/recipes.mjs';
 import { recognise, planImport, summarizePlan } from '../sourcery/import-plan.mjs';
 import { buildReport } from '../sourcery/report.mjs';
 import { buildCommitSet, buildCatalog, commitImport } from '../sourcery/commit.mjs';
 import { syncCompendiumItemToWorld } from '../data/compendium-sync.mjs';
 import { syncImportedItems, importedItemDocuments } from '../sourcery/sync-existing.mjs';
-import { SOURCERY_CATALOG_SETTING, applySourceryCatalog } from '../content/sourcery-content-provider.mjs';
+import { SOURCERY_CATALOG_SETTING, applySourceryCatalog, readStoredCatalog } from '../content/sourcery-content-provider.mjs';
 import { COG_THEME_ID } from '../content/default-content-provider.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 
@@ -57,15 +57,29 @@ export function foundryImportIO() {
       await pack?.deleteCompendium();
     },
     createPack: ({ name, label, documentName }) => CC.createCompendium({ name, label, type: documentName, packageType: 'world' }),
-    async clearPack(pack) {
+    async clearPack(pack, { keep = new Set() } = {}) {
       if (pack.locked) await pack.configure({ locked: false });
       const index = await pack.getIndex();
-      const ids = [...index.keys()];
+      const ids = [...index.keys()].filter(id => !keep.has(id));
       if (ids.length) await pack.documentClass.deleteDocuments(ids, { pack: pack.collection });
     },
+    readDocuments: async (pack) => (await pack.getDocuments()).map(d => d.toObject()),
+    loadCatalog: () => readStoredCatalog(),
     createDocuments: (pack, documentName, docs) => pack.documentClass.createDocuments(docs, { pack: pack.collection, keepId: true, keepEmbeddedIds: true }),
     saveCatalog: (catalog) => globalThis.game.settings.set(SYSTEM_ID, SOURCERY_CATALOG_SETTING, catalog)
   };
+}
+
+const bookLabels = ids => ids.map(id => BOOKS.find(b => b.id === id)?.label ?? id).join(', ');
+
+/** The confirm a commit asks when Sourcery compendiums exist: which books the run adds, replaces and keeps. */
+export function importConfirmHtml(existing, { added = [], replaced = [], kept = [] } = {}) {
+  const rows = [
+    added.length ? `<li>Adds: ${bookLabels(added)}</li>` : '',
+    replaced.length ? `<li>Replaces what the last import read from: ${bookLabels(replaced)}</li>` : '',
+    kept.length ? `<li>Keeps from the last import: ${bookLabels(kept)}</li>` : ''
+  ].join('');
+  return `<p>${existing.length} Sourcery compendium(s) already exist. This import adds to them.</p>${rows ? `<ul>${rows}</ul>` : ''}<p>Continue?</p>`;
 }
 
 /** Default collaborators; tests pass their own through `options.services`. */
@@ -80,9 +94,9 @@ function defaultServices() {
     packSpecs: PACK_SPECS,
     io: foundryImportIO,
     applyCatalog: (catalog) => applySourceryCatalog(undefined, catalog),
-    confirm: async (existing) => globalThis.foundry.applications.api.DialogV2.confirm({
-      window: { title: 'Replace Sourcery compendiums' },
-      content: `<p>${existing.length} Sourcery compendium(s) already exist. Replace them with this import?</p>`
+    confirm: async (existing, books) => globalThis.foundry.applications.api.DialogV2.confirm({
+      window: { title: 'Update Sourcery compendiums' },
+      content: importConfirmHtml(existing, books)
     }),
     confirmSync: async (count) => globalThis.foundry.applications.api.DialogV2.confirm({
       window: { title: 'Update existing items' },
@@ -209,7 +223,7 @@ export class COGSourceryImporterApp extends COGToolApp {
       this.phase = this.result.cancelled ? 'preview' : 'done';
       if (!this.result.cancelled) {
         this.loaded = []; // free the indexes; the plan keeps only counts for the summary
-        await Promise.resolve(this.services.applyCatalog?.(catalog)).catch(err => console.warn('Sprinter RPG | Sourcery catalog refresh failed:', err));
+        await Promise.resolve(this.services.applyCatalog?.(this.result.catalog ?? catalog)).catch(err => console.warn('Sprinter RPG | Sourcery catalog refresh failed:', err));
         this.services.notify('Sourcery import written and loaded into the catalogs.');
         await this.#offerSync(set);
         await this.#offerTheme();

@@ -637,7 +637,7 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
   const primaryType = parts[0]?.type || 'Physical';
   const dmod = collectDamageModifiers(actor, rollContext, { primaryType, split: true });
   // Techniques in play (the chosen effect and the primed ones) that multiply total damage by the target's health
-  // (Smush, Choke Out): per-target rows, judged for each target at apply.
+  // (finishing techniques): per-target rows, judged for each target at apply.
   const healthEffects = [];
   const healthRefs = replacesDamage ? [] : [...extraTechs
     .filter(t => typeof actor.isTechniqueApplicable !== 'function' || actor.isTechniqueApplicable(t, attackItem))

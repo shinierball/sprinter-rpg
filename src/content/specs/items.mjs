@@ -161,7 +161,7 @@ export const COG_ITEMS = [
         {
           "kind": "skill",
           "identifier": "unarmed-combat",
-          "label": "Unarmed Combat",
+          "label": "",
           "value": 1
         }
       ],
@@ -333,26 +333,26 @@ export const COG_ITEMS = [
       },
       "outcomes": [
         {
-          "name": "Fireball",
+          "name": "Pyrotechnic Cue",
           "type": "spell",
-          "spellIdentifier": "fireball",
-          "spellName": "Fireball",
-          "damage": "2d10",
+          "spellIdentifier": "pyrotechnic-cue",
+          "spellName": "Pyrotechnic Cue",
+          "damage": "1d6",
           "damageStat": "int",
           "damageType": "Fire",
           "targetType": "closest_mob",
-          "description": "Unleashes an explosive burst of fire at the closest mob. Costs 0 mana."
+          "description": "Fires the stage pyrotechnics at the closest mob. Costs 0 mana."
         }
       ],
       "grants": [
         {
           "kind": "spell",
-          "identifier": "fireball",
-          "label": "Fireball",
+          "identifier": "pyrotechnic-cue",
+          "label": "Pyrotechnic Cue",
           "rank": 1
         }
       ],
-      "notes": "Activated Ability: Casts Fireball (0 Mana) once per scene.",
+      "notes": "Activated Ability: Casts Pyrotechnic Cue (0 Mana) once per scene.",
       "description": "A bronze ring set with a warm ember stone. Flickers with eager flame whenever combat erupts.",
       "tags": [
         "kind.gear",
@@ -563,7 +563,7 @@ export const COG_ITEMS = [
   },
   {
     "_id": "dccitm0000000007",
-    "name": "Scroll of Fireball",
+    "name": "Scroll of Pyrotechnic Cue",
     "type": "loot",
     "img": "icons/sundries/scrolls/scroll-bound-red.webp",
     "system": {
@@ -574,15 +574,15 @@ export const COG_ITEMS = [
         "unit": ""
       },
       "lootType": "scroll",
-      "spellIdentifier": "fireball",
-      "spellName": "Fireball",
-      "notes": "Single-use spell scroll. Casts Fireball with 0 mana required.",
-      "description": "A parchment scroll inscribed with fiery runes. Reading the inscription casts a devastating Fireball at zero mana cost, burning the scroll to ash."
+      "spellIdentifier": "pyrotechnic-cue",
+      "spellName": "Pyrotechnic Cue",
+      "notes": "Single-use spell scroll. Casts Pyrotechnic Cue with 0 mana required.",
+      "description": "A parchment scroll printed with a lighting cue sheet. Reading the cue aloud casts Pyrotechnic Cue at zero mana cost, and the scroll goes up with the rest of the set."
     }
   },
   {
     "_id": "dccitm0000000008",
-    "name": "Scroll of Heal",
+    "name": "Scroll of House Call",
     "type": "loot",
     "img": "icons/svg/book.svg",
     "system": {
@@ -593,15 +593,15 @@ export const COG_ITEMS = [
         "unit": ""
       },
       "lootType": "scroll",
-      "spellIdentifier": "heal",
-      "spellName": "Heal",
-      "notes": "Single-use spell scroll. Casts Heal with 0 mana required.",
-      "description": "A holy illuminated scroll that invokes soothing restorative magic, healing up to 2 health bars with no mana spent."
+      "spellIdentifier": "house-call",
+      "spellName": "House Call",
+      "notes": "Single-use spell scroll. Casts House Call with 0 mana required.",
+      "description": "A scroll in a doctor's handwriting, which nobody can read. Reading it aloud anyway casts House Call at zero mana cost: the one you touch regains a Health Bar."
     }
   },
   {
     "_id": "dccitm0000000009",
-    "name": "Scroll of Earworm",
+    "name": "Scroll of Mic Feedback",
     "type": "loot",
     "img": "icons/svg/book.svg",
     "system": {
@@ -612,10 +612,10 @@ export const COG_ITEMS = [
         "unit": ""
       },
       "lootType": "scroll",
-      "spellIdentifier": "earworm",
-      "spellName": "Earworm",
-      "notes": "Single-use spell scroll. Casts Earworm (Sonic damage) for 0 mana.",
-      "description": "Inscribed with hypnotic musical notation that lodges unbearable sonic noise in an enemy's mind."
+      "spellIdentifier": "mic-feedback",
+      "spellName": "Mic Feedback",
+      "notes": "Single-use spell scroll. Casts Mic Feedback (Sonic damage) for 0 mana.",
+      "description": "A sound check, written down. Reading it aloud casts Mic Feedback at zero mana cost, and the whole cone regrets being in the front row."
     }
   },
   {
@@ -685,7 +685,7 @@ export const COG_ITEMS = [
   },
   {
     "_id": "dccitm0000000011",
-    "name": "Wand of Lightning",
+    "name": "Wand of Bouncer's Shove",
     "type": "loot",
     "img": "icons/weapons/wands/wand-gem-blue.webp",
     "system": {
@@ -700,10 +700,10 @@ export const COG_ITEMS = [
         "value": 3,
         "max": 3
       },
-      "spellIdentifier": "lightning-bolt",
-      "spellName": "Lightning Bolt",
-      "notes": "Wand with 3 charges. Casts Lightning Bolt for 0 mana.",
-      "description": "A silver conductor wand tipped with a crackling sapphire. Casts powerful Lightning Bolt spells at zero mana cost."
+      "spellIdentifier": "bouncers-shove",
+      "spellName": "Bouncer's Shove",
+      "notes": "Wand with 3 charges. Casts Bouncer's Shove for 0 mana.",
+      "description": "A black wand with a tiny earpiece. Each charge casts Bouncer's Shove at zero mana cost and escorts one target off the premises."
     }
   },
   {
@@ -731,8 +731,8 @@ export const COG_ITEMS = [
           "damageStat": "int",
           "damageType": "Fire",
           "targetType": "closest_mob",
-          "debuff": "Burned",
-          "description": "A slow ball of fire drifts at the closest mob. Attack made with Disadvantage. 10ft blast radius. Targets losing 1+ Health Bar gain the Burned Debuff."
+          "debuff": "flambe",
+          "description": "A slow ball of fire drifts at the closest mob. Attack made with Disadvantage. 10ft blast radius. Targets losing 1+ Health Bar gain the Flambe debuff."
         },
         {
           "name": "Healing Blob of Pudding",
@@ -995,12 +995,12 @@ export const COG_ITEMS = [
         },
         {
           "kind": "skill",
-          "identifier": "bite",
-          "label": "Bite",
+          "identifier": "chomp",
+          "label": "Chomp",
           "value": 1
         }
       ],
-      "notes": "+2 CON, +1 STR. Adds +1d4 Bludgeoning damage to natural attacks and grants +1 bonus to Lockjaw Clamp and Bite skills.",
+      "notes": "+2 CON, +1 STR. Adds +1d4 Bludgeoning damage to natural attacks and grants +1 bonus to Lockjaw Clamp and Chomp skills.",
       "description": "Cast titanium sleeve caps fitted over canine and incisor teeth, reinforcing the pet's skull against concussive rebound.",
       "tags": [
         "kind.gear",

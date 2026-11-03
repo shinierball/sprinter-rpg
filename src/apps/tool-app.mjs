@@ -4,14 +4,15 @@
  * A thin ApplicationV2 + Handlebars base, no V1 compatibility. It provides the three-attribute
  * delegation contract the Phase 2 sheets use (`data-action`, `data-change-action`,
  * `data-input-action`, all resolved in `options.actions` with `this === app`), a one-window
- * `open()` for fixed-id apps, and `refreshOpen()` to re-render every open instance of a class.
+ * `open()` for fixed-id apps, and `refreshOpen()` to re-render every open instance of a class. Resize and
+ * focus behaviour comes from {@link COGWindowMixin}, shared with the document sheets.
  */
 import { HandlebarsApplicationMixin, openApplications } from '../compat.mjs';
-import { focusKey, findByFocusKey, focusLikeTab } from '../utils/focus-restore.mjs';
+import { COGWindowMixin } from './window-mixin.mjs';
 
 const ApplicationV2 = globalThis.foundry?.applications?.api?.ApplicationV2 ?? class {};
 
-export class COGToolApp extends HandlebarsApplicationMixin(ApplicationV2) {
+export class COGToolApp extends COGWindowMixin(HandlebarsApplicationMixin(ApplicationV2)) {
   static DEFAULT_OPTIONS = {
     classes: ['cog-app'],
     tag: 'div',
@@ -36,29 +37,6 @@ export class COGToolApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.element.addEventListener('change', (event) => this._onChangeForm(this.options.form, event));
     }
     this.element.addEventListener('input', (event) => this._onDelegatedInput(event));
-    this.element.addEventListener('focusin', (event) => { this._lastFocused = event.target; });
-  }
-
-  /** Note which control has focus before the DOM is replaced, so {@link _onRender} can put it back. @override */
-  async _preRender(context, options) {
-    await super._preRender?.(context, options);
-    // `change` fires before the browser moves focus on Tab; wait one task so the record names the NEW focus target.
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    const doc = this.element?.ownerDocument;
-    const active = doc?.activeElement;
-    const focused = (active && active !== doc.body && this.element.contains(active)) ? active : this._lastFocused;
-    this._focusRestoreKey = focused ? focusKey(this.element, focused) : null;
-  }
-
-  /** After a re-render that dropped focus to the page body (Tab out of a control that re-renders), refocus it. @override */
-  async _onRender(context, options) {
-    await super._onRender?.(context, options);
-    const key = this._focusRestoreKey;
-    this._focusRestoreKey = null;
-    const doc = this.element?.ownerDocument;
-    if (!key || !doc || (doc.activeElement && doc.activeElement !== doc.body)) return;
-    const target = findByFocusKey(this.element, key);
-    if (target) focusLikeTab(target);
   }
 
   /**

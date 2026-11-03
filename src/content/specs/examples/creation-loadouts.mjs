@@ -5,6 +5,10 @@
  * offers them for a slot only when no provider registered an entry for that slot (answer 120 (a)). They are not catalog
  * documents, are not in `EXAMPLE_ITEM_SPECS`, and are never registered.
  */
+import { BACKSTAGE_BRAWLING, MIC_DROP } from './items/base-skills.mjs';
+import { PYROTECHNIC_CUE } from './items/base-set.mjs';
+
+const withoutId = ({ _id, ...spec }) => structuredClone(spec);
 
 export const EXAMPLE_CREATION_LOADOUTS = Object.freeze([
   {
@@ -12,16 +16,8 @@ export const EXAMPLE_CREATION_LOADOUTS = Object.freeze([
     slot: 'spell',
     name: 'Pyrotechnic Cue',
     spellIdentifier: 'pyrotechnic-cue',
-    fallback: {
-      name: 'Pyrotechnic Cue',
-      img: 'icons/svg/fire.svg',
-      system: {
-        identifier: 'pyrotechnic-cue', rank: 1, stat: 'int', manaCost: 3, range: '30 feet', duration: 'Instantaneous',
-        cooldown: { value: 0, unit: '' }, checkType: 'attack', baseDamage: { dice: '1d6', stat: 'int', damageType: 'Fire' }, delivery: 'target',
-        tags: ['kind.spell', 'action.attack', 'element.fire', 'stat.int', 'delivery.target'],
-        description: '<p>The stage manager says "go", and a jet of stage fire answers. Single target, no refunds.</p>'
-      }
-    }
+    // The Base Set's spell (items/base-set.mjs) without its set id, so the two cannot drift.
+    fallback: withoutId(PYROTECHNIC_CUE)
   },
   {
     id: 'example.backstage-brawling',
@@ -30,29 +26,8 @@ export const EXAMPLE_CREATION_LOADOUTS = Object.freeze([
     label: 'Backstage Brawling with Mic Drop (+1d4 base damage)',
     skillIdentifier: 'backstage-brawling',
     effectIdentifier: 'mic-drop',
-    fallback: {
-      skill: {
-        name: 'Backstage Brawling',
-        img: 'icons/svg/combat.svg',
-        system: {
-          identifier: 'backstage-brawling', rank: 0, stat: 'dex', isAttack: true, hasDamage: true,
-          baseDamage: { dice: '1d2', stat: 'str', damageType: 'Bludgeoning' },
-          tags: ['kind.skill', 'action.attack', 'element.bludgeoning', 'stat.dex', 'skillGroup.combat', 'weaponClass.unarmed', 'weaponGroup.hand_to_hand'],
-          notes: 'Unarmed fighting learned between takes, where nobody was filming.'
-        }
-      },
-      effect: {
-        name: 'Mic Drop',
-        img: 'icons/svg/sound.svg',
-        system: {
-          identifier: 'mic-drop', rank: 0, stat: 'str', checkType: 'passive', isTechnique: true, isAttack: false, hasDamage: false,
-          appliesToQuery: { all: [], any: ['id.skill.backstage-brawling'], none: [] },
-          techniqueConfig: { isDamageEffect: true, damageBonus: '1d4', description: 'Deal +1d4 base damage.' },
-          tags: ['kind.skill', 'kind.technique', 'action.passive', 'stat.str', 'weaponGroup.hand_to_hand'],
-          notes: 'A Damage Effect for Backstage Brawling: the punch lands, the room goes quiet.'
-        }
-      }
-    }
+    // The two documents are the Base Skills set's (items/base-skills.mjs), without their set ids, so the two cannot drift.
+    fallback: { skill: withoutId(BACKSTAGE_BRAWLING), effect: withoutId(MIC_DROP) }
   },
   {
     id: 'example.mana-spritzer',

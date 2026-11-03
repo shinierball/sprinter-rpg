@@ -30,6 +30,20 @@ const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const docKindOf = (raw) => (cleanText(raw) === 'spell' ? 'spell' : 'skill');
 const catalogKind = (docKind) => (docKind === 'spell' ? 'spells' : 'skills');
 
+/** What an option with no catalog entry shows in place of a name it does not have (a book document the owner has not imported). */
+export const unnamedFromBooks = (docKind) => (docKind === 'spell' ? 'a spell from the books' : 'a skill from the books');
+
+/**
+ * Whether a named/spell option names a document no catalog holds (a book document, before an import). Such an option
+ * stays selectable and grants a stub (directive 2). A `uuid` option is a document link, never a stub.
+ */
+export function optionNeedsImport(option) {
+  if (option?.kind !== 'named' && option?.kind !== 'spell') return false;
+  const identifier = cleanText(option.identifier);
+  if (!identifier || cleanText(option.uuid)) return false;
+  return !findCatalogEntry(catalogKind(docKindOf(option.docKind ?? option.kind)), identifier);
+}
+
 function modesOf(step) {
   const list = (Array.isArray(step.modes) ? step.modes : []).map(cleanText).filter(m => MODES.includes(m));
   return list.length ? list : ['custom'];
@@ -67,10 +81,17 @@ function tableView(snapshot) {
     key: snapshot.key, name: snapshot.name, formula: snapshot.formula,
     rows: (snapshot.rows ?? []).map(row => ({
       range: row.range, narrative: row.narrative,
-      options: (row.options ?? []).map((o, index) => ({
-        index, kind: o.kind, docKind: o.docKind ?? null, identifier: o.identifier ?? null, name: o.name ?? o.label ?? '',
-        ...(o.kind === 'choice' ? { choices: choicesOf(o) } : {})
-      }))
+      options: (row.options ?? []).map((o, index) => {
+        const needsImport = optionNeedsImport(o);
+        // A name the table never froze reads back as the identifier: no better than blank for a book document.
+        const name = needsImport && cleanText(o.name) === cleanText(o.identifier) ? '' : (o.name ?? o.label ?? '');
+        return {
+          index, kind: o.kind, docKind: o.docKind ?? null, identifier: o.identifier ?? null,
+          name: needsImport ? (cleanText(name) || unnamedFromBooks(docKindOf(o.docKind ?? o.kind))) : name,
+          ...(needsImport ? { needsImport: true } : {}),
+          ...(o.kind === 'choice' ? { choices: choicesOf(o) } : {})
+        };
+      })
     }))
   };
 }
@@ -103,7 +124,7 @@ function resolvePick(step, state, row, pick) {
     if (option.kind === 'named' || option.kind === 'spell') {
       const identifier = cleanText(option.identifier);
       if (!identifier) { state.warn(step.id, `${option.name || 'An option'} has no catalog identifier; the pick was skipped.`); return null; }
-      return { docKind: docKindOf(option.docKind ?? option.kind), identifier, name: cleanText(option.name) };
+      return { docKind: docKindOf(option.docKind ?? option.kind), identifier, name: cleanText(option.name), fromOption: !cleanText(option.uuid) };
     }
     if (option.kind === 'choice') {
       const identifier = cleanText(pick.identifier);
@@ -139,10 +160,13 @@ export const ownedByIdentifier = (state, docKind, identifier) =>
 /** Create the working item (and its create payload) for a pick the crawler does not own. */
 export function createWorkingItem(step, state, resolved) {
   let payload;
-  if (resolved.custom) {
+  if (resolved.custom || resolved.stub) {
     const warnings = [];
+    // A stub stands in for a book document that is not installed: it keeps the identifier, so an import can replace it.
+    const name = resolved.name || (resolved.stub ? resolved.identifier : '');
     payload = buildPayload(resolved.docKind, {
-      name: resolved.name, system: { rank: 0 }, flags: { [SYSTEM_ID]: { floorCustom: true } }
+      name, system: { rank: 0, ...(resolved.stub ? { identifier: resolved.identifier } : {}) },
+      flags: { [SYSTEM_ID]: resolved.stub ? { floorStub: true } : { floorCustom: true } }
     }, { warnings });
     for (const w of warnings) state.warn(step.id, `${resolved.name}: ${w.message}`);
   } else {
@@ -165,15 +189,20 @@ function applyPick(step, state, row, pick, position, rng) {
   const formula = cleanText(pick.formula) || formulas[position] || '';
   if (!formula) { state.warn(step.id, 'No Rank die is left for this pick; it was skipped.'); return null; }
   if (formulas.length && !formulas.includes(formula)) state.breakKey(`experiences:formula:${step.id}`, step.id, `${formula} is not one of this step's Rank dice (${formulas.join(', ')})`);
-  const resolved = resolvePick(step, state, row, pick);
+  let resolved = resolvePick(step, state, row, pick);
   if (!resolved) return null;
   let item = ownedByIdentifier(state, resolved.docKind, resolved.identifier);
   const isNew = !item;
   if (isNew) {
     // Check the catalog before rolling so a refused pick draws no dice.
     if (!resolved.custom && !findCatalogEntry(catalogKind(resolved.docKind), resolved.identifier)) {
-      state.warn(step.id, `${resolved.identifier} is not in the catalog; the pick was skipped.`);
-      return null;
+      if (!resolved.fromOption) {
+        state.warn(step.id, `${resolved.identifier} is not in the catalog; the pick was skipped.`);
+        return null;
+      }
+      const named = resolved.name && resolved.name !== resolved.identifier;
+      resolved = { ...resolved, stub: true, name: named ? resolved.name : unnamedFromBooks(resolved.docKind) };
+      state.warn(step.id, `${resolved.name} needs an import; a stub was added.`);
     }
   }
   const roll = rollOrTyped(state, step.id, formula, pick.value, rng);
@@ -186,7 +215,7 @@ function applyPick(step, state, row, pick, position, rng) {
     rolled: roll.rolled, manual: roll.manual || undefined, before: rank.before, after: rank.after,
     capped: rank.capped || undefined, overflow: rank.overflow || undefined,
     breakKey: rank.breakKey ?? roll.breakKey ?? undefined,
-    note: ceilingBound ? `Rank ${item.rankCeiling} maximum` : (isNew ? (resolved.custom ? 'new custom skill' : 'new') : undefined)
+    note: ceilingBound ? `Rank ${item.rankCeiling} maximum` : (isNew ? (resolved.custom ? 'new custom skill' : (resolved.stub ? 'needs an import' : 'new')) : undefined)
   });
   return {
     docKind: item.kind, identifier: item.identifier, name: item.name, formula, total: roll.total, rolled: roll.rolled,

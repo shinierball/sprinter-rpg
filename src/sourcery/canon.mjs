@@ -9,6 +9,7 @@
  * system packs are built with.
  */
 import { compilePackSpecs } from '../data/builders/item-payload.mjs';
+import { isHiddenId } from '../content/visibility.mjs';
 
 /** Compiled document type -> Sourcery kind (the grammar and field map). A type absent here has no grammar (pets, mercenaries). */
 export const KIND_OF_TYPE = Object.freeze({
@@ -64,7 +65,8 @@ export function packDefinition(pack) {
 /**
  * Compile the canon documents of the importable packs.
  * @param {object[]} packSpecs `PACK_SPECS`-shaped entries `{ pack, documentName, specs, delegate? }`
- * @returns {{ pack: string, documentName: string, docs: { id: string, type: string, kind: string|null, doc: object }[] }[]}
+ * @returns {{ pack: string, documentName: string, docs: { id: string, type: string, kind: string|null, hidden: boolean, doc: object }[] }[]}
+ *   `hidden`: a book document, written by the import only when its entry was found
  *   one entry per importable pack present in `packSpecs`
  */
 export function compileCanon(packSpecs) {
@@ -73,7 +75,7 @@ export function compileCanon(packSpecs) {
     const entry = (packSpecs ?? []).find(e => e.pack === def.pack);
     if (!entry) continue;
     const docs = compilePackSpecs(entry, { warnings: [], dataModel: false }).map(doc => ({
-      id: doc._id, type: doc.type, kind: KIND_OF_TYPE[doc.type] ?? null, doc
+      id: doc._id, type: doc.type, kind: KIND_OF_TYPE[doc.type] ?? null, hidden: isHiddenId(doc._id), doc
     }));
     out.push({ pack: def.pack, documentName: def.documentName, docs });
   }

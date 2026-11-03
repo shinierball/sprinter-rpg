@@ -8,19 +8,28 @@
 
 const attr = (value) => String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"');
 
+/** Tooltip attributes often carry live values ("3/5 HP"), so they never identify a control. */
+const IDENTITY_SKIP = /^data-tooltip/;
+
 /**
- * A locator for `el` inside `root`: its id, else its name (plus its index among same-named controls), else its
- * position in the tree.
+ * A locator for `el` inside `root`: its id, else its name, else its `data-*` attributes (a ledger row's
+ * `data-entry-id` + `data-change-action`), each plus its index among matching controls; else its position in the
+ * tree. Identity beats position: a row inserted above the focused one must not move focus to its neighbour.
  * @param {Element} root
  * @param {Element} el
- * @returns {{ selector: string, index: number }|null}
+ * @returns {{ selector: string, index: number, fromRoot?: boolean }|null}
  */
 export function focusKey(root, el) {
   if (!root || !el || el === root || !root.contains?.(el)) return null;
   if (el.id) return { selector: `[id="${attr(el.id)}"]`, index: 0 };
+  const tag = el.tagName.toLowerCase();
   const name = el.getAttribute?.('name');
-  if (name) {
-    const selector = `${el.tagName.toLowerCase()}[name="${attr(name)}"]`;
+  const data = [...(el.attributes ?? [])]
+    .filter((a) => a.name.startsWith('data-') && !IDENTITY_SKIP.test(a.name))
+    .map((a) => `[${a.name}="${attr(a.value)}"]`)
+    .join('');
+  if (name || data) {
+    const selector = name ? `${tag}[name="${attr(name)}"]` : `${tag}${data}`;
     return { selector, index: [...root.querySelectorAll(selector)].indexOf(el) };
   }
   const path = [];
@@ -64,6 +73,67 @@ export function focusLikeTab(target) {
   if (target.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit'].includes(target.type)) {
     try { target.select?.(); } catch { /* not selectable */ }
   }
+}
+
+const NOT_TEXT = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'color', 'range', 'image', 'hidden']);
+
+/** True for a control the user types into (text-like input or textarea). */
+function isTextEntry(el) {
+  if (el?.tagName === 'TEXTAREA') return true;
+  return el?.tagName === 'INPUT' && !NOT_TEXT.has(el.type);
+}
+
+/** The caret/selection of a text control, or null where the browser does not expose one (number inputs). */
+function readSelection(el) {
+  try {
+    if (el.selectionStart === null || el.selectionStart === undefined) return null;
+    return { start: el.selectionStart, end: el.selectionEnd, direction: el.selectionDirection ?? 'none' };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Record what a re-render must put back on the focused control `el`: where it is ({@link focusKey}), its caret,
+ * and text typed but not yet committed by a `change` event (`draft`, kept with the value it was rendered with).
+ * @param {Element} root
+ * @param {Element} el
+ * @returns {{ key: object, rendered?: string, draft?: string, selection?: object }|null}
+ */
+export function captureFocus(root, el) {
+  const key = focusKey(root, el);
+  if (!key) return null;
+  const snapshot = { key };
+  if (isTextEntry(el)) {
+    snapshot.rendered = el.defaultValue;
+    if (el.value !== el.defaultValue) snapshot.draft = el.value;
+    const selection = readSelection(el);
+    if (selection) snapshot.selection = selection;
+  }
+  return snapshot;
+}
+
+/**
+ * Put a {@link captureFocus} snapshot back on the freshly rendered `root`: focus the control, carry over a draft
+ * when the control was re-rendered with the same value (a changed value means someone else wrote it; theirs wins),
+ * then restore the caret. Without a known caret, select the text the way Tab does.
+ * @param {Element} root
+ * @param {ReturnType<typeof captureFocus>} snapshot
+ * @returns {{ target: Element, draft: boolean }|null} the refocused control and whether a draft was carried over
+ */
+export function restoreFocus(root, snapshot) {
+  const target = findByFocusKey(root, snapshot?.key);
+  if (!target) return null;
+  if (target.ownerDocument?.activeElement !== target) target.focus?.({ preventScroll: true });
+  const draft = snapshot.draft !== undefined && isTextEntry(target) && target.defaultValue === snapshot.rendered;
+  if (draft) target.value = snapshot.draft;
+  const { selection } = snapshot;
+  if (selection && isTextEntry(target)) {
+    try { target.setSelectionRange(selection.start, selection.end, selection.direction); } catch { /* not selectable */ }
+  } else if (!draft) {
+    focusLikeTab(target);
+  }
+  return { target, draft };
 }
 
 /** Collapsible blocks whose open state should survive a re-render. */

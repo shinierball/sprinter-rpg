@@ -11,6 +11,7 @@
  */
 
 import { contentRegistry } from './registry.mjs';
+import { isHiddenDoc } from './visibility.mjs';
 import { PACK_SPECS } from './specs/index.mjs';
 import { COG_GRIND_COMPLICATION_TABLES } from './specs/grind-complications.mjs';
 import { COG_POINT_BUILD_ENTRIES } from './specs/point-build.mjs';
@@ -38,13 +39,13 @@ const PROVIDER = 'cog-bundled';
 
 /**
  * The compiled documents of one bundled pack: the same specs `build:packs` compiles, so the runtime
- * catalogs and the compendiums cannot drift. Warnings are the build's business (`--strict`, the 3.5 test), not init's.
+ * catalogs and the compendiums cannot drift. A book document is left out: it reaches the catalogs through an import. Warnings are the build's business (`--strict`, the 3.5 test), not init's.
  * @param {string} pack
  * @returns {object[]}
  */
 function compiledSpecs(pack) {
   const entry = PACK_SPECS.find(e => e.pack === pack);
-  return entry ? compilePackSpecs(entry, { warnings: [], dataModel: false }) : [];
+  return entry ? compilePackSpecs(entry, { warnings: [], dataModel: false }).filter(doc => !isHiddenDoc(doc)) : [];
 }
 
 export function registerBundledCOGContent(registry = contentRegistry) {

@@ -4,6 +4,43 @@
  * sheet's explicit "Parse upgrade text into rank breaks" action and the pack build pass. The author reviews the result;
  * the engine never reads the prose. Re-exported from `rapid-text-parser.mjs` (the authoring parser).
  */
+import { COG_TAGS } from '../data/tag-catalog.mjs';
+import { catalogEntries } from '../content/catalog-lookup.mjs';
+
+/**
+ * The debuff names the parser looks for when the caller gives none: the tag catalog's `condition.*` labels, then the
+ * names of the debuffs in the content catalogs (the system's own, and an import's).
+ * @returns {string[]}
+ */
+export function catalogDebuffNames() {
+  return catalogDebuffRefs().map(ref => ref.name);
+}
+
+/**
+ * The debuffs the parser looks for when the caller gives none, each with the reference a match stores: a catalog debuff's
+ * identifier, or a `condition.*` tag that no catalog debuff of that name answers for. A name the tag catalog and a catalog
+ * debuff share is listed once, with the debuff's identifier.
+ * @returns {{ name: string, identifier: string }[]}
+ */
+export function catalogDebuffRefs() {
+  const debuffs = [];
+  for (const entry of catalogEntries('debuffs')) {
+    if (typeof entry?.name === 'string' && entry.name.trim()) debuffs.push({ name: entry.name.trim(), identifier: String(entry.system?.identifier ?? '').trim() });
+  }
+  const byName = new Map(debuffs.map(d => [d.name.toLowerCase(), d]));
+  const refs = COG_TAGS.filter(tag => tag.namespace === 'condition' && tag.label)
+    .map(tag => byName.get(tag.label.toLowerCase()) ?? { name: tag.label, identifier: tag.id });
+  const seen = new Set();
+  return [...refs, ...debuffs].filter(ref => !seen.has(ref.name.toLowerCase()) && seen.add(ref.name.toLowerCase()));
+}
+
+/** A known debuff as `{ name, ref }`: a string is a name (a match stores it as given); an object's match stores its identifier. */
+function knownDebuff(entry) {
+  if (typeof entry === 'string') return { name: entry, ref: entry };
+  const name = typeof entry?.name === 'string' ? entry.name : '';
+  const identifier = typeof entry?.identifier === 'string' ? entry.identifier.trim() : '';
+  return { name, ref: identifier || name };
+}
 
 /**
  * Extract rank upgrade strings (Rank 5, Rank 10, Rank 15) from an upgrades object or string.
@@ -35,7 +72,8 @@ const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  * Extracts damageDice, baseDiceCountMod, rankDamageDice, debuff, buffsResistances, and notes.
  *
  * @param {string} text
- * @param {string[]} [knownDebuffs=[]]
+ * @param {(string|{ name: string, identifier?: string })[]} [knownDebuffs=[]] names, or debuffs whose match stores the
+ *   identifier; when empty, {@link catalogDebuffRefs}
  * @returns {{ damageDice: string, baseDiceCountMod: string, rankDamageDice: number, buffsResistances: string, debuff: string, notes: string }}
  */
 export function parseUpgradeTextToRankBreak(text, knownDebuffs = []) {
@@ -70,16 +108,11 @@ export function parseUpgradeTextToRankBreak(text, knownDebuffs = []) {
     result.rankDamageDice = rDie[1] ? parseInt(rDie[1], 10) : 1;
   }
 
-  // 4. Debuff match against known canonical debuffs (data-driven)
-  const debuffList = Array.isArray(knownDebuffs) && knownDebuffs.length > 0 ? knownDebuffs : [
-    'Woozy', 'Queasy', 'Burned', 'Shocked', 'Stunned', 'Bleeding', 'Poisoned', 'Held', 'Stiff Legs',
-    'The Taint', 'Sore as Shit', 'Muted', 'Take Down', 'Fatigued', 'Exhausted', 'Frightened', 'Prone',
-    'Blinded', 'Reduced Sight', 'Terrified', 'Staggered', 'Shakey', 'Frozen', 'Crippled',
-    'Minor Injury', 'Major Injury', 'Blood Trail', 'Drowning', 'Dying', 'Enraged',
-    'Long-Term Major Injury', 'Long-Term Minor Injury', 'Paralyzed', 'Sepsis', 'Shit-Faced'
-  ];
-  for (const dName of debuffList) {
-    if (typeof dName !== 'string' || !dName.trim()) continue;
+  // 4. Debuff match against known canonical debuffs (data-driven). A match stores the debuff's identifier when the list gives one.
+  const debuffList = Array.isArray(knownDebuffs) && knownDebuffs.length > 0 ? knownDebuffs : catalogDebuffRefs();
+  for (const known of debuffList) {
+    const { name: dName, ref } = knownDebuff(known);
+    if (!dName.trim()) continue;
     // Debuff names come from world items, so they may hold regex syntax ("[claude] Dazed", "Hex (Minor)").
     const name = escapeRegExp(dName);
     const regex = new RegExp(`(?<![\\w])${name}(?![\\w])(?:\\s+Debuff)?`, 'i');
@@ -87,7 +120,7 @@ export function parseUpgradeTextToRankBreak(text, knownDebuffs = []) {
       const isHealing = new RegExp(`(?:heal|mend|remove|cure|end|avoid)\\w*\\s+(?:an?\\s+)?(?:Long-Term\\s+)?(?:Minor\\s+Injury|Major\\s+Injury|${name})`, 'i').test(t);
       const isHeldItems = dName.toLowerCase() === 'held' && /held\s+items?/i.test(t);
       if (!isHealing && !isHeldItems) {
-        result.debuff = dName;
+        result.debuff = ref;
         break;
       }
     }

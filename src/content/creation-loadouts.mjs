@@ -26,6 +26,18 @@ function registeredEntries(slot) {
 }
 
 /**
+ * Whether a registered spell, unarmed or potion entry can be given: it has an embedded `fallback`, or every document it
+ * references is in the catalog (a book entry resolves only after an import).
+ */
+function loadoutResolves(slot, entry) {
+  if (entry.fallback && typeof entry.fallback === 'object') return true;
+  if (slot === 'spell') return Boolean(findCatalogEntry('spells', entry.spellIdentifier ?? entry.id));
+  if (slot === 'unarmed') return [entry.skillIdentifier, entry.effectIdentifier].every(ref => typeof ref === 'string' && ref && findCatalogEntry('skills', ref));
+  if (slot === 'potion') return Boolean(entry.itemRef) && Boolean(findCatalogEntry('items', entry.itemRef));
+  return true;
+}
+
+/**
  * @param {'weapon'|'spell'|'unarmed'|'potion'} slot
  * @returns {object[]} Options for the slot; examples carry `baseline: true`
  */
@@ -36,7 +48,8 @@ export function loadoutOptions(slot) {
     const known = new Set(STARTER_WEAPON_LOADOUTS.map(base => base.id));
     return [...merged, ...registered.filter(entry => !known.has(entry.id))];
   }
-  if (registered.length) return registered;
+  const offered = registered.filter(entry => loadoutResolves(slot, entry));
+  if (offered.length) return offered;
   return EXAMPLE_CREATION_LOADOUTS.filter(entry => entry.slot === slot).map(entry => ({ ...entry, baseline: true }));
 }
 

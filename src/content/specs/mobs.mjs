@@ -1286,10 +1286,11 @@ export const COG_MOBS = [
         "_id": "dcclootmob000012"
       },
       {
-        "name": "Artisanal Corpse Starch Crust",
+        "name": "New Consumable Item 0013",
         "type": "loot",
         "img": "icons/svg/chest.svg",
         "system": {
+          "identifier": "dcclootmob000013",
           "quantity": 1,
           "notes": "A hardened, baked crust of dungeon ration starch.",
           "description": "A hardened, baked crust of dungeon ration starch.",
@@ -2842,10 +2843,11 @@ export const COG_MOBS = [
         "_id": "dccatkmob0000029"
       },
       {
-        "name": "Norwegian Black Metal Cassette",
+        "name": "New Consumable Item 0032",
         "type": "loot",
         "img": "icons/svg/chest.svg",
         "system": {
+          "identifier": "dcclootmob000032",
           "quantity": 1,
           "notes": "A magnetic tape labelled with a band name in unreadable gothic font.",
           "description": "A magnetic tape labelled with a band name in unreadable gothic font.",
@@ -3210,10 +3212,11 @@ export const COG_MOBS = [
     },
     "items": [
       {
-        "name": "Wrist Weight",
+        "name": "New Attack 0033",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0000033",
           "toHitStat": "dex",
           "toHitRank": 0,
           "damageParts": [
@@ -3336,10 +3339,11 @@ export const COG_MOBS = [
         "_id": "dcclootmob000038"
       },
       {
-        "name": "Knitted Leg Warmers",
+        "name": "New Consumable Item 0039",
         "type": "loot",
         "img": "icons/svg/chest.svg",
         "system": {
+          "identifier": "dcclootmob000039",
           "quantity": 1,
           "notes": "Striped acrylic leg warmers offering questionable thermal defense.",
           "description": "Striped acrylic leg warmers offering questionable thermal defense.",
@@ -4387,7 +4391,7 @@ export const COG_MOBS = [
         "description": "",
         "aiDescription": "",
         "notes": "",
-        "special": "Its sneeze spreads Diseased, The Taint or Stiff Legs. It gurgles like a pig when it speaks."
+        "special": "Its sneeze spreads Diseased, a taint debuff or Stiff Legs. It gurgles like a pig when it speaks."
       },
       "tags": []
     },
@@ -4465,7 +4469,7 @@ export const COG_MOBS = [
             "slotLoss": {
               "minSlotsLost": 1,
               "debuffs": [
-                "the-taint",
+                "dccdeb0000000009",
                 "stiff-legs",
                 "diseased"
               ],
@@ -5561,10 +5565,11 @@ export const COG_MOBS = [
     },
     "items": [
       {
-        "name": "Fiery Cocktail",
+        "name": "New Attack 2601",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0002601",
           "toHitStat": "dex",
           "toHitRank": 0,
           "damageParts": [
@@ -5776,7 +5781,7 @@ export const COG_MOBS = [
             "evadeFail": {
               "degree": "major_fail",
               "debuffs": [
-                "washed"
+                "reanimating"
               ]
             }
           },
@@ -6741,10 +6746,11 @@ export const COG_MOBS = [
         "_id": "dccatkmob0003201"
       },
       {
-        "name": "Bone Scoop",
+        "name": "New Attack 3202",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0003202",
           "toHitStat": "str",
           "toHitRank": 0,
           "damageParts": [
@@ -7142,10 +7148,11 @@ export const COG_MOBS = [
         "_id": "dccatkmob0003402"
       },
       {
-        "name": "Foot Probe",
+        "name": "New Attack 3403",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0003403",
           "toHitStat": "str",
           "toHitRank": 0,
           "damageParts": [
@@ -8679,10 +8686,11 @@ export const COG_MOBS = [
         "_id": "dccatkmob0004201"
       },
       {
-        "name": "Pineapple Club",
+        "name": "New Consumable Item 4201",
         "type": "loot",
         "img": "icons/svg/chest.svg",
         "system": {
+          "identifier": "dcclootmob004201",
           "quantity": 1,
           "notes": "Club with slightly dented pineapple.",
           "description": "",
@@ -9526,10 +9534,11 @@ export const COG_MOBS = [
         "_id": "dccatkmob0004602"
       },
       {
-        "name": "Stick-Click",
+        "name": "New Attack 4603",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0004603",
           "toHitStat": "dex",
           "toHitRank": 0,
           "damageParts": [
@@ -9722,7 +9731,7 @@ export const COG_MOBS = [
             "evadeFail": {
               "degree": "major_fail",
               "debuffs": [
-                "the-taint"
+                "dccdeb0000000009"
               ]
             }
           },
@@ -9996,10 +10005,11 @@ export const COG_MOBS = [
         "_id": "dccsplmob0004801"
       },
       {
-        "name": "Pediatric Hospital Gown",
+        "name": "New Consumable Item 4801",
         "type": "loot",
         "img": "icons/svg/chest.svg",
         "system": {
+          "identifier": "dcclootmob004801",
           "quantity": 1,
           "notes": "Tragic worn garment.",
           "description": "",
@@ -10315,10 +10325,11 @@ export const COG_MOBS = [
         "_id": "dccatkmob0005001"
       },
       {
-        "name": "Fiery Weight",
+        "name": "New Attack 5002",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0005002",
           "toHitStat": "str",
           "toHitRank": 0,
           "damageParts": [
@@ -10962,7 +10973,7 @@ export const COG_MOBS = [
             "evadeFail": {
               "degree": "major_fail",
               "debuffs": [
-                "the-taint"
+                "dccdeb0000000009"
               ]
             }
           },
@@ -11551,10 +11562,11 @@ export const COG_MOBS = [
     },
     "items": [
       {
-        "name": "Melon-Baller",
+        "name": "New Attack 5601",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0005601",
           "toHitStat": "dex",
           "toHitRank": 0,
           "damageParts": [
@@ -11586,10 +11598,11 @@ export const COG_MOBS = [
         "_id": "dccatkmob0005601"
       },
       {
-        "name": "Bone Scoop",
+        "name": "New Attack 5602",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0003202",
           "toHitStat": "str",
           "toHitRank": 0,
           "damageParts": [
@@ -11611,7 +11624,7 @@ export const COG_MOBS = [
         "_id": "dccatkmob0005602"
       },
       {
-        "name": "Precision Melon-Baller",
+        "name": "New Consumable Item 5601",
         "type": "loot",
         "img": "icons/svg/chest.svg",
         "system": {
@@ -12040,10 +12053,11 @@ export const COG_MOBS = [
         "_id": "dccatkmob0005801"
       },
       {
-        "name": "Phase Claw",
+        "name": "New Attack 5802",
         "type": "attack",
         "img": "icons/svg/sword.svg",
         "system": {
+          "identifier": "dccatkmob0005802",
           "toHitStat": "dex",
           "toHitRank": 0,
           "damageParts": [
@@ -13558,13 +13572,13 @@ export const COG_MOBS = [
     }
   },
   {
-    "name": "Rat Janitor",
+    "name": "",
     "type": "mob",
     "img": "icons/svg/skull.svg",
     "tokenWidth": 1,
     "tokenHeight": 1,
     "prototypeToken": {
-      "name": "Rat Janitor",
+      "name": "",
       "width": 1,
       "height": 1,
       "disposition": -1
@@ -13697,10 +13711,12 @@ export const COG_MOBS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.details.description",
             "system.details.aiDescription",
-            "system.details.notes"
+            "system.details.notes",
+            "prototypeToken.name"
           ]
         }
       }
@@ -13839,7 +13855,7 @@ export const COG_MOBS = [
             "evadeFail": {
               "degree": "major_fail",
               "debuffs": [
-                "the-taint"
+                "dccdeb0000000009"
               ]
             }
           },
@@ -14608,7 +14624,7 @@ export const COG_MOBS = [
             "evadeFail": {
               "degree": "major_fail",
               "debuffs": [
-                "the-taint"
+                "dccdeb0000000009"
               ]
             }
           },
@@ -14759,7 +14775,7 @@ export const COG_MOBS = [
             "evadeFail": {
               "degree": "major_fail",
               "debuffs": [
-                "the-taint"
+                "dccdeb0000000009"
               ]
             }
           },

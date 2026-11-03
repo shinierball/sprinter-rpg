@@ -13,6 +13,7 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
+import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
@@ -104,7 +105,14 @@ export function tableSnapshotFromRollTable(data, options = {}) {
       if (flagged.kind === 'named' || flagged.kind === 'spell') {
         const resolved = uuid ? (options?.resolveUuid ?? resolveDocumentSync)(uuid) : null;
         if (!text(flagged.identifier) && resolved?.identifier) flagged.identifier = resolved.identifier;
-        if (!text(flagged.name)) flagged.name = text(resolved?.name) || label || text(flagged.identifier);
+        // No frozen name: the linked document's, else the catalog document with the option's identifier (an option with no
+        // uuid names a book document), else the result's own label.
+        if (!text(flagged.name)) {
+          const byIdentifier = !uuid && text(flagged.identifier)
+            ? findCatalogEntry(flagged.kind === 'spell' || flagged.docKind === 'spell' ? 'spells' : 'skills', text(flagged.identifier))
+            : null;
+          flagged.name = text(resolved?.name) || text(byIdentifier?.name) || label || text(flagged.identifier);
+        }
         if (!flagged.docKind && resolved?.docKind) flagged.docKind = resolved.docKind;
         if (uuid) flagged.uuid = uuid;
       } else if (flagged.kind === 'custom' && !text(flagged.label)) {

@@ -2,24 +2,12 @@
  * Condition item data: the one place a condition reference (`condition.<id>`, a debuff identifier, an item id)
  * becomes debuff item data. A leaf module so `applyCondition` and the aura/zone debuff builder can both use it.
  */
-import { catalogEntries } from '../../content/catalog-lookup.mjs';
+import { catalogEntries, conditionRefTag, conditionRefTagId, conditionMatcher } from '../../content/catalog-lookup.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { getTagDefinition } from '../../data/tags.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
-import { conditionTagId, itemIdentifier } from '../../utils/identifier.mjs';
 
-/** The condition tag a cleanse/cure reference names: a `condition.*` tag as given, else the tag its identifier derives. */
-export function conditionRefTag(ref) {
-  const clean = String(ref ?? '').trim();
-  return clean.startsWith('condition.') ? clean : conditionTagId(clean);
-}
-
-/** The condition tag a condition reference names: an object's `tagId`/`conditionTag`/identifier, a string's `condition.*` tag, `id.debuff.*` identifier or bare identifier. */
-function refTagId(ref) {
-  if (typeof ref === 'object' && ref !== null) return ref.tagId || ref.conditionTag || conditionTagId(itemIdentifier(ref));
-  const clean = String(ref ?? '').trim();
-  return clean.startsWith('id.debuff.') ? conditionTagId(clean.slice('id.debuff.'.length)) : conditionRefTag(clean);
-}
+export { conditionRefTag };
 
 /** The display label of a condition reference (`condition.burned` becomes "Burned"); only for human-facing text. */
 export function conditionLabel(ref) {
@@ -37,7 +25,7 @@ export function conditionLabel(ref) {
  * @returns {object|null} item data ({ name, type: 'debuff', img, system, flags }); no round duration is applied
  */
 export function conditionItemData(ref, options = {}) {
-  const tagId = refTagId(ref);
+  const tagId = conditionRefTagId(ref);
   const slug = tagId.replace(/^condition\./, '');
   const flags = {
     [SYSTEM_ID]: {
@@ -46,11 +34,7 @@ export function conditionItemData(ref, options = {}) {
       conditionTag: tagId || null
     }
   };
-  const same = (d) => {
-    if (d._id === ref || d.id === ref) return true;
-    if (Array.isArray(d.system?.tags) && d.system.tags.includes(tagId)) return true;
-    return conditionTagId(d.system?.identifier) === tagId;
-  };
+  const same = conditionMatcher(ref);
 
   let match = catalogEntries('debuffs').find(same) ?? contentRegistry.listReferences('debuffs').find(same);
   if (!match && typeof game !== 'undefined' && game.items) match = game.items.find(i => i.type === 'debuff' && same(i));

@@ -719,7 +719,7 @@ export const COG_BUFFS = [
 export const COG_DEBUFFS = [
   {
     "_id": "dccdeb0000000001",
-    "name": "Burned",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/fire.svg",
     "severity": "Minor",
@@ -741,6 +741,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -752,7 +753,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000002",
-    "name": "Shocked",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/lightning.svg",
     "severity": "Minor",
@@ -773,6 +774,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -783,7 +785,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000003",
-    "name": "Poisoned",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/poison.svg",
     "severity": "Minor",
@@ -804,6 +806,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -814,7 +817,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000004",
-    "name": "Held",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/net.svg",
     "severity": "Major",
@@ -834,6 +837,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -845,7 +849,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000005",
-    "name": "Stunned",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/explosion.svg",
     "severity": "Minor",
@@ -871,6 +875,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -881,7 +886,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000006",
-    "name": "Woozy",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/sleep.svg",
     "severity": "Minor",
@@ -917,6 +922,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -927,7 +933,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000007",
-    "name": "Queasy",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/acid.svg",
     "severity": "Minor",
@@ -953,6 +959,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -964,7 +971,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000008",
-    "name": "Stiff Legs",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/hazard.svg",
     "severity": "Minor",
@@ -985,6 +992,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -996,13 +1004,13 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000009",
-    "name": "The Taint",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/skull.svg",
     "severity": "Major",
     "description": "",
     "system": {
-      "identifier": "the-taint",
+      "identifier": "dccdeb0000000009",
       "severity": "Major",
       "damageType": "Necrotic",
       "damageModifiers": [],
@@ -1017,6 +1025,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1028,7 +1037,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000010",
-    "name": "Sore as Shit",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/falling.svg",
     "severity": "Minor",
@@ -1048,6 +1057,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1058,7 +1068,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000011",
-    "name": "Muted",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/silenced.svg",
     "severity": "Minor",
@@ -1079,6 +1089,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1176,7 +1187,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000015",
-    "name": "Minor Injury",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/blood.svg",
     "severity": "Minor",
@@ -1199,6 +1210,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1209,7 +1221,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000016",
-    "name": "Major Injury",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/bones.svg",
     "severity": "Major",
@@ -1232,6 +1244,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1242,7 +1255,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000017",
-    "name": "Blinded",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/blind.svg",
     "severity": "Minor",
@@ -1277,6 +1290,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1287,7 +1301,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000018",
-    "name": "Blood Trail",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/blood.svg",
     "severity": "Minor",
@@ -1308,6 +1322,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1319,7 +1334,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000019",
-    "name": "Drowning",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/waterfall.svg",
     "severity": "Major",
@@ -1340,6 +1355,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1350,7 +1366,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000020",
-    "name": "Dying",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/skull.svg",
     "severity": "Major",
@@ -1370,6 +1386,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1381,7 +1398,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000021",
-    "name": "Enraged",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/fire.svg",
     "severity": "Minor",
@@ -1401,6 +1418,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1412,7 +1430,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000022",
-    "name": "Fatigued",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/sleep.svg",
     "severity": "Minor",
@@ -1447,6 +1465,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1457,7 +1476,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000023",
-    "name": "Long-Term Major Injury",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/blood.svg",
     "severity": "Major",
@@ -1480,6 +1499,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1491,7 +1511,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000024",
-    "name": "Long-Term Minor Injury",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/blood.svg",
     "severity": "Minor",
@@ -1514,6 +1534,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1524,7 +1545,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000025",
-    "name": "Paralyzed",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/paralysis.svg",
     "severity": "Major",
@@ -1550,6 +1571,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1560,7 +1582,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000026",
-    "name": "Sepsis",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/poison.svg",
     "severity": "Major",
@@ -1580,6 +1602,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1591,7 +1614,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000027",
-    "name": "Shit-Faced",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/daze.svg",
     "severity": "Minor",
@@ -1611,6 +1634,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1621,7 +1645,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000028",
-    "name": "Staggered",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/downgrade.svg",
     "severity": "Minor",
@@ -1654,6 +1678,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1665,7 +1690,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000029",
-    "name": "Take Down",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/down.svg",
     "severity": "Minor",
@@ -1685,6 +1710,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1695,7 +1721,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000030",
-    "name": "Terrified",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/terror.svg",
     "severity": "Major",
@@ -1728,6 +1754,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.duration",
@@ -1799,7 +1826,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000033",
-    "name": "Fear",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/terror.svg",
     "severity": "Major",
@@ -1833,6 +1860,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1876,7 +1904,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000035",
-    "name": "Dissolving",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/acid.svg",
     "severity": "Minor",
@@ -1897,6 +1925,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1907,7 +1936,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000036",
-    "name": "Rabies",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/poison.svg",
     "severity": "Minor",
@@ -1928,6 +1957,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1938,7 +1968,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000037",
-    "name": "Diseased",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/poison.svg",
     "severity": "Minor",
@@ -1959,6 +1989,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -1969,7 +2000,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000038",
-    "name": "Rot",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/poison.svg",
     "severity": "Minor",
@@ -1990,6 +2021,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2000,7 +2032,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000039",
-    "name": "Rat Bite Fever",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/poison.svg",
     "severity": "Minor",
@@ -2021,6 +2053,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2031,7 +2064,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000040",
-    "name": "Splitting Headache",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/terror.svg",
     "severity": "Minor",
@@ -2052,6 +2085,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2062,7 +2096,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000041",
-    "name": "Drain Blood",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/blood.svg",
     "severity": "Minor",
@@ -2083,6 +2117,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2093,7 +2128,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000042",
-    "name": "Mental Scarring",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/terror.svg",
     "severity": "Minor",
@@ -2126,6 +2161,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2136,13 +2172,13 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000043",
-    "name": "Washed",
+    "name": "Reanimating",
     "type": "debuff",
     "img": "icons/svg/hazard.svg",
     "severity": "Minor",
     "description": "",
     "system": {
-      "identifier": "washed",
+      "identifier": "reanimating",
       "severity": "Minor",
       "damageType": "",
       "damageModifiers": [],
@@ -2156,7 +2192,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000044",
-    "name": "Stuck",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/net.svg",
     "severity": "Minor",
@@ -2176,6 +2212,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2186,7 +2223,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000045",
-    "name": "Confused",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/daze.svg",
     "severity": "Minor",
@@ -2206,6 +2243,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2216,7 +2254,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000046",
-    "name": "Seduced",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/eye.svg",
     "severity": "Minor",
@@ -2236,6 +2274,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2246,7 +2285,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000047",
-    "name": "Mesmerized",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/eye.svg",
     "severity": "Minor",
@@ -2266,6 +2305,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2276,7 +2316,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000048",
-    "name": "Nightmares",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/sleep.svg",
     "severity": "Minor",
@@ -2296,6 +2336,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2306,7 +2347,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000049",
-    "name": "Swallowed",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/acid.svg",
     "severity": "Major",
@@ -2340,6 +2381,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"
@@ -2350,7 +2392,7 @@ export const COG_DEBUFFS = [
   },
   {
     "_id": "dccdeb0000000050",
-    "name": "Unconscious",
+    "name": "",
     "type": "debuff",
     "img": "icons/svg/sleep.svg",
     "severity": "Major",
@@ -2370,6 +2412,7 @@ export const COG_DEBUFFS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "description",
             "system.description"

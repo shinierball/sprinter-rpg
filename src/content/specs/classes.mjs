@@ -7,7 +7,7 @@
 export const COG_CLASSES = [
   {
     "_id": "dcccls0000000001",
-    "name": "Boring Ol’ Arcanist",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -44,14 +44,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "arcane",
-          "label": "Arcane",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "salvage",
-          "label": "Salvage",
+          "label": "",
           "rank": 3
         },
         {
@@ -114,6 +114,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -123,7 +124,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000002",
-    "name": "Alchemist",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -160,14 +161,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "alchemy",
-          "label": "Alchemy",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "infusion",
-          "label": "Infusion",
+          "label": "",
           "rank": 3
         },
         {
@@ -209,6 +210,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -218,7 +220,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000003",
-    "name": "Douchy Wizard School Wand-Maker",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -265,28 +267,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "arcane",
-          "label": "Arcane",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lore",
-          "label": "Lore",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "negotiation",
-          "label": "Negotiation",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "salvage",
-          "label": "Salvage",
+          "label": "",
           "rank": 2
         },
         {
@@ -312,13 +314,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -328,7 +331,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000004",
-    "name": "Infernocrafter",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -370,14 +373,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "arcane",
-          "label": "Arcane",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "smithing",
-          "label": "Smithing",
+          "label": "",
           "rank": 3
         },
         {
@@ -412,6 +415,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -421,7 +425,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000005",
-    "name": "Prison Tattoo Artist",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -435,7 +439,7 @@ export const COG_CLASSES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "prison-tattoo-artist",
+      "identifier": "dcccls0000000005",
       "archetypes": [
         "archetype.arcanist"
       ],
@@ -463,21 +467,21 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "tattoo-artistry",
-          "label": "Tattoo Artistry",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "calligraphy",
-          "label": "Calligraphy",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dagger",
-          "label": "Dagger",
+          "label": "",
           "rank": 2
         },
         {
@@ -499,13 +503,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -515,7 +520,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000006",
-    "name": "Boring Ol’ Barbarian",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -552,14 +557,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "endurance",
-          "label": "Endurance",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "intimidate",
-          "label": "Intimidate",
+          "label": "",
           "rank": 1
         },
         {
@@ -598,6 +603,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -607,7 +613,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000007",
-    "name": "Gladiator",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -652,14 +658,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "attack-of-opportunity",
-          "label": "Attack of Opportunity",
+          "label": "",
           "rank": 1
         },
         {
@@ -680,7 +686,7 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "intimidate",
-          "label": "Intimidate",
+          "label": "",
           "rank": 2
         },
         {
@@ -718,6 +724,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -727,7 +734,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000008",
-    "name": "Harii",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -772,14 +779,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "ambush",
-          "label": "Ambush",
+          "label": "",
           "rank": 4
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "stealth",
-          "label": "Stealth",
+          "label": "",
           "rank": 4
         },
         {
@@ -823,13 +830,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -839,7 +847,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000009",
-    "name": "Feral Cat Berserker",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -881,28 +889,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "unarmed-combat",
-          "label": "Unarmed Combat",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dodge",
-          "label": "Dodge",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "ambush",
-          "label": "Ambush",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "slice-attack",
-          "label": "Slice Attack",
+          "label": "",
           "rank": 3
         }
       ],
@@ -932,13 +940,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -949,7 +958,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000010",
-    "name": "Shieldmaiden",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -998,7 +1007,7 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "shield-block",
-          "label": "Shield Block",
+          "label": "",
           "rank": 5
         },
         {
@@ -1067,13 +1076,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -1084,7 +1094,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000011",
-    "name": "Boring Ol’ Bard",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1120,28 +1130,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "diplomacy",
-          "label": "Diplomacy",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "good-first-impression",
-          "label": "Good First Impression",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lore",
-          "label": "Lore",
+          "label": "",
           "rank": 1
         },
         {
@@ -1186,6 +1196,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1195,7 +1206,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000012",
-    "name": "Artist Alley Mogul",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1236,28 +1247,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dodge",
-          "label": "Dodge",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "negotiation",
-          "label": "Negotiation",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pathfinder",
-          "label": "Pathfinder",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "shield",
-          "label": "Shield",
+          "label": "",
           "rank": 2
         },
         {
@@ -1272,13 +1283,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1288,7 +1300,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000013",
-    "name": "Former Child Actor",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1322,14 +1334,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "character-actor",
-          "label": "Character Actor",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "cockroach",
-          "label": "Cockroach",
+          "identifier": "dccskl0000000058",
+          "label": "",
           "rank": 2
         }
       ],
@@ -1356,13 +1368,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -1373,7 +1386,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000014",
-    "name": "NecroBard",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1424,21 +1437,21 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 4
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "turn-undead",
-          "label": "Turn Undead",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000032",
-          "label": "Panty Dropper",
+          "label": "",
           "rank": 3
         }
       ],
@@ -1458,6 +1471,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1467,7 +1481,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000015",
-    "name": "Poet Laureate",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1506,28 +1520,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "earworm",
-          "label": "Earworm",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "heal-others",
-          "label": "Heal Others",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "shield",
-          "label": "Shield",
+          "label": "",
           "rank": 2
         },
         {
@@ -1553,13 +1567,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1569,7 +1584,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000016",
-    "name": "Professional Roadie",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1599,28 +1614,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 4
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "negotiation",
-          "label": "Negotiation",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "iron-stomach",
-          "label": "Iron Stomach",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "repair",
-          "label": "Repair",
+          "label": "",
           "rank": 1
         },
         {
@@ -1665,13 +1680,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1681,7 +1697,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000017",
-    "name": "Spellbinder",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1719,42 +1735,42 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "good-first-impression",
-          "label": "Good First Impression",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lore",
-          "label": "Lore",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000021",
-          "label": "Hot Stuff Aura",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000032",
-          "label": "Panty Dropper",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "battlefield-attention",
-          "label": "Battlefield Attention",
+          "label": "",
           "rank": 1
         }
       ],
@@ -1775,6 +1791,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1784,7 +1801,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000018",
-    "name": "Boring Ol’ Cleric",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1823,28 +1840,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "religion",
-          "label": "Religion",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "heal-others",
-          "label": "Heal Others",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "shield",
-          "label": "Shield",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "turn-undead",
-          "label": "Turn Undead",
+          "label": "",
           "rank": 2
         },
         {
@@ -1874,6 +1891,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1883,7 +1901,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000019",
-    "name": "Santero",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -1932,35 +1950,35 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "religion",
-          "label": "Religion",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "endurance",
-          "label": "Endurance",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "heal-others",
-          "label": "Heal Others",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "shield",
-          "label": "Shield",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000042",
-          "label": "Soul Collector",
+          "label": "",
           "rank": 2
         },
         {
@@ -1990,6 +2008,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1999,7 +2018,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000020",
-    "name": "Boring Ol’ Druid",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2042,14 +2061,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "survival",
-          "label": "Survival",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
-          "identifier": "natures-breath",
-          "label": "Nature's Breath",
+          "identifier": "dccspl0000000029",
+          "label": "",
           "rank": 3
         },
         {
@@ -2093,6 +2112,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2102,7 +2122,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000021",
-    "name": "Herbalist",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2141,42 +2161,42 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "alchemy",
-          "label": "Alchemy",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "cooking",
-          "label": "Cooking",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "first-aid",
-          "label": "First Aid",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "survival",
-          "label": "Survival",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
-          "identifier": "natures-breath",
-          "label": "Nature's Breath",
+          "identifier": "dccspl0000000029",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000007",
-          "label": "Dirt Clod",
+          "label": "",
           "rank": 2
         }
       ],
@@ -2196,6 +2216,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2205,7 +2226,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000022",
-    "name": "Lifebringer",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2219,7 +2240,7 @@ export const COG_CLASSES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "lifebringer",
+      "identifier": "dcccls0000000022",
       "archetypes": [
         "archetype.druid"
       ],
@@ -2242,35 +2263,35 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "first-aid",
-          "label": "First Aid",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pathfinder",
-          "label": "Pathfinder",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "regeneration",
-          "label": "Regeneration",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "survival",
-          "label": "Survival",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
-          "identifier": "natures-breath",
-          "label": "Nature's Breath",
+          "identifier": "dccspl0000000029",
+          "label": "",
           "rank": 2
         },
         {
@@ -2282,7 +2303,7 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "party-regeneration",
-          "label": "Party Regeneration",
+          "label": "",
           "rank": 1
         }
       ]
@@ -2290,6 +2311,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2299,7 +2321,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000023",
-    "name": "PHysicker",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2335,36 +2357,36 @@ export const COG_CLASSES = [
         {
           "kind": "spell",
           "mode": "fixed",
-          "identifier": "natures-breath",
-          "label": "Nature's Breath",
+          "identifier": "dccspl0000000029",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000030",
-          "label": "Oakhide",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000037",
-          "label": "Rootfoot",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000041",
-          "label": "Solsplash",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "party-dr-buff",
-          "label": "Party DR Buff",
+          "label": "",
           "rank": 1
         }
       ],
@@ -2384,6 +2406,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2393,7 +2416,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000024",
-    "name": "Shepherd",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2414,7 +2437,7 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.druid",
         "kind.class",
-        "rule.cog.herding_weapons_only",
+        "rule.cog.herding_tools_only",
         "rule.cog.shepherd_herd_dr"
       ],
       "grants": [
@@ -2437,28 +2460,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "animal-handling",
-          "label": "Animal Handling",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pathfinder",
-          "label": "Pathfinder",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
-          "identifier": "natures-breath",
-          "label": "Nature's Breath",
+          "identifier": "dccspl0000000029",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "drain-life",
-          "label": "Drain Life",
+          "label": "",
           "rank": 2
         }
       ],
@@ -2490,13 +2513,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2506,7 +2530,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000025",
-    "name": "Boring Ol’ Fighter",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2545,7 +2569,7 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dodge",
-          "label": "Dodge",
+          "label": "",
           "rank": 3
         },
         {
@@ -2583,6 +2607,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2592,7 +2617,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000026",
-    "name": "Pit Fighter",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2634,28 +2659,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "attack-of-opportunity",
-          "label": "Attack of Opportunity",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dirty-fighting",
-          "label": "Dirty Fighting",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dodge",
-          "label": "Dodge",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "improvised-weapons",
-          "label": "Improvised Weapons",
+          "label": "",
           "rank": 2
         }
       ],
@@ -2665,13 +2690,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2681,7 +2707,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000027",
-    "name": "Shotgun Messenger",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2731,14 +2757,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "aiming",
-          "label": "Aiming",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "intimidate",
-          "label": "Intimidate",
+          "label": "",
           "rank": 2
         },
         {
@@ -2766,13 +2792,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2782,7 +2809,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000028",
-    "name": "Straight-to-DVD Action Hero",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2836,28 +2863,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "unarmed-combat",
-          "label": "Unarmed Combat",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "driving",
-          "label": "Driving",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "running",
-          "label": "Running",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 1
         }
       ],
@@ -2867,13 +2894,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2883,7 +2911,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000029",
-    "name": "Sword and Boarder",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -2931,21 +2959,21 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "shield-block",
-          "label": "Shield Block",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "attack-of-opportunity",
-          "label": "Attack of Opportunity",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "catcher",
-          "label": "Catcher",
+          "label": "",
           "rank": 2
         },
         {
@@ -2966,6 +2994,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2975,7 +3004,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000030",
-    "name": "Monster Truck Driver",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3024,28 +3053,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "gear-head",
-          "label": "Gear Head",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "driving",
-          "label": "Driving",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pathfinder",
-          "label": "Pathfinder",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "monster-truck-charge",
-          "label": "Monster Truck Charge",
+          "label": "",
           "rank": 1
         }
       ],
@@ -3061,13 +3090,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -3078,7 +3108,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000031",
-    "name": "Zulu Warrior",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3120,21 +3150,21 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "attack-of-opportunity",
-          "label": "Attack of Opportunity",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "endurance",
-          "label": "Endurance",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "running",
-          "label": "Running",
+          "label": "",
           "rank": 2
         },
         {
@@ -3170,13 +3200,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3186,7 +3217,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000032",
-    "name": "Boring Ol’ Mage",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3233,14 +3264,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lore",
-          "label": "Lore",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "arcane",
-          "label": "Arcane",
+          "label": "",
           "rank": 1
         },
         {
@@ -3325,6 +3356,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3334,7 +3366,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000033",
-    "name": "Blizzardmancer",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3377,21 +3409,21 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "aiming",
-          "label": "Aiming",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "ice-blast",
-          "label": "Ice Blast",
+          "label": "",
           "rank": 4
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000013",
-          "label": "Frost Scar",
+          "label": "",
           "rank": 4
         }
       ],
@@ -3405,6 +3437,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3414,7 +3447,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000034",
-    "name": "Crisper",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3428,7 +3461,7 @@ export const COG_CLASSES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "crisper",
+      "identifier": "dcccls0000000034",
       "archetypes": [
         "archetype.mage"
       ],
@@ -3456,35 +3489,35 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lore",
-          "label": "Lore",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "wall-of-fire",
-          "label": "Wall of Fire",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000011",
-          "label": "Fire Fingers",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "fireball",
-          "label": "Fireball",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000053",
-          "label": "Wilbur's Slow-Build Fireblast",
+          "label": "",
           "rank": 2
         }
       ],
@@ -3503,6 +3536,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3512,7 +3546,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000035",
-    "name": "Fire Spiritualist",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3526,7 +3560,7 @@ export const COG_CLASSES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "fire-spiritualist",
+      "identifier": "dcccls0000000035",
       "archetypes": [
         "archetype.bard",
         "archetype.mage"
@@ -3551,28 +3585,28 @@ export const COG_CLASSES = [
           "kind": "spell",
           "mode": "fixed",
           "identifier": "holy-aura",
-          "label": "Holy Aura",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000021",
-          "label": "Hot Stuff Aura",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "heal-others",
-          "label": "Heal Others",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000024",
-          "label": "Intimate Touches",
+          "label": "",
           "rank": 2
         },
         {
@@ -3583,8 +3617,8 @@ export const COG_CLASSES = [
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "ethereal-hug",
-          "label": "Ethereal Hug",
+          "identifier": "dccskl0000000151",
+          "label": "",
           "rank": 1
         }
       ],
@@ -3598,6 +3632,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3607,7 +3642,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000036",
-    "name": "Forsaken Aerialist",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3646,35 +3681,35 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "alchemy",
-          "label": "Alchemy",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "infusion",
-          "label": "Infusion",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "tactics",
-          "label": "Tactics",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "drain-life",
-          "label": "Drain Life",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000042",
-          "label": "Soul Collector",
+          "label": "",
           "rank": 3
         }
       ]
@@ -3682,6 +3717,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3691,7 +3727,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000037",
-    "name": "Necromancer",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3742,28 +3778,28 @@ export const COG_CLASSES = [
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000042",
-          "label": "Soul Collector",
+          "label": "",
           "rank": 4
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000036",
-          "label": "Rise, Dead Minion!",
+          "label": "",
           "rank": 4
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "drain-life",
-          "label": "Drain Life",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "second-chance",
-          "label": "Second Chance",
+          "label": "",
           "rank": 2
         }
       ]
@@ -3771,6 +3807,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3780,7 +3817,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000038",
-    "name": "Boring Ol’ Monk",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3822,42 +3859,42 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "unarmed-combat",
-          "label": "Unarmed Combat",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "foot-soldier",
-          "label": "Foot Soldier",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "iron-punch",
-          "label": "Iron Punch",
+          "identifier": "dccskl0000000018",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "powerful-strike",
-          "label": "Powerful Strike",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pugilism",
-          "label": "Pugilism",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "smush",
-          "label": "Smush",
+          "identifier": "dccskl0000000021",
+          "label": "",
           "rank": 1
         },
         {
@@ -3886,6 +3923,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3895,7 +3933,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000039",
-    "name": "Elemental Monk",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -3935,28 +3973,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "unarmed-combat",
-          "label": "Unarmed Combat",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000007",
-          "label": "Dirt Clod",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000011",
-          "label": "Fire Fingers",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000013",
-          "label": "Frost Scar",
+          "label": "",
           "rank": 1
         },
         {
@@ -3991,6 +4029,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -4000,7 +4039,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000040",
-    "name": "Prizefighter",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4050,14 +4089,14 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pugilism",
-          "label": "Pugilism",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "iron-punch",
-          "label": "Iron Punch",
+          "identifier": "dccskl0000000018",
+          "label": "",
           "rank": 5
         },
         {
@@ -4086,13 +4125,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -4103,7 +4143,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000041",
-    "name": "Spirit Healer",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4148,29 +4188,29 @@ export const COG_CLASSES = [
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "smush",
-          "label": "Smush",
+          "identifier": "dccskl0000000021",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "drain-life",
-          "label": "Drain Life",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "heal-others",
-          "label": "Heal Others",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "heal-self",
-          "label": "Heal Self",
+          "label": "",
           "rank": 2
         },
         {
@@ -4185,13 +4225,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -4201,7 +4242,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000042",
-    "name": "Street Monk",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4215,7 +4256,7 @@ export const COG_CLASSES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "street-monk",
+      "identifier": "dcccls0000000042",
       "archetypes": [
         "archetype.fighter",
         "archetype.monk"
@@ -4245,28 +4286,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dirty-fighting",
-          "label": "Dirty Fighting",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "streetwise",
-          "label": "Streetwise",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "unarmed-combat",
-          "label": "Unarmed Combat",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pugilism",
-          "label": "Pugilism",
+          "label": "",
           "rank": 1
         },
         {
@@ -4292,13 +4333,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -4308,7 +4350,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000043",
-    "name": "Boring Ol’ Paladin",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4341,21 +4383,21 @@ export const COG_CLASSES = [
           "kind": "spell",
           "mode": "fixed",
           "identifier": "protective-shell",
-          "label": "Protective Shell",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "heal-others",
-          "label": "Heal Others",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "holy-aura",
-          "label": "Holy Aura",
+          "label": "",
           "rank": 3
         },
         {
@@ -4397,6 +4439,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -4406,7 +4449,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000044",
-    "name": "Cavalier",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4448,35 +4491,35 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "catcher",
-          "label": "Catcher",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "riding",
-          "label": "Riding",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lance",
-          "label": "Lance",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "shield",
-          "label": "Shield",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "paladins-smite",
-          "label": "Paladin's Smite",
+          "label": "",
           "rank": 2
         }
       ],
@@ -4498,6 +4541,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -4507,7 +4551,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000045",
-    "name": "Sacred Paladin",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4547,21 +4591,21 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "catcher",
-          "label": "Catcher",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "heal-others",
-          "label": "Heal Others",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "turn-undead",
-          "label": "Turn Undead",
+          "label": "",
           "rank": 2
         },
         {
@@ -4582,7 +4626,7 @@ export const COG_CLASSES = [
           "kind": "spell",
           "mode": "fixed",
           "identifier": "paladins-smite",
-          "label": "Paladin's Smite",
+          "label": "",
           "rank": 2
         }
       ],
@@ -4598,6 +4642,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -4607,7 +4652,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000046",
-    "name": "Boring Ol’ Rogue",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4651,42 +4696,42 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "stealth",
-          "label": "Stealth",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dagger",
-          "label": "Dagger",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "detect-trap",
-          "label": "Detect Trap",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dodge",
-          "label": "Dodge",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lockpicking",
-          "label": "Lockpicking",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "ambush",
-          "label": "Ambush",
+          "label": "",
           "rank": 1
         }
       ],
@@ -4702,6 +4747,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -4711,7 +4757,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000047",
-    "name": "Bomb Squad Tech",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4753,15 +4799,15 @@ export const COG_CLASSES = [
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "bomb-surgeon",
-          "label": "Bomb Surgeon",
+          "identifier": "dccskl0000000049",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "find-trap",
-          "label": "Find Trap",
+          "label": "",
           "rank": 3
         },
         {
@@ -4776,13 +4822,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -4793,7 +4840,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000048",
-    "name": "Compensated Anarchist",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -4834,56 +4881,56 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "backfire",
-          "label": "Backfire",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "escape-plan",
-          "label": "Escape Plan",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "find-trap",
-          "label": "Find Trap",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "bomb-surgeon",
-          "label": "Bomb Surgeon",
+          "identifier": "dccskl0000000049",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "hide-in-shadows",
-          "label": "Hide in Shadows",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "trap-engineer",
-          "label": "Trap Engineer",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "unarmed-combat",
-          "label": "Unarmed Combat",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "fear",
-          "label": "Fear",
+          "label": "",
           "rank": 1
         }
       ],
@@ -4949,13 +4996,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -4966,7 +5014,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000049",
-    "name": "High Rise Grifter",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -5004,42 +5052,42 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "deception",
-          "label": "Deception",
+          "label": "",
           "rank": 4
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "stealth",
-          "label": "Stealth",
+          "label": "",
           "rank": 4
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dagger",
-          "label": "Dagger",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "escape-plan",
-          "label": "Escape Plan",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "determine-value",
-          "label": "Determine Value",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "negotiation",
-          "label": "Negotiation",
+          "label": "",
           "rank": 1
         }
       ],
@@ -5054,13 +5102,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -5070,7 +5119,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000050",
-    "name": "Identity Thief",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -5108,21 +5157,21 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "deception",
-          "label": "Deception",
+          "label": "",
           "rank": 5
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dagger",
-          "label": "Dagger",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "investigation",
-          "label": "Investigation",
+          "label": "",
           "rank": 2
         }
       ],
@@ -5139,7 +5188,7 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ],
       "requires": {
@@ -5151,6 +5200,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -5160,7 +5210,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000051",
-    "name": "Swashbuckler",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -5202,28 +5252,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "balance",
-          "label": "Balance",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dodge",
-          "label": "Dodge",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "light-on-your-feet",
-          "label": "Light on Your Feet",
+          "label": "",
           "rank": 1
         },
         {
@@ -5272,6 +5322,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -5281,7 +5332,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000052",
-    "name": "Dungeon Dad",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -5332,28 +5383,28 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "catcher",
-          "label": "Catcher",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "repair",
-          "label": "Repair",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "tactics",
-          "label": "Tactics",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "spell",
           "mode": "fixed",
           "identifier": "dccspl0000000021",
-          "label": "Hot Stuff Aura",
+          "label": "",
           "rank": 2
         },
         {
@@ -5383,13 +5434,14 @@ export const COG_CLASSES = [
           "itemType": "loot",
           "quantity": 1,
           "mode": "fixed",
-          "label": "Earth Origin Box"
+          "label": ""
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -5399,7 +5451,7 @@ export const COG_CLASSES = [
   },
   {
     "_id": "dcccls0000000053",
-    "name": "Black Inquisitor General",
+    "name": "",
     "type": "class",
     "img": "icons/svg/book.svg",
     "system": {
@@ -5451,21 +5503,21 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "find-trap",
-          "label": "Find Trap",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "trap-engineer",
-          "label": "Trap Engineer",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "religion",
-          "label": "Religion",
+          "label": "",
           "rank": 1
         },
         {
@@ -5508,6 +5560,7 @@ export const COG_CLASSES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]

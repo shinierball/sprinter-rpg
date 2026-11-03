@@ -38,6 +38,14 @@ export const EXAMPLE_SET_META = Object.freeze([
   Object.freeze({
     id: 'used-up', code: 'us', label: 'Used Up', release: '5.8.0',
     premise: 'A reusable buzzer, a rechargeable wand and a multi-dose tonic, plus a drink that leaves a bottle, a scroll whose junk remembers it, a bag of the junk itself, and a torch that leaves a Burnt Torch.'
+  }),
+  Object.freeze({
+    id: 'base-skills', code: 'bk', label: 'Base Skills', release: '6.0.0',
+    premise: 'Every skill the base classes, races and starter weapons use, and one that only proves the system works.'
+  }),
+  Object.freeze({
+    id: 'base-set', code: 'bs', label: 'Base Set', release: '6.0.0',
+    premise: 'Ten classes, two races, and the spells and debuffs a world starts with before an import.'
   })
 ]);
 

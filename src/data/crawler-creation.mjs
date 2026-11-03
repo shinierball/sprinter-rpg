@@ -11,7 +11,7 @@ export const COG_SPECIES_DATA = {
     aiFavor: 1,
     inherentSkill: {
       name: 'Unarmed Combat',
-      ref: 'dccskl0000000014',
+      ref: 'unarmed-combat',
       rank: 3,
       stat: 'str',
       source: 'Species Inherent'
@@ -35,7 +35,7 @@ export const COG_SPECIES_DATA = {
     aiFavor: 0,
     inherentSkill: {
       name: 'Slice Attack',
-      ref: 'dccskl0000000003',
+      ref: 'slice-attack',
       rank: 3,
       stat: 'dex',
       source: 'Species Inherent'

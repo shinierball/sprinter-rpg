@@ -30,7 +30,7 @@ import { addRank, cleanInt, cleanText, readSpecValue, rollOrTyped } from '../sta
 import { LOOT_SPELL_TABLE, LOOT_UPGRADE_TABLE, rowForTotal } from '../tables.mjs';
 import { LOOT_SLOTS, compileLootPick, manaPotionPayload, slotsForTiers, spellVariantsFor } from '../loot-tiers.mjs';
 import { asTriggerFromOption } from '../../../utils/amazing-success.mjs';
-import { createWorkingItem, ownedByIdentifier } from './experiences.mjs';
+import { createWorkingItem, ownedByIdentifier, unnamedFromBooks } from './experiences.mjs';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const loaded = (ctx, key) => Boolean(key && isObj(ctx?.tables?.[key]));
@@ -72,21 +72,28 @@ function spellFromTable(step, state, ctx, rng, pickSpec, tableKey) {
   const row = rowForTotal(table, rowNumber);
   const option = row?.options?.find(o => (o.kind === 'spell' || o.kind === 'named') && cleanText(o.identifier));
   if (!option) { state.warn(step.id, `${table.name || tableKey} row ${rowNumber} names no spell; the spell pick was skipped.`); return null; }
-  return { identifier: cleanText(option.identifier), row: rowNumber, rolled: chosen === null || given.rolled };
+  return { identifier: cleanText(option.identifier), name: cleanText(option.name), stubOk: !cleanText(option.uuid), row: rowNumber, rolled: chosen === null || given.rolled };
 }
 
 /** One spell of a Spells-instead card. Returns the history record of the pick, or null when nothing came of it. */
 function takeSpell(step, state, ctx, rng, pickSpec, rankFormula, spellTable) {
   let identifier = cleanText(pickSpec.identifier);
   let tableRow = null;
+  let listedName;
+  let stubOk;
   if (identifier) {
     const table = ctx?.tables?.[spellTable];
     const listed = isObj(table) ? table.rows.some(r => r.options?.some(o => cleanText(o.identifier) === identifier)) : true;
     if (!listed) state.breakKey(`loot:offTable:${step.id}`, step.id, `${identifier} is not on the loot spell table`);
+    const option = isObj(table) ? table.rows.flatMap(r => r.options ?? []).find(o => cleanText(o.identifier) === identifier) : null;
+    listedName = cleanText(option?.name);
+    stubOk = Boolean(option) && !cleanText(option.uuid);
   } else {
     const found = spellFromTable(step, state, ctx, rng, pickSpec, spellTable);
     if (!found) return null;
     identifier = found.identifier;
+    listedName = found.name;
+    stubOk = found.stubOk;
     tableRow = found;
   }
   let owned = ownedByIdentifier(state, 'spell', identifier);
@@ -113,15 +120,20 @@ function takeSpell(step, state, ctx, rng, pickSpec, rankFormula, spellTable) {
     return { ...base, name: owned.name, duplicate: true, before: rank.before, after: rank.after, total: roll.total };
   }
   const entry = findCatalogEntry('spells', identifier);
-  if (!entry) { state.warn(step.id, `${identifier} is not in the spell catalog; the spell pick was skipped.`); return null; }
+  // A table option with no uuid names a book spell: when no catalog holds it, a stub keeps the pick (directive 2).
+  const stub = !entry && stubOk;
+  if (!entry && !stub) { state.warn(step.id, `${identifier} is not in the spell catalog; the spell pick was skipped.`); return null; }
   const roll = rollOrTyped(state, step.id, rankFormula, pickSpec.rankValue, rng);
   if (!roll) return null;
-  const item = createWorkingItem(step, state, { docKind: 'spell', identifier, name: entry.name });
+  if (stub) state.warn(step.id, `${listedName || unnamedFromBooks('spell')} needs an import; a stub was added.`);
+  const item = createWorkingItem(step, state, stub
+    ? { docKind: 'spell', identifier, name: listedName || unnamedFromBooks('spell'), stub: true }
+    : { docKind: 'spell', identifier, name: entry.name });
   const rank = addRank(state, item, roll.total, { stepId: step.id, keepOverflow: Boolean(pickSpec.keepOverflow) });
   state.log({
     step: step.id, kind: 'loot', itemId: item.id, label: item.name, formula: rankFormula, dice: roll.dice ?? undefined, total: roll.total,
     rolled: roll.rolled, manual: roll.manual || undefined, before: rank.before, after: rank.after, capped: rank.capped || undefined,
-    overflow: rank.overflow || undefined, breakKey: rank.breakKey ?? roll.breakKey ?? undefined, note: 'new spell'
+    overflow: rank.overflow || undefined, breakKey: rank.breakKey ?? roll.breakKey ?? undefined, note: stub ? 'needs an import' : 'new spell'
   });
   const record = { ...base, name: item.name, rank: rank.after, total: roll.total, isNew: true };
   // Tome or learned (C (a)) is settled after the Stat step, when the working max Mana is known.

@@ -2,10 +2,10 @@
   "id": "sprinter-rpg",
   "title": "Sprinter RPG",
   "description": "A Foundry VTT system for crawler-style dungeon roleplaying games.",
-  "version": "5.11.0",
+  "version": "6.0.0",
   "url": "https://github.com/shinierball/sprinter-rpg",
   "manifest": "https://github.com/shinierball/sprinter-rpg/releases/latest/download/system.json",
-  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v5.11.0/sprinter-rpg.zip",
+  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v6.0.0/sprinter-rpg.zip",
   "socket": true,
   "relationships": {
     "requires": [
@@ -262,17 +262,6 @@
       "name": "races",
       "label": "Races",
       "path": "packs/races",
-      "type": "Item",
-      "system": "sprinter-rpg",
-      "ownership": {
-        "PLAYER": "OBSERVER",
-        "ASSISTANT": "OWNER"
-      }
-    },
-    {
-      "name": "classes",
-      "label": "Classes",
-      "path": "packs/classes",
       "type": "Item",
       "system": "sprinter-rpg",
       "ownership": {

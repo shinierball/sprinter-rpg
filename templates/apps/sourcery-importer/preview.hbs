@@ -20,11 +20,12 @@
       <ul class="cog-sourcery-kinds">
         {{#each summary.kinds}}
           <li class="cog-sourcery-kind">
-            <strong>{{label}}</strong>: {{withText}} of {{asked}} get text{{#if waiting}}, <span class="cog-text-warning">{{waiting}} empty, waiting for a book not provided</span>{{/if}}{{#if notFound}}, <span class="cog-text-warning">{{notFound}} empty, not found in the provided book</span>{{/if}}{{#if noRecipe}}, <span class="cog-text-warning">{{noRecipe}} empty, not in the system's recipes</span>{{/if}}{{#if partial}}, <span class="cog-text-muted">{{partial}} only partly</span>{{/if}}
+            <strong>{{label}}</strong>: {{withText}} of {{asked}} get text{{#if leftOut}}, <span class="cog-text-muted">{{leftOut}} left out</span>{{/if}}{{#if waiting}}, <span class="cog-text-warning">{{waiting}} empty, waiting for a book not provided</span>{{/if}}{{#if notFound}}, <span class="cog-text-warning">{{notFound}} empty, not found in the provided book</span>{{/if}}{{#if noRecipe}}, <span class="cog-text-warning">{{noRecipe}} empty, not in the system's recipes</span>{{/if}}{{#if partial}}, <span class="cog-text-muted">{{partial}} only partly</span>{{/if}}
           </li>
         {{/each}}
       </ul>
       <p class="cog-text-muted">{{summary.totals.withText}} of {{summary.totals.asked}} documents get text; {{summary.totals.empty}} stay empty and flagged ({{summary.totals.waiting}} waiting for a book not provided, {{summary.totals.notFound}} not found in the provided book, {{summary.totals.noRecipe}} not in the system's recipes).</p>
+      {{#if summary.totals.leftOut}}<p class="cog-text-muted">{{summary.totals.leftOut}} documents from books you did not provide are left out.</p>{{/if}}
       <p class="cog-text-muted">Fields: {{summary.fields.fromBook}} filled from the book ({{summary.fields.verified}} verified against the reviewed text, {{summary.fields.unverified}} unverified and flagged), {{summary.fields.emptiedNow}} emptied and flagged because the book text did not parse, {{summary.fields.keptOurs}} still hold the system's own wording.</p>
     </div>
   {{/if}}

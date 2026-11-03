@@ -7,7 +7,7 @@
 export const COG_SKILLS = [
   {
     "_id": "dccskl0000000001",
-    "name": "Bite",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -73,7 +73,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Woozy",
+          "debuff": "woozy",
           "notes": "+1d8 base damage, and the target gains the Woozy Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -139,6 +139,7 @@ export const COG_SKILLS = [
           "generated": [
             "system.notes"
           ],
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank10.notes"
@@ -149,7 +150,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000002",
-    "name": "Back Claw",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -215,7 +216,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Blood Trail",
+          "debuff": "blood-trail",
           "notes": "+1d6 base damage, and the target gains the Blood Trail Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -273,11 +274,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000003",
-    "name": "Slice Attack",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -414,11 +422,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000004",
-    "name": "Club",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -464,7 +479,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Woozy",
+          "debuff": "woozy",
           "notes": "+1d6 base damage, and the target gains the Woozy Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -484,7 +499,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Take Down",
+          "debuff": "take-down",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -548,6 +563,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank15.notes"
@@ -558,7 +574,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000005",
-    "name": "Improvised Weapons",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/chest.svg",
     "system": {
@@ -704,6 +720,7 @@ export const COG_SKILLS = [
           "generated": [
             "system.notes"
           ],
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank5.notes",
@@ -715,7 +732,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000006",
-    "name": "Warhammer",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -845,6 +862,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank15.notes"
@@ -855,7 +873,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000007",
-    "name": "Axe",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -985,6 +1003,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank10.notes",
@@ -996,7 +1015,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000008",
-    "name": "Dagger",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -1139,6 +1158,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank5.notes",
@@ -1151,7 +1171,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000009",
-    "name": "Longsword",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -1281,6 +1301,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank15.notes"
@@ -1291,7 +1312,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000010",
-    "name": "Rapier",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -1421,6 +1442,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank10.notes",
@@ -1432,7 +1454,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000011",
-    "name": "Foot Soldier",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -1440,7 +1462,7 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "AI Favor: 1 (only if no Damage Effect is used). Choose Powerful Strike or Smush Damage Effect before rolling to hit. Base Damage: 1d4 + Str Bludgeoning.",
+      "notes": "AI Favor: 1 (only if no Damage Effect is used). Base Damage: 1d4 + Str Bludgeoning.",
       "upgrades": "Rank 5: +1d4 base damage\nRank 10: +1d4 base damage\nRank 15: +1d4 base damage, and the target gains the Sore as Shit Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -1469,7 +1491,7 @@ export const COG_SKILLS = [
       },
       "optionalEffects": [
         "powerful-strike",
-        "smush"
+        "dccskl0000000021"
       ],
       "rankBreaks": {
         "rank5": {
@@ -1517,7 +1539,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Sore as Shit",
+          "debuff": "sore-as-shit",
           "notes": "+1d4 base damage, and the target gains the Sore as Shit Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -1574,11 +1596,21 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.notes"
+          ]
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000012",
-    "name": "Noggin Nocker",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -1663,7 +1695,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Woozy",
+          "debuff": "woozy",
           "notes": "+1d4 base damage, and the target gains the Woozy Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -1699,7 +1731,7 @@ export const COG_SKILLS = [
           }
         }
       },
-      "identifier": "noggin-nocker",
+      "identifier": "dccskl0000000012",
       "tags": [
         "action.attack",
         "element.bludgeoning",
@@ -1727,6 +1759,7 @@ export const COG_SKILLS = [
           "generated": [
             "system.notes"
           ],
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank5.notes",
@@ -1738,7 +1771,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000013",
-    "name": "Pugilism",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -1746,7 +1779,7 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
-      "notes": "AI Favor: 2 (only if no Damage Effect is used). Choose Dirty Fighting, Iron Punch, or Powerful Strike before rolling. Base Damage: 1d2 + Str Bludgeoning.",
+      "notes": "AI Favor: 2 (only if no Damage Effect is used). Base Damage: 1d2 + Str Bludgeoning.",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -1775,7 +1808,7 @@ export const COG_SKILLS = [
       },
       "optionalEffects": [
         "dirty-fighting",
-        "iron-punch",
+        "dccskl0000000018",
         "powerful-strike"
       ],
       "rankBreaks": {
@@ -1886,7 +1919,9 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
+            "system.notes",
             "system.upgrades",
             "system.rankBreaks.rank15.notes"
           ]
@@ -1896,7 +1931,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000014",
-    "name": "Unarmed Combat",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -2034,11 +2069,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000015",
-    "name": "Wrasslin",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -2084,7 +2126,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Held",
+          "debuff": "held",
           "notes": "Maintain Held at no Action cost, but check to prevent escape is at Disadvantage.",
           "isArmorPiercing": false,
           "healing": {
@@ -2181,11 +2223,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000016",
-    "name": "Choke Out",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -2361,14 +2410,15 @@ export const COG_SKILLS = [
         "sourcery": {
           "generated": [
             "system.notes"
-          ]
+          ],
+          "redacted": true
         }
       }
     }
   },
   {
     "_id": "dccskl0000000017",
-    "name": "Dirty Fighting",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/cowled.svg",
     "system": {
@@ -2377,7 +2427,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Pugilism / Wrestling Damage Effect, Passive",
       "notes": "Pugilism or Wrestling Damage Effect, Passive. If Attack is Critical Fail, lose 1 Popularity. Apply Woozy Debuff to target.",
-      "upgrades": "Rank 5: Also apply The Taint Debuff.\nRank 10: Also apply Blinded Debuff. No longer lose Popularity on Critical Fails.\nRank 15: Apply an immediate Minor Injury Debuff.",
+      "upgrades": "Rank 10: Also apply Blinded Debuff. No longer lose Popularity on Critical Fails.\nRank 15: Apply an immediate Minor Injury Debuff.",
       "checked": false,
       "damageModifiers": [],
       "popularityTriggers": [
@@ -2424,15 +2474,15 @@ export const COG_SKILLS = [
           },
           {
             "minRank": 5,
-            "text": "Inflict Woozy / The Taint"
+            "text": "Inflict Woozy / a taint debuff"
           },
           {
             "minRank": 10,
-            "text": "Inflict Woozy / The Taint / Blinded"
+            "text": "Inflict Woozy / a taint debuff / Blinded"
           },
           {
             "minRank": 15,
-            "text": "Inflict Woozy / The Taint / Blinded + Minor Injury"
+            "text": "Inflict Woozy / a taint debuff / Blinded + Minor Injury"
           }
         ]
       },
@@ -2442,8 +2492,8 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "The Taint",
-          "notes": "Also apply The Taint Debuff",
+          "debuff": "dccdeb0000000009",
+          "notes": "",
           "isArmorPiercing": false,
           "healing": {
             "barsBonus": 0,
@@ -2462,7 +2512,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Blinded",
+          "debuff": "blinded",
           "notes": "Also apply Blinded Debuff. No longer lose Popularity on Critical Fails.",
           "isArmorPiercing": false,
           "healing": {
@@ -2482,7 +2532,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Minor Injury",
+          "debuff": "minor-injury",
           "notes": "Apply an immediate Minor Injury Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -2537,11 +2587,22 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.upgrades",
+            "system.rankBreaks.rank5.notes"
+          ]
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000018",
-    "name": "Iron Punch",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -2579,7 +2640,7 @@ export const COG_SKILLS = [
             "minRank": 10,
             "replacesDamage": true,
             "debuffs": [
-              "Stunned"
+              "stunned"
             ]
           }
         ]
@@ -2610,7 +2671,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Stunned",
+          "debuff": "stunned",
           "notes": "Choose to have target gain Stunned Debuff (the Stun instead of damage variant)",
           "isArmorPiercing": false,
           "healing": {
@@ -2630,7 +2691,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 1,
           "buffsResistances": "",
-          "debuff": "Stunned",
+          "debuff": "stunned",
           "notes": "Add 1 Rank damage die, and target gains Stunned Debuff",
           "isArmorPiercing": false,
           "healing": {
@@ -2666,7 +2727,7 @@ export const COG_SKILLS = [
           }
         }
       },
-      "identifier": "iron-punch",
+      "identifier": "dccskl0000000018",
       "tags": [
         "action.passive",
         "kind.skill",
@@ -2684,11 +2745,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000019",
-    "name": "Powerful Strike",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -2711,7 +2779,7 @@ export const COG_SKILLS = [
         "all": [],
         "any": [
           "id.skill.foot-soldier",
-          "id.skill.noggin-nocker",
+          "id.skill.dccskl0000000012",
           "id.skill.pugilism"
         ],
         "none": []
@@ -2836,7 +2904,7 @@ export const COG_SKILLS = [
         "skillGroup.utility",
         "stat.str",
         "technique.foot_soldier",
-        "technique.noggin_nocker",
+        "technique.headbutt",
         "technique.pugilism",
         "weaponGroup.hand_to_hand"
       ],
@@ -2854,21 +2922,22 @@ export const COG_SKILLS = [
         "sourcery": {
           "generated": [
             "system.notes"
-          ]
+          ],
+          "redacted": true
         }
       }
     }
   },
   {
     "_id": "dccskl0000000020",
-    "name": "Skullcracker",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
       "rank": 0,
       "stat": "str",
       "checkType": "passive",
-      "checkNote": "Noggin Nocker Damage Effect, Passive",
+      "checkNote": "Damage Effect, Passive",
       "notes": "",
       "upgrades": "Rank 5: +1d4 base damage if target is same size.\nRank 10: If same size, add 1 Rank damage die and target gains Stunned Debuff.\nRank 15: Add 1 Rank damage die and target gains Blood Trail Debuff.",
       "checked": false,
@@ -2879,7 +2948,7 @@ export const COG_SKILLS = [
       "appliesToQuery": {
         "all": [],
         "any": [
-          "id.skill.noggin-nocker"
+          "id.skill.dccskl0000000012"
         ],
         "none": []
       },
@@ -2945,7 +3014,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 1,
           "buffsResistances": "",
-          "debuff": "Stunned",
+          "debuff": "stunned",
           "notes": "If same size, add 1 Rank damage die and target gains Stunned Debuff",
           "isArmorPiercing": false,
           "healing": {
@@ -2965,7 +3034,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 1,
           "buffsResistances": "",
-          "debuff": "Blood Trail",
+          "debuff": "blood-trail",
           "notes": "Add 1 Rank damage die and target gains Blood Trail Debuff",
           "isArmorPiercing": false,
           "healing": {
@@ -3008,7 +3077,7 @@ export const COG_SKILLS = [
         "kind.technique",
         "skillGroup.utility",
         "stat.str",
-        "technique.noggin_nocker",
+        "technique.headbutt",
         "weaponGroup.hand_to_hand"
       ],
       "healing": {
@@ -3025,14 +3094,15 @@ export const COG_SKILLS = [
         "sourcery": {
           "generated": [
             "system.notes"
-          ]
+          ],
+          "redacted": true
         }
       }
     }
   },
   {
     "_id": "dccskl0000000021",
-    "name": "Smush",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -3172,7 +3242,7 @@ export const COG_SKILLS = [
           }
         }
       },
-      "identifier": "smush",
+      "identifier": "dccskl0000000021",
       "tags": [
         "action.passive",
         "kind.skill",
@@ -3194,6 +3264,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank5.notes",
@@ -3205,7 +3276,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000022",
-    "name": "Toss",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -3346,11 +3417,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000023",
-    "name": "Bow",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -3416,7 +3494,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Blood Trail",
+          "debuff": "blood-trail",
           "notes": "+1d6 base damage, and target gains Blood Trail Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -3476,11 +3554,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000024",
-    "name": "Crossbow",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -3530,7 +3615,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Blood Trail",
+          "debuff": "blood-trail",
           "notes": "+1d8 base damage, target gains Blood Trail Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -3610,11 +3695,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000025",
-    "name": "Handgun",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -3680,7 +3772,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Staggered",
+          "debuff": "staggered",
           "notes": "+1d8 base damage, target gains Staggered Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -3740,11 +3832,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000026",
-    "name": "Javelin",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -3870,11 +3969,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000027",
-    "name": "Shotgun",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -4000,11 +4106,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000028",
-    "name": "Shuriken",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -4143,11 +4256,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000029",
-    "name": "Slingshot",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -4286,11 +4406,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000030",
-    "name": "Herding Weapons",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -4369,7 +4496,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Take Down",
+          "debuff": "take-down",
           "notes": "+1d4 base damage, target gains Take Down Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -4405,7 +4532,7 @@ export const COG_SKILLS = [
           }
         }
       },
-      "identifier": "herding-weapons",
+      "identifier": "dccskl0000000030",
       "tags": [
         "action.attack",
         "element.bludgeoning",
@@ -4429,11 +4556,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000031",
-    "name": "Lance",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -4565,14 +4699,15 @@ export const COG_SKILLS = [
         "sourcery": {
           "generated": [
             "system.notes"
-          ]
+          ],
+          "redacted": true
         }
       }
     }
   },
   {
     "_id": "dccskl0000000032",
-    "name": "Polearm",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -4698,11 +4833,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000033",
-    "name": "Quarterstaff",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -4828,11 +4970,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000039",
-    "name": "Acute Ears",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/eye.svg",
     "system": {
@@ -4944,11 +5093,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000040",
-    "name": "Aiming",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -5061,11 +5217,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000041",
-    "name": "Alchemy",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/daze.svg",
     "system": {
@@ -5181,6 +5344,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank15.notes"
@@ -5191,7 +5355,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000042",
-    "name": "Ambush",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -5302,11 +5466,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000043",
-    "name": "Animal Handling",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/pawprint.svg",
     "system": {
@@ -5417,11 +5588,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000044",
-    "name": "Arcane",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -5533,11 +5711,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000045",
-    "name": "Attack of Opportunity",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -5655,11 +5840,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000046",
-    "name": "Backfire",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/hazard.svg",
     "system": {
@@ -5775,6 +5967,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.notes"
           ]
@@ -5784,7 +5977,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000047",
-    "name": "Balance",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -5908,6 +6101,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.notes"
           ]
@@ -5917,7 +6111,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000048",
-    "name": "Basic Science",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -6028,11 +6222,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000049",
-    "name": "Bomb Surgeon",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/explosion.svg",
     "system": {
@@ -6126,7 +6327,7 @@ export const COG_SKILLS = [
           }
         }
       },
-      "identifier": "bomb-surgeon",
+      "identifier": "dccskl0000000049",
       "tags": [
         "kind.skill",
         "skillGroup.explosive",
@@ -6144,11 +6345,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000050",
-    "name": "Calligraphy",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -6260,11 +6468,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000051",
-    "name": "Cartography",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/direction.svg",
     "system": {
@@ -6379,6 +6594,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank5.notes"
@@ -6389,7 +6605,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000052",
-    "name": "Cat-Like Reflexes",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -6447,7 +6663,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "+1 Evade",
-          "debuff": "Held",
+          "debuff": "held",
           "notes": "+10ft Move, +1 Evade Buff, Advantage to Evade Held effects.",
           "isArmorPiercing": false,
           "healing": {
@@ -6500,11 +6716,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000053",
-    "name": "Catcher",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -6642,11 +6865,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000054",
-    "name": "Cesta Punta",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/d20.svg",
     "system": {
@@ -6762,6 +6992,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.notes"
           ]
@@ -6771,7 +7002,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000055",
-    "name": "Character Actor",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/cowled.svg",
     "system": {
@@ -6883,11 +7114,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000056",
-    "name": "Chopper Pilot",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -6998,11 +7236,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000057",
-    "name": "Climbing",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/stone-path.svg",
     "system": {
@@ -7114,11 +7359,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000058",
-    "name": "Cockroach",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/aura.svg",
     "system": {
@@ -7220,7 +7472,7 @@ export const COG_SKILLS = [
           }
         }
       },
-      "identifier": "cockroach",
+      "identifier": "dccskl0000000058",
       "tags": [
         "kind.skill",
         "skillGroup.utility",
@@ -7237,11 +7489,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000059",
-    "name": "Cooking",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -7356,6 +7615,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank10.notes",
@@ -7367,7 +7627,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000060",
-    "name": "Deception",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/cowled.svg",
     "system": {
@@ -7478,11 +7738,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000061",
-    "name": "Detect Lies",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/eye.svg",
     "system": {
@@ -7593,11 +7860,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000062",
-    "name": "Detect Trap",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/hazard.svg",
     "system": {
@@ -7709,11 +7983,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000063",
-    "name": "Determine Value",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/chest.svg",
     "system": {
@@ -7825,11 +8106,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000064",
-    "name": "Diplomacy",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -7940,11 +8228,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000065",
-    "name": "Dodge",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wing.svg",
     "system": {
@@ -8056,11 +8351,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000066",
-    "name": "Double Tap",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -8172,11 +8474,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000067",
-    "name": "Driving",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -8287,11 +8596,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000068",
-    "name": "Dumpster Diving",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/chest.svg",
     "system": {
@@ -8406,6 +8722,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank5.notes"
@@ -8416,7 +8733,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000069",
-    "name": "Endurance",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/aura.svg",
     "system": {
@@ -8471,7 +8788,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Fatigued",
+          "debuff": "fatigued",
           "notes": "Advantage if not Fatigued or in extreme conditions.",
           "isArmorPiercing": false,
           "healing": {
@@ -8544,11 +8861,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000070",
-    "name": "Engineering",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -8660,11 +8984,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000071",
-    "name": "Escape Plan",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/direction.svg",
     "system": {
@@ -8780,6 +9111,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank15.notes"
@@ -8790,7 +9122,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000072",
-    "name": "Escape Artist",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -8901,11 +9233,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000073",
-    "name": "Explosives Handling",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/explosion.svg",
     "system": {
@@ -9022,6 +9361,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank10.notes",
@@ -9033,7 +9373,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000074",
-    "name": "Fabricate",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/chest.svg",
     "system": {
@@ -9145,11 +9485,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000075",
-    "name": "Find Crawler",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/target.svg",
     "system": {
@@ -9261,11 +9608,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000076",
-    "name": "Find Trap",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/hazard.svg",
     "system": {
@@ -9378,11 +9732,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000077",
-    "name": "First Aid",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -9496,11 +9857,18 @@ export const COG_SKILLS = [
           "Minor Injury"
         ]
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000078",
-    "name": "Gear Head",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -9612,11 +9980,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000079",
-    "name": "Goblin Explosives",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/explosion.svg",
     "system": {
@@ -9624,7 +9999,7 @@ export const COG_SKILLS = [
       "stat": "int",
       "checkType": "stat",
       "checkNote": "Unopposed",
-      "notes": "Safely use Goblin Explosives. Critical Fails occur on Natural 1–4.",
+      "notes": "Critical Fails occur on Natural 1–4.",
       "upgrades": "Rank 5: Critical Fail on Nat 3-; determine type and status.\nRank 10: Critical Fail on Nat 2-; craft explosives with a demolitions table.\nRank 15: Critical Fail on Nat 1 as usual; create raw materials.",
       "checked": false,
       "damageModifiers": [],
@@ -9710,7 +10085,7 @@ export const COG_SKILLS = [
           }
         }
       },
-      "identifier": "goblin-explosives",
+      "identifier": "dccskl0000000079",
       "tags": [
         "kind.skill",
         "skillGroup.crafting",
@@ -9733,7 +10108,9 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
+            "system.notes",
             "system.upgrades",
             "system.rankBreaks.rank10.notes"
           ]
@@ -9743,7 +10120,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000080",
-    "name": "Good First Impression",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -9858,6 +10235,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.notes"
           ]
@@ -9867,7 +10245,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000081",
-    "name": "Improvised Explosive Device",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/explosion.svg",
     "system": {
@@ -9988,6 +10366,7 @@ export const COG_SKILLS = [
           "generated": [
             "system.notes"
           ],
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank10.notes",
@@ -9999,7 +10378,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000082",
-    "name": "Hide in Shadows",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/blind.svg",
     "system": {
@@ -10110,11 +10489,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000083",
-    "name": "Incendiary Device Handling",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/explosion.svg",
     "system": {
@@ -10231,6 +10617,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank10.notes"
@@ -10241,7 +10628,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000084",
-    "name": "Infusion",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/daze.svg",
     "system": {
@@ -10353,11 +10740,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000085",
-    "name": "Intimidate",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -10395,7 +10789,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Woozy",
+          "debuff": "woozy",
           "notes": "Target also gains Woozy Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -10415,7 +10809,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Paralyzed",
+          "debuff": "paralyzed",
           "notes": "Target drops held items and gains Paralyzed Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -10468,11 +10862,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000086",
-    "name": "Investigation",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -10583,11 +10984,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000087",
-    "name": "Iron Stomach",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/aura.svg",
     "system": {
@@ -10702,6 +11110,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.notes"
           ]
@@ -10711,7 +11120,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000088",
-    "name": "Jumping",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -10823,11 +11232,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000089",
-    "name": "Leadership",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -10938,11 +11354,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000090",
-    "name": "Light on Your Feet",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/pawprint.svg",
     "system": {
@@ -11054,11 +11477,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000091",
-    "name": "Lockpicking",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/padlock.svg",
     "system": {
@@ -11173,6 +11603,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank5.notes"
@@ -11183,7 +11614,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000092",
-    "name": "Lore",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -11294,11 +11725,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000093",
-    "name": "Negotiation",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -11409,11 +11847,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000094",
-    "name": "Pathfinder",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/direction.svg",
     "system": {
@@ -11525,11 +11970,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000095",
-    "name": "Perception",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/eye.svg",
     "system": {
@@ -11640,11 +12092,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000096",
-    "name": "Performance",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -11755,11 +12214,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000097",
-    "name": "Persuasion",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -11870,11 +12336,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000098",
-    "name": "Regeneration",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/regen.svg",
     "system": {
@@ -11892,7 +12365,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Minor Injury",
+          "debuff": "minor-injury",
           "notes": "Minor Injury ends after 5 min; Major Injury ends after 10 min.",
           "isArmorPiercing": false,
           "healing": {
@@ -11986,11 +12459,18 @@ export const COG_SKILLS = [
         "hotRounds": 5,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000099",
-    "name": "Religion",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -12105,6 +12585,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank10.notes"
@@ -12115,7 +12596,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000100",
-    "name": "Repair",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/chest.svg",
     "system": {
@@ -12226,11 +12707,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000101",
-    "name": "Ropework",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/stone-path.svg",
     "system": {
@@ -12248,7 +12736,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Held",
+          "debuff": "held",
           "notes": "Use as Attack (range 10 ft vs Evade); target gains Held Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -12341,11 +12829,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000102",
-    "name": "Riding",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/pawprint.svg",
     "system": {
@@ -12456,11 +12951,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000103",
-    "name": "Running",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/wingfoot.svg",
     "system": {
@@ -12588,11 +13090,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000104",
-    "name": "Salvage",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/chest.svg",
     "system": {
@@ -12703,11 +13212,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000105",
-    "name": "Scutelliphily",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -12819,11 +13335,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000106",
-    "name": "Shield Block",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -12940,11 +13463,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000107",
-    "name": "Sleight of Hand",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/cowled.svg",
     "system": {
@@ -13055,11 +13585,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000108",
-    "name": "Smithing",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -13171,11 +13708,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000109",
-    "name": "Stealth",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/blind.svg",
     "system": {
@@ -13290,6 +13834,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.upgrades",
             "system.rankBreaks.rank5.notes"
@@ -13300,7 +13845,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000110",
-    "name": "Streetwise",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/cowled.svg",
     "system": {
@@ -13411,11 +13956,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000111",
-    "name": "Survival",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/cave.svg",
     "system": {
@@ -13526,11 +14078,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000112",
-    "name": "Swimming",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/stone-path.svg",
     "system": {
@@ -13548,7 +14107,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Fatigued",
+          "debuff": "fatigued",
           "notes": "Fatigued Debuff delayed to 2 minutes.",
           "isArmorPiercing": false,
           "healing": {
@@ -13588,7 +14147,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Fatigued",
+          "debuff": "fatigued",
           "notes": "Check every 5 minutes; Fatigued Debuff only on Critical Fail.",
           "isArmorPiercing": false,
           "healing": {
@@ -13642,11 +14201,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000113",
-    "name": "Tactics",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -13773,11 +14339,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000114",
-    "name": "Tattoo Artistry",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/book.svg",
     "system": {
@@ -13889,11 +14462,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000115",
-    "name": "Taunt",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -14022,11 +14602,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000116",
-    "name": "Throwing",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/d20.svg",
     "system": {
@@ -14137,11 +14724,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000117",
-    "name": "Tracking",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/direction.svg",
     "system": {
@@ -14252,11 +14846,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000118",
-    "name": "Trap Engineer",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/hazard.svg",
     "system": {
@@ -14373,6 +14974,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.notes",
             "system.upgrades",
@@ -14384,7 +14986,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000119",
-    "name": "Zone of Control",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -14502,11 +15104,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000120",
-    "name": "Call a Play",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/combat.svg",
     "system": {
@@ -14639,11 +15248,18 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
     "_id": "dccskl0000000121",
-    "name": "Intervene",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -14783,6 +15399,13 @@ export const COG_SKILLS = [
         "hotRounds": 3,
         "cleanseDebuffs": []
       }
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true
+        }
+      }
     }
   },
   {
@@ -14833,7 +15456,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Bleeding",
+          "debuff": "bleeding",
           "notes": "+1d8 base damage and inflicts Bleeding DoT",
           "isArmorPiercing": false,
           "healing": {
@@ -14982,7 +15605,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Dying",
+          "debuff": "dying",
           "notes": "Once per floor, surviving a lethal blow leaves you at 1 HP instead of dying.",
           "isArmorPiercing": false,
           "healing": {
@@ -15616,7 +16239,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Held",
+          "debuff": "held",
           "notes": "Critical hit knocks the target prone and disarms held weapons.",
           "isArmorPiercing": true,
           "healing": {
@@ -16359,7 +16982,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Poisoned",
+          "debuff": "poisoned",
           "notes": "Poison DoT increases to 1d8 per round for 3 rounds",
           "isArmorPiercing": false,
           "healing": {
@@ -16379,7 +17002,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Paralyzed",
+          "debuff": "paralyzed",
           "notes": "Critical hit inflicts Paralyzed debuff for 1 round.",
           "isArmorPiercing": true,
           "healing": {
@@ -16489,7 +17112,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Webbed",
+          "debuff": "webbed",
           "notes": "Enemies entering web area gain the Webbed debuff",
           "isArmorPiercing": false,
           "healing": {
@@ -17124,7 +17747,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Take Down",
+          "debuff": "take-down",
           "notes": "Knocks target prone on hit",
           "isArmorPiercing": false,
           "healing": {
@@ -17642,7 +18265,7 @@ export const COG_SKILLS = [
           "isArmorPiercing": false,
           "healing": {
             "barsBonus": 0,
-            "cleanseDebuff": "Poisoned"
+            "cleanseDebuff": "poisoned"
           },
           "rank": 10,
           "critMultiplier": 1,
@@ -17894,7 +18517,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Burned",
+          "debuff": "burned",
           "notes": "Target gains the Burned debuff",
           "isArmorPiercing": false,
           "healing": {
@@ -18521,11 +19144,11 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000150",
-    "name": "Creepy Chains",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/shield.svg",
     "system": {
-      "identifier": "creepy-chains",
+      "identifier": "dccskl0000000150",
       "tags": [
         "action.attack",
         "element.bludgeoning",
@@ -18663,7 +19286,7 @@ export const COG_SKILLS = [
           "baseDiceMultiplier": 1,
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Woozy",
+          "debuff": "woozy",
           "debuffOn": "hit",
           "notes": "+1d6 base damage, and the target gains the Woozy Debuff.",
           "isArmorPiercing": false,
@@ -18701,7 +19324,7 @@ export const COG_SKILLS = [
           "baseDiceMultiplier": 1,
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Take Down",
+          "debuff": "take-down",
           "debuffOn": "hit",
           "notes": "",
           "isArmorPiercing": false,
@@ -18807,6 +19430,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description",
             "system.upgrades",
@@ -18818,11 +19442,11 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000151",
-    "name": "Ethereal Hug",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/aura.svg",
     "system": {
-      "identifier": "ethereal-hug",
+      "identifier": "dccskl0000000151",
       "tags": [
         "kind.skill",
         "skillGroup.utility",
@@ -19097,6 +19721,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -20556,7 +21181,7 @@ export const COG_SKILLS = [
   },
   {
     "_id": "dccskl0000000157",
-    "name": "Tongue Lashing",
+    "name": "",
     "type": "skill",
     "img": "icons/svg/aura.svg",
     "system": {
@@ -20839,6 +21464,7 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]

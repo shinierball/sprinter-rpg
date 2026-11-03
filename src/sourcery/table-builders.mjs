@@ -49,8 +49,10 @@ const tableUuidOf = (link, options) => {
 };
 
 /** The marker every Sourcery document carries: where its text came from and whether it was found. */
+// `book`: which book's tables a document belongs to, so a later import of another book keeps them (see `commitImport`).
 const provenance = (recipe, hydrated, options) => ({
-  id: recipe.id, resolved: !hydrated.warnings.some(w => w.startsWith('unresolved')), source: options.source ?? 'pdf'
+  id: recipe.id, ...(typeof options.book === 'string' ? { book: options.book } : {}),
+  resolved: !hydrated.warnings.some(w => w.startsWith('unresolved')), source: options.source ?? 'pdf'
 });
 
 /**
@@ -157,7 +159,7 @@ export function journalSpec(book, items, options = {}) {
 export function bookTableSpecs(file, hydratedById, options = {}) {
   const recipes = new Map(file.tables.map(t => [t.id, t]));
   const items = file.tables.filter(t => hydratedById.has(t.id)).map(recipe => ({ recipe, hydrated: hydratedById.get(recipe.id).hydrated }));
-  const opts = { ...options, recipes, rollTableUuid: options.rollTableUuid ?? (r => `RollTable.${r._id}`) };
+  const opts = { ...options, book: file.book, recipes, rollTableUuid: options.rollTableUuid ?? (r => `RollTable.${r._id}`) };
   const rollTables = items.map(({ recipe, hydrated }) => rollTableSpec(recipe, hydrated, opts)).filter(Boolean);
   return { rollTables, journal: journalSpec({ book: file.book, journalId: file.journalId, label: options.label }, items, opts) };
 }

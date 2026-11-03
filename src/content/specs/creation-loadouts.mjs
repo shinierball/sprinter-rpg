@@ -18,15 +18,15 @@ export const COG_CREATION_LOADOUTS = Object.freeze([
   spell('dccspl0000000042'),
   spell('dccspl0000000049'),
   {
-    id: 'pugilism', slot: 'unarmed', name: 'Pugilism', skillIdentifier: 'pugilism', effectIdentifier: 'iron-punch',
-    label: 'Pugilism with Iron Punch Damage Effect (+1d2 base dmg)'
+    id: 'pugilism', slot: 'unarmed', name: 'Pugilism', skillIdentifier: 'pugilism', effectIdentifier: 'dccskl0000000018',
+    label: ''
   },
   {
-    id: 'foot_soldier', slot: 'unarmed', name: 'Foot Soldier', skillIdentifier: 'foot-soldier', effectIdentifier: 'smush',
-    label: 'Foot Soldier with Smush Damage Effect (×2 dmg on ≤20% HP)'
+    id: 'foot_soldier', slot: 'unarmed', name: 'Foot Soldier', skillIdentifier: 'foot-soldier', effectIdentifier: 'dccskl0000000021',
+    label: ''
   },
   {
-    id: 'noggin_nocker', slot: 'unarmed', name: '', skillIdentifier: 'noggin-nocker', effectIdentifier: 'dccskl0000000020',
+    id: 'dccskl0000000012', slot: 'unarmed', name: '', skillIdentifier: 'dccskl0000000012', effectIdentifier: 'dccskl0000000020',
     label: ''
   },
   {

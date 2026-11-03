@@ -171,7 +171,7 @@ function experienceSlots(session, step, spec) {
         index: j, formula: skill.formula || step.rankFormulas[j] || '',
         chips: (tableRow?.options ?? []).map(o => ({
           index: o.index, label: o.name, kind: o.kind, active: Number(skill.option) === o.index && hasValue(skill.option),
-          isChoice: o.kind === 'choice', isCustom: o.kind === 'custom', docKind: o.docKind,
+          isChoice: o.kind === 'choice', isCustom: o.kind === 'custom', docKind: o.docKind, needsImport: Boolean(o.needsImport),
           ceiling: o.kind === 'named' || o.kind === 'spell' ? ceilingFor(session, o.docKind || (o.kind === 'spell' ? 'spell' : 'skill'), o.identifier) : null
         })),
         choice: picked?.kind === 'choice' ? { path: `${skillBase}.identifier`, options: [opt('', '', !skill.identifier), ...(picked.choices ?? []).map(c => opt(c.value, c.label, c.value === skill.identifier))] } : null,

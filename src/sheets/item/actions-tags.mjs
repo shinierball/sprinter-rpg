@@ -131,7 +131,7 @@ export const TAG_ACTIONS = {
   async parseRankBreaks(event, target) {
     if (!this.isEditable) return;
     const debuffs = await getAvailableDebuffs();
-    const patch = rankBreakFillPatch(this.item.system.rankBreaks, this.item.system.upgrades, debuffs.map((d) => d.name));
+    const patch = rankBreakFillPatch(this.item.system.rankBreaks, this.item.system.upgrades, debuffs.map((d) => ({ name: d.name, identifier: d.system?.identifier ?? '' })));
     let filled = 0;
     for (const [name, value] of Object.entries(patch)) {
       const input = this.element.querySelector(`[name="${name}"]`);

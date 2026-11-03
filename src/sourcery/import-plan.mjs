@@ -162,6 +162,9 @@ export function keptOursPaths(spec, skipped, kind) {
   });
 }
 
+/** A hidden (book) document the import found no entry for: the commit does not write it. */
+export const isLeftOut = (entry) => entry?.hidden === true && entry.state === 'unresolved';
+
 /** Classify a resolution (see the module comment). */
 function classify(res) {
   if (!res || res.status !== 'resolved') return 'unresolved';
@@ -187,10 +190,10 @@ export function planImport({ loaded, recognition, canon }) {
   const entities = [];
   const hydrated = new Map();
   for (const pack of canon) {
-    for (const { id, kind, type, doc } of pack.docs) {
+    for (const { id, kind, type, hidden = false, doc } of pack.docs) {
       if (!kind) continue;
       const info = bookOf.get(id) ?? null;
-      const entry = { id, kind, type, pack: pack.pack, book: info?.book ?? null, reason: null, state: 'complete', resolution: null, chosen: null, filled: 0, fromBook: 0, emptiedNow: 0, keptOurs: 0, verified: 0, unverified: 0, itemNames: 0, itemsKept: 0, needsText: false, emptyPaths: [] };
+      const entry = { id, kind, type, hidden, pack: pack.pack, book: info?.book ?? null, reason: null, state: 'complete', resolution: null, chosen: null, filled: 0, fromBook: 0, emptiedNow: 0, keptOurs: 0, verified: 0, unverified: 0, itemNames: 0, itemsKept: 0, needsText: false, emptyPaths: [] };
       let out = doc;
 
       if (info) {
@@ -229,8 +232,9 @@ export function planImport({ loaded, recognition, canon }) {
       }
       if (entry.state === 'unresolved') {
         // Nothing found: empty text stays empty and carries the flag; a spec that was asked for nothing is left alone.
+        // A hidden (book) document that was not found stays unresolved even then: the commit leaves it out.
         if (pendingTextPaths(doc, kind).length) out = hydrateWithReport(doc, null, { kind, source: 'none', resolved: false }).spec;
-        else entry.state = 'complete';
+        else if (!hidden) entry.state = 'complete';
       }
       entry.emptyPaths = pendingTextPaths(out, kind);
       entry.needsText = entry.emptyPaths.length > 0;
@@ -317,15 +321,17 @@ export function summarizePlan(plan) {
   const all = [...plan.entities, ...plan.tables, ...(plan.waitingTableList ?? [])];
   const order = [...new Set(all.map(e => e.kind))];
   const kinds = order.map((kind) => {
-    const asked = all.filter(e => e.kind === kind && e.state !== 'complete');
+    // A hidden document the import found nothing for is left out, not written empty: counted apart, not as asked.
+    const leftOut = all.filter(e => e.kind === kind && isLeftOut(e)).length;
+    const asked = all.filter(e => e.kind === kind && e.state !== 'complete' && !isLeftOut(e));
     const unresolved = asked.filter(e => e.state === 'unresolved');
     const empty = unresolved.length;
     // The GM can act on the first (add the PDF); the second is a maintainer gap (not-found, no-anchor).
     const waiting = unresolved.filter(e => e.reason === 'no-book').length;
     const noRecipe = unresolved.filter(e => e.reason === 'no-anchor').length;
-    return { kind, asked: asked.length, withText: asked.length - empty, empty, waiting, notFound: empty - waiting - noRecipe, noRecipe, partial: asked.filter(e => e.state !== 'unresolved' && e.needsText).length };
-  }).filter(k => k.asked > 0);
-  const totals = { asked: 0, withText: 0, empty: 0, waiting: 0, notFound: 0, noRecipe: 0 };
+    return { kind, asked: asked.length, leftOut, withText: asked.length - empty, empty, waiting, notFound: empty - waiting - noRecipe, noRecipe, partial: asked.filter(e => e.state !== 'unresolved' && e.needsText).length };
+  }).filter(k => k.asked > 0 || k.leftOut > 0);
+  const totals = { asked: 0, leftOut: 0, withText: 0, empty: 0, waiting: 0, notFound: 0, noRecipe: 0 };
   for (const k of kinds) for (const key of Object.keys(totals)) totals[key] += k[key];
   // A PDF below the match floor is no rulebook; the window names it so it is not silently ignored.
   const unrecognised = (plan.files ?? []).filter(f => f.best === null).map(f => ({ file: f.file, pct: Math.round((f.fraction ?? 0) * 100) }));

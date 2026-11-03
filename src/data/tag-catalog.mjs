@@ -252,7 +252,6 @@ export const COG_TAGS = [
   { id: 'condition.woozy', label: 'Woozy', namespace: 'condition' },
   { id: 'condition.queasy', label: 'Queasy', namespace: 'condition' },
   { id: 'condition.stiff_legs', label: 'Stiff Legs', namespace: 'condition' },
-  { id: 'condition.the_taint', label: 'The Taint', namespace: 'condition' },
   { id: 'condition.sore_as_shit', label: 'Sore as Shit', namespace: 'condition' },
   { id: 'condition.muted', label: 'Muted', namespace: 'condition' },
   { id: 'condition.bleeding', label: 'Bleeding', namespace: 'condition' },
@@ -287,6 +286,7 @@ export const COG_TAGS = [
   { id: 'weapon.dagger', label: 'Dagger', namespace: 'weapon' },
   { id: 'weapon.handgun', label: 'Handgun', namespace: 'weapon' },
   { id: 'weapon.herding_weapon', label: 'Herding Weapon', namespace: 'weapon' },
+  { id: 'weapon.herding_tools', label: 'Herding Tools', namespace: 'weapon' },
   { id: 'weapon.improvised', label: 'Improvised Weapon', namespace: 'weapon' },
   { id: 'weapon.javelin', label: 'Javelin', namespace: 'weapon' },
   { id: 'weapon.lance', label: 'Lance', namespace: 'weapon' },
@@ -400,7 +400,7 @@ export const COG_TAGS = [
   // --- Combat Technique Targets ---
   { id: 'technique.wrestling', label: 'Wrestling Technique', namespace: 'technique', references: 'id.skill.dccskl0000000015' },
   { id: 'technique.pugilism', label: 'Pugilism Technique', namespace: 'technique', references: 'id.skill.pugilism' },
-  { id: 'technique.noggin_nocker', label: 'Noggin Nocker Technique', namespace: 'technique', references: 'id.skill.noggin-nocker' },
+  { id: 'technique.headbutt', label: 'Headbutt Technique', namespace: 'technique', references: 'id.skill.dccskl0000000012' },
   { id: 'technique.foot_soldier', label: 'Foot Soldier Technique', namespace: 'technique', references: 'id.skill.foot-soldier' },
 
   // --- Engine Rule Overrides ---

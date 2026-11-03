@@ -7,7 +7,8 @@
  *   { _id?, name, key (flags.sprinter-rpg.tableKey), tableNumber?, formula? ('1d6'), description?, img?, folder?,
  *     rows: [{ range: [lo, hi] | roll: n, name?: string, narrative?: string, options?: Option[], tableRef?: uuid, flags?: { <name>: boolean|number } }] }
  * Option (the `flags.sprinter-rpg.option` of one result; the human-readable `label`/`name` fills the result's name):
- *   { kind: 'named', docKind: 'skill'|'spell', uuid, identifier, name }   a document result (documentUuid)
+ *   { kind: 'named', docKind: 'skill'|'spell', uuid?, identifier, name }   a document result (documentUuid); without a uuid it is
+ *     a text result that resolves by identifier through the catalogs (a book document the system does not ship)
  *   { kind: 'choice', docKind, query, label } | { kind: 'custom', label }
  *   { kind: 'lootSlot', slot, tier, spellsAllowed, label? }
  *   { kind: 'asTrigger', trigger, nameAddition, extraTags, label? }
@@ -67,7 +68,9 @@ function optionResult(option, range, types, warn, path) {
   delete opt.documentUuid;
   const label = text(opt.label ?? opt.name ?? opt.identifier ?? opt.slot);
   const documentBacked = (opt.kind === 'named' || opt.kind === 'spell' || opt.kind === 'tableRef') && Boolean(uuid);
-  if ((opt.kind === 'named' || opt.kind === 'tableRef') && !uuid) warn(path, `${opt.kind} option has no uuid; written as a text result`);
+  // A named or spell option with an identifier and no uuid resolves by identifier through the catalogs: valid, no warning.
+  const byIdentifier = (opt.kind === 'named' || opt.kind === 'spell') && Boolean(text(opt.identifier));
+  if ((opt.kind === 'named' || opt.kind === 'tableRef') && !uuid && !byIdentifier) warn(path, `${opt.kind} option has no uuid; written as a text result`);
   if (opt.kind === 'named' && !text(opt.identifier) && !uuid) warn(path, 'named option has neither identifier nor uuid');
   return {
     type: documentBacked ? types.document : types.text,

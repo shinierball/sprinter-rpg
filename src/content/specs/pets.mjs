@@ -104,7 +104,7 @@ export const COG_PETS = [
   },
   {
     _id: "dccpet0000000002",
-    name: "Brenda the Tummy Acher",
+    name: "Brenda the Gut Lizard",
     type: "pet",
     img: "icons/svg/pawprint.svg",
     system: {
@@ -125,7 +125,7 @@ export const COG_PETS = [
       },
       details: {
         level: 15,
-        race: "tummy-acher",
+        race: "gut-lizard",
         creatureType: "Beast",
         isMount: true,
         special: "Caustic Regurgitation & Scavenger Digestion",

@@ -134,7 +134,7 @@ const TRAPS = experienceTable('floor.experience.traps', TUTORIAL_TABLE_NAMES['fl
     },
     {
       narrative: 'The confetti cannon was loaded with something that was not confetti. You spent a commercial break learning what it was and how to unload it.',
-      options: [skill('dccskl0000000049', 'bomb-surgeon', 'Bomb Surgeon'), skill('dccskl0000000083', 'incendiary-device-handling', 'Incendiary Device Handling'), skill('dccskl0000000077', 'first-aid', 'First Aid'), custom('Confetti Forensics')]
+      options: [skill('dccskl0000000049', 'dccskl0000000049', ''), skill('dccskl0000000083', 'incendiary-device-handling', 'Incendiary Device Handling'), skill('dccskl0000000077', 'first-aid', 'First Aid'), custom('Confetti Forensics')]
     },
     {
       narrative: 'A trapdoor dropped you into the set below in the middle of someone else\'s recording. You climbed out and stayed in character the whole way.',

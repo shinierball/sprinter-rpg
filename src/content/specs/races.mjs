@@ -7,7 +7,7 @@
 export const COG_RACES = [
   {
     "_id": "dccrce0000000001",
-    "name": "Amazonian",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -44,21 +44,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "bow",
-          "label": "Bow",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "endurance",
-          "label": "Endurance",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pugilism",
-          "label": "Pugilism",
+          "label": "",
           "rank": 2
         }
       ]
@@ -66,6 +66,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -76,7 +77,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000002",
-    "name": "Arachnid",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -107,28 +108,28 @@ export const COG_RACES = [
           "kind": "spell",
           "mode": "fixed",
           "identifier": "web",
-          "label": "Web",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "climbing",
-          "label": "Climbing",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "perception",
-          "label": "Perception",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 2
         }
       ],
@@ -147,6 +148,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -156,7 +158,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000003",
-    "name": "Cat",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -204,14 +206,14 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "cat-like-reflexes",
-          "label": "Cat-Like Reflexes",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "slice-attack",
-          "label": "Slice Attack",
+          "label": "",
           "rank": 2
         }
       ],
@@ -245,6 +247,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -255,7 +258,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000004",
-    "name": "Cat Girl/Cat Boy",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -296,35 +299,35 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "cat-like-reflexes",
-          "label": "Cat-Like Reflexes",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "good-first-impression",
-          "label": "Good First Impression",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "light-on-your-feet",
-          "label": "Light on Your Feet",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "slice-attack",
-          "label": "Slice Attack",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dccskl0000000158",
-          "label": "Feline Parasite",
+          "label": "",
           "rank": 1
         }
       ],
@@ -360,6 +363,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -369,7 +373,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000005",
-    "name": "Changbi Demon",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -418,14 +422,14 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "ambush",
-          "label": "Ambush",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "creepy-chains",
-          "label": "Creepy Chains",
+          "identifier": "dccskl0000000150",
+          "label": "",
           "rank": 3
         }
       ],
@@ -444,6 +448,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -453,7 +458,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000006",
-    "name": "Changeling",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -488,21 +493,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "ambush",
-          "label": "Ambush",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "deception",
-          "label": "Deception",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "escape-artist",
-          "label": "Escape Artist",
+          "label": "",
           "rank": 1
         },
         {
@@ -529,6 +534,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -538,7 +544,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000007",
-    "name": "Crocodilian",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -569,14 +575,14 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pugilism",
-          "label": "Pugilism",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "powerful-strike",
-          "label": "Powerful Strike",
+          "label": "",
           "rank": 2
         },
         {
@@ -635,6 +641,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -644,7 +651,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000008",
-    "name": "Doppelgänger",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -672,14 +679,14 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "deception",
-          "label": "Deception",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "endurance",
-          "label": "Endurance",
+          "label": "",
           "rank": 1
         },
         {
@@ -718,6 +725,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -727,7 +735,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000009",
-    "name": "Dwarf, Classic",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -758,7 +766,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "endurance",
-          "label": "Endurance",
+          "label": "",
           "rank": 2
         },
         {
@@ -842,6 +850,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -851,7 +860,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000010",
-    "name": "Dwarf, Fathom",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -867,7 +876,7 @@ export const COG_RACES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "dwarf-fathom",
+      "identifier": "dccrce0000000010",
       "archetypes": [],
       "tags": [
         "kind.race",
@@ -883,21 +892,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "engineering",
-          "label": "Engineering",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dumpster-diving",
-          "label": "Dumpster Diving",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "salvage",
-          "label": "Salvage",
+          "label": "",
           "rank": 2
         },
         {
@@ -922,6 +931,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -931,7 +941,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000011",
-    "name": "Elf, High",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -972,14 +982,14 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lore",
-          "label": "Lore",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "intimidate",
-          "label": "Intimidate",
+          "label": "",
           "rank": 2
         },
         {
@@ -1063,6 +1073,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1072,7 +1083,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000012",
-    "name": "Elf, City",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1100,21 +1111,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "good-first-impression",
-          "label": "Good First Impression",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "negotiation",
-          "label": "Negotiation",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "streetwise",
-          "label": "Streetwise",
+          "label": "",
           "rank": 2
         },
         {
@@ -1132,6 +1143,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1141,7 +1153,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000013",
-    "name": "Elf, Night",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1177,21 +1189,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "acute-ears",
-          "label": "Acute Ears",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "hide-in-shadows",
-          "label": "Hide in Shadows",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "shadow-taunt",
-          "label": "Shadow Taunt",
+          "label": "",
           "rank": 1
         },
         {
@@ -1234,6 +1246,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1243,7 +1256,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000014",
-    "name": "Frost Maiden",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1259,7 +1272,7 @@ export const COG_RACES = [
         "fly": 20,
         "burrow": 0
       },
-      "identifier": "frost-maiden",
+      "identifier": "dccrce0000000014",
       "archetypes": [],
       "tags": [
         "kind.race",
@@ -1271,7 +1284,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "persuasion",
-          "label": "Persuasion",
+          "label": "",
           "rank": 2
         },
         {
@@ -1321,6 +1334,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1330,7 +1344,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000015",
-    "name": "Human",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1399,6 +1413,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1408,7 +1423,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000016",
-    "name": "Igneous",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1424,7 +1439,7 @@ export const COG_RACES = [
         "fly": 0,
         "burrow": 20
       },
-      "identifier": "igneous",
+      "identifier": "dccrce0000000016",
       "archetypes": [],
       "tags": [
         "kind.race",
@@ -1457,21 +1472,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "endurance",
-          "label": "Endurance",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "lava-burst",
-          "label": "Lava Burst",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "volcanic-sprint",
-          "label": "Volcanic Sprint",
+          "label": "",
           "rank": 1
         }
       ],
@@ -1502,6 +1517,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1511,7 +1527,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000017",
-    "name": "Obsidian Butterfly",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1527,7 +1543,7 @@ export const COG_RACES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "obsidian-butterfly",
+      "identifier": "dccrce0000000017",
       "archetypes": [],
       "tags": [
         "kind.race",
@@ -1549,7 +1565,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "intimidate",
-          "label": "Intimidate",
+          "label": "",
           "rank": 2
         },
         {
@@ -1561,7 +1577,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "slice-attack",
-          "label": "Slice Attack",
+          "label": "",
           "rank": 2
         },
         {
@@ -1600,6 +1616,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -1610,7 +1627,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000018",
-    "name": "Lajabless",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1703,6 +1720,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1712,7 +1730,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000019",
-    "name": "Primal",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1769,6 +1787,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1778,7 +1797,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000020",
-    "name": "Rat Hooligan",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1794,7 +1813,7 @@ export const COG_RACES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "rat-hooligan",
+      "identifier": "dccrce0000000020",
       "archetypes": [],
       "tags": [
         "kind.race",
@@ -1815,28 +1834,28 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "escape-plan",
-          "label": "Escape Plan",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "stealth",
-          "label": "Stealth",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "bite",
-          "label": "Bite",
+          "label": "",
           "rank": 1
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "survival",
-          "label": "Survival",
+          "label": "",
           "rank": 1
         }
       ],
@@ -1869,6 +1888,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -1878,7 +1898,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000021",
-    "name": "Sasquatch",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1929,26 +1949,27 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "foot-soldier",
-          "label": "Foot Soldier",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
-          "identifier": "smush",
-          "label": "Smush",
+          "identifier": "dccskl0000000021",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "rank_cap",
           "value": 20,
-          "identifier": "smush"
+          "identifier": "dccskl0000000021"
         }
       ]
     },
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -1959,7 +1980,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000022",
-    "name": "Tetrakai",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -1996,14 +2017,14 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "pugilism",
-          "label": "Pugilism",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dccskl0000000015",
-          "label": "Wrasslin",
+          "label": "",
           "rank": 2
         },
         {
@@ -2016,6 +2037,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2025,7 +2047,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000023",
-    "name": "Tigran",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -2061,14 +2083,14 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "ambush",
-          "label": "Ambush",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "cat-like-reflexes",
-          "label": "Cat-Like Reflexes",
+          "label": "",
           "rank": 2
         },
         {
@@ -2080,7 +2102,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "slice-attack",
-          "label": "Slice Attack",
+          "label": "",
           "rank": 2
         }
       ],
@@ -2117,6 +2139,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2126,7 +2149,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000024",
-    "name": "Bune",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -2163,21 +2186,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "determine-value",
-          "label": "Determine Value",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "fabricate",
-          "label": "Fabricate",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "negotiation",
-          "label": "Negotiation",
+          "label": "",
           "rank": 3
         },
         {
@@ -2204,6 +2227,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -2214,7 +2238,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000025",
-    "name": "Caprid",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -2230,7 +2254,7 @@ export const COG_RACES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "caprid",
+      "identifier": "dccrce0000000025",
       "archetypes": [],
       "tags": [
         "kind.race"
@@ -2245,21 +2269,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "find-crawler",
-          "label": "Find Crawler",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "investigation",
-          "label": "Investigation",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "leadership",
-          "label": "Leadership",
+          "label": "",
           "rank": 3
         },
         {
@@ -2318,6 +2342,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2327,7 +2352,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000026",
-    "name": "Grulke",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -2366,7 +2391,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "zone-of-control",
-          "label": "Zone of Control",
+          "label": "",
           "rank": 2
         },
         {
@@ -2404,7 +2429,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "tongue-lashing",
-          "label": "Tongue Lashing",
+          "label": "",
           "rank": 1
         }
       ],
@@ -2421,6 +2446,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -2431,7 +2457,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000027",
-    "name": "Hobgoblin",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -2463,7 +2489,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "regeneration",
-          "label": "Regeneration",
+          "label": "",
           "rank": 1
         },
         {
@@ -2529,6 +2555,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.prerequisites",
             "system.description"
@@ -2539,7 +2566,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000028",
-    "name": "Pocket Kuma",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -2583,21 +2610,21 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "bite",
-          "label": "Bite",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "dodge",
-          "label": "Dodge",
+          "label": "",
           "rank": 2
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "ambush",
-          "label": "Ambush",
+          "label": "",
           "rank": 1
         },
         {
@@ -2609,7 +2636,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "slice-attack",
-          "label": "Slice Attack",
+          "label": "",
           "rank": 2
         },
         {
@@ -2681,6 +2708,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2690,7 +2718,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000029",
-    "name": "Pterolykos",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -2722,28 +2750,28 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "bite",
-          "label": "Bite",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "performance",
-          "label": "Performance",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "tracking",
-          "label": "Tracking",
+          "label": "",
           "rank": 3
         },
         {
           "kind": "skill",
           "mode": "fixed",
           "identifier": "diplomacy",
-          "label": "Diplomacy",
+          "label": "",
           "rank": 1
         },
         {
@@ -2786,6 +2814,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -2795,7 +2824,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000030",
-    "name": "Skyfowl",
+    "name": "",
     "type": "race",
     "img": "icons/svg/mystery-man.svg",
     "system": {
@@ -2843,7 +2872,7 @@ export const COG_RACES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "slice-attack",
-          "label": "Slice Attack",
+          "label": "",
           "rank": 2
         },
         {
@@ -2889,6 +2918,7 @@ export const COG_RACES = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.description"
           ]
@@ -3563,7 +3593,7 @@ export const COG_RACES = [
   },
   {
     "_id": "dccrce0000000038",
-    "name": "Tummy Acher",
+    "name": "Gut Lizard",
     "type": "race",
     "img": "icons/svg/pawprint.svg",
     "system": {
@@ -3597,7 +3627,7 @@ export const COG_RACES = [
         "fly": 0,
         "burrow": 0
       },
-      "identifier": "tummy-acher",
+      "identifier": "gut-lizard",
       "archetypes": [],
       "tags": [
         "kind.race",

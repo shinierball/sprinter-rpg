@@ -7,9 +7,14 @@
  */
 import { SYSTEM_ID } from '../../../../constants.mjs';
 import { exampleId } from '../ids.mjs';
+import { SPECS as BASE_SKILLS } from '../items/base-skills.mjs';
 
-const skill = (id, identifier, name) =>
-  ({ kind: 'named', docKind: 'skill', identifier, name, uuid: `Compendium.${SYSTEM_ID}.skills.Item.${id}` });
+// The five movement skills of the Base Skills set (items/base-skills.mjs), linked by id in the examples-items pack.
+const skill = (identifier) => {
+  const doc = BASE_SKILLS.find((d) => d.system.identifier === identifier);
+  if (!doc) throw new Error(`No Base Skill with identifier "${identifier}"`);
+  return { kind: 'named', docKind: 'skill', identifier, name: doc.name, uuid: `Compendium.${SYSTEM_ID}.examples-items.Item.${doc._id}` };
+};
 
 export const SPECS = Object.freeze([
   {
@@ -21,12 +26,12 @@ export const SPECS = Object.freeze([
     formula: '1d6',
     description: 'What the course designers added after the insurance review. Draw one per leg.',
     rows: [
-      { roll: 1, narrative: 'A sprint past the sponsor booths, each of which wants a word.', options: [skill('dccskl0000000103', 'running', 'Running')] },
-      { roll: 2, narrative: 'A greased ramp, installed as a tribute to the previous season.', options: [skill('dccskl0000000088', 'jumping', 'Jumping')] },
-      { roll: 3, narrative: 'A shallow ornamental fountain with an unreasonable current.', options: [skill('dccskl0000000112', 'swimming', 'Swimming')] },
-      { roll: 4, narrative: 'A cargo net that nobody asked for.', options: [skill('dccskl0000000057', 'climbing', 'Climbing')] },
+      { roll: 1, narrative: 'A sprint past the sponsor booths, each of which wants a word.', options: [skill('sprinting')] },
+      { roll: 2, narrative: 'A greased ramp, installed as a tribute to the previous season.', options: [skill('jumping')] },
+      { roll: 3, narrative: 'A shallow ornamental fountain with an unreasonable current.', options: [skill('swimming')] },
+      { roll: 4, narrative: 'A cargo net that nobody asked for.', options: [skill('climbing')] },
       { roll: 5, narrative: 'A sudden ad break. The course holds its breath and waits for the product.' },
-      { roll: 6, narrative: 'A narrow beam over nothing in particular, sponsored by a bank.', options: [skill('dccskl0000000047', 'balance', 'Balance')] }
+      { roll: 6, narrative: 'A narrow beam over nothing in particular, sponsored by a bank.', options: [skill('parkour')] }
     ]
   }
 ]);

@@ -640,6 +640,7 @@
         "Swap": "Swap the dice between the two Skills",
         "Custom": "Write-in",
         "Choice": "Pick from the catalog",
+        "NeedsImport": "needs an import",
         "CustomName": "Name"
       },
       "Marker": {

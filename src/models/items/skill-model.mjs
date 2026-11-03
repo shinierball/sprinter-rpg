@@ -97,7 +97,7 @@ export class SkillDataModel extends BaseItemDataModel {
           any: new fields.ArrayField(new fields.StringField(), { initial: [] }),
           none: new fields.ArrayField(new fields.StringField(), { initial: [] })
         }),
-        // Total-damage multiplier against a target at or below a share of its Health Bar (Smush, Choke Out): the entry with the
+        // Total-damage multiplier against a target at or below a share of its Health Bar (a finishing technique): the entry with the
         // highest `minRank` the technique's Rank reaches wins. `percent` is a step of HEALTH_FRACTION_STEPS (tags.mjs); it is
         // judged per target when the damage is applied (the `subject.resource.health_<percent>` tag).
         healthMultipliers: new fields.ArrayField(new fields.SchemaField({
@@ -105,7 +105,7 @@ export class SkillDataModel extends BaseItemDataModel {
           percent: new fields.NumberField({ integer: true, min: 1, max: 100, initial: 20 }),
           multiplier: new fields.NumberField({ min: 1, initial: 2 })
         }), { initial: [] }),
-        // Sub-choices of the effect offered once its Rank reaches `minRank` (Iron Punch: Stun instead of damage). A
+        // Sub-choices of the effect offered once its Rank reaches `minRank` (for example Stun instead of damage). A
         // `replacesDamage` variant rolls no damage; its `debuffs` are inflicted like a rank break's `debuff`.
         variants: new fields.ArrayField(new fields.SchemaField({
           id: new fields.StringField({ required: true, blank: false }),

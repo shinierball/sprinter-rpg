@@ -123,6 +123,7 @@
                 {{#each chips}}
                   <button type="button" class="cog-fsim-optchip{{#if active}} active{{/if}}" data-action="pickOption" data-step="{{p.stepId}}" data-slot="{{../../index}}" data-skill="{{../index}}" data-option="{{index}}">
                     {{#if isCustom}}<i class="fa-solid fa-pen"></i> {{localize 'COG.FloorSim.Exp.Custom'}}{{else}}{{#if isChoice}}<i class="fa-solid fa-list"></i> {{localize 'COG.FloorSim.Exp.Choice'}}{{else}}{{label}}{{/if}}{{/if}}
+                    {{#if needsImport}}<span class="cog-fsim-badge">{{localize 'COG.FloorSim.Exp.NeedsImport'}}</span>{{/if}}
                     {{#if ceiling}}<span class="cog-fsim-badge cap">{{localize 'COG.FloorSim.RankMax' rank=ceiling}}</span>{{/if}}
                   </button>
                 {{/each}}

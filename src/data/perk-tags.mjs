@@ -46,7 +46,7 @@ export const COG_PERK_TAGS = Object.freeze([
   {"id":"rule.cog.focused_healing","label":"Focused Healing","namespace":"rule","description":"Healing Skills and Spells restore 1 extra Health Bar slot when aimed at one individual.","descriptive":true},
   {"id":"rule.cog.four_arms","label":"Four Arms","namespace":"rule","description":"","descriptive":true},
   {"id":"rule.cog.head_lizard_light","label":"Head Lizard Light","namespace":"rule","description":"","descriptive":true},
-  {"id":"rule.cog.herding_weapons_only","label":"Herding Weapons Only","namespace":"rule","description":"The only melee weapons allowed are Herding weapons.","descriptive":true},
+  {"id":"rule.cog.herding_tools_only","label":"Herding Tools Only","namespace":"rule","description":"The only melee weapons allowed are herding tools.","descriptive":true},
   {"id":"rule.cog.inventory_burns_health","label":"Inventory Costs Health","namespace":"rule","description":"Opening your Inventory (the Hotlist does not count) costs 1 Health Bar slot each time.","descriptive":true},
   {"id":"rule.cog.day_night_stats","label":"Day and Night Aspects","namespace":"rule","description":"Daytime gives +5 Intelligence; nighttime gives +5 Strength.","descriptive":true},
   {"id":"rule.cog.level_up_ai_favor","label":"AI Favor on Level Up","namespace":"rule","description":"Each level up grants 1 AI Favor.","descriptive":true},

@@ -6,6 +6,7 @@
  * tests/content/floor-tables-examples-3-25c.test.mjs checks both against the shipped catalogs.
  */
 import { SYSTEM_ID } from '../../../constants.mjs';
+import { isHiddenId } from '../../visibility.mjs';
 
 const packUuid = (pack, documentName, id) => `Compendium.${SYSTEM_ID}.${pack}.${documentName}.${id}`;
 
@@ -28,13 +29,15 @@ export const FLOOR_TABLE_IDS = Object.freeze({
 /** The compendium UUID of an example table, by its tableKey. */
 export const floorTableUuid = (key) => packUuid('floor-tables', 'RollTable', FLOOR_TABLE_IDS[key]);
 
-/** A named Skill option: a document result pointing at the catalog skill. */
-export const skill = (id, identifier, name) =>
-  ({ kind: 'named', docKind: 'skill', identifier, name, uuid: packUuid('skills', 'Item', id) });
+/** A named Skill option: a document result pointing at the catalog skill. A hidden (book) id gives no uuid: the option resolves by identifier. */
+export const skill = (id, identifier, name) => (isHiddenId(id)
+  ? { kind: 'named', docKind: 'skill', identifier, name }
+  : { kind: 'named', docKind: 'skill', identifier, name, uuid: packUuid('skills', 'Item', id) });
 
 /** A named Spell option on an experience row: a document result pointing at the catalog spell. */
-export const namedSpell = (id, identifier, name) =>
-  ({ kind: 'named', docKind: 'spell', identifier, name, uuid: packUuid('spells', 'Item', id) });
+export const namedSpell = (id, identifier, name) => (isHiddenId(id)
+  ? { kind: 'named', docKind: 'spell', identifier, name }
+  : { kind: 'named', docKind: 'spell', identifier, name, uuid: packUuid('spells', 'Item', id) });
 
 /** A choice option: the player picks any catalog entry the tag query matches. */
 export const choice = (docKind, query, label) => ({ kind: 'choice', docKind, query, label });
@@ -52,8 +55,9 @@ export const narrativeTrigger = (text, nameAddition, label) =>
   ({ kind: 'asTrigger', trigger: { type: 'narrative', text }, nameAddition, extraTags: [], label });
 
 /** A random-spell result: a document result pointing at the catalog spell. */
-export const lootSpell = (id, identifier, name) =>
-  ({ kind: 'spell', identifier, name, uuid: packUuid('spells', 'Item', id) });
+export const lootSpell = (id, identifier, name) => (isHiddenId(id)
+  ? { kind: 'spell', identifier, name }
+  : { kind: 'spell', identifier, name, uuid: packUuid('spells', 'Item', id) });
 
 /** Tag queries the choice options use. */
 export const QUERIES = Object.freeze({

@@ -163,7 +163,6 @@ export const actorCombatSkillDamageMixin = {
     let powerfulStrikeApplied = false;
     let powerfulStrikeRank = 0;
     let tossApplied = false;
-    let smushApplied = false;
     let chokeOutApplied = false;
     let dirtyFightingApplied = false;
     let effectRankDice = [];
@@ -234,8 +233,6 @@ export const actorCombatSkillDamageMixin = {
         powerfulStrikeRank = eRank;
       } else if (eName === 'toss') {
         tossApplied = true;
-      } else if (eName === 'smush') {
-        smushApplied = true;
       } else if (eName === 'choke-out') {
         chokeOutApplied = true;
       } else if (eName === 'dirty-fighting') {
@@ -331,7 +328,6 @@ export const actorCombatSkillDamageMixin = {
       powerfulStrikeRank,
       tossApplied,
       tossBonus,
-      smushApplied,
       chokeOutApplied,
       dirtyFightingApplied,
       combinedRankDieStr,

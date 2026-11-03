@@ -10,9 +10,11 @@
  *   data-change-action="x"  change  (no form submit)
  *   data-input-action="x"   input   (live, DOM-only handlers)
  * Controls without a `name` never trigger a form submit (CONTRIBUTING §5).
+ * Resize, focus and open-block behaviour comes from {@link COGWindowMixin}, shared with the tool apps.
  */
 import { getDragDropClass } from '../../compat.mjs';
 import { noBookTextReason } from '../../sourcery/redacted.mjs';
+import { COGWindowMixin } from '../../apps/window-mixin.mjs';
 
 /** Core action names; clicks on these are handled by Foundry, never by this mixin. */
 export const RESERVED_ACTIONS = Object.freeze([
@@ -36,7 +38,7 @@ async function onEditImage(event, target) {
 /**
  * @param {typeof foundry.applications.api.DocumentSheetV2} Base HandlebarsApplicationMixin(ActorSheetV2 | ItemSheetV2)
  */
-export const COGSheetMixin = (Base) => class COGSheet extends Base {
+export const COGSheetMixin = (Base) => class COGSheet extends COGWindowMixin(Base) {
   static DEFAULT_OPTIONS = {
     // Arrays concatenate down the chain: subclasses add only their own.
     classes: ['cog-sheet-window', 'cog-sheet'],

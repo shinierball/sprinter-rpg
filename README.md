@@ -6,7 +6,7 @@ Requires Foundry VTT v14 or later, and the [socketlib](https://github.com/farlin
 
 ## What ships, and what you bring
 
-The package holds the rules engine, the sheets, the creators and the original example content, along with the rules' numbers, short mechanical notes (many in the books' own words, where a line is only numbers and rule terms), and the names of many skills, spells, races, classes, items, debuffs, and monster attacks and loot. The books' flavour text, descriptions, and character, monster and place names are left out. If you own the source books as PDFs, the Sourcery importer reads them in your browser and writes the text into compendiums in your own world. The PDFs are never uploaded. Without them the system works with the example content.
+The package holds the rules engine, the sheets, the creators and original content written for this system: a base set of ten classes, two races, and the skills, spells and debuffs they use, plus the example sets. Its compendiums show none of the source books' entries. If you own the books as PDFs, the Sourcery importer reads them in your browser and writes their skills, spells, races, classes, mobs and the rest, with the books' own names and text, into compendiums in your own world. The PDFs are never uploaded. Without them the system works with the base set and the examples.
 
 The PDF export of a crawler sheet needs a fillable sheet that the GM supplies; see [`docs/pdf-export.md`](https://github.com/shinierball/sprinter-rpg/blob/main/docs/pdf-export.md).
 

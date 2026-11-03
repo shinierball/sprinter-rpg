@@ -26,6 +26,8 @@ import { SPECS as creatorRowsItems } from './items/creator-rows.mjs';
 import { SPECS as plainLabelsItems } from './items/plain-labels.mjs';
 import { SPECS as plainLabelsMobs } from './mobs/plain-labels.mjs';
 import { SPECS as usedUpItems } from './items/used-up.mjs';
+import { SPECS as baseSkillsItems } from './items/base-skills.mjs';
+import { SPECS as baseSetItems } from './items/base-set.mjs';
 import { SPECS as racingMobs } from './mobs/racing-and-chasing.mjs';
 import { SPECS as racingTables } from './tables/racing-and-chasing.mjs';
 
@@ -46,7 +48,9 @@ const RELEASE_FILES = Object.freeze([
   { set: 'creator-rows', kind: 'items', specs: creatorRowsItems },
   { set: 'plain-labels', kind: 'items', specs: plainLabelsItems },
   { set: 'plain-labels', kind: 'mobs', specs: plainLabelsMobs },
-  { set: 'used-up', kind: 'items', specs: usedUpItems }
+  { set: 'used-up', kind: 'items', specs: usedUpItems },
+  { set: 'base-skills', kind: 'items', specs: baseSkillsItems },
+  { set: 'base-set', kind: 'items', specs: baseSetItems }
 ]);
 
 /** Kind order inside a set's `specs`: referenced documents come first. `mobs` are Actors (the examples-actors pack). */

@@ -6,7 +6,7 @@ Sprinter RPG has a comprehensive, data-driven **Unified Tagging System** that re
 
 The tagging engine powers:
 - Categorization and lookup across world items and compendium entries.
-- Combat Technique applicability (e.g. *Iron Punch*, *Dirty Fighting*, *Toss*).
+- Combat Technique applicability (e.g. *Mic Drop*, *Dirty Fighting*, *Toss*).
 - Spell favored class detection and mana penalty calculation (+1 MP for non-favored classes).
 - Structured Class and Race grants (skills, spells, choices, stat modifiers).
 - Fast O(1) in-memory indexing and live mutation tracking.

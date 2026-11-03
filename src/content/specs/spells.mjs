@@ -7,7 +7,7 @@
 export const COG_SPELLS = [
   {
     "_id": "dccspl0000000001",
-    "name": "Air Buddy",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/wing.svg",
     "system": {
@@ -142,6 +142,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -158,7 +159,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000002",
-    "name": "Astral Paw",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/pawprint.svg",
     "system": {
@@ -297,6 +298,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -313,7 +315,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000003",
-    "name": "Bad Faith",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/skull.svg",
     "system": {
@@ -454,6 +456,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -466,7 +469,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000004",
-    "name": "Bang Bro",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -535,7 +538,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Burned",
+          "debuff": "burned",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -555,7 +558,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Shocked",
+          "debuff": "shocked",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -614,6 +617,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -628,7 +632,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000005",
-    "name": "Clockwork Triplicate",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/clockwork.svg",
     "system": {
@@ -783,6 +787,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -795,7 +800,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000006",
-    "name": "Confusing Fog",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/aura.svg",
     "system": {
@@ -962,6 +967,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -978,7 +984,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000007",
-    "name": "Dirt Clod",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/stone-path.svg",
     "system": {
@@ -1032,7 +1038,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Woozy",
+          "debuff": "woozy",
           "notes": "+1d2 base damage, and the target gains the Woozy Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -1111,6 +1117,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -1123,7 +1130,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000008",
-    "name": "Drain Life",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/blood.svg",
     "system": {
@@ -1262,6 +1269,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -1279,7 +1287,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000009",
-    "name": "Earworm",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -1333,7 +1341,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Queasy",
+          "debuff": "queasy",
           "notes": "+1d6 base damage, and the target gains the Queasy Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -1413,6 +1421,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description"
@@ -1423,7 +1432,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000010",
-    "name": "Fear",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/terror.svg",
     "system": {
@@ -1501,7 +1510,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Paralyzed",
+          "debuff": "paralyzed",
           "notes": "Targets who fail their check are completely paralyzed with Fear for 1 round.",
           "isArmorPiercing": false,
           "healing": {
@@ -1562,6 +1571,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -1573,7 +1583,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000011",
-    "name": "Fire Fingers",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/fire.svg",
     "system": {
@@ -1705,7 +1715,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Burned",
+          "debuff": "burned",
           "notes": "+1d4 base damage, and the target gains the Burned Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -1783,6 +1793,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -1795,7 +1806,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000012",
-    "name": "Fireball",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/explosion.svg",
     "system": {
@@ -1843,7 +1854,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Burned",
+          "debuff": "burned",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -1951,6 +1962,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -1967,7 +1979,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000013",
-    "name": "Frost Scar",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/frozen.svg",
     "system": {
@@ -1993,7 +2005,7 @@ export const COG_SPELLS = [
       "upgrades": {
         "rank5": "",
         "rank10": "+1d4 base damage, and the target gains the Stiff Legs Debuff.",
-        "rank15": "+1d4 base damage, and the target gains The Taint Debuff."
+        "rank15": ""
       },
       "rankBreaks": {
         "rank5": {
@@ -2021,7 +2033,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Stiff Legs",
+          "debuff": "stiff-legs",
           "notes": "+1d4 base damage, and the target gains the Stiff Legs Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -2041,8 +2053,8 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "The Taint",
-          "notes": "+1d4 base damage, and the target gains The Taint Debuff.",
+          "debuff": "dccdeb0000000009",
+          "notes": "",
           "isArmorPiercing": false,
           "healing": {
             "barsBonus": 0,
@@ -2099,11 +2111,14 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
             "system.upgrades.rank5",
-            "system.rankBreaks.rank5.notes"
+            "system.upgrades.rank15",
+            "system.rankBreaks.rank5.notes",
+            "system.rankBreaks.rank15.notes"
           ]
         }
       }
@@ -2111,7 +2126,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000014",
-    "name": "Grand Illusion",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/eye.svg",
     "system": {
@@ -2145,7 +2160,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Woozy",
+          "debuff": "woozy",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -2165,7 +2180,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Queasy",
+          "debuff": "queasy",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -2185,7 +2200,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Shocked",
+          "debuff": "shocked",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -2248,6 +2263,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -2264,7 +2280,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000015",
-    "name": "Heal",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -2404,6 +2420,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description"
@@ -2414,7 +2431,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000016",
-    "name": "Heal Critter",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/pawprint.svg",
     "system": {
@@ -2553,6 +2570,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -2564,7 +2582,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000017",
-    "name": "Heal Others",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -2704,6 +2722,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -2717,7 +2736,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000018",
-    "name": "Heal Self",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -2856,6 +2875,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -2872,7 +2892,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000019",
-    "name": "Hole",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/circle.svg",
     "system": {
@@ -3009,6 +3029,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -3026,7 +3047,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000020",
-    "name": "Holy Aura",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/sun.svg",
     "system": {
@@ -3169,6 +3190,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -3181,7 +3203,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000021",
-    "name": "Hot Stuff Aura",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/aura.svg",
     "system": {
@@ -3355,6 +3377,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -3367,7 +3390,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000022",
-    "name": "Ice Blast",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/frozen.svg",
     "system": {
@@ -3501,6 +3524,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -3515,7 +3539,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000023",
-    "name": "Icicles",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/frozen.svg",
     "system": {
@@ -3569,7 +3593,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Stiff Legs",
+          "debuff": "stiff-legs",
           "notes": "+1d12 base damage, and the target gains the Stiff Legs Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -3648,6 +3672,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -3660,7 +3685,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000024",
-    "name": "Intimate Touches",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -3796,6 +3821,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -3813,7 +3839,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000025",
-    "name": "Lightning Bolt",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/lightning.svg",
     "system": {
@@ -3955,6 +3981,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -3969,7 +3996,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000026",
-    "name": "Magic Missile",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/target.svg",
     "system": {
@@ -4023,7 +4050,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Burned",
+          "debuff": "burned",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -4103,6 +4130,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -4117,7 +4145,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000027",
-    "name": "Mind Tickle",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/eye.svg",
     "system": {
@@ -4171,7 +4199,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Sore as Shit",
+          "debuff": "sore-as-shit",
           "notes": "+1d2 base damage, and the target gains the Sore as Shit Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -4191,7 +4219,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Muted",
+          "debuff": "muted",
           "notes": "+1d2 base damage, and the target gains the Muted Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -4251,6 +4279,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description"
@@ -4261,7 +4290,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000028",
-    "name": "Minion Army",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/skull.svg",
     "system": {
@@ -4420,6 +4449,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -4437,7 +4467,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000029",
-    "name": "Nature's Breath",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -4547,7 +4577,7 @@ export const COG_SPELLS = [
           }
         }
       },
-      "identifier": "natures-breath",
+      "identifier": "dccspl0000000029",
       "interrupt": {
         "range": 0,
         "unlimited": true
@@ -4577,6 +4607,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -4591,7 +4622,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000030",
-    "name": "Oakhide",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -4738,6 +4769,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -4750,7 +4782,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000031",
-    "name": "Paladin's Smite",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/sword.svg",
     "system": {
@@ -4804,7 +4836,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Take Down",
+          "debuff": "take-down",
           "notes": "+1d8 base damage, and the target gains the Take Down Debuff.",
           "isArmorPiercing": false,
           "healing": {
@@ -4884,6 +4916,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -4896,7 +4929,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000032",
-    "name": "Panty Dropper",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -5047,6 +5080,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description"
@@ -5057,7 +5091,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000033",
-    "name": "Ping",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/target.svg",
     "system": {
@@ -5091,7 +5125,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Fear",
+          "debuff": "fear",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -5131,7 +5165,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Fear",
+          "debuff": "fear",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -5197,6 +5231,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -5213,7 +5248,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000034",
-    "name": "Protective Shell",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -5377,6 +5412,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -5390,7 +5426,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000035",
-    "name": "Puddle Jumper",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/sun.svg",
     "system": {
@@ -5523,6 +5559,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -5540,7 +5577,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000036",
-    "name": "Rise, Dead Minion!",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/skull.svg",
     "system": {
@@ -5682,6 +5719,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -5696,7 +5734,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000037",
-    "name": "Rootfoot",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/cave.svg",
     "system": {
@@ -5774,7 +5812,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Poisoned",
+          "debuff": "poisoned",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -5835,6 +5873,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -5851,7 +5890,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000038",
-    "name": "Second Chance",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/heal.svg",
     "system": {
@@ -5989,6 +6028,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -6005,7 +6045,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000039",
-    "name": "Shield",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -6147,6 +6187,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description"
@@ -6157,7 +6198,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000040",
-    "name": "Shock Treatment",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/lightning.svg",
     "system": {
@@ -6191,7 +6232,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Stunned",
+          "debuff": "stunned",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -6290,6 +6331,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -6306,7 +6348,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000041",
-    "name": "Solsplash",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/sun.svg",
     "system": {
@@ -6360,7 +6402,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Burned",
+          "debuff": "burned",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -6444,6 +6486,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -6456,7 +6499,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000042",
-    "name": "Soul Collector",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/skull.svg",
     "system": {
@@ -6589,6 +6632,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -6605,7 +6649,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000043",
-    "name": "Thunderlash",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/sound.svg",
     "system": {
@@ -6738,6 +6782,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -6752,7 +6797,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000044",
-    "name": "Torch",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/fire.svg",
     "system": {
@@ -6909,6 +6954,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -6925,7 +6971,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000045",
-    "name": "Tripper",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/hazard.svg",
     "system": {
@@ -7035,7 +7081,7 @@ export const COG_SPELLS = [
           }
         }
       },
-      "identifier": "tripper",
+      "identifier": "dccspl0000000045",
       "tags": [
         "kind.spell",
         "action.passive",
@@ -7066,6 +7112,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -7079,7 +7126,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000046",
-    "name": "Turn Undead",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/sun.svg",
     "system": {
@@ -7248,6 +7295,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -7260,7 +7308,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000047",
-    "name": "Twinkle Toes",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/pawprint.svg",
     "system": {
@@ -7401,6 +7449,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -7417,7 +7466,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000048",
-    "name": "Unnecessary Force",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/explosion.svg",
     "system": {
@@ -7551,6 +7600,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -7565,7 +7615,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000049",
-    "name": "Vine Porn",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/oak.svg",
     "system": {
@@ -7700,6 +7750,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -7714,7 +7765,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000050",
-    "name": "Wall of Fire",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/fire.svg",
     "system": {
@@ -7876,6 +7927,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -7892,7 +7944,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000051",
-    "name": "Water Breathing",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/waterfall.svg",
     "system": {
@@ -8034,6 +8086,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description",
@@ -8050,7 +8103,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000052",
-    "name": "Web",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/net.svg",
     "system": {
@@ -8217,6 +8270,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description"
@@ -8227,7 +8281,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000053",
-    "name": "Wilbur's Slow-Build Fireblast",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/fire.svg",
     "system": {
@@ -8360,6 +8414,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.limitations",
             "system.quote",
@@ -8373,7 +8428,7 @@ export const COG_SPELLS = [
   },
   {
     "_id": "dccspl0000000054",
-    "name": "Wisp Armor",
+    "name": "",
     "type": "spell",
     "img": "icons/svg/shield.svg",
     "system": {
@@ -8524,6 +8579,7 @@ export const COG_SPELLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
+          "redacted": true,
           "emptied": [
             "system.quote",
             "system.description"
@@ -8588,7 +8644,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "Staggered",
+          "debuff": "staggered",
           "notes": "+1d10 base damage (4d10). Enemies who fail their check gain the Staggered Debuff.",
           "isArmorPiercing": false,
           "healing": {
