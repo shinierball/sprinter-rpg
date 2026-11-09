@@ -7,7 +7,9 @@
  * `id` and an async `update(changes)`. The editor's input names start `system.<key>.`; a window renames them with
  * {@link renameRowPaths} so they are unique there, and maps a control's `data-path` back with {@link retargetRow}.
  */
-import { COG_TAGS, TAG_NAMESPACES, getCustomTags } from '../../data/tags.mjs';
+import { COG_TAGS } from '../../data/tag-catalog.mjs';
+import { TAG_NAMESPACES } from '../../data/tag-vocabulary.mjs';
+import { getCustomTags } from '../../data/tag-definitions.mjs';
 import { processItemFormData } from './form-data.mjs';
 
 const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);

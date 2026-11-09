@@ -6,10 +6,11 @@ import { applyCardEffect, canWriteTarget, registerChatApplier } from '../chat-re
 import { resolveTargetActors } from './targets.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
-import { buffCardText } from '../../utils/buff-card-text.mjs';
+import { buffCardText } from '../../utils/card/buff-card-text.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
+import { carrySourceStamp, landItems, isContentOff } from '../../utils/content-source.mjs';
 
-export function parseApplyBuff(button) {
+function parseApplyBuff(button) {
   return {
     targetUuid: button.dataset?.targetUuid,
     buffIdentifier: button.dataset?.buffIdentifier,
@@ -22,16 +23,17 @@ export async function applyBuffTo(targetActor, params) {
   // By identifier through the catalog (never by name).
   const match = findConditionEntry('buffs', buffIdentifier);
 
-  const buffData = match ? {
+  const buffData = match ? carrySourceStamp({
     name: match.name,
     type: 'buff',
     img: match.img || 'icons/svg/aura.svg',
-    system: structuredClone(match.system || {})
-  } : {
+    // An item applied to someone is in force: a buff model defaults to inactive, which would skip its modifiers and its duration stamp
+    system: { ...structuredClone(match.system || {}), active: true }
+  }, match) : {
     name: buffName,
     type: 'buff',
     img: 'icons/svg/aura.svg',
-    system: { description: '' }
+    system: { description: '', active: true }
   };
 
   const rawExternal = targetActor.system?.attributes?.externalBuffs || {};
@@ -45,11 +47,11 @@ export async function applyBuffTo(targetActor, params) {
 
   let mode = 'item';
   // An external buff slot holds a buff reference (the catalog _id), never a name; an unmatched buff becomes an item.
-  if (emptySlot && targetActor.type === 'crawler' && match?._id) {
+  if (emptySlot && targetActor.type === 'crawler' && match?._id && !isContentOff(match)) {
     await targetActor.update({ [`system.attributes.externalBuffs.${emptySlot}`]: match._id });
     mode = 'slot';
   } else {
-    await targetActor.createEmbeddedDocuments('Item', [buffData]);
+    await targetActor.createEmbeddedDocuments('Item', landItems([buffData]));
   }
   return { targetUuid: targetActor.uuid, targetName: targetActor.name, buffName: buffData.name, mode };
 }

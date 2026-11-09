@@ -9,9 +9,10 @@
 import { catalogEntries } from '../content/catalog-lookup.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
-import { normalizeBaseDamage } from '../utils/base-damage.mjs';
-import { normalizeTiming } from '../utils/timing.mjs';
-import { stampCompendiumLink } from './compendium-sync.mjs';
+import { normalizeBaseDamage } from '../utils/damage/base-damage.mjs';
+import { normalizeTiming } from '../utils/time/timing.mjs';
+import { isSameOwnedEntry } from '../utils/character/owned-entry.mjs';
+import { landItems } from '../utils/content-source.mjs';
 
 /** The cooldown a merged skill row carries: the row's own when it has one, else the catalog skill's, else none. */
 const pickCooldown = (own, fallback) => (normalizeTiming(own).unit ? own : (normalizeTiming(fallback).unit ? fallback : { value: 0, unit: '' }));
@@ -123,8 +124,58 @@ export async function resolveGrantDocument(grant, expectedType) {
   return catalog.find(d => d?.system?.identifier === identifier) || null;
 }
 
+/**
+ * Resolves a typed grant row without waiting: `grant.uuid` through `fromUuidSync` (an unloaded compendium document
+ * does not resolve), else `grant.identifier` against world items, then the bundled catalogs. A pack document is only
+ * found by the async {@link resolveGrantDocument}; {@link prefetchGrantDocuments} runs that ahead of a plan.
+ * @param {{uuid?: string, identifier?: string}} grant
+ * @param {'skill'|'spell'} [expectedType]
+ * @returns {object|null}
+ */
+export function resolveGrantDocumentSync(grant, expectedType) {
+  if (!grant || typeof grant !== 'object') return null;
+  const uuid = typeof grant.uuid === 'string' ? grant.uuid.trim() : '';
+  if (uuid && typeof globalThis.fromUuidSync === 'function') {
+    let doc = null;
+    try { doc = globalThis.fromUuidSync(uuid); } catch (_) { /* falls through to the identifier */ }
+    if (doc && (!expectedType || !doc.type || doc.type === expectedType)) return doc;
+  }
+  const identifier = typeof grant.identifier === 'string' ? grant.identifier.trim() : '';
+  if (!identifier) return null;
+  const world = Array.from(globalThis.game?.items ?? []);
+  const worldDoc = world.find(i => i?.system?.identifier === identifier && (!expectedType || !i.type || i.type === expectedType));
+  if (worldDoc) return worldDoc;
+  const catalog = expectedType === 'spell' ? catalogEntries('spells') : (expectedType === 'skill' ? catalogEntries('skills') : []);
+  return catalog.find(d => d?.system?.identifier === identifier) || null;
+}
+
+const lookupKey = (row, itemType) => `${itemType ?? ''}|${String(row?.uuid ?? '').trim()}|${String(row?.identifier ?? '').trim()}`;
+
+/**
+ * Resolves every `{ row, itemType }` the planner will look up, with the async {@link resolveGrantDocument} (world items,
+ * then the pack indexes, then the catalog), and returns the sync `lookup(row, itemType)` the planner takes. A row that
+ * was not prefetched falls back to {@link resolveGrantDocumentSync} and is recorded in `lookup.misses`.
+ * @param {Array<{row: object, itemType: 'skill'|'spell'}>} wanted
+ * @returns {Promise<((row: object, itemType: string) => object|null) & {misses: string[]}>}
+ */
+export async function prefetchGrantDocuments(wanted) {
+  const found = new Map();
+  for (const { row, itemType } of wanted || []) {
+    const key = lookupKey(row, itemType);
+    if (!found.has(key)) found.set(key, (await resolveGrantDocument(row, itemType)) ?? null);
+  }
+  const lookup = (row, itemType) => {
+    const key = lookupKey(row, itemType);
+    if (found.has(key)) return found.get(key);
+    lookup.misses.push(key);
+    return resolveGrantDocumentSync(row, itemType);
+  };
+  lookup.misses = [];
+  return lookup;
+}
+
 /** The skill / spell data a grant row creates: `resolvedSys` is the resolved document's system data. */
-const GRANT_SYSTEM = {
+export const GRANT_SYSTEM = {
   skill: (s, resolvedSys) => ({
     ...resolvedSys,
     rank: s.rank ?? resolvedSys.rank ?? 1,
@@ -135,8 +186,7 @@ const GRANT_SYSTEM = {
     canGainRanks: s.canGainRanks !== undefined ? s.canGainRanks : (resolvedSys.canGainRanks ?? true),
     cooldown: pickCooldown(s.cooldown, resolvedSys.cooldown),
     notes: s.notes || resolvedSys.notes || '',
-    upgrades: s.upgrades || resolvedSys.upgrades || '',
-    isPassive: Boolean(s.isPassive ?? resolvedSys.isPassive)
+    upgrades: s.upgrades || resolvedSys.upgrades || ''
   }),
   spell: (sp, resolvedSys) => ({
     ...resolvedSys,
@@ -152,7 +202,7 @@ const GRANT_SYSTEM = {
 };
 
 /** Image a granted item gets when neither its resolved document nor its grant row names one. */
-const GRANT_DEFAULT_IMG = { skill: 'icons/svg/sword.svg', spell: 'icons/svg/lightning.svg' };
+export const GRANT_DEFAULT_IMG = { skill: 'icons/svg/sword.svg', spell: 'icons/svg/lightning.svg' };
 
 /**
  * What differs between applying a race and applying a class. `find` / `parse` / `remove` take the applier so a test
@@ -211,86 +261,6 @@ export function mayOpenDialogs(options = {}) {
 }
 
 /**
- * Resolves the skill / spell choices of a definition: from `options.choices`, from the choices dialog, or the headless
- * defaults.
- * @param {object} applier COGRaceClassApplier
- * @param {object} def
- * @param {object} options
- * @returns {Promise<{chosenSkills: object[], chosenSpells: object[], chosenRankCaps: object[]}|null>} null when cancelled
- */
-export async function resolveKindChoices(applier, def, options) {
-  const choices = applier.detectChoices(def);
-  if (choices.length === 0) return { chosenSkills: [], chosenSpells: [], chosenRankCaps: [] };
-  if (options.choices !== undefined) return applier.resolveChoices(def, choices, options.choices);
-  if (mayOpenDialogs(options)) {
-    const userSelections = await applier.promptChoicesDialog(def, choices, options);
-    if (userSelections === null) return null; // User cancelled
-    return applier.resolveChoices(def, choices, userSelections);
-  }
-  // Headless default fallback
-  return applier.resolveChoices(def, choices, {});
-}
-
-/**
- * Grants each row as an item of `itemType` ('skill' or 'spell') on the actor: an item the actor already has gains
- * the row's rank, any other is created from the resolved document merged with the row.
- * @param {object} actor
- * @param {'race'|'class'} kind
- * @param {'skill'|'spell'} itemType
- * @param {object[]} rows
- * @returns {Promise<object[]>} The applied records for the actor's applied flag
- */
-export async function grantKindItems(actor, kind, itemType, rows) {
-  const { createdKey } = RACE_CLASS_KINDS[kind];
-  const applied = [];
-  for (const row of rows) {
-    const resolvedDoc = await resolveGrantDocument(row, itemType);
-    const grantIdentifier = row.identifier || resolvedDoc?.system?.identifier || '';
-    const existing = grantIdentifier
-      ? actor.items?.find(i => i.type === itemType && i.system?.identifier === grantIdentifier)
-      : null;
-    if (existing) {
-      const curRank = Number(existing.system?.rank) || 0;
-      await existing.update?.({ 'system.rank': curRank + row.rank });
-      applied.push({ id: existing.id, name: existing.name, rank: row.rank, preExistingRank: curRank, [createdKey]: false, isChoice: Boolean(row.choiceId) });
-      continue;
-    }
-    const resolvedSys = (typeof resolvedDoc?.toObject === 'function')
-      ? resolvedDoc.toObject().system
-      : (resolvedDoc?.system ? structuredClone(resolvedDoc.system) : {});
-    const itemName = resolvedDoc?.name || row.name || row.identifier;
-    const itemImg = resolvedDoc?.img || row.img || GRANT_DEFAULT_IMG[itemType];
-
-    const mergedSystem = GRANT_SYSTEM[itemType](row, resolvedSys);
-    if (row.identifier || resolvedDoc?.system?.identifier) {
-      mergedSystem.identifier = row.identifier || resolvedDoc?.system?.identifier;
-    }
-    if (Array.isArray(resolvedDoc?.tags) && !mergedSystem.tags?.length) {
-      mergedSystem.tags = [...resolvedDoc.tags];
-    }
-
-    if (typeof actor.createEmbeddedDocuments === 'function') {
-      const [created] = await actor.createEmbeddedDocuments('Item', [stampCompendiumLink({
-        name: itemName,
-        type: itemType,
-        img: itemImg,
-        system: mergedSystem,
-        flags: {
-          ...(resolvedDoc?.flags ? structuredClone(resolvedDoc.flags) : {}),
-          [SYSTEM_ID]: {
-            ...(resolvedDoc?.flags?.[SYSTEM_ID] || {}),
-            grantedBy: kind,
-            isChoice: Boolean(row.choiceId)
-          }
-        }
-      }, resolvedDoc)]);
-      applied.push({ id: created?.id, name: itemName, rank: row.rank, preExistingRank: 0, [createdKey]: true, isChoice: Boolean(row.choiceId) });
-    }
-  }
-  return applied;
-}
-
-/**
  * What a granted effect's item gets on top of its stored copy: a racial or class trait does not wear off, so it is
  * untimed (and a buff is on). This overrides a catalog buff's own timer. A debuff has no `active` field.
  */
@@ -306,63 +276,69 @@ export const GRANTED_EFFECT_STATE = Object.freeze({
   })
 });
 
-/**
- * Embeds each of the race or class's `system.grantedEffects[]` (a frozen buff or debuff payload) on the
- * actor, active and untimed, flagged `grantedBy: kind` so removing the race or class removes them. An effect the actor
- * already has (same type and identifier) is left alone and not flagged, so removal leaves it too.
- * @param {object} actor
- * @param {'race'|'class'} kind
- * @param {object} def the race or class definition
- * @returns {Promise<void>}
- */
-export async function grantKindEffects(actor, kind, def) {
-  const effects = def?.system?.grantedEffects;
-  for (const entry of Array.isArray(effects) ? effects : []) {
-    const state = GRANTED_EFFECT_STATE[entry?.type];
-    if (!state || !entry.system) continue;
-    const identifier = entry.system.identifier;
-    if (identifier && actor.items?.find(i => i.type === entry.type && i.system?.identifier === identifier)) continue;
-    await actor.createEmbeddedDocuments?.('Item', [{
-      name: entry.name,
-      type: entry.type,
-      img: entry.img,
-      system: { ...structuredClone(entry.system), ...structuredClone(state) },
-      flags: { [SYSTEM_ID]: { grantedBy: kind } }
-    }]);
-  }
+/** The creates of a plan that make up one write call, in write order: skills, spells, granted effects, the race or class item, starting items. */
+function createGroups(plan) {
+  const startingOf = (d) => Boolean(d?.flags?.[SYSTEM_ID]?.startingItemOf);
+  const creates = plan.itemCreates || [];
+  const pick = (test) => creates.filter(test);
+  return [
+    pick(d => d.type === 'skill' && !startingOf(d)),
+    pick(d => d.type === 'spell' && !startingOf(d)),
+    pick(d => (d.type === 'buff' || d.type === 'debuff') && !startingOf(d)),
+    pick(d => d.type === RACE_CLASS_KINDS[plan.kind].itemType && !startingOf(d)),
+    pick(startingOf)
+  ].filter(group => group.length > 0);
 }
 
 /**
- * Embeds the race / class item, carrying the chosen skills and spells.
+ * The thin writer for a {@link KindPlan}: the rank updates of items the actor already had, the creates (one call for the
+ * skills, one for the spells, one for the granted effects, one for the race or class item, each with the planned ids),
+ * the applied-record flag, then one actor update. The removal that comes before it is not part of the plan.
+ * If Foundry returns another item than a planned create (a duplicate its own dedupe caught), the record's ids are
+ * patched to the item that is really there and a warning is shown.
  * @param {object} actor
- * @param {'race'|'class'} kind
- * @param {{def: object, grantDef: object, bonuses: object, resolvedChoices: object, ruleBreak: boolean}} stage
- * @returns {Promise<string|null|undefined>} The embedded item id
+ * @param {object} plan a plan from `planRaceClassKind`
+ * @returns {Promise<void>}
  */
-export async function embedKindItem(actor, kind, { def, grantDef, bonuses, resolvedChoices, ruleBreak }) {
-  const profile = RACE_CLASS_KINDS[kind];
-  let embeddedId = null;
-  if (typeof actor.createEmbeddedDocuments === 'function') {
-    const [embedded] = await actor.createEmbeddedDocuments('Item', [stampCompendiumLink({
-      name: def.name,
-      type: profile.itemType,
-      img: def.img || profile.defaultImg,
-      system: {
-        ...(grantDef.system || {}),
-        ...profile.itemSystem(bonuses),
-        chosenSkills: resolvedChoices.chosenSkills || [],
-        chosenSpells: resolvedChoices.chosenSpells || []
-      },
-      flags: {
-        [SYSTEM_ID]: {
-          [profile.markerFlag]: true,
-          ...(ruleBreak ? { ruleBreak: true } : {})
-        }
-      }
-    }, def)]);
-    embeddedId = embedded?.id;
+export async function writeKindPlan(actor, plan, { allowOffTheme = false } = {}) {
+  const profile = RACE_CLASS_KINDS[plan.kind];
+  for (const update of plan.itemUpdates || []) {
+    const item = actor.items?.get(update._id);
+    await item?.update?.({ 'system.rank': update['system.rank'] });
   }
-  return embeddedId;
+
+  const idMap = new Map();
+  if (typeof actor.createEmbeddedDocuments === 'function') {
+    for (const group of createGroups(plan)) {
+      // What the grants name from a turned-off theme arrives as Celestial AI Poop (it keeps the planned id); the race or
+      // class item itself is the player's explicit pick, and a restore passes `allowOffTheme`.
+      const lands = allowOffTheme || group.some(d => d.type === profile.itemType) ? group : landItems(group);
+      const returned = Array.from(await actor.createEmbeddedDocuments('Item', lands, { keepId: true }) ?? []);
+      const planned = new Set(group.map(d => d._id));
+      const strays = returned.filter(doc => !planned.has(doc?.id));
+      for (const data of group) {
+        if (returned.some(doc => doc?.id === data._id)) continue;
+        const stand = strays.find(doc => isSameOwnedEntry(doc, data));
+        if (stand) idMap.set(data._id, stand.id);
+      }
+    }
+  }
+  if (idMap.size) {
+    globalThis.ui?.notifications?.warn?.(`${plan.def?.name ?? profile.label}: some granted items already existed, so their ranks were kept.`);
+  }
+
+  const swap = (entries) => (entries || []).map(e => (idMap.has(e.id) ? { ...e, id: idMap.get(e.id) } : e));
+  for (const [key, value] of Object.entries(plan.flagUpdates || {})) {
+    if (typeof actor.setFlag !== 'function') break;
+    const patched = key === profile.flagKey
+      ? { ...value, skills: swap(value.skills), spells: swap(value.spells), itemId: idMap.get(value.itemId) ?? value.itemId }
+      : value;
+    await actor.setFlag(SYSTEM_ID, key, patched);
+  }
+
+  if (Object.keys(plan.actorUpdate || {}).length > 0 && typeof actor.update === 'function') {
+    await actor.update(plan.actorUpdate);
+  }
 }
 
 /**

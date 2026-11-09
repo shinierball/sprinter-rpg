@@ -1,0 +1,15 @@
+<div class="cog-crafting-header cog-bg-surface">
+  <div class="cog-crafting-title">
+    <i class="fa-solid fa-hammer"></i> {{#if hasCrawler}}{{crawler.name}}{{else}}{{localize "COG.CraftApp.NoCrawler"}}{{/if}}
+  </div>
+  <div class="cog-crafting-meta cog-text-secondary">
+    <span>{{localize "COG.CraftApp.Floor"}} <strong class="cog-text-strong">{{floor}}</strong></span>
+    <span>{{localize "COG.CraftApp.Clock"}} <strong class="cog-text-strong">{{clock}}</strong> {{localize "COG.CraftApp.Hours"}}</span>
+  </div>
+  <label class="cog-crafting-field">
+    <span class="cog-field-label">{{localize "COG.CraftApp.Space"}}</span>
+    <select class="cog-field-input cog-crafting-space" data-change-action="setSpace">
+      {{#each spaceOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+    </select>
+  </label>
+</div>

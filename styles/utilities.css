@@ -1,0 +1,871 @@
+/* =======================================================
+   COLOUR ROLE UTILITIES (replace style="color/background")
+   The class is repeated three times in the selector (specificity 0,3,0) so a utility
+   beats component rules exactly as the inline style it replaces used to, with no forcing.
+   .cog-text-* set colour from a role token, .cog-bg-* a background, .cog-ac-* accent-color. Combine with
+   .cog-dark (token context, see THEME TOKENS) for text on a dark panel. *-dyn read a per-element
+   custom property (data-driven hue).
+   ======================================================= */
+.cog-ac-accent.cog-ac-accent.cog-ac-accent {
+  accent-color: var(--cog-accent-fill);
+}
+
+.cog-ac-success.cog-ac-success.cog-ac-success {
+  accent-color: var(--cog-success-fill);
+}
+
+.cog-ac-info.cog-ac-info.cog-ac-info {
+  accent-color: var(--cog-info-fill);
+}
+
+.cog-bd-warning-fill.cog-bd-warning-fill.cog-bd-warning-fill {
+  border-color: var(--cog-warning-fill);
+}
+
+.cog-bg-window.cog-bg-window.cog-bg-window {
+  background: var(--cog-window-bg);
+}
+
+.cog-bg-surface.cog-bg-surface.cog-bg-surface {
+  background: var(--cog-surface);
+}
+
+.cog-bg-surface-alt.cog-bg-surface-alt.cog-bg-surface-alt {
+  background: var(--cog-surface-alt);
+}
+
+.cog-bg-surface-muted.cog-bg-surface-muted.cog-bg-surface-muted {
+  background: var(--cog-surface-muted);
+}
+
+.cog-bg-surface-strong.cog-bg-surface-strong.cog-bg-surface-strong {
+  background: var(--cog-surface-strong);
+}
+
+.cog-bg-danger-tint.cog-bg-danger-tint.cog-bg-danger-tint {
+  background: var(--cog-danger-tint);
+}
+
+.cog-bg-success-tint.cog-bg-success-tint.cog-bg-success-tint {
+  background: var(--cog-success-tint);
+}
+
+.cog-bg-warning-tint.cog-bg-warning-tint.cog-bg-warning-tint {
+  background: var(--cog-warning-tint);
+}
+
+.cog-bg-gold-tint.cog-bg-gold-tint.cog-bg-gold-tint {
+  background: var(--cog-gold-tint);
+}
+
+.cog-bg-info-tint.cog-bg-info-tint.cog-bg-info-tint {
+  background: var(--cog-info-tint);
+}
+
+.cog-bg-magic-tint.cog-bg-magic-tint.cog-bg-magic-tint {
+  background: var(--cog-magic-tint);
+}
+
+.cog-bg-accent-fill.cog-bg-accent-fill.cog-bg-accent-fill {
+  background: var(--cog-accent-fill);
+}
+
+.cog-bg-accent-strong-fill.cog-bg-accent-strong-fill.cog-bg-accent-strong-fill {
+  background: var(--cog-accent-strong-fill);
+}
+
+.cog-bg-danger-fill.cog-bg-danger-fill.cog-bg-danger-fill {
+  background: var(--cog-danger-fill);
+}
+
+.cog-bg-success-fill.cog-bg-success-fill.cog-bg-success-fill {
+  background: var(--cog-success-fill);
+}
+
+.cog-bg-warning-fill.cog-bg-warning-fill.cog-bg-warning-fill {
+  background: var(--cog-warning-fill);
+}
+
+.cog-bg-gold-fill.cog-bg-gold-fill.cog-bg-gold-fill {
+  background: var(--cog-gold-fill);
+}
+
+.cog-bg-info-fill.cog-bg-info-fill.cog-bg-info-fill {
+  background: var(--cog-info-fill);
+}
+
+.cog-bg-magic-fill.cog-bg-magic-fill.cog-bg-magic-fill {
+  background: var(--cog-magic-fill);
+}
+
+.cog-bg-neutral-fill.cog-bg-neutral-fill.cog-bg-neutral-fill {
+  background: var(--cog-neutral-fill);
+}
+
+.cog-bg-header-fill.cog-bg-header-fill.cog-bg-header-fill {
+  background: var(--cog-header-fill);
+}
+
+.cog-bg-icon-box.cog-bg-icon-box.cog-bg-icon-box {
+  background: var(--cog-icon-box);
+}
+
+.cog-bg-none.cog-bg-none.cog-bg-none {
+  background: none;
+}
+
+.cog-bg-transparent.cog-bg-transparent.cog-bg-transparent {
+  background: transparent;
+}
+
+.cog-bg-shade-02.cog-bg-shade-02.cog-bg-shade-02 {
+  background: color-mix(in srgb, var(--cog-ink) 2%, transparent);
+}
+
+.cog-bg-shade-30.cog-bg-shade-30.cog-bg-shade-30 {
+  background: color-mix(in srgb, var(--cog-ink) 30%, transparent);
+}
+
+.cog-bg-shade-40.cog-bg-shade-40.cog-bg-shade-40 {
+  background: color-mix(in srgb, var(--cog-ink) 40%, transparent);
+}
+
+.cog-bg-shade-50.cog-bg-shade-50.cog-bg-shade-50 {
+  background: color-mix(in srgb, var(--cog-ink) 50%, transparent);
+}
+
+.cog-bg-sheen-03.cog-bg-sheen-03.cog-bg-sheen-03 {
+  background: color-mix(in srgb, var(--cog-on-fill) 3%, transparent);
+}
+
+.cog-bg-sheen-20.cog-bg-sheen-20.cog-bg-sheen-20 {
+  background: color-mix(in srgb, var(--cog-on-fill) 20%, transparent);
+}
+
+.cog-bg-grad-success-info.cog-bg-grad-success-info.cog-bg-grad-success-info {
+  background: linear-gradient(135deg, var(--cog-success-fill) 0%, var(--cog-info-fill) 100%);
+}
+
+.cog-bg-grad-info.cog-bg-grad-info.cog-bg-grad-info {
+  background: linear-gradient(90deg, var(--cog-header-fill) 0%, var(--cog-info-fill) 100%);
+}
+
+.cog-bg-grad-success.cog-bg-grad-success.cog-bg-grad-success {
+  background: linear-gradient(90deg, var(--cog-success-fill), color-mix(in srgb, var(--cog-success-fill), var(--cog-on-fill) 25%));
+}
+
+.cog-bg-grad-magic-gold.cog-bg-grad-magic-gold.cog-bg-grad-magic-gold {
+  background: linear-gradient(90deg, var(--cog-magic-fill), var(--cog-gold-fill));
+}
+
+.cog-bg-grad-accent-magic.cog-bg-grad-accent-magic.cog-bg-grad-accent-magic {
+  background: linear-gradient(90deg, var(--cog-accent-fill), var(--cog-magic-fill));
+}
+
+.cog-bg-grad-accent-warning.cog-bg-grad-accent-warning.cog-bg-grad-accent-warning {
+  background: linear-gradient(90deg, var(--cog-accent-fill), var(--cog-warning-fill));
+}
+
+.cog-bg-dyn.cog-bg-dyn.cog-bg-dyn {
+  background: var(--cog-bg-dyn);
+}
+
+.cog-fg-dyn.cog-fg-dyn.cog-fg-dyn {
+  color: var(--cog-fg-dyn);
+}
+
+.cog-text-on-fill.cog-text-on-fill.cog-text-on-fill {
+  color: var(--cog-on-fill);
+}
+
+.cog-text-on-bright.cog-text-on-bright.cog-text-on-bright {
+  color: var(--cog-on-bright);
+}
+
+.cog-text-strong.cog-text-strong.cog-text-strong {
+  color: var(--cog-text-strong);
+}
+
+.cog-text.cog-text.cog-text {
+  color: var(--cog-text);
+}
+
+.cog-text-secondary.cog-text-secondary.cog-text-secondary {
+  color: var(--cog-text-secondary);
+}
+
+.cog-text-muted.cog-text-muted.cog-text-muted {
+  color: var(--cog-text-muted);
+}
+
+.cog-text-accent.cog-text-accent.cog-text-accent {
+  color: var(--cog-accent);
+}
+
+.cog-text-accent-strong.cog-text-accent-strong.cog-text-accent-strong {
+  color: var(--cog-accent-strong);
+}
+
+.cog-text-danger.cog-text-danger.cog-text-danger {
+  color: var(--cog-danger);
+}
+
+.cog-text-success.cog-text-success.cog-text-success {
+  color: var(--cog-success);
+}
+
+.cog-text-warning.cog-text-warning.cog-text-warning {
+  color: var(--cog-warning);
+}
+
+.cog-text-gold.cog-text-gold.cog-text-gold {
+  color: var(--cog-gold);
+}
+
+.cog-text-info.cog-text-info.cog-text-info {
+  color: var(--cog-info);
+}
+
+.cog-text-magic.cog-text-magic.cog-text-magic {
+  color: var(--cog-magic);
+}
+
+/* Stash manager: parts laid out as a two-column grid (header and filters span both columns) */
+.cog-stash-window .window-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  column-gap: 14px;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: 'Oswald', sans-serif;
+}
+.cog-stash-window [data-application-part="header"],
+.cog-stash-window [data-application-part="filters"] {
+  grid-column: 1 / -1;
+  margin-bottom: 12px;
+}
+.cog-stash-window .cog-stash-pane-top {
+  border: 1px solid var(--cog-panel-border);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+}
+.cog-stash-window .cog-stash-pane-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--cog-panel-border);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+}
+
+
+/* Buff & condition manager: controls on top, scrolling list fills the rest */
+.cog-buff-manager-window .window-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cog-buff-manager-window .cog-manager-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Tag manager: header, controls and create box keep their size; the list part scrolls */
+.cog-tag-manager-window .window-content {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--cog-surface-alt);
+  font-family: var(--font-primary, sans-serif);
+}
+.cog-tag-manager-window .cog-tm-list {
+  flex: 1;
+  min-height: 260px;
+}
+
+/* Tag manager category pills: the template pairs a theme-aware background with a fixed dark text colour, which is
+   dark on dark in the dark theme (always so in the read-only player view). Theme-aware text on both states, with the
+   specificity to beat the fixed-colour utility classes. */
+.cog-tag-manager-window .cog-tm-tabs .cog-tm-tab.cog-tm-tab.cog-tm-tab {
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+  border: 1px solid var(--cog-text-strong);
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+}
+.cog-tag-manager-window .cog-tm-tabs .cog-tm-tab.cog-tm-tab.cog-tm-tab:hover {
+  border-color: var(--cog-accent);
+  color: var(--cog-accent);
+}
+.cog-tag-manager-window .cog-tm-tabs .cog-tm-tab.cog-tm-tab.cog-tm-tab.active {
+  background: var(--cog-accent-fill);
+  border-color: var(--cog-accent-strong-fill);
+  color: var(--cog-on-fill);
+}
+
+/* Tag manager rule flags: a disabled (player, read-only) checkbox stays fully visible, with a readable label */
+.cog-tag-manager-window .cog-tm-flags .cog-tm-flag {
+  opacity: 1;
+}
+.cog-tag-manager-window .cog-tm-flags .cog-tm-flag:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.cog-tag-manager-window .cog-tm-flags .cog-field-label {
+  color: var(--cog-text-strong);
+  font-family: 'Oswald', sans-serif;
+}
+/* The flags are a grid of at most 5 per row, new rows after that. The FLAGS heading has its own row; each
+   flag is a checkbox beside its label. flex-shrink 0 keeps a column flex window from squeezing it under the hints. */
+.cog-tag-manager-window .cog-tm-flags {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px 8px;
+  align-items: center;
+  flex-shrink: 0;
+  margin: 4px 0;
+}
+.cog-tag-manager-window .cog-tm-flags > .cog-field-label {
+  grid-column: 1 / -1;
+}
+.cog-tag-manager-window .cog-tm-flags .cog-field-group {
+  min-width: 0;
+  width: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+.cog-tag-manager-window .cog-tm-flags .cog-tm-flag {
+  width: auto;
+  margin: 0;
+}
+.cog-tag-manager-window .cog-tm-flags .cog-field-label {
+  margin-bottom: 0;
+}
+
+/* Achievement manager: header and nav keep their size; the body part scrolls */
+.cog-achievement-manager-window .window-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Spell manager: controls on top, scrolling list fills the rest */
+.cog-spell-manager-window .window-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cog-spell-manager-window .cog-manager-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Item manager: controls on top, scrolling list in the middle, status footer at the bottom */
+.cog-item-manager-window .window-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cog-item-manager-window .cog-manager-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Frameless AppV2 overlays: the single content part must not become the flex child of the host. */
+#cog-effects-panel > .cog-effects-list {
+  display: contents;
+}
+
+/* Point-build studios (class / race creators): header, builder column and ledger are sibling parts of the window content */
+.cog-class-creator-app .window-content,
+.cog-race-creator-app .window-content {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.cog-race-creator-app .window-content {
+  padding: 0;
+  background: var(--cog-window-bg);
+  color: var(--cog-text);
+  font-family: 'Oswald', sans-serif;
+}
+.cog-class-creator-app .window-content > .cog-studio-header,
+.cog-race-creator-app .window-content > .cog-studio-header {
+  grid-column: 1 / -1;
+}
+.cog-class-creator-app .window-content > .cog-studio-builder,
+.cog-class-creator-app .window-content > .cog-studio-sidebar,
+.cog-race-creator-app .window-content > .cog-studio-builder,
+.cog-race-creator-app .window-content > .cog-studio-sidebar {
+  min-height: 0;
+}
+
+/* Crawler creator: the wizard sections are sibling parts of the window content */
+.cog-crawler-creator-window .window-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Mob creator: header, tab nav, body and footer are sibling parts of the window content */
+.cog-mob-creator-app .window-content {
+  display: flex;
+  flex-direction: column;
+}
+.cog-mob-creator-app .window-content > .creator-body {
+  min-height: 0;
+}
+
+/* Combat archive: header, sidebar and detail are sibling parts of the window content (grid replaces the old wrapper) */
+.cog-archive-app .window-content {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.cog-archive-app .window-content > .cog-archive-top {
+  grid-column: 1 / -1;
+}
+.cog-archive-app .window-content > .cog-archive-sidebar {
+  min-height: 0;
+}
+
+/* Combat metrics: header, summary and console are sibling parts of the window content */
+.cog-combat-metrics-window .window-content {
+  display: flex;
+  flex-direction: column;
+}
+.cog-combat-metrics-window .window-content > .cog-metrics-body {
+  min-height: 0;
+}
+
+/* Session manager: header, tabs and body are sibling parts of the window content */
+.cog-session-manager-app .window-content {
+  display: flex;
+  flex-direction: column;
+}
+.cog-session-manager-app .window-content > .cog-session-body {
+  min-height: 0;
+}
+
+/* Combat tracker (core subclass): the row stacks its sections instead of core's single flex line */
+.cog-combat-tracker .combat-tracker .combatant.cog-combatant-row {
+  display: block;
+  cursor: default;
+}
+/* Rule Break choices stay clickable (they ask for confirmation); they only look muted */
+.cog-combat-tracker .cog-action-option.rule-warn,
+.cog-combat-tracker .cog-drawer-interrupt-btn.rule-warn,
+.cog-combat-tracker .cog-ping-btn.is-unavailable {
+  opacity: 0.65;
+}
+
+/* Typed modifier editors on item sheets (damage / defense modifier cards and the tag-query editor). */
+.cog-modifier-block {
+  margin-bottom: 10px;
+  border: 1px solid var(--cog-divider);
+}
+.cog-modifier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 6px;
+  font-size: 11px;
+}
+.cog-modifier-add {
+  color: var(--cog-on-fill);
+  font-size: 10px;
+  cursor: pointer;
+}
+.cog-modifier-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: var(--cog-surface-alt);
+}
+.cog-modifier-card {
+  padding: 6px;
+  border: 1px solid var(--cog-border-muted);
+  border-left: 3px solid var(--cog-accent);
+  background: var(--cog-surface);
+  color: var(--cog-text);
+}
+.cog-modifier-card .cog-field-row {
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.cog-modifier-delete {
+  color: var(--cog-accent-strong);
+  cursor: pointer;
+  padding-bottom: 6px;
+}
+.cog-modifier-empty {
+  padding: 6px;
+  text-align: center;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--cog-text-secondary);
+}
+.cog-query-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.cog-query-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 24px;
+  margin-bottom: 4px;
+  padding: 3px;
+  border: 1px dashed var(--cog-border-muted);
+  border-radius: 3px;
+  background: var(--cog-surface-alt);
+}
+.cog-query-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--cog-on-fill);
+  background: var(--cog-header-fill);
+}
+.cog-query-pill-warn {
+  background: var(--cog-gold-fill);
+}
+.cog-query-pill-flag {
+  font-size: 10px;
+  color: var(--cog-gold);
+}
+.cog-badge-info {
+  color: var(--cog-on-fill);
+  background: var(--cog-header-fill);
+}
+.cog-query-add .cog-query-role {
+  flex: 0 0 auto;
+}
+.cog-query-pill-remove {
+  color: var(--cog-gold);
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+}
+.cog-query-empty {
+  align-self: center;
+  font-size: 10px;
+  font-style: italic;
+  color: var(--cog-text-secondary);
+}
+.cog-query-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.cog-query-add select,
+.cog-query-add input {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 11px;
+}
+.cog-query-add {
+  min-width: 0;
+  max-width: 100%;
+}
+/* One chevron: drop the native arrow (a second one is painted at the right edge in the dark scheme) and draw our own
+   inside reserved right padding, so the text never runs under it. */
+.cog-query-add select {
+  appearance: none;
+  padding-right: 18px;
+  background-color: transparent;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--cog-text-muted) 50%),
+    linear-gradient(135deg, var(--cog-text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 9px) 55%, calc(100% - 5px) 55%;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+/* A modifier row's checkbox (DISABLED) is a fixed box, not a stretched flex item of its column group. */
+.cog-modifier-card .cog-field-group input[type="checkbox"] {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: 2px 0 0;
+}
+/* Modifier rows: small fields keep room for their longest option ("Once per floor") */
+.cog-modifier-card .cog-field-group.small {
+  flex: 1 1 96px;
+  min-width: 96px;
+}
+.cog-modifier-card .cog-field-group.small select {
+  text-overflow: ellipsis;
+}
+.cog-query-add-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border: 1px solid var(--cog-ink);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--cog-on-fill);
+  background: var(--cog-header-fill);
+  cursor: pointer;
+}
+
+/* Action tracking the user does not control (combat tracker): shown, not clickable */
+.cog-action-pip.is-inert,
+.cog-action-budget-counter.is-inert {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* Generic modifier row editor. */
+.cog-modifier-controls {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+  padding-bottom: 6px;
+}
+.cog-modifier-move {
+  color: var(--cog-text-secondary);
+  cursor: pointer;
+}
+.cog-modifier-move:hover {
+  color: var(--cog-accent);
+}
+.cog-modifier-hint {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--cog-text-secondary);
+}
+.cog-modifier-leftover,
+.cog-modifier-scale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.cog-modifier-reads {
+  font-size: 11px;
+  color: var(--cog-text);
+}
+.cog-modifier-addbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 6px;
+  border: 1px dashed var(--cog-accent);
+}
+.cog-modifier-add-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--cog-accent-strong);
+  background: var(--cog-surface);
+  color: var(--cog-accent-strong);
+  font-size: 11px;
+  cursor: pointer;
+}
+.cog-modifier-add-chip:hover {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+}
+
+/* E7.4: dry run of modifier rows */
+.cog-modifier-preview-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.cog-modifier-preview-toggle {
+  color: var(--cog-text-secondary);
+  cursor: pointer;
+}
+.cog-modifier-preview-toggle:hover,
+.cog-modifier-preview-toggle.active {
+  color: var(--cog-accent);
+}
+.cog-modifier-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.cog-modifier-now {
+  font-style: normal;
+  font-weight: bold;
+  color: var(--cog-accent-strong);
+}
+
+/* E7.8: editor legibility. Theme tokens (not raw greys) so hints and reads stay readable on the dark Tag Manager window,
+   and the scale editor's fields get room to breathe instead of truncating. */
+.cog-modifier-hint,
+.cog-modifier-empty,
+.cog-modifier-move {
+  color: var(--cog-text-secondary);
+}
+.cog-modifier-hint {
+  font-size: 11px;
+}
+.cog-modifier-reads,
+.cog-modifier-block .cog-field-label {
+  color: var(--cog-text);
+}
+.cog-modifier-now {
+  color: var(--cog-accent);
+}
+.cog-modifier-block {
+  border-color: var(--cog-divider);
+}
+.cog-tm-rules-readonly .cog-modifier-hint {
+  padding: 3px 6px;
+  font-size: 12px;
+  font-style: normal;
+  color: var(--cog-text);
+}
+.cog-modifier-scale {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px;
+  border-left: 3px solid var(--cog-accent-strong);
+  background: var(--cog-surface-alt);
+}
+.cog-modifier-scale .cog-field-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cog-modifier-scale .cog-field-group {
+  flex: 1 1 130px;
+  min-width: 110px;
+}
+.cog-modifier-scale .cog-field-group.small {
+  flex: 0 1 90px;
+  min-width: 80px;
+}
+
+/* E7.9: [CORE] badge on rankless core actions */
+.cog-badge-core {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  font-family: 'Oswald', sans-serif;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  padding: 1px 4px;
+  border-radius: 2px;
+  border: 1px solid var(--cog-accent-strong-fill);
+}
+
+/* E7.9: assists on check cards (offers, applied list) and the assist card */
+.cog-assist-offers {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--cog-warning);
+  border-radius: 4px;
+  background: var(--cog-warning-tint);
+  font-family: 'Oswald', sans-serif;
+}
+.cog-assist-offers-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--cog-gold);
+}
+.cog-assist-offers-hint { font-size: 9px; font-weight: normal; color: var(--cog-text-muted); }
+.cog-assist-offer-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 5px 8px;
+  border: 1px solid var(--cog-warning);
+  border-radius: 3px;
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.cog-assist-offer-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%); }
+.cog-assist-offer-btn:disabled { opacity: 0.5; cursor: default; }
+.cog-assist-offer-btn.is-highlighted { border-color: var(--cog-accent); box-shadow: 0 0 0 1px var(--cog-accent); }
+.cog-assist-offer-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.cog-assist-offer-cost { font-size: 10px; font-weight: normal; color: var(--cog-warning); white-space: nowrap; }
+.cog-badge-near-miss,
+.cog-badge-no-actions {
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  font-weight: bold;
+  white-space: nowrap;
+  color: var(--cog-on-fill);
+}
+.cog-badge-near-miss { background: var(--cog-accent-fill); border: 1px solid var(--cog-accent-strong-fill); }
+.cog-badge-no-actions { background: var(--cog-neutral-fill); border: 1px solid var(--cog-panel-border); }
+.cog-check-assists {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid var(--cog-accent);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  color: var(--cog-text);
+}
+.cog-check-assists-title { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cog-gold); }
+.cog-check-assists-lines { list-style: none; margin: 2px 0; padding: 0 0 0 6px; }
+.cog-check-assist { padding: 1px 0; }
+.cog-check-assist-unresolved { font-style: italic; }
+.cog-check-assists-total { font-weight: bold; }
+.cog-check-assists-note { font-size: 10px; color: var(--cog-text-secondary); }
+.cog-assist-card-title { font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: bold; text-transform: uppercase; color: var(--cog-gold); }
+.cog-assist-card-lines { font-size: 10px; color: var(--cog-text-secondary); }
+.cog-assist-apply { margin-top: 4px; font-family: 'Oswald', sans-serif; font-size: 11px; }
+.cog-assist-apply-note { color: var(--cog-text-secondary); }
+.cog-assist-apply-btn {
+  width: auto;
+  padding: 0 8px;
+  line-height: 1.6;
+  border: 1px solid var(--cog-accent-strong-fill);
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+}
+.cog-assist-apply-btn:hover:not(:disabled) { background: var(--cog-accent-strong-fill); }
+.cog-assist-apply-btn:disabled { opacity: 0.5; cursor: default; }
+

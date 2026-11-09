@@ -17,6 +17,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "1st Floor",
       "quote": "",
       "reward": "Bronze Box",
+      "rewardBoxes": [
+        {
+          "tier": "bronze",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "",
       "favor": 1,
       "xp": 100,
@@ -47,6 +56,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "1st Floor",
       "quote": "",
       "reward": "Silver Box",
+      "rewardBoxes": [
+        {
+          "tier": "silver",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "",
       "favor": 2,
       "xp": 250,
@@ -77,6 +95,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "1st Floor",
       "quote": "",
       "reward": "Silver Box",
+      "rewardBoxes": [
+        {
+          "tier": "silver",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "",
       "favor": 2,
       "xp": 500,
@@ -125,6 +152,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "1st Floor",
       "quote": "You took down your first real dungeon abomination. Don't get cocky; that was just the appetizer.",
       "reward": "Bronze Loot Box & +1 AI Favor",
+      "rewardBoxes": [
+        {
+          "tier": "bronze",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "Basic crawler starter kit or consumable potion.",
       "favor": 1,
       "xp": 150,
@@ -143,6 +179,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "Current Floor",
       "quote": "Floor-shaking performance. You earned this, crawler. Now try not to blow yourself up with it.",
       "reward": "1x Celestial Boss Loot Box",
+      "rewardBoxes": [
+        {
+          "tier": "celestial",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "A high-tier enchanted weapon, boss relic, or unique class catalyst.",
       "favor": 5,
       "xp": 1000,
@@ -161,6 +206,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "1st Floor",
       "quote": "You entered combat wearing mismatched armor, no pants, and a towel. The viewing audience is thoroughly appalled yet strangely captivated.",
       "reward": "Bronze Box",
+      "rewardBoxes": [
+        {
+          "tier": "bronze",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "A pair of commemorative underpants or an absurd novelty cape.",
       "favor": 1,
       "xp": 50,
@@ -179,6 +233,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "Current Floor",
       "quote": "You solved a tactical dilemma by detonating something you definitely weren't supposed to touch. We respect the hustle.",
       "reward": "Platinum Loot Box & +3 AI Favor",
+      "rewardBoxes": [
+        {
+          "tier": "platinum",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "Experimental explosive munitions or high-tier alchemical reagents.",
       "favor": 3,
       "xp": 400,
@@ -197,6 +260,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "Current Floor",
       "quote": "A corporate sponsor noticed you! They still expect you to die terribly, but they gave you something shiny anyway.",
       "reward": "Gold Sponsor Gift Box & +2 AI Favor",
+      "rewardBoxes": [
+        {
+          "tier": "gold",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "A corporate sponsor branded item or potent consumable crate.",
       "favor": 2,
       "xp": 300,
@@ -215,6 +287,15 @@ export const COG_ACHIEVEMENTS = [
       "floor": "Current Floor",
       "quote": "There is no tactical problem in this dungeon that cannot be solved by throwing a goblin through a window, off a parapet, or into a meat grinder.",
       "reward": "Silver Box",
+      "rewardBoxes": [
+        {
+          "tier": "silver",
+          "quantity": 1,
+          "uuid": "",
+          "identifier": "",
+          "name": ""
+        }
+      ],
       "rewardContents": "Reinforced spiked gauntlets or a ring of brute momentum.",
       "favor": 2,
       "xp": 200,

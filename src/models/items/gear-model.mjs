@@ -1,25 +1,9 @@
-import {
-  BaseItemDataModel,
-  onHitField,
-  cooldownField,
-  useRecordsField,
-  areaSchemaField,
-  damageModifiersField,
-  asTriggersField,
-  defenseModifiersField,
-  rollModifiersField,
-  manaCostModifiersField,
-  recoveryModifiersField,
-  statSubstitutionsField,
-  popularityTriggersField,
-  aiFavorRatingsField,
-  damagePartField,
-  interruptSchemaField,
-  grantsField,
-  sensesField,
-  lightSchemaField,
-  auraStateField
-} from './base-item-model.mjs';
+import { BaseItemDataModel } from './base-item-model.mjs';
+import { onHitField, areaSchemaField, damagePartField, interruptSchemaField, lightSchemaField, auraStateField } from '../fields/effect-fields.mjs';
+import { cooldownField, useRecordsField } from '../fields/timing-fields.mjs';
+import { damageModifiersField, asTriggersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, aiFavorRatingsField, sensesField } from '../fields/modifier-fields.mjs';
+import { grantsField } from '../fields/grant-fields.mjs';
+import { enchantmentLedgerField } from '../fields/craft-fields.mjs';
 
 /**
  * Data Model for Sprinter RPG Gear and Equipment Items.
@@ -27,18 +11,14 @@ import {
 export class GearDataModel extends BaseItemDataModel {
   static defineSchema() {
     const fields = globalThis.foundry.data.fields;
-    const abilityModifierField = () => new fields.SchemaField({
-      value: new fields.NumberField({ integer: true, initial: 0 }),
-      type: new fields.StringField({ initial: 'flat' })
-    });
-
     return {
       ...super.defineSchema(),
       slot: new fields.StringField({ initial: 'torso' }),
       quantity: new fields.NumberField({ integer: true, min: 0, initial: 1 }),
       value: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
       equipped: new fields.BooleanField({ initial: false }),
-      isWeapon: new fields.BooleanField({ initial: false }),
+      // null = never set: a hands slot then reads as a weapon (isWeaponGear); the sheet's checkbox stores true or false
+      isWeapon: new fields.BooleanField({ nullable: true, initial: null }),
       wieldMode: new fields.StringField({
         initial: 'one_handed',
         choices: ['one_handed', 'two_handed', 'two_handed_disadv_1h']
@@ -71,19 +51,14 @@ export class GearDataModel extends BaseItemDataModel {
         barsPerRound: new fields.NumberField({ integer: true, initial: 0 }),
         cleanseDebuffs: new fields.ArrayField(new fields.StringField(), { initial: [] })
       }),
-      abilityModifiers: new fields.SchemaField({
-        str: abilityModifierField(),
-        int: abilityModifierField(),
-        con: abilityModifierField(),
-        dex: abilityModifierField(),
-        cha: abilityModifierField()
-      }),
       damageParts: new fields.ArrayField(damagePartField(fields), { initial: [] }),
       damageModifiers: damageModifiersField(fields),
       asTriggers: asTriggersField(fields),
       defenseModifiers: defenseModifiersField(fields),
       attackModifiers: rollModifiersField(fields),
       checkModifiers: rollModifiersField(fields),
+      craftModifiers: craftModifiersField(fields),
+      vehicleModifiers: vehicleModifiersField(fields),
       manaCostModifiers: manaCostModifiersField(fields),
       recoveryModifiers: recoveryModifiersField(fields),
       statSubstitutions: statSubstitutionsField(fields),
@@ -116,6 +91,8 @@ export class GearDataModel extends BaseItemDataModel {
       light: lightSchemaField(fields),
       rankBreaks: new fields.ObjectField({ initial: {} }),
       grants: grantsField(fields),
+      // What the item has been enchanted with (3.15); the rows each entry wrote carry its id
+      enchantments: enchantmentLedgerField(fields),
       description: new fields.HTMLField({ initial: '' })
     };
   }

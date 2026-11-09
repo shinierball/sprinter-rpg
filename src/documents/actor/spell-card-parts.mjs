@@ -2,15 +2,17 @@
  * Pieces of a spell's chat card that more than one card shares (3.47-1b): the cast card of a non-attack spell and the
  * hit card of an attack spell both inflict the spell's conditions and show the Inflict block.
  */
-import { getTagDefinition } from '../../data/tags.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { canWriteTarget, messageAuthorId, parseMessageContent } from '../../chat/chat-relay.mjs';
-import { rankBreakConditionRounds } from '../../utils/durations.mjs';
-import { escapeAttr } from '../../utils/interrupts.mjs';
+import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { ownsAuraSource } from './aura-relay.mjs';
-import { cardSummary, OMIT_ALL } from '../../utils/card-summary.mjs';
+import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
+import { firstScalar } from '../../utils/first-scalar.mjs';
+import { getItemInflictedConditions } from './inflicted-conditions.mjs';
 
 export const SPELL_CONDITION_RELAY = 'spellApplyCondition';
 
@@ -26,10 +28,10 @@ export function targetFilterLabel(filter) {
 /** The condition tags a spell may inflict (normal and crit), read from its structured data. */
 function inflictableTags(spell) {
   const holder = spell?.parent;
-  if (typeof holder?.getItemInflictedConditions !== 'function') return new Set();
+  if (!holder) return new Set();
   return new Set([
-    ...holder.getItemInflictedConditions(spell, { isCrit: false }),
-    ...holder.getItemInflictedConditions(spell, { isCrit: true })
+    ...getItemInflictedConditions(holder, spell, { isCrit: false }),
+    ...getItemInflictedConditions(holder, spell, { isCrit: true })
   ]);
 }
 
@@ -42,11 +44,8 @@ const NOTICE_SLOT = 'cog-applied-slot';
 
 /** A flag id read defensively as a trimmed string (arrays take the first entry, comma strings the first part). */
 function idString(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val !== 'string') return '';
-  if (val.includes(',')) val = val.split(',')[0];
-  return val.trim();
+  const val = firstScalar(raw);
+  return typeof val === 'string' ? val.trim() : '';
 }
 
 /**
@@ -248,7 +247,7 @@ export function spellSkipsCaster(actor, spell, targetActor, isBurstOrArea) {
  */
 export async function applySpellConditions(actor, spell, targets, opts = {}) {
   const sys = spell?.system || {};
-  const conditionTags = opts.conditionTags ?? actor.getItemInflictedConditions(spell, { isCrit: opts.isCrit === true });
+  const conditionTags = opts.conditionTags ?? getItemInflictedConditions(actor, spell, { isCrit: opts.isCrit === true });
   const isBurstOrArea = Boolean(opts.isBurstOrArea);
   const conditionRounds = opts.conditionRounds ?? 0;
   const applied = [];

@@ -1,6 +1,7 @@
 /**
  * Achievements tab context: tier tallies, boss stars and crawler skulls.
  */
+import { sourceBadge } from '../../utils/content-source.mjs';
 
 const TIER_KEYS = ['bronze', 'silver', 'gold', 'platinum', 'legendary', 'celestial', 'quest', 'secret', 'special'];
 
@@ -25,6 +26,7 @@ export function prepareAchievements(context, actor, filter = {}) {
   let totalFavor = 0;
   let totalXP = 0;
   for (const ach of context.achievements) {
+    ach.sourceBadge = sourceBadge(ach);
     const tier = (ach.system?.tier || 'bronze').toLowerCase();
     if (byTier[tier] !== undefined) byTier[tier]++;
     else byTier.special++;

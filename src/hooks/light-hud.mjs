@@ -8,7 +8,7 @@ import { lightFlagOf, findLightTokens, extinguishTokens } from '../documents/act
 import { toggleDouble, attachLight, detachLight } from '../documents/actor/light-follow.mjs';
 
 /** The light tokens the HUD's token controls: itself when it is a light, else the lights its actor owns. */
-export function lightsForHud(tokenDoc) {
+function lightsForHud(tokenDoc) {
   if (!tokenDoc) return [];
   if (lightFlagOf(tokenDoc)) return [tokenDoc];
   const ownerUuid = tokenDoc.actor?.uuid;

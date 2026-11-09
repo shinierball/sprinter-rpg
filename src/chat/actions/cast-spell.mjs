@@ -4,6 +4,7 @@
 import { COGItem } from '../../documents/item.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
+import { isContentOff } from '../../utils/content-source.mjs';
 
 /**
  * The spell a cast button names: the actor's item with `spellId`, else its spell with
@@ -14,7 +15,10 @@ export function resolveCardSpell(actor, { spellId = '', spellIdentifier = '' } =
   const byId = spellId ? (items?.get(spellId) ?? items?.find(it => it.id === spellId)) : null;
   if (byId) return byId;
   const owned = spellIdentifier ? items?.find(it => it.type === 'spell' && it.system?.identifier === spellIdentifier) : null;
-  return owned || findCatalogEntry('spells', spellIdentifier) || findCatalogEntry('spells', spellId);
+  if (owned) return owned;
+  // A spell of a turned-off theme still resolves for lookup, but a card casts nothing for it.
+  const entry = findCatalogEntry('spells', spellIdentifier) || findCatalogEntry('spells', spellId);
+  return entry && !isContentOff(entry) ? entry : null;
 }
 
 /**

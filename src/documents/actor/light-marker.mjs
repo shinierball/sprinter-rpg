@@ -15,7 +15,7 @@ import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { syncActorOwnership } from './ownership-relay.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
-import { MARKER_TYPE } from '../../utils/marker.mjs';
+import { MARKER_TYPE } from '../../utils/area/marker.mjs';
 import { registerPayloadDelegate, buildPayload } from '../../data/builders/item-payload.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
 

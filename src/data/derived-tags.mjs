@@ -1,15 +1,15 @@
 import { conditionTagId, debuffIdentifier } from '../utils/identifier.mjs';
-import { getDamageParts } from '../utils/damage-parts.mjs';
-import { isWeaponGear, getWieldMode } from '../utils/wield-mode.mjs';
-import { hasOnHitDebuff, hasOnHitEffect, hasLifesteal, hasDispel } from '../utils/on-hit.mjs';
+import { getDamageParts } from '../utils/damage/damage-parts.mjs';
+import { isWeaponGear, getWieldMode } from '../utils/gear/wield-mode.mjs';
+import { hasOnHitDebuff, hasOnHitEffect, hasLifesteal, hasDispel } from '../utils/attack/on-hit.mjs';
 import { heritageTag, sanitizeHeritageId } from './rules/heritages.mjs';
-import {
-  ARCHETYPE_TO_TAG, STAT_TO_TAG, WEAPON_CATEGORY_TAGS, damageTypeToElement, getReachedRankBreaks, getTagDefinition, resolveAreaShape, identityTag
-} from './tags.mjs';
+import { ARCHETYPE_TO_TAG, STAT_TO_TAG, WEAPON_CATEGORY_TAGS, damageTypeToElement, identityTag } from './tag-vocabulary.mjs';
+import { getTagDefinition, resolveAreaShape } from './tag-definitions.mjs';
+import { getReachedRankBreaks } from '../utils/skill/rank-breaks.mjs';
 
 /**
- * Runtime tags derived from an item's structured fields (never persisted). Re-exported by `tags.mjs`; the import
- * back into `tags.mjs` is a function-only cycle (nothing here runs at module load).
+ * Runtime tags derived from an item's structured fields (never persisted). `documents/active-tags.mjs` adds them to
+ * an item's explicit tags.
  */
 
 /**
@@ -263,10 +263,10 @@ export function computeDerivedTags(item) {
     derived.add('target.self');
   }
 
-  // Delivery mode
+  // Delivery mode: the select offers the delivery.* catalog (homebrew included), so any well-formed id derives its tag
   if (sys.delivery) {
     const deliv = lc(sys.delivery);
-    if (['placed', 'aura', 'self', 'target'].includes(deliv)) {
+    if (/^[a-z0-9_-]+$/.test(deliv)) {
       derived.add(`delivery.${deliv}`);
       if (deliv === 'aura') {
         derived.add('shape.aura');

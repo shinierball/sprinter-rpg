@@ -8,7 +8,7 @@ import { recommendedWeaponSkillIdentifiers, recommendedOptionalEffects } from '.
 import { getCompendiumSkills } from './catalogs.mjs';
 import { schemaFieldAt, toStringList } from './util.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
-import { DEFAULT_DAMAGE_TYPES } from './options.mjs';
+import { DEFAULT_DAMAGE_TYPES } from '../../utils/ui/field-options.mjs';
 
 /** `system` path of each pill list, by the name used in its actions. */
 export const LIST_FIELDS = Object.freeze({
@@ -24,7 +24,7 @@ const has = (list, value) => list.some((v) => v.toLowerCase() === value.toLowerC
  * Append values not already present (case-insensitive) to a list field.
  * @returns {Promise<boolean>} true when the item changed
  */
-export async function addToList(item, path, values) {
+async function addToList(item, path, values) {
   const current = readList(item, path);
   let changed = false;
   for (const raw of values) {
@@ -36,7 +36,7 @@ export async function addToList(item, path, values) {
 }
 
 /** Remove a value (case-insensitive) from a list field. */
-export async function removeFromList(item, path, value) {
+async function removeFromList(item, path, value) {
   const needle = String(value ?? '').trim().toLowerCase();
   await item.update({ [`system.${path}`]: readList(item, path).filter((v) => v.toLowerCase() !== needle) });
 }
@@ -50,6 +50,12 @@ const damageTypeValue = (raw) => {
   return damageTypes().find((t) => t.toLowerCase() === value.toLowerCase()) ?? value;
 };
 
+/** A typed condition or debuff reference: an explicit `condition.*` / `id.debuff.*` tag is kept, anything else is a debuff identifier slug. */
+const effectRefValue = (raw) => {
+  const value = String(raw ?? '').trim().toLowerCase();
+  return /^(condition|id\.debuff)\.[a-z0-9_.-]+$/.test(value) ? value : slugifyIdentifier(raw);
+};
+
 /**
  * Fields the shared multi-pick list (`pick-list.hbs`) may edit, by the `data-list` key its controls carry.
  * `custom` turns a typed entry into the stored value: identifier lists store the slug, damage types the registered
@@ -58,11 +64,17 @@ const damageTypeValue = (raw) => {
 export const PICK_LISTS = Object.freeze({
   persistentBuffs: Object.freeze({ path: 'persistentBuffs', custom: slugifyIdentifier }),
   persistentDebuffs: Object.freeze({ path: 'persistentDebuffs', custom: slugifyIdentifier }),
-  onHitDebuffs: Object.freeze({ path: 'onHit.debuffs', custom: slugifyIdentifier }),
-  evadeFailDebuffs: Object.freeze({ path: 'onHit.evadeFail.debuffs', custom: slugifyIdentifier }),
-  slotLossDebuffs: Object.freeze({ path: 'onHit.slotLoss.debuffs', custom: slugifyIdentifier }),
+  onHitDebuffs: Object.freeze({ path: 'onHit.debuffs', custom: effectRefValue }),
+  evadeFailDebuffs: Object.freeze({ path: 'onHit.evadeFail.debuffs', custom: effectRefValue }),
+  slotLossDebuffs: Object.freeze({ path: 'onHit.slotLoss.debuffs', custom: effectRefValue }),
   grantedResistances: Object.freeze({ path: 'area.grantedResistances', custom: damageTypeValue }),
   grantedImmunities: Object.freeze({ path: 'area.grantedImmunities', custom: damageTypeValue }),
+  areaGrantedBuffs: Object.freeze({ path: 'area.grantedBuffs', custom: slugifyIdentifier }),
+  areaCleanseDebuffs: Object.freeze({ path: 'area.cleanseDebuffs', custom: effectRefValue }),
+  areaInflictedDebuffs: Object.freeze({ path: 'area.inflictedDebuffs', custom: effectRefValue }),
+  // The buffs and debuffs a transformation adds (7.1g): identifiers of either kind
+  transformEffects: Object.freeze({ path: 'transform.effects', custom: slugifyIdentifier }),
+  areaPulseConditions: Object.freeze({ path: 'area.pulseConditions', custom: effectRefValue }),
   // A list inside a row of `system.grants` (a stat pool's stats, a choice row's options): the control sits in an element
   // carrying `data-grant-path` and `data-grant-index`, and the whole `grants` array is written back.
   grantOptions: Object.freeze({ array: 'grants', rowField: 'options', custom: slugifyIdentifier })

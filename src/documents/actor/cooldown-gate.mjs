@@ -1,5 +1,5 @@
-import { cooldownState, effectiveCooldown, gateCooldown } from '../../utils/cooldowns.mjs';
-import { TIME_UNITS, SECONDS_PER_ROUND, timingAmount } from '../../utils/timing.mjs';
+import { cooldownState, effectiveCooldown, gateCooldown } from '../../utils/time/cooldowns.mjs';
+import { TIME_UNITS, SECONDS_PER_ROUND, timingAmount } from '../../utils/time/timing.mjs';
 import { currentTimeContext } from './dungeon-time.mjs';
 
 /**

@@ -36,10 +36,6 @@ export function registerRelayAction(type, { authorize, apply }) {
   actions.set(type, { authorize, apply });
 }
 
-export function hasRelayAction(type) {
-  return actions.has(type);
-}
-
 function usersList() {
   const users = globalThis.game?.users;
   if (!users) return [];
@@ -187,7 +183,7 @@ export async function applyRelayRequest(callerId, type, payload) {
 }
 
 /** socketlib handler for RELAY_RESULT_FUNCTION (regular function: reads this.socketdata.userId). */
-export async function relayResultHandler(type, payload) {
+async function relayResultHandler(type, payload) {
   return runRelayRequest(this?.socketdata?.userId, type, payload);
 }
 
@@ -220,7 +216,7 @@ export async function requestRelay(type, payload, { direct } = {}) {
  * The socketlib handler. It must be a regular function: socketlib binds `this` to `{ socketdata }`,
  * and `socketdata.userId` is the sender's user id taken from the socket envelope.
  */
-export async function relayHandler(type, payload) {
+async function relayHandler(type, payload) {
   return applyRelayRequest(this?.socketdata?.userId, type, payload);
 }
 

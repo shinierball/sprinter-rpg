@@ -23,13 +23,15 @@
 import { ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
 import { isNoGmReason, registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, getRuleBreakMode, RULE_BREAK_MODES, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
+import { readCheckRecord, effectiveCheck, isSuccessOutcome } from '../../utils/roll/check-assists.mjs';
 import { hasRecordedAccess, reconcileRecordedAccess, syncActorOwnership } from './ownership-relay.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import {
   CREW_OPS, crewCapacity, planCrewChange, readCrew, sanitizeVehicleRole, vehicleRoleInfo, wouldOverfill
 } from '../../data/rules/vehicle-crew-rules.mjs';
+import { boardDifficulty } from '../../data/rules/vehicle-rules.mjs';
 
 export const RELAY_ACTION_VEHICLE_CREW = 'vehicleCrew';
 
@@ -41,67 +43,23 @@ export const REFUSED_TYPES = Object.freeze({ mount_vehicle: 'vehicle', personal_
 
 const asString = (v) => (typeof v === 'string' ? v.trim() : '');
 
-/* -------------------------------------------- */
-/*  Lookups                                     */
-/* -------------------------------------------- */
+import { allVehicles, crewEntryOf, vehicleOf, vehicleUuidOf, vehiclesCarrying } from '../../utils/vehicle/vehicle-lookup.mjs';
 
-const listOf = (c) => {
-  if (!c) return [];
-  return Array.isArray(c) ? c : (Array.isArray(c.contents) ? c.contents : Array.from(c.values?.() || c));
-};
+export { crewEntryOf, vehicleOf, vehicleUuidOf, vehiclesCarrying };
 
-/** World actors of type `mount_vehicle`. */
-export function worldVehicles() {
-  return listOf(globalThis.game?.actors).filter((x) => x?.type === 'mount_vehicle');
-}
-
-/**
- * Vehicles that exist only as unlinked tokens: the synthetic actor of every unlinked
- * `mount_vehicle` token on every scene. Each copy carries its own crew (in its ActorDelta). A linked token's actor is
- * the world actor, already in `worldVehicles()`.
- */
-export function tokenVehicles() {
-  const out = [];
-  for (const scene of listOf(globalThis.game?.scenes)) {
-    for (const token of listOf(scene?.tokens)) {
-      if (token?.actorLink !== false) continue;
-      const actor = token.actor;
-      if (actor?.type === 'mount_vehicle') out.push(actor);
-    }
-  }
-  return out;
-}
-
-/** Every vehicle that can carry crew: world vehicles, then unlinked vehicle tokens' synthetic actors. */
-export function allVehicles() {
-  return [...worldVehicles(), ...tokenVehicles()];
-}
-
-/**
- * A vehicle's stable identity: its token's uuid for a synthetic (unlinked token) actor, else its actor uuid. Every crew
- * payload and comparison uses it; `resolveActorByUuid` turns a token uuid back into the synthetic actor.
- */
-export function vehicleUuidOf(vehicle) {
-  if (vehicle?.isToken) {
-    const token = vehicle.token ?? vehicle.parent;
-    if (typeof token?.uuid === 'string' && token.uuid) return token.uuid;
-  }
-  return asString(vehicle?.uuid);
+/** The actor driving this vehicle, or null (no pilot, an unresolved uuid, or a pilot that is itself a vehicle). */
+export function driverOf(vehicle) {
+  const uuid = typeof vehicle?.system?.pilotUuid === 'string' ? vehicle.system.pilotUuid.trim() : '';
+  if (!uuid) return null;
+  const driver = resolveActorByUuid(uuid);
+  return driver && driver.type !== 'mount_vehicle' ? driver : null;
 }
 
 const sameVehicle = (a, b) => Boolean(a && b) && vehicleUuidOf(a) === vehicleUuidOf(b);
 
-/** Vehicles whose crew lists `ref` (an actor uuid). */
-export function vehiclesCarrying(ref) {
-  const uuid = asString(ref);
-  if (!uuid) return [];
-  return allVehicles().filter((v) => readCrew(v.system).occupants.some((o) => o.uuid === uuid));
-}
-
-/** The first vehicle this actor is aboard, or null. */
-export function vehicleOf(actor) {
-  return vehiclesCarrying(actor?.uuid)[0] ?? null;
-}
+/* -------------------------------------------- */
+/*  Lookups                                     */
+/* -------------------------------------------- */
 
 /**
  * The vehicle's crew with documents resolved.
@@ -125,14 +83,6 @@ export function crewMembers(vehicle) {
   return { pilot: occupants.find((o) => o.isPilot)?.actor ?? null, occupants, missing };
 }
 
-/** This actor's `{ uuid, role, ruleBreak, isPilot }` in `vehicle`, or null when not aboard. */
-export function crewEntryOf(vehicle, actor) {
-  const ref = asString(actor?.uuid);
-  const crew = readCrew(vehicle?.system);
-  const entry = ref ? crew.occupants.find((o) => o.uuid === ref) : null;
-  return entry ? { ...entry, isPilot: entry.uuid === crew.pilotUuid } : null;
-}
-
 /* -------------------------------------------- */
 /*  Client entry point                          */
 /* -------------------------------------------- */
@@ -141,14 +91,75 @@ function notify(level, message) {
   globalThis.ui?.notifications?.[level]?.(message);
 }
 
+const BOARD_CHOICES = Object.freeze(['roll', 'waive', 'cancel']);
+
+/** Ask how to board a moving vehicle: roll Dex, board without a check (a Rule Break), or cancel. A preset `boardCheck` answers. */
+async function askBoardChoice(vehicle, actor, speed, dc, preset) {
+  if (BOARD_CHOICES.includes(preset)) return preset;
+  const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
+  if (typeof DialogV2?.wait !== 'function') return 'cancel';
+  const i18n = globalThis.game?.i18n;
+  const text = (key, fallback, data) => {
+    const s = data ? i18n?.format?.(key, data) : i18n?.localize?.(key);
+    return typeof s === 'string' && s && s !== key ? s : fallback;
+  };
+  try {
+    const answer = await DialogV2.wait({
+      window: { title: text('COG.VehicleBoard.Title', 'Board a moving vehicle') },
+      content: `<p>${esc(text('COG.VehicleBoard.Message', `${vehicle.name} is moving (${speed} ft). Board with a Dex check (Difficulty ${dc})?`, { name: vehicle.name, speed, dc }))}</p>`,
+      buttons: [
+        { action: 'roll', label: text('COG.VehicleBoard.Roll', 'Roll Dex'), default: true },
+        { action: 'waive', label: text('COG.VehicleBoard.Waive', 'Board without a check (Rule Break)') },
+        { action: 'cancel', label: text('COG.VehicleBoard.Cancel', 'Cancel') }
+      ],
+      rejectClose: false,
+      modal: true
+    });
+    return BOARD_CHOICES.includes(answer) ? answer : 'cancel';
+  } catch {
+    return 'cancel';
+  }
+}
+
+/**
+ * Boarding a moving vehicle (3.44d): a stationary vehicle boards as ever; a moving one asks for a Dex check (Difficulty
+ * 10 + half the speed), or lets the boarder come aboard as a Rule Break. A failed check leaves them off and the card offers
+ * the GM "Board anyway". Never a hard block.
+ * @returns {Promise<{ proceed: boolean, ruleBreak: boolean }>}
+ */
+async function boardingGate(vehicle, actor, op, crew, ref, opts) {
+  const aboard = crew.occupants.some((o) => o.uuid === ref);
+  const dc = ADDING_OPS.has(op) && !aboard ? boardDifficulty(vehicle.system?.drive?.currentMove) : null;
+  if (dc === null) return { proceed: true, ruleBreak: false };
+  if (opts.boardCheck === 'skip') return { proceed: true, ruleBreak: opts.boardRuleBreak === true };
+  const choice = await askBoardChoice(vehicle, actor, vehicle.system.drive.currentMove, dc, opts.boardCheck);
+  if (choice === 'cancel') return { proceed: false, ruleBreak: false };
+  if (choice === 'waive') {
+    if (getRuleBreakMode() === RULE_BREAK_MODES.REFUSE) {
+      notify('warn', `The GM does not allow boarding ${vehicle.name} without a check.`);
+      return { proceed: false, ruleBreak: false };
+    }
+    return { proceed: true, ruleBreak: true };
+  }
+  const message = await actor.rollStat?.('dex', { vehicle: { vehicleUuid: vehicleUuidOf(vehicle), kind: 'board', dc } });
+  const record = message ? readCheckRecord(message) : null;
+  const made = Boolean(record) && isSuccessOutcome(effectiveCheck(record)?.outcome);
+  if (!made) {
+    if (message) notify('warn', `${actor.name} did not make it aboard ${vehicle.name}. The GM may let them board anyway.`);
+    return { proceed: false, ruleBreak: false };
+  }
+  return { proceed: true, ruleBreak: false };
+}
+
 /**
  * Change one actor's place or role in a vehicle. Asks for a Rule Break when the op would overfill the vehicle.
  * @param {Actor} vehicle  a mount_vehicle
  * @param {Actor|string} actorOrUuid  the occupant
  * @param {'embark'|'disembark'|'takeWheel'|'stepDown'|'setRole'} op
- * @param {{ role?: string, interactive?: boolean, ruleBreak?: boolean }} [options]
+ * @param {{ role?: string, interactive?: boolean, ruleBreak?: boolean, boardCheck?: string, boardRuleBreak?: boolean }} [options]
  *   role: for setRole (required) and embark/takeWheel (optional, default 'passenger'). interactive and ruleBreak
- *   go to confirmRuleBreak.
+ *   go to confirmRuleBreak. boardCheck: 'roll' | 'waive' | 'cancel' answers the moving-vehicle prompt, 'skip' (with
+ *   boardRuleBreak) is the GM's "Board anyway".
  * @returns {Promise<boolean>} true when applied
  */
 export async function changeVehicleCrew(vehicle, actorOrUuid, op, options = {}) {
@@ -185,6 +196,9 @@ export async function changeVehicleCrew(vehicle, actorOrUuid, op, options = {}) 
     }
   }
 
+  const boarding = await boardingGate(vehicle, actor, op, crew, ref, opts);
+  if (!boarding.proceed) return false;
+
   const user = globalThis.game?.user;
   const others = otherVehiclesCarrying(ref, vehicle, op);
   const plan = planCrewChange(crew, op, ref, capacity, { role });
@@ -194,6 +208,7 @@ export async function changeVehicleCrew(vehicle, actorOrUuid, op, options = {}) 
     && !revokes.some(([v, a]) => hasRecordedAccess(v, a))));
   const payload = { vehicleUuid: vehicleUuidOf(vehicle), actorUuid: ref, op };
   if (ROLE_OPS.has(op)) payload.role = role;
+  if (boarding.ruleBreak) payload.boardRuleBreak = true;
   const reply = await requestRelay(RELAY_ACTION_VEHICLE_CREW, payload, { direct });
   if (reply.ok === true && reply.result?.ok === true) return true;
   // The relay already warned about a missing GM or socket; say why for everything else.
@@ -310,6 +325,19 @@ async function applyCrewChange(payload) {
     const who = actor?.name ?? 'Someone';
     if (overCapacity) {
       await postLine(vehicle, `${esc(who)} boards ${esc(vehicle.name)} past its occupancy (${plan.aboard}/${plan.total}). Rule Break.`, true);
+    }
+    // A moving vehicle (the GM reads its speed from the document) and a boarder as large as the vehicle get a line of their own.
+    const speed = Number(vehicle.system?.drive?.currentMove) || 0;
+    const tight = plan.added && Number(actor?.system?.attributes?.sizeNumber) >= Number(vehicle.system?.attributes?.sizeNumber);
+    if (plan.added && (speed > 0 || tight)) {
+      const parts = [];
+      if (speed > 0) {
+        parts.push(`${esc(who)} boards ${esc(vehicle.name)} while it is moving (${speed} ft).`);
+        if (globalThis.game?.combat?.started) parts.push('Boarding uses 10 ft of Move (a Step will do).');
+        if (payload.boardRuleBreak === true) parts.push('Boarded without a passing check. Rule Break.');
+      }
+      if (tight) parts.push(`${esc(who)} is as large as ${esc(vehicle.name)}: it is going to be a tight fit.`);
+      await postLine(vehicle, parts.join(' '), speed > 0 && payload.boardRuleBreak === true);
     }
     if (plan.replacedPilot) {
       const old = resolveActorByUuid(plan.replacedPilot)?.name ?? 'the previous driver';

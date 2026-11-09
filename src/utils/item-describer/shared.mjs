@@ -10,8 +10,9 @@
 import { conditionLabel } from '../../documents/actor/condition-data.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { resolveGrantName } from '../../data/race-class-grants.mjs';
+import { firstScalar } from '../first-scalar.mjs';
 import { slugifyIdentifier, debuffIdentifier } from '../identifier.mjs';
-import { tempBarBaseSlots } from '../temp-bars.mjs';
+import { tempBarBaseSlots } from '../damage/temp-bars.mjs';
 
 /** @typedef {import('../feature-describer.mjs').FeatureLine} FeatureLine */
 
@@ -166,8 +167,7 @@ export function str(v) {
  * entry. Free text (names, dice, notes) uses `str`, which keeps its commas.
  */
 export function token(v) {
-  const val = str(v);
-  return val.includes(',') ? val.split(',')[0].trim() : val;
+  return firstScalar(str(v));
 }
 
 /** A finite number; 0 for anything else. */

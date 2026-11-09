@@ -13,12 +13,13 @@
  * - A chaser with no result in a closed leg gains no Ground that leg.
  * - G5 the p. 60 degree bands are used everywhere (a chase example's "Near Miss" 4 short is a Failure).
  */
-import { evaluateRollOutcome, COG_ROLL_OUTCOMES } from '../../apps/session-manager/roll-outcomes.mjs';
+import { evaluateRollOutcome, COG_ROLL_OUTCOMES } from '../../documents/session/roll-outcomes.mjs';
 import { CHASE_GROUND, CONTEST_KINDS, contestKindInfo, sanitizeContestKind } from '../../data/rules/contest-rules.mjs';
+import { firstScalar } from '../first-scalar.mjs';
 
-export const CONTEST_STATE_VERSION = 1;
-export const DEFAULT_CATCH_THRESHOLD = 4;
-export const DEFAULT_LOSE_THRESHOLD = -4;
+const CONTEST_STATE_VERSION = 1;
+const DEFAULT_CATCH_THRESHOLD = 4;
+const DEFAULT_LOSE_THRESHOLD = -4;
 const STATUSES = Object.freeze(['setup', 'leg', 'done']);
 const LEG_STATUSES = Object.freeze(['pending', 'open', 'closed']);
 const MODES = Object.freeze(['roll', 'fixed']);
@@ -29,12 +30,9 @@ const STATS = Object.freeze(['str', 'dex', 'con', 'int', 'cha']);
 const MAX_TEXT = 120;
 
 /** First entry of an array, first item of a comma string, trimmed; anything else is ''. */
-function firstString(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val !== 'string') return '';
-  if (val.includes(',')) val = val.split(',')[0];
-  return val.trim();
+function trimmedScalar(raw) {
+  const val = firstScalar(raw);
+  return typeof val === 'string' ? val.trim() : '';
 }
 
 const text = (raw) => (typeof raw === 'string' ? raw.trim().slice(0, MAX_TEXT) : '');
@@ -44,7 +42,7 @@ const finite = (raw, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 const oneOf = (raw, allowed, fallback) => {
-  const v = firstString(raw);
+  const v = trimmedScalar(raw);
   return allowed.includes(v) ? v : fallback;
 };
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -74,9 +72,12 @@ export function fixedResult({ statMod = 0, floor = 0, moveMod = 0, adjust = 0 } 
  * Move for a participant on a leg. `resolve(uuid)` returns an actor-like document (or null); it is injected so this
  * stays Foundry-free. With a vehicle the vehicle's Move is used. Otherwise the leg's `moveMode` speed is read, falling
  * back to `speed.move` when it is missing or zero. `baseMove` is always the participant's own `speed.move` (tie-breaks).
+ * `options.vehicleMove(vehicle)` (3.44i, G11) gives the Move a vehicle races at; it is injected so this stays Foundry-free.
+ * Without it the vehicle's stored `speed.move` is read, as before.
+ * @param {{ vehicleMove?: (vehicle: object) => number }} [options]
  * @returns {{ move: number, baseMove: number, source: 'vehicle'|'actor'|'swim'|'climb'|'fly'|'none' }}
  */
-export function contestMoveOf(participant, leg, resolve) {
+export function contestMoveOf(participant, leg, resolve, options = {}) {
   const lookup = (uuid) => {
     if (typeof resolve !== 'function' || typeof uuid !== 'string' || !uuid) return null;
     try { return resolve(uuid) ?? null; } catch { return null; }
@@ -86,7 +87,10 @@ export function contestMoveOf(participant, leg, resolve) {
   const baseMove = Math.max(0, finite(speed?.move));
   const vehicle = lookup(participant?.vehicleUuid);
   if (vehicle) {
-    const vMove = finite(vehicle.system?.attributes?.speed?.move, finite(vehicle.system?.attributes?.move, 0));
+    let vMove = finite(vehicle.system?.attributes?.speed?.move, finite(vehicle.system?.attributes?.move, 0));
+    if (typeof options?.vehicleMove === 'function') {
+      try { vMove = finite(options.vehicleMove(vehicle), vMove); } catch { /* keep the stored Move */ }
+    }
     return { move: Math.max(0, vMove), baseMove, source: 'vehicle' };
   }
   if (!own) return { move: 0, baseMove: 0, source: 'none' };
@@ -105,7 +109,7 @@ function sanitizeLeg(raw, index, usedIds) {
   while (usedIds.has(id)) id = `${id}-${index + 1}`;
   usedIds.add(id);
   const check = isObject(src.check) ? src.check : {};
-  const skill = firstString(check.skill);
+  const skill = trimmedScalar(check.skill);
   return {
     id,
     label: text(src.label) || `Leg ${index + 1}`,
@@ -122,17 +126,17 @@ function sanitizeParticipant(raw, index, usedIds, kindRoles, legIds) {
   usedIds.add(id);
   let out = null;
   if (isObject(src.out)) {
-    const leg = firstString(src.out.leg);
+    const leg = trimmedScalar(src.out.leg);
     out = { leg: legIds.has(leg) ? leg : null, reason: oneOf(src.out.reason, OUT_REASONS, 'dropped') };
   }
   return {
     id,
-    actorUuid: firstString(src.actorUuid),
-    tokenId: firstString(src.tokenId),
+    actorUuid: trimmedScalar(src.actorUuid),
+    tokenId: trimmedScalar(src.tokenId),
     name: text(src.name) || 'Participant',
     role: oneOf(src.role, kindRoles, kindRoles[0]),
     mode: oneOf(src.mode, MODES, 'roll'),
-    vehicleUuid: firstString(src.vehicleUuid) || null,
+    vehicleUuid: trimmedScalar(src.vehicleUuid) || null,
     skillOverrides: sanitizeSkillMap(src.skillOverrides, legIds),
     skillProposals: sanitizeSkillMap(src.skillProposals, legIds),
     out
@@ -144,7 +148,7 @@ function sanitizeSkillMap(raw, legIds) {
   const clean = {};
   if (!isObject(raw)) return clean;
   for (const legId of legIds) {
-    const skill = firstString(raw[legId]).slice(0, MAX_TEXT);
+    const skill = trimmedScalar(raw[legId]).slice(0, MAX_TEXT);
     if (skill) clean[legId] = skill;
   }
   return clean;
@@ -156,7 +160,7 @@ function sanitizeSkillMap(raw, legIds) {
  * @returns {{ skill: string|null, overridden: boolean }}
  */
 export function participantLegSkill(participant, leg) {
-  const override = firstString(participant?.skillOverrides?.[leg?.id]);
+  const override = trimmedScalar(participant?.skillOverrides?.[leg?.id]);
   if (override) return { skill: override, overridden: true };
   return { skill: leg?.check?.skill ?? null, overridden: false };
 }
@@ -171,7 +175,7 @@ function sanitizeResult(raw) {
     total,
     d20: hasD20 ? d20 : null,
     source: oneOf(raw.source, SOURCES, 'roll'),
-    messageId: firstString(raw.messageId) || null,
+    messageId: trimmedScalar(raw.messageId) || null,
     ruleBreak: raw.ruleBreak === true,
     note: text(raw.note)
   };

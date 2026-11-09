@@ -35,7 +35,7 @@ const ROLL_MODE_TEXT = {
 };
 
 /** Words for a roll that was not a plain d20 (empty for a plain one), so a card says it had Advantage. */
-export function rollModeText(mode) {
+function rollModeText(mode) {
   return ROLL_MODE_TEXT[mode] ?? '';
 }
 
@@ -82,46 +82,6 @@ export function buildAdvancementCard(d) {
       </div>
       ${d.note ? `<div class="cog-text-secondary" style="margin-top: 6px; font-size: 11px; text-align: center;">${esc(d.note)}</div>` : ''}
       ${d.ruleBreak ? `<div style="margin-top: 6px; font-size: 11px; text-align: center;">${RULE_BREAK_BADGE}</div>` : ''}
-    </div>
-  `;
-}
-
-/**
- * The compact block a grind-session card shows for the skill it advanced.
- * @param {AdvancementCardData & {surplusHours?: number}} d
- * @returns {string} HTML
- */
-export function buildAdvancementInline(d) {
-  const gained = d.outcome === 'gain';
-  const surplus = Number(d.surplusHours) > 0
-    ? `<br/>${esc(d.surplusHours)} hour(s) left over: assign them to another skill.`
-    : '';
-  const badge = d.ruleBreak ? ` ${RULE_BREAK_BADGE}` : '';
-  if (gained) {
-    return `
-      <div class="cog-bg-success-tint" style="border: 1px solid var(--cog-success); border-radius: 4px; padding: 6px 10px; margin-top: 8px;">
-        <div class="cog-text-success" style="font-weight: bold; font-size: 12px; text-transform: uppercase;">
-          <i class="fa-solid fa-circle-check"></i> SKILL ADVANCEMENT: ${esc(d.skillName)}!${badge}
-        </div>
-        <div class="cog-text" style="font-size: 11px; margin-top: 2px;">
-          Advancement Roll: <strong>${esc(d.rollTotal)}</strong>${modeNote(d.rollMode)} (Target: &ge; ${esc(d.target)}).
-          <br/><strong class="cog-text-gold">Rank ${esc(d.previousRank)} &rarr; Rank ${esc(d.newRank)}</strong>!${surplus}
-        </div>
-      </div>
-    `;
-  }
-  const note = d.outcome === 'fail'
-    ? `Remains at Rank ${esc(d.previousRank)}. Practice logged.`
-    : outcomeText(d);
-  return `
-    <div class="cog-bg-danger-tint" style="border: 1px solid var(--cog-accent); border-radius: 4px; padding: 6px 10px; margin-top: 8px;">
-      <div class="cog-text-danger" style="font-weight: bold; font-size: 11px; text-transform: uppercase;">
-        <i class="fa-solid fa-circle-xmark"></i> SKILL ADVANCEMENT ${d.outcome === 'fail' ? 'FAILED' : 'BLOCKED'}: ${esc(d.skillName)}${badge}
-      </div>
-      <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">
-        Advancement Roll: <strong>${esc(d.rollTotal)}</strong>${modeNote(d.rollMode)} (Needed &ge; ${esc(d.target)}).
-        ${note}${surplus}
-      </div>
     </div>
   `;
 }

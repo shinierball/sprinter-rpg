@@ -60,7 +60,7 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
-          weaponCategory: "melee",
+          weaponCategory: "Edge",
           weaponType: "axe_pick",
           damage: "1d8",
           damageType: "Piercing",
@@ -148,7 +148,7 @@ export const COG_MERCENARIES = [
           equipped: true,
           isWeapon: true,
           wieldMode: "two_handed",
-          weaponCategory: "melee",
+          weaponCategory: "Bashing",
           damage: "1d6",
           damageType: "Bludgeoning",
           tags: ["kind.gear", "archetype.mage"]
@@ -233,7 +233,7 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
-          weaponCategory: "melee",
+          weaponCategory: "Bashing",
           damage: "1d8",
           damageType: "Bludgeoning",
           tags: ["kind.gear", "element.bludgeoning"]
@@ -315,7 +315,7 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
-          weaponCategory: "melee",
+          weaponCategory: "Edge",
           damage: "1d6",
           damageType: "Piercing",
           tags: ["kind.gear", "element.piercing", "role.scout"]
@@ -396,7 +396,7 @@ export const COG_MERCENARIES = [
           equipped: true,
           isWeapon: true,
           wieldMode: "two_handed",
-          weaponCategory: "melee",
+          weaponCategory: "Edge",
           damage: "2d8",
           damageType: "Slashing",
           tags: ["kind.gear", "element.slashing", "role.dps"]
@@ -469,7 +469,7 @@ export const COG_MERCENARIES = [
           equipped: true,
           isWeapon: true,
           wieldMode: "two_handed",
-          weaponCategory: "ranged",
+          weaponCategory: "Ranged",
           damage: "1d10",
           damageType: "Piercing",
           tags: ["kind.gear", "element.piercing", "role.dps"]

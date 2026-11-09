@@ -13,16 +13,16 @@
  * Registry definitions are never edited. GM only. Problems are shown as warnings and never block a save.
  */
 import { SYSTEM_ID } from '../constants.mjs';
-import { TAG_MAP, getCustomTags, getTagDefinition } from '../data/tags.mjs';
-import { damageModifiersField, defenseModifiersField, rollModifiersField } from '../models/items/base-item-model.mjs';
+import { TAG_MAP, getCustomTags, getTagDefinition } from '../data/tag-definitions.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField } from '../models/fields/modifier-fields.mjs';
 import { buildRowEditorContext } from '../sheets/item/context-rows.mjs';
 import { applyHostForm, renameRowPaths, retargetRow, tagPickerOptions } from '../sheets/item/row-host.mjs';
 import { ROW_ACTIONS } from '../sheets/item/actions-rows.mjs';
 import { TAG_ACTIONS } from '../sheets/item/actions-tags.mjs';
 import { ARRAY_UI } from '../sheets/item/row-fields.mjs';
-import { describeRow } from '../utils/feature-describer.mjs';
-import { scaleSpecErrors } from '../utils/scalars.mjs';
-import { RULE_FLAG_DEFS, TAG_ROW_ARRAYS, getTagBehaviour, getTagOverrides, tagBehaviourErrors } from '../utils/tag-behaviour.mjs';
+import { describeRow } from '../utils/item-describer/feature-describer.mjs';
+import { scaleSpecErrors } from '../utils/roll/scalars.mjs';
+import { RULE_FLAG_DEFS, TAG_ROW_ARRAYS, getTagBehaviour, getTagOverrides, tagBehaviourErrors } from '../utils/tag/tag-behaviour.mjs';
 
 /** The input-name root of a tag's rows in the Tag Manager form. */
 export const TAG_ROWS_ROOT = 'rows';
@@ -65,7 +65,7 @@ function rowsOfDefinition(rows) {
  * An item-shaped view of one tag's rows for the item sheet's row editor and actions. `update({ 'system.<array>': rows })`
  * cleans the rows through the item row fields (R3) and hands the non-empty arrays to `save`.
  */
-export class TagRowsHost {
+class TagRowsHost {
   /**
    * @param {string} tagId
    * @param {object} rows `{ [array]: row[] }`
@@ -101,7 +101,7 @@ export class TagRowsHost {
 // -- What a tag carries and where it is stored -------------------------------------------------------------------
 
 /** True for a world custom tag: stored in `customTags` and not in the core table. */
-export function isWorldCustomTag(tagId) {
+function isWorldCustomTag(tagId) {
   return !TAG_MAP.has(tagId) && getCustomTags().some((t) => t?.id === tagId);
 }
 
@@ -202,7 +202,7 @@ export async function applyRowsForm(host, submitted) {
 // -- Context -----------------------------------------------------------------------------------------------------
 
 /** The item-sheet path of a Tag Manager path (`rows.damageModifiers.0.condition` -> `system.damageModifiers.0.condition`). */
-export function toItemPath(path) {
+function toItemPath(path) {
   const text = String(path ?? '');
   return text.startsWith(`${TAG_ROWS_ROOT}.`) ? `system.${text.slice(TAG_ROWS_ROOT.length + 1)}` : text;
 }

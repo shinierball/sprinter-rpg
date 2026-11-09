@@ -98,7 +98,7 @@
                       <span class="cog-called-play-pill" data-called-play-id="{{play.id}}" data-tooltip="{{play.title}}">
                         <i class="fa-solid fa-bullhorn"></i> {{play.label}}
                         {{#if play.canDiscard}}
-                          <button type="button" class="cog-called-play-discard" data-action="discardCalledPlay" data-combatant-id="{{../turn.id}}" data-called-play-id="{{play.id}}" data-tooltip="Discard this Called Play" aria-label="Discard this Called Play">&times;</button>
+                          <button type="button" class="cog-called-play-discard" data-action="discardCalledPlay" data-combatant-id="{{../id}}" data-called-play-id="{{play.id}}" data-tooltip="Discard this Called Play" aria-label="Discard this Called Play">&times;</button>
                         {{/if}}
                       </span>
                     {{/each}}

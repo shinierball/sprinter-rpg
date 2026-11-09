@@ -3,34 +3,43 @@
  * `actorSkillsMixin.rollSkill` in actor-skills.mjs. The card HTML is in skill-roll-card.mjs, the fragments shared with
  * `rollSpell` in use-card-parts.mjs.
  */
-import { getHpPerBar } from '../../apps/combat-metrics.mjs';
-import { COGSessionEngine } from '../../apps/session-manager.mjs';
+import { getHpPerBar } from '../combat-metrics.mjs';
+import { COGSessionEngine } from '../session/session-engine.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
-import { cardSummary, CARD_PROFILES } from '../../utils/card-summary.mjs';
-import { getItemAllTags } from '../../data/tags.mjs';
-import { confirmUnusableSkill } from '../../utils/animal-skills.mjs';
-import { gateAttackRange, outOfRangeLineHtml, findOutOfRange } from '../../utils/attack-range.mjs';
-import { cameraParts, consumeArmedCamera } from '../../utils/cameras.mjs';
-import { getAssistSpec, buildCheckRecord, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../../utils/check-assists.mjs';
+import { cardSummary, CARD_PROFILES } from '../../utils/item-describer/card-summary.mjs';
+import { getItemAllTags } from '../active-tags.mjs';
+import { confirmUnusableSkill } from '../../utils/skill/animal-skills.mjs';
+import { gateAttackRange, outOfRangeLineHtml, findOutOfRange } from '../../utils/attack/attack-range.mjs';
+import { cameraParts, consumeArmedCamera } from '../../utils/roll/cameras.mjs';
+import { getAssistSpec, buildCheckRecord, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
 import { sanitizeContestRef, moveLine } from '../../utils/contest/contest-roll.mjs';
-import { floorRuleBreakCard } from '../../utils/floor-rule-break.mjs';
-import { collectCheckToHit, rollCheckTargets } from '../../utils/per-target-to-hit.mjs';
-import { resolveStatSubstitution } from '../../utils/narrow-modifiers.mjs';
-import { resolveReachedRankBreaks } from '../../utils/rank-breaks.mjs';
-import { buildRollContext, extendContext, resolveRollToggles } from '../../utils/roll-context.mjs';
-import { isAuraItem, isHealingItem, isPassiveSkill, offersAreaTemplate } from '../../utils/tag-mechanics.mjs';
-import { extractD20Result } from '../../apps/session-manager/roll-outcomes.mjs';
+import { sanitizeCraftRef, craftContextTags, craftTierLine, craftDifficultyLine, craftOutcome } from '../../utils/crafting/crafting-engine.mjs';
+import { sanitizeVehicleRef, vehicleCheckSetup, vehicleCheckKeys, withVehicleSources } from '../../utils/vehicle/vehicle-check.mjs';
+import { floorRuleBreakCard } from '../../utils/floor/floor-rule-break.mjs';
+import { collectCheckToHit, rollCheckTargets } from '../../utils/attack/per-target-to-hit.mjs';
+import { resolveStatSubstitution } from '../../utils/roll/narrow-modifiers.mjs';
+import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
+import { buildRollContext, extendContext, resolveRollToggles } from '../../utils/roll/roll-context.mjs';
+import { isGearOnlySkillOffline } from '../../utils/skill/skill-stand-in.mjs';
+import { isAuraItem, isAttackSkill, isHealingItem, isPassiveSkill, offersAreaTemplate } from '../../utils/tag/tag-mechanics.mjs';
+import { extractD20Result } from '../session/roll-outcomes.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { gateItemCooldown } from './cooldown-gate.mjs';
+import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from './zero-zone-gate.mjs';
 import { callPlay, postSheetAssistRoll, warnInvalidAssistOnce, pendingCalledPlaysFor, rollCalledPlays, consumeCalledPlays } from './call-play.mjs';
 import {
   skillAuraActivationCardHtml, passiveSkillCardHtml, untrainedSkillFlavor, skillCheckFlavor, skillDamageButtonHtml,
   skillHealBlockHtml, skillRangeLineHtml
 } from './skill-roll-card.mjs';
-import { cardMessageOptions } from '../../utils/chat-mode.mjs';
+import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import {
   auraDismissedMessage, auraActiveBlockHtml, tempBarsLineHtml, grantItemTempBars, areaTemplateButtonHtml, healingBarsFor, cleanseListFor
 } from './use-card-parts.mjs';
+import { attackTargetEntries } from './attack-targets.mjs';
+import { getContestData, renderContestChallengeBlock } from './contest-blocks.mjs';
+import { getRollAdvantageState } from './combat-rolls.mjs';
+import { getSkillDamageData } from './combat-skill-damage.mjs';
+import { applyHoT, cleanseDebuff } from './actor-conditions.mjs';
 
 /**
  * An active aura skill rolled again is dismissed: deactivate it and post the dismissed card.
@@ -51,10 +60,18 @@ export async function dismissSkillAura(actor, skill) {
  * @param {Actor} actor
  * @param {Item} skill
  * @param {object} options
- * @returns {Promise<null | { unusableGate: object, rangeGate: object, rangeFlags: object, outOfRangeHtml: string, cooldownGate: object }>}
+ * @returns {Promise<null | { unusableGate: object, rangeGate: object, rangeFlags: object, outOfRangeHtml: string, cooldownGate: object, zeroZoneGate: object }>}
  *   null when the roller declined a gate
  */
 export async function gateSkillUse(actor, skill, options) {
+  // In a zero zone a skill tagged `action.attack` asks, and so does a skill that only worn gear gives (once, whichever
+  // applies); every other skill rolls normally.
+  const gearOnlyOffline = skill?.isGranted === true && isGearOnlySkillOffline(actor, skill.system?.identifier);
+  const zeroZoneGate = (isAttackSkill(skill) || gearOnlyOffline) && zeroZoneApplies(actor, options)
+    ? await gateZeroZone(actor, skill, { verb: 'Use', options })
+    : ZERO_ZONE_CLEAR;
+  if (!zeroZoneGate.proceed) return null;
+
   // An animal skill the crawler can no longer use: permissive Rule Break, recorded on the card
   const unusableGate = await confirmUnusableSkill(skill, options);
   if (!unusableGate.proceed) return null;
@@ -63,7 +80,7 @@ export async function gateSkillUse(actor, skill, options) {
   // spent; every target out of range and declined cancels the use.
   const rangeGate = isPassiveSkill(skill)
     ? { proceed: true, ruleBreak: false, outOfRange: [], flags: {} }
-    : await gateAttackRange(actor, skill, actor._attackTargetEntries(options), { options });
+    : await gateAttackRange(actor, skill, attackTargetEntries(actor, options), { options });
   if (!rangeGate.proceed) return null;
   const rangeFlags = { ...(rangeGate.flags.ruleBreak ? { ruleBreak: true } : {}), ...(rangeGate.flags.rangeRuleBreak ? { rangeRuleBreak: true } : {}), ...(rangeGate.flags.outOfRange ? { outOfRange: rangeGate.flags.outOfRange } : {}) };
   const outOfRangeHtml = outOfRangeLineHtml(rangeGate.outOfRange);
@@ -72,7 +89,7 @@ export async function gateSkillUse(actor, skill, options) {
   const cooldownGate = await gateItemCooldown(actor, skill, { options });
   if (!cooldownGate.proceed) return null;
   await cooldownGate.commit();
-  return { unusableGate, rangeGate, rangeFlags, outOfRangeHtml, cooldownGate };
+  return { unusableGate, rangeGate, rangeFlags, outOfRangeHtml, cooldownGate, zeroZoneGate };
 }
 
 /**
@@ -173,18 +190,25 @@ export async function prepareSkillCheck(actor, skill, options, { rank, rangeGate
   const sys = skill.system || {};
   const isAttackSkill = Boolean(sys.isAttack || sys.actionType === 'attack');
   // Context tags: the skill's own tags, `check.skill`, `stat.<stat>` and any ticked `situation.*` toggle
-  const checkKeys = isAttackSkill ? ['skill', 'attack'] : 'skill';
+  // A check made to drive, brake, board or ram a vehicle (3.44d): `check.vehicle` and `vehicle.check.<kind>` on the context,
+  // the vehicle's gear and buffs as extra row sources, and the Advantage an Amazing Success last time owes the driver.
+  const vehicleRef = sanitizeVehicleRef(options.vehicle);
+  const vehicleSetup = vehicleRef ? vehicleCheckSetup(actor, vehicleRef) : null;
+  const vehicle = vehicleRef ? { ...vehicleRef, skill: vehicleRef.skill || String(sys.identifier ?? ''), advantage: Boolean(vehicleSetup?.advantage) } : null;
+  const checkKeys = vehicleCheckKeys(isAttackSkill ? ['skill', 'attack'] : 'skill', vehicleRef);
   // The roller's targets: the first is the check's subject, and the rest get a per-target total (E3.5c).
   // A target the skill cannot reach is not part of the check (3.48-8).
-  const targetActors = actor._attackTargetEntries(options)
+  const targetActors = attackTargetEntries(actor, options)
     .filter(e => !findOutOfRange(rangeGate.outOfRange, { uuid: e.actor?.uuid ?? null, actorId: e.actor?.id ?? null, tokenId: e.token?.id ?? e.token?.document?.id ?? null }))
     .map(e => e.actor);
   // A check made for a leg of a race or chase (3.45): its context carries `contest.race` / `contest.chase`.
   const contest = sanitizeContestRef(options.contest);
-  const baseContext = buildRollContext({
+  // A crafting check (3.15): its context carries `check.crafting`, the step's mode, the table type and the output's tags.
+  const craft = sanitizeCraftRef(options.craft);
+  const baseContext = withVehicleSources(buildRollContext({
     actor, phase: isAttackSkill ? 'toHit' : 'check', item: skill, check: checkKeys, stat: statKey, other: targetActors[0],
-    tags: contest ? [contest.tag] : []
-  });
+    tags: [...(contest ? [contest.tag] : []), ...craftContextTags(craft), ...(vehicleSetup?.tags ?? [])]
+  }), vehicleSetup);
   // A Called Play waiting for this roll is a pre-ticked line in the same dialog (E7.9 D6.3).
   const calledEntries = pendingCalledPlaysFor(actor, baseContext);
   const toggles = await resolveRollToggles(actor, baseContext, options, { isAttack: isAttackSkill, calledPlays: calledEntries, cameras: true });
@@ -201,7 +225,7 @@ export async function prepareSkillCheck(actor, skill, options, { rank, rangeGate
     totalSkill = modifiedRank + statMod;
   }
   // Advantage rows read the context before `situation.disadvantaged` exists; flat and dice rows read it after.
-  const advState = actor.getRollAdvantageState({
+  const advState = getRollAdvantageState(actor, {
     rollType: 'skill',
     stat: statKey,
     item: skill,
@@ -209,6 +233,7 @@ export async function prepareSkillCheck(actor, skill, options, { rank, rangeGate
     isAttack: isAttackSkill,
     rollContext: situationContext,
     extraDisadvantages: camera.disadvantages,
+    extraAdvantages: vehicleSetup?.advantage ? [vehicleSetup.advantage] : [],
     options
   });
   // Untrained is one Disadvantage reason in the net, so the mode already carries it
@@ -221,7 +246,7 @@ export async function prepareSkillCheck(actor, skill, options, { rank, rangeGate
   const checkExtraDice = checkMods.diceParts.length > 0 ? ` + ${checkMods.diceParts.join(' + ')}` : '';
   const resolvedBreaks = resolveReachedRankBreaks(skill, modifiedRank || 1);
   return {
-    isUntrained, isAttackSkill, contest, targetActors, calledEntries, calledPlayIds, floorRuleBreak, camera,
+    isUntrained, isAttackSkill, contest, craft, vehicle, targetActors, calledEntries, calledPlayIds, floorRuleBreak, camera,
     statName, statMod, totalSkill, advState, rollContext, checkMods, targetRows, checkExtraDice, resolvedBreaks
   };
 }
@@ -238,7 +263,7 @@ export async function prepareSkillCheck(actor, skill, options, { rank, rangeGate
  */
 export async function rollSkillCheckDice(actor, skill, options, { check, rank }) {
   const { modifiedRank, baseRank, itemBonus, boonBonus } = rank;
-  const { isUntrained, advState, statName, statMod, totalSkill, checkMods, checkExtraDice, rollContext, contest } = check;
+  const { isUntrained, advState, statName, statMod, totalSkill, checkMods, checkExtraDice, rollContext, contest, craft } = check;
   const breakdown = [`Rank ${modifiedRank}`];
   if (itemBonus > 0 || boonBonus > 0) {
     const parts = [`Base ${baseRank}`];
@@ -254,9 +279,12 @@ export async function rollSkillCheckDice(actor, skill, options, { check, rank })
   const moveMod = contest?.moveMod ?? 0;
   const moveText = moveLine(contest);
   if (moveText) breakdown.push(moveText);
-  const modLines = moveText ? [...checkMods.breakdown, moveText] : checkMods.breakdown;
+  // The table tier of a crafting check is a flat line too (3.15)
+  const tierText = craftTierLine(craft);
+  if (tierText) breakdown.push(tierText);
+  const modLines = [...checkMods.breakdown, ...(moveText ? [moveText] : []), ...(tierText ? [tierText] : [])];
 
-  const checkValue = (isUntrained ? statMod : totalSkill) + checkMods.flatBonus + moveMod;
+  const checkValue = (isUntrained ? statMod : totalSkill) + checkMods.flatBonus + moveMod + (craft?.tableTier ?? 0);
   const effectiveTotal = checkValue;
   const formula = `${advState.formula} + ${checkValue}${checkExtraDice}`;
   const roll = await new Roll(formula, { rank: isUntrained ? 0 : modifiedRank, mod: statMod }).evaluate();
@@ -286,7 +314,7 @@ export async function rollSkillCheckDice(actor, skill, options, { check, rank })
  * @returns {Promise<null | { barsToHeal: number, hpPerBar: number, debuffsToCleanse: string[], isSelfTarget: boolean,
  *   isHoT: boolean, hotRounds: number, actualHealed: number, cleansedDebuffs: string[] }>} null for a skill that does not heal
  */
-export async function applySkillHealing(actor, skill, options, resolvedBreaks) {
+async function applySkillHealing(actor, skill, options, resolvedBreaks) {
   if (!isHealingItem(skill)) return null;
   const sys = skill.system || {};
   const hpPerBar = getHpPerBar(actor);
@@ -300,13 +328,13 @@ export async function applySkillHealing(actor, skill, options, resolvedBreaks) {
   const cleansedDebuffs = [];
   if (isSelfTarget) {
     if (isHoT) {
-      await actor.applyHoT({ name: `${skill.name} (HoT)`, healBars: barsToHeal, rounds: hotRounds });
+      await applyHoT(actor, { name: `${skill.name} (HoT)`, healBars: barsToHeal, rounds: hotRounds });
     } else {
       const res = await actor.applyHealingBars(barsToHeal);
       actualHealed = res.actualHealed;
     }
     for (const deb of debuffsToCleanse) {
-      const c = await actor.cleanseDebuff(deb);
+      const c = await cleanseDebuff(actor, deb);
       cleansedDebuffs.push(...c);
     }
   }
@@ -327,7 +355,7 @@ export async function skillUseParts(actor, skill, options, { check, rank, auraDa
   const isAura = isAuraItem(skill);
   const { isAttackSkill, rollContext, resolvedBreaks } = check;
 
-  const dmgData = actor.getSkillDamageData(skill);
+  const dmgData = getSkillDamageData(actor, skill);
   const hasDmg = dmgData.hasDamage;
   let dmgBtnHtml = '';
   if (hasDmg) {
@@ -378,10 +406,13 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
   const { unusableGate, rangeFlags, outOfRangeHtml, cooldownGate } = gates;
   const { dmgBtnHtml, hasDmg, auraHtml, healHtml, tempBarsHtml, aoeBtnHtml, rangeHtml } = parts;
   const rollHtml = typeof roll.render === 'function' ? await roll.render() : '';
-  const contestData = actor.getContestData(skill, options);
-  const contestHtml = contestData ? actor.renderContestChallengeBlock(skill, contestData, roll.total) : '';
+  const contestData = getContestData(actor, skill, options);
+  const contestHtml = contestData ? renderContestChallengeBlock(actor, skill, contestData, roll.total) : '';
   const perTarget = await rollCheckTargets(roll, targetRows, rollContext, targetActors);
-  const content = `${rollHtml || ''}${floorRuleBreak.html}${perTarget.html}${rangeHtml}${outOfRangeHtml}${dmgBtnHtml || ''}${aoeBtnHtml || ''}${auraHtml || ''}${healHtml || ''}${tempBarsHtml || ''}${contestHtml || ''}`.trim() || undefined;
+  // A crafting check is graded against its Difficulty with Table 47's tiers (3.15)
+  const craftResult = check.craft ? craftOutcome({ total: roll.total, d20: extractD20Result(roll), dc: check.craft.dc }) : null;
+  const craftHtml = craftResult ? `<p class="cog-craft-difficulty">${craftDifficultyLine(check.craft, craftResult)}</p>` : '';
+  const content = `${rollHtml || ''}${craftHtml}${floorRuleBreak.html}${perTarget.html}${rangeHtml}${outOfRangeHtml}${dmgBtnHtml || ''}${aoeBtnHtml || ''}${auraHtml || ''}${healHtml || ''}${tempBarsHtml || ''}${contestHtml || ''}`.trim() || undefined;
 
   // Called Plays this roll uses: no Difficulty on a skill card, so they wait for the GM unless the face decides (D14).
   const { assists } = rollCalledPlays({
@@ -403,8 +434,10 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
         ...(unusableGate.ruleBreak ? { ruleBreak: true } : {}),
         ...rangeFlags,
         ...cooldownGate.flags,
+        ...gates.zeroZoneGate.flags,
         ...floorRuleBreak.flags,
         contest: contestData || null,
+        ...(craftResult ? { craft: { dc: check.craft.dc, tableTier: check.craft.tableTier, outcome: craftResult.outcome, margin: craftResult.margin } } : {}),
         ...perTarget.flags,
         [CHECK_RECORD_FLAG]: buildCheckRecord({
           kind: 'skill',
@@ -414,9 +447,11 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
           combat: combatRefFor(actor),
           tags: [...rollContext.tags],
           targets: perTarget.results.map((r, i) => ({ actorId: r.actorId, actorUuid: targetActors[i]?.uuid, name: r.actorName, dc: null, bonus: r.bonus })),
+          dc: check.craft ? check.craft.dc : (check.vehicle ? check.vehicle.dc : null),
           hasDamage: hasDmg,
           assists,
-          contest: check.contest
+          contest: check.contest,
+          vehicle: check.vehicle
         })
       }
     }

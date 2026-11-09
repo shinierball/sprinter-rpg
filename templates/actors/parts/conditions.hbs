@@ -26,6 +26,8 @@
     </div>
   </div>
 
+  {{> "systems/sprinter-rpg/templates/actors/parts/transformation-banner.hbs"}}
+
   {{!-- CHARACTER BUFFS TABLE --}}
   <div class="cog-stat-block" style="margin-bottom: 14px;">
     <div class="cog-banner-header cog-bg-success-fill" style="display: flex; justify-content: space-between; align-items: center;">
@@ -54,6 +56,7 @@
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img class="cog-condition-icon" src="{{item.img}}" />
                 <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;{{#if item.isSuspended}} text-decoration: line-through;{{/if}}">{{item.name}}</span>
+                {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=item.sourceBadge}}
                 {{#if item.isSuspended}}<span class="cog-state-badge cog-badge-undone" data-tooltip="Dispelled: suspended until the combat ends">[SUSPENDED]</span>{{/if}}
               </div>
             </td>
@@ -70,11 +73,13 @@
             </td>
             <td style="text-align: center;">
               <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                {{#unless @root.hideBuffSlots}}
                 <div class="cog-slot-assign-btn-group" title="Assign to Core Slot 1, 2, or 3">
                   <button type="button" class="buff-assign-slot-btn {{#if item.isSlot1}}is-assigned{{/if}}" data-action="assignBuffSlot" data-item-id="{{item.id}}" data-slot="buff1" data-tooltip="{{#if item.isSlot1}}Slot 1 (Assigned - Click to toggle off){{else}}Assign to Slot 1{{/if}}">1</button>
                   <button type="button" class="buff-assign-slot-btn {{#if item.isSlot2}}is-assigned{{/if}}" data-action="assignBuffSlot" data-item-id="{{item.id}}" data-slot="buff2" data-tooltip="{{#if item.isSlot2}}Slot 2 (Assigned - Click to toggle off){{else}}Assign to Slot 2{{/if}}">2</button>
                   <button type="button" class="buff-assign-slot-btn {{#if item.isSlot3}}is-assigned{{/if}}" data-action="assignBuffSlot" data-item-id="{{item.id}}" data-slot="buff3" data-tooltip="{{#if item.isSlot3}}Slot 3 (Assigned - Click to toggle off){{else}}Assign to Slot 3{{/if}}">3</button>
                 </div>
+                {{/unless}}
                 <a class="item-edit" data-action="editItem" data-tooltip="Edit Buff" style="margin-left: 4px;"><i class="fa-solid fa-edit"></i></a>
                 <a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="Delete Buff" style="margin-left: 4px;"><i class="fa-solid fa-trash"></i></a>
               </div>
@@ -114,12 +119,30 @@
       </thead>
       <tbody>
         {{#each debuffs as |item|}}
-          <tr class="draggable" data-item-id="{{item.id}}" draggable="true">
+          <tr class="draggable{{#if item.system.paused}} is-suspended{{/if}}" data-item-id="{{item.id}}" draggable="true"{{#if item.system.paused}} style="opacity: 0.6;"{{/if}}>
             <td>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img class="cog-condition-icon" src="{{item.img}}" />
-                <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;">{{item.name}}</span>
+                <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;{{#if item.system.paused}} text-decoration: line-through;{{/if}}">{{item.name}}</span>
+                {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=item.sourceBadge}}
+                {{#if item.system.paused}}<span class="cog-state-badge cog-badge-undone" data-tooltip="Paused: does nothing until switched back on">[PAUSED]</span>{{/if}}
+                {{#if item.transform}}<span class="cog-state-badge cog-badge-spell cog-transform-stage" data-tooltip="{{localize "COG.Transform.Title"}}">[{{item.transform.stageLabel}}]</span>{{/if}}
               </div>
+              {{#if item.transform}}
+              <div class="cog-transform-controls">
+                {{#if item.transform.canChange}}
+                  <a class="cog-transform-change" data-action="changeAffliction" data-tooltip="{{localize "COG.Transform.ChangeTooltip"}}"><i class="fa-solid fa-masks-theater"></i> {{localize "COG.Transform.Change"}}</a>
+                {{/if}}
+                {{#if item.transform.canSwitchForm}}
+                  <select class="cog-field-input cog-transform-form" data-change-action="switchAfflictionForm" data-tooltip="{{localize "COG.Transform.ChangeForm"}}">
+                    {{#each item.transform.formOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+                  </select>
+                {{/if}}
+                {{#if item.transform.canRevert}}
+                  <a class="cog-transform-revert cog-text-accent" data-action="revertAffliction" data-tooltip="{{localize "COG.Transform.RevertTooltip"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "COG.Transform.Revert"}}</a>
+                {{/if}}
+              </div>
+              {{/if}}
             </td>
             <td>
               <span class="cog-badge {{#if (eq item.system.severity 'Major')}}cog-badge-attack{{else}}cog-badge-item{{/if}}" style="font-size: 9px; padding: 2px 5px;">
@@ -133,6 +156,7 @@
               <span style="font-size: 11px;">{{item.system.duration}}</span>
             </td>
             <td style="text-align: center;">
+              {{#if item.canSwitch}}<a class="item-pause" data-action="toggleDebuffPaused" data-tooltip="{{#if item.system.paused}}Switch on{{else}}Pause{{/if}}" style="margin-right: 6px;"><i class="fa-solid {{#if item.system.paused}}fa-play{{else}}fa-pause{{/if}}"></i></a>{{/if}}
               <a class="item-edit" data-action="editItem" data-tooltip="Edit Condition"><i class="fa-solid fa-edit"></i></a>
               <a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="Delete Condition" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
             </td>

@@ -2,29 +2,30 @@
  * "Apply Damage to Target(s)" chat button.
  */
 import { COGDamage } from '../../documents/actor/damage-pipeline.mjs';
-import { getTagDefinition, elementToDamageType } from '../../data/tags.mjs';
-import { parseRollContext } from '../../utils/roll-context.mjs';
-import { parseCardParts } from '../../utils/damage-parts.mjs';
-import { parseTargetRows, targetRowsFor } from '../../utils/per-target-damage.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { elementToDamageType } from '../../data/tag-vocabulary.mjs';
+import { parseRollContext } from '../../utils/roll/roll-context.mjs';
+import { parseCardParts } from '../../utils/damage/damage-parts.mjs';
+import { parseTargetRows, targetRowsFor } from '../../utils/damage/per-target-damage.mjs';
 import { resolveActorByUuid, findTokenByActorUuid, isSameActor } from '../../utils/actor-uuid.mjs';
-import { clickTargetsOf } from '../../utils/scalars.mjs';
+import { clickTargetsOf } from '../../utils/roll/scalars.mjs';
 import { getActiveGM } from '../../utils/gm-relay.mjs';
 import { applyCardEffect, canWriteTarget, registerChatApplier, messageAuthorId } from '../chat-relay.mjs';
-import { multiplierOf } from '../../utils/per-target-damage.mjs';
-import { findEvadeFor } from '../../utils/evade-link.mjs';
-import { findInterceptionFor } from '../../utils/interrupts.mjs';
+import { multiplierOf } from '../../utils/damage/per-target-damage.mjs';
+import { findEvadeFor } from '../../utils/attack/evade-link.mjs';
+import { findInterceptionFor } from '../../utils/combat/interrupts.mjs';
 import { tokensInCardArea } from './area-membership.mjs';
 import { postReflectOffers } from './apply-reflect.mjs';
-import { newApplicationId, setDamageUndoInflictedItems } from '../../apps/damage-undo.mjs';
+import { newApplicationId, setDamageUndoInflictedItems } from '../../utils/damage/damage-undo.mjs';
 import { indexDamageApplication } from '../damage-applications.mjs';
-import { appliedEffectLine } from '../../utils/card-summary.mjs';
-import { amazingSuccessFor, asTriggerConditionRefs, parseAsTriggers } from '../../utils/amazing-success.mjs';
-import { getCurrentFloor } from '../../utils/current-floor.mjs';
-import { parseOnHitCard } from '../../utils/on-hit.mjs';
-import { evadeFailDegree, meetsEvadeGate } from '../../utils/evade-degrees.mjs';
+import { appliedEffectLine } from '../../utils/item-describer/card-summary.mjs';
+import { amazingSuccessFor, asTriggerConditionRefs, parseAsTriggers } from '../../utils/roll/amazing-success.mjs';
+import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
+import { parseOnHitCard } from '../../utils/attack/on-hit.mjs';
+import { evadeFailDegree, meetsEvadeGate } from '../../utils/attack/evade-degrees.mjs';
 import { conditionLabel } from '../../documents/actor/condition-data.mjs';
-import { addDispelEntry } from '../../utils/dispel.mjs';
-import { isOutOfRangeOnMessage, rangeText } from '../../utils/attack-range.mjs';
+import { addDispelEntry } from '../../utils/effects/dispel.mjs';
+import { isOutOfRangeOnMessage, rangeText } from '../../utils/attack/attack-range.mjs';
 
 /** The Amazing Success mode of a clicked button (E6.9 D6): `auto` (absent), `force` or `off`. */
 function amazingModeOf(raw) {
@@ -156,7 +157,7 @@ export function isTrustedEvade(message, record) {
  * An interception card counts only when its author is the GM or owns the interrupter: a player can claim a Catcher's DR only for
  * an actor they own (the same rule as `isTrustedEvade`).
  */
-export function isTrustedInterception(message, record) {
+function isTrustedInterception(message, record) {
   const interrupter = resolveActorByUuid(record.interrupterUuid);
   if (!interrupter) return false;
   const author = game.users?.get?.(messageAuthorId(message));
@@ -397,7 +398,7 @@ export async function applyDamageTo(targetActor, params, ctx) {
  * Damage also writes the Combat metrics flag, the session ledger and kill trophies, which a player cannot
  * write. With a GM connected the GM applies all player damage so one client does the whole application.
  */
-export function canApplyDamageLocally(target, params) {
+function canApplyDamageLocally(target, params) {
   const user = game.user;
   if (!user || user.isGM) return true;
   if (getActiveGM()) return false;

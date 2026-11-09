@@ -5,7 +5,7 @@
  * (`tests/integration/examples-authorable-3-49.test.mjs`) enters it through the rendered creator and expects the same
  * payload. The row carries no `tags`: the creator has no tag control for spells.
  */
-import '../../../../apps/mob-creator/build.mjs'; // registers the `mob` payload delegate (pure)
+import '../../../../data/builders/mob-payload.mjs'; // registers the `mob` payload delegate (pure)
 import { exampleId } from '../ids.mjs';
 
 export const SPECS = Object.freeze([

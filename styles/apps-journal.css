@@ -1,0 +1,636 @@
+/* =======================================================
+   SPRINTER RPG JOURNAL ENTRY & GUIDE STYLING (DARK MODE AWARE)
+   ======================================================= */
+
+.cog-journal-page {
+  /* Journal tokens alias the theme roles (3.0b): one declaration serves both themes */
+  --cog-journal-text: var(--cog-text);
+  --cog-journal-text-muted: var(--cog-text-muted);
+  --cog-journal-heading: var(--cog-text-strong);
+  --cog-journal-accent: var(--cog-accent);
+  --cog-journal-border: var(--cog-divider);
+  --cog-journal-table-border: var(--cog-divider);
+  --cog-journal-table-bg-odd: var(--cog-surface-alt);
+  --cog-journal-table-bg-even: var(--cog-surface);
+  --cog-journal-table-header-bg: var(--cog-header-fill);
+  --cog-journal-table-header-text: var(--cog-on-fill);
+  --cog-journal-card-bg: var(--cog-surface-alt);
+  --cog-journal-card-border: var(--cog-divider);
+  --cog-journal-callout-info-bg: var(--cog-info-tint);
+  --cog-journal-callout-info-border: var(--cog-info);
+  --cog-journal-callout-info-text: var(--cog-info);
+  --cog-journal-callout-alert-bg: var(--cog-danger-tint);
+  --cog-journal-callout-alert-border: var(--cog-accent);
+  --cog-journal-callout-alert-text: var(--cog-accent-strong);
+  --cog-journal-code-bg: var(--cog-surface-muted);
+  --cog-journal-code-text: var(--cog-accent-strong);
+  --cog-journal-code-border: var(--cog-divider);
+  --cog-journal-pre-bg: var(--cog-header-fill);
+  --cog-journal-pre-text: var(--cog-on-fill);
+  --cog-journal-pre-border: var(--cog-ink);
+
+  font-family: var(--font-primary, 'Roboto Condensed', sans-serif);
+  line-height: 1.6;
+  color: var(--cog-journal-text);
+  padding: 6px 4px;
+  box-sizing: border-box;
+}
+
+/* Journal Typography */
+.cog-journal-page h2,
+.cog-journal-page .cog-journal-title {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  color: var(--cog-journal-accent);
+  border-bottom: 2px solid var(--cog-journal-accent);
+  padding-bottom: 4px;
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+
+.cog-journal-page h3,
+.cog-journal-page .cog-journal-section {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  color: var(--cog-journal-heading);
+  margin-top: 18px;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.cog-journal-page h4,
+.cog-journal-page .cog-journal-subtitle {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  color: var(--cog-journal-accent);
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.cog-journal-page p {
+  color: var(--cog-journal-text);
+  margin: 0 0 10px 0;
+}
+
+.cog-journal-page ul,
+.cog-journal-page ol {
+  color: var(--cog-journal-text);
+  margin: 0 0 12px 0;
+  padding-left: 24px;
+}
+
+.cog-journal-page li {
+  margin-bottom: 4px;
+}
+
+.cog-journal-page strong {
+  font-weight: 700;
+  color: var(--cog-journal-heading);
+}
+
+/* Callouts */
+.cog-journal-page .cog-journal-callout {
+  padding: 10px 14px;
+  margin: 12px 0;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+.cog-journal-page .cog-journal-callout-info {
+  background: var(--cog-journal-callout-info-bg);
+  border-left: 4px solid var(--cog-journal-callout-info-border);
+  color: var(--cog-journal-callout-info-text);
+}
+
+.cog-journal-page .cog-journal-callout-info strong {
+  color: var(--cog-journal-callout-info-border);
+}
+
+.cog-journal-page .cog-journal-callout-alert {
+  background: var(--cog-journal-callout-alert-bg);
+  border-left: 4px solid var(--cog-journal-callout-alert-border);
+  color: var(--cog-journal-callout-alert-text);
+}
+
+.cog-journal-page .cog-journal-callout-alert h3 {
+  color: var(--cog-journal-accent);
+  margin-top: 0;
+}
+
+/* Cards */
+.cog-journal-page .cog-journal-card {
+  background: var(--cog-journal-card-bg);
+  border: 1px solid var(--cog-journal-card-border);
+  padding: 12px 14px;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+
+/* Tables */
+.cog-journal-page .cog-journal-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 13px;
+  border: 1px solid var(--cog-journal-table-border);
+}
+
+.cog-journal-page .cog-journal-table thead tr {
+  background: var(--cog-journal-table-header-bg);
+  color: var(--cog-journal-table-header-text);
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  text-align: left;
+}
+
+.cog-journal-page .cog-journal-table th {
+  padding: 8px 10px;
+  border: 1px solid var(--cog-journal-table-border);
+  color: var(--cog-journal-table-header-text);
+}
+
+.cog-journal-page .cog-journal-table td {
+  padding: 6px 10px;
+  border: 1px solid var(--cog-journal-table-border);
+  color: var(--cog-journal-text);
+}
+
+.cog-journal-page .cog-journal-table tbody tr:nth-child(odd) {
+  background: var(--cog-journal-table-bg-odd);
+}
+
+.cog-journal-page .cog-journal-table tbody tr:nth-child(even) {
+  background: var(--cog-journal-table-bg-even);
+}
+
+/* Inline Code & Pre Blocks */
+.cog-journal-page code {
+  font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
+  background: var(--cog-journal-code-bg);
+  color: var(--cog-journal-code-text);
+  border: 1px solid var(--cog-journal-code-border);
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.cog-journal-page pre,
+.cog-journal-page .cog-journal-pre {
+  background: var(--cog-journal-pre-bg);
+  color: var(--cog-journal-pre-text);
+  border: 1px solid var(--cog-journal-pre-border);
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
+  font-size: 12px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.cog-journal-page pre code {
+  background: transparent;
+  color: inherit;
+  border: none;
+  padding: 0;
+}
+
+/* =======================================================
+   TAG MANAGER BASE & HIGH-CONTRAST CHECKBOX STYLES
+   ======================================================= */
+
+.cog-tag-manager-container input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  vertical-align: middle;
+  transition: transform 0.15s ease;
+}
+
+.cog-tag-manager-container input[type="checkbox"]:hover {
+  transform: scale(1.1);
+}
+
+.cog-tag-manager-container .cog-custom-tag-apply-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--cog-text);
+  cursor: pointer;
+}
+
+
+/* ==========================================================================
+   Effects Panel & Collapsible Aura Config
+   ========================================================================== */
+
+#cog-effects-panel {
+  position: fixed;
+  top: 110px;
+  right: 312px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.cog-effect-badge {
+  position: relative;
+  pointer-events: all;
+  transition: transform 0.15s ease;
+}
+
+.cog-effect-badge:hover {
+  transform: scale(1.05);
+}
+
+.cog-effect-icon-wrap {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--cog-ink) 60%, transparent);
+  cursor: pointer;
+  background: var(--cog-window-bg);
+  border: 2px solid var(--cog-panel-border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cog-effect-badge.is-aura-emitter .cog-effect-icon-wrap {
+  border-color: var(--cog-warning);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cog-warning) 60%, transparent);
+}
+
+.cog-effect-badge.is-aura-receiver .cog-effect-icon-wrap {
+  border-color: var(--cog-info);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cog-info) 60%, transparent);
+}
+
+.cog-effect-badge.is-debuff .cog-effect-icon-wrap {
+  border-color: var(--cog-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cog-accent) 60%, transparent);
+}
+
+.cog-effect-badge.is-buff .cog-effect-icon-wrap {
+  border-color: var(--cog-success);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cog-success) 50%, transparent);
+}
+
+.cog-effect-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cog-effect-duration-pill {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  background: color-mix(in srgb, var(--cog-window-bg) 90%, transparent);
+  color: var(--cog-on-fill);
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 2px;
+  line-height: 1.1;
+  border: 1px solid color-mix(in srgb, var(--cog-on-fill) 20%, transparent);
+  max-width: 36px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.cog-aura-emitter-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid var(--cog-gold);
+  border-radius: 3px;
+  pointer-events: none;
+  animation: cog-pulse 2s infinite;
+}
+
+.cog-effect-flyout {
+  position: absolute;
+  right: 50px;
+  top: 0;
+  width: 240px;
+  background: color-mix(in srgb, var(--cog-window-bg) 96%, transparent);
+  border: 1.5px solid var(--cog-accent);
+  border-radius: 4px;
+  padding: 8px 10px;
+  color: var(--cog-on-fill);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--cog-ink) 80%, transparent);
+  font-family: 'Oswald', sans-serif;
+  z-index: 70;
+  pointer-events: all;
+}
+
+.cog-flyout-header {
+  border-bottom: 1px solid color-mix(in srgb, var(--cog-on-fill) 15%, transparent);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.cog-flyout-type-badge {
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  color: var(--cog-gold);
+  text-transform: uppercase;
+}
+
+.cog-flyout-title {
+  margin: 2px 0 0 0;
+  font-size: 14px;
+  color: var(--cog-text-strong);
+  letter-spacing: 0.3px;
+}
+
+.cog-flyout-row {
+  font-size: 11px;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.cog-flyout-label {
+  color: var(--cog-text-muted);
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+.cog-flyout-val {
+  color: var(--cog-text);
+}
+
+.cog-flyout-details {
+  background: color-mix(in srgb, var(--cog-ink) 35%, transparent);
+  padding: 4px 6px;
+  border-radius: 3px;
+  border-left: 2px solid var(--cog-warning);
+  margin: 6px 0;
+}
+
+.cog-flyout-footer {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--cog-on-fill) 15%, transparent);
+}
+
+.cog-btn-dismiss-effect {
+  width: 100%;
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-accent-strong-fill);
+  border-radius: 3px;
+  padding: 4px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: background 0.15s ease;
+}
+
+.cog-btn-dismiss-effect:hover {
+  background: var(--cog-danger-fill);
+}
+
+/* Collapsible Block with Progressive Disclosure */
+.cog-collapsible-block {
+  margin-bottom: 8px;
+  border: 1px solid var(--cog-border-muted);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--cog-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cog-collapsible-block[open] {
+  border-color: var(--cog-panel-border);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--cog-ink) 8%, transparent);
+}
+
+.cog-collapsible-summary {
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  font-family: var(--font-primary, 'Oswald', sans-serif);
+  font-size: 11px;
+  padding: 5px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  outline: none;
+  list-style: none;
+  transition: background-color 0.15s ease, filter 0.15s ease;
+}
+
+.cog-collapsible-summary:hover {
+  background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%);
+  filter: brightness(1.1);
+}
+
+.cog-collapsible-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cog-collapsible-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.cog-collapsible-title .cog-chevron {
+  font-size: 9px;
+  transition: transform 0.2s ease;
+  width: 12px;
+  text-align: center;
+}
+
+.cog-collapsible-block[open] > .cog-collapsible-summary .cog-chevron {
+  transform: rotate(90deg);
+}
+
+.cog-toggle-indicator {
+  font-size: 9px;
+  color: var(--cog-text-secondary);
+  font-weight: normal;
+  letter-spacing: 0.5px;
+  transition: color 0.2s ease;
+}
+
+/* The summary bar paints a fixed fill: its chevron and hint read as on-fill text, not as sheet text roles. */
+.cog-collapsible-summary .cog-chevron,
+.cog-collapsible-summary .cog-toggle-indicator {
+  color: var(--cog-on-fill);
+}
+
+.cog-toggle-indicator.active {
+  color: var(--cog-gold);
+  font-weight: bold;
+}
+
+.cog-collapsible-content {
+  padding: 8px;
+  background: var(--cog-surface-alt);
+  border-top: 1px solid var(--cog-divider);
+}
+
+.cog-armor-piercing-badge {
+  background: var(--cog-header-fill);
+  color: var(--cog-gold);
+  border: 1px solid var(--cog-gold);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cog-heal-effect {
+  margin: 8px 0;
+  padding: 8px 10px;
+  background: var(--cog-success-tint);
+  border: 1px solid var(--cog-success);
+  border-radius: 4px;
+  color: var(--cog-success);
+  font-size: 12px;
+}
+
+.cog-cleanse-debuff-btn {
+  background: var(--cog-success-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-success-fill);
+  border-radius: 3px;
+  padding: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: bold;
+  font-family: var(--font-primary, sans-serif);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: background 0.15s ease;
+}
+
+.cog-cleanse-debuff-btn:hover {
+  background: color-mix(in srgb, var(--cog-success-fill), var(--cog-ink) 15%);
+}
+
+/* Contested / Opposed Checks UI */
+.cog-contested-challenge {
+  margin: 8px 0;
+  padding: 8px 10px;
+  background: var(--cog-magic-tint);
+  border: 2px solid var(--cog-magic);
+  border-radius: 4px;
+  color: var(--cog-magic);
+  font-size: 12px;
+  font-family: var(--font-primary, 'Oswald', sans-serif);
+}
+
+.cog-roll-contest-btn {
+  background: var(--cog-magic-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-magic-fill);
+  border-radius: 3px;
+  padding: 5px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-weight: bold;
+  font-family: var(--font-primary, 'Oswald', sans-serif);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease, filter 0.15s ease;
+}
+
+.cog-roll-contest-btn:hover {
+  background: color-mix(in srgb, var(--cog-magic-fill), var(--cog-ink) 15%);
+  filter: brightness(1.05);
+}
+
+.cog-contest-result-card {
+  font-family: var(--font-primary, 'Oswald', sans-serif);
+  border-radius: 4px;
+  padding: 8px;
+  background: var(--cog-surface);
+}
+
+/* ---------------- APPV2 SHEET FRAME ---------------- */
+.application.cog-sheet-window.cog-sheet { height: auto; }            /* defeat .cog-sheet{height:100%}; inline position height still wins */
+.application.cog-sheet-window.cog-sheet .window-content { display: flex; flex-direction: column; gap: 0; overflow: hidden; }
+.application.cog-sheet-window.cog-sheet .window-content > :not(.tab) { flex: 0 0 auto; }
+.application.cog-sheet-window.cog-sheet .window-content > .tab { display: none; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; }
+.application.cog-sheet-window.cog-sheet .window-content > .tab.active { display: block; }
+
+/* Crawler inventory gold row */
+.cog-gold-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-family: 'Oswald', sans-serif; font-weight: bold; }
+.cog-gold-row .cog-gold-input { width: 110px; }
+
+/* ---------------- PERSONAL SPACE SHEET (AppV2) ---------------- */
+.application.cog-sheet-window.personal-space .window-content { background: var(--cog-window-bg); color: var(--cog-text); font-family: 'Oswald', sans-serif; }
+.application.cog-sheet-window.personal-space .window-content > .tab { padding: 12px; }
+.application.cog-sheet-window.personal-space .sheet-tabs { display: flex; flex-wrap: wrap; background: var(--cog-window-bg); border-bottom: 1px solid var(--cog-panel-border); }
+.application.cog-sheet-window.personal-space .sheet-tabs .item { padding: 8px 16px; color: var(--cog-text-secondary); text-transform: uppercase; font-size: 12px; font-weight: bold; text-decoration: none; }
+.application.cog-sheet-window.personal-space .sheet-tabs .item.active { color: var(--cog-on-fill); }
+
+/* Chat-card damage application rows (Undo) */
+.cog-damage-applications { margin-top: 6px; border-top: 1px solid var(--cog-accent); padding-top: 4px; font-family: "Oswald", sans-serif; font-size: 11px; }
+.cog-damage-application { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.cog-damage-application-target { flex: 1; font-weight: bold; }
+.cog-damage-application.is-undone .cog-damage-application-amount { text-decoration: line-through; color: var(--cog-text-muted); }
+.cog-damage-application-lines { list-style: none; margin: 0 0 2px; padding: 0 0 0 10px; font-size: 10px; opacity: 0.85; }
+.cog-damage-application-line { padding: 0; }
+.cog-undo-damage { width: auto; flex: none; line-height: 1.4; padding: 0 8px; background: var(--cog-accent-fill); color: var(--cog-on-fill); border: 1px solid var(--cog-accent-strong-fill); font-family: "Oswald", sans-serif; font-size: 11px; cursor: pointer; }
+.cog-undo-damage:hover:not(:disabled) { background: var(--cog-accent-strong-fill); }
+.cog-undo-damage:disabled { opacity: 0.5; cursor: default; }
+.cog-badge-undone { color: var(--cog-text-muted); font-weight: bold; }
+
+/* ---------------- PAUSE BANNER INTERACTIVITY ---------------- */
+/* Core sets pointer-events: none on the full-width #pause strip. Only the icon, caption and hint take
+   clicks, so the GM can still use the canvas behind the rest of the strip while paused. */
+#pause.paused img,
+#pause.paused figcaption,
+#pause.paused .cog-pause-unpause-hint {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+#pause.paused img:hover {
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--cog-accent) 85%, transparent));
+}
+
+.cog-pause-unpause-hint {
+  font-family: var(--font-primary, 'Oswald', sans-serif);
+  font-size: 13px;
+  color: var(--cog-on-fill);
+  text-shadow: 1px 1px 2px var(--cog-ink);
+  text-align: center;
+  opacity: 0.95;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+

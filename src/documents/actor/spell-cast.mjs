@@ -2,24 +2,29 @@
  * The stages of casting a spell (3.43): toggle-off, gates, cost, Mana confirmation, payment, healing, cast effects,
  * conditions and the session record. `COGActor#rollSpell` strings them together; each takes the caster first.
  */
-import { offersSpellAttack } from '../../utils/spell-cast-link.mjs';
+import { offersSpellAttack } from '../../utils/attack/spell-cast-link.mjs';
 import { applySpellConditions, spellSkipsCaster } from './spell-card-parts.mjs';
-import { getItemAllTags, getTagDefinition } from '../../data/tags.mjs';
-import { getHpPerBar } from '../../apps/combat-metrics.mjs';
-import { COGSessionEngine } from '../../apps/session-manager.mjs';
+import { getItemAllTags } from '../active-tags.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { getHpPerBar } from '../combat-metrics.mjs';
+import { COGSessionEngine } from '../session/session-engine.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
-import { resolveReachedRankBreaks } from '../../utils/rank-breaks.mjs';
-import { gateAttackRange, findOutOfRange } from '../../utils/attack-range.mjs';
-import { rankBreakConditionRounds } from '../../utils/durations.mjs';
-import { buildRollContext, extendContext } from '../../utils/roll-context.mjs';
+import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
+import { gateAttackRange, findOutOfRange } from '../../utils/attack/attack-range.mjs';
+import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
+import { buildRollContext, extendContext } from '../../utils/roll/roll-context.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { gateItemCooldown, gateGrantedSpellCooldown } from './cooldown-gate.mjs';
-import { computeManaCost, resolveManaCostSituations } from '../../utils/narrow-modifiers.mjs';
-import { isAuraItem, isAreaTagSet, isHealingItem } from '../../utils/tag-mechanics.mjs';
+import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from './zero-zone-gate.mjs';
+import { computeManaCost, resolveManaCostSituations } from '../../utils/roll/narrow-modifiers.mjs';
+import { isAuraItem, isAreaTagSet, isHealingItem } from '../../utils/tag/tag-mechanics.mjs';
 import { igniteLight, isLit, isSelfLightSpell, extinguish as extinguishLight } from './light-source.mjs';
 import { auraDismissedMessage, grantItemTempBars, healingBarsFor, cleanseListFor } from './use-card-parts.mjs';
 import { spellFailedCardHtml } from './spell-cast-card.mjs';
-import { cardMessageOptions } from '../../utils/chat-mode.mjs';
+import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
+import { restoredValue } from '../../utils/damage/resource-restore.mjs';
+import { attackTargetEntries } from './attack-targets.mjs';
+import { getItemInflictedConditions } from './inflicted-conditions.mjs';
 
 /**
  * Casting an active aura dismisses it, and recasting a lit self light puts it out without spending Mana (3.16c).
@@ -63,7 +68,7 @@ async function putOutLight(actor, spell) {
  * @param {Actor} actor
  * @param {Item} spell
  * @param {object} opts
- * @returns {Promise<{ isAura: boolean, isSelfLight: boolean, isGrantedSpell: boolean, cooldownGate: object, castRange: object }|null>}
+ * @returns {Promise<{ isAura: boolean, isSelfLight: boolean, isGrantedSpell: boolean, zeroZoneGate: object, cooldownGate: object, castRange: object }|null>}
  *   null when the caster declined a gate
  */
 export async function gateSpellCast(actor, spell, opts) {
@@ -73,8 +78,14 @@ export async function gateSpellCast(actor, spell, opts) {
   // A spell granted by gear is an inherent spell: it costs no Mana and its grant's cooldown limits it (3.12c, Q-F)
   const isGrantedSpell = Boolean(spell.isGranted && spell.grantSources?.length);
 
-  // The cooldown gate. A scroll or gear that casts the spell carries the limit itself (`useLoot`), so it is skipped there.
+  // A scroll or gear that casts the spell carries its limits itself (`useLoot` asked the zero-zone Rule Break and the cooldown).
   const carriedByItem = Boolean(opts.originItem || opts.isConsumable || opts.isItemEffect);
+  const zeroZoneGate = !carriedByItem && zeroZoneApplies(actor, opts)
+    ? await gateZeroZone(actor, spell, { verb: 'Cast', options: opts })
+    : ZERO_ZONE_CLEAR;
+  if (!zeroZoneGate.proceed) return null;
+
+  // The cooldown gate.
   const cooldownGate = carriedByItem
     ? { proceed: true, flags: {}, commit: async () => {} }
     : (isGrantedSpell
@@ -85,11 +96,11 @@ export async function gateSpellCast(actor, spell, opts) {
   // Range (3.48-8): a spell does not take hold of a target beyond its range unless the caster confirms a Rule Break.
   // An attack spell's range is judged at its attack roll, an aura is self. Cancelled before Mana or the cooldown is spent.
   const castRange = (!isAura && !offersSpellAttack(spell))
-    ? await gateAttackRange(actor, spell, actor._attackTargetEntries(opts), { options: opts })
+    ? await gateAttackRange(actor, spell, attackTargetEntries(actor, opts), { options: opts })
     : { proceed: true, ruleBreak: false, outOfRange: [], flags: {} };
   if (!castRange.proceed) return null;
 
-  return { isAura, isSelfLight, isGrantedSpell, cooldownGate, castRange };
+  return { isAura, isSelfLight, isGrantedSpell, zeroZoneGate, cooldownGate, castRange };
 }
 
 /**
@@ -258,7 +269,7 @@ export async function applySpellHealing(actor, spell, opts, updates) {
       await actor.applyHoT({ name: `${spell.name} (HoT)`, healBars: barsToHeal, rounds: hotRounds });
     } else {
       const healAmt = barsToHeal * hpPerBar;
-      newHp = Math.min(maxHp, currentHp + healAmt);
+      newHp = restoredValue(currentHp, healAmt, maxHp);
       actualHealed = Math.max(0, newHp - currentHp);
       newPct = maxHp > 0 ? Math.min(100, Math.max(0, Math.round((newHp / maxHp) * 100))) : 100;
       if (actor.system?.attributes?.hp) {
@@ -333,7 +344,7 @@ export async function applySpellCastConditions(actor, spell, opts, { isAura, cas
   const offersAttack = offersSpellAttack(spell);
 
   // Evaluate condition tags to inflict (Targeted or Burst Area)
-  const conditionTags = actor.getItemInflictedConditions(spell, { isCrit: opts.isCrit === true });
+  const conditionTags = getItemInflictedConditions(actor, spell, { isCrit: opts.isCrit === true });
   if (opts.conditionTag) conditionTags.push(opts.conditionTag);
   if (Array.isArray(opts.conditionTags)) {
     for (const ct of opts.conditionTags) {

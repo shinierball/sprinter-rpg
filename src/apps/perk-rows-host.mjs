@@ -9,10 +9,9 @@
  *
  * Two pure functions do the projection both ways: {@link systemFromRows} and {@link rowsFromSystem}.
  */
-import {
-  damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField,
-  statSubstitutionsField, popularityTriggersField, grantsField, startingItemsField, sensesField, statCapsField, tagQueryField
-} from '../models/items/base-item-model.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, sensesField, statCapsField } from '../models/fields/modifier-fields.mjs';
+import { grantsField, startingItemsField } from '../models/fields/grant-fields.mjs';
+import { tagQueryField } from '../models/fields/tag-fields.mjs';
 import { buildRowEditorContext } from '../sheets/item/context-rows.mjs';
 import { ROW_ACTIONS } from '../sheets/item/actions-rows.mjs';
 import { TAG_ACTIONS } from '../sheets/item/actions-tags.mjs';
@@ -21,13 +20,13 @@ import { renameRowPaths, retargetRow, tagPickerOptions } from '../sheets/item/ro
 import { buildIdentityRowsContext } from '../sheets/item/context-identity-rows.mjs';
 import { trimGrantRow } from '../sheets/item/grant-row-fields.mjs';
 import { buildTagPills } from '../sheets/base/tag-editor.mjs';
-import { PERK_ROW_PATHS, applyPerkRows, fieldOf } from '../utils/perk-rows.mjs';
+import { PERK_ROW_PATHS, applyPerkRows, fieldOf } from '../utils/character/perk-rows.mjs';
 
 const clone = (value) => foundry.utils.deepClone(value);
 const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 /** The `system` keys of the row arrays the creator edits with the item sheet's modifier editor. */
-export const MODIFIER_KEYS = Object.freeze([
+const MODIFIER_KEYS = Object.freeze([
   'damageModifiers', 'defenseModifiers', 'attackModifiers', 'checkModifiers',
   'manaCostModifiers', 'recoveryModifiers', 'statSubstitutions', 'popularityTriggers'
 ]);
@@ -64,7 +63,7 @@ export const SPEC_GRANT_LISTS = Object.freeze({
 });
 
 /** The input-name root of one perk's rows form, or of a spec grant list's (which has no index). */
-export const perkRowsRoot = (list, index) => (Object.hasOwn(SPEC_GRANT_LISTS, list) ? `perkRows.${list}` : `perkRows.${list}.${index}`);
+const perkRowsRoot = (list, index) => (Object.hasOwn(SPEC_GRANT_LISTS, list) ? `perkRows.${list}` : `perkRows.${list}.${index}`);
 
 /**
  * Perk rows to a `system` object (pure). Like `applyPerkRows`, except that an appended row is never skipped for being
@@ -171,7 +170,7 @@ class PerkRowsSystem {
 const number = (value) => (value === null || value === undefined || String(value).trim() === '' ? NaN : Number(value));
 
 /** A starting item kept to what its mode uses: blank text, an empty query and a stale `query` on a fixed row are left out. */
-export function trimStartingItem(row) {
+function trimStartingItem(row) {
   const text = (value) => (typeof value === 'string' ? value.trim() : '');
   const mode = row?.mode === 'choice' ? 'choice' : 'fixed';
   const out = {};
@@ -285,7 +284,7 @@ export class PerkRowsHost {
 }
 
 /** A spec row of a {@link SPEC_GRANT_LISTS} list as the grant row the editor shows. */
-export function grantRowFromSpec(list, row) {
+function grantRowFromSpec(list, row) {
   const def = SPEC_GRANT_LISTS[list];
   const grant = { kind: def.kind };
   if (def.mode !== 'fixed') grant.mode = def.mode;

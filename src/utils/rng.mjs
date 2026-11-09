@@ -1,6 +1,6 @@
 /**
  * Injectable dice for pure compilers. A compiler takes an `rng` with `rng.die(sides)` and
- * rolls only what its spec leaves open; the app passes `foundryRng()`, tests pass `sequenceRng([...])`.
+ * rolls only what its spec leaves open (`rngIndex` / `rngPick` / `rngInt` also take a `Math.random`-style function); the app passes `foundryRng()`, tests pass a `sequenceRng([...])` (tests/helpers/sequence-rng.mjs).
  */
 
 /**
@@ -20,21 +20,37 @@ export function foundryRng() {
 }
 
 /**
- * A deterministic RNG that returns the given values in order, whatever the die size (tests). Running out
- * throws, so a test fails loudly when the code rolls more dice than expected.
- * @param {number[]} values
- * @returns {{die: (sides: number) => number, remaining: () => number}}
+ * A uniform index in `[0, n)` from an injected RNG: an `{ die }` RNG (`die(n) - 1`) or a uniform function in the
+ * `Math.random` shape. A choice of one asks the RNG nothing (a test `sequenceRng` is not spent on it). -1 when `n` is below 1.
+ * @param {{die: (sides: number) => number}|(() => number)|null|undefined} rng
+ * @param {number} n
+ * @returns {number}
  */
-export function sequenceRng(values = []) {
-  const queue = Array.isArray(values) ? values.map(Number) : [];
-  let index = 0;
-  return {
-    die() {
-      if (index >= queue.length) throw new Error('sequenceRng exhausted: more dice were rolled than supplied');
-      return queue[index++];
-    },
-    remaining: () => queue.length - index
-  };
+export function rngIndex(rng, n) {
+  const size = Math.trunc(Number(n));
+  if (!Number.isFinite(size) || size < 1) return -1;
+  if (size === 1) return 0;
+  let i;
+  if (rng && typeof rng.die === 'function') {
+    i = Math.trunc(Number(rng.die(size))) - 1;
+  } else {
+    const u = Number(typeof rng === 'function' ? rng() : Math.random());
+    i = Math.floor((Number.isFinite(u) ? u : 0) * size);
+  }
+  return Number.isFinite(i) ? Math.min(Math.max(i, 0), size - 1) : 0;
+}
+
+/** A uniform pick from a list through {@link rngIndex}; undefined for an empty list. */
+export function rngPick(rng, list) {
+  const items = Array.isArray(list) ? list : [];
+  return items.length ? items[rngIndex(rng, items.length)] : undefined;
+}
+
+/** A uniform integer in the inclusive `[min, max]` range through {@link rngIndex} (a reversed range reads as `[min, min]`). */
+export function rngInt(rng, range) {
+  const lo = Math.trunc(Number(range?.[0]) || 0);
+  const hi = Math.max(lo, Math.trunc(Number(range?.[1]) || 0));
+  return lo + rngIndex(rng, hi - lo + 1);
 }
 
 const FORMULA = /^(\d+)d(\d+)(?:([+-])(\d+))?$/;

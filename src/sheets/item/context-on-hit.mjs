@@ -1,9 +1,9 @@
 /** Precomputed context for the shared On Hit partial (templates/items/parts/on-hit.hbs). */
-import { hasOnHitEffect } from '../../utils/on-hit.mjs';
+import { hasOnHitEffect } from '../../utils/attack/on-hit.mjs';
 import { buildQueryView } from './context-query.mjs';
 import { buildPickList, identifierEntries } from './context-pick-list.mjs';
-import { ON_HIT_MODES } from '../../models/items/base-item-model.mjs';
-import { EVADE_FAIL_DEGREES } from '../../utils/evade-degrees.mjs';
+import { ON_HIT_MODES } from '../../models/fields/effect-fields.mjs';
+import { EVADE_FAIL_DEGREES } from '../../utils/attack/evade-degrees.mjs';
 
 const loc = (key) => globalThis.game?.i18n?.localize?.(key) ?? key;
 const DEGREE_KEYS = Object.freeze({ fail: 'Fail', major_fail: 'MajorFail', critical_fail: 'CriticalFail' });

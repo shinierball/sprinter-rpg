@@ -7,7 +7,7 @@
  * `flags.sprinter-rpg.tableKey`: the world's RollTables first (so a GM's imported or edited copy wins), then the
  * registered `floorTables` packs by priority. Foundry access is injected through `sources`, so Node tests pass plain data.
  *
- * TableSnapshot = { key, name, formula, rows: [{ range: [lo, hi], narrative, options: [Option], tableRef? }] }
+ * TableSnapshot = { key, name, formula, rows: [{ range: [lo, hi], name?, narrative, options: [Option], tableRef? }] }
  * Option kinds: named | choice | custom | lootSlot | asTrigger | spell (see rolltable-payload.mjs). A plain text result
  * the GM adds without our flag reads as `{ kind: 'custom', label: <result name or text> }`.
  */
@@ -64,6 +64,13 @@ function resolveDocumentSync(uuid) {
   }
 }
 
+/** The catalog an identifier-only `named` or `spell` option resolves in: spells, skills, or items for any other docKind. */
+function catalogOfOption(option) {
+  if (option.kind === 'spell' || option.docKind === 'spell') return 'spells';
+  if (!option.docKind || option.docKind === 'skill') return 'skills';
+  return 'items';
+}
+
 /**
  * Turn a RollTable's data into a TableSnapshot. Never throws: results without a usable range are skipped (a warning
  * is pushed when `options.warnings` is an array), and a table with no rows gives `rows: []`.
@@ -93,6 +100,8 @@ export function tableSnapshotFromRollTable(data, options = {}) {
 
     if (flags.role === 'narrative') {
       const line = text(result.description ?? result.text) || text(result.name);
+      // A row with both a name (its first column) and words keeps the name apart; a name alone is the narrative
+      if (text(result.description ?? result.text) && text(result.name) && !row.name) row.name = text(result.name);
       row.narrative = row.narrative ? `${row.narrative} ${line}` : line;
       return;
     }
@@ -109,7 +118,7 @@ export function tableSnapshotFromRollTable(data, options = {}) {
         // uuid names a book document), else the result's own label.
         if (!text(flagged.name)) {
           const byIdentifier = !uuid && text(flagged.identifier)
-            ? findCatalogEntry(flagged.kind === 'spell' || flagged.docKind === 'spell' ? 'spells' : 'skills', text(flagged.identifier))
+            ? findCatalogEntry(catalogOfOption(flagged), text(flagged.identifier))
             : null;
           flagged.name = text(resolved?.name) || text(byIdentifier?.name) || label || text(flagged.identifier);
         }
@@ -216,3 +225,5 @@ export async function loadFloorTableSnapshots(keys, options = {}) {
 export const LOOT_SPELL_TABLE = 'floor.loot.spells';
 /** The Scroll of Upgrade table (Table 26) the loot step rolls for a Gold or Platinum weapon pick. */
 export const LOOT_UPGRADE_TABLE = 'floor.loot.upgrade';
+/** The table the Silver loot Friendship Bracelet's race is rolled on (a 1d10); a world copy or a pack may supply it. */
+export const LOOT_BRACELET_RACE_TABLE = 'floor.loot.braceletRace';

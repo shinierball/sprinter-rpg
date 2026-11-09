@@ -15,10 +15,12 @@ import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { getCOGStatModifier } from '../../documents/actor/actor-constants.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { DEFAULT_SIZE, sanitizeSizeId } from '../sizes.mjs';
-import { parseFloorNumber, floorLabel } from '../../utils/floor-number.mjs';
+import { parseFloorNumber, floorLabel } from '../../utils/floor/floor-number.mjs';
 import { runForStartFloor, startLevelForFloor } from '../floor-arrivals.mjs';
-import { coreSkillPayloads } from '../../utils/core-skills.mjs';
+import { coreSkillPayloads } from '../../utils/skill/core-skills.mjs';
 import { registerPayloadDelegate } from './item-payload.mjs';
+import { compileFloorStart } from '../floor-simulator/pipeline.mjs';
+import { contentIds } from '../../utils/stable-id.mjs';
 
 /**
  * The starter hotlist for a crawler's items, read from their `starterRole` flags only. A starter spell
@@ -69,10 +71,24 @@ function starterSkillCopy(identifier) {
  * Pure compiler function that builds a complete Crawler Actor document payload
  * from a specification object.
  *
+ * A spec with `floorStart` (D7) and a start floor of 3 to 5 compiles the whole run: the Floor 1 crawler is built first,
+ * then every arrival and Race and Class are folded in (`compileFloorStart`), and the payload carries no `floorRun` flag.
+ * Every item then has an `_id`. A Floor 3+ `spec.floor` without `floorStart` compiles the same run with every answer open
+ * (the lowest legal values and a warning each, or the dice `options.rng` rolls).
+ *
  * @param {object} spec
+ * @param {object} [options]
+ * @param {(item?: object) => string} [options.ids] item id source, called with the item it names; when given, every item without an `_id` gets one (the creator passes
+ *   `contentIds`, so a draft keeps its ids across edits). A floor start without one uses deterministic ids seeded by the crawler's name.
+ * @param {{die: (sides: number) => number}} [options.rng] rolls the dice a floor start leaves open (default: lowest face)
+ * @param {Function} [options.snapshot] snapshot source for the floor start (default `snapshotFromPayload`)
+ * @param {Function} [options.lookup] sync grant document lookup for Race and Class
+ * @param {object} [options.tables] floor table snapshots by key
+ * @param {{ race?: Function, class?: Function }} [options.definitions] finds a Race or Class definition by reference before the catalog and world items are asked (a build with no registry, such as build:packs)
+ * @param {object} [options.out] receives `{ results, raceClass, ruleBreaks, choicesNeeded, warnings }` of a floor start
  * @returns {object} Actor creation payload for a Crawler
  */
-export function buildCrawlerPayload(spec = {}) {
+export function buildCrawlerPayload(spec = {}, options = {}) {
   const speciesData = resolveCreatorSpecies(spec.species);
   const species = speciesData.id;
   const tierSelections = spec.tierSelections || {
@@ -82,10 +98,11 @@ export function buildCrawlerPayload(spec = {}) {
     tier4: { background: '', skills: [] }
   };
   const resolved = contentRegistry.resolveSkillRanks(species, tierSelections);
-  const floorNumber = parseFloorNumber(spec.floor) || 1;
-  // A Floor 3+ start builds the Floor 1 crawler; the Floor Simulator then carries it up the floors
-  const floorRun = runForStartFloor(floorNumber).length ? { startFloor: floorNumber, done: [] } : null;
-  const floor = floorRun ? floorLabel(1) : floorLabel(floorNumber);
+  const floorNumber = parseFloorNumber(spec.floorStart?.startFloor ?? spec.floor) || 1;
+  const hasRun = runForStartFloor(floorNumber).length > 0;
+  // A Floor 3+ start builds the Floor 1 crawler first; the run is folded in below
+  const floorStart = spec.floorStart && typeof spec.floorStart === 'object' ? spec.floorStart : {};
+  const floor = hasRun ? floorLabel(1) : floorLabel(floorNumber);
 
   const stats = {
     str: spec.stats?.str ?? 5,
@@ -110,6 +127,10 @@ export function buildCrawlerPayload(spec = {}) {
 
   // Each item the hotlist maps is stamped with its starter role, so the slots never look items up by name.
   const role = (starterRole) => ({ [SYSTEM_ID]: { starterRole } });
+  // Adds the role to the item's own system-scope flags, so the flags a catalog copy carries (its source stamp, 7.7c) stay.
+  const withRole = (item, starterRole) => {
+    item.flags = { ...(item.flags || {}), [SYSTEM_ID]: { ...(item.flags?.[SYSTEM_ID] || {}), starterRole } };
+  };
 
   const itemPayloads = [];
 
@@ -129,7 +150,7 @@ export function buildCrawlerPayload(spec = {}) {
         itemObj.system.stat = s.stat.toLowerCase();
       }
       // The primary attack skill the Floor Simulator boosts first
-      if (s.primary) itemObj.flags = { ...(itemObj.flags || {}), ...role('primarySkill') };
+      if (s.primary) withRole(itemObj, 'primarySkill');
       delete itemObj._id;
       delete itemObj.id;
       itemPayloads.push(itemObj);
@@ -181,11 +202,11 @@ export function buildCrawlerPayload(spec = {}) {
     const existing = itemPayloads.find(p => p.type === 'skill' && ((identifier && p.system?.identifier === identifier) || String(p.name ?? '').toLowerCase().trim() === lowered));
     if (existing) {
       existing.system = { ...(existing.system ?? {}), rank: Math.max(Number(existing.system?.rank) || 0, STARTER_RANK) };
-      if (primary) existing.flags = { ...(existing.flags || {}), ...role('primarySkill') };
+      if (primary) withRole(existing, 'primarySkill');
       continue;
     }
     payload.system = { ...(payload.system ?? {}), rank: STARTER_RANK };
-    if (primary) payload.flags = { ...(payload.flags || {}), ...role('primarySkill') };
+    if (primary) withRole(payload, 'primarySkill');
     itemPayloads.push(payload);
   }
 
@@ -196,7 +217,7 @@ export function buildCrawlerPayload(spec = {}) {
     healItem.system = healItem.system || {};
     healItem.system.rank = 1;
     healItem.system.rankCeiling = 1;
-    healItem.flags = { ...(healItem.flags || {}), ...role('heal') };
+    withRole(healItem, 'heal');
     delete healItem._id;
     delete healItem.id;
     itemPayloads.push(healItem);
@@ -236,13 +257,6 @@ export function buildCrawlerPayload(spec = {}) {
         quantity: 1,
         equipped: true,
         drBonus: 0,
-        abilityModifiers: {
-          str: { value: 0, type: 'flat' },
-          int: { value: 0, type: 'flat' },
-          con: { value: 0, type: 'flat' },
-          dex: { value: 0, type: 'flat' },
-          cha: { value: 0, type: 'flat' }
-        },
         damageParts: [{ dice: wDef.damageDice, stat: wDef.damageStat, type: wDef.damageType, value: 0 }],
         ...(wDef.skillIdentifier ? { associatedSkills: [wDef.skillIdentifier] } : {}),
         notes: wDef.effects || `Equipped weapon: ${wDef.name}`
@@ -267,14 +281,14 @@ export function buildCrawlerPayload(spec = {}) {
     const spellItem = starterSpellPayload(spellEntry, loadoutWarnings);
     if (spellItem) {
       spellItem.system = { ...(spellItem.system ?? {}), rank: STARTER_RANK };
-      spellItem.flags = { ...(spellItem.flags || {}), ...role('starterSpell') };
+      withRole(spellItem, 'starterSpell');
       itemPayloads.push(spellItem);
     }
 
     // The potions restore mana by their outcome row (never by name or notes)
     const potion = starterPotionPayload(STARTER_POTION_COUNT, loadoutWarnings);
     if (potion) {
-      potion.flags = { ...(potion.flags || {}), ...role('manaPotion') };
+      withRole(potion, 'manaPotion');
       itemPayloads.push(potion);
     }
   }
@@ -289,12 +303,6 @@ export function buildCrawlerPayload(spec = {}) {
   // Core skills (`kind.core`: Intervene, Call a Play) every crawler has, skipping any already in the payload (E7.9 D9)
   itemPayloads.push(...coreSkillPayloads(itemPayloads));
 
-  // Starting items of the chosen race and class, resolved once by `buildStartingItemsSpec`. The record
-  // marks each source as given, so applying it to this actor later never duplicates them.
-  const startingItems = Array.isArray(spec.startingItems?.items) ? spec.startingItems.items : [];
-  const startingRecord = spec.startingItems?.record && typeof spec.startingItems.record === 'object' ? spec.startingItems.record : null;
-  itemPayloads.push(...startingItems);
-
   const conMod = getCOGStatModifier(stats.con);
   const maxHp = 10 * conMod;
   const maxMana = Number(stats.int) || 0;
@@ -307,7 +315,7 @@ export function buildCrawlerPayload(spec = {}) {
   const isRuleBreak = Boolean(spec.ruleBreak || spec.isRuleBreak);
   const name = (spec.name || '').trim() || 'New Crawler';
 
-  return {
+  const payload = {
     name,
     type: 'crawler',
     ownership,
@@ -343,7 +351,7 @@ export function buildCrawlerPayload(spec = {}) {
       tags: Array.isArray(speciesData.tags) ? [...speciesData.tags] : [],
       details: {
         floor,
-        level: floorRun ? 1 : startLevelForFloor(floorNumber),
+        level: hasRun ? 1 : startLevelForFloor(floorNumber),
         crawlerNumber: spec.crawlerNumber || '',
         pastTrauma: spec.pastTrauma || '',
         looseEnds: spec.looseEnds || '',
@@ -352,19 +360,24 @@ export function buildCrawlerPayload(spec = {}) {
     },
     flags: {
       ...(spec.flags || {}),
-      ...(isRuleBreak || startingRecord || floorRun
-        ? {
-            [SYSTEM_ID]: {
-              ...(spec.flags?.[SYSTEM_ID] || {}),
-              ...(isRuleBreak ? { ruleBreak: true } : {}),
-              ...(startingRecord ? { startingItemsGranted: startingRecord } : {}),
-              ...(floorRun ? { floorRun } : {})
-            }
-          }
+      ...(isRuleBreak
+        ? { [SYSTEM_ID]: { ...(spec.flags?.[SYSTEM_ID] || {}), ruleBreak: true } }
         : {})
     },
     items: itemPayloads
   };
+
+  const ids = options.ids ?? (hasRun ? contentIds(name) : null);
+  if (ids) for (const item of payload.items) if (!item._id) item._id = ids(item);
+  if (!hasRun) return payload;
+
+  const compiled = compileFloorStart(payload, { ...floorStart, startFloor: floorNumber }, {
+    ids, rng: options.rng, snapshot: options.snapshot, lookup: options.lookup, tables: options.tables, definitions: options.definitions
+  });
+  if (options.out && typeof options.out === 'object') {
+    Object.assign(options.out, { results: compiled.results, raceClass: compiled.raceClass, ruleBreaks: compiled.ruleBreaks, choicesNeeded: compiled.choicesNeeded, warnings: compiled.warnings });
+  }
+  return compiled.payload;
 }
 
 

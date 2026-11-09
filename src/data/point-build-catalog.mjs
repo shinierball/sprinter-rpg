@@ -7,9 +7,9 @@
  * Shared between the Class Creator (30 BP base) and Race Creator (25 BP base).
  *
  * `rows`: the structured rows a benefit or detriment adds to the race or class it is built into, as
- * `{ path, row }` templates (see src/utils/perk-rows.mjs). A `$name` in a template is filled from the selection's
+ * `{ path, row }` templates (see src/utils/character/perk-rows.mjs). A `$name` in a template is filled from the selection's
  * `params` (`rowParams` lists them, `rowDefaults` gives defaults); a row whose parameter is not chosen yet is left
- * out. `buildPointBuyItemPayload` applies them with the same function the perk conversion uses, so a builder-made
+ * out. `buildPointBuyPayload` applies them with the same function the perk conversion uses, so a builder-made
  * race and a converted rulebook race carry identical rows. Entries without `rows` are narration the GM adjudicates.
  */
 
@@ -938,5 +938,3 @@ export const COG_POINT_BUILD_DETRIMENTS = [
   }
 ];
 
-export const COG_CANONICAL_PRESETS = [
-];

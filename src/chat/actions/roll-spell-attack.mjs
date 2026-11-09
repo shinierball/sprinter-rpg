@@ -2,8 +2,8 @@
  * "Roll Spell Attack" / "Declare Attack" button on an attack spell's cast card (3.47).
  */
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { skipOptions } from '../../utils/attack-options.mjs';
-import { attackText } from '../../utils/attack-text.mjs';
+import { skipOptions } from '../../utils/attack/attack-options.mjs';
+import { attackText } from '../../utils/attack/attack-text.mjs';
 import { resolveCardSpell } from './cast-spell.mjs';
 
 /**

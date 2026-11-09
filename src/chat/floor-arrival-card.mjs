@@ -42,16 +42,42 @@ function entryLine(entry) {
 }
 
 /**
+ * The write-ins (custom Skills and Spells) an arrival created, as `{ name, uuid }`, in log order. A log entry names its
+ * item by `createIndex` into the result's `itemCreates`; the item's id is stamped when the arrival is merged into the
+ * crawler, and its uuid is the new actor's. Empty without an actor uuid.
+ * @param {object} result FloorArrivalResult
+ * @param {string} actorUuid the created actor's uuid
+ */
+export function writeInLinks(result, actorUuid) {
+  const base = String(actorUuid ?? '').trim();
+  if (!base) return [];
+  const out = [];
+  for (const entry of result?.log ?? []) {
+    if (!entry?.custom) continue;
+    const id = result.itemCreates?.[entry.createIndex]?._id;
+    if (id) out.push({ name: String(entry.label ?? ''), uuid: `${base}.Item.${id}` });
+  }
+  return out;
+}
+
+/** A content link Foundry's enrichment turns into a clickable document link; the label cannot hold link syntax. */
+const contentLink = ({ name, uuid }) => `@UUID[${uuid}]{${esc(name.replace(/[[\]{}]/g, '') || 'Write-in')}}`;
+
+/**
  * @param {object} result FloorArrivalResult (uses `card`, `skipped`, `warnings`, `ruleBreaks`)
+ * @param {{ actorUuid?: string }} [options] `actorUuid` links each write-in to the item the build created
  * @returns {string} HTML
  */
-export function buildFloorArrivalCard(result) {
+export function buildFloorArrivalCard(result, { actorUuid = '' } = {}) {
   const card = result?.card ?? {};
   const sections = (card.sections ?? []).map(section => `
       <div style="margin-top: 8px;">
         <div class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">${esc(section.id)}</div>
         <ul style="margin: 2px 0 0 16px; padding: 0; font-size: 12px;">${(section.entries ?? []).map(entryLine).join('')}</ul>
       </div>`).join('');
+  const links = writeInLinks(result, actorUuid);
+  const writeIns = links.length
+    ? `<div style="margin-top: 8px; font-size: 12px;"><span class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Write-ins</span> ${links.map(contentLink).join(', ')}</div>` : '';
   const skipped = (result?.skipped ?? []).length
     ? `<div class="cog-text-secondary" style="margin-top: 8px; font-size: 11px;">Not simulated: ${(result.skipped).map(s => esc(s.step)).join(', ')}</div>` : '';
   const warnings = (result?.warnings ?? []).length
@@ -61,7 +87,7 @@ export function buildFloorArrivalCard(result) {
     <div class="cog-chat-card cog-floor-arrival-card cog-bg-window cog-text-strong" style="border: 2px solid var(--cog-accent); border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif;">
       <div class="cog-bg-accent-fill cog-text-on-fill" style="text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 5px 8px; border-radius: 3px; font-weight: bold; text-align: center;">
         ${esc(card.title)}${card.actorName ? `: ${esc(card.actorName)}` : ''}${anyBreak ? ` ${RULE_BREAK_BADGE_ON_FILL}` : ''}
-      </div>${sections}${skipped}${warnings}
+      </div>${sections}${writeIns}${skipped}${warnings}
     </div>
   `;
 }

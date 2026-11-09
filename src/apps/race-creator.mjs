@@ -9,7 +9,7 @@
  * - Shows exact points used for each attribute, perk, skill, size, and detriment.
  * - Soft Limit Policy: does NOT enforce a hard limit; informs the user without blocking
  *   item creation, JSON export, or actor application.
- * - Heritage Selection: Earth (Earth Origin Box + Earth Classes) vs Alien (Off-World Fanbase Popularity).
+ * - Heritage Selection: Earth (Silver Earth Box + Earth Classes) vs Alien (Off-World Fanbase Popularity).
  * - Creature Size pills come from the size registry (`raceSizeOptions`): a blank "No change" pill at 0 BP, then each
  *   registered size with its `raceCost` (Tiny, Small, Large and Huge cost 3 BP; Petite and Medium cost 0).
  * - Interactive accordion drawers for Minor (1 BP), Moderate (2 BP), Major (3 BP),
@@ -19,14 +19,13 @@
  */
 
 import { COGBasePointBuilderApp } from './base-point-builder.mjs';
-import { buildRacePayload } from '../data/builders/point-buy-payload.mjs';
-
-export { buildRacePayload };
 import { pointBuildBenefits, pointBuildDetriments, pointBuildPresets } from '../content/point-build.mjs';
 import { COG_BENEFIT_TIERS, COG_DETRIMENT_TIERS } from '../data/rules/point-build-tiers.mjs';
-import { catalogEntries, findCatalogEntry } from '../content/catalog-lookup.mjs';
+import { findCatalogEntry } from '../content/catalog-lookup.mjs';
+import { offeredEntries } from '../utils/content-source.mjs';
 import { DEFAULT_SIZE, raceSizeOptions, sanitizeSizeId } from '../data/sizes.mjs';
 import { getHeritage, heritagePills, sanitizeHeritageId } from '../data/rules/heritages.mjs';
+import { isFormRace } from '../utils/character/transform-rules.mjs';
 import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 
@@ -39,8 +38,9 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
     id: 'cog-race-creator-{id}',
     classes: ['cog-race-creator-app'],
     window: { title: 'Sprinter RPG — Race Creator Studio', icon: 'fa-solid fa-dna', resizable: true },
-    // Heritage and size are pills on the base `setProp` action (`data-prop`), so this app adds no actions
-    position: { width: 960, height: 840 }
+    // Heritage and size are pills on the base `setProp` action (`data-prop`); the form checkbox has its own change action
+    position: { width: 960, height: 840 },
+    actions: { setFormRace: COGRaceCreatorApp.#onSetFormRace }
   };
 
   static PARTS = {
@@ -75,6 +75,7 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
       this.spec.name = canonicalRace.name;
       this.spec.description = canonicalRace.system?.description ? canonicalRace.system.description.replace(/<[^>]+>/g, '').trim() : '';
       this.spec.prerequisites = canonicalRace.system?.prerequisites || '';
+      if (isFormRace(canonicalRace)) this.spec.form = true;
       this.spec.heritage = sanitizeHeritageId(canonicalRace.system?.heritage);
       
       // Blank stays blank: a race that leaves size alone (D10)
@@ -92,6 +93,18 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
         this.addSpell({ name: sp.name, rank: sp.rank });
       }
     }
+  }
+
+  /** The "Transformation form" checkbox (7.1g): the race is only a form an affliction names, so pickers leave it out. */
+  static async #onSetFormRace(event, target) {
+    this.spec.form = target.checked === true;
+    await this._refreshBuild();
+  }
+
+  /** @override A cleared build is an ordinary race again. */
+  resetBuild() {
+    super.resetBuild();
+    this.spec.form = false;
   }
 
   async _prepareContext(options) {
@@ -177,7 +190,7 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
       : [];
 
     // Presets: registered races, plus registered point-build presets
-    const presets = [...pointBuildPresets('race').map(p => ({ id: p.id, name: p.name })), ...catalogEntries('races').map(r => ({
+    const presets = [...pointBuildPresets('race').map(p => ({ id: p.id, name: p.name })), ...offeredEntries('races').map(r => ({
       id: r._id,
       name: `${r.name} (${heritageName(r.system.heritage)})`
     }))];
@@ -188,6 +201,7 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
       description: this.spec.description,
       prerequisites: this.spec.prerequisites,
       heritage: this.spec.heritage,
+      isFormRace: this.spec.form === true,
       heritagePills: heritagePills(this.spec.heritage),
       size: this.spec.size,
       sizeName: this.getSizeName(),

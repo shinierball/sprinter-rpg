@@ -7,6 +7,8 @@
     <div class="cog-text-accent" style="font-family: 'Oswald', sans-serif; font-size: 12px; text-transform: uppercase; margin-top: 4px;">
       Type: {{upper item.type}}
       {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
+      {{> "systems/sprinter-rpg/templates/items/parts/provenance-badges.hbs" provenance=provenance}}
+      {{#if canRestorePoop}}<button type="button" class="cog-btn cog-dark cog-bg-header-fill cog-text-on-fill" data-action="restorePoop" title="{{localize "COG.CelestialAiPoop.RestoreHint"}}"><i class="fa-solid fa-rotate-left"></i> {{localize "COG.CelestialAiPoop.Restore"}}</button>{{/if}}
     </div>
   </div>
 </header>

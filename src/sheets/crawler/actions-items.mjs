@@ -4,30 +4,23 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { rowItem, controlValue } from './dom.mjs';
-import { getRankCap } from '../../utils/rank-cap.mjs';
+import { getRankCap } from '../../utils/skill/rank-cap.mjs';
+import { slotReferencesTo } from '../../utils/ui/slot-references.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { coreSkillPayloads } from '../../utils/core-skills.mjs';
+import { coreSkillPayloads } from '../../utils/skill/core-skills.mjs';
+import { pullOutCommonItem } from '../../documents/actor/misc-junk.mjs';
+import { setItemEquipped, startRepair } from '../../documents/item/enchantments.mjs';
+import { setDebuffPaused } from '../../documents/actor/debuff-switch.mjs';
+import { confirmTransformDelete } from '../../documents/actor/transformations.mjs';
+import { refuseGmOnlyItem } from '../../documents/actor/gm-only-items.mjs';
 
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-
-/** Slot references (hotlist, external buffs) that point at `item` by id. */
-function slotReferencesTo(actor, item) {
-  const matches = (val) => Boolean(val) && val === item.id;
-  const updates = {};
-  for (const [slot, val] of Object.entries(actor.system?.hotlist || {})) {
-    if (matches(val)) updates[`system.hotlist.${slot}`] = '';
-  }
-  for (const [slot, val] of Object.entries(actor.system?.attributes?.externalBuffs || {})) {
-    if (matches(val)) updates[`system.attributes.externalBuffs.${slot}`] = '';
-  }
-  return updates;
-}
 
 export const itemActions = {
   async createItem(event, target) {
     if (!this.isEditable) return;
     const type = target.dataset.type || 'skill';
-    const [created] = await this.actor.createEmbeddedDocuments('Item', [{ name: `New ${capitalize(type)}`, type }]);
+    const [created] = await this.actor.createEmbeddedDocuments('Item', [{ name: `New ${capitalize(type)}`, type }], { cogHomebrew: true });
     created?.sheet?.render({ force: true });
     return created;
   },
@@ -45,17 +38,41 @@ export const itemActions = {
   },
 
   editItem(event, target) {
-    rowItem(this, target)?.sheet?.render({ force: true });
+    const item = rowItem(this, target);
+    if (refuseGmOnlyItem(item)) return;
+    item?.sheet?.render({ force: true });
   },
 
   /** Delete the row's item and clear any hotlist or buff slot that referenced it. */
   async deleteItem(event, target) {
     if (!this.isEditable) return;
     const item = rowItem(this, target);
-    if (!item) return;
+    if (!item || refuseGmOnlyItem(item)) return;
+    // A part of a changed transformation reverts the whole thing: a closed cure window asks a Rule Break first (D9)
+    if (!(await confirmTransformDelete(this.actor, item))) return;
     const updates = slotReferencesTo(this.actor, item);
     if (Object.keys(updates).length) await this.actor.update(updates);
     await item.delete();
+  },
+
+  /** The conditions row's pause switch (7.1b): owner or GM; a paused debuff does nothing. */
+  async toggleDebuffPaused(event, target) {
+    const item = rowItem(this, target);
+    if (item) await setDebuffPaused(item);
+  },
+
+  /** The Used group's "Pull out a common item": spend 1 Misc. Junk for a plain named loot item (3.15 S3). */
+  async pullOutCommonItem(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    if (!this.isEditable) return;
+    await pullOutCommonItem(this.actor);
+  },
+
+  /** 7.3d: open every unopened loot box this crawler holds (safe-room check, relay and show live in `openLootBoxes`). */
+  async openLootBoxes() {
+    if (!this.isEditable) return;
+    await this.actor.openLootBoxes?.();
   },
 
   /** Use a consumable or activate gear. */
@@ -72,7 +89,7 @@ export const itemActions = {
     if (!this.isEditable) return;
     const item = rowItem(this, target);
     const field = target.dataset.field;
-    if (!item || !field) return;
+    if (!item || !field || refuseGmOnlyItem(item)) return;
     const value = controlValue(target);
     let ruleBreak = false;
     // Typing a skill Rank above its cap is a Rule Break: confirm, then record it on the skill.
@@ -94,7 +111,15 @@ export const itemActions = {
   async toggleGearEquipped(event, target) {
     if (!this.isEditable) return;
     const item = rowItem(this, target);
-    if (item) await item.update({ 'system.equipped': !item.system.equipped });
+    if (item) await setItemEquipped(item, !item.system.equipped);
+  },
+
+  /** Repair a broken or destroyed gear row: pick the skill, roll the check, spend the hours (3.15 G1). */
+  async repairItem(event, target) {
+    event?.preventDefault?.();
+    if (!this.isEditable) return;
+    const item = rowItem(this, target);
+    if (item) await startRepair(this.actor, item);
   },
 
   /** change: inventory sort mode, kept on this sheet and stored as an actor flag. */

@@ -5,11 +5,15 @@
 import { isWeaponGear } from '../../documents/actor.mjs';
 import { COG_ACHIEVEMENT_TIERS } from '../../data/rules/achievement-tiers.mjs';
 import { prepareAttackDisplay } from './attack-display.mjs';
-import { classifyBuff } from '../../utils/buff-classify.mjs';
-import { isBuffSuppressed } from '../../utils/dispel.mjs';
+import { classifyBuff } from '../../utils/effects/buff-classify.mjs';
+import { isBuffSuppressed } from '../../utils/effects/dispel.mjs';
+import { canSwitchDebuff } from '../../documents/actor/debuff-switch.mjs';
+import { afflictionView } from './context-transformation.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
-import { isActivatableGear } from '../../utils/hotlist.mjs';
+import { isActivatableGear } from '../../utils/ui/hotlist.mjs';
 import { describeItem, summaryText, summaryTooltip, emptyLine, linesInGroups } from '../../utils/item-describer/index.mjs';
+import { sourceBadge } from '../../utils/content-source.mjs';
+import { decorateOfflineGear, offlineReadouts } from './gear-offline-display.mjs';
 
 /** Sort by the manual `sort` key, then by name. */
 export const sortItems = (a, b) => (a.sort || 0) - (b.sort || 0) || a.name.localeCompare(b.name);
@@ -71,7 +75,7 @@ export function prepareItemLists(context, actor) {
         break;
       }
       case 'skill': context.skills.push(item); break;
-      case 'spell': context.spells.push(item); break;
+      case 'spell': item.sourceBadge = sourceBadge(item); context.spells.push(item); break;
       case 'race': context.races.push(item); break;
       case 'class': context.classes.push(item); break;
       case 'deity': context.deities.push(item); break;
@@ -81,12 +85,17 @@ export function prepareItemLists(context, actor) {
         item.kindLabel = classifyBuff(item.system || {}).join(' / ');
         // A dispel in force suspends the Buff: the tab keeps the row but marks it [SUSPENDED] (3.40 j)
         item.isSuspended = isBuffSuppressed(actor, item);
+        item.sourceBadge = sourceBadge(item);
         context.buffs.push(item);
         break;
       }
       case 'debuff': {
         const sev = (item.system?.severity || 'Minor').toLowerCase();
         item.severityClass = sev === 'major' ? 'is-major' : 'is-minor';
+        item.canSwitch = canSwitchDebuff(actor.items?.get(item.id) ?? item);
+        // An affliction's stage and controls (7.1g); null for an ordinary debuff
+        item.transform = afflictionView(actor, item);
+        item.sourceBadge = sourceBadge(item);
         context.debuffs.push(item);
         break;
       }
@@ -104,8 +113,13 @@ export function prepareItemLists(context, actor) {
     }
   }
 
+  decorateOfflineGear(actor, context.gear);
+  context.offlineReadouts = offlineReadouts(actor.system);
+
   context.buffs.sort(sortItems);
   context.debuffs.sort(sortItems);
+  // The banner lists the afflictions that have changed their victim
+  context.transformations = context.debuffs.filter((d) => d.transform?.isChanged).map((d) => d.transform);
 }
 
 /** The summary groups the inventory's gear badge text reads (stats, skills and spells, defenses). */

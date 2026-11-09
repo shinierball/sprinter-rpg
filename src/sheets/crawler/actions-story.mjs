@@ -8,9 +8,11 @@ import { rollBackgroundTable } from '../../data/rules/background-table-rules.mjs
 import { contentRegistry } from '../../content/registry.mjs';
 import { buildPayload } from '../../data/builders/item-payload.mjs';
 import { COGStashApp } from '../../apps/stash-app.mjs';
+import { COGCraftingApp } from '../../apps/crafting-app.mjs';
 import { changeVehicleCrew, vehicleOf } from '../../documents/actor/vehicle-crew.mjs';
 import { resolveSpace } from '../../documents/actor/personal-space-links.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { driveActions } from '../vehicle/drive-actions.mjs';
 
 const worldActor = (id) => (id ? globalThis.game?.actors?.get?.(id) ?? null : null);
 
@@ -44,6 +46,9 @@ async function createCompanion(sheet, data) {
 }
 
 export const storyActions = {
+  // The Aboard strip's driver controls (speed, Drive, Brake, Ram): the same handlers as the vehicle sheet's drive panel.
+  ...driveActions((sheet, target) => vehicleFor(target?.dataset) ?? vehicleOf(sheet.actor)),
+
   /** Roll a background table (`data-table`: pastTrauma, looseEnds, regrets) and append the result. */
   async rollStoryTable(event, target) {
     if (!this.isEditable) return;
@@ -135,6 +140,12 @@ export const storyActions = {
   openStash() {
     if (!this.isEditable) return;
     new COGStashApp({ crawler: this.actor }).render({ force: true });
+  },
+
+  /** Open the crafting app for this crawler (inventory toolbar). */
+  openCraftingApp() {
+    if (!this.isEditable) return;
+    COGCraftingApp.open({ crawler: this.actor });
   },
 
   async restInSpace(event, target) {

@@ -11,13 +11,13 @@
  */
 import { ruleBreakBadgeHtml } from '../utils/rule-break-visibility.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
-import { CHECK_RECORD_FLAG } from '../utils/check-assists.mjs';
-import { isMobSide } from '../utils/combat-sides.mjs';
+import { CHECK_RECORD_FLAG } from '../utils/roll/check-assists.mjs';
+import { isMobSide } from '../utils/combat/combat-sides.mjs';
 
 export const AI_FAVOR_TALLY_FLAG = 'aiFavorTally';
-export const AI_FAVOR_TALLY_ACTION = 'crawlerApplyAiFavorTally';
+const AI_FAVOR_TALLY_ACTION = 'crawlerApplyAiFavorTally';
 /** The book's minimum number of rounds. */
-export const BOOK_MIN_ROUNDS = 3;
+const BOOK_MIN_ROUNDS = 3;
 
 const TEMPLATES = {
   'COG.AiFavorTally.Title': 'AI Favor Tally',
@@ -59,7 +59,7 @@ const asList = (collection) => {
 const flagsOf = (message) => message?.flags?.[SYSTEM_ID] ?? {};
 
 /** The chat messages in the world, as an array. */
-export function worldMessages() {
+function worldMessages() {
   return asList(globalThis.game?.messages);
 }
 

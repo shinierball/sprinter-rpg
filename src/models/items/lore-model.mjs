@@ -1,19 +1,7 @@
-import {
-  BaseItemDataModel,
-  damageModifiersField,
-  defenseModifiersField,
-  rollModifiersField,
-  manaCostModifiersField,
-  recoveryModifiersField,
-  statSubstitutionsField,
-  popularityTriggersField,
-  grantsField,
-  grantedEffectsField,
-  statCapsField,
-  sensesField,
-  startingItemsField,
-  tagQueryField
-} from './base-item-model.mjs';
+import { BaseItemDataModel } from './base-item-model.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, statCapsField, sensesField } from '../fields/modifier-fields.mjs';
+import { grantsField, grantedEffectsField, startingItemsField } from '../fields/grant-fields.mjs';
+import { tagQueryField } from '../fields/tag-fields.mjs';
 
 /**
  * Data Model for Sprinter RPG Race Items.

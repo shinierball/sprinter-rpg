@@ -8,7 +8,8 @@
  */
 
 import { COGToolApp } from './tool-app.mjs';
-import { COGSessionEngine, COG_ROLL_OUTCOMES, COG_OUTCOME_CONFIG } from './session-manager.mjs';
+import { COGSessionEngine } from '../documents/session/session-engine.mjs';
+import { COG_ROLL_OUTCOMES, COG_OUTCOME_CONFIG } from '../documents/session/roll-outcomes.mjs';
 import { COGRapidTextParser } from './rapid-text-parser.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { lootBoxTierOptions } from '../data/loot-box-tiers.mjs';

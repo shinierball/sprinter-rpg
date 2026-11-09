@@ -76,8 +76,7 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
       persistentBuffs: ['studio-audience-approval'],
       persistentDebuffs: ['stage-fright'],
       healing: { hasHealing: true, barsPerRound: 1 },
-      abilityModifiers: { cha: { value: 1, type: 'flat' } },
-      grants: [{ kind: 'skill', identifier: 'hostile-interview', value: 1, label: 'Backstage access' }],
+      grants: [{ kind: 'stat', stat: 'cha', value: 1 }, { kind: 'skill', identifier: 'hostile-interview', value: 1, label: 'Backstage access' }],
       defenseModifiers: [{ kind: 'tempHp', label: 'Lanyard padding', value: 5 }],
       checkModifiers: [{ kind: 'bonus', label: 'Knows the exits', value: 1, condition: q(['check.evade', 'situation.in_combat']) }]
     }

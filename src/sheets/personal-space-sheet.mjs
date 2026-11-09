@@ -1,11 +1,13 @@
 import { getSpaceTypeInfo } from '../data/rules/personal-space-rules.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { COGStashApp } from '../apps/stash-app.mjs';
+import { COGCraftingApp } from '../apps/crafting-app.mjs';
 import { COGGrindApp } from '../apps/grind-app.mjs';
 import { resolveTrainingRoomConfig, trainingAllowsSkill, trainingWindowLabel } from '../documents/actor/actor-spaces.mjs';
 import { currentTimeContext } from '../documents/actor/dungeon-time.mjs';
 import { SYSTEM_PATH, SYSTEM_ID } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
+import { unopenedBoxUnits } from '../documents/actor/loot-box-open.mjs';
 import { removeCrawlerFromSpace, spaceMembers, userOwnsActor, worldCrawlers } from '../documents/actor/personal-space-links.mjs';
 import { COGActorSheetV2 } from './base/actor-sheet-v2.mjs';
 import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
@@ -31,6 +33,7 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     position: { width: 820, height: 840 },
     actions: {
       openStash: COGPersonalSpaceSheet.#onOpenStash,
+      openCraftingApp: COGPersonalSpaceSheet.#onOpenCrafting,
       withdrawItem: COGPersonalSpaceSheet.#onWithdrawItem,
       restInSpace: COGPersonalSpaceSheet.#onRestInSpace,
       launchGrind: COGPersonalSpaceSheet.#onLaunchGrind,
@@ -47,7 +50,8 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
       openGuild: COGPersonalSpaceSheet.#onOpenGuild,
       addOccupant: COGPersonalSpaceSheet.#onAddOccupant,
       removeOccupant: COGPersonalSpaceSheet.#onRemoveOccupant,
-      leaveSpace: COGPersonalSpaceSheet.#onLeaveSpace
+      leaveSpace: COGPersonalSpaceSheet.#onLeaveSpace,
+      openLootBoxes: COGPersonalSpaceSheet.#onOpenLootBoxes
     }
   };
 
@@ -114,6 +118,11 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
       ...members.occupants.map(c => row(c.uuid, c)),
       ...members.missing.map(uuid => row(uuid, null))
     ];
+    // 7.3d: one "Open loot boxes (N)" button per linked crawler this user owns that holds unopened boxes.
+    context.lootBoxOpeners = members.occupants
+      .filter(c => userOwnsActor(c, user))
+      .map(c => ({ uuid: c.uuid, name: c.name, units: unopenedBoxUnits(c) }))
+      .filter(c => c.units > 0);
     context.availableOccupants = this.isEditable ? this.#availableOccupants(members) : [];
     const flags = actor.flags?.[SYSTEM_ID] ?? {};
     context.ruleBreak = flags.ruleBreak === true;
@@ -155,7 +164,13 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     // Upgrades: installed vs available
     const installedList = allItems
       .filter(i => i.type === 'space_upgrade' && i.system?.purchased !== false)
-      .map(i => ({ id: i.system.identifier || i.id, name: i.name, description: i.system.description ?? '', tier: i.system.tier }));
+      .map(i => ({
+        id: i.system.identifier || i.id,
+        name: i.name,
+        description: i.system.description ?? '',
+        tier: i.system.tier,
+        isCraftingTable: i.system?.craftingTable?.enabled === true
+      }));
     const installedIds = new Set(installedList.map(u => u.id));
 
     context.installedUpgrades = installedList;
@@ -298,7 +313,7 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     await super._onRender(context, options);
     // Anyone with a crawler in the space leaves, uses the stash and rests from here, even with view-only access.
     const mine = spaceMembers(this.actor).occupants.some(c => userOwnsActor(c, globalThis.game?.user));
-    const always = mine ? ['leaveSpace', 'openStash', 'withdrawItem', 'restInSpace'] : ['leaveSpace'];
+    const always = mine ? ['leaveSpace', 'openStash', 'openCraftingApp', 'withdrawItem', 'restInSpace', 'openLootBoxes'] : ['leaveSpace'];
     for (const action of always) {
       for (const button of this.element?.querySelectorAll?.(`[data-action="${action}"]`) ?? []) button.disabled = false;
     }
@@ -315,6 +330,12 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
   static async #onOpenStash(event, target) {
     const crawler = this.#owner();
     if (crawler) new COGStashApp({ crawler, space: this.actor }).render({ force: true });
+  }
+
+  /** Craft in this space: the crafting app for the crawler this user owns here, with this space chosen. */
+  static async #onOpenCrafting() {
+    const crawler = this.#owner();
+    if (crawler) COGCraftingApp.open({ crawler, space: this.actor });
   }
 
   static async #onWithdrawItem(event, target) {
@@ -440,6 +461,15 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     const uuid = target.dataset.crawlerUuid;
     if (!uuid) return;
     await removeCrawlerFromSpace(this.actor, uuid);
+    return this.render();
+  }
+
+  /** Open a linked crawler's loot boxes from this space (the space is not a safe room; the crawler's scene decides). */
+  static async #onOpenLootBoxes(event, target) {
+    const crawler = resolveActorByUuid(target.dataset.crawlerUuid);
+    if (crawler?.type !== 'crawler' || !userOwnsActor(crawler, globalThis.game?.user)) return;
+    if (!spaceMembers(this.actor).occupants.some(c => c.uuid === crawler.uuid)) return;
+    await crawler.openLootBoxes?.();
     return this.render();
   }
 

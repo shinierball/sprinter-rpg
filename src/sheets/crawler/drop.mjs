@@ -8,10 +8,11 @@
  * Actors: on a crawler, pets and vehicles bond and a personal space links.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { isSameOwnedEntry } from '../../documents/actor.mjs';
+import { isSameOwnedEntry } from '../../utils/character/owned-entry.mjs';
+import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
 
 /** Drop target attribute values (`data-drop-target`) and the actor field each slot writes. */
-export const SLOT_DROP_TARGETS = Object.freeze({
+const SLOT_DROP_TARGETS = Object.freeze({
   hotlist: { path: 'system.hotlist', accepts: () => true, sameKind: (a, b) => a.type === b.type },
   externalBuff: { path: 'system.attributes.externalBuffs', accepts: (item) => item.type === 'buff', sameKind: (a, b) => b.type === 'buff' }
 });
@@ -79,7 +80,8 @@ export async function dropItem(sheet, event, item) {
   const actor = sheet.actor;
   const interactive = typeof document !== 'undefined';
 
-  if (item.type === 'race') {
+  // A form race an affliction embeds is the affliction's, not a race to apply (D4)
+  if (item.type === 'race' && !transformationOfItem(item)) {
     await actor.applyRace(item, { interactive });
     return item;
   }

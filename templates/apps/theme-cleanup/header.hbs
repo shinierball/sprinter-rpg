@@ -1,0 +1,7 @@
+<header class="cog-theme-cleanup-header">
+  <p class="cog-theme-cleanup-headline">{{headline}}</p>
+  <nav class="cog-theme-cleanup-tabs">
+    <button type="button" class="cog-btn {{#if isCleanupTab}}cog-btn-primary{{else}}cog-btn-secondary{{/if}}" data-action="setCleanupTab" data-tab="cleanup">{{localize "COG.ThemeCleanup.TabCleanup"}}</button>
+    <button type="button" class="cog-btn {{#if isRestoreTab}}cog-btn-primary{{else}}cog-btn-secondary{{/if}}" data-action="setCleanupTab" data-tab="restore">{{localize "COG.ThemeCleanup.TabRestore"}} ({{restorableCount}})</button>
+  </nav>
+</header>

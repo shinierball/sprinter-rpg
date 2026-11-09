@@ -11,7 +11,7 @@ import { SYSTEM_ID } from '../../constants.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 
 /** True when the card records its targets and every one of them is in its applied list. */
-export function spellConditionsAllApplied(message) {
+function spellConditionsAllApplied(message) {
   const f = message?.flags?.[SYSTEM_ID];
   if (!f || typeof f !== 'object') return false;
   const targets = Array.isArray(f.conditionTargetUuids) ? f.conditionTargetUuids : [];

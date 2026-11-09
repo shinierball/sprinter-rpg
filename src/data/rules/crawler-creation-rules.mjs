@@ -5,7 +5,7 @@
  */
 
 import { contentRegistry } from '../../content/registry.mjs';
-import { floorLabel } from '../../utils/floor-number.mjs';
+import { floorLabel } from '../../utils/floor/floor-number.mjs';
 import { startLevelForFloor } from '../floor-arrivals.mjs';
 import { DEFAULT_SIZE, sizesInOrder } from '../sizes.mjs';
 import { loadoutOptions } from '../../content/creation-loadouts.mjs';

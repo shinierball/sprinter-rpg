@@ -5,7 +5,7 @@
  * Enforce linked actor data for player characters (crawlers) and companion pets,
  * and handle unlinked independent tokens with sequential naming for mobs.
  */
-export function onPreCreateToken(tokenDoc, createData, options, userId) {
+function onPreCreateToken(tokenDoc, createData, options, userId) {
   const actor = tokenDoc.actor || game.actors?.get(tokenDoc.actorId);
   if (actor && ['crawler', 'pet', 'mercenary', 'mount_vehicle'].includes(actor.type)) {
     tokenDoc.updateSource({ actorLink: true });

@@ -4,7 +4,7 @@
 import { COGActor } from '../documents/actor.mjs';
 import { COGItem } from '../documents/item.mjs';
 import { COGCombat } from '../documents/combat.mjs';
-import { SECONDS_PER_ROUND } from '../utils/timing.mjs';
+import { SECONDS_PER_ROUND } from '../utils/time/timing.mjs';
 import { loadQuenchSuite } from '../utils/quench-loader.mjs';
 import { COGCrawlerSheet } from '../sheets/crawler-sheet.mjs';
 import { COGMobSheet } from '../sheets/mob-sheet.mjs';
@@ -46,16 +46,21 @@ import { registerChatMessageHook } from '../chat/register-chat-hook.mjs';
 import { registerSettings } from '../settings/register-settings.mjs';
 import { registerHandlebarsHelpers, preloadTemplates } from './handlebars.mjs';
 import { buildGameNamespace, buildConfigCOG, installEnvironmentAccessors, syncRegistryConfig } from './system-api.mjs';
+import { registerKeybindings } from './keybindings.mjs';
+import { onGetSceneControlButtons } from './scene-controls.mjs';
 import { buildDevApi } from './dev-tools.mjs';
-import { onUpdateActorRefreshRelated, onItemChangeRefreshRelated } from '../utils/related-sheets.mjs';
+import { onUpdateActorRefreshRelated, onItemChangeRefreshRelated } from '../utils/ui/related-sheets.mjs';
 import { onItemChangeSyncVision, onItemUpdateSyncVision } from '../documents/actor/actor-vision.mjs';
 import { onLightItemCreate, onLightItemUpdate, onLightItemDelete } from '../documents/actor/light-source.mjs';
+import { ZeroZoneBehaviorType } from '../models/region-behaviors/zero-zone-behavior.mjs';
+import { registerZeroZoneRegionHooks } from './zero-zone-regions.mjs';
 import { onGearAuraItemCreate, onGearAuraItemUpdate, onGearAuraItemDelete } from '../documents/actor/gear-aura.mjs';
 import { onRaceClassItemDelete } from '../data/race-class-applier.mjs';
+import { onTransformItemDelete } from '../documents/actor/transformations.mjs';
 import { onRenderTokenHUD } from './light-hud.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { seedLevelAwardPresets } from '../data/level-awards.mjs';
-import { setIdentityNameResolver } from '../data/tags.mjs';
+import { setIdentityNameResolver } from '../data/tag-definitions.mjs';
 import { resolveIdentityName } from '../content/identity-names.mjs';
 
 export async function onInit() {
@@ -85,11 +90,12 @@ export async function onInit() {
   // Register sheet & UI classes
   registerSheets();
 
-  // Call content registration hook (before settings: the activeTheme choices come from registered themes)
+  // Call content registration hook (before settings: the primaryTheme choices come from registered themes)
   globalThis.Hooks?.callAll?.('sprinter-rpg.registerContent', contentRegistry);
 
   // Register System Settings
   registerSettings();
+  registerKeybindings();
   syncRegistryConfig();
   setIdentityNameResolver(resolveIdentityName);
 
@@ -115,14 +121,23 @@ export async function onInit() {
   Hooks.on('updateItem', onLightItemUpdate);
   Hooks.on('deleteItem', onLightItemDelete);
   Hooks.on('renderTokenHUD', onRenderTokenHUD);
+  Hooks.on('getSceneControlButtons', onGetSceneControlButtons);
 
   // Gear auras (3.17-6): equipped or switched-on gear emits an aura from its wielder
   Hooks.on('createItem', onGearAuraItemCreate);
   Hooks.on('updateItem', onGearAuraItemUpdate);
   Hooks.on('deleteItem', onGearAuraItemDelete);
 
+  // Zero zone Region behavior (7.17d): behavior and region changes re-prepare the affected actors
+  registerZeroZoneRegionHooks();
+
   // Deleting a race or class item reverts it (3.78 j)
-  Hooks.on('deleteItem', onRaceClassItemDelete);
+  // One dispatcher, so the order of registration is not a contract: a transformation's items revert the transformation,
+  // anything else is a race or class delete
+  Hooks.on('deleteItem', async (item, options, userId) => {
+    if ((await onTransformItemDelete(item, options, userId)) !== null) return;
+    await onRaceClassItemDelete(item, options, userId);
+  });
 
   // Global Developer Helper
   window.cog = buildDevApi();
@@ -131,7 +146,20 @@ export async function onInit() {
   registerChatMessageHook();
 }
 
+/** Index fields the compendium badge (7.7e) reads from, appended to whatever Foundry or a module already lists. */
+export const SOURCE_INDEX_FIELD = `flags.${SYSTEM_ID}.source`;
+
+export function registerCompendiumIndexFields() {
+  for (const cls of ['Item', 'Actor', 'RollTable']) {
+    const config = CONFIG[cls];
+    if (!config) continue;
+    const fields = Array.isArray(config.compendiumIndexFields) ? config.compendiumIndexFields : [];
+    if (!fields.includes(SOURCE_INDEX_FIELD)) config.compendiumIndexFields = [...fields, SOURCE_INDEX_FIELD];
+  }
+}
+
 export function registerDocumentClasses() {
+  registerCompendiumIndexFields();
   // Register document classes
   CONFIG.Actor.documentClass = COGActor;
   CONFIG.Item.documentClass = COGItem;
@@ -164,7 +192,7 @@ export function registerDocumentClasses() {
     },
     mount_vehicle: {
       bar: ['attributes.hp'],
-      value: ['attributes.dr.total', 'attributes.move']
+      value: ['attributes.dr.total', 'attributes.move', 'drive.currentMove']
     },
     personal_space: {
       bar: ['defenseRating', 'stashCapacity'],
@@ -179,6 +207,10 @@ export function registerDocumentClasses() {
       value: ['attributes.effectiveEvadeDC', 'attributes.effectiveSurpriseDC', 'details.level', 'attributes.xp']
     }
   };
+
+  // Region behavior subtypes (7.17d)
+  CONFIG.RegionBehavior ??= {};
+  CONFIG.RegionBehavior.dataModels = { ...(CONFIG.RegionBehavior.dataModels ?? {}), zeroZone: ZeroZoneBehaviorType };
 
   // Register Item Type Data Models (Foundry System Data Models)
   CONFIG.Item.dataModels = {
@@ -206,7 +238,7 @@ export function registerDocumentClasses() {
   CONFIG.time.roundTime = SECONDS_PER_ROUND;
 }
 
-export function registerSheets() {
+function registerSheets() {
   // Register sheet & UI classes
   CONFIG.ui.combat = COGCombatTracker;
 

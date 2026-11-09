@@ -156,7 +156,7 @@ const loneLabel =para => !!para && para.pieces.length === 1 && /:\s*$/.test(para
  * because recall cannot change; 5.3a turns it on under the stricter reflow test (the next line opens in lowercase),
  * which the compiler report measures. `options.joinPageBreaks` overrides.
  */
-export const DEFAULT_JOIN_PAGE_BREAKS = true;
+const DEFAULT_JOIN_PAGE_BREAKS = true;
 
 const TERMINAL = /[.!?:;)\]"'\u201D\u2019]\s*$/;
 const LOWER_START = /^\p{Ll}/u;
@@ -246,7 +246,7 @@ const hasOwn = (o, k) => Object.hasOwn(o, k);
 const BULLET = /^[\u2022\u25CF\u25AA\u25E6\u2023\u2043\u25A0\u25B8\u25BA]\s*/u;
 
 /** A line as a selector sees it: unwrapped, without a leading bullet mark. */
-export const cleanLine = text => unwrap(text).replace(BULLET, '').trim();
+const cleanLine = text => unwrap(text).replace(BULLET, '').trim();
 
 /** The display text of a heading run: no leading bullet, no trailing colon; an alias hit keeps the text before `(`. */
 function headingName(run, hit, vocab) {

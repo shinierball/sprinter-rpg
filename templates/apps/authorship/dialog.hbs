@@ -1,0 +1,16 @@
+<div class="cog-authorship-dialog">
+  <p class="cog-authorship-hint">{{hint}}</p>
+  <div class="cog-authorship-choices" role="radiogroup">
+    {{#each choices}}
+    <label class="cog-authorship-choice{{#if checked}} is-checked{{/if}}">
+      <input type="radio" data-action="pickAuthorship" data-authorship="{{id}}" {{#if checked}}checked{{/if}}>
+      <i class="{{icon}}"></i>
+      <span>{{label}}</span>
+    </label>
+    {{/each}}
+  </div>
+  <footer class="cog-authorship-footer">
+    <button type="button" data-action="applyAuthorship"><i class="fa-solid fa-check"></i> {{localize "COG.Authorship.Apply"}}</button>
+    <button type="button" data-action="cancelAuthorship">{{localize "COG.Authorship.Cancel"}}</button>
+  </footer>
+</div>

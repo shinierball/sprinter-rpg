@@ -5,7 +5,8 @@
  * has a table here:
  *   floor.index.tutorial (d6) → the six Tutorial Floor tables (d4 each, TUTORIAL_EXPERIENCE_TABLES order);
  *   floor.experience.floor3 and floor.experience.floor4 (d4, the arrival[4]/[5] experience slots);
- *   floor.loot.starting, floor.loot.upgrade and floor.loot.spells (d4 each).
+ *   floor.loot.starting, floor.loot.upgrade and floor.loot.spells (d4 each);
+ *   floor.loot.braceletRace (d10, the race of the Silver Friendship Bracelet).
  * The book's tables (names, narratives, Skills per row, upgrade names) ship in the content module, which registers a
  * higher-priority `floorTables` pack with the same keys.
  */

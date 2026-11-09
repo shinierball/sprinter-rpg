@@ -11,6 +11,9 @@
  */
 import { SYSTEM_ID } from '../constants.mjs';
 import { escapeHtml, plainText, titleCaseHeading } from './text.mjs';
+import { textCheck } from './hash.mjs';
+import { sizesInOrder } from '../data/sizes.mjs';
+import { sanitizeVehicleKind } from '../data/rules/vehicle-rules.mjs';
 
 const ACTOR_PACKS = new Set(['mobs', 'pets', 'mercenaries']);
 const DOC_KIND = Object.freeze({
@@ -18,7 +21,7 @@ const DOC_KIND = Object.freeze({
   mobs: 'mob', pets: 'pet', mercenaries: 'mercenary', achievements: 'achievement'
 });
 /** Joins the description columns of one row (all but the first text column of a multi-column table). */
-export const CELL_JOIN = ' — ';
+const CELL_JOIN = ' — ';
 const PLACEHOLDER = (range) => `Result ${range[0] === range[1] ? range[0] : `${range[0]}-${range[1]}`}`;
 
 /** The default document UUID: the system's own pack of that name. 5.5 passes the world pack ids instead. */
@@ -79,14 +82,31 @@ export function rollTableSpec(recipe, hydrated, options = {}) {
     if (rest.length > 1 || (listCols.size && rest.length === 1)) spec.name = rest[0];
     const narrative = (rest.length > 1 ? rest.slice(1) : (listCols.size ? [] : rest)).join(CELL_JOIN);
     if (narrative) spec.narrative = narrative;
-    else if (!docLinks.length && !(row.links ?? []).some(l => l.kind === 'table')) spec.narrative = PLACEHOLDER(row.range);
+    else if (!docLinks.length && !row.nextTable && !(row.links ?? []).some(l => l.kind === 'table')) spec.narrative = PLACEHOLDER(row.range);
     if (docLinks.length) {
       // A list link (no `whole`) is one skill option of a matrix row: its catalog ref, stat and position in the book's list.
       spec.options = docLinks.map(l => (l.whole || !Number.isInteger(l.item)
         ? { kind: 'named', docKind: DOC_KIND[l.pack] ?? 'item', uuid: uuidFor(l), name: cells[l.col] || `Document ${l.id}` }
         : { kind: 'named', docKind: DOC_KIND[l.pack] ?? 'item', uuid: uuidFor(l), ref: l.id, stat: l.stat, order: l.item, name: options.nameFor?.(l) ?? '' }));
     }
-    const target = (row.links ?? []).find(l => l.kind === 'table');
+    // A hinted row (the Scroll of Upgrade table) is an Amazing Success trigger: the hint names a debuff and tags, the words are the book's cells.
+    if (row.asTrigger) {
+      const { debuff, tags } = row.asTrigger;
+      spec.options = [...(spec.options ?? []), {
+        kind: 'asTrigger',
+        trigger: debuff ? { type: 'debuff', identifier: debuff } : { type: 'narrative', text: spec.narrative ?? '' },
+        nameAddition: spec.name ?? '', extraTags: [...(tags ?? [])], label: spec.name ?? ''
+      }];
+    }
+    // Magic item generator hints (7.3k): ids only; the row's narrative stays the book's cell.
+    if (row.base) spec.options = [...(spec.options ?? []), { kind: 'magicBase', base: row.base, label: spec.name ?? '' }];
+    if (row.magic) {
+      spec.options = [...(spec.options ?? []), {
+        kind: 'magic', property: row.magic.property, ...(row.magic.damageTypes?.length ? { damageTypes: [...row.magic.damageTypes] } : {}), label: ''
+      }];
+    }
+    // A `nextTable` hint links like a `kind: 'table'` Link; a real link in the row wins.
+    const target = (row.links ?? []).find(l => l.kind === 'table') ?? (row.nextTable ? { kind: 'table', id: row.nextTable } : null);
     const ref = target ? tableUuidOf(target, options) : null;
     if (ref) spec.tableRef = ref;
     if (row.flags && Object.keys(row.flags).length) spec.flags = { ...row.flags };
@@ -102,6 +122,60 @@ export function rollTableSpec(recipe, hydrated, options = {}) {
     rows,
     flags: { [SYSTEM_ID]: { sourcery: provenance(recipe, hydrated, options) } }
   };
+}
+
+/** The numbers of a count cell: `1-2` is its upper bound, `4 (+50 in cargo)` is 4 and a cargo of 50. Digits, dashes and `+` only; the words are not read. */
+function countOf(cell) {
+  const text = String(cell ?? '');
+  const range = /(\d+)\s*[-‐-―]\s*(\d+)/.exec(text);
+  const first = /\d+/.exec(text);
+  const cargo = /\+\s*(\d+)/.exec(text);
+  return { n: range ? Math.max(Number(range[1]), Number(range[2])) : first ? Number(first[0]) : null, cargo: cargo ? Number(cargo[1]) : 0 };
+}
+
+/** The first whole number in a cell, or null. */
+const numberOf = (cell) => { const m = /\d+/.exec(String(cell ?? '')); return m ? Number(m[0]) : null; };
+
+/** The frozen 16-character `_id` of the vehicle a table row builds. */
+export const vehicleDocId = (recipeId, row) => `dccveh${textCheck(`${recipeId}:${row}`).slice(0, 10)}`;
+
+/**
+ * `mount_vehicle` specs for `buildPayload('mount_vehicle', spec)`: one per row of a table carrying a `vehicles` hint (Table 7).
+ * The hint says which printed column is the name, Move, size, DR and occupancy; the values are the cells read from the book. A row
+ * with no name or no Move reads as unhydrated and builds nothing. A size the registry has no number for keeps the model's default.
+ * @param {object} recipe a `readTableRecipe` result
+ * @param {object} hydrated a `hydrateTable` result
+ * @param {BuildOptions} [options]
+ * @returns {object[]} specs, none when the recipe has no `vehicles` hint
+ */
+export function vehicleSpecs(recipe, hydrated, options = {}) {
+  const columns = recipe.vehicles?.columns;
+  if (!columns) return [];
+  const at = (field) => columns.indexOf(field);
+  const specs = [];
+  hydrated.rows.forEach((row, i) => {
+    const cell = (field) => (at(field) >= 0 ? row.cells[at(field)] : undefined);
+    const name = plainText(cell('name') ?? '').trim();
+    const move = numberOf(cell('move'));
+    if (!name || move === null) return;
+    const attributes = { move };
+    const size = numberOf(cell('size'));
+    const sizeId = size === null ? undefined : sizesInOrder().find(s => s.size === size)?.id;
+    if (sizeId) attributes.size = sizeId;
+    const dr = numberOf(cell('dr'));
+    if (dr !== null) attributes.dr = { armor: dr };
+    const seats = countOf(cell('occupancy'));
+    if (seats.n !== null) attributes.occupancy = seats.n;
+    if (seats.cargo) attributes.cargoOccupancy = seats.cargo;
+    specs.push({
+      type: 'mount_vehicle',
+      _id: vehicleDocId(recipe.id, i),
+      name,
+      system: { kind: sanitizeVehicleKind(row.vehicleKind), attributes },
+      flags: { [SYSTEM_ID]: { sourcery: provenance(recipe, hydrated, options) } }
+    });
+  });
+  return specs;
 }
 
 /** One cell as HTML: escaped text, or an `@UUID` link when a document link covers the whole cell. */
@@ -122,7 +196,7 @@ export function tablePageHtml(recipe, hydrated, options = {}) {
   for (const row of hydrated.rows) {
     const cells = row.cells.map((c, i) => `<td>${cellHtml(c, row.links ?? [], i, uuidFor)}</td>`);
     if (recipe.rollColumn) cells.unshift(`<td>${escapeHtml(rangeText(row.range))}</td>`);
-    lines.push(`<tr>${cells.join('')}</tr>`);
+    lines.push(row.vehicleResult ? `<tr data-vehicle-result="${escapeHtml(row.vehicleResult)}">${cells.join('')}</tr>` : `<tr>${cells.join('')}</tr>`);
   }
   lines.push('</tbody></table>', '</div>');
   return lines.join('');
@@ -154,12 +228,13 @@ export function journalSpec(book, items, options = {}) {
  * @param {{ book: string, journalId: string, tables: object[] }} file a `readTablesFile` result
  * @param {Map<string, { hydrated: object }>} hydratedById from `hydrateBookTables`
  * @param {BuildOptions & { label?: string, rollTableUuid?: (recipe: object) => string }} [options]
- * @returns {{ rollTables: object[], journal: object }}
+ * @returns {{ rollTables: object[], vehicles: object[], journal: object }} `vehicles`: the `mount_vehicle` specs of the tables carrying a `vehicles` hint
  */
 export function bookTableSpecs(file, hydratedById, options = {}) {
   const recipes = new Map(file.tables.map(t => [t.id, t]));
   const items = file.tables.filter(t => hydratedById.has(t.id)).map(recipe => ({ recipe, hydrated: hydratedById.get(recipe.id).hydrated }));
   const opts = { ...options, book: file.book, recipes, rollTableUuid: options.rollTableUuid ?? (r => `RollTable.${r._id}`) };
   const rollTables = items.map(({ recipe, hydrated }) => rollTableSpec(recipe, hydrated, opts)).filter(Boolean);
-  return { rollTables, journal: journalSpec({ book: file.book, journalId: file.journalId, label: options.label }, items, opts) };
+  const vehicles = items.flatMap(({ recipe, hydrated }) => vehicleSpecs(recipe, hydrated, opts));
+  return { rollTables, vehicles, journal: journalSpec({ book: file.book, journalId: file.journalId, label: options.label }, items, opts) };
 }

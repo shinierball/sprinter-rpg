@@ -35,7 +35,7 @@ Tags follow the lowercase dot-separated notation: `<namespace>.<identifier>`.
 
 ---
 
-## 3. TagQuery Engine (`src/utils/tag-query.mjs`)
+## 3. TagQuery Engine (`src/utils/tag/tag-query.mjs`)
 
 The `matchesTagQuery(targetTags, query)` function supports three query forms:
 
@@ -64,7 +64,7 @@ The `expandTagReferences(tags)` helper maps referencing tags to their counterpar
 
 ---
 
-## 4. Tag Index Service (`src/apps/tag-index.mjs`)
+## 4. Tag Index Service (`src/utils/tag/tag-index.mjs`)
 
 The system initializes a global `TagIndex` singleton accessible via `game.cog.tags` and `game.sprinterRpg.tags`.
 
@@ -131,7 +131,7 @@ When opening `COGTagManager` from an item sheet (via the Tag Manager button in t
 
 ## 9. Mechanic Tags (aura, interrupt, free interrupt, trigger)
 
-Aura, interrupt, free-interrupt and reactive-trigger behavior is decided only from an item's tag set (`item.allTags`). Item names, `notes`, `description` and the free-text `checkType` are never read for these decisions. The predicates live in `src/utils/tag-mechanics.mjs` (`isAuraItem`, `isInterruptItem`, `isFreeInterruptItem`, `getInterruptTrigger`, `getFreeInterruptRankBreak`).
+Aura, interrupt, free-interrupt and reactive-trigger behavior is decided only from an item's tag set (`item.allTags`). Item names, `notes`, `description` and the free-text `checkType` are never read for these decisions. The predicates live in `src/utils/tag/tag-mechanics.mjs` (`isAuraItem`, `isInterruptItem`, `isFreeInterruptItem`, `getInterruptTrigger`, `getFreeInterruptRankBreak`).
 
 | Mechanic | Tag(s) | Meaning |
 |---|---|---|
@@ -144,7 +144,7 @@ Aura, interrupt, free-interrupt and reactive-trigger behavior is decided only fr
 
 ### Interrupt offers on attack cards
 
-Offers are chosen only by trigger tags (`INTERRUPT_TRIGGERS` in `src/utils/tag-mechanics.mjs`, `collectInterruptOffers` in `src/utils/interrupts.mjs`):
+Offers are chosen only by trigger tags (`INTERRUPT_TRIGGERS` in `src/utils/tag/tag-mechanics.mjs`, `collectInterruptOffers` in `src/utils/combat/interrupts.mjs`):
 
 | Trigger | Offered to | Needs the attack to hit |
 |---|---|---|
@@ -156,7 +156,7 @@ Offers are chosen only by trigger tags (`INTERRUPT_TRIGGERS` in `src/utils/tag-m
 | `trigger.on_ally_check` | offered on an ally's d20 check card, not on attack cards | n/a |
 | `trigger.before_ally_action` | offered on the assisting actor's own turn, not on attack cards | n/a |
 
-Ally means a living combatant on the same side as the attacked actor, other than the attacker. Side comes from the single rule `isMobSide` in `src/utils/combat-sides.mjs` (crawlers and pets are crawler side; mounts, vehicles and mercenaries follow token disposition and default to the crawler side; npcs are mob side). Each button is shown only to the interrupter's owners and the GM.
+Ally means a living combatant on the same side as the attacked actor, other than the attacker. Side comes from the single rule `isMobSide` in `src/utils/combat/combat-sides.mjs` (crawlers and pets are crawler side; mounts, vehicles and mercenaries follow token disposition and default to the crawler side; npcs are mob side). Each button is shown only to the interrupter's owners and the GM.
 
 Ally offers are range limited by `system.interrupt.range` (feet, 0 = no limit) measured from `system.interrupt.rangeFrom` (`defender` or `attacker`). Skills and spells add `rankBreaks.rankN.interrupt.rangeBonus` once the rank break is reached. If a token cannot be found the distance is unknown and the interrupt is offered.
 
@@ -170,7 +170,7 @@ Because the derivation depends on rank, a compendium entry (rank 0/1) does not s
 
 ### Skill and spell roles
 
-Skills and spells have no type or category fields. `checkType` derives `action.attack` (`attack`) and `action.passive` (`passive`); `system.healing.hasHealing` derives `action.heal`; a spell's interrupt role is its stored `action.interrupt` / `action.free_interrupt` tag. `spellRole(spell)` in `src/utils/tag-mechanics.mjs` reads those tags (first match: attack, heal, free interrupt, interrupt, passive, else none).
+Skills and spells have no type or category fields. `checkType` derives `action.attack` (`attack`) and `action.passive` (`passive`); `system.healing.hasHealing` derives `action.heal`; a spell's interrupt role is its stored `action.interrupt` / `action.free_interrupt` tag. `spellRole(spell)` in `src/utils/tag/tag-mechanics.mjs` reads those tags (first match: attack, heal, free interrupt, interrupt, passive, else none).
 
 A skill's weapon group and discipline are stored tags: `weaponGroup.*` (`edge`, `bashing`, `reach`, `ranged`, `hand_to_hand`, ...) and `skillGroup.*` (`combat`, `strike`, `defensive`, `utility`, `social`, `movement`, ...). `skillGroupLabel(skill)` picks the label to show: the first `weaponGroup.*` tag, else the first `skillGroup.*` tag other than combat and utility, else combat, else utility. A spell's descriptive school is a `school.*` tag, read only by the catalog, the cast card line and the Spell Manager search.
 

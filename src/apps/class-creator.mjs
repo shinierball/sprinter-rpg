@@ -9,21 +9,21 @@
  * - Shows exact points used for each attribute, perk, skill, and detriment.
  * - Does NOT enforce a hard limit: soft badges allow homebrew and GM-discretion builds.
  * - Interactive accordion drawers for Minor, Moderate, Major, Extreme, and Epic benefits.
- * - Supports Earth Class perks (Earth Origin Box & hobby skill potion).
+ * - Supports Earth Class perks (Silver Earth Box & hobby skill potion).
  * - Instant export to Foundry Item directory, JSON export, and 1-click crawler sheet application.
  */
 
 import { COGBasePointBuilderApp } from './base-point-builder.mjs';
-import { buildClassPayload } from '../data/builders/point-buy-payload.mjs';
-
-export { buildClassPayload };
 import { pointBuildBenefits, pointBuildDetriments, pointBuildPresets } from '../content/point-build.mjs';
 import { COG_BENEFIT_TIERS, COG_DETRIMENT_TIERS } from '../data/rules/point-build-tiers.mjs';
-import { catalogEntries, findCatalogEntry } from '../content/catalog-lookup.mjs';
+import { findCatalogEntry } from '../content/catalog-lookup.mjs';
+import { offeredEntries } from '../utils/content-source.mjs';
 import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { archetypeTagId } from '../data/builders/point-buy-payload.mjs';
-import { COG_TAGS, ARCHETYPE_TO_TAG, getCustomTags } from '../data/tags.mjs';
+import { COG_TAGS } from '../data/tag-catalog.mjs';
+import { ARCHETYPE_TO_TAG } from '../data/tag-vocabulary.mjs';
+import { getCustomTags } from '../data/tag-definitions.mjs';
 
 /** The registered `archetype.*` tags (core and module-registered) the creator offers. */
 function registeredArchetypes() {
@@ -208,7 +208,7 @@ export class COGClassCreatorApp extends COGBasePointBuilderApp {
         name: `${p.name} (Preset Class)`,
         isCanonical: true
       })),
-      ...catalogEntries('classes').slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => ({
+      ...offeredEntries('classes').slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => ({
         id: c._id,
         name: `${c.name} (${archetypeLabels(c.system.archetypes) || 'Class'})`,
         isCanonical: true
@@ -228,7 +228,7 @@ export class COGClassCreatorApp extends COGBasePointBuilderApp {
       skills: this.spec.skills,
       spells: this.spec.spells,
       benefits: this.spec.isEarthClass
-        ? [{ id: 'earth_class_knowledge', name: 'Earth Origin Box (Hobby Skill Potion)', points: 0, cost: 0, category: 'Earth', tier: 'minor' }, ...this.spec.selectedBenefits]
+        ? [{ id: 'earth_class_knowledge', name: 'Silver Earth Box (Hobby Skill Potion)', points: 0, cost: 0, category: 'Earth', tier: 'minor' }, ...this.spec.selectedBenefits]
         : this.spec.selectedBenefits,
       detriments: this.spec.selectedDetriments,
       selectedBenefits: this.spec.selectedBenefits,

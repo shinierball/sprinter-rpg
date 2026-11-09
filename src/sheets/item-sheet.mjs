@@ -23,14 +23,25 @@ import { t as summaryLabel } from '../utils/item-describer/shared.mjs';
 import { processItemFormData } from './item/form-data.mjs';
 import { TAG_ACTIONS, addTagFromInput } from './item/actions-tags.mjs';
 import { LIST_ACTIONS } from './item/actions-lists.mjs';
+import { TRANSFORM_ACTIONS } from './item/actions-transform.mjs';
+import { buildTransformContext } from './item/context-transform.mjs';
 import { ROW_ACTIONS } from './item/actions-rows.mjs';
 import { OUTCOME_ACTIONS } from './item/actions-outcomes.mjs';
+import { SPECIALTY_ACTIONS } from './item/actions-specialty.mjs';
 import { AS_TRIGGER_ACTIONS } from './item/actions-as-triggers.mjs';
+import { BLUEPRINT_ACTIONS, canManageTable } from './item/actions-blueprint.mjs';
+import { isBlueprintLootType, isLootBoxType } from '../models/items/loot-model.mjs';
+import { buildAchievementTierContext, buildLootBoxContext, buildRewardBoxesContext } from './item/context-loot-box.mjs';
+import { LOOT_BOX_ACTIONS, dropBoxItem, dropBoxTable, dropRewardBoxTemplate } from './item/actions-loot-box.mjs';
+import { COPY_BLUEPRINT_ACTIONS } from './item/actions-copy-blueprint.mjs';
+import { POOP_ACTIONS } from './item/actions-poop.mjs';
 import { addGearGrant, GEAR_GRANT_KINDS } from './item/gear-grants.mjs';
 import { itemIdentifier } from '../utils/identifier.mjs';
 import { modifierArrayKeys } from './item/util.mjs';
+import { startRepair } from '../documents/item/enchantments.mjs';
 
-const part = (name) => ({ template: `${SYSTEM_PATH}/templates/items/parts/${name}.hbs` });
+// `scrollable` keeps each part's scroll position across a re-render (a pick or any field change), so the form does not jump to the top.
+const part = (name) => ({ template: `${SYSTEM_PATH}/templates/items/parts/${name}.hbs`, scrollable: [''] });
 
 /**
  * The read-only "what this does" block: the lines, the heading ("What this
@@ -55,6 +66,13 @@ const USE_ACTIONS = {
   },
   async broadcastAchievement() {
     await this.item.announce();
+  },
+  /** Repair a broken or destroyed gear item held by an actor (3.15 G1). */
+  async repairItem(event) {
+    event?.preventDefault?.();
+    if (!this.isEditable) return;
+    const actor = this.item.parent;
+    if (actor?.documentName === 'Actor') await startRepair(actor, this.item);
   }
 };
 
@@ -62,7 +80,7 @@ export class COGItemSheet extends COGItemSheetV2 {
   static DEFAULT_OPTIONS = {
     classes: ['item'],
     position: { width: 580, height: 640 },
-    actions: { ...TAG_ACTIONS, ...LIST_ACTIONS, ...ROW_ACTIONS, ...OUTCOME_ACTIONS, ...AS_TRIGGER_ACTIONS, ...TIMING_ACTIONS, ...USE_ACTIONS }
+    actions: { ...TAG_ACTIONS, ...LIST_ACTIONS, ...ROW_ACTIONS, ...OUTCOME_ACTIONS, ...AS_TRIGGER_ACTIONS, ...SPECIALTY_ACTIONS, ...COPY_BLUEPRINT_ACTIONS, ...POOP_ACTIONS, ...TIMING_ACTIONS, ...USE_ACTIONS, ...BLUEPRINT_ACTIONS, ...LOOT_BOX_ACTIONS, ...TRANSFORM_ACTIONS }
   };
 
   /** Body part for each item type (the `item.type` enum; deity and sponsor share the traits part). */
@@ -112,9 +130,11 @@ export class COGItemSheet extends COGItemSheetV2 {
     spell: buildSpellContext,
     attack: buildAttackContext,
     gear: buildGearContext,
-    loot: buildLootContext,
+    loot: (context, item) => { buildLootContext(context, item); buildLootBoxContext(context, item); },
+    achievement: (context, item) => { buildRewardBoxesContext(context, item); buildAchievementTierContext(context); },
     race: buildRaceContext,
     class: buildClassContext,
+    debuff: buildTransformContext,
     space_upgrade: buildSpaceUpgradeContext
   });
 
@@ -144,11 +164,33 @@ export class COGItemSheet extends COGItemSheetV2 {
       getCompendiumSkills(), getAvailableBuffs(), getAvailableDebuffs(), getAvailableSpells(), getAvailableRollTables()
     ]);
     buildCommonContext(context, item, { skills, buffs, debuffs, spells, tables });
+    // An `enchant_item` outcome may roll any table, so its picker also lists the table packs.
+    if ((Array.isArray(item.system?.outcomes) ? item.system.outcomes : []).some((o) => o?.type === 'enchant_item')) {
+      context.availableEnchantTables = await getAvailableRollTables({ packs: true });
+    }
+    // A loot box's table pickers list the world's tables and the table packs; only the GM sees the rows.
+    if (item.type === 'loot' && isLootBoxType(item.system?.lootType) && globalThis.game?.user?.isGM) {
+      context.availableBoxTables = await getAvailableRollTables({ packs: true });
+    }
     buildRowEditorContext(context, item, { preview: this._rowPreview });
     this.constructor.CONTEXT_BUILDERS[item.type]?.(context, item);
+    // Descriptions are rich text: the editor helper takes the enriched HTML.
+    if (typeof item.system?.description === 'string') {
+      const TE = foundry.applications.ux.TextEditor.implementation;
+      context.descriptionHtml = await TE.enrichHTML(item.system?.description ?? '', { relativeTo: item, secrets: item.isOwner });
+    }
     buildTimingContext(context, item);
     await buildSummaryContext(context, item);
     return context;
+  }
+
+  /** @override A space's occupant cannot edit its table, but can still buy a tier or apply a coupon with their own crawler. */
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+    if (this.isEditable || !canManageTable(this.item)) return;
+    for (const action of ['buyTableTier', 'applyTableCoupon']) {
+      for (const button of this.element?.querySelectorAll?.(`[data-action="${action}"]`) ?? []) button.disabled = false;
+    }
   }
 
   /** @override Pressing Enter in the new-tag input adds the tag. */
@@ -179,6 +221,9 @@ export class COGItemSheet extends COGItemSheetV2 {
    * row is +1, a new spell row grants the spell at Rank 1, and dropping one the gear already names adds +1 to it.
    */
   async _onDropItem(event, item) {
+    if (this.isEditable && this.item?.type === 'loot' && isLootBoxType(this.item.system?.lootType)) return dropBoxItem(this.item, item);
+    if (this.isEditable && this.item?.type === 'achievement') return dropRewardBoxTemplate(this.item, item);
+    if (this.isEditable && this.item?.type === 'loot' && isBlueprintLootType(this.item.system?.lootType)) return this.#dropBlueprintOutput(item);
     if (!this.isEditable || this.item?.type !== 'gear' || !GEAR_GRANT_KINDS.includes(item?.type)) return null;
     const identifier = itemIdentifier(item);
     if (!identifier) return null;
@@ -188,5 +233,22 @@ export class COGItemSheet extends COGItemSheetV2 {
     await this.item.update({ 'system.grants': rows });
     globalThis.ui?.notifications?.info(`Added "${label || identifier}" ${item.type} bonus to ${this.item.name}.`);
     return rows;
+  }
+
+  /** @override A RollTable dropped on a loot box becomes a `table` row (7.3d); everything else keeps the base routing. */
+  async _onDropDocument(event, doc) {
+    if (doc?.documentName === 'RollTable') {
+      if (this.isEditable && this.item?.type === 'loot' && isLootBoxType(this.item.system?.lootType)) return dropBoxTable(this.item, doc);
+      return null;
+    }
+    return super._onDropDocument(event, doc);
+  }
+
+  /** Dropping an item on a blueprint names it as the item the blueprint makes (item mode). */
+  async #dropBlueprintOutput(item) {
+    if (!item?.name) return null;
+    const output = { uuid: String(item.uuid ?? ''), identifier: itemIdentifier(item), name: String(item.name) };
+    await this.item.update({ 'system.blueprint.output': output, 'system.blueprint.mode': 'item' });
+    return output;
   }
 }

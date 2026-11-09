@@ -2,10 +2,10 @@
   "id": "sprinter-rpg",
   "title": "Sprinter RPG",
   "description": "A Foundry VTT system for crawler-style dungeon roleplaying games.",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "url": "https://github.com/shinierball/sprinter-rpg",
   "manifest": "https://github.com/shinierball/sprinter-rpg/releases/latest/download/system.json",
-  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v6.0.0/sprinter-rpg.zip",
+  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v7.0.0/sprinter-rpg.zip",
   "socket": true,
   "relationships": {
     "requires": [
@@ -140,6 +140,9 @@
         ]
       },
       "space_upgrade": {}
+    },
+    "RegionBehavior": {
+      "zeroZone": {}
     }
   },
   "authors": [
@@ -155,7 +158,19 @@
     "src/cog.mjs"
   ],
   "styles": [
-    "styles/cog.css"
+    "styles/tokens.css",
+    "styles/sheets.css",
+    "styles/apps-library.css",
+    "styles/chat.css",
+    "styles/combat.css",
+    "styles/apps-session.css",
+    "styles/huds.css",
+    "styles/apps-creators.css",
+    "styles/apps-journal.css",
+    "styles/apps-mob-creator.css",
+    "styles/utilities.css",
+    "styles/apps-floor-vehicle.css",
+    "styles/loot-box.css"
   ],
   "languages": [
     {
@@ -227,7 +242,7 @@
     },
     {
       "name": "pets",
-      "label": "Example Pets",
+      "label": "Pets",
       "path": "packs/pets",
       "type": "Actor",
       "system": "sprinter-rpg",
@@ -293,7 +308,7 @@
     },
     {
       "name": "examples-items",
-      "label": "Example Items",
+      "label": "Shiny Items",
       "path": "packs/examples-items",
       "type": "Item",
       "system": "sprinter-rpg",
@@ -304,7 +319,7 @@
     },
     {
       "name": "examples-actors",
-      "label": "Example Actors",
+      "label": "Shiny Actors",
       "path": "packs/examples-actors",
       "type": "Actor",
       "system": "sprinter-rpg",
@@ -315,7 +330,7 @@
     },
     {
       "name": "examples-tables",
-      "label": "Example Tables",
+      "label": "Shiny Tables",
       "path": "packs/examples-tables",
       "type": "RollTable",
       "system": "sprinter-rpg",
@@ -327,13 +342,29 @@
   ],
   "packFolders": [
     {
-      "name": "Example Content",
+      "name": "Shiny",
       "sorting": "a",
       "color": "#962d22",
       "packs": [
         "examples-items",
         "examples-actors",
         "examples-tables"
+      ]
+    },
+    {
+      "name": "Rulebook Content",
+      "sorting": "a",
+      "color": "#2c3e50",
+      "packs": [
+        "skills",
+        "spells",
+        "buffs",
+        "items",
+        "races",
+        "mobs",
+        "pets",
+        "mercenaries",
+        "floor-tables"
       ]
     }
   ]

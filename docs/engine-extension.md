@@ -38,7 +38,7 @@ Hooks.on('sprinter-rpg.registerContent', (registry) => {
   registry.registerRuleFlag({ id: 'studio-props.hush', label: 'Hushed', hint: 'The carrier cannot be heckled.' });
 
   // 4. Rule tag: rows behave as rows on whatever carries the tag (equipped gear, an active buff, a skill, the actor);
-  //    flags are the gates above. The 14 core flags (`no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`; see `RULE_FLAGS` in `src/utils/tag-behaviour.mjs`) work the same way.
+  //    flags are the gates above. The 14 core flags (`no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`; see `RULE_FLAGS` in `src/utils/tag/tag-behaviour.mjs`) work the same way.
   registry.registerTag({
     id: 'studio-props.spotlit',
     label: 'Spotlit',

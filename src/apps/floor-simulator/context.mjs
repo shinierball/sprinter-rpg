@@ -1,16 +1,14 @@
 /**
- * Floor Simulator template context. Pure: it reads a `FloorSimulatorSession` and returns plain data,
+ * Step panel contexts for the floor-start stages. Pure: it reads an `ArrivalDraft` and returns plain data,
  * with every option list, `selected` flag, label source and die control precomputed (CONTRIBUTING §5). Static words live in
  * the templates (`COG.FloorSim.*` lang keys); this file supplies ids, numbers and names.
  */
-import { describeOrigin } from '../../chat/floor-arrival-card.mjs';
 import { loadoutOptions } from '../../content/creation-loadouts.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { formulaForRank } from '../../data/floor-simulator/steps/skill-boost.mjs';
-import { LOOT_UPGRADE_TABLE, rowForTotal } from '../../data/floor-simulator/tables.mjs';
-import { floorLabel } from '../../utils/floor-number.mjs';
-import { damageTypesOfRarity } from '../../utils/damage-types.mjs';
-import { LOOT_SPELL_TABLE, REVIEW_STEP, ROLL_MODES, plainValue } from './session.mjs';
+import { LOOT_BRACELET_RACE_TABLE, LOOT_UPGRADE_TABLE, rowForTotal } from '../../data/floor-simulator/tables.mjs';
+import { damageTypesOfRarity } from '../../utils/damage/damage-types.mjs';
+import { LOOT_SPELL_TABLE, plainValue } from '../crawler-creator/arrival-draft.mjs';
 
 const STAT_KEYS = ['str', 'dex', 'con', 'int', 'cha'];
 const ARMOR_SLOTS = ['head', 'torso', 'arms', 'legs', 'feet'];
@@ -241,6 +239,24 @@ function scrollView(session, step, base, slotSpec, option, tierSpec) {
   };
 }
 
+/**
+ * The bracelet race die: shown while no race is chosen and a race table exists. `race` is the identifier the die's row
+ * names (the select shows it), `installed` whether that race is installed (a missing one leaves the select blank and warns).
+ */
+function braceletRaceView(session, option, slotSpec, base) {
+  const table = session.context.tables?.[LOOT_BRACELET_RACE_TABLE];
+  if (option?.kind !== 'bracelet' || !table || hasValue(slotSpec.choice?.race)) return null;
+  const path = `${base}.raceRow`;
+  const row = hasValue(session.get(path)) ? rowForTotal(table, Number(session.get(path))) : null;
+  const named = row?.options?.find(o => hasValue(o?.identifier));
+  const race = String(named?.identifier ?? '').trim().toLowerCase();
+  const installed = Boolean(race) && raceOptionValues().some(o => o.value === race);
+  return {
+    die: die(session, path, table.formula), race, installed, name: named?.name || race, narrative: row?.narrative ?? '',
+    marker: !row ? 'open' : (session.isRolled(path) ? 'rolled' : 'chosen')
+  };
+}
+
 function lootPanel(session, step, spec, result) {
   const ctx = session.context;
   const rowTable = ctx.tables?.[step.table];
@@ -252,12 +268,15 @@ function lootPanel(session, step, spec, result) {
     const option = tierSpec?.options?.find(o => o.id === optionId) ?? null;
     const takeSpells = slotSpec.take === 'spells' && card.spellsAllowed;
     const entry = result?.log.find(e => e.step === step.id && e.slot === card.slot);
+    const braceletRace = braceletRaceView(session, option, slotSpec, base);
+    const paramSpec = braceletRace?.installed ? { ...slotSpec, choice: { ...slotSpec.choice, race: braceletRace.race } } : slotSpec;
     return {
       slot: card.slot, tier: card.tier, tierLabel: card.label || tierSpec?.label || `${card.tier} ${card.slot}`, spellsAllowed: card.spellsAllowed,
       takePath: `${base}.take`, take: slotSpec.take ?? '', takeLoot: slotSpec.take === 'loot', takeSpells,
       takeOptions: [opt('', '', !slotSpec.take, { labelKey: 'COG.FloorSim.Loot.Take.none' }), opt('loot', '', slotSpec.take === 'loot', { labelKey: 'COG.FloorSim.Loot.Take.loot' }), ...(card.spellsAllowed ? [opt('spells', '', slotSpec.take === 'spells', { labelKey: 'COG.FloorSim.Loot.Take.spells' })] : [])],
       optionPath: `${base}.option`, optionOptions: [opt('', '', !optionId), ...card.options.map(o => opt(o.id, o.label, o.id === optionId))],
-      params: lootParams(session, option, tierSpec, slotSpec).map(p => ({ ...p, path: `${base}.choice.${p.key}` })),
+      params: lootParams(session, option, tierSpec, paramSpec).map(p => ({ ...p, path: `${base}.choice.${p.key}` })),
+      braceletRace,
       scroll: scrollView(session, step, base, slotSpec, option, tierSpec),
       scrollRoll: option?.kind === 'scrollSpell' && !hasValue(slotSpec.choice?.spell) ? die(session, `${base}.spellRow`, ctx.tables?.[LOOT_SPELL_TABLE]?.formula ?? '') : null,
       variants: card.spellVariants.map(v => opt(v.id, v.picks.join(' + '), v.id === (slotSpec.spells?.variant ?? card.spellVariants[0]?.id), { potions: v.potions })),
@@ -323,23 +342,10 @@ function raceClassPanel(session, step, spec) {
   };
 }
 
-function reviewPanel(session, preview) {
-  const result = preview?.result;
-  const sections = [];
-  // A rolled entry is "not rolled yet" only while its step still has a die left to the RNG (an in-app roll closes it).
-  const openSteps = new Set(session.openControls().map(c => c.step));
-  for (const entry of result?.log ?? []) {
-    let section = sections.find(s => s.id === entry.step);
-    if (!section) { section = { id: entry.step, labelKey: `COG.FloorSim.Step.${entry.step}`, entries: [] }; sections.push(section); }
-    section.entries.push({ ...entry, origin: describeOrigin(entry), pendingDie: entry.rolled === true && openSteps.has(entry.step) });
-  }
-  return {
-    isReview: true, sections, openDice: session.openControls().length, ruleBreaks: result?.ruleBreaks?.pending ?? [],
-    warnings: result?.warnings ?? [], skipped: result?.skipped ?? [], floor: session.nextArrival, finishing: session.finishing
-  };
-}
-
-function stepPanel(session, step, spec, preview) {
+/**
+ * The panel of one arrival step. `session` is the `ArrivalDraft` of one arrival of the Crawler Creator's floor start.
+ */
+export function stepPanel(session, step, spec, preview) {
   const result = preview?.result;
   if (step.kind === 'level') return levelPanel(step);
   if (step.kind === 'skillBoost') {
@@ -353,78 +359,4 @@ function stepPanel(session, step, spec, preview) {
   if (step.kind === 'popularity') return popularityPanel(session, step, spec, result);
   if (step.kind === 'raceClass') return raceClassPanel(session, step, spec);
   return { isUnknown: true, kind: step.kind };
-}
-
-// ---------------------------------------------------------------- preview, rail, header
-
-function previewView(session, preview) {
-  const result = preview?.result;
-  const p = result?.preview;
-  if (!p) return { available: false, error: preview?.error ?? '' };
-  const entryByItem = new Map((result.log ?? []).filter(e => e.itemId).map(e => [e.itemId, e]));
-  return {
-    available: true, level: p.level, floorLabel: floorLabel(p.floor), aiFavor: p.aiFavor, popularity: p.popularity,
-    pendingStatPoints: p.pendingStatPoints,
-    abilities: STAT_KEYS.map(key => ({
-      key, unenhanced: p.abilities[key].unenhanced, enhanced: p.abilities[key].value,
-      before: session.snapshot.abilities[key].unenhanced, changed: p.abilities[key].unenhanced !== session.snapshot.abilities[key].unenhanced
-    })),
-    skills: p.skills.map(s => ({ ...s, capped: Boolean(entryByItem.get(s.id)?.capped), note: entryByItem.get(s.id)?.note ?? '', isSpell: s.kind === 'spell' })),
-    newItems: p.newItems.map(i => ({ name: i.name ?? '', type: String(i.type ?? '').toUpperCase() })),
-    ruleBreaks: result.ruleBreaks.pending, warnings: result.warnings
-  };
-}
-
-/**
- * @param {import('./session.mjs').FloorSimulatorSession} session
- * @returns {object} The Handlebars context of the window.
- */
-export function buildSimulatorContext(session) {
-  const base = {
-    actor: { name: session.snapshot?.name ?? '', uuid: session.snapshot?.actorUuid ?? '' },
-    pending: session.pending, finishing: session.finishing,
-    rollModes: ROLL_MODES.map(m => opt(m, m, m === session.rollMode, { labelKey: `COG.FloorSim.RollMode.${m}` }))
-  };
-  if (!session.pending) return { ...base, empty: true };
-  const snap = session.snapshot;
-  const header = {
-    level: snap.level, floorLabel: floorLabel(snap.floor), arrival: session.nextArrival, arrivalLabel: session.nextArrival ? floorLabel(session.nextArrival) : '',
-    targetOptions: session.startFloorOptions(), chips: session.runChips(), startFloor: session.startFloor
-  };
-  if (session.finishing) {
-    // The chosen target floor is already reached: nothing to simulate, only the "Finish run" button.
-    return {
-      ...base, empty: false, header, steps: [], panel: null, preview: { available: false }, openDice: 0, followNote: false,
-      canBack: false, canNext: false, onReview: false, hasBreaks: false, error: ''
-    };
-  }
-  const preview = session.preview();
-  const controls = session.openControls();
-  const pendingBreaks = preview?.result?.ruleBreaks?.pending ?? [];
-  const activeId = session.draft.activeStep;
-  const steps = session.plan.steps.map(step => {
-    const open = controls.filter(c => c.step === step.id).length;
-    const breaks = pendingBreaks.filter(b => b.step === step.id).length;
-    return {
-      id: step.id, kind: step.kind, labelKey: step.labelKey, active: step.id === activeId, openDice: open, breaks,
-      status: breaks ? 'break' : (session.visited.has(step.id) && !open ? 'done' : 'open')
-    };
-  });
-  steps.push({
-    id: REVIEW_STEP, kind: 'review', labelKey: 'COG.FloorSim.Step.review', active: activeId === REVIEW_STEP, openDice: controls.length,
-    breaks: pendingBreaks.length, status: pendingBreaks.length ? 'break' : 'open'
-  });
-  const planStep = session.plan.steps.find(s => s.id === activeId);
-  const panel = activeId === REVIEW_STEP || !planStep
-    ? reviewPanel(session, preview)
-    : stepPanel(session, planStep, session.draft.steps[activeId] ?? {}, preview);
-  const ids = session.stepIds();
-  const at = ids.indexOf(activeId);
-  return {
-    ...base, empty: false, header,
-    followNote: session.nextArrival === 3 && session.runChips().some(c => c.floor !== 3),
-    steps, activeId, panel, preview: previewView(session, preview), openDice: controls.length,
-    canBack: at > 0, canNext: at >= 0 && at < ids.length - 1, onReview: activeId === REVIEW_STEP,
-    hasBreaks: pendingBreaks.length > 0, error: preview?.error ?? ''
-  };
 }

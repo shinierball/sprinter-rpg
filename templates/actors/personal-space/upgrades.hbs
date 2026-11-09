@@ -10,6 +10,11 @@
           <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">{{up.name}}</div>
           <div class="cog-text-secondary" style="font-size: 11px;">{{up.description}}</div>
         </div>
+        {{#if up.isCraftingTable}}
+          <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="openCraftingApp" data-tooltip="{{localize 'COG.CraftApp.OpenerHint'}}" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+            <i class="fa-solid fa-hammer"></i> {{localize "COG.CraftApp.OpenerHere"}}
+          </button>
+        {{/if}}
         <button class="cog-bg-accent-fill cog-text-on-fill" type="button" data-action="uninstallUpgrade" data-upgrade-id="{{up.id}}" style="border: 1px solid var(--cog-danger-fill); border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
           Uninstall
         </button>

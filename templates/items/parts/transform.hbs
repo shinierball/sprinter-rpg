@@ -1,0 +1,92 @@
+{{!--
+  Debuff sheet: the Transformation section. Context: `transform` from src/sheets/item/context-transform.mjs.
+  Only the form rows' race, label and image, the cue and the cure window carry a `name`; every other control is a
+  `data-action` delegate or the shared pick list (no `name`), so nothing is harvested twice.
+--}}
+<div class="cog-stat-block cog-transform-section" style="margin-bottom: 10px;">
+  <div class="cog-banner-header" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
+    <span><i class="fa-solid fa-masks-theater"></i> {{localize "COG.Transform.Title"}}</span>
+    {{#if transform.enabled}}
+      <a class="cog-text-on-fill" data-action="disableTransform" style="font-size: 10px; cursor: pointer;" data-tooltip="{{localize "COG.Transform.RemoveTooltip"}}">
+        <i class="fa-solid fa-xmark"></i> {{localize "COG.Transform.Remove"}}
+      </a>
+    {{/if}}
+  </div>
+  <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
+    {{#if transform.enabled}}
+      <div class="cog-field-group">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="cog-field-label">{{localize "COG.Transform.Forms"}}</span>
+          <a class="cog-text-accent" data-action="addTransformForm" style="font-size: 10px; cursor: pointer;">
+            <i class="fa-solid fa-plus"></i> {{localize "COG.Transform.AddForm"}}
+          </a>
+        </div>
+        {{#if transform.hasForms}}
+          <table class="cog-table" style="margin: 0; font-size: 11px;">
+            <thead>
+              <tr>
+                <th>{{localize "COG.Transform.Race"}}</th>
+                <th style="width: 22%;">{{localize "COG.Transform.FormLabel"}}</th>
+                <th style="width: 30%;">{{localize "COG.Transform.TokenImage"}}</th>
+                <th style="width: 6%;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each transform.forms as |form|}}
+                <tr>
+                  <td>
+                    <select class="cog-field-input" name="system.transform.forms.{{form.index}}.race" style="font-size: 11px;">
+                      <option value="">{{localize "COG.Transform.RaceChoose"}}</option>
+                      {{#each form.raceGroups as |group|}}
+                        <optgroup label="{{group.label}}">
+                          {{#each group.options as |opt|}}
+                            <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                          {{/each}}
+                        </optgroup>
+                      {{/each}}
+                    </select>
+                  </td>
+                  <td>
+                    <input class="cog-field-input" type="text" name="system.transform.forms.{{form.index}}.label" value="{{form.label}}" placeholder="{{localize "COG.Transform.FormLabelPlaceholder"}}" style="width: 100%; font-size: 11px;" />
+                  </td>
+                  <td>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                      <input class="cog-field-input" type="text" name="system.transform.forms.{{form.index}}.tokenImg" value="{{form.tokenImg}}" placeholder="{{localize "COG.Transform.TokenImagePlaceholder"}}" style="flex: 1; font-size: 11px;" />
+                      <a class="cog-text-accent" data-action="browseTransformImage" data-index="{{form.index}}" data-tooltip="{{localize "COG.Transform.Browse"}}" style="cursor: pointer;"><i class="fa-solid fa-folder-open"></i></a>
+                    </div>
+                  </td>
+                  <td style="text-align: center;">
+                    <a class="cog-text-accent" data-action="deleteTransformForm" data-index="{{form.index}}" data-tooltip="{{localize "COG.Transform.RemoveForm"}}" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        {{else}}
+          <div class="cog-text" style="text-align: center; font-style: italic; font-size: 11px; padding: 6px;">{{localize "COG.Transform.FormsEmpty"}}</div>
+        {{/if}}
+        <div class="cog-text-secondary" style="font-size: 10px; font-style: italic;">{{localize "COG.Transform.FormsNote"}}</div>
+      </div>
+
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=transform.effectsPicker}}
+
+      <div class="cog-field-row" style="margin-top: 6px; flex-wrap: wrap;">
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.Transform.Cue"}}</span>
+          <select name="system.transform.cue" class="cog-field-input" data-tooltip="{{localize "COG.Transform.CueTooltip"}}">
+            {{#each transform.cueOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.Transform.Curable"}}</span>
+          <select name="system.transform.curable" class="cog-field-input" data-tooltip="{{localize "COG.Transform.CurableTooltip"}}">
+            {{#each transform.curableOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+          </select>
+        </div>
+      </div>
+    {{else}}
+      <div class="cog-text" style="font-size: 11px; font-style: italic; padding: 4px 0;">{{localize "COG.Transform.NotAffliction"}}</div>
+      <button type="button" class="cog-btn" data-action="enableTransform" style="font-size: 11px; padding: 3px 6px; cursor: pointer;"><i class="fa-solid fa-plus"></i> {{localize "COG.Transform.Enable"}}</button>
+    {{/if}}
+  </div>
+</div>

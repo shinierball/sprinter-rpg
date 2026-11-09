@@ -6,16 +6,13 @@
     <div class="cog-field-group flex-1">
       <span class="cog-field-label" style="font-weight: bold;">Trophy Tier</span>
       <select class="cog-field-input" name="system.tier" style="font-family: 'Oswald', sans-serif;">
-        <option value="bronze" {{#if (eq system.tier "bronze")}}selected{{/if}}>Bronze</option>
-        <option value="silver" {{#if (eq system.tier "silver")}}selected{{/if}}>Silver</option>
-        <option value="gold" {{#if (eq system.tier "gold")}}selected{{/if}}>Gold</option>
-        <option value="platinum" {{#if (eq system.tier "platinum")}}selected{{/if}}>Platinum</option>
-        <option value="legendary" {{#if (eq system.tier "legendary")}}selected{{/if}}>Legendary</option>
-        <option value="celestial" {{#if (eq system.tier "celestial")}}selected{{/if}}>Celestial</option>
-        <option value="quest" {{#if (eq system.tier "quest")}}selected{{/if}}>Quest</option>
-        <option value="secret" {{#if (eq system.tier "secret")}}selected{{/if}}>Secret</option>
-        <option value="special" {{#if (eq system.tier "special")}}selected{{/if}}>Special</option>
+        {{#each achievementTierOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
       </select>
+    </div>
+
+    <div class="cog-field-group flex-1">
+      <span class="cog-field-label" style="font-weight: bold;">Category</span>
+      <input class="cog-field-input" type="text" name="system.category" value="{{system.category}}" placeholder="e.g. Attendance" />
     </div>
 
     <div class="cog-field-group flex-1">
@@ -72,10 +69,12 @@
     <textarea class="cog-field-input" name="system.rewardContents" rows="2" placeholder="e.g. A novelty hat, a coupon, or another small prize.">{{system.rewardContents}}</textarea>
   </div>
 
+  {{> "systems/sprinter-rpg/templates/items/parts/reward-boxes.hbs"}}
+
   {{!-- DESCRIPTION / BACKGROUND --}}
   <div class="cog-field-group" style="margin-bottom: 12px;">
     <span class="cog-field-label" style="font-weight: bold;">Achievement Description / Unlock Condition</span>
-    <textarea class="cog-field-input" name="system.description" rows="2" placeholder="Unlock conditions, backstory, or player notes...">{{system.description}}</textarea>
+    {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
   </div>
 
   {{!-- BROADCAST ACTION BUTTON --}}

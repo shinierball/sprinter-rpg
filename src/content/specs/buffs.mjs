@@ -713,6 +713,27 @@ export const COG_BUFFS = [
       },
       "description": "Grants complete immunity to Sonic damage, negating 100% of incoming Sonic damage."
     }
+  },
+  {
+    "_id": "dccbuf0000000033",
+    "name": "Speed Burst",
+    "type": "buff",
+    "img": "icons/svg/wingfoot.svg",
+    "system": {
+      "identifier": "speed-burst",
+      "vehicleModifiers": [
+        {
+          "kind": "moveMultiply",
+          "label": "Speed Burst",
+          "multiplier": 2
+        }
+      ],
+      "duration": "3 Rounds",
+      "durationConfig": {
+        "type": "rounds",
+        "value": 3
+      }
+    }
   }
 ];
 

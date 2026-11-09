@@ -8,6 +8,14 @@ import { crewEntryOf, vehicleOf, vehicleUuidOf } from '../../documents/actor/veh
 import { crewCapacity, readCrew, vehicleRoleSelectOptions } from '../../data/rules/vehicle-crew-rules.mjs';
 import { STORY_TRAITS, storyTableView } from '../../data/rules/background-table-rules.mjs';
 import { DEFAULT_SIZE, sizeName } from '../../data/sizes.mjs';
+import { vehicleKindInfo } from '../../data/rules/vehicle-rules.mjs';
+import { driveContext } from '../vehicle/drive-context.mjs';
+
+/** A vehicle kind's label, localized when the i18n service is up. */
+const vehicleKindLabel = (id) => {
+  const label = vehicleKindInfo(id).label;
+  return globalThis.game?.i18n?.localize?.(label) ?? label;
+};
 
 /** Story box look per trait; the table's name and die come from the registry. */
 const STORY_BOXES = Object.freeze({
@@ -78,14 +86,15 @@ export function prepareStory(context, actor) {
     roleOptions: vehicleRoleSelectOptions(entry.role),
     seatsLabel: seatsLabel(current),
     hullLabel: `Hull ${current.system?.attributes?.hp?.value ?? 0}/${current.system?.attributes?.hp?.max ?? 0}`,
-    canOpen: Boolean(globalThis.game?.user?.isGM || current.testUserPermission?.(globalThis.game?.user, 'OBSERVER') !== false)
+    canOpen: Boolean(globalThis.game?.user?.isGM || current.testUserPermission?.(globalThis.game?.user, 'OBSERVER') !== false),
+    drive: driveContext(current, { actor })
   } : null;
 
   context.bondedVehicles = actor.getBondedVehicles().map(v => ({
     id: v.id,
     name: v.name,
     img: v.img || v.prototypeToken?.texture?.src || 'icons/svg/shield.svg',
-    vehicleType: v.system?.vehicleType || 'Ground',
+    vehicleKind: vehicleKindLabel(v.system?.kind),
     size: sizeName(v.system?.attributes?.size || 'large'),
     hp: v.system?.attributes?.hp || { value: 0, max: 0, pct: 100 },
     dr: v.system?.attributes?.dr?.total ?? 2,

@@ -1,0 +1,61 @@
+{{!-- The drive panel (3.44g): speed, Move, the stored Table 6 result, the Difficulties that follow from the speed. --}}
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="drive">
+<div class="cog-page-container cog-vehicle-drive">
+  <div class="cog-stat-block">
+    <div class="cog-banner-header cog-bg-info-fill cog-text-on-fill">
+      <span><i class="fa-solid fa-gauge-high"></i> DRIVE</span>
+      <span class="cog-vehicle-driver-line">
+        {{#if drive.hasDriver}}Driver: <strong>{{drive.driverName}}</strong>{{#if drive.skillName}} rolls {{drive.skillName}}{{/if}}{{else}}No driver{{/if}}
+      </span>
+    </div>
+    <div class="cog-vehicle-panel">
+      {{> "systems/sprinter-rpg/templates/actors/vehicle/drive-controls.hbs" drive=drive}}
+
+      <div class="cog-vehicle-readouts">
+        <div class="cog-vehicle-readout" title="10 + speed / 5. No Floor.">
+          <span class="cog-field-label">To hit the vehicle</span>
+          <strong>{{drive.hit}}</strong><span class="cog-text-muted"> ({{drive.hitHeadOn}} head-on)</span>
+        </div>
+        <div class="cog-vehicle-readout" title="Speed / 10, added to an occupant's Evade">
+          <span class="cog-field-label">Occupant Evade Buff</span>
+          <strong>+{{drive.evadeBuff}}</strong>
+        </div>
+        <div class="cog-vehicle-readout" title="10 + speed / 2, a Dex check to climb aboard">
+          <span class="cog-field-label">Boarding</span>
+          <strong>{{#if drive.board}}Dex {{drive.board}}{{else}}no check{{/if}}</strong>
+        </div>
+        <div class="cog-vehicle-readout" title="Size value + speed / 10 d6">
+          <span class="cog-field-label">Ram</span>
+          <strong>{{drive.ramDiceLabel}}</strong>
+        </div>
+        <div class="cog-vehicle-readout" title="Full Move; upgrades and the driver's skill add to the rated Move">
+          <span class="cog-field-label">Full / rated Move</span>
+          <strong>{{drive.full}} / {{drive.rated}} ft</strong>
+        </div>
+      </div>
+      <p class="cog-rule-hint cog-vehicle-no-drive-by"><i class="fa-solid fa-circle-info"></i> {{drive.noDriveBy}}</p>
+      <p class="cog-rule-hint cog-vehicle-mounted-only"><i class="fa-solid fa-circle-info"></i> {{drive.mountedOnlyHint}}</p>
+
+      {{#if drive.badge}}{{#if (or drive.canDrive drive.isGM)}}
+        <div class="cog-vehicle-result-row">
+          <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="vehicleClearResult" title="Forget this round's driving result">Clear result</button>
+        </div>
+      {{/if}}{{/if}}
+
+      {{#if drive.isGM}}
+        <div class="cog-vehicle-override">
+          <span class="cog-field-label">This round's result</span>
+          <select class="cog-field-input cog-vehicle-override-select" title="The GM sets the driving result by hand. A mob or NPC driver starts on its fixed result.">
+            {{#each drive.resultOptions as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+          <button type="button" class="cog-btn-xs cog-bg-warning-fill cog-text-on-fill" data-action="vehicleOverride">Set result</button>
+          {{#if drive.fixed}}<span class="cog-text-muted cog-vehicle-fixed">{{drive.fixed.text}}</span>{{/if}}
+          <button type="button" class="cog-btn-xs cog-bg-danger-fill cog-text-on-fill" data-action="vehicleExplode" title="The vehicle explodes now: size d6 + Floor Fire to everyone aboard"><i class="fa-solid fa-burst"></i> Explode</button>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+</section>

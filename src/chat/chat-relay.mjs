@@ -62,7 +62,7 @@ export function registerChatApplier(action, applier) {
   appliers.set(action, applier);
 }
 
-export function getChatApplier(action) {
+function getChatApplier(action) {
   return appliers.get(action) ?? null;
 }
 

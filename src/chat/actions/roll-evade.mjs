@@ -2,16 +2,16 @@
  * "Roll Evade" chat button on an incoming attack card.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { parseRollContext } from '../../utils/roll-context.mjs';
+import { parseRollContext } from '../../utils/roll/roll-context.mjs';
 import { getCurrentFloor } from '../../documents/actor/actor-environment.mjs';
-import { appliedBeforeEvade, listEvadesFor, classifyNextEvade } from '../../utils/evade-link.mjs';
+import { appliedBeforeEvade, listEvadesFor, classifyNextEvade } from '../../utils/attack/evade-link.mjs';
 import { getDamageApplications } from '../damage-applications.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { mobAttackText } from '../../utils/declared-attacks.mjs';
+import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
 import { recordEvadeOnDeclaration } from '../../documents/combat-declarations.mjs';
-import { COG_ACTION_TYPES } from '../../documents/combat.mjs';
-import { isOutOfRangeOnMessage, rangeText } from '../../utils/attack-range.mjs';
+import { COG_ACTION_TYPES } from '../../documents/combat/action-ledger.mjs';
+import { isOutOfRangeOnMessage, rangeText } from '../../utils/attack/attack-range.mjs';
 import { parseMessageContent } from '../chat-relay.mjs';
 
 const crawlerOf = (token) => (token?.actor?.type === 'crawler' ? token.actor : null);

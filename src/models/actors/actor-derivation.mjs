@@ -4,17 +4,37 @@
  * reads or writes an actor. `BaseActorDataModel` composes them in `prepareDerivedBaseStats` and
  * `prepareDerivedItemRanks`.
  */
-import { ANIMAL_TAGS, getItemAllTags } from '../../data/tags.mjs';
-import { gearSkillGrantBonus } from '../items/base-item-model.mjs';
+import { ANIMAL_TAGS } from '../../data/tag-vocabulary.mjs';
+import { getItemAllTags } from '../../documents/active-tags.mjs';
+import { roundPercent } from '../../utils/character/stat-percent.mjs';
+import { gearSkillGrantBonus } from '../items/grant-validation.mjs';
 import { catalogEntries, findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
-import { normalizeTiming } from '../../utils/timing.mjs';
-import { matchesTagQuery } from '../../utils/tag-query.mjs';
-import { baseRankOf } from '../../utils/rank-source.mjs';
-import { isStaticDefenseRow } from '../../utils/damage-modifiers.mjs';
+import { normalizeTiming } from '../../utils/time/timing.mjs';
+import { matchesTagQuery } from '../../utils/tag/tag-query.mjs';
+import { baseRankOf } from '../../utils/skill/rank-source.mjs';
+import { isStaticDefenseRow } from '../../utils/roll/damage-modifiers.mjs';
+import { raceInForce } from '../../utils/character/overlay-state.mjs';
 import { applyRowKind, getRowKind, kindOf } from '../../utils/row-kinds.mjs';
 
 export const STAT_KEYS = ['str', 'int', 'con', 'dex', 'cha'];
+
+/**
+ * One ability's gear and buff bonuses (the one code path for the live actor and the floor simulator's payload).
+ * Live percents (gear in live mode or with no lock, buffs and debuffs always) are summed per stat and floored once;
+ * the gear's share is floored on its own so the sheet can split the two columns.
+ * @param {number} unenhanced the score a percent is taken from
+ * @param {{flat?: number, pct?: number}} [gearStat] `collectGearBonuses(...).stats[key]`
+ * @param {number} [buffFlat] buff plus debuff flat total
+ * @param {number} [buffPct] buff plus debuff percent total
+ * @returns {{gearBonus: number, buffBonus: number}}
+ */
+export function statBonuses(unenhanced, gearStat, buffFlat = 0, buffPct = 0) {
+  const gearPct = gearStat?.pct || 0;
+  const gearPctBonus = roundPercent(unenhanced, gearPct);
+  const totalPctBonus = roundPercent(unenhanced, gearPct + buffPct);
+  return { gearBonus: (gearStat?.flat || 0) + gearPctBonus, buffBonus: buffFlat + (totalPctBonus - gearPctBonus) };
+}
 
 const emptyStatMap = (make) => Object.fromEntries(STAT_KEYS.map(k => [k, make()]));
 
@@ -43,21 +63,15 @@ function addLimbs(sys, limbs) {
   if (l.hands) limbs.hands += Number(l.hands) || 0;
 }
 
-function addGearStat(stats, key, value, type) {
-  if (!stats[key]) return;
-  const val = Number(value);
-  if (!Number.isFinite(val) || val === 0) return;
-  const t = (type || 'flat').toLowerCase();
-  if (t === 'pct' || t === '%') stats[key].pct += val;
-  else stats[key].flat += val;
-}
-
 /**
- * Equipped gear totals (ability scores, `drBonus`). Resistances and immunities are typed `defenseModifiers`
- * rows, summed separately by `collectStaticDefense`.
+ * Equipped gear totals (ability scores from `grants[kind: stat]` rows, `drBonus`). Per stat `flat` is the sum of
+ * the rows' `value` plus, in `fixed` mode, every row's `locked` number; `pct` is the sum of percents still
+ * worked out live (every percent in `live` mode, a row with `locked: null` in `fixed` mode).
+ * Resistances and immunities are typed `defenseModifiers` rows, summed separately by `collectStaticDefense`.
  * @param {object[]} equippedGear
+ * @param {'fixed'|'live'} [mode] the `percentStatBonuses` setting
  */
-export function collectGearBonuses(equippedGear) {
+export function collectGearBonuses(equippedGear, mode = 'fixed') {
   const out = {
     stats: emptyStatMap(() => ({ flat: 0, pct: 0 })),
     dr: 0
@@ -65,15 +79,17 @@ export function collectGearBonuses(equippedGear) {
   for (const item of (equippedGear || [])) {
     const sys = item?.system;
     if (!sys) continue;
-    if (sys.abilityModifiers) {
-      for (const [key, mods] of Object.entries(sys.abilityModifiers)) {
-        if (mods) addGearStat(out.stats, key, mods.value, mods.type);
-      }
-    }
     if (Array.isArray(sys.grants)) {
       for (const g of sys.grants) {
-        if (!g) continue;
-        if (g.kind === 'stat') addGearStat(out.stats, (g.stat || '').toLowerCase().trim(), g.value, 'flat');
+        if (g?.kind !== 'stat' || (g.mode && g.mode !== 'fixed')) continue;
+        const slot = out.stats[String(g.stat ?? '').toLowerCase().trim()];
+        if (!slot) continue;
+        slot.flat += Number(g.value) || 0;
+        const percent = Number(g.percent) || 0;
+        if (!percent) continue;
+        const locked = g.locked === null || g.locked === undefined || g.locked === '' ? NaN : Number(g.locked);
+        if (mode === 'fixed' && Number.isFinite(locked)) slot.flat += locked;
+        else slot.pct += percent;
       }
     }
     out.dr += Number(sys.drBonus) || 0;
@@ -103,13 +119,39 @@ export function collectStaticDefense(sources, derivedContext) {
   return out;
 }
 
-/** Add every `grants[kind: stat]` row of a buff or debuff into `stats` (ability score deltas). */
-function addStatGrants(sys, stats) {
+/**
+ * Add every `grants[kind: stat]` row of a buff or debuff into `stats` (flat deltas) and `pct` (percent sums).
+ * Buff and debuff percents are always live whatever the setting: they never lock.
+ */
+function addStatGrants(sys, stats, pct, floored) {
   for (const g of (Array.isArray(sys?.grants) ? sys.grants : [])) {
-    if (g?.kind !== 'stat') continue;
+    if (g?.kind !== 'stat' || (g.mode && g.mode !== 'fixed')) continue;
     const key = String(g.stat ?? '').toLowerCase().trim();
-    if (key && stats[key] !== undefined) stats[key] += Number(g.value) || 0;
+    if (!key || stats[key] === undefined) continue;
+    const value = Number(g.value) || 0;
+    stats[key] += value;
+    pct[key] += Number(g.percent) || 0;
+    // A negative row with a `floor` never takes the score below it (D5); the highest floor on a stat wins.
+    const floor = Number(g.floor);
+    if (floored && value < 0 && Number.isFinite(floor) && floor > 0) {
+      const slot = floored[key] ?? (floored[key] = { sum: 0, floor: 0 });
+      slot.sum += value;
+      slot.floor = Math.max(slot.floor, floor);
+    }
   }
+}
+
+/** Merge the `floored` maps of the buff and debuff sums: per stat, the summed floored rows and the highest floor. */
+export function mergeFloored(...maps) {
+  const out = {};
+  for (const map of maps) {
+    for (const [key, slot] of Object.entries(map || {})) {
+      const into = out[key] ?? (out[key] = { sum: 0, floor: 0 });
+      into.sum += slot.sum;
+      into.floor = Math.max(into.floor, slot.floor);
+    }
+  }
+  return out;
 }
 
 /**
@@ -120,14 +162,16 @@ function addStatGrants(sys, stats) {
 export function collectBuffBonuses(activeBuffs) {
   const out = {
     stats: emptyStatMap(() => 0),
-    limbs: { arms: 0, legs: 0, hands: 0 }
+    pct: emptyStatMap(() => 0),
+    limbs: { arms: 0, legs: 0, hands: 0 },
+    floored: {}
   };
 
   for (const buff of (activeBuffs || [])) {
     if (!buff) continue;
     const bSys = buff.system || buff;
     addLimbs(bSys, out.limbs);
-    addStatGrants(bSys, out.stats);
+    addStatGrants(bSys, out.stats, out.pct, out.floored);
   }
   return out;
 }
@@ -155,7 +199,7 @@ export function resolvePersistentDebuffs(items, equippedGear) {
       if (!identifier || owned.has(identifier) || seen.has(identifier)) continue;
       seen.add(identifier);
       const def = findCatalogEntry('debuffs', identifier);
-      const system = { ...(def?.system || {}), active: true, identifier };
+      const system = { ...(def?.system || {}), identifier };
       out.push({
         name: def?.name || String(ref),
         system,
@@ -172,11 +216,11 @@ export function resolvePersistentDebuffs(items, equippedGear) {
  * @param {object[]} debuffItems - owned debuff items plus the output of {@link resolvePersistentDebuffs}
  */
 export function collectDebuffEffects(debuffItems) {
-  const out = { stats: emptyStatMap(() => 0), limbs: { arms: 0, legs: 0, hands: 0 } };
+  const out = { stats: emptyStatMap(() => 0), pct: emptyStatMap(() => 0), limbs: { arms: 0, legs: 0, hands: 0 }, floored: {} };
   for (const debuff of (debuffItems || [])) {
     const dSys = debuff.system || {};
     addLimbs(dSys, out.limbs);
-    addStatGrants(dSys, out.stats);
+    addStatGrants(dSys, out.stats, out.pct, out.floored);
   }
   return out;
 }
@@ -199,7 +243,7 @@ export function collectTagBonusGrants({ equippedGear = [], activeBuffs = [], ite
   };
   for (const i of equippedGear) take(i);
   for (const b of activeBuffs) take(b);
-  for (const i of items) if (i?.type === 'class' || i?.type === 'race') take(i);
+  for (const i of items) if (i?.type === 'class' || (i?.type === 'race' && raceInForce(items, i))) take(i);
   return out;
 }
 

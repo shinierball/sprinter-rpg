@@ -3,7 +3,7 @@
  * button (action delegate `crawlerDismissArea`, no `name` attribute) that ends the placed group.
  */
 import { SYSTEM_ID } from '../constants.mjs';
-import { combatText } from '../utils/combat-round-text.mjs';
+import { combatText } from '../utils/combat/combat-round-text.mjs';
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 

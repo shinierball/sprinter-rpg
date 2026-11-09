@@ -2,12 +2,12 @@
  * Display helpers for attack rows on the crawler sheet.
  * Re-exported from `src/sheets/crawler-sheet.mjs`.
  */
-import { resolveAttackToHit } from '../../utils/to-hit-display.mjs';
-import { cooldownBadge } from '../../utils/cooldown-badge.mjs';
+import { resolveAttackToHit } from '../../utils/attack/to-hit-display.mjs';
+import { cooldownBadge } from '../../utils/time/cooldown-badge.mjs';
 import { currentTimeContext } from '../../documents/actor/dungeon-time.mjs';
-import { attackEffectsText } from '../../utils/attack-mechanics.mjs';
+import { attackEffectsText } from '../../utils/attack/attack-mechanics.mjs';
 import { conditionLabel } from '../../documents/actor/condition-data.mjs';
-import { attackDamageDisplay } from '../../utils/damage-parts.mjs';
+import { attackDamageDisplay } from '../../utils/damage/damage-parts.mjs';
 
 /**
  * Prepares consistent display properties for attack table rows

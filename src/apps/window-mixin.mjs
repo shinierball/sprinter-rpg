@@ -10,7 +10,10 @@
  *
  * A mixin rather than a base class: sheets must extend core's ActorSheetV2/ItemSheetV2.
  */
-import { captureFocus, findByFocusKey, restoreFocus, openBlockKeys, restoreOpenBlocks } from '../utils/focus-restore.mjs';
+import { captureFocus, findByFocusKey, restoreFocus, openBlockKeys, restoreOpenBlocks } from '../utils/ui/focus-restore.mjs';
+
+/** The class every system window root carries; styles/sheets.css keys the shared checkbox rule on it. */
+export const WINDOW_CLASS = 'cog-window';
 
 /**
  * Fire `change` on blur for a control whose draft a re-render carried over: the browser compares against the
@@ -31,6 +34,9 @@ function commitDraftOnBlur(target) {
  * @param {typeof foundry.applications.api.ApplicationV2} Base
  */
 export const COGWindowMixin = (Base) => class COGWindow extends Base {
+  /** `cog-window` marks every system window for the shared control styles (the one checkbox rule); classes concatenate down the chain. */
+  static DEFAULT_OPTIONS = { classes: [WINDOW_CLASS] };
+
   /** @override */
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);

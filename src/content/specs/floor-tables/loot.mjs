@@ -6,10 +6,11 @@
  *   the narratives are original.
  * - Scroll of Upgrade (d4): an Amazing Success trigger (a catalog debuff or a narrative effect) and a name addition.
  * - Random Spells (d4): one catalog spell per row.
+ * - Bracelet Matchmaking (d10): the race a Friendship Bracelet is attuned to, one shipped race per row (repeats are fine).
  * Names and narratives are original example content in the 3.4 tone; the book's tables ship in the content module.
  */
 import {
-  FLOOR_TABLE_IDS, lootSlot, debuffTrigger, narrativeTrigger, lootSpell
+  FLOOR_TABLE_IDS, lootSlot, debuffTrigger, narrativeTrigger, lootSpell, raceResult
 } from './refs.mjs';
 
 const TIER_LABELS = Object.freeze({ bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum' });
@@ -90,4 +91,31 @@ const SPELLS = {
   ].map((row, i) => ({ roll: i + 1, ...row }))
 };
 
-export const LOOT_TABLE_SPECS = Object.freeze([STARTING_LOOT, UPGRADE, SPELLS]);
+// The races the Base Set, Creator Rows and Plain Labels example sets ship; tests check every row resolves to one.
+const HUMAN = raceResult('human', 'Human');
+const NON_HUMAN = raceResult('non-human', 'Non-Human');
+const PHANTOM = raceResult('laugh-track-phantom', 'Laugh Track Phantom');
+const UNDERSTUDY = raceResult('understudy', 'Understudy');
+
+const BRACELET_RACES = {
+  type: 'rolltable',
+  _id: FLOOR_TABLE_IDS['floor.loot.braceletRace'],
+  key: 'floor.loot.braceletRace',
+  name: 'Bracelet Matchmaking',
+  formula: '1d10',
+  description: 'Example table: the race a Friendship Bracelet is attuned to. Roll the die or pick a race yourself; the race must be installed.',
+  rows: [
+    ['The bracelet blinks green and reads your name aloud, mispronounced.', HUMAN],
+    ['A tiny speaker plays a studio audience sighing in recognition.', HUMAN],
+    ['The clasp refuses to open until you say you are fine.', HUMAN],
+    ['It hums the theme of a show nobody remembers commissioning.', NON_HUMAN],
+    ['The charm is a miniature of a door that does not exist.', NON_HUMAN],
+    ['It laughs, on cue, at nothing you said.', PHANTOM],
+    ['A recorded giggle plays whenever you check the time.', PHANTOM],
+    ['It knows every line and is waiting to be told it is needed.', UNDERSTUDY],
+    ['The bracelet glows a colour the network has not named yet.', NON_HUMAN],
+    ['It is a perfectly ordinary bracelet, which is somehow the worry.', HUMAN]
+  ].map(([narrative, race], i) => ({ roll: i + 1, narrative, options: [race] }))
+};
+
+export const LOOT_TABLE_SPECS = Object.freeze([STARTING_LOOT, UPGRADE, SPELLS, BRACELET_RACES]);

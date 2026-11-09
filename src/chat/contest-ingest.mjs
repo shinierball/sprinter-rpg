@@ -19,11 +19,12 @@
 import { SYSTEM_ID } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { isActiveGM, registerRelayAction, requestRelay } from '../utils/gm-relay.mjs';
-import { readCheckRecord, effectiveCheck } from '../utils/check-assists.mjs';
+import { readCheckRecord, effectiveCheck } from '../utils/roll/check-assists.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { findCatalogEntry } from '../content/catalog-lookup.mjs';
-import { skillStandIn } from '../utils/skill-stand-in.mjs';
+import { skillStandIn } from '../utils/skill/skill-stand-in.mjs';
 import { contestMoveOf, moveRateMod, participantLegSkill } from '../utils/contest/contest-engine.mjs';
+import { contestMoveOptions, contestVehicleRef } from '../documents/actor/vehicle-contest.mjs';
 import { readContest, participantIsOut } from './contest-card.mjs';
 import { findContestMessage, updateContest, markParticipantOut, recordSkillProposal } from './contest-service.mjs';
 import { isTrustedAssist } from './actions/use-assist.mjs';
@@ -187,15 +188,18 @@ export async function rollContestLeg({ message, legId, participantId, skillId = 
     return { ok: false, reason: 'cancelled' };
   }
 
-  const move = contestMoveOf(participant, leg, resolveActorByUuid);
+  const move = contestMoveOf(participant, leg, resolveActorByUuid, contestMoveOptions);
   const contest = {
     kind: state.kind, messageId: wrapper.id, legId: leg.id, participantId: participant.id,
     moveMod: moveRateMod(move.move), moveNote: `Move ${move.move}`
   };
   const useSkill = wantSkill ?? assigned;
+  // A driver rolls the leg as a vehicle check too (3.44i): the vehicle's upgrades apply, the driver Disadvantage does not.
+  const vehicle = contestVehicleRef(participant);
+  const rollOptions = vehicle ? { contest, vehicle } : { contest };
   const rolled = useSkill
-    ? await actor.rollSkill(skillStandIn(actor, useSkill), { contest })
-    : await actor.rollStat(leg.check.stat, { contest });
+    ? await actor.rollSkill(skillStandIn(actor, useSkill), rollOptions)
+    : await actor.rollStat(leg.check.stat, rollOptions);
   if (rolled && differs && typeof rolled.update === 'function') {
     await rolled.update({ [`flags.${SYSTEM_ID}.${CONTEST_RULE_BREAK_FLAG}`]: true });
   }

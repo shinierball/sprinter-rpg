@@ -7,6 +7,7 @@
         <span class="cog-bg-magic-fill cog-text-on-fill" style="font-family: 'Oswald', sans-serif; font-size: 11px; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; font-weight: bold; letter-spacing: 1px;">
           TIER {{system.tier}} {{system.size}}
         </span>
+        {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=sourceBadge text=true}}
         {{#if ruleBreak}}<span class="cog-badge cog-badge-rule-break" title="{{ruleBreakReason}}">[RULE BREAK]</span>{{/if}}
       </div>
 

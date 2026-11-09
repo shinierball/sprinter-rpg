@@ -15,14 +15,15 @@ import {
 import { COGSkillManager } from '../apps/skill-manager.mjs';
 import { COGSpellManager } from '../apps/spell-manager.mjs';
 import { COGItemManager } from '../apps/item-manager.mjs';
-import { COGCombatMetrics, COGCombatMetricsApp } from '../apps/combat-metrics.mjs';
+import { COGCombatMetrics } from '../documents/combat-metrics.mjs';
+import { COGCombatMetricsApp } from '../apps/combat-metrics.mjs';
 import { COGDamage } from '../documents/actor/damage-pipeline.mjs';
 import { COGCombatArchiveApp } from '../apps/combat-archive.mjs';
-import { COGSessionEngine, COGSessionManagerApp } from '../apps/session-manager.mjs';
+import { COGSessionEngine } from '../documents/session/session-engine.mjs';
+import { COGSessionManagerApp } from '../apps/session-manager/manager-app.mjs';
 import { COGRapidBatchImportApp } from '../apps/rapid-batch-import.mjs';
 import { COGRapidTextParser } from '../apps/rapid-text-parser.mjs';
 import { COGCrawlerCreatorApp } from '../apps/crawler-creator.mjs';
-import { openFloorSimulator } from '../apps/floor-simulator/floor-simulator-app.mjs';
 import { COGClassCreatorApp } from '../apps/class-creator.mjs';
 import { COGRaceCreatorApp } from '../apps/race-creator.mjs';
 import { COGAchievementManagerApp } from '../apps/achievement-manager.mjs';
@@ -101,10 +102,6 @@ export function buildDevApi() {
     rapidTextParser: COGRapidTextParser,
     openCrawlerCreator(options = {}) {
       return COGCrawlerCreatorApp.open(options);
-    },
-    /** Open the Floor Simulator on a crawler with a pending floor run; any other actor gets a warning and no window. */
-    openFloorSimulator(actor, options = {}) {
-      return openFloorSimulator(actor, options);
     },
     openClassCreator(options = {}) {
       return new COGClassCreatorApp(options).render({ force: true });

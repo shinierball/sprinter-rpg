@@ -6,20 +6,24 @@
  * this module only reads them and adds view fields. Gear `grants` rows reference skills and spells by
  * `system.identifier`; names are display text only.
  */
-import { normalizeBaseDamage } from '../../utils/base-damage.mjs';
-import { isSkillUnusable } from '../../utils/animal-skills.mjs';
+import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
+import { isSkillUnusable } from '../../utils/skill/animal-skills.mjs';
 import { getRequiredGrindingHours, getAdvancementTarget } from '../../data/rules/grinding-rules.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
 import { sortItems } from './context-items.mjs';
-import { cooldownBadge, grantedSpellCooldownBadge } from '../../utils/cooldown-badge.mjs';
+import { cooldownBadge, grantedSpellCooldownBadge } from '../../utils/time/cooldown-badge.mjs';
 import { currentTimeContext } from '../../documents/actor/dungeon-time.mjs';
-import { isAttackSkill, skillGroupLabel, spellRole, spellRoleLabel } from '../../utils/tag-mechanics.mjs';
-import { offersSpellAttack } from '../../utils/spell-cast-link.mjs';
-import { attackText } from '../../utils/attack-text.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
+import { isAttackSkill, skillGroupLabel, spellRole, spellRoleLabel } from '../../utils/tag/tag-mechanics.mjs';
+import { offersSpellAttack } from '../../utils/attack/spell-cast-link.mjs';
+import { attackText } from '../../utils/attack/attack-text.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { checkTypeLabel, checkTypeOptions } from '../../data/rules/check-types.mjs';
-import { buildSkillStandIn } from '../../utils/skill-stand-in.mjs';
+import { specialtyLabel } from '../../utils/skill/skill-specialty-options.mjs';
+import { buildSkillStandIn } from '../../utils/skill/skill-stand-in.mjs';
 import { collectGearSkillBonuses } from '../../models/actors/actor-derivation.mjs';
+import { sourceBadge } from '../../utils/content-source.mjs';
+import { workingGear } from '../../utils/effects/gear-suppression.mjs';
+import { offlineTip } from './gear-offline-display.mjs';
 
 const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -33,7 +37,9 @@ function asList(raw) {
  * `BaseActorDataModel.prepareDerivedItemRanks`; nothing here writes `skill.system`.
  */
 function decorateOwnedSkill(skill, actor, context) {
+  skill.sourceBadge = sourceBadge(skill);
   skill.groupLabel = skillGroupLabel(skill);
+  skill.specialtyLabel = specialtyLabel(skill.system?.specialty);
   // A `no-ranks` core action has no Ranks, Used mark or grinding: the row shows the [CORE] badge instead (E7.9 D9).
   if (hasRuleFlag(skill, RULE_FLAGS.noRanks)) {
     Object.assign(skill, { isCore: true, isUnusable: isSkillUnusable(skill) });
@@ -164,10 +170,18 @@ export function prepareSkillsAndSpells(context, actor) {
   const ownedSkillIds = new Set(ownedSkills.map(s => s.system?.identifier).filter(Boolean));
   for (const skill of ownedSkills) decorateOwnedSkill(skill, actor, context);
 
+  // Gear-only abilities stay listed in a zone, marked offline when no working gear still grants them
+  const working = new Set(workingGear(actor, context.gear, 'grantedAbilities').map(g => g.name));
+  const markOffline = (entry, sources) => {
+    entry.isOffline = !sources.some(name => working.has(name));
+    if (entry.isOffline) entry.offlineTip = offlineTip(actor);
+  };
+
   const grantedSkills = new Map();
   for (const data of gearBonuses.values()) {
     if (data.kind !== 'skill' || ownedSkillIds.has(data.identifier)) continue;
     const skill = grantedSkill(data, actor);
+    markOffline(skill, data.sources ?? []);
     grantedSkills.set(skill.id, skill);
     context.skills.push(skill);
   }
@@ -179,6 +193,7 @@ export function prepareSkillsAndSpells(context, actor) {
   for (const data of gearGrantedSpells(context.gear, gearBonuses).values()) {
     if (ownedSpellIds.has(data.identifier)) continue;
     const spell = grantedSpell(data, context);
+    markOffline(spell, data.sources ?? []);
     grantedSpells.set(spell.id, spell);
     context.spells.push(spell);
   }

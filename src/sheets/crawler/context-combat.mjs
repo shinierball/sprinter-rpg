@@ -2,9 +2,9 @@
  * Page 1 attack table context: synthesized skill attacks, combat techniques, stowed attacks.
  */
 import { sortItems } from './context-items.mjs';
-import { cooldownBadge } from '../../utils/cooldown-badge.mjs';
+import { cooldownBadge } from '../../utils/time/cooldown-badge.mjs';
 import { currentTimeContext } from '../../documents/actor/dungeon-time.mjs';
-import { attackText } from '../../utils/attack-text.mjs';
+import { attackText } from '../../utils/attack/attack-text.mjs';
 
 /**
  * The read-only "Damage Effects" reference strip: per effect its Rank (or
@@ -14,7 +14,7 @@ import { attackText } from '../../utils/attack-text.mjs';
  * @param {Array<object>} attacks the sheet's attack rows
  * @returns {Array<object>}
  */
-export function buildTechniqueStrip(actor, techniques, attacks) {
+function buildTechniqueStrip(actor, techniques, attacks) {
   const now = currentTimeContext(actor);
   const applies = typeof actor.isTechniqueApplicable === 'function';
   return (techniques ?? []).map((tech) => {

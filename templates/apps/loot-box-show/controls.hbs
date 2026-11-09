@@ -1,0 +1,8 @@
+<footer class="cog-lootbox-controls">
+  {{#unless controls.atSummary}}
+    <button type="button" data-action="skipBox"><i class="fa-solid fa-forward-step"></i> {{controls.skipBox}}</button>
+    <button type="button" data-action="skipToSummary"><i class="fa-solid fa-forward-fast"></i> {{controls.skipToSummary}}</button>
+    <button type="button" data-action="toggleSpeed" class="{{#if controls.speedActive}}active{{/if}}" aria-pressed="{{#if controls.speedActive}}true{{else}}false{{/if}}"><i class="fa-solid fa-gauge-high"></i> {{controls.speed}}</button>
+  {{/unless}}
+  <button type="button" data-action="closeShow"><i class="fa-solid fa-xmark"></i> {{controls.close}}</button>
+</footer>

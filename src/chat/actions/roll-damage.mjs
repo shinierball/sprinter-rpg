@@ -2,7 +2,7 @@
  * "Roll Spell Damage" / "Roll Attack Damage" / "Roll Skill Damage" chat buttons.
  */
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { parseRollContext } from '../../utils/roll-context.mjs';
+import { parseRollContext } from '../../utils/roll/roll-context.mjs';
 
 /**
  * The roll options the attack card's button carries: its parsed `data-roll-context` (the damage roll inherits the
@@ -51,7 +51,9 @@ export async function handleRollItemDamage(event, button, message) {
   const itemId = button.dataset?.itemId || button.dataset?.skillId;
   const actor = resolveActorByUuid(actorUuid);
   if (!actor) return;
-  const item = actor.items?.get(itemId);
+  // A weapon the roller does not own (a mounted weapon on its vehicle) is found by its uuid.
+  const itemUuid = button.dataset?.itemUuid;
+  const item = actor.items?.get(itemId) ?? (itemUuid ? globalThis.fromUuidSync?.(itemUuid) : null);
   if (item) {
     // The damage reads the card's `attackChoices` snapshot through `sourceMessageId`, never a button attribute.
     const rollOpts = rollContextOptions(button, message);

@@ -20,7 +20,10 @@ import { COGSkillManager } from '../apps/skill-manager.mjs';
 import { COGSpellManager } from '../apps/spell-manager.mjs';
 import { COGItemManager } from '../apps/item-manager.mjs';
 import { COGGrindApp } from '../apps/grind-app.mjs';
+import { COGCraftingApp } from '../apps/crafting-app.mjs';
 import { COGAwardLevelsApp } from '../apps/award-levels-app.mjs';
+import { COGAuthorshipApp } from '../apps/authorship-dialog.mjs';
+import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
 import { COGRapidBatchImportApp } from '../apps/rapid-batch-import.mjs';
 import { COGMercenaryGuildApp } from '../apps/mercenary-guild.mjs';
 import { COGCombatArchiveApp } from '../apps/combat-archive.mjs';
@@ -29,7 +32,6 @@ import { COGSessionManagerApp } from '../apps/session-manager/manager-app.mjs';
 import { COGClassCreatorApp } from '../apps/class-creator.mjs';
 import { COGRaceCreatorApp } from '../apps/race-creator.mjs';
 import { COGCrawlerCreatorApp } from '../apps/crawler-creator.mjs';
-import { COGFloorSimulatorApp } from '../apps/floor-simulator/floor-simulator-app.mjs';
 import { COGContestTrackerApp } from '../apps/contest-tracker.mjs';
 import { COGMobCreatorApp } from '../apps/mob-creator/mob-creator-app.mjs';
 import { COGFloorClockHUD } from '../apps/floor-clock-hud.mjs';
@@ -37,6 +39,7 @@ import { COGCrawlerClockHUD } from '../apps/crawler-clock-hud.mjs';
 import { COGEffectsPanel } from '../apps/effects-panel.mjs';
 import { COGSourceryImporterApp } from '../apps/sourcery-importer.mjs';
 import { COGCrawlerHotbarHUD, COGCrawlerActionHUD } from '../apps/crawler-token-hud.mjs';
+import { COGLootBoxShowApp } from '../apps/loot-box-show.mjs';
 
 export function registerHandlebarsHelpers() {
   // Register Handlebars Helpers
@@ -74,25 +77,30 @@ export const TEMPLATE_PATHS = Object.freeze([
   `${SYSTEM_PATH}/templates/actors/parts/companions.hbs`,
   `${SYSTEM_PATH}/templates/shared/tab-nav.hbs`,
   `${SYSTEM_PATH}/templates/shared/content-hint.hbs`,
+  `${SYSTEM_PATH}/templates/shared/source-badge.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/page1-core.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/identity-pet.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/identity-mercenary.hbs`,
-  `${SYSTEM_PATH}/templates/actors/parts/identity-vehicle.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/vehicle-role-select.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/hotlist.hbs`,
+  `${SYSTEM_PATH}/templates/actors/parts/sex-select.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/page3-skills.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/spells.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/page4-inventory.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/conditions.hbs`,
+  `${SYSTEM_PATH}/templates/actors/parts/transformation-banner.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/story-extras.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/achievements.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/header.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/provenance-badges.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/attack.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/spell.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/base-damage.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/gear.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/buff.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/debuff.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/stat-grant-rows.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/transform.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/achievement.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/space-upgrade.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/skill.hbs`,
@@ -135,7 +143,19 @@ export const TEMPLATE_PATHS = Object.freeze([
   `${SYSTEM_PATH}/templates/items/parts/usage-readout.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/feature-list.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/pick-list.hbs`,
-  `${SYSTEM_PATH}/templates/items/parts/as-triggers.hbs`
+  `${SYSTEM_PATH}/templates/items/parts/as-triggers.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/blueprint.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/loot-box.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/outcome-cure-filter.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/outcome-spell-damage.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/reward-boxes.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/craft-materials.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/enchantment-ledger.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/enchantment-template.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/enchantment-templates.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/copy-blueprint.hbs`,
+  // The Loot Box Showcase's prize card (its stage and summary parts share it)
+  `${SYSTEM_PATH}/templates/apps/loot-box-show/prize.hbs`
 ]);
 
 /** Sheet classes whose PARTS declare their own templates (CONTRIBUTING §5: sheets register themselves). */
@@ -146,11 +166,11 @@ const SHEET_CLASSES = [COGCrawlerSheet, COGPetSheet, COGMercenarySheet, COGVehic
  */
 export const TOOL_APP_CLASSES = [
   COGStashApp, COGBuffDebuffManager, COGTagManager, COGAchievementManagerApp, COGSkillManager,
-  COGSpellManager, COGItemManager, COGGrindApp, COGAwardLevelsApp, COGRapidBatchImportApp, COGMercenaryGuildApp,
+  COGSpellManager, COGItemManager, COGGrindApp, COGCraftingApp, COGAwardLevelsApp, COGRapidBatchImportApp, COGMercenaryGuildApp,
   COGCombatArchiveApp, COGCombatMetricsApp, COGSessionManagerApp, COGClassCreatorApp,
-  COGRaceCreatorApp, COGCrawlerCreatorApp, COGFloorSimulatorApp, COGMobCreatorApp, COGContestTrackerApp,
+  COGRaceCreatorApp, COGCrawlerCreatorApp, COGMobCreatorApp, COGContestTrackerApp,
   COGFloorClockHUD, COGCrawlerClockHUD, COGEffectsPanel,
-  COGCrawlerHotbarHUD, COGCrawlerActionHUD, COGSourceryImporterApp
+  COGCrawlerHotbarHUD, COGCrawlerActionHUD, COGSourceryImporterApp, COGLootBoxShowApp, COGAuthorshipApp, COGThemeCleanupApp
 ];
 
 export function preloadTemplates() {

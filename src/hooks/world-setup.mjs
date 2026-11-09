@@ -34,10 +34,22 @@ export async function runGMWorldSetup() {
         } catch (err) {
           console.warn(`Sprinter RPG | Could not create world macro "${mData.name}":`, err);
         }
-      } else if (existing.ownership && existing.ownership.default < 2) {
-        try {
-          await existing.update({ 'ownership.default': 2 });
-        } catch (_) {}
+      } else {
+        // A world macro carrying the system macroKey follows the code: stale command/img are rewritten.
+        // A GM's own macro that merely shares the name has no matching key and is left alone.
+        const key = mData.flags?.[SYSTEM_ID]?.macroKey;
+        const isSystemMacro = !!key && existing.flags?.[SYSTEM_ID]?.macroKey === key;
+        const changes = {};
+        if (isSystemMacro && existing.command !== mData.command) changes.command = mData.command;
+        if (isSystemMacro && existing.img !== mData.img) changes.img = mData.img;
+        if (existing.ownership && existing.ownership.default < 2) changes['ownership.default'] = 2;
+        if (Object.keys(changes).length) {
+          try {
+            await existing.update(changes);
+          } catch (err) {
+            console.warn(`Sprinter RPG | Could not update world macro "${mData.name}":`, err);
+          }
+        }
       }
     }
   }

@@ -3,7 +3,7 @@
  * damage button, the heal block and the range line. Pure: every function returns a string and reads only its arguments.
  * The fragments `rollSpell` shares live in `use-card-parts.mjs`.
  */
-import { rollContextDataAttr } from '../../utils/roll-context.mjs';
+import { rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
 import { auraActiveBlockHtml, damageSourcesPreviewHtml } from './use-card-parts.mjs';
 
 /**

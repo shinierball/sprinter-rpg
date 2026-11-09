@@ -2,6 +2,7 @@ import { BaseActorDataModel } from './base-actor-model.mjs';
 import { DEFAULT_SIZE, getSizeInfo, sanitizeSizeId, sizeLabel } from '../../data/sizes.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { resolveActor } from '../../documents/actor.mjs';
+import { effectiveRace } from '../../utils/character/overlay-state.mjs';
 
 /**
  * TypeDataModel for Mercenaries in Sprinter RPG.
@@ -75,7 +76,7 @@ export class MercenaryDataModel extends BaseActorDataModel {
     this.prepareDerivedItemRanks(this.prepareDerivedBaseStats());
 
     // Derive size from embedded race item, assigned race definition, or explicit details
-    const embeddedRace = this.parent?.items?.find(i => i.type === 'race');
+    const embeddedRace = effectiveRace(this.parent?.items);
     // A blank race size means "no change" (D10): it is never looked up, so it never reads as Medium.
     let raceSize = sanitizeSizeId(embeddedRace?.system?.size);
     if (!raceSize) raceSize = sanitizeSizeId(this.details?.size);

@@ -6,13 +6,13 @@
  * skills are skipped without a roll or a prompt: their marks clear and the card lists them.
  */
 import { SYSTEM_ID } from '../constants.mjs';
-import { COGSessionEngine } from './session-manager/session-engine.mjs';
+import { COGSessionEngine } from '../documents/session/session-engine.mjs';
 import { getCurrentFloor, getFloorTimer } from '../documents/actor/actor-environment.mjs';
-import { isPassiveSkill } from '../utils/tag-mechanics.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../utils/tag-behaviour.mjs';
-import { resolveFloorRows } from '../utils/floor-limited-rows.mjs';
-import { getRankCap } from '../utils/rank-cap.mjs';
-import { selectBatchSkills, evaluateAdvancement } from '../utils/skill-advancement.mjs';
+import { isPassiveSkill } from '../utils/tag/tag-mechanics.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../utils/tag/tag-behaviour.mjs';
+import { resolveFloorRows } from '../utils/floor/floor-limited-rows.mjs';
+import { getRankCap } from '../utils/skill/rank-cap.mjs';
+import { selectBatchSkills, evaluateAdvancement } from '../utils/skill/skill-advancement.mjs';
 import { buildAdvancementBatchCard, buildLevelAwardCard } from '../chat/advancement-card.mjs';
 import { getLevelAwardPresets, levelsForPreset } from '../data/level-awards.mjs';
 
@@ -229,7 +229,7 @@ export function buildAdvancementControls(actors) {
  * @param {string} value
  * @returns {Promise<object|null>} The `runAdvancementCheck` result, or null when nothing matched
  */
-export async function runPickedSkillCheck(actors, value) {
+async function runPickedSkillCheck(actors, value) {
   const [actorId, skillId] = String(value ?? '').split(':');
   const actor = (actors ?? []).find(a => a.id === actorId);
   if (!actor || !skillId) return null;
@@ -261,7 +261,7 @@ export async function runAdvancementControl(kind, actors, element) {
 }
 
 /** One-line toast text for a finished batch run. */
-export function summarizeBatch({ mode, results }) {
+function summarizeBatch({ mode, results }) {
   const label = mode === 'floor' ? 'End of floor check' : '2-hour check';
   if (!results.length) return `${label}: nothing marked to roll.`;
   const gains = results.filter(r => r.outcome === 'gain' || r.outcome === 'new-skill').length;

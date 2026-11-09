@@ -5,12 +5,12 @@
  *
  * This is the one replaceable function: a later ruling changes `pickRollSkill` and `tests/roll-skill-policy-3-22.test.mjs`.
  */
-import { getItemAllTags } from '../../data/tags.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
-import { isPassiveSkill, isAttackSkill, isCombatSkill } from '../../utils/tag-mechanics.mjs';
+import { getItemAllTags } from '../active-tags.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
+import { isPassiveSkill, isAttackSkill, isCombatSkill } from '../../utils/tag/tag-mechanics.mjs';
 
 /** The skill's effective Rank (the higher of its modified and stored Rank). */
-export function skillRankOf(skill) {
+function skillRankOf(skill) {
   return Math.max(Number(skill?.system?.modifiedRank) || 0, Number(skill?.system?.rank) || 0);
 }
 

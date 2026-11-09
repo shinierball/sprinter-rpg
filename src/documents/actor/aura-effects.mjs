@@ -6,10 +6,12 @@
  * the effect items themselves (see aura-relay.mjs).
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { resolveReachedRankBreaks } from '../../utils/rank-breaks.mjs';
-import { tempBarBaseSlots } from '../../utils/temp-bars.mjs';
-import { normalizeElementTag } from '../../data/tags.mjs';
+import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
+import { tempBarBaseSlots } from '../../utils/damage/temp-bars.mjs';
+import { normalizeElementTag } from '../../data/tag-vocabulary.mjs';
 import { conditionItemData } from './condition-data.mjs';
+import { getSpellRank } from './spell-rank.mjs';
+import { resolveBuff } from './actor-conditions.mjs';
 
 /** The aura's rank on its holder. */
 export function auraRank(holder, item) {
@@ -17,7 +19,7 @@ export function auraRank(holder, item) {
   return Number(
     item?.type === 'skill'
       ? (holder?.getSkillRank ? holder.getSkillRank(item) : (sys.modifiedRank ?? sys.rank))
-      : (holder?.getSpellRank ? holder.getSpellRank(item) : (sys.modifiedRank ?? sys.rank))
+      : (holder?.items ? getSpellRank(holder, item) : (sys.modifiedRank ?? sys.rank))
   ) || Number(sys.rank) || 1;
 }
 
@@ -101,7 +103,7 @@ export function buildAuraEffectItems(holder, item) {
   if (Array.isArray(areaConfig?.grantedBuffs)) {
     for (const bKey of areaConfig.grantedBuffs) {
       if (!bKey) continue;
-      const resolved = typeof holder?.resolveBuff === 'function' ? holder.resolveBuff(bKey) : null;
+      const resolved = holder ? resolveBuff(holder, bKey) : null;
       if (!resolved) continue;
       items.push({
         name: resolved.name,

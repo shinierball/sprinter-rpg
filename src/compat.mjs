@@ -24,9 +24,6 @@ export const ItemSheetV2 = globalThis.foundry?.applications?.sheets?.ItemSheetV2
 /** The configured DragDrop class. */
 export const getDragDropClass = () => globalThis.foundry?.applications?.ux?.DragDrop?.implementation ?? globalThis.DragDrop;
 
-/** The configured TextEditor class. */
-export const getTextEditor = () => globalThis.foundry?.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
-
 /** The configured FilePicker class. */
 export const getFilePicker = () => globalThis.foundry?.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
 

@@ -14,19 +14,21 @@
  * `buildPayload`. It is pure: it reads the working state and writes nothing; the step applies the result.
  */
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
-import { damageTypesOfRarity } from '../../utils/damage-types.mjs';
+import { damageTypesOfRarity } from '../../utils/damage/damage-types.mjs';
 import { getStarterWeaponDefinition, starterPotionPayload } from '../../content/creation-loadouts.mjs';
 import { buildPayload } from '../builders/item-payload.mjs';
-import { cleanInt, cleanText } from './state.mjs';
-import { prefillAiFavorRating } from '../../utils/ai-favor.mjs';
+import { skillPotionPayload } from '../skill-potion-payload.mjs';
+import { cleanText } from './state.mjs';
+import { stableId } from '../../utils/stable-id.mjs';
+import { prefillAiFavorRating } from '../../utils/character/ai-favor.mjs';
+import { HAZARD_BREAKS_ON, HAZARD_ENCHANTMENTS, breakItemUpdate, buildEnchantmentWrite, enchantmentCount } from '../../utils/crafting/crafting-engine.mjs';
 
 export const LOOT_SLOTS = Object.freeze(['weapon', 'armor', 'item', 'consumable']);
-export const LOOT_TIER_IDS = Object.freeze(['bronze', 'silver', 'gold', 'platinum']);
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 /** Catalog item the tiers reference by `_id` (quantity set at build time). The mana potion comes from the loadout reader. */
-export const ANTIDOTE_REF = 'dccitm0000000006';
+const ANTIDOTE_REF = 'dccitm0000000006';
 
 const heal = (name, bars) => ({ name, type: 'heal', healBars: bars, targetType: 'self' });
 const consumable = (id, label, name, quantity, outcomes, extra = {}) => ({
@@ -68,7 +70,7 @@ function armorTier(tier, bonuses) {
 
 /** The book's tier numbers with original item names. Frozen; copy before editing. */
 /** The Bronze loot weapon's book rating: "AI Favor: 2 when fighting Bosses" (the target is any registered boss tier). */
-export const BRONZE_BOSS_RATING = Object.freeze({ label: '', value: 2, condition: { all: ['subject.mob.boss'], any: [], none: [] }, minRank: 0, maxRank: null });
+const BRONZE_BOSS_RATING = Object.freeze({ label: '', value: 2, condition: { all: ['subject.mob.boss'], any: [], none: [] }, minRank: 0, maxRank: null });
 
 export const LOOT_TIERS = Object.freeze({
   weapon: Object.freeze({
@@ -120,7 +122,7 @@ export const LOOT_TIERS = Object.freeze({
     silver: slotTier('silver', 'silver consumable', false, {
       options: [
         { id: 'antidotes', label: 'Two Poison Antidotes', kind: 'consumable', catalog: ANTIDOTE_REF, name: 'Antidote Flask', quantity: 2 },
-        consumable('goodHealing', 'One Good Healing Potion (6 Health Bar slots)', 'Good Healing Potion', 1, [heal('Good healing', 6)], { usedInto: 'empty-bottle' }),
+        consumable('goodHealing', 'One Silver Healing Tonic (6 Health Bar slots)', 'Silver Healing Tonic', 1, [heal('Silver healing', 6)], { usedInto: 'empty-bottle' }),
         consumable('goodDynamite', 'One stick of fine dynamite', 'Stick of Fine Dynamite', 1, [
           { name: 'Blast', type: 'damage', damage: '2d6', damageType: 'Bludgeoning', targetType: 'closest_mob' }
         ], { notes: 'Thrown. 5 ft blast radius plus 5 ft splash.' })
@@ -209,14 +211,14 @@ function lootSpec(option) {
 function weaponBonusRows(ctx, bonuses, skill, stat, out, label) {
   const grants = [];
   const damageModifiers = [];
-  const abilityModifiers = {};
   if (bonuses.skill) {
     if (skill) grants.push(skillGrant(ctx, skill, bonuses.skill));
     else out.warnings.push(`${label}: no weapon Skill was named, so the +${bonuses.skill} Skill bonus was skipped.`);
   }
   if (bonuses.damage) damageModifiers.push({ label: `+${bonuses.damage} damage`, mode: 'add', value: bonuses.damage });
-  if (bonuses.stat && stat) abilityModifiers[stat] = { value: bonuses.stat, type: 'flat' };
-  return { grants, damageModifiers, abilityModifiers };
+  // A new weapon carries the stat row itself; an upgrade stamps it as its own ledger entry.
+  const statRows = bonuses.stat && stat ? [{ kind: 'stat', stat, value: bonuses.stat }] : [];
+  return { grants, damageModifiers, statRows };
 }
 
 function pickStat(out, bonuses, choice, label) {
@@ -227,7 +229,7 @@ function pickStat(out, bonuses, choice, label) {
   return picked;
 }
 
-function compileWeapon(option, tierSpec, choice, state, ctx, out, label) {
+function compileWeapon(option, tierSpec, choice, state, ctx, out, label, rollHazard) {
   const bonuses = tierSpec.bonuses ?? {};
   const weapons = Array.isArray(state.weapons) ? state.weapons : [];
   const stat = pickStat(out, bonuses, choice, label);
@@ -237,14 +239,41 @@ function compileWeapon(option, tierSpec, choice, state, ctx, out, label) {
     const skill = cleanText(choice.skill) || cleanText(weapon.skillIdentifier);
     const rows = weaponBonusRows(ctx, bonuses, skill, stat, out, label);
     const update = { _id: weapon.id };
-    if (rows.grants.length) update['system.grants'] = [...(weapon.grants ?? []), ...rows.grants];
-    if (rows.damageModifiers.length) update['system.damageModifiers'] = [...(weapon.damageModifiers ?? []), ...rows.damageModifiers];
-    for (const [key, row] of Object.entries(rows.abilityModifiers)) {
-      const prev = cleanInt(weapon.abilityModifiers?.[key]?.value) ?? 0;
-      update[`system.abilityModifiers.${key}`] = { value: prev + row.value, type: 'flat' };
+    // The book applies the over-enchanting 1d10 "by any means": a weapon already at the engine's threshold risks breaking.
+    const enchantCount = enchantmentCount(weapon);
+    if (enchantCount >= HAZARD_ENCHANTMENTS && typeof rollHazard === 'function') {
+      const roll = rollHazard();
+      if (roll) {
+        const destroyed = roll.total <= HAZARD_BREAKS_ON;
+        out.hazard = { weaponId: weapon.id, name: weapon.name, count: enchantCount, total: roll.total, dice: roll.dice ?? null, destroyed };
+        if (destroyed) {
+          Object.assign(update, breakItemUpdate(weapon, { destroyed: true }));
+          out.updates.push(update);
+          out.upgrade = { weaponId: weapon.id, destroyed: true, grants: [], damageModifiers: [], enchantments: [] };
+          out.summary = `${weapon.name} destroyed by the over-enchant roll`;
+          return;
+        }
+      }
+    }
+    // One ledger entry per bonus (the book: a Skill Rank and a damage bonus are two enchantments): stamped rows plus an entry each.
+    // No dialog; the simulator's own Rule Break keys decide.
+    const templates = [];
+    if (rows.grants.length) templates.push({ label: option.label || 'Weapon upgrade', property: '', category: 'active', bonusLevel: bonuses.skill, rows: { grants: rows.grants } });
+    if (rows.damageModifiers.length) templates.push({ label: `+${bonuses.damage} damage`, property: '', category: 'other', bonusLevel: bonuses.damage, rows: { damageModifiers: rows.damageModifiers } });
+    if (bonuses.stat && stat) templates.push({ label: `+${bonuses.stat} ${stat.toUpperCase()}`, property: '', category: 'stat', bonusLevel: bonuses.stat, rows: { grants: [{ kind: 'stat', stat, value: bonuses.stat, label: `+${bonuses.stat} ${stat.toUpperCase()}` }] } });
+    let working = { grants: weapon.grants, damageModifiers: weapon.damageModifiers, enchantments: weapon.enchantments };
+    const stamped = { grants: [], damageModifiers: [] };
+    const entries = [];
+    for (const template of templates) {
+      // The ledger id follows the weapon and the bonus, so the same answers compile to the same payload.
+      const written = buildEnchantmentWrite(working, template, { id: stableId(`upgrade:${weapon.id}:${template.label}:${(working.enchantments ?? []).length}`), method: 'floor-simulator' });
+      Object.assign(update, written.update);
+      working = { ...working, ...Object.fromEntries(Object.entries(written.update).map(([key, value]) => [key.slice('system.'.length), value])) };
+      for (const array of Object.keys(stamped)) stamped[array].push(...(written.rows[array] ?? []));
+      entries.push(written.entry);
     }
     out.updates.push(update);
-    out.upgrade = { weaponId: weapon.id, grants: rows.grants, damageModifiers: rows.damageModifiers, abilityModifiers: rows.abilityModifiers };
+    out.upgrade = { weaponId: weapon.id, grants: stamped.grants, damageModifiers: stamped.damageModifiers, enchantments: entries };
     out.summary = `${weapon.name} upgraded`;
   } else {
     const def = getStarterWeaponDefinition(cleanText(choice.weapon) || cleanText(choice.name) || option.defaultName);
@@ -253,20 +282,19 @@ function compileWeapon(option, tierSpec, choice, state, ctx, out, label) {
     const skill = cleanText(choice.skill);
     const rows = weaponBonusRows(ctx, bonuses, skill, stat, out, label);
     const parts = [{ dice, stat: def.damageStat, type: def.damageType, value: 0 }];
-    const abilityModifiers = Object.fromEntries(Object.entries(rows.abilityModifiers));
     const gear = build(out, 'weapon', {
       name, img: def.img,
       system: {
         slot: 'hands', quantity: 1, equipped: true, isWeapon: true, toHitStat: def.toHitStat, damageParts: parts,
-        aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []), grants: rows.grants, damageModifiers: rows.damageModifiers,
-        ...(Object.keys(abilityModifiers).length ? { abilityModifiers } : {}), notes: def.effects || ''
+        aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []), grants: [...rows.statRows, ...rows.grants], damageModifiers: rows.damageModifiers,
+        notes: def.effects || ''
       }
     }, label);
     // The AI Favor reader looks at the attack item, not the gear it was made from: the rows ride on both, like the creator's starter attack.
     const attack = build(out, 'attack', { name, img: def.img, system: { toHitStat: def.toHitStat, toHitRank: 3, damageParts: parts, effects: def.effects || '', aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []) } }, label);
     out.creates.push(gear, attack);
     out.unequip = weapons.filter(w => w.equipped).map(w => w.id);
-    out.newWeapon = { name, aiFavor: prefillAiFavorRating(bonuses.aiFavorRatings), aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []), skillIdentifier: skill, grants: rows.grants, damageModifiers: rows.damageModifiers, abilityModifiers: rows.abilityModifiers };
+    out.newWeapon = { name, aiFavor: prefillAiFavorRating(bonuses.aiFavorRatings), aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []), skillIdentifier: skill, grants: [...rows.statRows, ...rows.grants], damageModifiers: rows.damageModifiers };
     out.summary = `${name} (new weapon)`;
   }
   if (bonuses.scroll) {
@@ -289,7 +317,7 @@ function compileArmor(option, tierSpec, choice, ctx, out, label) {
       system.defenseModifiers = [{ kind: 'resistance', label: `${type} Resistance`, damageType: type }];
     }
   }
-  if (b.con) system.abilityModifiers = { con: { value: b.con, type: 'flat' } };
+  if (b.con) grants.push({ kind: 'stat', stat: 'con', value: b.con });
   if (b.grantSkillChoices) {
     const skill = cleanText(choice.skill).toLowerCase();
     if (!skill) out.warnings.push(`${label}: choose ${b.grantSkillChoices.join(' or ')} for the +${b.grantSkill} Skill bonus.`);
@@ -319,19 +347,15 @@ function compileItem(option, tierSpec, choice, ctx, out, label) {
     out.creates.push(build(out, 'gear', {
       name, system: {
         slot: 'accessory', quantity: 1, equipped: false,
-        abilityModifiers: { [option.stat]: { value: tierSpec.bonuses.stat, type: 'flat' } },
-        grants: [skillGrant(ctx, option.skill, tierSpec.bonuses.skill)]
+        grants: [{ kind: 'stat', stat: option.stat, value: tierSpec.bonuses.stat }, skillGrant(ctx, option.skill, tierSpec.bonuses.skill)]
       }
     }, label));
   } else if (option.kind === 'skillPotion') {
     const skill = cleanText(choice.skill);
     if (!skill) { out.warnings.push(`${label}: choose a Skill for the potion; nothing was created.`); return; }
-    out.creates.push(build(out, 'loot', {
-      name, system: {
-        quantity: 1, lootType: 'consumable', usedInto: 'empty-bottle', executionMode: 'all', notes: `Permanently adds ${tierSpec.bonuses.skillRank} Ranks to ${skillName(ctx, skill)}.`,
-        outcomes: [{ name: 'Study', type: 'skill_rank', skillIdentifier: skill, skillName: skillName(ctx, skill), rankBonus: tierSpec.bonuses.skillRank, targetType: 'self' }]
-      }
-    }, label));
+    const warnings = [];
+    out.creates.push(skillPotionPayload({ name: skillName(ctx, skill), identifier: skill }, tierSpec.bonuses.skillRank, { name, warnings }));
+    for (const w of warnings) out.warnings.push(`${label}: ${w.message}`);
   }
   out.summary = out.creates.at(-1)?.name ?? '';
 }
@@ -367,10 +391,11 @@ function compileConsumable(option, state, choice, ctx, out, label) {
  * @param {object} choice `{ option, weaponId?, skill?, stat?, name?, weapon?, slot?, resistance?, race?, spell? }`
  * @param {object} state the working state (reads `state.weapons`)
  * @param {object} ctx the FloorSimContext (`ctx.lootTiers`, `ctx.catalog`)
+ * @param {{ rollHazard?: () => ({ total: number, dice?: number[] }|null) }} [hooks] `rollHazard` rolls the over-enchanting 1d10 when an upgraded weapon already carries the hazard count; without it nothing is rolled
  * @returns {{ creates: object[], updates: object[], unequip: string[], newWeapon: object|null, upgrade?: object, notes: string[],
  *   warnings: string[], breaks: Array<{key: string, reason: string}>, scrollPending: boolean, summary: string }}
  */
-export function compileLootPick(slot, tier, choice, state, ctx) {
+export function compileLootPick(slot, tier, choice, state, ctx, hooks = {}) {
   const out = newPick();
   const tiers = ctx?.lootTiers ?? getLootTiers();
   const tierSpec = tiers?.[slot]?.[tier];
@@ -384,7 +409,7 @@ export function compileLootPick(slot, tier, choice, state, ctx) {
     out.warnings.push(wanted ? `${wanted} is not offered by ${label} loot; the pick was skipped.` : `${label} loot needs an option chosen; the pick was skipped.`);
     return out;
   }
-  if (option.kind === 'weaponUpgrade' || option.kind === 'weaponNew') compileWeapon(option, tierSpec, ch, state, ctx, out, label);
+  if (option.kind === 'weaponUpgrade' || option.kind === 'weaponNew') compileWeapon(option, tierSpec, ch, state, ctx, out, label, hooks.rollHazard);
   else if (option.kind === 'armor') compileArmor(option, tierSpec, ch, ctx, out, label);
   else if (slot === 'consumable') compileConsumable(option, state, ch, ctx, out, label);
   else compileItem(option, tierSpec, ch, ctx, out, label);

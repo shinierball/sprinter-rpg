@@ -8,6 +8,8 @@ Requires Foundry VTT v14 or later, and the [socketlib](https://github.com/farlin
 
 The package holds the rules engine, the sheets, the creators and original content written for this system: a base set of ten classes, two races, and the skills, spells and debuffs they use, plus the example sets. Its compendiums show none of the source books' entries. If you own the books as PDFs, the Sourcery importer reads them in your browser and writes their skills, spells, races, classes, mobs and the rest, with the books' own names and text, into compendiums in your own world. The PDFs are never uploaded. Without them the system works with the base set and the examples.
 
+The base set and the examples were written with AI, and each document is marked as AI-written, human-written or AI-written and edited by a person. A table that wants none of it sets **AI-Written Content** in Configure Settings to hide them.
+
 The PDF export of a crawler sheet needs a fillable sheet that the GM supplies; see [`docs/pdf-export.md`](https://github.com/shinierball/sprinter-rpg/blob/main/docs/pdf-export.md).
 
 ## Install
@@ -29,15 +31,17 @@ To run on The Forge, see [`docs/hosting-on-the-forge.md`](https://github.com/shi
 1. As GM, open **Configure Settings** and click **Open Sourcery Importer**.
 2. Pick your PDFs. They are read in your browser.
 3. Review the summary of what was found, then click **Import**. The importer writes world compendiums, and asks before it replaces ones it made earlier.
-4. Set **Active Content Theme** to **Rulebook Content** and reload. Imported compendiums are registered under that theme, so the creators and pickers do not show them while the default theme is active. The importer itself offers to switch after an import; if you decline, set it later in Configure Settings.
+4. Optionally, make **Rulebook Content** the **Primary Content Theme** and reload. The imported documents are in the pickers and compendiums either way, each with its book's badge. The primary theme supplies the crawler creator's species, backgrounds and story tables, so this switch makes the creator use the books' tables. The importer offers to switch after an import; if you decline, set it later in Configure Settings.
+5. Optionally, for classic mode, add **Shiny** to **Themes Turned Off** and reload. Its sample skills, spells and items leave the pickers, creators and compendiums, and a Theme Cleanup offers to replace those already on actors.
 
 Importing again after an update can refresh the world items you already have, matched by their compendium id; the importer asks first and changes nothing if you decline.
 
 ## For module authors
 
-The rules this code is built to are in [`CONTRIBUTING.md`](https://github.com/shinierball/sprinter-rpg/blob/main/CONTRIBUTING.md). Three guides cover extending the system:
+The rules this code is built to are in [`CONTRIBUTING.md`](https://github.com/shinierball/sprinter-rpg/blob/main/CONTRIBUTING.md). Four guides cover extending the system:
 
 - [`docs/unified-tagging-system.md`](https://github.com/shinierball/sprinter-rpg/blob/main/docs/unified-tagging-system.md): tags, the way content is extended.
+- [`docs/content-themes.md`](https://github.com/shinierball/sprinter-rpg/blob/main/docs/content-themes.md): content themes, source stamps and badges.
 - [`docs/engine-extension.md`](https://github.com/shinierball/sprinter-rpg/blob/main/docs/engine-extension.md): the extension API.
 - [`docs/conditional-modifiers.md`](https://github.com/shinierball/sprinter-rpg/blob/main/docs/conditional-modifiers.md): the modifier row format.
 

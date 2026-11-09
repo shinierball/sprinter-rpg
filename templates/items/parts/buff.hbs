@@ -27,52 +27,7 @@
   {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=durationEditor}}
 </div>
 
-{{!-- MULTIPLE STAT MODIFIERS --}}
-<div class="cog-stat-block" style="margin-bottom: 10px;">
-  <div class="cog-banner-header" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
-    <span>STAT MODIFIERS</span>
-    <a class="cog-text-on-fill" data-action="addRow" data-row-table="statGrant" style="font-size: 10px; cursor: pointer;">
-      <i class="fa-solid fa-plus"></i> Add Stat Modifier
-    </a>
-  </div>
-  <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
-    {{#if statGrantRows.length}}
-      <table class="cog-table" style="margin: 0; font-size: 11px;">
-        <thead>
-          <tr>
-            <th style="width: 55%;">Ability / Stat</th>
-            <th style="width: 35%;">Bonus Value (+/-)</th>
-            <th style="width: 10%;"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {{#each statGrantRows as |mod|}}
-            <tr>
-              <td>
-                <select class="cog-field-input" name="system.grants.{{mod.idx}}.stat" style="font-size: 11px;">
-                  {{#each mod.options as |opt|}}
-                    <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
-                  {{/each}}
-                </select>
-              </td>
-              <td>
-                <input class="cog-stat-input" type="number" name="system.grants.{{mod.idx}}.value" value="{{mod.value}}" placeholder="2" style="width: 100%; font-size: 11px; text-align: center;" />
-              </td>
-              <td style="text-align: center;">
-                <a class="cog-text-accent" data-action="deleteRow" data-row-table="grant" data-index="{{mod.idx}}" data-tooltip="Delete" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
-              </td>
-            </tr>
-          {{/each}}
-        </tbody>
-      </table>
-    {{else}}
-      <div class="cog-text" style="text-align: center; font-style: italic; font-size: 11px; padding: 6px;">
-        No additional stat modifiers. Click "Add Stat Modifier" above to grant stat bonuses (e.g. +2 STR, +2 DEX).
-      </div>
-    {{/if}}
-  </div>
-</div>
-
+{{> "systems/sprinter-rpg/templates/items/parts/stat-grant-rows.hbs"}}
 
 {{!-- LIMB MODIFIERS (ARMS, LEGS, HANDS) --}}
 <div class="cog-stat-block" style="margin-bottom: 10px;">
@@ -102,6 +57,6 @@
 
 <div class="cog-field-group">
   <span class="cog-field-label">Description</span>
-  <textarea class="cog-field-input" name="system.description" style="height: 100px;">{{system.description}}</textarea>
+  {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
 </div>
 </section>

@@ -3,10 +3,19 @@
  */
 import { refreshEnvironmentDisplays } from '../documents/actor/actor-environment.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
+import { HUD_HIDDEN_SETTING, refreshHudVisibility } from '../utils/effects/hud-visibility.mjs';
+import { ZERO_ZONE_SETTING, onZeroZoneChange } from '../utils/effects/zero-zone.mjs';
 import { RULE_BREAK_MODES } from '../utils/rule-break.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { COGSourceryImporterLauncher } from '../apps/sourcery-importer.mjs';
-import { invalidateTagBehaviour } from '../utils/tag-behaviour.mjs';
+import { COGThemeCleanupLauncher } from '../apps/theme-cleanup.mjs';
+import { onAiContentChange } from '../hooks/ai-content.mjs';
+import { invalidateTagBehaviour } from '../utils/tag/tag-behaviour.mjs';
+import { PERCENT_STAT_SETTING, PERCENT_STAT_MODES } from '../utils/character/stat-percent.mjs';
+import { lockOwnedPercentRows } from '../documents/actor/percent-lock.mjs';
+import { registerLootBoxShowSettings } from '../apps/loot-box-show.mjs';
+import { ACTION_HUD_POSITION_SETTING } from '../apps/crawler-token-hud.mjs';
+import { PENDING_SECRETS_SETTING } from '../documents/pending-secrets.mjs';
 
 export function registerSettings() {
   // Register System Settings
@@ -28,13 +37,42 @@ export function registerSettings() {
     default: []
   });
 
-  game.settings.register(SYSTEM_ID, 'actionHudPosition', {
+  game.settings.register(SYSTEM_ID, PENDING_SECRETS_SETTING, {
+    name: 'Pending Secrets',
+    hint: 'Secret debuffs held GM-side until the GM reveals them or fires the change.',
+    scope: 'world',
+    config: false,
+    type: Array,
+    default: []
+  });
+
+  game.settings.register(SYSTEM_ID, ACTION_HUD_POSITION_SETTING, {
     name: 'Action HUD Position',
     hint: 'Where this client dragged the crawler Action HUD. Empty means docked below the scene navigation.',
     scope: 'client',
     config: false,
     type: Object,
     default: null
+  });
+
+  game.settings.register(SYSTEM_ID, HUD_HIDDEN_SETTING, {
+    name: 'COG.Hud.SettingName',
+    hint: 'COG.Hud.SettingHint',
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => refreshHudVisibility()
+  });
+
+  game.settings.register(SYSTEM_ID, ZERO_ZONE_SETTING, {
+    name: 'COG.Hud.ZeroZoneSettingName',
+    hint: 'COG.Hud.ZeroZoneSettingHint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => onZeroZoneChange()
   });
 
   game.settings.register(SYSTEM_ID, 'activeSessionId', {
@@ -164,9 +202,25 @@ export function registerSettings() {
     default: false
   });
 
-  game.settings.register(SYSTEM_ID, 'activeTheme', {
-    name: 'Active Content Theme',
-    hint: 'Determines the active lore, species, background tables, and the default compendium packs used across character creation and managers.',
+  // When a percent Stat bonus (+10% STR) is worked out.
+  game.settings.register(SYSTEM_ID, PERCENT_STAT_SETTING, {
+    name: 'Percent Stat Bonuses',
+    hint: 'Fixed (book): a percent bonus is worked out once, rounded down, when the item lands on a character, and kept. '
+      + 'Live (house rule): it is recalculated from the current Stat every time. Buffs and debuffs are always live.',
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      [PERCENT_STAT_MODES.FIXED]: 'Fixed when the item is gained (book)',
+      [PERCENT_STAT_MODES.LIVE]: 'Live (house rule)'
+    },
+    default: PERCENT_STAT_MODES.FIXED,
+    onChange: (mode) => { lockOwnedPercentRows(mode).catch((err) => console.error('COG | locking percent Stat bonuses failed', err)); }
+  });
+
+  game.settings.register(SYSTEM_ID, 'primaryTheme', {
+    name: 'Primary Content Theme',
+    hint: "Every installed theme's content is in the pickers and compendiums. The primary theme supplies the crawler creator's species, backgrounds and story tables and the other setting data, and it comes first when two themes offer the same thing.",
     scope: 'world',
     config: true,
     requiresReload: true,
@@ -176,6 +230,61 @@ export function registerSettings() {
     ),
     default: 'shiny'
   });
+
+  // Themes turned off (classic mode): their content leaves the pickers, creators, managers and compendium sidebar. A set of
+  // theme ids, so a theme a module adds later starts on. The primary is always on (the registry ignores it here).
+  const { SetField, StringField } = foundry.data.fields;
+  game.settings.register(SYSTEM_ID, 'disabledThemes', {
+    name: 'Themes Turned Off',
+    hint: 'Content of a theme that is turned off leaves the pickers, creators, managers and compendium sidebar. The primary theme is always on. Documents already on actors are not changed.',
+    scope: 'world',
+    config: true,
+    requiresReload: true,
+    type: new SetField(new StringField({
+      required: true,
+      choices: Object.fromEntries(Object.entries(contentRegistry.getThemes()).map(([id, theme]) => [id, theme.label || id])),
+    })),
+    default: []
+  });
+
+  // AI-written content (7.16f): hides documents stamped with an AI authorship from every picker, creator, manager and
+  // compendium directory, and offers the cleanup that replaces the AI-written documents on actors with Celestial AI Poop.
+  game.settings.register(SYSTEM_ID, 'aiContent', {
+    name: 'AI-Written Content',
+    hint: 'Show all content, hide content written with AI, or also hide AI-written content a person edited. Hidden documents leave the pickers, creators, managers and compendium lists, and the theme cleanup offers to replace those already on actors with Celestial AI Poop. With nothing human-written installed, the race and class lists are empty until you import your own books or make your own.',
+    scope: 'world',
+    config: true,
+    requiresReload: false,
+    type: String,
+    choices: {
+      show: 'Show all content',
+      'hide-ai': 'Hide AI-written content',
+      'hide-ai-edited': 'Hide AI-written and human-edited content'
+    },
+    default: 'show',
+    onChange: onAiContentChange
+  });
+
+  // The sorted off list the theme cleanup last asked about (empty until it exists), so it asks again only when the list changes.
+  game.settings.register(SYSTEM_ID, 'themeCleanupSeen', {
+    scope: 'world',
+    config: false,
+    type: Array,
+    default: []
+  });
+
+  // The cleanup window for documents of a theme that is off (also opened at ready and by /themes).
+  game.settings.registerMenu?.(SYSTEM_ID, 'themeCleanup', {
+    name: 'Theme Cleanup',
+    label: 'Open Theme Cleanup',
+    hint: 'List the documents of a turned-off theme on actors and in the world, replace them with Celestial AI Poop, or restore them.',
+    icon: 'fa-solid fa-broom',
+    type: COGThemeCleanupLauncher,
+    restricted: true
+  });
+
+  // The Loot Box Showcase (7.3e): client settings `lootBoxShow` (full / reduced / summary) and `lootBoxShowSound`.
+  registerLootBoxShowSettings(game.settings);
 
   // Sourcery importer: a button in Configure Settings; the catalog setting itself is registered by the provider.
   game.settings.registerMenu?.(SYSTEM_ID, 'sourceryImporter', {

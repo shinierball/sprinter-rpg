@@ -6,10 +6,12 @@
  * species/creation matrices, background tables, character sheet PDF asset, and canonical packs).
  *
  * Nothing registers at import time. `installBundledContentHook()` (called once from cog.mjs) listens
- * to `sprinter-rpg.registerContent`; everything is registered under the `cog` theme, so the GM opts in
- * with the `activeTheme` setting and the default (`shiny`) gets only the sample creation content (`creation-samples-provider.mjs`).
+ * to `sprinter-rpg.registerContent`; everything is registered under the `cog` theme. Every theme is active, so its
+ * documents are in the pickers beside the shiny ones; the `primaryTheme` setting decides whose species, backgrounds and
+ * other setting data the creators use (the default primary, `shiny`, supplies the sample creation content).
  */
 
+import { SYSTEM_ID } from '../constants.mjs';
 import { contentRegistry } from './registry.mjs';
 import { isHiddenDoc } from './visibility.mjs';
 import { PACK_SPECS } from './specs/index.mjs';
@@ -20,6 +22,11 @@ import { COG_SPACE_TYPES, COG_SPACE_UPGRADES } from '../data/personal-spaces.mjs
 import { COG_SPECIES_DATA } from '../data/crawler-creation.mjs';
 import { COG_PERK_TAGS } from '../data/perk-tags.mjs';
 import { COG_CREATION_LOADOUTS } from './specs/creation-loadouts.mjs';
+import { BOOKS } from '../sourcery/canon.mjs';
+import { BUNDLED_SET_ID } from '../utils/content-source.mjs';
+
+/** The badge symbol of each book (7.7c). */
+const BOOK_SYMBOLS = Object.freeze({ core: 'CO', toolkit: 'TK', crawlers: 'CW', survival: 'SV', atlas: 'AT' });
 
 /**
  * Registers the bundled descriptive perk tags (3.9a). build:packs and the golden tests call this before compiling,
@@ -53,30 +60,37 @@ export function registerBundledCOGContent(registry = contentRegistry) {
 
   registry.registerTheme(COG_THEME_ID, {
     label: 'Rulebook Content',
-    description: 'Skills, spells, items, species, mercenaries and background tables from the rulebooks you imported.'
+    description: 'Skills, spells, items, species, mercenaries and background tables from the rulebooks you imported.',
+    badge: { icon: 'fa-solid fa-book-open', color: '--cog-source-rulebook' }
   }, { priority: 5, provider: PROVIDER });
 
+  // The source sets of the theme (7.7c): the bundled documents, and one per book a Sourcery import fills.
+  registry.registerSourceSet(COG_THEME_ID, BUNDLED_SET_ID, { label: 'Bundled', symbol: 'BD', note: 'Bundled with the system' });
+  for (const book of BOOKS) registry.registerSourceSet(COG_THEME_ID, book.id, { label: book.label, symbol: BOOK_SYMBOLS[book.id] ?? book.id.slice(0, 2).toUpperCase() });
+
   const opts = { theme: COG_THEME_ID, priority: 5, provider: PROVIDER };
+  // `origin` is the pack a catalog entry lives in, so a uuid is built from the entry's own pack (`getCatalogOrigin`).
+  const from = pack => ({ ...opts, origin: `${SYSTEM_ID}.${pack}` });
 
   // Descriptive tags for the rulebook perks the races and classes carry (3.9a): label plus rules text, no engine reader.
   registerBundledTags(registry);
 
   // 0. Catalogs
-  registry.registerCatalog('skills', compiledSpecs('skills'), opts);
-  registry.registerCatalog('spells', compiledSpecs('spells'), opts);
-  registry.registerCatalog('items', compiledSpecs('items'), opts);
-  registry.registerCatalog('races', compiledSpecs('races'), opts);
-  registry.registerCatalog('classes', compiledSpecs('classes'), opts);
-  registry.registerCatalog('mobs', compiledSpecs('mobs'), opts);
-  registry.registerCatalog('pets', compiledSpecs('pets'), opts);
+  registry.registerCatalog('skills', compiledSpecs('skills'), from('skills'));
+  registry.registerCatalog('spells', compiledSpecs('spells'), from('spells'));
+  registry.registerCatalog('items', compiledSpecs('items'), from('items'));
+  registry.registerCatalog('races', compiledSpecs('races'), from('races'));
+  registry.registerCatalog('classes', compiledSpecs('classes'), from('classes'));
+  registry.registerCatalog('mobs', compiledSpecs('mobs'), from('mobs'));
+  registry.registerCatalog('pets', compiledSpecs('pets'), from('pets'));
   // Buffs and debuffs share one pack; the catalogs split on the document type. A provider that adds its
   // own buffs registers them with `registerCatalog('buffs' | 'debuffs', ...)`; the examples provider will do so here.
   const conditions = compiledSpecs('buffs');
-  registry.registerCatalog('buffs', conditions.filter(doc => doc.type === 'buff'), opts);
-  registry.registerCatalog('debuffs', conditions.filter(doc => doc.type === 'debuff'), opts);
+  registry.registerCatalog('buffs', conditions.filter(doc => doc.type === 'buff'), from('buffs'));
+  registry.registerCatalog('debuffs', conditions.filter(doc => doc.type === 'debuff'), from('buffs'));
 
   // 1. Mercenaries
-  registry.registerMercenaries(compiledSpecs('mercenaries'), opts);
+  registry.registerMercenaries(compiledSpecs('mercenaries'), from('mercenaries'));
 
   // 2. Personal Space Types & Upgrades
   if (COG_SPACE_TYPES) {
@@ -116,7 +130,7 @@ export function registerBundledCOGContent(registry = contentRegistry) {
     { category: 'races', packId: 'sprinter-rpg.races', kind: 'kind.race', label: 'Canonical Races' },
     { category: 'classes', packId: 'sprinter-rpg.classes', kind: 'kind.class', label: 'Canonical Classes' },
     { category: 'buffs', packId: 'sprinter-rpg.buffs', kind: 'kind.buff', label: 'Canonical Buffs and Debuffs' },
-    { category: 'floorTables', packId: 'sprinter-rpg.floor-tables', kind: 'kind.rolltable', label: 'Example Floor Tables', theme: 'all' }
+    { category: 'floorTables', packId: 'sprinter-rpg.floor-tables', kind: 'kind.rolltable', label: 'Floor Tables', theme: 'all' }
   ];
   for (const pack of bundledPacks) {
     registry.registerPack(pack.category, pack.packId, {
@@ -126,6 +140,7 @@ export function registerBundledCOGContent(registry = contentRegistry) {
       ...(pack.theme ? { theme: pack.theme } : {})
     });
   }
+  // The example tables lookup pack below the floor tables is the shiny provider's (shiny-content-provider.mjs).
 
   // 7. Achievements (3.6a R1)
   registry.registerCatalog('achievements', compiledSpecs('achievements'), opts);

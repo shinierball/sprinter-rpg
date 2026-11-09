@@ -11,7 +11,7 @@ import { cleanInt, rollOrTyped } from '../state.mjs';
 const clampRating = (n) => Math.min(2, Math.max(0, n));
 
 /** The rating the step pre-fills for this crawler and the item it comes from: `{ rating, source }`. */
-export function defaultAiFavorSource(state) {
+function defaultAiFavorSource(state) {
   const primary = state.primaryItem();
   let rating = cleanInt(primary?.aiFavor) ?? 0;
   let source = rating > 0 ? primary?.name ?? null : null;
@@ -24,12 +24,12 @@ export function defaultAiFavorSource(state) {
 }
 
 /** The rating the step pre-fills for this crawler. */
-export function defaultAiFavorRating(state) {
+function defaultAiFavorRating(state) {
   return defaultAiFavorSource(state).rating;
 }
 
 /** Combine a rolled amount with the current value by mode: `max`, `add` or `set`. */
-export function combine(mode, current, value) {
+function combine(mode, current, value) {
   if (mode === 'add') return current + value;
   if (mode === 'set') return value;
   return Math.max(current, value);

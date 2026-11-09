@@ -7,8 +7,8 @@
  * The user then targets the tokens inside the placed area.
  */
 import { findTokenByActorUuid } from '../../utils/actor-uuid.mjs';
-import { resolveAreaGeometry } from '../../utils/area-geometry.mjs';
-import { buildAreaShape, tokensInRegion } from '../../utils/region-shapes.mjs';
+import { resolveAreaGeometry } from '../../utils/area/area-geometry.mjs';
+import { buildAreaShape, tokensInRegion } from '../../utils/area/region-shapes.mjs';
 import { auraRank } from '../../documents/actor/aura-effects.mjs';
 import { createAreaRegions, tokenCenterOf } from '../../documents/actor/area-relay.mjs';
 import { postAreaPlacedCard } from '../area-placed-card.mjs';

@@ -101,6 +101,10 @@
             <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="vehicleCrew" data-op="takeWheel" data-vehicle-uuid="{{aboard.vehicleUuid}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Take the Wheel</button>
           {{/if}}
           <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="vehicleCrew" data-op="disembark" data-vehicle-uuid="{{aboard.vehicleUuid}}" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">Disembark</button>
+          {{!-- Drive controls for the driver; the speed and the Evade Buff for everyone aboard (3.44g) --}}
+          <div class="cog-vehicle-aboard-drive">
+            {{> "systems/sprinter-rpg/templates/actors/vehicle/drive-controls.hbs" drive=aboard.drive showEvade=true showFire=true}}
+          </div>
         </div>
       {{/if}}
 
@@ -112,7 +116,7 @@
                 <img class="cog-bg-icon-box" src="{{v.img}}" width="36" height="36" style="border-radius: 4px; object-fit: cover; border: 1px solid var(--cog-divider);" />
                 <div style="flex: 1; min-width: 0;">
                   <div class="cog-text" style="font-weight: bold; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{v.name}}</div>
-                  <div class="cog-text-muted" style="font-size: 10px;">{{v.size}} {{v.vehicleType}} • Move {{v.move}} • DR {{v.dr}}</div>
+                  <div class="cog-text-muted" style="font-size: 10px;">{{v.size}} {{v.vehicleKind}} • Move {{v.move}} • DR {{v.dr}}</div>
                 </div>
                 <div style="display: flex; gap: 4px;">
                   <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="openCompanion" data-companion-id="{{v.id}}" title="Open Vehicle Sheet" style="padding: 3px 6px; border: none; border-radius: 3px; cursor: pointer;">

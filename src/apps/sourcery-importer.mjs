@@ -45,7 +45,7 @@ export async function loadPdfJs({ importer = (url) => import(url), route = (p) =
 }
 
 /** The Foundry side of the commit (see `commitImport`). */
-export function foundryImportIO() {
+function foundryImportIO() {
   const CC = globalThis.foundry?.documents?.collections?.CompendiumCollection ?? globalThis.CompendiumCollection;
   return {
     hasPack: (id) => !!globalThis.game.packs.get(id),
@@ -103,14 +103,24 @@ function defaultServices() {
       content: `<p>Update the world items and the actors' items that came from these ${count} imported documents with the imported text?</p><p>Items are matched by their compendium id. Nothing changes if you decline.</p>`
     }),
     syncDocument: (doc) => syncCompendiumItemToWorld(doc),
-    activeTheme: () => contentRegistry.getActiveThemeId(),
+    primaryTheme: () => contentRegistry.getPrimaryThemeId(),
     confirmTheme: async () => globalThis.foundry?.applications?.api?.DialogV2?.confirm?.({
-      window: { title: 'Switch content theme' },
-      content: '<p>The imported content belongs to the Rulebook Content theme, and this world uses a different one, so the creators and pickers will not show it.</p><p>Switch the Active Content Theme to Rulebook Content? The world reloads.</p>'
+      window: { title: 'Primary content theme' },
+      content: "<p>Make Rulebook Content the primary theme?</p><p>The primary theme supplies the crawler creator's species, backgrounds and story tables. The world reloads.</p>"
     }) ?? false,
     async setTheme(id) {
-      await globalThis.game.settings.set(SYSTEM_ID, 'activeTheme', id);
+      await globalThis.game.settings.set(SYSTEM_ID, 'primaryTheme', id);
       await globalThis.foundry?.applications?.settings?.SettingsConfig?.reloadConfirm?.({ world: true });
+    },
+    isThemeOff: (id) => contentRegistry.isThemeOff(id),
+    confirmTurnOn: async () => globalThis.foundry?.applications?.api?.DialogV2?.confirm?.({
+      window: { title: 'Rulebook Content is turned off' },
+      content: '<p>Rulebook Content is turned off. Turn it on and make it the primary theme?</p><p>The world reloads.</p>'
+    }) ?? false,
+    async turnOnTheme(id) {
+      const off = contentRegistry.getDisabledThemeIds().filter((t) => t !== id);
+      await globalThis.game.settings.set(SYSTEM_ID, 'disabledThemes', off);
+      await this.setTheme(id);
     },
     // Foundry's helper also works on a plain-http server, where `navigator.clipboard` does not exist.
     writeClipboard: (text) => globalThis.game.clipboard.copyPlainText(text),
@@ -251,15 +261,23 @@ export class COGSourceryImporterApp extends COGToolApp {
     }
   }
 
-  /** One confirm after a commit when the world's theme hides the imported packs (they register under the `cog` theme). */
+  /**
+   * One confirm after a commit, only when `cog` (where the imported packs register) is not the primary theme. When `cog`
+   * is turned off the question is "turn it on and make it primary" instead, and it takes `cog` off the off list too.
+   */
   async #offerTheme() {
     try {
-      if (!this.services.activeTheme || this.services.activeTheme() === COG_THEME_ID) return false;
+      if (this.services.isThemeOff?.(COG_THEME_ID)) {
+        if (!this.services.confirmTurnOn || !(await this.services.confirmTurnOn())) return false;
+        await this.services.turnOnTheme(COG_THEME_ID);
+        return true;
+      }
+      if (!this.services.primaryTheme || this.services.primaryTheme() === COG_THEME_ID) return false;
       if (!this.services.confirmTheme || !(await this.services.confirmTheme())) return false;
       await this.services.setTheme(COG_THEME_ID);
       return true;
     } catch (err) {
-      console.warn('Sprinter RPG | Sourcery: switching the content theme failed:', err);
+      console.warn('Sprinter RPG | Sourcery: making the content theme primary failed:', err);
       return false;
     }
   }

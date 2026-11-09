@@ -6,13 +6,13 @@
  * element schema, through `row-fields.mjs`. Every input `name`, label key, option list and `selected` flag is computed
  * here, so the templates concatenate and compute nothing (CONTRIBUTING §5).
  */
-import { describeRow } from '../../utils/feature-describer.mjs';
+import { describeRow } from '../../utils/item-describer/feature-describer.mjs';
 import { MAX_SNAPSHOT_TEXT, kindOf, rowKindOf } from '../../utils/row-kinds.mjs';
 import { buildQueryView, conditionBadges, rolesOfArray } from './context-query.mjs';
 import { scaleView } from './context-scale.mjs';
 import { previewArray } from './row-preview.mjs';
-import { firstTargetActor } from '../../utils/roll-context.mjs';
-import { DEFAULT_DAMAGE_TYPES } from './options.mjs';
+import { firstTargetActor } from '../../utils/roll/roll-context.mjs';
+import { DEFAULT_DAMAGE_TYPES } from '../../utils/ui/field-options.mjs';
 import { ARRAY_UI, commonFieldNames, elementFieldsOf, fieldView, kindView, leftoverFields, rawFields } from './row-fields.mjs';
 import { modifierArrayKeys, queryBucketsAt, toArray } from './util.mjs';
 
@@ -25,6 +25,8 @@ function rowBadges(arrayKey, row) {
   if (resolved.error === 'unknown') badges.push({ key: 'COG.Rows.Badge.NotRegistered', value: resolved.id, tone: 'warn' });
   else if (resolved.error === 'option') badges.push({ key: 'COG.Rows.Badge.OptionNotDeclared', value: String(row?.option), tone: 'warn' });
   else if (typeof row?.option === 'string' && row.option.length > MAX_SNAPSHOT_TEXT) badges.push({ key: 'COG.Rows.Badge.OptionTooLong', value: MAX_SNAPSHOT_TEXT, tone: 'warn' });
+  // A row an enchantment wrote (3.15): editable like any other, marked with its origin
+  if (typeof row?.enchantment === 'string' && row.enchantment) badges.push({ key: 'COG.CraftSheet.Badge.Enchantment', tone: 'info', isInfo: true });
   return badges;
 }
 

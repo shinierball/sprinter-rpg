@@ -1,17 +1,8 @@
-import {
-  BaseItemDataModel,
-  damageModifiersField,
-  defenseModifiersField,
-  rollModifiersField,
-  manaCostModifiersField,
-  recoveryModifiersField,
-  statSubstitutionsField,
-  popularityTriggersField,
-  grantsField,
-  sensesField,
-  lightSchemaField,
-  durationConfigField
-} from './base-item-model.mjs';
+import { BaseItemDataModel } from './base-item-model.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, vehicleModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, sensesField } from '../fields/modifier-fields.mjs';
+import { grantsField } from '../fields/grant-fields.mjs';
+import { lightSchemaField } from '../fields/effect-fields.mjs';
+import { durationConfigField } from '../fields/timing-fields.mjs';
 
 /**
  * Data Model for Sprinter RPG Buff Items.
@@ -33,6 +24,7 @@ export class BuffDataModel extends BaseItemDataModel {
       defenseModifiers: defenseModifiersField(fields),
       attackModifiers: rollModifiersField(fields),
       checkModifiers: rollModifiersField(fields),
+      vehicleModifiers: vehicleModifiersField(fields),
       manaCostModifiers: manaCostModifiersField(fields),
       recoveryModifiers: recoveryModifiersField(fields),
       statSubstitutions: statSubstitutionsField(fields),

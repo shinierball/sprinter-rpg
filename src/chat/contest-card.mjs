@@ -11,6 +11,7 @@
  */
 import { SYSTEM_ID } from '../constants.mjs';
 import { sanitizeContest, raceStandings, chaseStatus, contestMoveOf, moveRateMod, participantLegSkill } from '../utils/contest/contest-engine.mjs';
+import { contestMoveOptions } from '../documents/actor/vehicle-contest.mjs';
 import { contestKindInfo } from '../data/rules/contest-rules.mjs';
 import { isGmAuthored } from './chat-relay.mjs';
 import { ruleBreakBadgeHtml } from '../utils/rule-break-visibility.mjs';
@@ -102,7 +103,7 @@ export function buildContestCardHtml(wrapper, { resolve } = {}) {
       const result = state.results[leg.id]?.[p.id];
       const out = participantIsOut(state, p.id, resolve);
       const canRoll = leg.status === 'open' && p.mode === 'roll' && !out && p.actorUuid && resolve?.(p.actorUuid)?.type !== 'mob';
-      const move = contestMoveOf(p, leg, resolve);
+      const move = contestMoveOf(p, leg, resolve, contestMoveOptions);
       const roll = canRoll
         ? `<button type="button" class="cog-contest-roll" data-action="${CONTEST_ACTIONS.roll}" data-leg-id="${esc(leg.id)}" data-participant-id="${esc(p.id)}" data-actor-uuid="${esc(p.actorUuid)}">${result ? 'Reroll' : 'Roll'} (Move Rate ${signed(moveRateMod(move.move))})</button>`
         : '';

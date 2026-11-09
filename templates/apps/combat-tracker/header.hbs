@@ -111,13 +111,14 @@
           <i class="fas fa-chevron-left"></i>
         </button>
         {{/if}}
-        <div class="cog-step-current-banner">
+        <div class="cog-step-current-banner{{#if isCleanUpStep}} cog-step-cleanup{{/if}}">
           <span class="cog-step-badge">{{currentStepDefinition.shortLabel}}</span>
           <span class="cog-step-desc">{{currentStepDefinition.desc}}</span>
         </div>
         {{#if isGM}}
-        <button type="button" class="cog-step-nav-btn next-step" data-action="stepNext" data-tooltip="{{localize 'COG.Combat.StepNext'}}">
-          <i class="fas fa-chevron-right"></i>
+        <button type="button" class="cog-step-nav-btn next-step{{#if isCleanUpStep}} cog-end-round{{/if}}" data-action="stepNext" data-tooltip="{{nextStepTooltip}}">
+          {{#if isCleanUpStep}}<span class="cog-end-round-label">{{nextStepLabel}}</span>{{/if}}
+          <i class="fas {{#if isCleanUpStep}}fa-rotate-right{{else}}fa-chevron-right{{/if}}"></i>
         </button>
         {{/if}}
       </div>

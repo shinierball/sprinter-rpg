@@ -1,4 +1,7 @@
-import { BaseItemDataModel, aiFavorRatingsField, asTriggersField, damagePartField, onHitField, contestField, interruptSchemaField, areaSchemaField, cooldownField, useRecordsField } from './base-item-model.mjs';
+import { BaseItemDataModel } from './base-item-model.mjs';
+import { aiFavorRatingsField, asTriggersField } from '../fields/modifier-fields.mjs';
+import { damagePartField, onHitField, contestField, interruptSchemaField, areaSchemaField } from '../fields/effect-fields.mjs';
+import { cooldownField, useRecordsField } from '../fields/timing-fields.mjs';
 
 /**
  * Data Model for Sprinter RPG Attack Items.

@@ -4,31 +4,32 @@
 
 import { conditionLabel } from './condition-data.mjs';
 import { getGrantedRankDamageDie, getEffectRankDice } from '../../data/rank-dice.mjs';
-import { getItemAllTags, ENGINE_SITUATIONS } from '../../data/tags.mjs';
+import { getItemAllTags } from '../active-tags.mjs';
+import { ENGINE_SITUATIONS } from '../../data/tag-vocabulary.mjs';
 import { isWeaponGear, DEFAULT_CRIT_MULTIPLIER, configuredCritMultiplier } from './actor-constants.mjs';
-import { getDamageParts, damageCardDataAttrs, ignoreEvadeButtonHtml } from '../../utils/damage-parts.mjs';
-import { resolveRollParts, targetRowsDataAttr, perTargetBoxHtml } from '../../utils/per-target-damage.mjs';
-import { collectDamageModifiers, applyStatSuppression, multiplierFor } from '../../utils/damage-modifiers.mjs';
-import { applyDamageStatSubstitutions } from '../../utils/narrow-modifiers.mjs';
-import { resolveDamageContext, extendContext, rollContextDataAttr } from '../../utils/roll-context.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
-import { escapeAttr } from '../../utils/interrupts.mjs';
+import { getDamageParts, damageCardDataAttrs, ignoreEvadeButtonHtml } from '../../utils/damage/damage-parts.mjs';
+import { resolveRollParts, targetRowsDataAttr, perTargetBoxHtml } from '../../utils/damage/per-target-damage.mjs';
+import { collectDamageModifiers, applyStatSuppression, multiplierFor } from '../../utils/roll/damage-modifiers.mjs';
+import { applyDamageStatSubstitutions } from '../../utils/roll/narrow-modifiers.mjs';
+import { resolveDamageContext, extendContext, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
+import { workingGear } from '../../utils/effects/gear-suppression.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
-import { cardSummary, OMIT_ALL } from '../../utils/card-summary.mjs';
-import { asTriggersOf, asTriggersDataAttr, amazingPreviewHtml, amazingSubActionHtml, amazingSourceMessage } from '../../utils/amazing-success.mjs';
+import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
+import { asTriggersOf, asTriggersDataAttr, amazingPreviewHtml, amazingSubActionHtml, amazingSourceMessage } from '../../utils/roll/amazing-success.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
-import { sourceDamageBonusParts } from '../../utils/check-assists.mjs';
-import { techniqueConditionMet, techniqueHealthRows, techniqueBonusDiceList, techniqueConditionPerTarget, techniqueConditionRow, techniqueConditionRowKey } from './actor-techniques.mjs';
-import { resolveReachedRankBreaks } from '../../utils/rank-breaks.mjs';
-import {
-  buildAttackOptions, resolveAttackChoices, settleChoiceToggles, readChoiceOptions, emptyChoices, ruleBreakReasons, confirmChoiceRuleBreaks,
-  choicesToDamageOptions, choicesFromMessage, choicesFlag, commitPick
-} from '../../utils/attack-options.mjs';
-import { attackOptionsLineHtml } from '../../utils/attack-options-line.mjs';
-import { normalizeBaseDamage } from '../../utils/base-damage.mjs';
-import { collectOnHitEffects, onHitCardAttrs } from '../../utils/on-hit.mjs';
-import { attackEffectsText } from '../../utils/attack-mechanics.mjs';
+import { sourceDamageBonusParts } from '../../utils/roll/check-assists.mjs';
+import { techniqueConditionMet, techniqueHealthRows, techniqueBonusDiceList, techniqueConditionPerTarget, techniqueConditionRow, techniqueConditionRowKey, isTechniqueApplicable, getAiFavorRating, resolveDamageEffect } from './actor-techniques.mjs';
+import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
+import { buildAttackOptions, resolveAttackChoices, settleChoiceToggles, readChoiceOptions, emptyChoices, ruleBreakReasons, confirmChoiceRuleBreaks , choicesToDamageOptions, choicesFromMessage, choicesFlag, commitPick } from '../../utils/attack/attack-options.mjs';
+import { attackOptionsLineHtml } from '../../utils/attack/attack-options-line.mjs';
+import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
+import { collectOnHitEffects, onHitCardAttrs } from '../../utils/attack/on-hit.mjs';
+import { attackEffectsText } from '../../utils/attack/attack-mechanics.mjs';
+import { resolveWeaponSkills } from './weapon-skills.mjs';
+import { getSkillDamageData } from './combat-skill-damage.mjs';
 
 /**
  * Equipped gear that may add flat damage parts to an attack. Weapons are excluded: an equipped
@@ -38,8 +39,7 @@ import { attackEffectsText } from '../../utils/attack-mechanics.mjs';
  * @returns {Array<Item>}
  */
 function getNonWeaponEquippedGear(actor) {
-  const all = actor.items ? actor.items.filter(i => i.type === 'gear' && i.system?.equipped) : [];
-  return all.filter(g => !isWeaponGear(g));
+  return workingGear(actor, actor.items, 'attackExtras').filter(g => !isWeaponGear(g));
 }
 
 /**
@@ -102,289 +102,118 @@ function markStandby(parts, from, effectData) {
   for (let i = from; i < parts.length; i++) Object.assign(parts[i], { standby: true, rowKey });
 }
 
-export const actorCombatDamageMixin = {
-  /**
-   * Resolve all damage parts for an attack from the weapon/attack item itself,
-   * equipped gear bonuses, active skill modifiers (with rank gating),
-   * and the rank damage dice.
-   * @param {Item} attackItem
-   * @param {object} [options={}]
-   * @returns {Array<object>}
-   */
-  getAttackDamageParts(attackItem, options = {}) {
-    if (attackItem?.type === 'skill') {
-      const sData = this.getSkillDamageData(attackItem, options);
-      const parts = [];
-
-      // 1. Base damage part
-      parts.push({
-        id: `skill-base-${attackItem.id || 'part'}`,
-        type: sData.damageType || 'Physical',
-        dice: sData.baseDice,
-        stat: sData.stat,
-        statMod: sData.statMod,
-        value: 0,
-        ...(sData.baseResultMultiplier !== null && sData.baseResultMultiplier !== undefined ? { resultMultiplier: sData.baseResultMultiplier } : {}),
-        source: `${sData.skillName} (Base)`
-      });
-
-      // 2. Rank damage die
-      if (sData.combinedRankDieStr) {
-        const isFlat = /^\d+$/.test(sData.combinedRankDieStr);
-        parts.push({
-          id: `skill-rank-die-${attackItem.id || 'part'}`,
-          excludeFromCrit: true, // Table 37: the Rank damage die is not doubled on a Critical Hit
-          type: sData.damageType || 'Physical',
-          dice: isFlat ? '' : sData.combinedRankDieStr,
-          stat: '',
-          statMod: 0,
-          value: isFlat ? Number(sData.combinedRankDieStr) : 0,
-          source: sData.effectRankDie
-            ? `Rank Die (${sData.skillName} R${sData.rank} + ${sData.effectName} R${sData.effectRank})`
-            : `Rank ${sData.rank} Damage Die`
-        });
-      }
-
-      // 3. Toss bonus damage part
-      if (sData.tossBonus) {
-        parts.push({
-          id: `skill-toss-${attackItem.id || 'part'}`,
-          type: sData.tossBonus.type || 'Bludgeoning',
-          dice: sData.tossBonus.dice,
-          stat: sData.tossBonus.stat,
-          statMod: sData.tossBonus.statMod,
-          value: 0,
-          source: sData.tossBonus.source || 'Technique'
-        });
-      }
-
-      // Extra Technique Damage Parts
-      for (const ep of (sData.extraDamageParts || [])) {
-        parts.push({
-          id: ep.id || `skill-extra-${parts.length}`,
-          type: ep.type || sData.damageType || 'Physical',
-          dice: ep.dice || '',
-          stat: ep.stat || '',
-          statMod: ep.statMod || 0,
-          value: ep.value || 0,
-          source: ep.source || 'Technique'
-        });
-      }
-
-      // 5. Rank Break Extra Damage Dice
-      if (sData.rankBreakExtraDamageDice && sData.rankBreakExtraDamageDice.length > 0) {
-        for (const bd of sData.rankBreakExtraDamageDice) {
-          parts.push({
-            id: `skill-break-${parts.length}`,
-            type: sData.damageType || 'Physical',
-            dice: bd,
-            stat: '',
-            statMod: 0,
-            value: 0,
-            source: `${sData.skillName} Rank Break`
-          });
-        }
-      }
-
-      // 6. Explicit Skill Damage Modifiers / rankDamageParts on this skill
-      const sMods = Array.isArray(attackItem.system?.rankDamageParts) ? attackItem.system.rankDamageParts : [];
-      for (const sm of sMods) {
-        if (!sm) continue;
-        const minRank = Number(sm.minRank) || 0;
-        if (sData.rank >= minRank && (sm.dice || sm.value || sm.stat)) {
-          const statKey = (sm.stat || '').toLowerCase();
-          const statMod = statKey && this.system?.abilities?.[statKey] ? (this.system.abilities[statKey].mod ?? 0) : 0;
-          parts.push({
-            id: `skill-mod-${parts.length}`,
-            type: sm.type || sData.damageType || 'Physical',
-            dice: (sm.dice || '').trim(),
-            stat: statKey,
-            statMod,
-            value: Number(sm.value) || 0,
-            source: sm.source || sm.label || sm.name || `${sData.skillName} (Rank ${minRank} Modifier)`
-          });
-        }
-      }
-
-      // 7. Equipped non-weapon gear damage parts. A skill attack (Pugilism, Bite, ...) never uses an equipped weapon.
-      const equippedGear = getNonWeaponEquippedGear(this);
-      for (const gear of equippedGear) {
-        if (gear.id === attackItem.id) continue;
-        const gearParts = Array.isArray(gear.system?.damageParts) ? gear.system.damageParts : Object.values(gear.system?.damageParts || {});
-        for (const gp of gearParts) {
-          if (!gp) continue;
-          const statKey = (gp.stat || '').toLowerCase();
-          const statMod = statKey && this.system?.abilities?.[statKey] ? (this.system.abilities[statKey].mod ?? 0) : 0;
-          parts.push({
-            id: gp.id || `gear-${gear.id}-${parts.length}`,
-            type: gp.type || 'Physical',
-            dice: (gp.dice || '').trim(),
-            stat: statKey,
-            statMod,
-            value: Number(gp.value) || 0,
-            source: gear.name
-          });
-        }
-      }
-
-      // 8. Outgoing damage modifiers via unified engine (replacing aux skills, buffs, attributes.damageBonus)
-      const rollContext = resolveDamageContext(this, options, { item: attackItem });
-      const dmod = collectDamageModifiers(this, rollContext, { primaryType: sData.damageType || 'Physical', split: options.withTargetRows === true });
-
-      parts.push(...dmod.addParts, ...dmod.targetAddParts);
-
-      this._applyTechniquesToDamageParts(parts, options, options.damageEffect || options.effect || '', sData.damageType || 'Physical', attackItem, sData.rank, rollContext);
-      return applyStatSuppression(applyDamageStatSubstitutions(this, parts, rollContext, { skip: options.skipSubstitutions }), dmod);
-    }
-
+/**
+ * Resolve all damage parts for an attack from the weapon/attack item itself,
+ * equipped gear bonuses, active skill modifiers (with rank gating),
+ * and the rank damage dice.
+ * @param {Item} attackItem
+ * @param {object} [options={}]
+ * @returns {Array<object>}
+ */
+export function getAttackDamageParts(actor, attackItem, options = {}) {
+  if (attackItem?.type === 'skill') {
+    const sData = getSkillDamageData(actor, attackItem, options);
     const parts = [];
-    const sys = attackItem?.system || {};
-    const itemParts = getDamageParts(sys);
-    let primaryType = 'Physical';
 
-    const skills = this.items ? this.items.filter(i => i.type === 'skill') : [];
-    const { matchingSkill, skillRank } = this._resolveWeaponSkills(attackItem, skills);
-    const rollContext = resolveDamageContext(this, options, { item: attackItem, skill: matchingSkill });
+    // 1. Base damage part
+    parts.push({
+      id: `skill-base-${attackItem.id || 'part'}`,
+      type: sData.damageType || 'Physical',
+      dice: sData.baseDice,
+      stat: sData.stat,
+      statMod: sData.statMod,
+      value: 0,
+      ...(sData.baseResultMultiplier !== null && sData.baseResultMultiplier !== undefined ? { resultMultiplier: sData.baseResultMultiplier } : {}),
+      source: `${sData.skillName} (Base)`
+    });
 
-    // Base damage scaling from matching skill rank upgrades & rank breaks
-    let upgradedDice = '';
-    let extraWeaponRankDiceCount = 0;
-    const offSizeBreakDice = [];
-    const skillBaseDamage = matchingSkill ? normalizeBaseDamage(matchingSkill.system?.baseDamage) : null;
-    const baseDiceCandidate = skillBaseDamage?.dice || itemParts[0]?.dice || '';
-    if ((matchingSkill || sys.rankBreaks) && skillRank >= 1) {
-      const dm = baseDiceCandidate.match(/(\d+)d(\d+)/i);
-      if (dm) {
-        let count = parseInt(dm[1], 10);
-        const sides = parseInt(dm[2], 10);
-        const processedWeaponTiers = new Set();
-
-        // 1. Structured Rank Breaks scaling (primary)
-        const breakSource = matchingSkill?.system?.rankBreaks ? matchingSkill : attackItem;
-        {
-          const breaks = resolveReachedRankBreaks(breakSource, skillRank).reachedTiers.map(t => ({ thresh: t.rank, key: t.key, data: t.tier }));
-          for (const b of breaks) {
-            if (skillRank >= b.thresh && b.data) {
-              let handled = false;
-              if (b.data.damageDice) {
-                const cleanDice = b.data.damageDice.replace(/^\+/, '').trim();
-                const mDice = cleanDice.match(/^(\d+)d(\d+)$/i);
-                if (mDice && parseInt(mDice[2], 10) === sides) {
-                  count += parseInt(mDice[1], 10);
-                  handled = true;
-                } else if (cleanDice) {
-                  // Book: rank upgrades add base damage dice. A die of another size cannot merge into the
-                  // base pool, so it rolls as its own part instead of being dropped.
-                  offSizeBreakDice.push({ dice: cleanDice, rank: b.thresh });
-                  handled = true;
-                }
-              }
-              if (b.data.rankDamageDice) {
-                extraWeaponRankDiceCount += Number(b.data.rankDamageDice) || 0;
-                handled = true;
-              }
-              if (handled) processedWeaponTiers.add(b.key);
-            }
-          }
-        }
-
-        upgradedDice = `${count}d${sides}`;
-      }
-    }
-
-    // 1. If matching skill provides base damage, push it as the primary base damage part
-    let hasBaseSkillPart = false;
-    if (matchingSkill && (skillBaseDamage.dice || itemParts.length === 0)) {
-      const bDice = upgradedDice || skillBaseDamage.dice;
-      if (bDice) {
-        // Base Damage stat 'none' is the explicit "this Base Damage has no stat" value (e.g. Crossbow "1d8 Piercing").
-        const skillDamageStat = skillBaseDamage.stat;
-        const statKey = skillDamageStat === 'none'
-          ? ''
-          : (skillDamageStat || matchingSkill.system?.stat || itemParts[0]?.stat || '').toLowerCase();
-        const statMod = statKey && this.system?.abilities?.[statKey] ? (this.system.abilities[statKey].mod ?? 0) : 0;
-        primaryType = skillBaseDamage.damageType || primaryType;
-        parts.push({
-          id: `skill-base-${matchingSkill.id}`,
-          type: primaryType,
-          dice: bDice,
-          stat: statKey,
-          statMod,
-          value: 0,
-          source: `${matchingSkill.name} (Rank ${skillRank})`
-        });
-        hasBaseSkillPart = true;
-      }
-    }
-
-    // 2. Weapon item damageParts (additive parts when matching skill provides base damage, or primary parts if not)
-    if (itemParts.length > 0) {
-      let isFirst = !hasBaseSkillPart;
-      for (const [i, p] of itemParts.entries()) {
-        if (!p) continue;
-        // When a skill supplies the Base Damage (and its stat), the weapon's parts are bonus dice only: no stat of their own.
-        const statKey = hasBaseSkillPart ? '' : (p.stat || '').toLowerCase();
-        const statMod = statKey && this.system?.abilities?.[statKey] ? (this.system.abilities[statKey].mod ?? 0) : 0;
-        const type = p.type || primaryType;
-        if (isFirst) primaryType = type;
-        const dice = (isFirst && upgradedDice && !hasBaseSkillPart ? upgradedDice : (p.dice || '')).trim();
-        const value = Number(p.value) || 0;
-        parts.push({
-          id: `item-part-${i}`,
-          type,
-          dice,
-          stat: statKey,
-          statMod,
-          value,
-          source: attackItem.name || 'Weapon'
-        });
-        isFirst = false;
-      }
-    }
-
-    for (const ob of offSizeBreakDice) {
+    // 2. Rank damage die
+    if (sData.combinedRankDieStr) {
+      const isFlat = /^\d+$/.test(sData.combinedRankDieStr);
       parts.push({
-        id: `skill-break-${parts.length}`,
-        type: primaryType,
-        dice: ob.dice,
+        id: `skill-rank-die-${attackItem.id || 'part'}`,
+        excludeFromCrit: true, // Table 37: the Rank damage die is not doubled on a Critical Hit
+        type: sData.damageType || 'Physical',
+        dice: isFlat ? '' : sData.combinedRankDieStr,
         stat: '',
         statMod: 0,
-        value: 0,
-        source: `${matchingSkill?.name || 'Skill'} Rank ${ob.rank} Upgrade`
+        value: isFlat ? Number(sData.combinedRankDieStr) : 0,
+        source: sData.effectRankDie
+          ? `Rank Die (${sData.skillName} R${sData.rank} + ${sData.effectName} R${sData.effectRank})`
+          : `Rank ${sData.rank} Damage Die`
       });
     }
 
-    // Optional Damage Effects handling for weapon/attack items
-    const chosenEffectRaw = (options.damageEffect !== undefined ? options.damageEffect : (options.chosenEffect !== undefined ? options.chosenEffect : options.effect));
-    this._applyChosenEffectToParts(parts, chosenEffectRaw, attackItem, { primaryType, skillRank, rollContext, options });
+    // 3. Toss bonus damage part
+    if (sData.tossBonus) {
+      parts.push({
+        id: `skill-toss-${attackItem.id || 'part'}`,
+        type: sData.tossBonus.type || 'Bludgeoning',
+        dice: sData.tossBonus.dice,
+        stat: sData.tossBonus.stat,
+        statMod: sData.tossBonus.statMod,
+        value: 0,
+        source: sData.tossBonus.source || 'Technique'
+      });
+    }
 
-    // Rank Damage Die for Weapon Attack: only when a reached rank break grants one
-    if (skillRank > 0) {
-      const rankDie = getGrantedRankDamageDie(skillRank, extraWeaponRankDiceCount);
-      if (rankDie.dice || rankDie.value) {
+    // Extra Technique Damage Parts
+    for (const ep of (sData.extraDamageParts || [])) {
+      parts.push({
+        id: ep.id || `skill-extra-${parts.length}`,
+        type: ep.type || sData.damageType || 'Physical',
+        dice: ep.dice || '',
+        stat: ep.stat || '',
+        statMod: ep.statMod || 0,
+        value: ep.value || 0,
+        source: ep.source || 'Technique'
+      });
+    }
+
+    // 5. Rank Break Extra Damage Dice
+    if (sData.rankBreakExtraDamageDice && sData.rankBreakExtraDamageDice.length > 0) {
+      for (const bd of sData.rankBreakExtraDamageDice) {
         parts.push({
-          id: `rank-die-${attackItem.id || 'atk'}`,
-          excludeFromCrit: true, // Table 37: the Rank damage die is not doubled on a Critical Hit
-          type: primaryType,
-          dice: rankDie.dice,
+          id: `skill-break-${parts.length}`,
+          type: sData.damageType || 'Physical',
+          dice: bd,
           stat: '',
           statMod: 0,
-          value: rankDie.value,
-          source: matchingSkill ? `${matchingSkill.name} (Rank ${skillRank} Die)` : `Rank ${skillRank} Damage Die`
+          value: 0,
+          source: `${sData.skillName} Rank Break`
         });
       }
     }
 
-    // 2. Equipped non-weapon gear damage parts. The attacking weapon's own parts were added above;
-    //    any other equipped weapon adds nothing (it is not the weapon attacking).
-    const equippedGear = getNonWeaponEquippedGear(this);
+    // 6. Explicit Skill Damage Modifiers / rankDamageParts on this skill
+    const sMods = Array.isArray(attackItem.system?.rankDamageParts) ? attackItem.system.rankDamageParts : [];
+    for (const sm of sMods) {
+      if (!sm) continue;
+      const minRank = Number(sm.minRank) || 0;
+      if (sData.rank >= minRank && (sm.dice || sm.value || sm.stat)) {
+        const statKey = (sm.stat || '').toLowerCase();
+        const statMod = statKey && actor.system?.abilities?.[statKey] ? (actor.system.abilities[statKey].mod ?? 0) : 0;
+        parts.push({
+          id: `skill-mod-${parts.length}`,
+          type: sm.type || sData.damageType || 'Physical',
+          dice: (sm.dice || '').trim(),
+          stat: statKey,
+          statMod,
+          value: Number(sm.value) || 0,
+          source: sm.source || sm.label || sm.name || `${sData.skillName} (Rank ${minRank} Modifier)`
+        });
+      }
+    }
+
+    // 7. Equipped non-weapon gear damage parts. A skill attack (Pugilism, Bite, ...) never uses an equipped weapon.
+    const equippedGear = getNonWeaponEquippedGear(actor);
     for (const gear of equippedGear) {
       if (gear.id === attackItem.id) continue;
       const gearParts = Array.isArray(gear.system?.damageParts) ? gear.system.damageParts : Object.values(gear.system?.damageParts || {});
       for (const gp of gearParts) {
         if (!gp) continue;
         const statKey = (gp.stat || '').toLowerCase();
-        const statMod = statKey && this.system?.abilities?.[statKey] ? (this.system.abilities[statKey].mod ?? 0) : 0;
+        const statMod = statKey && actor.system?.abilities?.[statKey] ? (actor.system.abilities[statKey].mod ?? 0) : 0;
         parts.push({
           id: gp.id || `gear-${gear.id}-${parts.length}`,
           type: gp.type || 'Physical',
@@ -397,158 +226,317 @@ export const actorCombatDamageMixin = {
       }
     }
 
-    // 3. Matching skill rankDamageParts (if base damage part was not already taken from this skill)
-    if (matchingSkill && !hasBaseSkillPart) {
-      const rank = Math.max(Number(matchingSkill.system?.modifiedRank) || 0, Number(matchingSkill.system?.rank) || 0);
-      const mods = Array.isArray(matchingSkill.system?.rankDamageParts) ? matchingSkill.system.rankDamageParts : [];
-      for (const m of mods) {
-        if (!m) continue;
-        const minRank = Number(m.minRank) || 0;
-        if (rank >= minRank && (m.dice || m.value || m.stat)) {
-          const statKey = (m.stat || '').toLowerCase();
-          const statMod = statKey && this.system?.abilities?.[statKey] ? (this.system.abilities[statKey].mod ?? 0) : 0;
-          parts.push({
-            id: `matching-skill-${matchingSkill.id}-${parts.length}`,
-            type: m.type || primaryType || 'Physical',
-            dice: (m.dice || '').trim(),
-            stat: statKey,
-            statMod,
-            value: Number(m.value) || 0,
-            source: `${matchingSkill.name} (Rank ${rank})`
-          });
-        }
-      }
-    }
-
-    // 4. Outgoing damage modifiers via unified engine (replaces aux skills, buff damageBonus, attributes.damageBonus)
-    const dmod = collectDamageModifiers(this, rollContext, { primaryType, split: options.withTargetRows === true });
+    // 8. Outgoing damage modifiers via unified engine (replacing aux skills, buffs, attributes.damageBonus)
+    const rollContext = resolveDamageContext(actor, options, { item: attackItem });
+    const dmod = collectDamageModifiers(actor, rollContext, { primaryType: sData.damageType || 'Physical', split: options.withTargetRows === true });
 
     parts.push(...dmod.addParts, ...dmod.targetAddParts);
 
-    this._applyTechniquesToDamageParts(parts, options, chosenEffectRaw, primaryType, attackItem, skillRank, rollContext);
-    return applyStatSuppression(applyDamageStatSubstitutions(this, parts, rollContext, { skip: options.skipSubstitutions }), dmod);
-  },
+    applyTechniquesToDamageParts(actor, parts, options, options.damageEffect || options.effect || '', sData.damageType || 'Physical', attackItem, sData.rank, rollContext);
+    return applyStatSuppression(applyDamageStatSubstitutions(actor, parts, rollContext, { skip: options.skipSubstitutions }), dmod);
+  }
 
-  /**
-   * Applies the chosen Damage Effect to damage parts: the base result multiplier, the effect's bonus dice and its Rank
-   * damage dice. Shared by the weapon and the spell damage paths, so a Damage Effect reads the same on both.
-   * @param {Array<object>} parts the parts so far (mutated)
-   * @param {string|object} chosenEffectRaw a technique identifier, the technique skill item, or 'none'
-   * @param {Item|object} attackItem the weapon or spell the damage belongs to
-   * @param {object} ctx
-   * @param {string} ctx.primaryType the damage type the effect's dice fall back to
-   * @param {number} ctx.skillRank the Rank that sizes unnamed Rank damage die grants (the attack skill's, or the spell's)
-   * @param {object} ctx.rollContext the damage roll's context; the effect's `condition` is matched against its tags
-   * @param {object} [ctx.options]
-   * @private
-   */
-  _applyChosenEffectToParts(parts, chosenEffectRaw, attackItem, { primaryType, skillRank, rollContext, options = {} }) {
-    const isNone = typeof chosenEffectRaw === 'string' && chosenEffectRaw.trim() === 'none';
-    if (!chosenEffectRaw || isNone) return;
-    const effectData = this.resolveDamageEffect(chosenEffectRaw, attackItem, options);
-    const perTarget = effectData && perTargetTechnique(effectData, options);
-    if (!effectData || !(perTarget || techniqueConditionMet(effectData, rollContext.tags))) return;
-    const eRank = effectData.rank;
-    const firstNew = parts.length;
+  const parts = [];
+  const sys = attackItem?.system || {};
+  const itemParts = getDamageParts(sys);
+  let primaryType = 'Physical';
 
-    // Base result multiplier (Powerful Strike): the base part's rolled dice total is multiplied (p. 182), once
-    applyResultMultiplier(parts, effectData);
+  const skills = actor.items ? actor.items.filter(i => i.type === 'skill') : [];
+  const { matchingSkill, skillRank } = resolveWeaponSkills(actor, attackItem, skills);
+  const rollContext = resolveDamageContext(actor, options, { item: attackItem, skill: matchingSkill });
 
-    // Bonus dice (config damageBonus + reached break dice, one source: effectBonusDiceParts)
-    parts.push(...effectBonusDiceParts(effectData, {
-      idPrefix: `effect-${effectData.identifier}`,
-      primaryType,
-      statMod: effectData.stat ? (this.system?.abilities?.[effectData.stat]?.mod ?? 0) : 0,
-      source: `${effectData.name}${eRank > 0 ? ` (Rank ${eRank})` : ''}`,
-      startIndex: parts.length
-    }));
+  // Base damage scaling from matching skill rank upgrades & rank breaks
+  let upgradedDice = '';
+  let extraWeaponRankDiceCount = 0;
+  const offSizeBreakDice = [];
+  const skillBaseDamage = matchingSkill ? normalizeBaseDamage(matchingSkill.system?.baseDamage) : null;
+  const baseDiceCandidate = skillBaseDamage?.dice || itemParts[0]?.dice || '';
+  if ((matchingSkill || sys.rankBreaks) && skillRank >= 1) {
+    const dm = baseDiceCandidate.match(/(\d+)d(\d+)/i);
+    if (dm) {
+      let count = parseInt(dm[1], 10);
+      const sides = parseInt(dm[2], 10);
+      const processedWeaponTiers = new Set();
 
-    // Rank damage dice the effect grants (for example a Rank die at R5 or R10): their own part, not doubled on a crit
-    for (const [i, rd] of getEffectRankDice(effectData, skillRank, eRank).entries()) {
+      // 1. Structured Rank Breaks scaling (primary)
+      const breakSource = matchingSkill?.system?.rankBreaks ? matchingSkill : attackItem;
+      {
+        const breaks = resolveReachedRankBreaks(breakSource, skillRank).reachedTiers.map(t => ({ thresh: t.rank, key: t.key, data: t.tier }));
+        for (const b of breaks) {
+          if (skillRank >= b.thresh && b.data) {
+            let handled = false;
+            if (b.data.damageDice) {
+              const cleanDice = b.data.damageDice.replace(/^\+/, '').trim();
+              const mDice = cleanDice.match(/^(\d+)d(\d+)$/i);
+              if (mDice && parseInt(mDice[2], 10) === sides) {
+                count += parseInt(mDice[1], 10);
+                handled = true;
+              } else if (cleanDice) {
+                // Book: rank upgrades add base damage dice. A die of another size cannot merge into the
+                // base pool, so it rolls as its own part instead of being dropped.
+                offSizeBreakDice.push({ dice: cleanDice, rank: b.thresh });
+                handled = true;
+              }
+            }
+            if (b.data.rankDamageDice) {
+              extraWeaponRankDiceCount += Number(b.data.rankDamageDice) || 0;
+              handled = true;
+            }
+            if (handled) processedWeaponTiers.add(b.key);
+          }
+        }
+      }
+
+      upgradedDice = `${count}d${sides}`;
+    }
+  }
+
+  // 1. If matching skill provides base damage, push it as the primary base damage part
+  let hasBaseSkillPart = false;
+  if (matchingSkill && (skillBaseDamage.dice || itemParts.length === 0)) {
+    const bDice = upgradedDice || skillBaseDamage.dice;
+    if (bDice) {
+      // Base Damage stat 'none' is the explicit "this Base Damage has no stat" value (e.g. Crossbow "1d8 Piercing").
+      const skillDamageStat = skillBaseDamage.stat;
+      const statKey = skillDamageStat === 'none'
+        ? ''
+        : (skillDamageStat || matchingSkill.system?.stat || itemParts[0]?.stat || '').toLowerCase();
+      const statMod = statKey && actor.system?.abilities?.[statKey] ? (actor.system.abilities[statKey].mod ?? 0) : 0;
+      primaryType = skillBaseDamage.damageType || primaryType;
       parts.push({
-        id: `effect-${effectData.identifier}-rankdie-${i}`,
+        id: `skill-base-${matchingSkill.id}`,
+        type: primaryType,
+        dice: bDice,
+        stat: statKey,
+        statMod,
+        value: 0,
+        source: `${matchingSkill.name} (Rank ${skillRank})`
+      });
+      hasBaseSkillPart = true;
+    }
+  }
+
+  // 2. Weapon item damageParts (additive parts when matching skill provides base damage, or primary parts if not)
+  if (itemParts.length > 0) {
+    let isFirst = !hasBaseSkillPart;
+    for (const [i, p] of itemParts.entries()) {
+      if (!p) continue;
+      // When a skill supplies the Base Damage (and its stat), the weapon's parts are bonus dice only: no stat of their own.
+      const statKey = hasBaseSkillPart ? '' : (p.stat || '').toLowerCase();
+      const statMod = statKey && actor.system?.abilities?.[statKey] ? (actor.system.abilities[statKey].mod ?? 0) : 0;
+      const type = p.type || primaryType;
+      if (isFirst) primaryType = type;
+      const dice = (isFirst && upgradedDice && !hasBaseSkillPart ? upgradedDice : (p.dice || '')).trim();
+      const value = Number(p.value) || 0;
+      parts.push({
+        id: `item-part-${i}`,
+        type,
+        dice,
+        stat: statKey,
+        statMod,
+        value,
+        source: attackItem.name || 'Weapon'
+      });
+      isFirst = false;
+    }
+  }
+
+  for (const ob of offSizeBreakDice) {
+    parts.push({
+      id: `skill-break-${parts.length}`,
+      type: primaryType,
+      dice: ob.dice,
+      stat: '',
+      statMod: 0,
+      value: 0,
+      source: `${matchingSkill?.name || 'Skill'} Rank ${ob.rank} Upgrade`
+    });
+  }
+
+  // Optional Damage Effects handling for weapon/attack items
+  const chosenEffectRaw = (options.damageEffect !== undefined ? options.damageEffect : (options.chosenEffect !== undefined ? options.chosenEffect : options.effect));
+  applyChosenEffectToParts(actor, parts, chosenEffectRaw, attackItem, { primaryType, skillRank, rollContext, options });
+
+  // Rank Damage Die for Weapon Attack: only when a reached rank break grants one
+  if (skillRank > 0) {
+    const rankDie = getGrantedRankDamageDie(skillRank, extraWeaponRankDiceCount);
+    if (rankDie.dice || rankDie.value) {
+      parts.push({
+        id: `rank-die-${attackItem.id || 'atk'}`,
         excludeFromCrit: true, // Table 37: the Rank damage die is not doubled on a Critical Hit
-        type: effectData.damageType || primaryType,
-        dice: rd.dice,
+        type: primaryType,
+        dice: rankDie.dice,
         stat: '',
         statMod: 0,
-        value: rd.value,
-        source: `${effectData.name} Rank Die (Rank ${rd.rank})`
+        value: rankDie.value,
+        source: matchingSkill ? `${matchingSkill.name} (Rank ${skillRank} Die)` : `Rank ${skillRank} Damage Die`
       });
     }
-    if (perTarget) markStandby(parts, firstNew, effectData);
-  },
+  }
 
-  /**
-   * Helper alias for resolving weapon damage parts.
-   * @param {Item} attackItem
-   * @param {object} [options={}]
-   * @returns {Array<object>}
-   */
-  _calculateWeaponDamageParts(attackItem, options = {}) {
-    return this.getAttackDamageParts(attackItem, options);
-  },
+  // 2. Equipped non-weapon gear damage parts. The attacking weapon's own parts were added above;
+  //    any other equipped weapon adds nothing (it is not the weapon attacking).
+  const equippedGear = getNonWeaponEquippedGear(actor);
+  for (const gear of equippedGear) {
+    if (gear.id === attackItem.id) continue;
+    const gearParts = Array.isArray(gear.system?.damageParts) ? gear.system.damageParts : Object.values(gear.system?.damageParts || {});
+    for (const gp of gearParts) {
+      if (!gp) continue;
+      const statKey = (gp.stat || '').toLowerCase();
+      const statMod = statKey && actor.system?.abilities?.[statKey] ? (actor.system.abilities[statKey].mod ?? 0) : 0;
+      parts.push({
+        id: gp.id || `gear-${gear.id}-${parts.length}`,
+        type: gp.type || 'Physical',
+        dice: (gp.dice || '').trim(),
+        stat: statKey,
+        statMod,
+        value: Number(gp.value) || 0,
+        source: gear.name
+      });
+    }
+  }
 
-  /**
-   * Applies primed or active combat technique modifications to attack damage parts.
-   * @param {Array<object>} parts
-   * @param {object} options
-   * @param {string|object} chosenEffect
-   * @param {string} primaryType
-   * @param {Item|object} [attackItem=null]
-   * @param {number} [attackRank=0] Rank of the Attack Skill making the attack (sizes unnamed Rank damage die grants)
-   * @param {object|null} [rollContext=null] the damage roll's context; a technique's `condition` is matched against its tags
-   * @private
-   */
-  _applyTechniquesToDamageParts(parts, options = {}, chosenEffect = '', primaryType = 'Physical', attackItem = null, attackRank = 0, rollContext = null) {
-    const activeTechs = options.techniques;
-    if (!Array.isArray(activeTechs) || activeTechs.length === 0) return;
-
-    // The chosen effect (an identifier, or the technique item) is applied by the caller, not again here.
-    const chosenId = typeof chosenEffect === 'string' ? chosenEffect.trim() : String(chosenEffect?.system?.identifier ?? '');
-
-    for (const tech of activeTechs) {
-      if (attackItem && typeof this.isTechniqueApplicable === 'function' && !this.isTechniqueApplicable(tech, attackItem)) {
-        continue;
-      }
-      const techId = tech.identifier || tech.system?.identifier || '';
-      if (chosenId && techId && chosenId === techId) continue;
-
-      const effectData = this.resolveDamageEffect(tech.item || techId, null, { effectRank: tech.rank });
-      const perTarget = effectData && perTargetTechnique(effectData, options);
-      if (effectData && (perTarget || techniqueConditionMet(effectData, rollContext?.tags ?? []))) {
-        const eRank = effectData.rank;
-        const firstNew = parts.length;
-
-        const hasMultiplier = effectData.resultMultiplier !== null && effectData.resultMultiplier !== undefined;
-        if (hasMultiplier && parts.length > 0 && parts[0].dice && !parts[0].source?.includes(effectData.name)) {
-          applyResultMultiplier(parts, effectData);
-        } else {
-          parts.push(...effectBonusDiceParts(effectData, {
-            idPrefix: `technique-${effectData.identifier}`,
-            primaryType,
-            statMod: effectData.stat ? (this.system?.abilities?.[effectData.stat]?.mod ?? 0) : 0,
-            source: `${effectData.name} (Rank ${eRank})`,
-            startIndex: parts.length
-          }));
-          for (const [i, rd] of getEffectRankDice(effectData, attackRank, eRank).entries()) {
-            parts.push({
-              id: `technique-${effectData.identifier}-rankdie-${i}`,
-              excludeFromCrit: true, // Table 37: the Rank damage die is not doubled on a Critical Hit
-              type: effectData.damageType || primaryType,
-              dice: rd.dice,
-              stat: '',
-              statMod: 0,
-              value: rd.value,
-              source: `${effectData.name} Rank Die (Rank ${rd.rank})`
-            });
-          }
-          if (perTarget) markStandby(parts, firstNew, effectData);
-        }
+  // 3. Matching skill rankDamageParts (if base damage part was not already taken from this skill)
+  if (matchingSkill && !hasBaseSkillPart) {
+    const rank = Math.max(Number(matchingSkill.system?.modifiedRank) || 0, Number(matchingSkill.system?.rank) || 0);
+    const mods = Array.isArray(matchingSkill.system?.rankDamageParts) ? matchingSkill.system.rankDamageParts : [];
+    for (const m of mods) {
+      if (!m) continue;
+      const minRank = Number(m.minRank) || 0;
+      if (rank >= minRank && (m.dice || m.value || m.stat)) {
+        const statKey = (m.stat || '').toLowerCase();
+        const statMod = statKey && actor.system?.abilities?.[statKey] ? (actor.system.abilities[statKey].mod ?? 0) : 0;
+        parts.push({
+          id: `matching-skill-${matchingSkill.id}-${parts.length}`,
+          type: m.type || primaryType || 'Physical',
+          dice: (m.dice || '').trim(),
+          stat: statKey,
+          statMod,
+          value: Number(m.value) || 0,
+          source: `${matchingSkill.name} (Rank ${rank})`
+        });
       }
     }
   }
-};
+
+  // 4. Outgoing damage modifiers via unified engine (replaces aux skills, buff damageBonus, attributes.damageBonus)
+  const dmod = collectDamageModifiers(actor, rollContext, { primaryType, split: options.withTargetRows === true });
+
+  parts.push(...dmod.addParts, ...dmod.targetAddParts);
+
+  applyTechniquesToDamageParts(actor, parts, options, chosenEffectRaw, primaryType, attackItem, skillRank, rollContext);
+  return applyStatSuppression(applyDamageStatSubstitutions(actor, parts, rollContext, { skip: options.skipSubstitutions }), dmod);
+}
+
+/**
+ * Applies the chosen Damage Effect to damage parts: the base result multiplier, the effect's bonus dice and its Rank
+ * damage dice. Shared by the weapon and the spell damage paths, so a Damage Effect reads the same on both.
+ * @param {Array<object>} parts the parts so far (mutated)
+ * @param {string|object} chosenEffectRaw a technique identifier, the technique skill item, or 'none'
+ * @param {Item|object} attackItem the weapon or spell the damage belongs to
+ * @param {object} ctx
+ * @param {string} ctx.primaryType the damage type the effect's dice fall back to
+ * @param {number} ctx.skillRank the Rank that sizes unnamed Rank damage die grants (the attack skill's, or the spell's)
+ * @param {object} ctx.rollContext the damage roll's context; the effect's `condition` is matched against its tags
+ * @param {object} [ctx.options]
+ * @private
+ */
+export function applyChosenEffectToParts(actor, parts, chosenEffectRaw, attackItem, { primaryType, skillRank, rollContext, options = {} }) {
+  const isNone = typeof chosenEffectRaw === 'string' && chosenEffectRaw.trim() === 'none';
+  if (!chosenEffectRaw || isNone) return;
+  const effectData = resolveDamageEffect(actor, chosenEffectRaw, attackItem, options);
+  const perTarget = effectData && perTargetTechnique(effectData, options);
+  if (!effectData || !(perTarget || techniqueConditionMet(effectData, rollContext.tags))) return;
+  const eRank = effectData.rank;
+  const firstNew = parts.length;
+
+  // Base result multiplier (Powerful Strike): the base part's rolled dice total is multiplied (p. 182), once
+  applyResultMultiplier(parts, effectData);
+
+  // Bonus dice (config damageBonus + reached break dice, one source: effectBonusDiceParts)
+  parts.push(...effectBonusDiceParts(effectData, {
+    idPrefix: `effect-${effectData.identifier}`,
+    primaryType,
+    statMod: effectData.stat ? (actor.system?.abilities?.[effectData.stat]?.mod ?? 0) : 0,
+    source: `${effectData.name}${eRank > 0 ? ` (Rank ${eRank})` : ''}`,
+    startIndex: parts.length
+  }));
+
+  // Rank damage dice the effect grants (for example a Rank die at R5 or R10): their own part, not doubled on a crit
+  for (const [i, rd] of getEffectRankDice(effectData, skillRank, eRank).entries()) {
+    parts.push({
+      id: `effect-${effectData.identifier}-rankdie-${i}`,
+      excludeFromCrit: true, // Table 37: the Rank damage die is not doubled on a Critical Hit
+      type: effectData.damageType || primaryType,
+      dice: rd.dice,
+      stat: '',
+      statMod: 0,
+      value: rd.value,
+      source: `${effectData.name} Rank Die (Rank ${rd.rank})`
+    });
+  }
+  if (perTarget) markStandby(parts, firstNew, effectData);
+}
+
+/**
+ * Applies primed or active combat technique modifications to attack damage parts.
+ * @param {Array<object>} parts
+ * @param {object} options
+ * @param {string|object} chosenEffect
+ * @param {string} primaryType
+ * @param {Item|object} [attackItem=null]
+ * @param {number} [attackRank=0] Rank of the Attack Skill making the attack (sizes unnamed Rank damage die grants)
+ * @param {object|null} [rollContext=null] the damage roll's context; a technique's `condition` is matched against its tags
+ * @private
+ */
+export function applyTechniquesToDamageParts(actor, parts, options = {}, chosenEffect = '', primaryType = 'Physical', attackItem = null, attackRank = 0, rollContext = null) {
+  const activeTechs = options.techniques;
+  if (!Array.isArray(activeTechs) || activeTechs.length === 0) return;
+
+  // The chosen effect (an identifier, or the technique item) is applied by the caller, not again here.
+  const chosenId = typeof chosenEffect === 'string' ? chosenEffect.trim() : String(chosenEffect?.system?.identifier ?? '');
+
+  for (const tech of activeTechs) {
+    if (attackItem && !isTechniqueApplicable(actor, tech, attackItem)) {
+      continue;
+    }
+    const techId = tech.identifier || tech.system?.identifier || '';
+    if (chosenId && techId && chosenId === techId) continue;
+
+    const effectData = resolveDamageEffect(actor, tech.item || techId, null, { effectRank: tech.rank });
+    const perTarget = effectData && perTargetTechnique(effectData, options);
+    if (effectData && (perTarget || techniqueConditionMet(effectData, rollContext?.tags ?? []))) {
+      const eRank = effectData.rank;
+      const firstNew = parts.length;
+
+      const hasMultiplier = effectData.resultMultiplier !== null && effectData.resultMultiplier !== undefined;
+      if (hasMultiplier && parts.length > 0 && parts[0].dice && !parts[0].source?.includes(effectData.name)) {
+        applyResultMultiplier(parts, effectData);
+      } else {
+        parts.push(...effectBonusDiceParts(effectData, {
+          idPrefix: `technique-${effectData.identifier}`,
+          primaryType,
+          statMod: effectData.stat ? (actor.system?.abilities?.[effectData.stat]?.mod ?? 0) : 0,
+          source: `${effectData.name} (Rank ${eRank})`,
+          startIndex: parts.length
+        }));
+        for (const [i, rd] of getEffectRankDice(effectData, attackRank, eRank).entries()) {
+          parts.push({
+            id: `technique-${effectData.identifier}-rankdie-${i}`,
+            excludeFromCrit: true, // Table 37: the Rank damage die is not doubled on a Critical Hit
+            type: effectData.damageType || primaryType,
+            dice: rd.dice,
+            stat: '',
+            statMod: 0,
+            value: rd.value,
+            source: `${effectData.name} Rank Die (Rank ${rd.rank})`
+          });
+        }
+        if (perTarget) markStandby(parts, firstNew, effectData);
+      }
+    }
+  }
+}
 
 /**
  * Roll Attack Damage (weapon, attack, or skill), producing an interactive Sprinter RPG damage card.
@@ -570,9 +558,7 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
 
   // One damage context per roll: inherited from the attack card (its situations, subject and crit), or built from the
   // live targets. Parts, stat substitutions and modifiers all read it.
-  const { matchingSkill } = typeof actor._resolveWeaponSkills === 'function'
-    ? actor._resolveWeaponSkills(attackItem)
-    : { matchingSkill: null };
+  const { matchingSkill } = resolveWeaponSkills(actor, attackItem);
   const baseContext = resolveDamageContext(actor, options, { item: attackItem, skill: matchingSkill });
   const sourceId = typeof options.sourceMessageId === 'string' && options.sourceMessageId ? options.sourceMessageId : null;
   const amazingMessage = amazingSourceMessage(sourceId);
@@ -615,15 +601,13 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
   }
   if (effectActive) rollContext = extendContext(rollContext, { tags: [ENGINE_SITUATIONS.damageEffect] });
   // AI Favor rating (3.25d), judged against the same context (the targeted creature, the chosen Damage Effect)
-  const favorBonus = typeof actor.getAiFavorRating === 'function'
-    ? actor.getAiFavorRating(attackItem, { context: rollContext, damageEffect: chosenEffect, skill: matchingSkill ?? undefined }).value
-    : 0;
+  const favorBonus = getAiFavorRating(actor, attackItem, { context: rollContext, damageEffect: chosenEffect, skill: matchingSkill ?? undefined }).value;
 
   const techniqueRows = [];
   // A variant that replaces the damage (a Stun that replaces the damage) rolls no damage parts at all (D10): the card
   // only offers the variant's Inflict buttons.
-  const variantEffect = effectActive && effectVariant && typeof actor.resolveDamageEffect === 'function'
-    ? actor.resolveDamageEffect(chosenEffect, attackItem, { effectVariant })
+  const variantEffect = effectActive && effectVariant
+    ? resolveDamageEffect(actor, chosenEffect, attackItem, { effectVariant })
     : null;
   const replacesDamage = Boolean(variantEffect?.replacesDamage) && techniqueConditionMet(variantEffect, rollContext.tags);
   const parts = replacesDamage ? [] : actor.getAttackDamageParts(attackItem, { ...currentOptions, rollContext, withTargetRows: true, techniqueRows });
@@ -640,13 +624,11 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
   // (finishing techniques): per-target rows, judged for each target at apply.
   const healthEffects = [];
   const healthRefs = replacesDamage ? [] : [...extraTechs
-    .filter(t => typeof actor.isTechniqueApplicable !== 'function' || actor.isTechniqueApplicable(t, attackItem))
+    .filter(t => isTechniqueApplicable(actor, t, attackItem))
     .map(t => ({ ref: t.item || t.identifier, rank: t.rank }))];
   if (effectActive) healthRefs.push({ ref: chosenEffect, rank: undefined });
   for (const { ref, rank } of healthRefs) {
-    const eff = typeof actor.resolveDamageEffect === 'function'
-      ? actor.resolveDamageEffect(ref, null, rank !== undefined ? { effectRank: rank } : {})
-      : null;
+    const eff = resolveDamageEffect(actor, ref, null, rank !== undefined ? { effectRank: rank } : {});
     if (eff && techniqueConditionMet(eff, rollContext.tags)) healthEffects.push(eff);
   }
   dmod.targetRows.push(...techniqueHealthRows(healthEffects), ...techniqueRows);
@@ -723,23 +705,19 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
   let critMultiplier = configuredCritMultiplier(attackItem?.system?.critMultiplier) || DEFAULT_CRIT_MULTIPLIER;
   const onHitDebuffs = [];
   const critDebuffs = [];
-  const activeTechs = extraTechs.filter(t => typeof actor.isTechniqueApplicable !== 'function' || actor.isTechniqueApplicable(t, attackItem));
+  const activeTechs = extraTechs.filter(t => isTechniqueApplicable(actor, t, attackItem));
   // Every reached debuff of each primed technique applies (the config's own plus every reached rank break's, cumulative),
   // when the technique's condition holds for this roll. The chosen effect's debuffs ride along the same way.
   const debuffSources = activeTechs.map(t => ({ ref: t.item || t.identifier, rank: t.rank }));
   const chosenRef = typeof chosenEffect === 'string' ? chosenEffect.trim() : chosenEffect;
   if (chosenRef && chosenRef !== 'none') debuffSources.push({ ref: chosenRef, rank: undefined, variant: effectVariant });
   for (const src of debuffSources) {
-    const eff = typeof actor.resolveDamageEffect === 'function'
-      ? actor.resolveDamageEffect(src.ref, null, { ...(src.rank !== undefined ? { effectRank: src.rank } : {}), ...(src.variant ? { effectVariant: src.variant } : {}) })
-      : null;
+    const eff = resolveDamageEffect(actor, src.ref, null, { ...(src.rank !== undefined ? { effectRank: src.rank } : {}), ...(src.variant ? { effectVariant: src.variant } : {}) });
     if (!eff || !techniqueConditionMet(eff, rollContext.tags)) continue;
     for (const d of eff.debuffs) if (d && !onHitDebuffs.includes(d)) onHitDebuffs.push(d);
   }
 
-  const { matchingSkill: matchedSkill } = typeof actor._resolveWeaponSkills === 'function'
-    ? actor._resolveWeaponSkills(attackItem)
-    : { matchingSkill: null };
+  const { matchingSkill: matchedSkill } = resolveWeaponSkills(actor, attackItem);
   if (matchedSkill) {
     const skillRank = Math.max(Number(matchedSkill.modifiedRank) || 0, Number(matchedSkill.system?.modifiedRank) || 0, Number(matchedSkill.system?.rank) || 0);
     const reachedBreaks = resolveReachedRankBreaks(matchedSkill, skillRank);
@@ -787,8 +765,9 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
     }
   }
 
-  const equippedGear = (actor.items ? actor.items.filter(i => i.type === 'gear' && i.system?.equipped) : []);
-  for (const w of equippedGear) {
+  // The attacking item's own Armor-Piercing always counts; other worn gear counts only while it still responds
+  if (attackItem?.system?.ignoreDR || attackItem?.system?.isArmorPiercing) isArmorPiercing = true;
+  for (const w of workingGear(actor, actor.items, 'attackExtras')) {
     if (w.system?.ignoreDR || w.system?.isArmorPiercing) isArmorPiercing = true;
   }
 

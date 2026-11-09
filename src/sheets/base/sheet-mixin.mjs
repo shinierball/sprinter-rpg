@@ -13,14 +13,11 @@
  * Resize, focus and open-block behaviour comes from {@link COGWindowMixin}, shared with the tool apps.
  */
 import { getDragDropClass } from '../../compat.mjs';
+import { buildItemProvenanceContext } from '../../utils/ui/item-provenance.mjs';
+import { sourceBadge } from '../../utils/content-source.mjs';
 import { noBookTextReason } from '../../sourcery/redacted.mjs';
 import { COGWindowMixin } from '../../apps/window-mixin.mjs';
-
-/** Core action names; clicks on these are handled by Foundry, never by this mixin. */
-export const RESERVED_ACTIONS = Object.freeze([
-  'tab', 'close', 'toggleControls', 'configureSheet', 'copyUuid',
-  'configurePrototypeToken', 'showPortraitArtwork', 'showTokenArtwork', 'importDocument'
-]);
+import { COGAuthorshipApp } from '../../apps/authorship-dialog.mjs';
 
 /** Profile image picker. */
 async function onEditImage(event, target) {
@@ -35,6 +32,12 @@ async function onEditImage(event, target) {
   return picker.browse();
 }
 
+/** Header control "Authorship…" (GM): opens the dialog that sets who wrote this document's words. */
+function onEditAuthorship() {
+  if (!globalThis.game?.user?.isGM) return undefined;
+  return COGAuthorshipApp.open({ document: this.document });
+}
+
 /**
  * @param {typeof foundry.applications.api.DocumentSheetV2} Base HandlebarsApplicationMixin(ActorSheetV2 | ItemSheetV2)
  */
@@ -43,9 +46,25 @@ export const COGSheetMixin = (Base) => class COGSheet extends COGWindowMixin(Bas
     // Arrays concatenate down the chain: subclasses add only their own.
     classes: ['cog-sheet-window', 'cog-sheet'],
     form: { submitOnChange: true, closeOnSubmit: false },
-    window: { resizable: true },
-    actions: { editImage: onEditImage }
+    window: {
+      resizable: true,
+      // 7.16e: "Authorship…" (GM only; `_getHeaderControls` drops it for anyone else)
+      controls: [{ icon: 'fa-solid fa-feather', label: 'COG.Authorship.Control', action: 'editAuthorship' }]
+    },
+    actions: { editImage: onEditImage, editAuthorship: onEditAuthorship }
   };
+
+  /**
+   * Header controls with the GM-only "Authorship…" kept for a GM and dropped for a player. A sheet that declares its own
+   * `window.controls` (the crawler's "Save to PDF") may replace this class's array on merge, so the control is added
+   * when it is missing.
+   * @override
+   */
+  _getHeaderControls() {
+    const controls = (super._getHeaderControls?.() ?? []).filter((c) => c.action !== 'editAuthorship');
+    if (globalThis.game?.user?.isGM) controls.push(...COGSheet.DEFAULT_OPTIONS.window.controls);
+    return controls;
+  }
 
   /** @type {Record<string, {initial: string, tabs: {id: string, label: string, icon?: string, cssClass?: string}[]}>} */
   static TABS = {};
@@ -122,6 +141,8 @@ export const COGSheetMixin = (Base) => class COGSheet extends COGWindowMixin(Bas
     context.noBookText = reason
       ? { label: i18n?.localize(reason === 'partial' ? 'COG.NoBookText.PartialBadge' : 'COG.NoBookText.Badge') ?? (reason === 'partial' ? '[PART BOOK TEXT]' : '[NO BOOK TEXT]'), tooltip: i18n?.localize(`COG.NoBookText.${tooltipKey}`) ?? reason }
       : null;
+    buildItemProvenanceContext(context, this.document);
+    context.sourceBadge = this.document?.documentName === 'Actor' ? sourceBadge(this.document) : null;
     return context;
   }
 

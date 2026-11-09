@@ -8,19 +8,21 @@
  * and a real damage click call. This file only picks the item's own rows out of the result and turns them into view
  * data (label keys, never English). It writes no document.
  */
-import { describeRow } from '../../utils/feature-describer.mjs';
-import { evaluateRows } from '../../utils/damage-modifiers.mjs';
-import { buildRollContext } from '../../utils/roll-context.mjs';
+import { describeRow } from '../../utils/item-describer/feature-describer.mjs';
+import { evaluateRows } from '../../utils/roll/damage-modifiers.mjs';
+import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { getRowKind, kindOf } from '../../utils/row-kinds.mjs';
-import { clickTargetsOf, resolveApplyScale, scalePhase } from '../../utils/scalars.mjs';
-import { matchesTagQuery } from '../../utils/tag-query.mjs';
+import { clickTargetsOf, resolveApplyScale, scalePhase } from '../../utils/roll/scalars.mjs';
+import { matchesTagQuery } from '../../utils/tag/tag-query.mjs';
 
 /** The roll phase each row array is judged in. */
-export const PREVIEW_PHASES = Object.freeze({
+const PREVIEW_PHASES = Object.freeze({
   damageModifiers: 'damage',
   defenseModifiers: 'defense',
   attackModifiers: 'toHit',
   checkModifiers: 'check',
+  craftModifiers: 'check',
+  vehicleModifiers: 'vehicle',
   manaCostModifiers: 'manaCost',
   recoveryModifiers: 'recovery',
   popularityTriggers: 'popularity',
@@ -47,7 +49,7 @@ export function failedBuckets(tags, condition) {
 }
 
 /** The roll context a real roll of this item by its owner against the first target would build, for one array. */
-export function previewContext(item, arrayKey, actor, target) {
+function previewContext(item, arrayKey, actor, target) {
   const isSkill = item.type === 'skill';
   return buildRollContext({
     actor, phase: PREVIEW_PHASES[arrayKey] ?? 'check', item: isSkill ? null : item, skill: isSkill ? item : null,

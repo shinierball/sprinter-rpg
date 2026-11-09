@@ -12,7 +12,7 @@
 
       <!-- Heritage Selector -->
       <div class="cog-form-group cog-span-2">
-        <label>Planetary Heritage <span class="cog-label-hint">(Earth: Earth Origin Box & Earth Classes | Alien: Off-World Fanbase)</span></label>
+        <label>Planetary Heritage <span class="cog-label-hint">(Earth: Silver Earth Box & Earth Classes | Alien: Off-World Fanbase)</span></label>
         <div class="cog-pills-row">
           {{#each heritagePills}}
             <button type="button" class="cog-heritage-pill {{#if this.selected}}selected{{/if}}" id="{{@root.rootId}}-heritage-{{this.id}}" data-action="setProp" data-prop="heritage" data-value="{{this.id}}">
@@ -33,6 +33,14 @@
             </button>
           {{/each}}
         </div>
+      </div>
+
+      <div class="cog-form-group cog-span-2">
+        <label>{{localize "COG.RaceCreatorForm.Label"}}</label>
+        <label class="cog-checkbox-label">
+          <input type="checkbox" name="isFormRace" data-change-action="setFormRace" data-prop="form" {{#if isFormRace}}checked{{/if}}>
+          <span>{{localize "COG.RaceCreatorForm.Hint"}}</span>
+        </label>
       </div>
 
       <div class="cog-form-group cog-span-2">

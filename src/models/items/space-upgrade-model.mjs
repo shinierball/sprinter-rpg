@@ -1,4 +1,6 @@
-import { BaseItemDataModel, tagQueryField } from './base-item-model.mjs';
+import { BaseItemDataModel } from './base-item-model.mjs';
+import { tagQueryField } from '../fields/tag-fields.mjs';
+import { craftModifiersField } from '../fields/modifier-fields.mjs';
 
 /**
  * DataModel for space_upgrade items embedded on personal_space actors.
@@ -20,7 +22,6 @@ export class SpaceUpgradeDataModel extends BaseItemDataModel {
         defenseBonus: new fields.NumberField({ integer: true, initial: 0 }),
         stashCapacityBonus: new fields.NumberField({ integer: true, initial: 0 }),
         restRecoveryBonus: new fields.NumberField({ integer: true, initial: 0 }),
-        workstationLevel: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
         mercenaryCapacityBonus: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
         petCapacityBonus: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
         mountCapacityBonus: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
@@ -43,13 +44,16 @@ export class SpaceUpgradeDataModel extends BaseItemDataModel {
         advantage: new fields.BooleanField({ initial: false }),
         dcModifier: new fields.NumberField({ integer: true, initial: 0 })
       }),
+      // Crafting limits and speed-ups the upgrade gives (a table or an attachment; 3.15 S7)
+      craftModifiers: craftModifiersField(fields),
       craftingTable: new fields.SchemaField({
         enabled: new fields.BooleanField({ initial: false }),
         tableTypeTag: new fields.StringField({ initial: '' }),
         baseTier: new fields.NumberField({ integer: true, min: 0, initial: 1 }),
         purchasedTiers: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
         couponTiers: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
-        acquiredAtFloor: new fields.NumberField({ integer: true, min: 1, initial: 1 }),
+        // null = not yet installed on a personal space, so no floor gain (3.15)
+        acquiredAtFloor: new fields.NumberField({ integer: true, min: 1, nullable: true, initial: null }),
         upgradeCostGold: new fields.NumberField({ min: 0, initial: 250000 })
       })
     };

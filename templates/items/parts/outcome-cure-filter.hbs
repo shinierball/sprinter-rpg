@@ -1,0 +1,6 @@
+{{!-- A cure_debuff outcome row's filter (`debuffTarget`): all debuffs, one catalog debuff, or a damage type. Context: out, idx. --}}
+<select class="cog-field-input" name="system.outcomes.{{idx}}.debuffTarget" data-tooltip="{{localize "COG.Item.OutcomeCureFilter"}}" style="width: 100%; font-size: 11px;">
+  {{#each out.cureFilterOptions as |cOpt|}}
+    <option value="{{cOpt.value}}" {{#if cOpt.selected}}selected{{/if}}>{{cOpt.label}}</option>
+  {{/each}}
+</select>

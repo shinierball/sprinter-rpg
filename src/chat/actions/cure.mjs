@@ -6,31 +6,31 @@ import { resolveTargetActors } from './targets.mjs';
 
 const base = (target) => ({ targetUuid: target.uuid, targetName: target.name });
 
-export function parseCleanseDebuff(button) {
+function parseCleanseDebuff(button) {
   return { targetUuid: button.dataset?.targetUuid, debuffName: button.dataset?.debuffName || '' };
 }
 
-export async function cleanseDebuffOn(targetActor, params) {
+async function cleanseDebuffOn(targetActor, params) {
   const removed = typeof targetActor.cleanseDebuff === 'function'
     ? await targetActor.cleanseDebuff(params.debuffName)
     : null;
-  return { ...base(targetActor), removed: removed ?? [], supported: removed !== null };
+  return { ...base(targetActor), removed: removed ?? [], held: (removed?.held ?? []).map(a => a.name), supported: removed !== null };
 }
 
-export function parseMendInjury(button) {
+function parseMendInjury(button) {
   return { targetUuid: button.dataset?.targetUuid, severity: button.dataset?.severity || 'minor' };
 }
 
-export async function mendInjuryOn(targetActor, params) {
+async function mendInjuryOn(targetActor, params) {
   if (typeof targetActor.mendInjury === 'function') await targetActor.mendInjury(params.severity);
   return base(targetActor);
 }
 
-export function parseCureDebuff(button) {
+function parseCureDebuff(button) {
   return { targetUuid: button.dataset?.targetUuid, filter: button.dataset?.filter || 'all' };
 }
 
-export async function cureDebuffOn(targetActor, params) {
+async function cureDebuffOn(targetActor, params) {
   if (typeof targetActor.cureDebuffs === 'function') await targetActor.cureDebuffs(params.filter);
   return base(targetActor);
 }
@@ -58,7 +58,7 @@ export async function handleCleanseDebuff(event, button, message) {
   if (!results.length) return;
   const cleansedAll = results.filter(r => r.supported).map(r => (r.removed.length > 0
     ? `${r.targetName}: cleansed [${r.removed.join(', ')}]`
-    : `${r.targetName}: no matching debuffs to cleanse`));
+    : `${r.targetName}: no matching debuffs to cleanse`) + (r.held?.length ? ` (held by a closed cure window: ${r.held.join(', ')})` : ''));
   ui.notifications?.info(`Sprinter RPG | ${cleansedAll.join('; ')}`);
 }
 

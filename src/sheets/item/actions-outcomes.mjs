@@ -3,7 +3,8 @@
  * scroll's inscribed-spell picker. Every handler runs with `this` = the item sheet.
  */
 import { getAvailableBuffs, getAvailableDebuffs, getAvailableRollTables, getAvailableSpells } from './catalogs.mjs';
-import { rollsNoDamage } from '../../utils/base-damage.mjs';
+import { ENCHANT_ITEM_OUTCOME } from '../../utils/loot/outcome-defaults.mjs';
+import { rollsNoDamage } from '../../utils/damage/base-damage.mjs';
 import { balanceWeights, digitsOnly, rowIndex, toArray } from './util.mjs';
 
 const readOutcomes = (item) => toArray(item.system?.outcomes).map((o) => ({ ...o }));
@@ -108,7 +109,15 @@ export const OUTCOME_ACTIONS = {
   async selectOutcomeTable(event, target) {
     if (!this.isEditable) return;
     const value = target.value;
-    const matched = (await getAvailableRollTables()).find((t) => t.id === value || t.uuid === value);
+    // An `enchant_item` row stores the key, the uuid and the label, and keeps its own name; it may also pick a pack table.
+    const isEnchant = readOutcomes(this.item)[rowIndex(target)]?.type === ENCHANT_ITEM_OUTCOME;
+    const matched = (await getAvailableRollTables({ packs: isEnchant })).find((t) => t.id === value || t.uuid === value);
+    if (isEnchant) {
+      await patchOutcome(this, target, (row) => ({
+        ...row, tableKey: matched?.key ?? '', tableUuid: matched ? (matched.uuid || matched.id) : '', tableName: matched?.name ?? ''
+      }));
+      return;
+    }
     await patchOutcome(this, target, (row) => (matched
       ? { ...row, tableUuid: matched.uuid || matched.id, tableName: matched.name, name: matched.name }
       : { ...row, tableUuid: value }));

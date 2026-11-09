@@ -8,10 +8,11 @@
  */
 import { SYSTEM_ID } from '../constants.mjs';
 import { isActiveGM } from '../utils/gm-relay.mjs';
-import { positionAfterMovement } from '../utils/movement-position.mjs';
-import { isMarkerActor } from '../utils/marker.mjs';
-import { collectMoveInterruptOffers, escapeAttr, interruptEffectsText } from '../utils/interrupts.mjs';
-import { MOVE_EVENTS } from '../utils/tag-mechanics.mjs';
+import { positionAfterMovement } from '../utils/combat/movement-position.mjs';
+import { isMarkerActor } from '../utils/area/marker.mjs';
+import { collectMoveInterruptOffers, interruptEffectsText } from '../utils/combat/interrupts.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
+import { MOVE_EVENTS } from '../utils/tag/tag-mechanics.mjs';
 
 /** Moves for one scene inside this window share one evaluation (a drag fires many). Tests may lower it. */
 export const movementOffersConfig = { debounceMs: 75 };
@@ -30,7 +31,7 @@ function userIdsFor(actors) {
 }
 
 /** The card for one mover's offers. */
-export function movementOfferHtml(offers) {
+function movementOfferHtml(offers) {
   const mover = offers[0];
   const lines = [...new Set(offers.map(o => o.event))].map(e => `${EVENT_TEXT[e].title} (${EVENT_TEXT[e].note})`).join('; ');
   const buttons = offers.map(o => {
@@ -83,7 +84,7 @@ async function offerForMover({ tokenDoc, origin, destination }) {
  * @param {{ origin?: {x:number,y:number} }|null} movement
  * @returns {Promise<void>}
  */
-export function queueMovementOffers(tokenDoc, movement) {
+function queueMovementOffers(tokenDoc, movement) {
   const actor = tokenDoc?.actor;
   const origin = movement?.origin;
   if (!isActiveGM() || !actor || isMarkerActor(actor) || !globalThis.game?.combat || !origin) return Promise.resolve();
@@ -110,7 +111,7 @@ export function queueMovementOffers(tokenDoc, movement) {
   return entry.promise;
 }
 
-export function onMovementOffersTokenMove(tokenDoc, movement) { return queueMovementOffers(tokenDoc, movement); }
+function onMovementOffersTokenMove(tokenDoc, movement) { return queueMovementOffers(tokenDoc, movement); }
 
 export function registerMovementOffersHooks() {
   Hooks.on('moveToken', onMovementOffersTokenMove);

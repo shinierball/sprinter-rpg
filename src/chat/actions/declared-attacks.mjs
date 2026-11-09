@@ -6,11 +6,11 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { getTagsOf } from '../../utils/tag-mechanics.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
-import { mobAttackText, TARGET_VIA } from '../../utils/declared-attacks.mjs';
+import { getTagsOf } from '../../utils/tag/tag-mechanics.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
+import { mobAttackText, TARGET_VIA } from '../../utils/combat/declared-attacks.mjs';
 import { combatOfDeclaration } from '../../documents/combat-declarations.mjs';
-import { COG_ACTION_TYPES } from '../../documents/combat.mjs';
+import { COG_ACTION_TYPES } from '../../documents/combat/action-ledger.mjs';
 import { resolveActingCrawler } from './roll-evade.mjs';
 import { autoHitContextOf } from './interrupts.mjs';
 

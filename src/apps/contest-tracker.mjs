@@ -11,11 +11,11 @@
  * `data-change-action` / `data-action` delegates. Skills are picked by `system.identifier` from the catalog. Nothing
  * here blocks (CONTRIBUTING rule 2); the engine and the service decide what a change means.
  */
+import { offeredEntries } from '../utils/content-source.mjs';
 import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
-import { catalogEntries } from '../content/catalog-lookup.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
-import { getCurrentFloor } from '../utils/current-floor.mjs';
+import { getCurrentFloor } from '../utils/floor/current-floor.mjs';
 import { MOVEMENT_SKILL_TAG } from '../data/tag-vocabulary.mjs';
 import { sanitizeContest, raceStandings, chaseStatus, participantLegSkill } from '../utils/contest/contest-engine.mjs';
 import { CONTEST_KINDS, contestKindInfo } from '../data/rules/contest-rules.mjs';
@@ -46,7 +46,7 @@ function freshId(prefix, list) {
 
 /** Catalog skills as `{ identifier, name, movement }`, movement skills first, then by name. */
 function catalogSkills() {
-  const rows = catalogEntries('skills')
+  const rows = offeredEntries('skills')
     .map((s) => ({ identifier: s?.system?.identifier, name: s?.name, movement: (s?.system?.tags ?? []).includes(MOVEMENT_SKILL_TAG) }))
     .filter((s) => typeof s.identifier === 'string' && s.identifier && typeof s.name === 'string');
   return rows.sort((a, b) => Number(b.movement) - Number(a.movement) || a.name.localeCompare(b.name));

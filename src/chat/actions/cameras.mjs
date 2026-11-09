@@ -10,19 +10,19 @@
  * (never written from a hook, never a modal); the GM's button asks the Rule Break.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { CAMERAS_FLAG, sanitizeCameraRecord, cameraRowOf, cameraCell, cameraReasonLabel, cameraText } from '../../utils/cameras.mjs';
-import { readCheckRecord, effectiveCheck } from '../../utils/check-assists.mjs';
+import { CAMERAS_FLAG, sanitizeCameraRecord, cameraRowOf, cameraCell, cameraReasonLabel, cameraText } from '../../utils/roll/cameras.mjs';
+import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { isActiveGM } from '../../utils/gm-relay.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
 import { addPopularity } from '../../documents/actor/actor-popularity.mjs';
-import { COGSessionEngine } from '../../apps/session-manager.mjs';
+import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { addAiFavor, aiFavorBarState, setAiFavorBar } from './ai-favor-tally.mjs';
 import { isTrustedAssist } from './use-assist.mjs';
 
 /** The chat-message flag on a prompt card: `{ sourceId, row, resolved }`. */
-export const CAMERA_PROMPT_FLAG = 'cameraPrompt';
+const CAMERA_PROMPT_FLAG = 'cameraPrompt';
 
 const escapeHtml = (value) => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
@@ -59,7 +59,7 @@ export function cameraChangesText({ popularity = 0, aiFavor = 0 } = {}) {
  * @param {ReturnType<typeof sanitizeCameraRecord>} [record]
  * @returns {number|null}
  */
-export function cameraRowFor(message, record = sanitizeCameraRecord(flagOf(message, CAMERAS_FLAG))) {
+function cameraRowFor(message, record = sanitizeCameraRecord(flagOf(message, CAMERAS_FLAG))) {
   if (record?.pickedRow) return record.pickedRow;
   const check = readCheckRecord(message);
   const eff = effectiveCheck(check);

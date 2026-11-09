@@ -5,8 +5,8 @@
  * `attachment.token`, so there is nothing to move here.
  */
 import { isActiveGM } from '../utils/gm-relay.mjs';
-import { isMarkerActor } from '../utils/marker.mjs';
-import { centreAfterMovement } from '../utils/movement-position.mjs';
+import { isMarkerActor } from '../utils/area/marker.mjs';
+import { centreAfterMovement } from '../utils/combat/movement-position.mjs';
 import { activeAurasOnScene, syncAuraMembership, withAuraLock } from '../documents/actor/aura-pulse.mjs';
 
 /** Moves for one scene that arrive within this window share one sync (a drag fires many). Tests may lower it. */

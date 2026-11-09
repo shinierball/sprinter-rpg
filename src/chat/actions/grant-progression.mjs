@@ -24,7 +24,7 @@ export async function grantSkillRankTo(targetActor, params) {
   return base(targetActor);
 }
 
-export function parseGrantStat(button) {
+function parseGrantStat(button) {
   return {
     targetUuid: button.dataset?.targetUuid,
     stat: button.dataset?.stat || 'str',
@@ -32,7 +32,7 @@ export function parseGrantStat(button) {
   };
 }
 
-export async function grantStatTo(targetActor, params) {
+async function grantStatTo(targetActor, params) {
   if (typeof targetActor.increaseUnenhancedStat === 'function') {
     await targetActor.increaseUnenhancedStat(params.stat, params.bonus);
   }

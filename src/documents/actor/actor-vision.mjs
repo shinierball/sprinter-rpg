@@ -12,12 +12,12 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { collectSenses, hasSenseOverride } from '../../utils/senses.mjs';
+import { collectSenses, hasSenseOverride } from '../../utils/character/senses.mjs';
 
 export const SYNC_TOKEN_VISION = 'syncTokenVision';
 
 /** Item types whose senses feed the actor (the same sources as the typed modifier rows). */
-export const SENSE_ITEM_TYPES = ['race', 'class', 'gear', 'buff'];
+const SENSE_ITEM_TYPES = ['race', 'class', 'gear', 'buff'];
 
 const SIGHT_KEYS = ['enabled', 'range', 'visionMode'];
 

@@ -14,8 +14,10 @@
  * companion creation path and are reported as skipped. Entries that reference crafting tables wait for 3.15 S3.
  */
 import { SYSTEM_ID } from '../constants.mjs';
-import { tagIndex } from '../apps/tag-index.mjs';
-import { dialogAnswer } from '../utils/dialog-answer.mjs';
+import { landItems } from '../utils/content-source.mjs';
+import { tagIndex } from '../utils/tag/tag-index.mjs';
+import { dialogAnswer } from '../utils/ui/dialog-answer.mjs';
+import { choiceSelectHtml, readChoicePicks } from '../utils/ui/choice-picker.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { resolveGrantDocument } from './race-class-grants.mjs';
 import { stampCompendiumLink } from './compendium-sync.mjs';
@@ -61,14 +63,16 @@ function itemDataFor(doc, entry, sourceKey) {
 }
 
 /**
- * Resolve a source's entries into creatable items (no document is created).
+ * Resolve a source's entries into creatable items (no document is created). Sync: `lookup(ref, itemType)` returns the
+ * document a reference resolves to, or null (the planner passes a prefetched one; see `prefetchGrantDocuments`).
  * @param {{type: 'race'|'class', def: object}} source
- * @param {object} [options] `choices`: `{ [entryIndex]: uuid | identifier }` answers for choice entries
- * @returns {Promise<{ sourceKey: string, items: Array<{index: number, entry: object, label: string, data: object}>,
+ * @param {{ choices?: object }} options `choices`: `{ [entryIndex]: uuid | identifier }` answers for choice entries
+ * @param {(ref: object, itemType?: string) => object|null} lookup
+ * @returns {{ sourceKey: string, items: Array<{index: number, entry: object, label: string, data: object}>,
  *   pending: Array<{index: number, entry: object, label: string, candidates: object[]}>,
- *   skipped: Array<{index: number, entry: object, reason: string}> }>}
+ *   skipped: Array<{index: number, entry: object, reason: string}> }}
  */
-export async function planStartingItems(source, options = {}) {
+export function planStartingItemsSync(source, options, lookup) {
   const sourceKey = startingSourceKey(source);
   const items = [];
   const pending = [];
@@ -88,7 +92,7 @@ export async function planStartingItems(source, options = {}) {
       }
       ref = { uuid: String(picked), identifier: String(picked), itemType: entry.itemType };
     }
-    const doc = await resolveGrantDocument(ref, entry.itemType || undefined);
+    const doc = lookup(ref, entry.itemType || undefined);
     if (!doc) {
       skipped.push({ index, entry, reason: 'unresolved' });
       continue;
@@ -98,32 +102,30 @@ export async function planStartingItems(source, options = {}) {
   return { sourceKey, items, pending, skipped };
 }
 
+const refKey = (ref, itemType) => `${itemType ?? ''}|${ref?.uuid ?? ''}|${ref?.identifier ?? ''}`;
+
+/**
+ * Resolve a source's entries into creatable items (no document is created). The references are resolved first (async,
+ * packs included), then the sync core runs.
+ * @param {{type: 'race'|'class', def: object}} source
+ * @param {object} [options] `choices`: `{ [entryIndex]: uuid | identifier }` answers for choice entries
+ * @returns {Promise<ReturnType<typeof planStartingItemsSync>>}
+ */
+async function planStartingItems(source, options = {}) {
+  const wanted = [];
+  planStartingItemsSync(source, options, (ref, itemType) => { wanted.push([ref, itemType]); return null; });
+  const docs = new Map();
+  for (const [ref, itemType] of wanted) docs.set(refKey(ref, itemType), await resolveGrantDocument(ref, itemType));
+  return planStartingItemsSync(source, options, (ref, itemType) => docs.get(refKey(ref, itemType)) ?? null);
+}
+
 /** The record stored for a source once its starting items were given. */
-function recordFor(plan, ruleBreak, previous) {
+export function recordFor(plan, ruleBreak, previous) {
   return {
     items: plan.items.map(i => i.label),
     count: (previous?.count ?? 0) + 1,
     ...(ruleBreak || previous?.ruleBreak ? { ruleBreak: true } : {})
   };
-}
-
-/**
- * Pure builder step for the crawler creator: resolve the sources' starting items into the creation payload
- * pieces `buildCrawlerPayload` takes as `spec.startingItems`.
- * @param {Array<{type: 'race'|'class', def: object}>} sources
- * @param {object} [options] `choices`: answers keyed by `sourceKey` then entry index
- * @returns {Promise<{ items: object[], record: object }>} item payloads, and the `startingItemsGranted` record
- */
-export async function buildStartingItemsSpec(sources, options = {}) {
-  const items = [];
-  const record = {};
-  for (const source of sources || []) {
-    const plan = await planStartingItems(source, { choices: options.choices?.[startingSourceKey(source)] });
-    if (!plan.sourceKey || record[plan.sourceKey] || plan.items.length === 0) continue;
-    items.push(...plan.items.map(i => i.data));
-    record[plan.sourceKey] = recordFor(plan, false);
-  }
-  return { items, record };
 }
 
 /**
@@ -137,13 +139,13 @@ async function promptStartingItems(source, plan) {
       <input type="checkbox" name="starting-${i.index}" checked />
       <span>${escapeHtml(i.label)}${Number(i.entry.quantity) > 1 ? ` x${Number(i.entry.quantity)}` : ''}</span>
     </label>`);
-  for (const p of plan.pending) {
-    const options = p.candidates.map(c => `<option value="${escapeHtml(c.uuid)}">${escapeHtml(c.name)}</option>`).join('');
+  const picks = plan.pending.map(p => ({ key: p.index, candidates: p.candidates.map(c => ({ value: c.uuid, label: c.name })) }));
+  for (const [i, p] of plan.pending.entries()) {
     rows.push(`
     <label class="cog-starting-item" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
       <input type="checkbox" name="starting-${p.index}" checked />
       <span>${escapeHtml(p.label)}</span>
-      <select name="choice-${p.index}">${options}</select>
+      ${choiceSelectHtml(picks[i])}
     </label>`);
   }
   const content = `<div class="cog-dialog-choices" style="padding:6px;font-family:'Oswald',sans-serif;">
@@ -164,12 +166,7 @@ async function promptStartingItems(source, plan) {
         callback: (event, button) => {
           const form = button.form;
           const accepted = indexes.filter(i => form.querySelector(`[name="starting-${i}"]:checked`));
-          const choices = {};
-          for (const p of plan.pending) {
-            const value = form.querySelector(`[name="choice-${p.index}"]`)?.value;
-            if (value) choices[p.index] = value;
-          }
-          return { accepted, choices };
+          return { accepted, choices: readChoicePicks(form, picks) };
         }
       },
       { action: 'skip', icon: 'fas fa-times', label: 'Skip', callback: () => null }
@@ -235,7 +232,7 @@ export async function grantStartingItems(actor, source, options = {}) {
     for (const i of chosen) i.data.flags[SYSTEM_ID].ruleBreak = true;
   }
   const created = typeof actor.createEmbeddedDocuments === 'function'
-    ? await actor.createEmbeddedDocuments('Item', chosen.map(i => i.data))
+    ? await actor.createEmbeddedDocuments('Item', options.allowOffTheme === true ? chosen.map(i => i.data) : landItems(chosen.map(i => i.data)))
     : [];
   result.granted = created ?? [];
   result.ruleBreak = ruleBreak;

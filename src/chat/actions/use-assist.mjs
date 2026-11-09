@@ -14,17 +14,18 @@ import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { readCheckRecord, getAssistSpec, CHECK_RECORD_FLAG, MAX_RECORD_ASSISTS } from '../../utils/check-assists.mjs';
-import { rollAssistDice } from '../../utils/assist-roll.mjs';
-import { isFreeInterruptItem } from '../../utils/tag-mechanics.mjs';
-import { escapeAttr } from '../../utils/interrupts.mjs';
+import { readCheckRecord, getAssistSpec, CHECK_RECORD_FLAG, MAX_RECORD_ASSISTS } from '../../utils/roll/check-assists.mjs';
+import { rollAssistDice } from '../../utils/roll/assist-roll.mjs';
+import { isFreeInterruptItem } from '../../utils/tag/tag-mechanics.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
 import { canModifyMessage } from '../damage-applications.mjs';
 import { messageAuthorId } from '../chat-relay.mjs';
 import { assistText } from '../render/check-assists.mjs';
+import { findCombatant } from '../../documents/combat/combatants.mjs';
 
 /** Relay action for check-card amends; `payload.op` names the write (`apply`; B3 adds `resolve`). */
-export const ASSIST_APPLY_RELAY = 'checkAssist';
+const ASSIST_APPLY_RELAY = 'checkAssist';
 
 /** Message ids become flag keys; anything else could address another flag path. */
 const ENTRY_ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -155,14 +156,6 @@ async function writeResolveCalledPlay(payload, user) {
   return { ok: true, appliedTo: payload.appliedTo };
 }
 
-/** Register (or replace) one `checkAssist` relay op. */
-export function registerCheckAssistOp(op, { authorize, apply } = {}) {
-  if (typeof op !== 'string' || !op || typeof authorize !== 'function' || typeof apply !== 'function') {
-    throw new Error('A check assist relay op needs a name, authorize and apply.');
-  }
-  ASSIST_OPS[op] = { authorize, apply };
-}
-
 function assistOp(payload) {
   const op = payload?.op;
   return typeof op === 'string' && Object.hasOwn(ASSIST_OPS, op) ? ASSIST_OPS[op] : null;
@@ -191,9 +184,9 @@ export async function applyCheckAssist(payload = {}) {
   return res.result && typeof res.result === 'object' && typeof res.result.ok === 'boolean' ? res.result : { ok: false, reason: 'error' };
 }
 
-function findCombatant(combat, combatantId, actor) {
-  const list = Array.isArray(combat?.combatants) ? combat.combatants : Array.from(combat?.combatants?.values?.() ?? combat?.combatants ?? []);
-  return list.find((c) => c?.id === combatantId) ?? list.find((c) => c?.actorId === actor?.id) ?? null;
+/** The assister's own combatant when the button names none (or names one that is gone): the first whose actor is them. */
+function combatantOfActor(combat, actor) {
+  return (combat?.combatants ?? []).find((c) => c?.actorId === actor?.id) ?? null;
 }
 
 async function postAssistCard({ assister, skill, roll, formula, lines, checkMessageId, rollerName, ruleBreak }) {
@@ -237,7 +230,7 @@ async function postAssistCard({ assister, skill, roll, formula, lines, checkMess
  * @param {object} [p.options] roll options (`situations`, `interactive`, `ruleBreak`)
  * @returns {Promise<{ ok: boolean, reason?: string, assistMessage?: object, applied?: object, ruleBreak?: boolean }>}
  */
-export async function useCheckAssist({ checkMessage, assisterUuid, combatantId = '', itemId, options = {} } = {}) {
+async function useCheckAssist({ checkMessage, assisterUuid, combatantId = '', itemId, options = {} } = {}) {
   const record = readCheckRecord(checkMessage);
   if (!record || !checkMessage?.id) {
     notify('warn', assistText('NoCheck'));
@@ -255,7 +248,7 @@ export async function useCheckAssist({ checkMessage, assisterUuid, combatantId =
     return { ok: false, reason: 'invalid-formula' };
   }
   const combat = globalThis.game?.combat;
-  const combatant = findCombatant(combat, combatantId, assister);
+  const combatant = findCombatant(combat, combatantId) ?? combatantOfActor(combat, assister);
   if (!combatant || typeof combat?.recordInterruptAction !== 'function') {
     notify('warn', assistText('NotInCombat'));
     return { ok: false, reason: 'no-combat' };
@@ -294,7 +287,8 @@ export async function useCheckAssist({ checkMessage, assisterUuid, combatantId =
   }
 
   const rollerName = resolveActorByUuid(record.rollerUuid)?.name ?? '';
-  const recorded = await combat.recordInterruptAction(combatant, interrupt, { note: `${skill.name} → ${rollerName}` });
+  const recorded = await combat.recordInterruptAction(combatant, interrupt, { note: `${skill.name} → ${rollerName}`, ruleBreak });
+  if (recorded?.declined) return { ok: false, reason: 'refused' };
   if (!recorded?.success) {
     // recordCombatantAction's relay already warned (no GM for an unowned combatant): one warning per click.
     return { ok: false, reason: 'no-gm-action' };

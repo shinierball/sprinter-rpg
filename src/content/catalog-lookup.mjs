@@ -83,18 +83,3 @@ export function findConditionEntry(kind, ref) {
     ?? contentRegistry.listReferences?.(kind).find(same)
     ?? null;
 }
-
-/**
- * Resolve a definition from authoring-time text (a creator's typed name or preset id): the exact id
- * first, then a case-insensitive name. Only for places where the author reviews the result.
- * @param {string} kind
- * @param {string} text
- * @returns {object|null}
- */
-export function findCatalogEntryByText(kind, text) {
-  const key = String(text ?? '').trim();
-  if (!key) return null;
-  const list = catalogEntries(kind);
-  const lower = key.toLowerCase();
-  return list.find(def => matchesRef(def, key)) ?? list.find(def => def?.name?.trim().toLowerCase() === lower) ?? null;
-}

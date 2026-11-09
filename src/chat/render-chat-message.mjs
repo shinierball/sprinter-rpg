@@ -8,6 +8,7 @@ import { addSenderBadges } from './render/sender-badges.mjs';
 import { renderCameraAward } from './render/cameras.mjs';
 import { renderDamageApplications } from './render/damage-applications.mjs';
 import { renderCheckAssists } from './render/check-assists.mjs';
+import { renderVehicleCheck } from './render/vehicle-check.mjs';
 import { hideForeignContestButtons } from './render/contest.mjs';
 import { hideSpentInflictButtons } from './render/spell-condition-buttons.mjs';
 import { hideGmRuleBreakBadges } from '../utils/rule-break-visibility.mjs';
@@ -22,6 +23,7 @@ export function onRenderChatMessage(message, root, data) {
   if (!root) return;
   bindChatActions(root, message);
   renderCheckAssists(root, message);
+  renderVehicleCheck(root, message);
   renderCameraAward(root, message);
   renderDamageApplications(root, message);
   hideForeignInterruptButtons(root);

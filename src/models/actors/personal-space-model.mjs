@@ -108,7 +108,6 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
     let mercDisc = 0;
     let extraPetCap = 0;
     let extraMountCap = 0;
-    let maxWorkstationLevel = 0;
     const allBuffs = [];
 
     // Installed upgrades: the embedded space_upgrade items (the only source)
@@ -125,7 +124,6 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
       if (bonuses.mercenaryCapacityBonus) extraMercCap += Number(bonuses.mercenaryCapacityBonus) || 0;
       if (bonuses.petCapacityBonus) extraPetCap += Number(bonuses.petCapacityBonus) || 0;
       if (bonuses.mountCapacityBonus) extraMountCap += Number(bonuses.mountCapacityBonus) || 0;
-      if (bonuses.workstationLevel) maxWorkstationLevel = Math.max(maxWorkstationLevel, Number(bonuses.workstationLevel) || 0);
       if (Array.isArray(bonuses.buffs)) {
         for (const b of bonuses.buffs) if (b && !allBuffs.includes(b)) allBuffs.push(b);
       }
@@ -160,7 +158,6 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
     this.mercenaryCapacity = totalMercCap;
     this.mercenaryDiscountPct = mercDisc;
     this.restRecoveryBonus = hoursRed;
-    this.workstationLevel = maxWorkstationLevel;
     this.mercenaryCapacityBonus = extraMercCap;
     this.petCapacityBonus = extraPetCap;
     this.mountCapacityBonus = extraMountCap;
@@ -338,7 +335,7 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
   }
 }
 
-export const RELAY_ACTION_BARRACKS_HOUSING = 'barracksHousing';
+const RELAY_ACTION_BARRACKS_HOUSING = 'barracksHousing';
 
 const HOUSEABLE_TYPES = ['mercenary', 'npc'];
 

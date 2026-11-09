@@ -6,12 +6,13 @@
  * tactical skills (call a play, intervene, clues), and buffing/support skills (heal, help).
  */
 
-import { COGCombat, COG_ACTION_TYPES } from '../documents/combat.mjs';
+import { COGCombat } from '../documents/combat.mjs';
+import { COG_ACTION_TYPES } from '../documents/combat/action-ledger.mjs';
 import { getRequiredXPForLevel } from '../documents/actor.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 
-export const DEFAULT_XP_WEIGHTS = {
+const DEFAULT_XP_WEIGHTS = {
   damageDealt: 35,
   damageTaken: 25,
   defensive: 15,

@@ -1,11 +1,12 @@
 import { COGToolApp } from '../tool-app.mjs';
 import { getCurrentFloor, setCurrentFloor } from '../../documents/actor/actor-environment.mjs';
 import { SYSTEM_PATH } from '../../constants.mjs';
-import { COG_OUTCOME_CONFIG } from './roll-outcomes.mjs';
-import { COGSessionEngine } from './session-engine.mjs';
+import { COG_OUTCOME_CONFIG } from '../../documents/session/roll-outcomes.mjs';
+import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { sessionRosterDialogsMixin } from './app-roster-dialogs.mjs';
 import { buildAdvancementControls, runAdvancementControl } from '../advancement-batch.mjs';
 import { openAwardLevels } from '../award-levels-app.mjs';
+import { buildSecretRows, openRowActor, revealRow, changeRow, cureRow, saveRowNote } from './secrets-tab.mjs';
 import { sessionEventDialogMixin, sessionEventDialogMixinStatic } from './app-event-dialog.mjs';
 
 /**
@@ -61,7 +62,12 @@ export class COGSessionManagerApp extends COGToolApp {
       runSkillCheck: COGSessionManagerApp.#onRunSkillCheck,
       awardLevels: COGSessionManagerApp.#onAwardLevels,
       distributeXP: COGSessionManagerApp.#onDistributeXP,
-      broadcastReview: COGSessionManagerApp.#onBroadcastReview
+      broadcastReview: COGSessionManagerApp.#onBroadcastReview,
+      openSecret: COGSessionManagerApp.#onOpenSecret,
+      revealSecret: COGSessionManagerApp.#onRevealSecret,
+      changeSecret: COGSessionManagerApp.#onChangeSecret,
+      cureSecret: COGSessionManagerApp.#onCureSecret,
+      saveSecretNote: COGSessionManagerApp.#onSaveSecretNote
     }
   };
 
@@ -87,6 +93,7 @@ export class COGSessionManagerApp extends COGToolApp {
         if (this.rendered) this.render();
       };
       this._hookId = Hooks.on('cogSessionUpdated', this._hookFn);
+      this._secretsHookId = Hooks.on('cogSecretsUpdated', this._hookFn);
     }
   }
 
@@ -95,7 +102,9 @@ export class COGSessionManagerApp extends COGToolApp {
     if (this._hookFn && typeof Hooks !== 'undefined' && Hooks.off) {
       Hooks.off('cogSessionUpdated', this._hookId ?? this._hookFn);
     }
+    if (this._hookFn && this._secretsHookId != null && typeof Hooks !== 'undefined' && Hooks.off) Hooks.off('cogSecretsUpdated', this._secretsHookId);
     this._hookId = null;
+    this._secretsHookId = null;
     this._hookFn = null;
     super._onClose(options);
   }
@@ -253,8 +262,15 @@ export class COGSessionManagerApp extends COGToolApp {
       selected: (idx + 1) === currentFloor
     }));
 
+    // The Secrets tab is the GM's alone; its rows are built only when it is showing.
+    const showSecrets = Boolean(globalThis.game?.user?.isGM);
+    if (!showSecrets && this.activeTab === 'secrets') this.activeTab = 'party';
+    const secretRows = showSecrets && this.activeTab === 'secrets' ? buildSecretRows() : [];
+
     return {
       ...data,
+      showSecrets,
+      secretRows,
       sessions,
       session,
       isActiveSession: session?.status === 'active',
@@ -489,6 +505,34 @@ export class COGSessionManagerApp extends COGToolApp {
   static async #onBroadcastReview() {
     await COGSessionEngine.broadcastAISessionReview(this.#sessionId());
     if (ui.notifications?.info) ui.notifications.info('Sprinter RPG | Dungeon AI Performance Review card posted to chat!');
+  }
+
+  /** Secrets tab: open the carrier's sheet. */
+  static #onOpenSecret(event, target) {
+    openRowActor(target.dataset.key);
+  }
+
+  /** Secrets tab: reveal a held secret to its carrier. */
+  static async #onRevealSecret(event, target) {
+    await revealRow(target.dataset.key);
+    this.render();
+  }
+
+  /** Secrets tab: change a held secret or a pending affliction now. */
+  static async #onChangeSecret(event, target) {
+    await changeRow(target.dataset.key);
+    this.render();
+  }
+
+  /** Secrets tab: cure a held secret or an affliction. */
+  static async #onCureSecret(event, target) {
+    await cureRow(target.dataset.key);
+    this.render();
+  }
+
+  /** Secrets tab: the GM note, saved when the field changes. */
+  static async #onSaveSecretNote(event, target) {
+    await saveRowNote(target.dataset.key, target.value);
   }
 
   /** Hide ledger rows that do not match the search box (display only). */

@@ -13,6 +13,10 @@
  * crawler already knows, the 1d2+1 bonus (clamped; a Rank ceiling such as Heal's 1 adds nothing, D10).
  * Tome or learned (Question C (a)) is settled in a finalizer after every step, so it sees the Stat step's Int.
  *
+ * Friendship Bracelet (3.25e): a Silver Item pick with no `choice.race` takes its race from `slotSpec.raceRow` on the table
+ * `floor.loot.braceletRace` (1d10, same value forms as `upgrade.row`; absent = rolled here). With no such table the race
+ * select is the only way. The pick's history record carries `race: { identifier, name, tableKey, row, rolled, chosen }`.
+ *
  * Scroll of Upgrade (S7b, e6.9 section 7): a Gold or Platinum weapon pick carries `slotSpec.upgrade = { row?, name?, optionIndex? }`
  * (`row` is a number, or `{ value, rolled: true, dice }` from the app; absent = rolled here on `step.upgradeTable`, default
  * `floor.loot.upgrade`; `name` is the player-edited weapon name, default "<nameAddition> <weapon name>"; `optionIndex` picks among
@@ -25,11 +29,15 @@
  * History entry: `{ floor, kind: 'loot', step, tableKey, row, rolled, chosen, reused?, tiers, narrative, picks: [...] }`.
  */
 import { findCatalogEntry } from '../../../content/catalog-lookup.mjs';
-import { buildPayload } from '../../builders/item-payload.mjs';
+import { tomePayload } from '../../tome-payload.mjs';
+import { COGRaceClassApplier } from '../../race-class-applier.mjs';
 import { addRank, cleanInt, cleanText, readSpecValue, rollOrTyped } from '../state.mjs';
-import { LOOT_SPELL_TABLE, LOOT_UPGRADE_TABLE, rowForTotal } from '../tables.mjs';
+import { LOOT_BRACELET_RACE_TABLE, LOOT_SPELL_TABLE, LOOT_UPGRADE_TABLE, rowForTotal } from '../tables.mjs';
 import { LOOT_SLOTS, compileLootPick, manaPotionPayload, slotsForTiers, spellVariantsFor } from '../loot-tiers.mjs';
-import { asTriggerFromOption } from '../../../utils/amazing-success.mjs';
+import { upgradeChoices, upgradeTemplate, upgradedName } from '../../../utils/crafting/upgrade-table.mjs';
+import { HAZARD_BREAKS_ON, breakItemUpdate, buildEnchantmentWrite } from '../../../utils/crafting/crafting-engine.mjs';
+import { stableId } from '../../../utils/stable-id.mjs';
+import { rollFormula } from '../../../utils/rng.mjs';
 import { createWorkingItem, ownedByIdentifier, unnamedFromBooks } from './experiences.mjs';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -73,6 +81,31 @@ function spellFromTable(step, state, ctx, rng, pickSpec, tableKey) {
   const option = row?.options?.find(o => (o.kind === 'spell' || o.kind === 'named') && cleanText(o.identifier));
   if (!option) { state.warn(step.id, `${table.name || tableKey} row ${rowNumber} names no spell; the spell pick was skipped.`); return null; }
   return { identifier: cleanText(option.identifier), name: cleanText(option.name), stubOk: !cleanText(option.uuid), row: rowNumber, rolled: chosen === null || given.rolled };
+}
+
+/**
+ * The race of a Friendship Bracelet the player did not choose: the row of the bracelet race table, rolled here or taken
+ * from the app's rolled die (`slotSpec.raceRow`, a number or `{ value, rolled: true, dice }`). Null with no table (the
+ * race select is then the only way) or when the row names no race. A race that is not installed is a warning and no tag.
+ */
+function braceletRace(step, state, ctx, rng, slotSpec, label) {
+  const table = ctx?.tables?.[LOOT_BRACELET_RACE_TABLE];
+  if (!isObj(table)) return null;
+  const roll = rollOrTyped(state, step.id, table.formula, slotSpec.raceRow, rng);
+  if (!roll) return null;
+  const row = rowForTotal(table, roll.total);
+  const option = row?.options?.find(o => cleanText(o.identifier));
+  const identifier = cleanText(option?.identifier).toLowerCase();
+  if (!identifier) { state.warn(step.id, `${table.name || LOOT_BRACELET_RACE_TABLE} row ${roll.total} names no race; the bracelet was created without a race tag.`); return null; }
+  const installed = Boolean(COGRaceClassApplier.findRace(identifier));
+  const name = cleanText(option.name) || identifier;
+  state.log({
+    step: step.id, kind: 'loot', label: `${label}: race ${name}`, table: LOOT_BRACELET_RACE_TABLE, tableName: table.name || undefined, row: roll.total,
+    rolled: roll.rolled, manual: roll.manual || undefined, formula: table.formula, total: roll.total, dice: roll.dice ?? undefined,
+    breakKey: roll.breakKey ?? undefined, narrative: row.narrative || undefined
+  });
+  if (!installed) state.warn(step.id, `${name} (${identifier}) is not installed here; the bracelet is still tagged for it.`);
+  return { identifier, name, row: roll.total, rolled: roll.rolled, installed };
 }
 
 /** One spell of a Spells-instead card. Returns the history record of the pick, or null when nothing came of it. */
@@ -148,14 +181,7 @@ function takeSpell(step, state, ctx, rng, pickSpec, rankFormula, spellTable) {
     if (at >= 0) state.itemCreates.splice(at, 1);
     state.items.delete(item.id);
     const warnings = [];
-    const tome = buildPayload('loot', {
-      name: `Tome of ${item.name}`,
-      system: {
-        quantity: 1, lootType: 'consumable', executionMode: 'all',
-        outcomes: [{ name: `Learn ${item.name}`, type: 'learn_spell', spellIdentifier: item.identifier, rank: Math.max(1, item.rank), weight: 1 }],
-        notes: `Read to learn ${item.name} at Rank ${Math.max(1, item.rank)}. Can be traded or sold.`
-      }
-    }, { warnings });
+    const tome = tomePayload(item, item.rank, { warnings });
     for (const w of warnings) state.warn(step.id, `Tome of ${item.name}: ${w.message}`);
     state.itemCreates.push(tome);
     record.tome = true;
@@ -204,10 +230,21 @@ function applyLoot(step, state, card, compiled) {
     if (w) {
       w.grants = [...(w.grants ?? []), ...compiled.upgrade.grants];
       w.damageModifiers = [...(w.damageModifiers ?? []), ...compiled.upgrade.damageModifiers];
-      for (const [key, row] of Object.entries(compiled.upgrade.abilityModifiers)) {
-        w.abilityModifiers = { ...(w.abilityModifiers ?? {}), [key]: { value: (cleanInt(w.abilityModifiers?.[key]?.value) ?? 0) + row.value, type: 'flat' } };
+      w.enchantments = [...(w.enchantments ?? []), ...(compiled.upgrade.enchantments ?? [])];
+      if (compiled.upgrade.destroyed) {
+        w.tags = breakItemUpdate(w, { destroyed: true })['system.tags'] ?? w.tags;
+        w.equipped = false;
       }
     }
+  }
+  if (compiled.hazard) {
+    const h = compiled.hazard;
+    state.log({
+      step: step.id, kind: 'loot', label: `Over-enchant roll: ${h.name}`, rolled: true, formula: '1d10', total: h.total, dice: h.dice ?? undefined,
+      note: h.destroyed
+        ? `${h.name} already had ${h.count} enchantments; ${h.total} is ${HAZARD_BREAKS_ON} or less, so it is destroyed and the upgrade is lost`
+        : `${h.name} already had ${h.count} enchantments; ${h.total} is over ${HAZARD_BREAKS_ON}, so it survives the upgrade`
+    });
   }
   let breakKey;
   for (const b of compiled.breaks) {
@@ -255,11 +292,13 @@ function resolveScroll(step, state, ctx, rng, slotSpec, compiled) {
   } else if (given.rolled) dice = given.dice ?? null;
   else rolled = false;
   const row = rowForTotal(table, number);
-  const triggers = (row?.options ?? []).filter(o => o?.kind === 'asTrigger');
+  // Only the row's own Amazing Success trigger options count here; the shared fallbacks (custom text, narrative) are for play.
+  const hasTriggerOption = (row?.options ?? []).some(o => o?.kind === 'asTrigger');
+  const triggers = hasTriggerOption ? upgradeChoices(row).filter(c => c.kind === 'trigger') : [];
   const index = cleanInt(upgradeSpec.optionIndex);
-  const option = (index !== null ? triggers[index] : null) ?? triggers[0];
-  if (!option) { state.warn(step.id, `${table.name || tableKey} row ${number} has no Amazing Success trigger; the Scroll is still pending.`); return null; }
-  const record = { tableKey, row: number, rolled, chosen: !rolled, option: option.label || option.nameAddition || '', weaponId: weapon.id };
+  const choice = (index !== null ? triggers[index] : null) ?? triggers[0];
+  if (!choice) { state.warn(step.id, `${table.name || tableKey} row ${number} has no Amazing Success trigger; the Scroll is still pending.`); return null; }
+  const record = { tableKey, row: number, rolled, chosen: !rolled, option: choice.label, weaponId: weapon.id };
   const upgraded = (state.upgradedWeaponIds ??= new Set());
   const again = weapon.hasAsTrigger === true || upgraded.has(weapon.id) || historyUpgradedIds(state).has(weapon.id);
   let breakKey;
@@ -269,27 +308,31 @@ function resolveScroll(step, state, ctx, rng, slotSpec, compiled) {
     go = state.breakKey(breakKey, step.id, `${weapon.name} already has an Amazing Success trigger; the book allows one per weapon`);
   }
   // A weapon that already carries this prefix (a second upgrade with the same option) is not prefixed twice.
-  const prefix = cleanText(option.nameAddition) || 'Enchanted';
-  const name = cleanText(upgradeSpec.name) || (weapon.name.startsWith(`${prefix} `) ? weapon.name : `${prefix} ${weapon.name}`);
+  const name = cleanText(upgradeSpec.name) || upgradedName(weapon.name, choice.nameAddition || 'Enchanted');
   state.log({
     step: step.id, kind: 'loot', label: `Scroll of Upgrade: ${weapon.name}`, table: tableKey, row: number, rolled, formula: table.formula, total: number, dice: dice ?? undefined,
     breakKey, narrative: row.narrative || undefined,
     note: go ? `${record.option} added; renamed ${name}` : 'Second Amazing Success trigger not confirmed; no trigger was added'
   });
   if (!go) return { ...record, name: weapon.name, written: false };
-  const trigger = asTriggerFromOption(option, { ruleBreak: again });
-  if (!trigger) { state.warn(step.id, `${table.name || tableKey} row ${number} has an unusable trigger; the Scroll is still pending.`); return null; }
-  const extraTags = (Array.isArray(option.extraTags) ? option.extraTags : []).map(cleanText).filter(Boolean);
-  const asTriggers = [...(weapon.asTriggers ?? []), trigger];
-  const tags = extraTags.length ? [...new Set([...(weapon.tags ?? []), ...extraTags])] : null;
+  // The trigger is its own enchantment: a stamped row plus a ledger entry (a second one on the weapon carries the Rule Break flag).
+  const written = buildEnchantmentWrite(
+    { asTriggers: weapon.asTriggers, enchantments: weapon.enchantments, tags: weapon.tags },
+    upgradeTemplate(choice),
+    // The ledger id follows the weapon and the row, so the same answers compile to the same payload.
+    { id: stableId(`upgrade:${weapon.id}:${(weapon.enchantments ?? []).length}:${number}`), method: 'floor-simulator', ruleBreak: again, asBreak: again, tags: choice.extraTags }
+  );
+  const asTriggers = written.update['system.asTriggers'];
+  const enchantments = written.update['system.enchantments'];
+  const tags = written.update['system.tags'] ?? null;
   const gear = compiled.upgrade ? null : compiled.creates[0];
   if (gear) {
     gear.name = name;
-    gear.system = { ...(gear.system ?? {}), asTriggers, ...(tags ? { tags } : {}) };
+    gear.system = { ...(gear.system ?? {}), asTriggers, enchantments, ...(tags ? { tags } : {}) };
   } else {
-    state.itemUpdates.set(weapon.id, { ...(state.itemUpdates.get(weapon.id) ?? { _id: weapon.id }), 'system.asTriggers': asTriggers, ...(tags ? { 'system.tags': tags } : {}), name });
+    state.itemUpdates.set(weapon.id, { ...(state.itemUpdates.get(weapon.id) ?? { _id: weapon.id }), 'system.asTriggers': asTriggers, 'system.enchantments': enchantments, ...(tags ? { 'system.tags': tags } : {}), name });
   }
-  Object.assign(weapon, { asTriggers, hasAsTrigger: true, name, ...(tags ? { tags } : {}) });
+  Object.assign(weapon, { asTriggers, enchantments, hasAsTrigger: true, name, ...(tags ? { tags } : {}) });
   upgraded.add(weapon.id);
   return { ...record, name, written: true };
 }
@@ -383,11 +426,17 @@ export const startingLootStep = {
           const found = spellFromTable(step, state, ctx, rng, { row: slotSpec.spellRow }, cleanText(step.spellTable) || LOOT_SPELL_TABLE);
           if (found) choice.spell = found.identifier;
         }
-        const compiled = compileLootPick(slot, card.tier, choice, state, ctx);
+        let race = null;
+        if (option?.kind === 'bracelet' && !cleanText(choice.race)) {
+          race = braceletRace(step, state, ctx, rng, slotSpec, `${card.tier} ${slot}`);
+          if (race) choice.race = race.identifier;
+        }
+        const compiled = compileLootPick(slot, card.tier, choice, state, ctx, { rollHazard: () => rollFormula(rng, '1d10') });
         applyLoot(step, state, card, compiled);
         const upgrade = compiled.scrollPending ? resolveScroll(step, state, ctx, rng, slotSpec, compiled) : null;
         picks.push({
           slot, tier: card.tier, take: 'loot', option: cleanText(slotSpec.option ?? slotSpec.choice?.option) || undefined, summary: compiled.summary,
+          ...(race ? { race: { identifier: race.identifier, name: race.name, tableKey: LOOT_BRACELET_RACE_TABLE, row: race.row, rolled: race.rolled, chosen: !race.rolled } } : {}),
           ...(upgrade ? { upgrade } : (compiled.scrollPending ? { scrollPending: true } : {}))
         });
       }

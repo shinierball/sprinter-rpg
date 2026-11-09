@@ -4,8 +4,9 @@
  * the latter derived from its weaponCategory), a catalog skill carries `skillGroup.weapon`, `weapon.*` and
  * a stored `weaponGroup.*`. Names are never read. Weapon groups are not skills: each weapon entry is its own skill.
  */
-import { getItemAllTags, identityTag, WEAPON_SKILL_TAG } from '../../data/tags.mjs';
-import { matchesTagQuery, expandTagReferences } from '../../utils/tag-query.mjs';
+import { getItemAllTags } from '../../documents/active-tags.mjs';
+import { identityTag, WEAPON_SKILL_TAG } from '../../data/tag-vocabulary.mjs';
+import { matchesTagQuery, expandTagReferences } from '../../utils/tag/tag-query.mjs';
 
 const tagsOf = (type, entry) => getItemAllTags({ type, system: entry?.system ?? {} });
 const tagsInNamespace = (tags, namespace) => [...tags].filter((t) => t.split('.')[0] === namespace);

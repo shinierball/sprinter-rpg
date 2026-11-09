@@ -1,0 +1,84 @@
+{{!--
+  The loot blueprint part (3.15): how to make something. Rendered by loot.hbs for lootType "blueprint" only.
+  Context: blueprint = buildBlueprintContext(...) (src/sheets/item/context-blueprint.mjs), system.
+  Scalar inputs are named system.blueprint.<field> and bound to the schema. The output drop zone, queries, material lines and
+  enchantment templates are action delegates or inputs named under their own path.
+--}}
+<details class="cog-collapsible-block cog-blueprint" open>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-compass-drafting"></i> {{localize "COG.CraftSheet.Blueprint.Title"}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row cog-blueprint-opener">
+      <button type="button" class="cog-crafting-btn" data-action="openCraftingApp" data-tooltip="{{localize 'COG.CraftApp.OpenerHint'}}"><i class="fa-solid fa-hammer"></i> {{localize "COG.CraftApp.OpenerBlueprint"}}</button>
+    </div>
+    <div class="cog-field-row">
+      <div class="cog-field-group flex-1">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Mode.Label"}}</span>
+        <select class="cog-field-input" name="system.blueprint.mode">
+          {{#each blueprint.modeOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group flex-1">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Quantity"}}</span>
+        <input class="cog-field-input" type="number" min="1" step="1" name="system.blueprint.quantity" value="{{system.blueprint.quantity}}" />
+      </div>
+      <label class="cog-field-group" data-tooltip="{{localize 'COG.CraftSheet.Blueprint.BatchableHint'}}">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Batchable"}}</span>
+        <input type="checkbox" name="system.blueprint.batchable" {{#if system.blueprint.batchable}}checked{{/if}} />
+      </label>
+      <label class="cog-field-group" data-tooltip="{{localize 'COG.CraftSheet.Blueprint.OneRollHint'}}">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.OneRoll"}}</span>
+        <input type="checkbox" name="system.blueprint.oneRoll" {{#if system.blueprint.oneRoll}}checked{{/if}} />
+      </label>
+    </div>
+
+    {{#if blueprint.isItemMode}}
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Output"}}</span>
+        <div class="cog-blueprint-output cog-bg-surface" data-blueprint-output>
+          {{#if blueprint.output.has}}
+            <span class="cog-badge">{{blueprint.output.name}}</span>
+            {{#if blueprint.output.identifier}}<span class="cog-text-secondary">{{blueprint.output.identifier}}</span>{{/if}}
+            <a class="cog-text-accent" data-action="clearBlueprintOutput" data-tooltip="{{localize 'COG.CraftSheet.Blueprint.ClearOutput'}}"><i class="fa-solid fa-xmark"></i></a>
+          {{else}}
+            <span class="cog-text-secondary"><i class="fa-solid fa-arrow-down-to-bracket"></i> {{localize "COG.CraftSheet.Blueprint.DropOutput"}}</span>
+          {{/if}}
+        </div>
+      </div>
+      <div class="cog-field-row">
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Size"}}</span>
+          <select class="cog-field-input" name="system.blueprint.size">
+            {{#each blueprint.sizeOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Dc"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="1" name="system.blueprint.dc" value="{{blueprint.dc}}" placeholder="{{localize 'COG.CraftSheet.Blueprint.DcHint'}}" />
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Junk"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="1" name="system.blueprint.junk" value="{{system.blueprint.junk}}" />
+        </div>
+      </div>
+    {{else}}
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Target"}}</span>
+        {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=blueprint.target tagOptions=blueprint.tagOptions}}
+      </div>
+    {{/if}}
+
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Skills"}}</span>
+      {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=blueprint.skills tagOptions=blueprint.tagOptions}}
+    </div>
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.CraftSheet.Blueprint.Tables"}}</span>
+      {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=blueprint.tables tagOptions=blueprint.tagOptions}}
+    </div>
+
+    {{> "systems/sprinter-rpg/templates/items/parts/craft-materials.hbs" materials=blueprint.materials materialsPath=blueprint.materialsPath}}
+    {{> "systems/sprinter-rpg/templates/items/parts/enchantment-templates.hbs" templates=blueprint.templates templatesPath=blueprint.templatesPath}}
+  </div>
+</details>

@@ -1,7 +1,8 @@
 /**
  * src/content/specs/examples/grind-complications.mjs
- * An original example grinding-complications table. The grind reader uses it when no content module registers a table,
- * so the complication roll works out of the box. A module's registered table replaces it.
+ * An original example grinding-complications table. The shiny provider (src/content/shiny-content-provider.mjs) registers it
+ * as the `grindComplications` of the `shiny` theme; the grind reader also falls back to it when nothing is registered, so
+ * the complication roll works out of the box. A module's registered table replaces it.
  */
 export const EXAMPLE_GRIND_COMPLICATION_TABLE = Object.freeze({
   id: 'example.grind-complications',

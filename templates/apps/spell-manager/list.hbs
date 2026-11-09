@@ -6,6 +6,7 @@
           <img class="cog-bg-icon-box" src="{{spell.img}}" style="width: 32px; height: 32px; border: 1px solid var(--cog-ink); border-radius: 3px; object-fit: contain;" />
           <div>
             <span class="cog-text-strong" style="font-size: 14px; font-weight: bold;">{{spell.name}}</span>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=spell.sourceBadge}}
             <div style="display: flex; gap: 4px; align-items: center; margin-top: 2px;">
               <span class="cog-badge cog-dark cog-bg-header-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px;">{{spell.roleLabel}}</span>
               <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px;">{{spell.system.manaCost}} MP</span>

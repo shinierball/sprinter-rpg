@@ -1,8 +1,12 @@
-import { COG_ROLL_OUTCOMES } from '../apps/session-manager/roll-outcomes.mjs';
+import { COG_ROLL_OUTCOMES } from '../documents/session/roll-outcomes.mjs';
+import { firstScalar } from '../utils/first-scalar.mjs';
 
 /**
- * Tag vocabulary: namespaces, engine situation and outcome ids, and the role-prefix helpers (`self.`, `attacker.`,
- * `subject.`). A leaf module so the tag catalog can use it; import through `tags.mjs`.
+ * Tag vocabulary: namespaces, engine situation and outcome ids, the role-prefix helpers (`self.`, `attacker.`,
+ * `subject.`) and the fixed slug-to-tag maps (stat, archetype, element, weapon group). A leaf module: it reads no
+ * document and no registry, so the tag catalog, the schema models and build scripts can import it in any order.
+ * Definition lookups (`getTagDefinition`, custom tags) live in `tag-definitions.mjs`; the tags a live document
+ * carries come from `documents/active-tags.mjs`.
  */
 
 export const TAG_NAMESPACES = {
@@ -31,11 +35,13 @@ export const TAG_NAMESPACES = {
   condition:    { label: 'Status Condition / Debuff', description: 'Condition and status effect classification' },
   injury:       { label: 'Injury Severity', description: 'Marks a debuff as an injury and its severity (minor, major, long_term); what Mend Injury removes' },
   heritage:     { label: 'Race Heritage', description: 'Where a race comes from (earth, alien, pet); derived from the race, never stored on an item' },
+  race:         { label: 'Race Marker', description: 'Marks a race item (race.form: a transformation form, not a race a crawler chooses)' },
   companion:    { label: 'Companion Type', description: 'Companion and asset classification (pet, vehicle, mount)' },
   species:      { label: 'Species (Origin)', description: 'A crawler\'s origin at induction (human, animal); not a race', partyTag: true },
   mob:          { label: 'Mob & Boss Classification', description: 'Mob encounter flags and boss hierarchy', partyTag: true },
   role:         { label: 'Crew / Handler Role', description: 'Crew stations and handler roles (pilot, rider, passenger, gunner, handler)' },
   space:        { label: 'Space Classification', description: 'Personal space, safe room, bunker, and apartment types' },
+  scene:        { label: 'Scene Marker', description: 'Marks a scene (Scene Config), never an item: scene.safe_room is where crawlers open loot boxes without a Rule Break' },
   upgrade:      { label: 'Space Upgrade Module', description: 'Personal space amenities, modules, and facilities' },
   id:           { label: 'Identity Tag', description: 'Stable unique item identity: id.<type>.<slug>' },
   school:       { label: 'Spell School', description: 'A spell\'s school or theme (illusion, healing, mind control); descriptive, the engine never reads it' },
@@ -51,6 +57,9 @@ export const TAG_NAMESPACES = {
   use:          { label: 'Row Use', description: 'A per-roll toggle that spends a limited roll row (use.<row key>, once per floor); set by the roll dialog, never carried by items' },
   usage:        { label: 'Item Usage', description: 'How an item is used up: reusable, rechargeable or consumable (read by the use gate)' },
   material:     { label: 'Crafting Material', description: 'Crafting reagents on loot (material.crafting, material.misc_junk); what a used-up consumable leaves behind carries them' },
+  crafting:     { label: 'Crafting', description: 'Crafting tables and what a craft is doing: crafting.table.<type> on a table, crafting.attachment.<id> on an attachment, crafting.mode.* in a check\'s context, crafting.coupon.table on a table coupon' },
+  vehicle:      { label: 'Vehicle', description: 'Vehicle rules: vehicle.skill.driving / vehicle.skill.chopper on the skills that drive, vehicle.kind.<id> derived on a vehicle, vehicle.upgrade.<id> on gear installed on one, vehicle.check.<id> and vehicle.explosion in a roll\'s context' },
+  item:         { label: 'Item State', description: 'The state of an item: item.broken (repairable) or item.destroyed (permanent)' },
   custom:       { label: 'Custom User Tag', description: 'User-created tags' }
 };
 
@@ -100,7 +109,8 @@ export const ENGINE_SITUATIONS = Object.freeze({
   disadvantaged: 'situation.disadvantaged',
   criticalHit: 'situation.critical_hit',
   amazingSuccess: 'situation.amazing_success',
-  damageEffect: 'situation.damage_effect'
+  damageEffect: 'situation.damage_effect',
+  specialty: 'situation.specialty'
 });
 
 /**
@@ -108,6 +118,27 @@ export const ENGINE_SITUATIONS = Object.freeze({
  * test them (`checkModifiers` "+1 on chase checks"); a roll dialog never offers them.
  */
 export const CONTEST_TAGS = Object.freeze({ race: 'contest.race', chase: 'contest.chase' });
+
+/**
+ * Tags the vehicle rules (3.44, `src/data/rules/vehicle-rules.mjs`) read or set. `kindPrefix`, `upgradePrefix` and
+ * `checkPrefix` are prefixes: `vehicle.kind.<id>` is derived on a vehicle from its kind, `vehicle.upgrade.<id>` marks
+ * gear installed on one, `vehicle.check.<id>` is in the context of a vehicle check of that kind. `skillDriving` and
+ * `skillChopper` mark the skills a kind's skill query finds, so no skill is ever found by name.
+ */
+export const VEHICLE_TAGS = Object.freeze({
+  skillDriving: 'vehicle.skill.driving',
+  skillChopper: 'vehicle.skill.chopper',
+  kindPrefix: 'vehicle.kind.',
+  upgradePrefix: 'vehicle.upgrade.',
+  checkPrefix: 'vehicle.check.',
+  explosion: 'vehicle.explosion',
+  check: 'check.vehicle',
+  driving: 'situation.driving',
+  headOn: 'situation.head_on',
+  mountedOnly: 'rule.mounted_only',
+  rolePrefix: 'role.',
+  rolePilot: 'role.pilot'
+});
 
 /** Card outcome condition tags, one per `COG_ROLL_OUTCOMES` id (pending excluded): `outcome.<id>`. */
 export const OUTCOME_TAGS = Object.freeze(Object.fromEntries(
@@ -202,4 +233,142 @@ export function splitRoleTag(tagId) {
     if (id.startsWith(`${role}.`) && id.length > role.length + 1) return { role, tag: id.slice(role.length + 1) };
   }
   return null;
+}
+
+/** Mob identity: `mob.boss` is derived on an actor from a registered `mob.tier.<id>` (`collectActorTags`). */
+export const MOB_BOSS_TAG = 'mob.boss';
+
+/** A race that is only a form an affliction changes a victim into; race pickers leave it out. */
+export const FORM_RACE_TAG = 'race.form';
+
+/** Damage type string to element tag lookup */
+const DAMAGE_TYPE_TO_ELEMENT = {
+  fire: 'element.fire',
+  ice: 'element.ice',
+  cold: 'element.ice',
+  electric: 'element.electric',
+  electricity: 'element.electric',
+  lightning: 'element.electric',
+  acid: 'element.acid',
+  poison: 'element.poison',
+  toxic: 'element.poison',
+  force: 'element.force',
+  sonic: 'element.sonic',
+  holy: 'element.holy',
+  radiant: 'element.holy',
+  necrotic: 'element.necrotic',
+  psychic: 'element.psychic',
+  bludgeoning: 'element.bludgeoning',
+  piercing: 'element.piercing',
+  slashing: 'element.slashing'
+};
+
+/** Element tag to canonical display damage type */
+const ELEMENT_TO_DAMAGE_TYPE = {
+  'element.fire': 'Fire',
+  'element.ice': 'Ice',
+  'element.electric': 'Electric',
+  'element.acid': 'Acid',
+  'element.poison': 'Poison',
+  'element.force': 'Force',
+  'element.sonic': 'Sonic',
+  'element.holy': 'Holy',
+  'element.necrotic': 'Necrotic',
+  'element.psychic': 'Psychic',
+  'element.bludgeoning': 'Bludgeoning',
+  'element.piercing': 'Piercing',
+  'element.slashing': 'Slashing'
+};
+
+/** Stat slug to stat tag */
+export const STAT_TO_TAG = {
+  str: 'stat.str',
+  dex: 'stat.dex',
+  con: 'stat.con',
+  int: 'stat.int',
+  cha: 'stat.cha'
+};
+
+/** Archetype name to archetype tag */
+export const ARCHETYPE_TO_TAG = {
+  arcanist: 'archetype.arcanist',
+  barbarian: 'archetype.barbarian',
+  bard: 'archetype.bard',
+  cleric: 'archetype.cleric',
+  druid: 'archetype.druid',
+  fighter: 'archetype.fighter',
+  mage: 'archetype.mage',
+  merchant: 'archetype.merchant',
+  monk: 'archetype.monk',
+  necromancer: 'archetype.necromancer',
+  paladin: 'archetype.paladin',
+  rogue: 'archetype.rogue'
+};
+
+/**
+ * Convert damage type string to element tag.
+ * @param {string} damageType
+ * @returns {string|null}
+ */
+export function damageTypeToElement(damageType) {
+  if (!damageType || typeof damageType !== 'string') return null;
+  const key = damageType.trim().toLowerCase();
+  return DAMAGE_TYPE_TO_ELEMENT[key] || null;
+}
+
+/**
+ * The `element.<type>` tag id a stored element reference names: an element tag id, or (leniently) a damage type
+ * name such as "Fire" or "cold". Empty string for blank or unknown values (= any damage).
+ * @param {*} raw
+ * @returns {string}
+ */
+export function normalizeElementTag(raw) {
+  let val = firstScalar(raw);
+  if (typeof val !== 'string') return '';
+  val = val.trim();
+  if (!val) return '';
+  if (val.startsWith('element.')) return val;
+  return damageTypeToElement(val) || '';
+}
+
+/**
+ * Convert element tag to canonical damage type string.
+ * @param {string} elementTag
+ * @returns {string|null}
+ */
+export function elementToDamageType(elementTag) {
+  if (!elementTag || typeof elementTag !== 'string') return null;
+  return ELEMENT_TO_DAMAGE_TYPE[elementTag.trim()] || null;
+}
+
+/** The tag of a skill that attacks with a wielded weapon (every weapon entry is its own skill). */
+export const WEAPON_SKILL_TAG = 'skillGroup.weapon';
+
+/** weaponCategory (exact match, lowercased + trimmed) -> derived weaponGroup tag */
+export const WEAPON_CATEGORY_TAGS = Object.freeze({
+  'power weapons': 'weaponGroup.power',
+  'edge': 'weaponGroup.edge',
+  'bashing': 'weaponGroup.bashing',
+  'reach': 'weaponGroup.reach',
+  'ranged': 'weaponGroup.ranged',
+  'hand to hand': 'weaponGroup.hand_to_hand',
+  'utility': 'weaponGroup.utility',
+  'exotic': 'weaponGroup.exotic'
+});
+
+/** Default thresholds for the fixed rank-break slots (used when rb.rank is unset) */
+export const RANK_BREAK_THRESHOLDS = Object.freeze({ rank5: 5, rank10: 10, rank15: 15, rank20: 20 });
+
+/**
+ * The identity tag of an item of `type` with `identifier` (`id.<type>.<identifier>`), as `getItemAllTags` derives it.
+ * A reference that already is an identity tag of that type is returned unchanged.
+ * @param {string} type item type, e.g. 'skill'
+ * @param {string} identifier
+ * @returns {string} '' when the identifier is empty
+ */
+export function identityTag(type, identifier) {
+  const id = String(identifier ?? '').trim();
+  if (!id) return '';
+  const prefix = ['id', type, ''].join('.');
+  return id.startsWith(prefix) ? id : `${prefix}${id}`;
 }

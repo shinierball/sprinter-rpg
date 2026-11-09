@@ -17,11 +17,12 @@
  * State lives on the aura item (`system.auraState`). Nothing here reads names or descriptions.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { resolveReachedRankBreaks } from '../../utils/rank-breaks.mjs';
-import { measureTokenFeet } from '../../utils/interrupts.mjs';
-import { isMobSide } from '../../utils/combat-sides.mjs';
-import { isAuraItem } from '../../utils/tag-mechanics.mjs';
-import { isMarkerActor } from '../../utils/marker.mjs';
+import { firstScalar } from '../../utils/first-scalar.mjs';
+import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
+import { measureTokenFeet } from '../../utils/combat/interrupts.mjs';
+import { isMobSide } from '../../utils/combat/combat-sides.mjs';
+import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
+import { isMarkerActor } from '../../utils/area/marker.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { auraRank, computeAuraTempBars, buildAuraEffectItems, inflictedDebuffsOf } from './aura-effects.mjs';
 import {
@@ -51,10 +52,7 @@ const dispositionOf = (token) => token?.document?.disposition ?? token?.disposit
  * @returns {'allies'|'enemies'|'both'}
  */
 export function normalizeAuraFilter(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0];
-  val = String(val).trim().toLowerCase();
+  const val = String(firstScalar(raw)).trim().toLowerCase();
   if (val === 'all') return 'both';
   return FILTERS.includes(val) ? val : 'allies';
 }
@@ -136,7 +134,7 @@ export function blankAuraState() {
  *   (a token mid-movement, whose document and placeable still hold the origin)
  * @returns {{ tokens: object[], measure: (a: object, b: object) => number|null }}
  */
-export function sceneTokenViews(scene, { centres = null } = {}) {
+function sceneTokenViews(scene, { centres = null } = {}) {
   const viewed = globalThis.canvas?.scene;
   if (viewed && (scene === viewed || (scene?.id && scene.id === viewed.id))) {
     const placeables = asArray(globalThis.canvas?.tokens?.placeables).map(t => {
@@ -168,7 +166,7 @@ export function sceneTokenViews(scene, { centres = null } = {}) {
  * @returns {{ scene: Scene, casterToken: object, tokens: object[], measure: Function }|null|'gone'}
  *   null when the aura has no caster token (theatre of the mind), 'gone' when its token or scene is missing.
  */
-export function resolveAuraGeometry(holder, item, { centres = null } = {}) {
+function resolveAuraGeometry(holder, item, { centres = null } = {}) {
   const state = item?.system?.auraState;
   if (!state?.tokenId) return null;
   const viewed = globalThis.canvas?.scene;

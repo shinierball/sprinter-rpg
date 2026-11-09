@@ -6,12 +6,13 @@
  * and callers can patch it the way they patched the old static.
  */
 
-import { COGCombatMetrics } from '../../apps/combat-metrics.mjs';
-import { COGSessionEngine } from '../../apps/session-manager.mjs';
-import { isApplicationId, newApplicationId, snapshotHpPools, appendDamageUndoRecord } from '../../apps/damage-undo.mjs';
+import { COGCombatMetrics } from '../combat-metrics.mjs';
+import { COGSessionEngine } from '../session/session-engine.mjs';
+import { isApplicationId, newApplicationId, snapshotHpPools, appendDamageUndoRecord } from '../../utils/damage/damage-undo.mjs';
 import { bossTierFromTags } from '../../data/mob-creation-rules.mjs';
-import { buildKillContext, killContextRecordOf } from '../../utils/roll-context.mjs';
-import { collectDamageReflections, earnedReflections } from '../../utils/damage-reflection.mjs';
+import { buildKillContext, killContextRecordOf } from '../../utils/roll/roll-context.mjs';
+import { onLethalDamage } from './transform-cues.mjs';
+import { collectDamageReflections, earnedReflections } from '../../utils/damage/damage-reflection.mjs';
 import {
   hitFactors, targetDamageContexts, damageBucketsFor, typeEntriesFor, totalDrFor, spendDr, spendHpPools, hpPoolUpdates, perTargetRecord
 } from './damage-math.mjs';
@@ -23,7 +24,7 @@ import {
  * @param {{ isLethal: boolean, appId: string, attackTags: string[], combat: Combat|null }} state
  * @returns {Promise<'boss'|'crawler'|null>} the trophy awarded
  */
-export async function creditKill(targetActor, attackerActor, { isLethal, appId, attackTags, combat }) {
+async function creditKill(targetActor, attackerActor, { isLethal, appId, attackTags, combat }) {
   let killTrophy = null;
 
   // Award boss star or crawler skull on lethal damage
@@ -74,7 +75,7 @@ export async function creditKill(targetActor, attackerActor, { isLethal, appId, 
  * subject). Runs after the undo record is stored: a client that cannot write the killer asks the GM, who checks that
  * record (3.56e). Never throws.
  */
-export async function awardKillPopularity(targetActor, attackerActor, { isLethal, appId, attackTags, combat }) {
+async function awardKillPopularity(targetActor, attackerActor, { isLethal, appId, attackTags, combat }) {
   if (!(isLethal && attackerActor && attackerActor.uuid !== targetActor.uuid && typeof attackerActor.awardPopularity === 'function')) return;
   try {
     const context = buildKillContext({ attacker: attackerActor, victim: targetActor, attackTags });
@@ -93,7 +94,7 @@ export async function awardKillPopularity(targetActor, attackerActor, { isLethal
  * @param {object} p
  * @returns {Promise<object|null>} the metrics call's result
  */
-export async function recordDamageMetrics({ combat, attackerActor, targetActor, adjustedRaw, dr, actualDamage, attackName, attackType, appId }) {
+async function recordDamageMetrics({ combat, attackerActor, targetActor, adjustedRaw, dr, actualDamage, attackName, attackType, appId }) {
   // Record in combat metrics if attacker provided
   let loggedMetrics = null;
   if (attackerActor) {
@@ -142,7 +143,7 @@ export async function recordDamageMetrics({ combat, attackerActor, targetActor, 
  * @param {object} record
  * @returns {Promise<void>}
  */
-export async function recordUndo(targetActor, record) {
+async function recordUndo(targetActor, record) {
   try {
     await appendDamageUndoRecord(targetActor, record);
   } catch (err) {
@@ -297,6 +298,7 @@ export const COGDamage = {
     const reflect = reflections.length ? { rows: reflectRows, slotsLost: pools.slotsLost, used: [] } : null;
     await recordUndo(targetActor, undoRecordOf({ appId, messageId, attackerActor, attackName, actualDamage: pools.actualDamage, per, killTrophy, lethal: pools.isLethal, killContext: killContextFor(pools.isLethal, targetActor, attackerActor, attackTags), before, after, reflect }));
     await awardKillPopularity(targetActor, attackerActor, { isLethal: pools.isLethal, appId, attackTags, combat });
+    await onLethalDamage(targetActor, { isLethal: pools.isLethal, appId });
     return damageResult({
       appId, targetActor, adjustedRaw, dr, pools, hpPerBar, reflections, damageType, damageBuckets, typeBreakdown,
       isImmune, isResistant: types.anyResistant, loggedMetrics, stageA, per

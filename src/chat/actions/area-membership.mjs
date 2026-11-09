@@ -6,8 +6,8 @@
  * moved in after placement counts). The area is placed on the caster and dragged afterwards, hence apply time.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { resolveAreaGeometry } from '../../utils/area-geometry.mjs';
-import { findAreaRegions, tokensInRegion } from '../../utils/region-shapes.mjs';
+import { resolveAreaGeometry } from '../../utils/area/area-geometry.mjs';
+import { findAreaRegions, tokensInRegion } from '../../utils/area/region-shapes.mjs';
 import { auraRank } from '../../documents/actor/aura-effects.mjs';
 
 /**

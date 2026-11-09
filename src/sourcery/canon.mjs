@@ -48,6 +48,9 @@ export const IMPORT_PACKS = Object.freeze([
 export const TABLE_PACK = Object.freeze({ pack: 'tables', documentName: 'RollTable', category: 'sourceryTables', kind: kindTag('rolltable'), label: 'Tables' });
 export const JOURNAL_PACK = Object.freeze({ pack: 'journals', documentName: 'JournalEntry', category: 'sourceryJournals', kind: kindTag('journal'), label: 'Table Journals' });
 
+/** The world compendium holding the vehicles built from a book's vehicle table (3.44j). */
+export const VEHICLE_PACK = Object.freeze({ pack: 'vehicles', documentName: 'Actor', category: 'sourceryVehicles', kind: kindTag('vehicle'), label: 'Vehicles' });
+
 /** Prefix of every world pack name the importer owns. */
 export const WORLD_PACK_PREFIX = 'sourcery-';
 
@@ -56,11 +59,6 @@ export const worldPackName = (pack) => `${WORLD_PACK_PREFIX}${pack}`;
 
 /** `world.sourcery-skills`. */
 export const worldPackId = (pack) => `world.${worldPackName(pack)}`;
-
-/** The pack definition (entity, table or journal) by short pack name, or null. */
-export function packDefinition(pack) {
-  return [...IMPORT_PACKS, TABLE_PACK, JOURNAL_PACK].find(p => p.pack === pack) ?? null;
-}
 
 /**
  * Compile the canon documents of the importable packs.

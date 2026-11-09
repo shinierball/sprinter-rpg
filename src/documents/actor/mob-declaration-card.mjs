@@ -3,8 +3,8 @@
  * A mob never rolls to hit; the card shows the fixed Evade DC (`evadeBase + Floor`, baseline 10 + DEX mod + Floor),
  * and offers the Step 2 controls (Roll Evade is the shared `_getEvadeButtonHtml`; the Taunt and Resolve buttons are here).
  */
-import { escapeAttr } from '../../utils/interrupts.mjs';
-import { mobAttackText } from '../../utils/declared-attacks.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
 
 const VARIANTS = Object.freeze({
   attack: { header: 'COG.MobAttack.Header', icon: 'fa-crosshairs', fill: 'cog-bg-accent-fill', badge: 'cog-bg-accent-strong-fill', text: 'cog-text-accent' },

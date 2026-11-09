@@ -1,7 +1,8 @@
 /**
  * Restoration chat buttons: healing, mana, heal over time.
  */
-import { getHpPerBar } from '../../apps/combat-metrics.mjs';
+import { getHpPerBar } from '../../documents/combat-metrics.mjs';
+import { restoredValue } from '../../utils/damage/resource-restore.mjs';
 import { applyCardEffect, registerChatApplier } from '../chat-relay.mjs';
 import { resolveTargetActors } from './targets.mjs';
 
@@ -20,7 +21,7 @@ export async function applyHealingTo(targetActor, params) {
   const healAmt = params.bars > 0 ? (params.bars * hpPerBar) : params.flatHealing;
   const currentHp = Number(targetActor.system?.attributes?.hp?.value ?? targetActor.system?.attributes?.hp?.max ?? 0);
   const maxHp = Number(targetActor.system?.attributes?.hp?.max) || (10 * hpPerBar);
-  const newHp = Math.min(maxHp, currentHp + healAmt);
+  const newHp = restoredValue(currentHp, healAmt, maxHp);
   const actualHealed = Math.max(0, newHp - currentHp);
 
   await targetActor.update({ 'system.attributes.hp.value': newHp });
@@ -39,12 +40,15 @@ export async function applyManaTo(targetActor, params) {
   if (!targetActor.system?.attributes?.mana) return { ...base(targetActor), skipped: true };
   const cur = Number(targetActor.system.attributes.mana.value) || 0;
   const max = Number(targetActor.system.attributes.mana.max) || 10;
-  const updated = params.targetManaVal ? Math.min(max, params.targetManaVal) : Math.min(max, cur + params.manaAmount);
+  // A target value is an absolute Mana total: restoring toward it closes the gap and never takes Mana away.
+  const updated = params.targetManaVal
+    ? restoredValue(cur, params.targetManaVal - cur, max)
+    : restoredValue(cur, params.manaAmount, max);
   await targetActor.update({ 'system.attributes.mana.value': updated });
   return { ...base(targetActor), newMana: updated };
 }
 
-export function parseApplyHoT(button) {
+function parseApplyHoT(button) {
   return {
     targetUuid: button.dataset?.targetUuid,
     name: button.dataset?.name || 'Regeneration',
@@ -53,7 +57,7 @@ export function parseApplyHoT(button) {
   };
 }
 
-export async function applyHoTTo(targetActor, params) {
+async function applyHoTTo(targetActor, params) {
   if (typeof targetActor.applyHoT === 'function') {
     await targetActor.applyHoT({ name: params.name, healBars: params.healBars, rounds: params.rounds });
   }

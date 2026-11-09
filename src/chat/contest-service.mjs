@@ -14,12 +14,14 @@ import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { sanitizeContest, contestMoveOf, moveRateMod, fixedResult, participantLegSkill } from '../utils/contest/contest-engine.mjs';
 import { CONTEST_TAGS } from '../data/tag-vocabulary.mjs';
 import { findCatalogEntry } from '../content/catalog-lookup.mjs';
-import { buildRollContext } from '../utils/roll-context.mjs';
-import { collectCheckModifiers } from '../utils/damage-modifiers.mjs';
-import { mobDifficultyShift, MOB_QUALITIES } from '../documents/actor/combat-targeting.mjs';
+import { buildRollContext } from '../utils/roll/roll-context.mjs';
+import { collectCheckModifiers } from '../utils/roll/damage-modifiers.mjs';
+import { mobDifficultyShift, MOB_QUALITIES } from '../documents/actor/attack-targets.mjs';
+import { contestMoveOptions } from '../documents/actor/vehicle-contest.mjs';
 import { CONTEST_FLAG, readContest, sanitizeContestWrapper, buildContestCardHtml } from './contest-card.mjs';
 
-const flagPath = `flags.${SYSTEM_ID}.${CONTEST_FLAG}`;
+/** Read lazily: contest-card.mjs and this module sit in one import cycle, so the constant may not be initialised at load. */
+const flagPath = () => `flags.${SYSTEM_ID}.${CONTEST_FLAG}`;
 
 /** A replace-not-merge value for a message update (Foundry v14 ForcedReplacement); the plain value outside Foundry. */
 function replaceValue(value) {
@@ -27,7 +29,7 @@ function replaceValue(value) {
 }
 
 /** A new contest id. */
-export function newContestId() {
+function newContestId() {
   return globalThis.foundry?.utils?.randomID?.(16) ?? `contest-${Math.random().toString(36).slice(2, 12)}`;
 }
 
@@ -112,7 +114,7 @@ export function updateContest(contestId, reducer) {
     if (out === false) return { ok: false, reason: 'unchanged' };
     const next = { id: wrapper.id, state: sanitizeContest(out ?? draft) };
     const data = cardData(next);
-    await message.update({ content: data.content, [flagPath]: replaceValue(next) });
+    await message.update({ content: data.content, [flagPath()]: replaceValue(next) });
     return { ok: true, state: next.state };
   });
   queues.set(contestId, run);
@@ -163,7 +165,7 @@ export function computeFixedResult(state, participant, leg, resolve = resolveAct
   const { skill, overridden } = participantLegSkill(participant, leg);
   const stat = overridden ? governingStat(actor, skill) : leg.check.stat;
   const statMod = Number(actor.system?.abilities?.[stat]?.mod) || 0;
-  const move = contestMoveOf(participant, leg, resolve);
+  const move = contestMoveOf(participant, leg, resolve, contestMoveOptions);
   const context = buildRollContext({
     actor, phase: 'check', check: skill ? 'skill' : 'stat', stat, tags: [CONTEST_TAGS[state.kind]]
   });

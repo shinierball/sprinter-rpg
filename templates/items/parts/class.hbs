@@ -134,7 +134,7 @@
   {{!-- LORE EDITABLE FIELDS --}}
   <div class="cog-field-group">
     <span class="cog-field-label">Description & Lore</span>
-    <textarea class="cog-field-input" name="system.description" style="height: 90px;">{{system.description}}</textarea>
+    {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
   </div>
 </div>
 </section>

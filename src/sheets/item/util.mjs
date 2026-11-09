@@ -3,7 +3,8 @@
  */
 
 // Row normalization lives on the item DataModel (one source for prepareBaseData and submits).
-export { toRowArray as toArray } from '../../models/items/base-item-model.mjs';
+export { toRowArray as toArray } from '../../models/items/grant-validation.mjs';
+import { enchantmentTemplateField } from '../../models/fields/craft-fields.mjs';
 import { ROW_ARRAYS } from '../../utils/row-kinds.mjs';
 
 const QUERY_BUCKETS = Object.freeze(['all', 'any', 'none']);
@@ -77,18 +78,34 @@ export function modifierArrayKeys(item) {
   return Object.keys(ROW_ARRAYS).filter((key) => keys.has(key));
 }
 
+let outcomeTemplatesField = null;
+
+/**
+ * The schema of the `enchantments` list inside an `enchant_item` outcome row. Outcome rows are free-form ObjectFields, so
+ * the schema cannot say what is under them; the list holds the same templates as a blueprint's (3.15), so its editors
+ * (tag queries) resolve against the template schema.
+ */
+function enchantItemTemplates() {
+  outcomeTemplatesField ??= new foundry.data.fields.ArrayField(enchantmentTemplateField(foundry.data.fields), { initial: [] });
+  return outcomeTemplatesField;
+}
+
 /**
  * The schema field at a dotted path (`system.a.b.0.c`; array segments are indexes), or null when the path leaves
- * the schema. A SchemaField is followed by `fields`, an ArrayField by `element`; any other field ends the walk.
+ * the schema. A SchemaField is followed by `fields`, an ArrayField by `element`; any other field ends the walk,
+ * except the `enchantments` list of an outcome row (see {@link enchantItemTemplates}).
  */
 export function schemaFieldAt(item, path) {
   const segments = String(path ?? '').split('.');
   if (segments.shift() !== 'system') return null;
   let field = { fields: systemFields(item) };
+  let previous = '';
   for (const segment of segments) {
     if (field?.element) field = field.element;
     else if (field?.fields && Object.hasOwn(field.fields, segment)) field = field.fields[segment];
+    else if (segment === 'enchantments' && previous !== '' && Number.isInteger(Number(previous)) && field instanceof foundry.data.fields.ObjectField) field = enchantItemTemplates();
     else return null;
+    previous = segment;
   }
   return field ?? null;
 }

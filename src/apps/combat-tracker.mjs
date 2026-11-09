@@ -15,13 +15,17 @@
  * - Buttons that open the AI awards dashboard, the battle archive and the session manager.
  */
 
-import { COGCombat, COMBAT_STEPS, COG_ACTION_TYPES, COMBAT_STEP_DEFINITIONS, getCalledPlays, mayDiscardCalledPlay } from '../documents/combat.mjs';
+import { COGCombat } from '../documents/combat.mjs';
+import { COMBAT_STEPS, COMBAT_STEP_DEFINITIONS } from '../documents/combat/steps.mjs';
+import { COG_ACTION_TYPES } from '../documents/combat/action-ledger.mjs';
+import { getCalledPlays, mayDiscardCalledPlay } from '../documents/combat/called-plays.mjs';
+import { findCombatant } from '../documents/combat/combatants.mjs';
 import { COGCombatMetricsApp } from './combat-metrics.mjs';
 import { COGCombatArchiveApp } from './combat-archive.mjs';
-import { COGSessionManagerApp } from './session-manager.mjs';
+import { COGSessionManagerApp } from './session-manager/manager-app.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
-import { combatText } from '../utils/combat-round-text.mjs';
-import { DECLARATION_STATUS, TARGET_STATUS, TARGET_VIA, findDeclarationTarget, targetStatus } from '../utils/declared-attacks.mjs';
+import { combatText } from '../utils/combat/combat-round-text.mjs';
+import { DECLARATION_STATUS, TARGET_STATUS, TARGET_VIA, findDeclarationTarget, targetStatus } from '../utils/combat/declared-attacks.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 
 const BaseCombatTracker = globalThis.foundry?.applications?.sidebar?.tabs?.CombatTracker ?? class {};
@@ -29,11 +33,6 @@ const BaseCombatTracker = globalThis.foundry?.applications?.sidebar?.tabs?.Comba
 const TARGET_TIP_ON = 'Untarget (Hold Alt/Shift to Solo-Target)';
 const TARGET_TIP_OFF = 'Target (Adds to targets)';
 const OVERLAY_SELECTOR = '.cog-action-picker-popover, .cog-interrupt-drawer';
-
-/** Look a combatant up by id in a combat's combatants (a Collection in Foundry, an array in tests). */
-function findCombatant(combat, id) {
-  return combat?.combatants?.get?.(id) ?? combat?.combatants?.find?.(c => c.id === id) ?? null;
-}
 
 /** The combatant id carried by a control or by one of its ancestors. */
 function combatantIdOf(target) {
@@ -332,6 +331,7 @@ export class COGCombatTracker extends BaseCombatTracker {
     const activeRound = Math.max(1, Number(combat.round) || 1);
     const viewedRound = this._getViewedRound(combat);
     const currentStep = combat.currentStep ?? 1;
+    const isCleanUpStep = currentStep === COMBAT_STEPS.CLEAN_UP;
     const declarations = declarationRows(combat, viewedRound);
     const openDeclarationCount = declarations.filter(d => !d.isResolved).length;
     Object.assign(context, {
@@ -344,6 +344,9 @@ export class COGCombatTracker extends BaseCombatTracker {
       isSurpriseRound,
       currentStep,
       currentStepDefinition: combat.currentStepDefinition ?? COMBAT_STEP_DEFINITIONS[1],
+      isCleanUpStep,
+      nextStepLabel: combatText(isCleanUpStep ? 'COG.Combat.EndRoundReset' : 'COG.Combat.StepNext'),
+      nextStepTooltip: combatText(isCleanUpStep ? 'COG.Combat.EndRoundResetTip' : 'COG.Combat.StepNext'),
       stepperItems: COMBAT_STEP_DEFINITIONS
         .filter(s => s.id !== 0 || isSurpriseRound)
         .map(s => ({ ...s, isActive: s.id === currentStep, isPast: s.id < currentStep })),
@@ -789,16 +792,6 @@ export class COGCombatTracker extends BaseCombatTracker {
     if (popover) popover.style.display = 'none';
 
     const targetRound = this._getViewedRound(combat);
-    if (actionType === 'attack' && popover?.dataset.attackCapped === 'true') {
-      const name = popover.dataset.combatantName || 'This mob';
-      const check = await confirmRuleBreak({
-        title: 'Mob Attack Limit',
-        message: `${name} has already attacked this round. Mobs may only make 1 Attack per round. Record it anyway as a Rule Break?`,
-        reason: `${name} has already attacked this round (mobs may only make 1 Attack per round).`
-      });
-      if (!check.confirmed) return;
-    }
-
     const res = await combat.recordCombatantAction(combatantId, { type: actionType, slotIndex }, { round: targetRound });
     if (res && res.success) this.render();
   }
@@ -865,6 +858,7 @@ export class COGCombatTracker extends BaseCombatTracker {
     const combatantId = drawer?.dataset.combatantId;
     const interruptId = target.dataset.interruptId;
 
+    let confirmed = false;
     if (target.dataset.canUse === 'false') {
       const reason = target.dataset.reason || 'This interrupt is not currently available.';
       const check = await confirmRuleBreak({
@@ -873,10 +867,11 @@ export class COGCombatTracker extends BaseCombatTracker {
         reason
       });
       if (!check.confirmed) return;
+      confirmed = true;
     }
 
     if (drawer) drawer.style.display = 'none';
-    const res = await combat.triggerInterrupt(combatantId, interruptId, { round: this._getViewedRound(combat) });
+    const res = await combat.triggerInterrupt(combatantId, interruptId, { round: this._getViewedRound(combat), ruleBreak: confirmed });
     // Evade from the drawer rolls the same Evade the attack card's Roll Evade button does (3.40 o5).
     if (res?.success && res.interrupt?.id === 'evade' && typeof res.actor?.rollEvade === 'function') {
       await res.actor.rollEvade();

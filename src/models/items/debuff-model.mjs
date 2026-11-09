@@ -1,14 +1,8 @@
-import {
-  BaseItemDataModel,
-  damageModifiersField,
-  defenseModifiersField,
-  rollModifiersField,
-  manaCostModifiersField,
-  recoveryModifiersField,
-  statSubstitutionsField,
-  grantsField,
-  durationConfigField
-} from './base-item-model.mjs';
+import { BaseItemDataModel } from './base-item-model.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField } from '../fields/modifier-fields.mjs';
+import { grantsField } from '../fields/grant-fields.mjs';
+import { durationConfigField } from '../fields/timing-fields.mjs';
+import { transformField } from '../fields/effect-fields.mjs';
 
 /**
  * Data Model for Sprinter RPG Debuff Items.
@@ -36,6 +30,12 @@ export class DebuffDataModel extends BaseItemDataModel {
       statSubstitutions: statSubstitutionsField(fields),
       duration: new fields.StringField({ initial: 'Combat' }),
       durationConfig: durationConfigField(fields),
+      // A paused debuff does nothing (rows, limbs, tags, damage per round). Buffs have their own `active`, default false.
+      paused: new fields.BooleanField({ initial: false }),
+      // Ask the GM to hide it from players when it lands.
+      secret: new fields.BooleanField({ initial: false }),
+      // Not null = an affliction: it changes the victim into other races and/or adds effects.
+      transform: transformField(fields),
       description: new fields.HTMLField({ initial: '' })
     };
   }

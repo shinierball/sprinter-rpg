@@ -1,0 +1,35 @@
+{{!-- The driver's controls, shared by the vehicle sheet's drive panel and the crawler's Aboard strip. Params: drive (src/sheets/vehicle/drive-context.mjs), showEvade (the Aboard strip shows the occupant Evade Buff), showFire (the Aboard strip lists the vehicle's mounted weapons).
+     Nothing here has a name: the speed asks a Rule Break above the Move, so it goes through an action, not the form. --}}
+<div class="cog-vehicle-drive-controls">
+  {{#if drive.canSetSpeed}}
+  <label class="cog-vehicle-speed" title="Declared speed in feet. Above this round's Move it asks a Rule Break.">
+    <span class="cog-field-label">Speed (ft)</span>
+    <input class="cog-field-input cog-vehicle-speed-input" type="number" min="0" step="5" value="{{drive.speed}}" data-change-action="vehicleSetSpeed" data-vehicle-uuid="{{drive.vehicleUuid}}" />
+  </label>
+  {{else}}
+  <span class="cog-vehicle-speed-readout">Speed <strong>{{drive.speed}}</strong> ft</span>
+  {{/if}}
+  <span class="cog-vehicle-move-readout" title="Available Move this round / rated Move (full Move with upgrades and the driver's skill)">
+    Move <strong class="cog-vehicle-available{{#if drive.over}} is-over{{/if}}">{{drive.available}}</strong> / {{drive.rated}} ft
+  </span>
+  {{#if drive.badge}}
+    <span class="cog-badge cog-vehicle-result is-{{drive.badge.tone}}"{{#if drive.badge.ruleBreak}} title="Rule Break"{{/if}}>{{drive.badge.text}}</span>
+  {{/if}}
+  {{#if drive.over}}<span class="cog-badge cog-badge-rule-break" title="The declared speed is above the available Move">[RULE BREAK]</span>{{/if}}
+  {{#if showEvade}}{{#if drive.evadeBuff}}<span class="cog-vehicle-evade-buff" title="Speed / 10, added to your Evade while aboard">Evade +{{drive.evadeBuff}}</span>{{/if}}{{/if}}
+  {{#if showFire}}{{#each drive.weapons as |weapon|}}
+    <button type="button" class="cog-btn-xs cog-bg-accent-fill cog-text-on-fill cog-vehicle-fire" data-action="vehicleFireWeapon" data-vehicle-uuid="{{../drive.vehicleUuid}}" data-weapon-id="{{weapon.id}}" title="Fire {{weapon.name}} with your own stat and skill"><i class="fa-solid fa-crosshairs"></i> Fire {{weapon.name}}</button>
+  {{/each}}{{/if}}
+  {{#if drive.canDrive}}
+    <span class="cog-vehicle-drive-buttons">
+      {{#if drive.canRoll}}
+        <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="vehicleRollCheck" data-kind="performance" data-vehicle-uuid="{{drive.vehicleUuid}}" title="Roll a driving check (Table 6)"><i class="fa-solid fa-gauge-high"></i> Drive</button>
+        <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="vehicleRollCheck" data-kind="decelerate" data-vehicle-uuid="{{drive.vehicleUuid}}" title="Roll to stop where you want to (Difficulty {{drive.brakeDifficulty}})"><i class="fa-solid fa-hand"></i> Brake</button>
+      {{/if}}
+      <button type="button" class="cog-btn-xs cog-bg-danger-fill cog-text-on-fill" data-action="vehicleRam" data-vehicle-uuid="{{drive.vehicleUuid}}" title="Ram the targeted token ({{drive.ramDiceLabel}})"><i class="fa-solid fa-car-burst"></i> Ram</button>
+      <label class="cog-vehicle-headon" title="Head-on or from behind: speed does not count against the target's Difficulty">
+        <input type="checkbox" data-change-action="vehicleHeadOn" /> Head-on
+      </label>
+    </span>
+  {{/if}}
+</div>

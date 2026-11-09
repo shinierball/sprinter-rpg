@@ -4,13 +4,15 @@
  * physical gear (weapons, armor, accessories), consumables, potions, wands, and scrolls.
  */
 import { COGToolApp } from './tool-app.mjs';
-import { catalogEntries } from '../content/catalog-lookup.mjs';
-import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
-import { resolveFullItemData, resolveManagerSource, getCompendiumEntries } from './manager-source.mjs';
+import { CatalogBrowserMixin } from './catalog-browser.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
+import { searchRows } from '../content/unified-catalog.mjs';
+import { SOURCE_INDEX_FIELD } from '../utils/content-source.mjs';
 import { describeItem, summaryText } from '../utils/item-describer/index.mjs';
 import { isScratchLootType, lootTypeLabel } from '../models/items/loot-model.mjs';
-import { cooldownBadge } from '../utils/cooldown-badge.mjs';
+import { cooldownBadge } from '../utils/time/cooldown-badge.mjs';
 import { currentTimeContext } from '../documents/actor/dungeon-time.mjs';
+import { GEAR_SLOTS } from '../utils/gear/gear-slots.mjs';
 
 
 const TPL = `${SYSTEM_PATH}/templates/apps/item-manager`;
@@ -24,7 +26,7 @@ export const ITEM_MANAGER_INDEX_FIELDS = Object.freeze([
   'system.equipped', 'system.isWeapon', 'system.drBonus',
   'system.damageModifiers', 'system.defenseModifiers', 'system.attackModifiers', 'system.checkModifiers',
   'system.damageParts', 'system.charges', 'system.outcomes', 'system.notes', 'system.description',
-  'system.cooldown', 'system.rankBreaks', 'system.spellName', 'system.spellIdentifier'
+  'system.cooldown', 'system.rankBreaks', 'system.spellName', 'system.spellIdentifier', 'system.identifier', SOURCE_INDEX_FIELD
 ]);
 
 /** Plain text of an HTML description for a one-line card snippet. */
@@ -37,15 +39,21 @@ export function htmlSnippet(html) {
   return raw.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-export class COGItemManager extends COGToolApp {
+export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
+  static CATALOG = {
+    kind: 'item',
+    fields: ITEM_MANAGER_INDEX_FIELDS,
+    collection: 'items',
+    list: 'getUnifiedItems',
+    search: { input: '.item-search-input', clear: '.item-search-clear', parts: ['list', 'footer'] }
+  };
+
   static DEFAULT_OPTIONS = {
     id: 'cog-item-manager',
     classes: ['cog-sheet-window', 'cog-item-manager-window'],
     position: { width: 860, height: 780 },
     window: { title: 'Sprinter RPG — Item & Equipment Library', icon: 'fa-solid fa-shield-halved', resizable: true },
     actions: {
-      setSearch: COGItemManager.#onSetSearch,
-      clearSearch: COGItemManager.#onClearSearch,
       setCategory: COGItemManager.#onSetCategory,
       setSlot: COGItemManager.#onSetSlot,
       addItem: COGItemManager.#onAddItem,
@@ -64,12 +72,9 @@ export class COGItemManager extends COGToolApp {
 
   constructor(options = {}) {
     super(options);
-    this.actor = options.actor || null;
     this.onSelect = options.onSelect || null;
     this.activeCategory = options.activeCategory || options.activeType || 'all';
     this.activeSlot = options.activeSlot || 'all';
-    this.searchQuery = '';
-    this.rawSearchQuery = '';
   }
 
   /** @override */
@@ -81,70 +86,9 @@ export class COGItemManager extends COGToolApp {
     });
   }
 
-  /**
-   * Retrieve all items and gear from compendium packs, official CONFIG datasets, and world items.
-   * @returns {Promise<Array<object>>}
-   */
-  async getUnifiedItems() {
-    const itemsMap = new Map();
-
-    // 1. From the registered item packs
-    const index = await getCompendiumEntries('items', { fields: ITEM_MANAGER_INDEX_FIELDS });
-    for (const entry of index) {
-      const key = entry.name.toLowerCase().trim();
-      itemsMap.set(key, {
-        id: entry._id,
-        _id: entry._id,
-        name: entry.name,
-        type: entry.type || 'gear',
-        img: entry.img || (entry.type === 'gear' ? 'icons/svg/shield.svg' : 'icons/svg/item-bag.svg'),
-        source: 'compendium',
-        isCompendium: true,
-        isWorld: false,
-        system: structuredClone(entry.system || {})
-      });
-    }
-
-    // 2. From the registered item definitions
-    for (const it of catalogEntries('items')) {
-      const key = it.name.toLowerCase().trim();
-      if (!itemsMap.has(key)) {
-        itemsMap.set(key, {
-          id: it._id || it.id || key,
-          _id: it._id || it.id || key,
-          name: it.name,
-          type: it.type || 'gear',
-          img: it.img || (it.type === 'gear' ? 'icons/svg/shield.svg' : 'icons/svg/item-bag.svg'),
-          source: 'canonical',
-          isCompendium: true,
-          isWorld: false,
-          system: structuredClone(it.system || {})
-        });
-      }
-    }
-
-    // 3. World Items (User-created or imported gear/loot)
-    if (typeof game !== 'undefined' && game.items) {
-      for (const it of game.items) {
-        if (it.type !== 'gear' && it.type !== 'loot') continue;
-        const key = it.name.toLowerCase().trim();
-        if (!itemsMap.has(key)) {
-          itemsMap.set(key, {
-            id: it.id || it._id,
-            _id: it.id || it._id,
-            name: it.name,
-            type: it.type,
-            img: it.img || (it.type === 'gear' ? 'icons/svg/shield.svg' : 'icons/svg/item-bag.svg'),
-            source: 'world',
-            isCompendium: false,
-            isWorld: true,
-            system: (typeof it.toObject === 'function') ? it.toObject().system : structuredClone(it.system || {})
-          });
-        }
-      }
-    }
-
-    return Array.from(itemsMap.values());
+  /** Gear and loot from the packs, the registered definitions and the world; a world copy merges into its source by link. */
+  getUnifiedItems() {
+    return this.catalogRows();
   }
 
   /** @override */
@@ -168,19 +112,10 @@ export class COGItemManager extends COGToolApp {
       const goldVal = Number(sys.value) || 0;
       const displayValue = canSeeValue ? `${goldVal} GP` : '???';
 
-      // Check ownership on current actor
-      let isOwned = false;
-      let ownedQty = 0;
-      let cooldownBadgeView = null;
-      const ownedItems = this.actor?.items ?? null;
-      if (ownedItems) {
-        const match = ownedItems.find(i => (i.id === item.id || i._id === item.id) || i.flags?.[SYSTEM_ID]?.compendiumId === item.id);
-        if (match) {
-          isOwned = true;
-          ownedQty = Number(match.system?.quantity) || 1;
-          cooldownBadgeView = cooldownBadge(this.actor, match, now);
-        }
-      }
+      // The owned copy on the current actor
+      const match = item.ownedItem;
+      const ownedQty = match ? Number(match.system?.quantity) || 1 : 0;
+      const cooldownBadgeView = match ? cooldownBadge(this.actor, match, now) : null;
 
       // Format badges & summaries
       let badgeLabel;
@@ -217,7 +152,6 @@ export class COGItemManager extends COGToolApp {
         goldVal,
         displayValue,
         canSeeValue,
-        isOwned,
         ownedQty,
         cooldownBadge: cooldownBadgeView,
         badgeLabel,
@@ -270,15 +204,7 @@ export class COGItemManager extends COGToolApp {
     }
 
     // Filter by search query
-    if (this.searchQuery) {
-      const q = this.searchQuery;
-      filtered = filtered.filter(i =>
-        i.name.toLowerCase().includes(q) ||
-        (i.descriptionSnippet && i.descriptionSnippet.toLowerCase().includes(q)) ||
-        (i.mechanicsSummary && i.mechanicsSummary.toLowerCase().includes(q)) ||
-        i.badgeLabel.toLowerCase().includes(q)
-      );
-    }
+    filtered = searchRows(filtered, this.searchQuery, (i) => [i.name, i.descriptionSnippet, i.mechanicsSummary, i.badgeLabel]);
 
     // Sort alphabetically by name
     filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -288,19 +214,9 @@ export class COGItemManager extends COGToolApp {
       items: filtered,
       activeCategory: this.activeCategory,
       activeSlot: this.activeSlot,
-      searchQuery: this.rawSearchQuery || this.searchQuery,
       counts,
       canSeeValue,
-      slots: [
-        { key: 'all', label: 'All Slots' },
-        { key: 'head', label: 'Head' },
-        { key: 'torso', label: 'Torso' },
-        { key: 'arms', label: 'Arms' },
-        { key: 'hands', label: 'Hands / Weapons' },
-        { key: 'legs', label: 'Legs' },
-        { key: 'feet', label: 'Feet' },
-        { key: 'accessory', label: 'Accessories' }
-      ]
+      slots: [{ key: 'all', label: 'All Slots' }, ...Object.values(GEAR_SLOTS).map((s) => ({ key: s.id, label: s.label }))]
     });
   }
 
@@ -309,20 +225,11 @@ export class COGItemManager extends COGToolApp {
    * @param {object} itemData
    * @returns {Promise<COGItem|null>}
    */
-  async addItemToActor(itemData) {
-    if (!this.actor) {
-      globalThis.ui?.notifications?.warn?.('No actor bound to add this item to!');
-      return null;
-    }
-
-    const itemPayload = await resolveFullItemData(itemData, 'items');
-
-    const res = await this.actor.createEmbeddedDocuments('Item', [itemPayload]);
-    const created = res?.[0] || null;
-
-    globalThis.ui?.notifications?.info?.(`Added "${itemData.name}" to ${this.actor.name}'s inventory.`);
-    if (typeof this.render === 'function') this.render();
-    return created;
+  addItemToActor(itemData) {
+    return this.addRowToActor(itemData, {
+      noActorMessage: 'No actor bound to add this item to!',
+      message: this.actor ? `Added "${itemData.name}" to ${this.actor.name}'s inventory.` : undefined
+    });
   }
 
   /**
@@ -353,39 +260,7 @@ export class COGItemManager extends COGToolApp {
       }
     };
 
-    if (this.actor) {
-      const created = await this.addItemToActor(itemData);
-      if (created && typeof created.sheet?.render === 'function') {
-        created.sheet.render({ force: true });
-      }
-      return created;
-    } else {
-      const ItemClass = CONFIG.Item?.documentClass
-        ?? globalThis.foundry?.documents?.Item
-        ?? globalThis.Item;
-      const created = await ItemClass.create(itemData);
-      if (created && typeof created.sheet?.render === 'function') {
-        created.sheet.render({ force: true });
-      }
-      this.render();
-      return created;
-    }
-  }
-
-  static async #onSetSearch(event, target) {
-    const val = target.value ?? '';
-    this.rawSearchQuery = val;
-    this.searchQuery = String(val).toLowerCase().trim();
-    // The clear control sits in the (not re-rendered) controls part: toggle it in place.
-    this.element?.querySelector?.('.item-search-clear')?.toggleAttribute('hidden', !val);
-    await this.render({ parts: ['list', 'footer'] });
-  }
-
-  static async #onClearSearch() {
-    this.rawSearchQuery = '';
-    this.searchQuery = '';
-    await this.render();
-    this.element?.querySelector?.('.item-search-input')?.focus?.();
+    return this.createBlankDocument(itemData);
   }
 
   static async #onSetCategory(event, target) {
@@ -401,9 +276,7 @@ export class COGItemManager extends COGToolApp {
   /** Add Item to Actor Inventory */
   static async #onAddItem(event, target) {
     // The card row carries the item's id; the buttons inside it resolve through the row, never by name.
-    const itemId = target.closest('[data-item-id]')?.dataset.itemId;
-    const allItems = await this.getUnifiedItems();
-    const match = itemId ? allItems.find(i => i.id === itemId || i._id === itemId) : null;
+    const match = await this.rowById(target.closest('[data-item-id]')?.dataset.itemId);
     if (match) {
       await this.addItemToActor(match);
     }
@@ -412,9 +285,7 @@ export class COGItemManager extends COGToolApp {
   /** Preview Item / Open Sheet */
   static async #onPreviewItem(event, target) {
     // The card row carries the item's id; the buttons inside it resolve through the row, never by name.
-    const itemId = target.closest('[data-item-id]')?.dataset.itemId;
-    const allItems = await this.getUnifiedItems();
-    const match = itemId ? allItems.find(i => i.id === itemId || i._id === itemId) : null;
+    const match = await this.rowById(target.closest('[data-item-id]')?.dataset.itemId);
     if (match) {
       if (CONFIG.Item?.documentClass) {
         const tempDoc = new CONFIG.Item.documentClass(match);
@@ -442,25 +313,7 @@ export class COGItemManager extends COGToolApp {
     if (!itemName) return;
 
     // The card carries the item's id: resolve by id (world item, else registered definition), never by name.
-    const { data: itemData, uuid } = resolveManagerSource('items', el.dataset.itemId);
-    const dragData = {
-      type: 'Item',
-      name: itemName,
-      uuid,
-      data: {
-        name: itemName,
-        type: itemData?.type || 'gear',
-        img: itemData?.img || 'icons/svg/item-bag.svg',
-        system: itemData?.system ? structuredClone(itemData.system) : {},
-        flags: {
-          core: { sourceId: uuid },
-          [SYSTEM_ID]: {
-            compendiumId: itemData?._id || itemData?.id,
-            sourceUuid: uuid
-          }
-        }
-      }
-    };
+    const dragData = this.dragPayload(el.dataset.itemId, itemName, { type: 'gear', img: 'icons/svg/item-bag.svg', flags: true });
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   }
 }

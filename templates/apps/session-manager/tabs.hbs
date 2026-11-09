@@ -11,4 +11,9 @@
   <button data-action="setTab" type="button" class="cog-tab-nav-btn {{#if (eq activeTab 'archive')}}active{{/if}}" data-tab="archive">
     <i class="fa-solid fa-box-archive"></i> Session History ({{sessions.length}})
   </button>
+  {{#if showSecrets}}
+  <button data-action="setTab" type="button" class="cog-tab-nav-btn {{#if (eq activeTab 'secrets')}}active{{/if}}" data-tab="secrets">
+    <i class="fa-solid fa-user-secret"></i> Secrets
+  </button>
+  {{/if}}
 </nav>

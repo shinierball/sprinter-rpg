@@ -1,7 +1,7 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { getActiveGM } from '../../utils/gm-relay.mjs';
-import { getCurrentFloor } from '../../utils/current-floor.mjs';
-import { popularityTokens } from '../../utils/popularity.mjs';
+import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
+import { popularityTokens } from '../../utils/floor/popularity.mjs';
 import { advanceDungeonTime } from './actor-environment.mjs';
 
 /**
@@ -75,7 +75,7 @@ function activeCombatFor(actor) {
 /**
  * A snapshot of the clock for cooldown evaluation.
  * @param {object|null} [actor]
- * @returns {import('../../utils/cooldowns.mjs').TimeNow}
+ * @returns {import('../../utils/time/cooldowns.mjs').TimeNow}
  */
 export function currentTimeContext(actor = null) {
   const floor = getCurrentFloor();

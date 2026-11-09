@@ -2,10 +2,10 @@
  * Session manager UI: add/edit ledger event dialog.
  */
 
-import { dialogAnswer } from '../../utils/dialog-answer.mjs';
+import { dialogAnswer } from '../../utils/ui/dialog-answer.mjs';
 import { SYSTEM_PATH } from '../../constants.mjs';
-import { COG_OUTCOME_CONFIG } from './roll-outcomes.mjs';
-import { COGSessionEngine } from './session-engine.mjs';
+import { COG_OUTCOME_CONFIG } from '../../documents/session/roll-outcomes.mjs';
+import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { COGSessionManagerApp } from './manager-app.mjs';
 import { lootBoxTierOptions } from '../../data/loot-box-tiers.mjs';
 

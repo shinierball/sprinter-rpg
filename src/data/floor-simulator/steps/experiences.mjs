@@ -16,12 +16,11 @@
  * picked catalog `identifier` on the pick; a `custom` option takes an optional `name`. Dice are drawn in this order per
  * slot: index die, row die, then each pick's Rank die.
  */
-import { SYSTEM_ID } from '../../../constants.mjs';
 import { findCatalogEntry } from '../../../content/catalog-lookup.mjs';
-import { getRankCeiling } from '../../../utils/rank-cap.mjs';
+import { getRankCeiling } from '../../../utils/skill/rank-cap.mjs';
 import { TUTORIAL_EXPERIENCE_TABLES } from '../../floor-arrivals.mjs';
 import { COGRaceClassApplier } from '../../race-class-applier.mjs';
-import { buildPayload } from '../../builders/item-payload.mjs';
+import { customItemPayload } from '../../custom-item-payload.mjs';
 import { addRank, cleanInt, cleanText, readSpecValue, rollOrTyped } from '../state.mjs';
 import { rowForTotal } from '../tables.mjs';
 
@@ -37,7 +36,7 @@ export const unnamedFromBooks = (docKind) => (docKind === 'spell' ? 'a spell fro
  * Whether a named/spell option names a document no catalog holds (a book document, before an import). Such an option
  * stays selectable and grants a stub (directive 2). A `uuid` option is a document link, never a stub.
  */
-export function optionNeedsImport(option) {
+function optionNeedsImport(option) {
   if (option?.kind !== 'named' && option?.kind !== 'spell') return false;
   const identifier = cleanText(option.identifier);
   if (!identifier || cleanText(option.uuid)) return false;
@@ -164,10 +163,7 @@ export function createWorkingItem(step, state, resolved) {
     const warnings = [];
     // A stub stands in for a book document that is not installed: it keeps the identifier, so an import can replace it.
     const name = resolved.name || (resolved.stub ? resolved.identifier : '');
-    payload = buildPayload(resolved.docKind, {
-      name, system: { rank: 0, ...(resolved.stub ? { identifier: resolved.identifier } : {}) },
-      flags: { [SYSTEM_ID]: resolved.stub ? { floorStub: true } : { floorCustom: true } }
-    }, { warnings });
+    payload = customItemPayload(resolved.docKind, name, { identifier: resolved.identifier, stub: resolved.stub, warnings });
     for (const w of warnings) state.warn(step.id, `${resolved.name}: ${w.message}`);
   } else {
     payload = structuredClone(findCatalogEntry(catalogKind(resolved.docKind), resolved.identifier));
@@ -215,7 +211,9 @@ function applyPick(step, state, row, pick, position, rng) {
     rolled: roll.rolled, manual: roll.manual || undefined, before: rank.before, after: rank.after,
     capped: rank.capped || undefined, overflow: rank.overflow || undefined,
     breakKey: rank.breakKey ?? roll.breakKey ?? undefined,
-    note: ceilingBound ? `Rank ${item.rankCeiling} maximum` : (isNew ? (resolved.custom ? 'new custom skill' : (resolved.stub ? 'needs an import' : 'new')) : undefined)
+    note: ceilingBound ? `Rank ${item.rankCeiling} maximum` : (isNew ? (resolved.custom ? 'new custom skill' : (resolved.stub ? 'needs an import' : 'new')) : undefined),
+    // A write-in this pick created: which create of the result is its item (the card links to it once the item has an id)
+    ...(isNew && resolved.custom ? { custom: true, docKind: item.kind, createIndex: state.itemCreates.indexOf(item.payload) } : {})
   });
   return {
     docKind: item.kind, identifier: item.identifier, name: item.name, formula, total: roll.total, rolled: roll.rolled,

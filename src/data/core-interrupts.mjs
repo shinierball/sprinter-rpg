@@ -1,7 +1,7 @@
 /**
  * Built-in interrupts available to every actor, expressed as tag data so they go through
  * the same offer path as owned items. Taunt, Catcher and Intervene are NOT built-ins: they are skills
- * (see src/data/skills.mjs). Call a Play is a standard action (COG_ACTION_TYPES.play) planned on the
+ * (see src/content/specs/skills.mjs). Call a Play is a standard action (COG_ACTION_TYPES.play) planned on the
  * actor's own turn, so it is never an interrupt.
  */
 const freezeEntry = (e) => Object.freeze({

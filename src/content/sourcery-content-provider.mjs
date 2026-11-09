@@ -279,7 +279,18 @@ export async function refreshSourceryCatalogs(registry = contentRegistry, { cata
  * After an import (or at `ready`): register the packs and refresh the catalogs, then let the host re-read the registry.
  * @returns {Promise<number>} catalog entries registered
  */
-export async function applySourceryCatalog(registry = contentRegistry, catalog = readStoredCatalog(), packs = globalThis.game?.packs) {
+export function applySourceryCatalog(registry = contentRegistry, catalog = readStoredCatalog(), packs = globalThis.game?.packs) {
+  const run = runSourceryCatalogRefresh(registry, catalog, packs);
+  inFlight.add(run);
+  const done = () => { inFlight.delete(run); };
+  run.then(done, done);
+  return run;
+}
+
+/** Refreshes that have started and not ended (setup, the importer, and every client's setting `onChange`). */
+const inFlight = new Set();
+
+async function runSourceryCatalogRefresh(registry, catalog, packs) {
   for (const def of catalog.packs) goneIds.delete(def.packId); // an import recreates a pack under the same id
   // Only packs that exist: a pack deleted by hand must not come back at `ready` (the pickers would go empty).
   const present = typeof packs?.get === 'function' ? { ...catalog, packs: catalog.packs.filter(def => packs.get(def.packId)) } : catalog;
@@ -296,12 +307,12 @@ export async function applySourceryCatalog(registry = contentRegistry, catalog =
 }
 
 /**
- * True when Sourcery packs are imported but the world's content theme is not the one they register under, so the
- * creators and pickers do not show them (the default theme is `shiny`).
+ * True when Sourcery packs are imported but `cog`, the theme they register under, is not the primary theme, so the
+ * crawler creator uses the primary theme's species, backgrounds and story tables (the default primary is `shiny`).
  * @param {import('./registry.mjs').COGContentRegistry} [registry=contentRegistry]
  */
-export function sourceryThemeInactive(registry = contentRegistry, catalog = readStoredCatalog()) {
-  return catalog.packs.length > 0 && registry?.getActiveThemeId?.() !== COG_THEME_ID;
+export function sourceryNotPrimary(registry = contentRegistry, catalog = readStoredCatalog()) {
+  return catalog.packs.length > 0 && registry?.getPrimaryThemeId?.() !== COG_THEME_ID;
 }
 
 /** The refresh `setup` starts (once game.packs is filled), so the catalogs hold the imported text before `ready`. */
@@ -313,6 +324,16 @@ let startupRefresh = null;
  */
 export function sourceryCatalogsReady() {
   return startupRefresh ?? applySourceryCatalog();
+}
+
+/**
+ * For code that reads the catalogs on a user action (the crawler creator's create): resolves once every refresh that is
+ * running now (the one `setup` starts, which Foundry's `ready` does not wait for, or one an import's setting change
+ * started) has ended. Never rejects; a failed refresh leaves the bundled catalogs, which the reader copes with.
+ * @returns {Promise<void>}
+ */
+export async function whenSourceryCatalogsSettled() {
+  while (inFlight.size) await Promise.allSettled([...inFlight]);
 }
 
 /** Listen to `sprinter-rpg.registerContent` and register the imported packs (and prune missing ones at setup). Call once at load. */

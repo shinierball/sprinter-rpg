@@ -43,6 +43,7 @@
             <select class="cog-field-input" name="{{f.name}}" data-row-field="{{f.field}}">
               {{#each f.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
             </select>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=f.badge}}
           {{else if f.isTag}}
             <select class="cog-field-input" name="{{f.name}}" data-row-field="{{f.field}}">
               <option value="">{{f.blank}}</option>

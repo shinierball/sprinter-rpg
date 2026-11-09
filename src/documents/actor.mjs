@@ -1,5 +1,3 @@
-import { COGSessionEngine } from '../apps/session-manager.mjs';
-
 // Re-export all shared constants and helper functions
 export * from './actor/actor-constants.mjs';
 import {
@@ -7,52 +5,58 @@ import {
   getRequiredXPForLevel
 } from './actor/actor-constants.mjs';
 
-// Import domain mixins
-import { actorEnvironmentMixin, actorEnvironmentStaticMixin, getCurrentFloor } from './actor/actor-environment.mjs';
-import { actorHealthMixin } from './actor/actor-health.mjs';
-import { actorTechniquesMixin } from './actor/actor-techniques.mjs';
-import { actorCombatMixin } from './actor/actor-combat.mjs';
-import { actorSpellsMixin } from './actor/actor-spells.mjs';
-import { actorSkillsMixin, actorSkillsStaticMixin } from './actor/actor-skills.mjs';
-import { actorAdvancementMixin } from './actor/actor-advancement.mjs';
-import { actorConditionsMixin } from './actor/actor-conditions.mjs';
-import { actorAchievementsMixin } from './actor/actor-achievements.mjs';
-import { actorInventoryMixin } from './actor/actor-inventory.mjs';
-import { actorCompanionsMixin } from './actor/actor-companions.mjs';
-import { actorSpacesMixin } from './actor/actor-spaces.mjs';
-import { actorActionsMixin } from './actor/actor-actions.mjs';
-import { actorPopularityMixin } from './actor/actor-popularity.mjs';
+// Import the domain modules the class delegates to
+import * as env from './actor/actor-environment.mjs';
+import * as spells from './actor/actor-spells.mjs';
+import * as interrupts from './actor/actor-interrupts.mjs';
+import * as spellDamageRoll from './actor/spell-damage-roll.mjs';
+import * as spellAttackRoll from './actor/spell-attack-roll.mjs';
+import * as spaces from './actor/actor-spaces.mjs';
+import * as crafting from './actor/actor-crafting.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
-import { sanitizeContestRef, moveLine } from '../utils/contest/contest-roll.mjs';
-import { buildCheckRecord, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../utils/check-assists.mjs';
-import { collectCheckToHit, rollCheckTargets } from '../utils/per-target-to-hit.mjs';
-import { itemIdentifier } from '../utils/identifier.mjs';
-import { buildRollContext, extendContext, resolveRollToggles } from '../utils/roll-context.mjs';
-import { cameraParts, consumeArmedCamera, camerasOffered, sanitizeCameraChoice, armedCamera, CAMERA_ARMED_FLAG } from '../utils/cameras.mjs';
-import { MOB_BOSS_TAG } from '../utils/tag-mechanics.mjs';
+import { resolveHpPerBar } from '../utils/damage/hp-per-bar.mjs';
+import { isSameOwnedEntry } from '../utils/character/owned-entry.mjs';
+import { camerasOffered, sanitizeCameraChoice, armedCamera, CAMERA_ARMED_FLAG } from '../utils/roll/cameras.mjs';
+import { MOB_BOSS_TAG } from '../data/tag-vocabulary.mjs';
+import { tokenDefaultUpdates } from '../data/token-defaults.mjs';
+import * as popularity from './actor/actor-popularity.mjs';
+import * as health from './actor/actor-health.mjs';
+import * as achievements from './actor/actor-achievements.mjs';
+import * as inventory from './actor/actor-inventory.mjs';
+import * as companions from './actor/actor-companions.mjs';
+import * as lootBoxes from './actor/loot-box-open.mjs';
+import * as statRoll from './actor/stat-roll.mjs';
+import * as weaponSkills from './actor/weapon-skills.mjs';
+import * as advancement from './actor/actor-advancement.mjs';
+import * as conditions from './actor/actor-conditions.mjs';
+import * as combatDamage from './actor/combat-damage.mjs';
+import * as attackProfiles from './actor/combat-attack-profiles.mjs';
+import * as skillDamage from './actor/combat-skill-damage.mjs';
+import * as techniques from './actor/actor-techniques.mjs';
+import * as attackTargets from './actor/attack-targets.mjs';
+import * as skills from './actor/actor-skills.mjs';
+import * as combatRolls from './actor/combat-rolls.mjs';
+import * as evade from './actor/combat-targeting.mjs';
+import { lockEmbeddedOnActorCreate, stampLockOwnerOnActorCreated } from './actor/percent-lock.mjs';
 
 const BaseActor = globalThis.foundry?.documents?.Actor
   ?? globalThis.foundry?.documents?.BaseActor
   ?? globalThis.Actor
   ?? class {};
 
-/** The compendium entry a document or creation data came from (`_stats.compendiumSource`, else the managers' flag). */
-function compendiumSourceOf(doc) {
-  return String(doc?._stats?.compendiumSource || doc?.flags?.[SYSTEM_ID]?.sourceUuid || '');
-}
-
-/**
- * Whether an owned skill/spell is the same entry as incoming creation data: the same compendium source,
- * else the same `system.identifier` (data without one gets the slug `_preCreate` would give it). Names never match.
- */
-export function isSameOwnedEntry(owned, data) {
-  const source = compendiumSourceOf(data);
-  if (source && compendiumSourceOf(owned) === source) return true;
-  const ownedId = String(owned?.system?.identifier ?? '').trim();
-  return Boolean(ownedId) && ownedId === itemIdentifier(data);
-}
-
 export class COGActor extends BaseActor {
+
+  // Floor clock and Crawler count: the module functions, reachable as `COGActor.x()`
+  static getCurrentFloor() { return env.getCurrentFloor(); }
+  static setCurrentFloor(floor) { return env.setCurrentFloor(floor); }
+  static getFloorTimer() { return env.getFloorTimer(); }
+  static setFloorTimer(hours) { return env.setFloorTimer(hours); }
+  static decrementFloorTimer(hours, opts) { return env.decrementFloorTimer(hours, opts); }
+  static getCrawlerCount() { return env.getCrawlerCount(); }
+  static setCrawlerCount(count) { return env.setCrawlerCount(count); }
+  static decrementCrawlerCount(amount) { return env.decrementCrawlerCount(amount); }
+  static incrementCrawlerCount(amount) { return env.incrementCrawlerCount(amount); }
+  static executePartyGrindSession(partyActors, options) { return skills.executePartyGrindSession(partyActors, options); }
   /**
    * Check if this actor carries an active tag (explicit, derived, or active item).
    * @param {string} tagId
@@ -115,9 +119,19 @@ export class COGActor extends BaseActor {
     };
   }
 
+  /** @override Items that came in with the actor were filed under it in `_preCreate` only if its id was known then. */
+  async _onCreate(data, options, userId) {
+    super._onCreate?.(data, options, userId);
+    if (userId === globalThis.game?.user?.id) {
+      await stampLockOwnerOnActorCreated(this).catch((err) => console.error('COG | filing percent locks failed', err));
+    }
+  }
+
   /** @override */
   async _preCreate(data, options, user) {
     await super._preCreate(data, options, user);
+    lockEmbeddedOnActorCreate(this);
+    this.updateSource(tokenDefaultUpdates(this.type, data, globalThis.CONFIG?.COG?.tokenDefaults));
     if (this.type === 'crawler' || this.type === 'pet' || this.type === 'mercenary' || this.type === 'mount_vehicle') {
       const updates = {
         'prototypeToken.actorLink': true,
@@ -130,7 +144,7 @@ export class COGActor extends BaseActor {
           const conMod = getCOGStatModifier(conVal);
           const computedMaxHp = 10 * conMod;
           const rawHp = data?.system?.attributes?.hp?.value;
-          if (rawHp === undefined || (rawHp === 40 && computedMaxHp !== 40)) {
+          if (rawHp === undefined) {
             updates['system.attributes.hp.value'] = computedMaxHp;
             updates['system.attributes.hp.max'] = computedMaxHp;
             updates['system.attributes.hp.pct'] = 100;
@@ -142,7 +156,7 @@ export class COGActor extends BaseActor {
       if (intVal !== undefined) {
         const computedMaxMana = Number(intVal) || 0;
         const rawMana = data?.system?.attributes?.mana?.value;
-        if (rawMana === undefined || (rawMana === 10 && computedMaxMana !== 10)) {
+        if (rawMana === undefined) {
           updates['system.attributes.mana.value'] = computedMaxMana;
           updates['system.attributes.mana.max'] = computedMaxMana;
           updates['system.attributes.mana.pct'] = 100;
@@ -159,14 +173,13 @@ export class COGActor extends BaseActor {
       const conVal = data?.system?.abilities?.con?.value ?? this.system?.abilities?.con?.value ?? 10;
       const conMod = getCOGStatModifier(conVal);
       const explicitBars = data?.system?.attributes?.hp?.bars ?? this.system?.attributes?.hp?.bars;
-      const explicitHpPerBar = Number(data?.system?.attributes?.hp?.hpPerBar ?? this.system?.attributes?.hp?.hpPerBar) || 0;
-      const hpPerBar = explicitHpPerBar > 0 ? explicitHpPerBar : (conMod > 0 ? conMod : 1);
+      const hpPerBar = resolveHpPerBar(data?.system?.attributes?.hp?.hpPerBar ?? this.system?.attributes?.hp?.hpPerBar, conMod);
 
       if (explicitBars !== null && explicitBars !== undefined) {
         const bars = Math.max(1, Number(explicitBars) || 1);
         const computedMaxHp = bars * hpPerBar;
         const rawHp = data?.system?.attributes?.hp?.value;
-        if (rawHp === undefined || rawHp === 40 || rawHp === 4) {
+        if (rawHp === undefined) {
           updates['system.attributes.hp.value'] = computedMaxHp;
           updates['system.attributes.hp.max'] = computedMaxHp;
           updates['system.attributes.hp.pct'] = 100;
@@ -244,7 +257,7 @@ export class COGActor extends BaseActor {
     }
     changes['system.attributes.hp.temp'] = tempBarsRemainingHp;
 
-    const hpPerBar = (Number(this.system?.abilities?.con?.mod) > 0 ? Number(this.system.abilities.con.mod) : 1);
+    const hpPerBar = resolveHpPerBar(this.system?.attributes?.hp?.hpPerBar, this.system?.abilities?.con?.mod);
     const barsRemoved = Math.floor(penetratingDmg / hpPerBar);
     const dmgToHp = barsRemoved * hpPerBar;
     const adjustedNewHp = Math.max(0, currentHp - dmgToHp);
@@ -307,7 +320,7 @@ export class COGActor extends BaseActor {
     const resolveBuff = (val) => {
       if (!val) return null;
       const strVal = String(val).trim();
-      const found = this.resolveBuff?.(strVal);
+      const found = conditions.resolveBuff(this, strVal);
       return {
         id: String(found?.id ?? strVal).toLowerCase(),
         identifier: String(found?.system?.identifier ?? '').toLowerCase()
@@ -507,7 +520,7 @@ export class COGActor extends BaseActor {
     await this.update({ 'system.details.xp.value': newXP });
     // The Level change goes through gainLevels so XP level-ups also bank Stat points.
     const gained = newLevel > currentLevel
-      ? await this.gainLevels(newLevel - currentLevel, { source: 'xp' })
+      ? await advancement.gainLevels(this, newLevel - currentLevel, { source: 'xp' })
       : { newLevel: currentLevel };
     newLevel = gained.newLevel;
     const leveledUp = newLevel > currentLevel;
@@ -555,105 +568,143 @@ export class COGActor extends BaseActor {
    * Roll a stat check
    * @param {string} statKey - str, int, con, dex, cha
    */
-  async rollStat(statKey, options = {}) {
-    const ability = this.system.abilities?.[statKey];
-    if (!ability) return;
+  async rollStat(...args) { return statRoll.rollStat(this, ...args); }
 
-    const mod = ability.mod ?? 0;
-    const statName = statKey.toUpperCase();
+  // health
+  activateAura(...args) { return health.activateAura(this, ...args); }
+  applyDamage(...args) { return health.applyDamage(this, ...args); }
+  checkFatalDebuffProtection(...args) { return health.checkFatalDebuffProtection(this, ...args); }
+  deactivateAura(...args) { return health.deactivateAura(this, ...args); }
+  getDamageReduction(...args) { return health.getDamageReduction(this, ...args); }
+  grantTempBars(...args) { return health.grantTempBars(this, ...args); }
+  hasImmunity(...args) { return health.hasImmunity(this, ...args); }
+  hasResistance(...args) { return health.hasResistance(this, ...args); }
 
-    // Context tags: `check.stat`, `stat.<stat>` and any ticked `situation.*` toggle
-    // The roller's targets: the first is the check's subject, and the rest get a per-target total (E3.5c).
-    const targetActors = this._attackTargetEntries(options).map(e => e.actor);
-    // A check made for a leg of a race or chase (3.45): `contest.race` / `contest.chase` on the context, Move Rate as a flat line
-    const contest = sanitizeContestRef(options.contest);
-    const baseContext = buildRollContext({ actor: this, phase: 'check', check: 'stat', stat: statKey, other: targetActors[0], tags: contest ? [contest.tag] : [] });
-    const toggles = await resolveRollToggles(this, baseContext, options, { cameras: true });
-    const situationContext = extendContext(baseContext, { situations: toggles.situations });
-    // Playing to the Cameras (E6.10): one extra Disadvantage reason, recorded on the card.
-    const camera = cameraParts(this, toggles.cameras, getCurrentFloor());
+  // popularity
+  awardPopularity(...args) { return popularity.awardPopularity(this, ...args); }
+  awardPopularityForRoll(...args) { return popularity.awardPopularityForRoll(this, ...args); }
 
-    // Advantage rows read the context before `situation.disadvantaged` exists; flat and dice rows read it after.
-    const advState = this.getRollAdvantageState({
-      rollType: 'stat',
-      stat: statKey,
-      rollContext: situationContext,
-      extraDisadvantages: camera.disadvantages,
-      options
-    });
-    const rollContext = extendContext(situationContext, { disadvantaged: advState.mode === 'disadvantage' });
-    const { mods: checkMods, targetRows } = collectCheckToHit(this, rollContext, { targetActors });
+  // achievements
+  announceAchievement(...args) { return achievements.announceAchievement(this, ...args); }
+  getBadgeSummary(...args) { return achievements.getBadgeSummary(this, ...args); }
+  recordBossKill(...args) { return achievements.recordBossKill(this, ...args); }
+  recordCrawlerKill(...args) { return achievements.recordCrawlerKill(this, ...args); }
+  removeBossKill(...args) { return achievements.removeBossKill(this, ...args); }
+  removeCrawlerKill(...args) { return achievements.removeCrawlerKill(this, ...args); }
+  removeKillByApplication(...args) { return achievements.removeKillByApplication(this, ...args); }
 
-    const moveMod = contest?.moveMod ?? 0;
-    const total = mod + checkMods.flatBonus + moveMod;
-    const extraDice = checkMods.diceParts.map(d => ` + ${d}`).join('');
-    const formula = `${advState.formula} + ${total}${extraDice}`;
-    const roll = await new Roll(formula, { mod }).evaluate();
+  // inventory
+  applyClass(...args) { return inventory.applyClass(this, ...args); }
+  applyRace(...args) { return inventory.applyRace(this, ...args); }
+  removeClass(...args) { return inventory.removeClass(this, ...args); }
+  removeRace(...args) { return inventory.removeRace(this, ...args); }
+  canSeeItemOrigin(...args) { return inventory.canSeeItemOrigin(this, ...args); }
+  canSeeItemValue(...args) { return inventory.canSeeItemValue(this, ...args); }
+  canSortInventoryByValue(...args) { return inventory.canSortInventoryByValue(this, ...args); }
+  getDetermineValueRank(...args) { return inventory.getDetermineValueRank(this, ...args); }
 
-    COGSessionEngine.recordRoll({
-      actor: this,
-      roll,
-      type: 'stat',
-      name: `${statName} Check`,
-      isUntrained: false
-    }).catch(() => {});
+  // companions
+  assignRider(...args) { return companions.assignRider(this, ...args); }
+  bondCompanion(...args) { return companions.bondCompanion(this, ...args); }
+  canBeRiddenBy(...args) { return companions.canBeRiddenBy(this, ...args); }
+  dismountRider(...args) { return companions.dismountRider(this, ...args); }
+  getBondedPets(...args) { return companions.getBondedPets(this, ...args); }
+  getBondedVehicles(...args) { return companions.getBondedVehicles(this, ...args); }
+  getEmployerActors(...args) { return companions.getEmployerActors(this, ...args); }
+  getOwnerActor(...args) { return companions.getOwnerActor(this, ...args); }
+  getPilotActor(...args) { return companions.getPilotActor(this, ...args); }
+  getRiderActor(...args) { return companions.getRiderActor(this, ...args); }
+  unbondCompanion(...args) { return companions.unbondCompanion(this, ...args); }
 
-    const modLines = moveLine(contest) ? [...checkMods.breakdown, moveLine(contest)] : checkMods.breakdown;
-    const modDesc = modLines.length > 0 ? ` [${modLines.join(', ')}]` : '';
-    const flavor = advState.label
-      ? `<strong>${this.name}</strong>: ${statName} Check (<strong>${advState.label}</strong>: ${advState.formula} + ${statName} Mod ${mod >= 0 ? `+${mod}` : mod}${modDesc})`
-      : `<strong>${this.name}</strong>: ${statName} Check${modDesc}`;
+  // loot boxes
+  openLootBoxes(...args) { return lootBoxes.openLootBoxes(this, ...args); }
 
-    const perTarget = await rollCheckTargets(roll, targetRows, rollContext, targetActors);
-    const message = await roll.toMessage({
-      speaker: ChatMessage.getSpeaker({ actor: this }),
-      flavor: `${flavor}${camera.noteHtml}`,
-      ...(perTarget.html ? { content: `${typeof roll.render === 'function' ? await roll.render() : ''}${perTarget.html}` } : {}),
-      flags: {
-        [SYSTEM_ID]: {
-          ...perTarget.flags,
-          ...camera.flags,
-          [CHECK_RECORD_FLAG]: buildCheckRecord({
-            kind: 'stat',
-            roller: this,
-            rollerTokenId: rollerTokenIdOf(this),
-            roll,
-            combat: combatRefFor(this),
-            tags: [...rollContext.tags],
-            targets: perTarget.results.map((r, i) => ({ actorId: r.actorId, actorUuid: targetActors[i]?.uuid, name: r.actorName, dc: null, bonus: r.bonus })),
-            contest
-          })
-        }
-      }
-    });
-    await consumeArmedCamera(this);
-    return message;
-  }
+  // attack targets and evade
+  getEvadeTargetDC(...args) { return attackTargets.getEvadeTargetDC(this, ...args); }
+  rollEvade(...args) { return evade.rollEvade(this, ...args); }
+
+  // skill damage
+  getSkillDamageData(...args) { return skillDamage.getSkillDamageData(this, ...args); }
+
+  // techniques
+  findDamageEffectSkill(...args) { return techniques.findDamageEffectSkill(this, ...args); }
+  getAiFavorRating(...args) { return techniques.getAiFavorRating(this, ...args); }
+  getCombatTechniques(...args) { return techniques.getCombatTechniques(this, ...args); }
+  getDamageEffectDescription(...args) { return techniques.getDamageEffectDescription(this, ...args); }
+  getDamageEffectLabel(...args) { return techniques.getDamageEffectLabel(this, ...args); }
+  getSelectableDamageEffects(...args) { return techniques.getSelectableDamageEffects(this, ...args); }
+  isTechniqueApplicable(...args) { return techniques.isTechniqueApplicable(this, ...args); }
+
+  // advancement
+  applyRankGain(...args) { return advancement.applyRankGain(this, ...args); }
+  gainLevels(...args) { return advancement.gainLevels(this, ...args); }
+  markSkillUsed(...args) { return advancement.markSkillUsed(this, ...args); }
+  resolveAdvancementCheck(...args) { return advancement.resolveAdvancementCheck(this, ...args); }
+  runAdvancementCheck(...args) { return advancement.runAdvancementCheck(this, ...args); }
+  spendStatPoint(...args) { return advancement.spendStatPoint(this, ...args); }
+
+  // conditions
+  applyCondition(...args) { return conditions.applyCondition(this, ...args); }
+  applyDebuff(...args) { return conditions.applyDebuff(this, ...args); }
+  applyHealingBars(...args) { return conditions.applyHealingBars(this, ...args); }
+  applyHoT(...args) { return conditions.applyHoT(this, ...args); }
+  cleanseDebuff(...args) { return conditions.cleanseDebuff(this, ...args); }
+  cureDebuffs(...args) { return conditions.cureDebuffs(this, ...args); }
+  getActiveBuffs(...args) { return conditions.getActiveBuffs(this, ...args); }
+  getArchetypeTags(...args) { return conditions.getArchetypeTags(this, ...args); }
+  mendInjury(...args) { return conditions.mendInjury(this, ...args); }
+  resolveActionTargets(...args) { return conditions.resolveActionTargets(this, ...args); }
+  resolveBuff(...args) { return conditions.resolveBuff(this, ...args); }
+
+  // attack damage
+  getAttackDamageParts(...args) { return combatDamage.getAttackDamageParts(this, ...args); }
+
+  // attack profiles
+  getSynthesizedAttacks(...args) { return attackProfiles.getSynthesizedAttacks(this, ...args); }
+
+  // skills
+  rollSkill(...args) { return skills.rollSkill(this, ...args); }
+  rest(...args) { return skills.rest(this, ...args); }
+  rollContestResponse(...args) { return skills.rollContestResponse(this, ...args); }
+  getSkillByIdentifier(...args) { return skills.getSkillByIdentifier(this, ...args); }
+  getSkillRank(...args) { return skills.getSkillRank(this, ...args); }
+  increaseSkillRank(...args) { return skills.increaseSkillRank(this, ...args); }
+  increaseUnenhancedStat(...args) { return skills.increaseUnenhancedStat(this, ...args); }
+  allocateGrindHours(...args) { return skills.allocateGrindHours(this, ...args); }
+  attemptSkillAdvancement(...args) { return skills.attemptSkillAdvancement(this, ...args); }
+  restSafeRoom(...args) { return skills.restSafeRoom(this, ...args); }
+  executePartyGrindSession(partyActors, options) { return this.constructor.executePartyGrindSession(partyActors || [this], options); }
+
+  // attack and damage rolls
+  getRollAdvantageState(...args) { return combatRolls.getRollAdvantageState(this, ...args); }
+  rollAttack(...args) { return combatRolls.rollAttack(this, ...args); }
+  rollSkillDamage(...args) { return combatRolls.rollSkillDamage(this, ...args); }
+
+  // weapon skills
+  _resolveWeaponSkills(...args) { return weaponSkills.resolveWeaponSkills(this, ...args); }
+
+  // spells and interrupts
+  getAvailableInterrupts(...args) { return interrupts.getAvailableInterrupts(this, ...args); }
+  triggerInterrupt(...args) { return interrupts.triggerInterrupt(this, ...args); }
+  getSpellDamageData(...args) { return spells.getSpellDamageData(this, ...args); }
+  getSpellDamageParts(...args) { return spells.getSpellDamageParts(this, ...args); }
+  rollSpellDamage(...args) { return spellDamageRoll.rollSpellDamage(this, ...args); }
+  rollSpellAttack(...args) { return spellAttackRoll.rollSpellAttack(this, ...args); }
+  rollSpell(...args) { return spells.rollSpell(this, ...args); }
+
+  // personal spaces
+  getOwnedPersonalSpace(...args) { return spaces.getOwnedPersonalSpace(this, ...args); }
+  getLinkedPersonalSpaces(...args) { return spaces.getLinkedPersonalSpaces(this, ...args); }
+  getPersonalSpace(...args) { return spaces.getPersonalSpace(this, ...args); }
+  linkPersonalSpace(...args) { return spaces.linkPersonalSpace(this, ...args); }
+  unlinkPersonalSpace(...args) { return spaces.unlinkPersonalSpace(this, ...args); }
+  acquirePersonalSpace(...args) { return spaces.acquirePersonalSpace(this, ...args); }
+  restInPersonalSpace(...args) { return spaces.restInPersonalSpace(this, ...args); }
+  depositToPersonalSpace(...args) { return spaces.depositToPersonalSpace(this, ...args); }
+  withdrawFromPersonalSpace(...args) { return spaces.withdrawFromPersonalSpace(this, ...args); }
+  trainSkillInPersonalSpace(...args) { return spaces.trainSkillInPersonalSpace(this, ...args); }
+
+  // crafting
+  craft(...args) { return crafting.craft(this, ...args); }
 
 }
-
-// Attach static domain methods to COGActor class
-Object.assign(
-  COGActor,
-  actorEnvironmentStaticMixin,
-  actorSkillsStaticMixin
-);
-
-// Attach instance domain methods to COGActor prototype
-Object.assign(
-  COGActor.prototype,
-  actorEnvironmentMixin,
-  actorHealthMixin,
-  actorTechniquesMixin,
-  actorCombatMixin,
-  actorSpellsMixin,
-  actorSkillsMixin,
-  actorAdvancementMixin,
-  actorConditionsMixin,
-  actorAchievementsMixin,
-  actorInventoryMixin,
-  actorCompanionsMixin,
-  actorSpacesMixin,
-  actorActionsMixin,
-  actorPopularityMixin
-);

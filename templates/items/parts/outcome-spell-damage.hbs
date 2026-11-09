@@ -1,0 +1,13 @@
+{{!-- A spell outcome row's own damage (the temporary spell's dice and type, used when no spell is picked). Context: out, idx. --}}
+<div data-outcome-damage style="margin-top: 4px;">
+  <div style="display: flex; gap: 4px;">
+    <input class="cog-field-input" data-input-action="checkOutcomeDamage" type="text" name="system.outcomes.{{idx}}.damage" value="{{out.damage}}" placeholder="NdM" style="width: 50%; font-size: 11px;" />
+    <select class="cog-field-input" name="system.outcomes.{{idx}}.damageType" style="width: 50%; font-size: 11px;">
+      <option value="">-- Type --</option>
+      {{#each out.damageTypeOptions as |dtOpt|}}
+        <option value="{{dtOpt.value}}" {{#if dtOpt.selected}}selected{{/if}}>{{dtOpt.label}}</option>
+      {{/each}}
+    </select>
+  </div>
+  <div class="cog-text-accent" data-outcome-damage-warn {{#unless out.damageWarn}}hidden{{/unless}} style="font-size: 10px;">{{localize "COG.Item.OutcomeDamageNoRoll"}}</div>
+</div>

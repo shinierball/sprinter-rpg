@@ -51,7 +51,7 @@ export function blockPrefixHash(block, prefixFrom) {
  * Index of the stat-block paragraph (`block.statLines`) an embedded-item selector `{ hash, words? }` names, or -1.
  * Same hashing as `findLine`, over the stat block's paragraphs.
  */
-export function findStatLine(block, sel) {
+function findStatLine(block, sel) {
   const key = `S${sel.words ?? LINE_WORDS}`;
   if (!Object.hasOwn(block, 'lineHashCache')) Object.defineProperty(block, 'lineHashCache', { value: new Map() });
   if (!block.lineHashCache.has(key)) block.lineHashCache.set(key, (block.statLines ?? []).map(l => lineHash(l, sel.words ?? LINE_WORDS)));
@@ -74,10 +74,10 @@ export function applyItems(block, items = []) {
 }
 
 /** Which list a selector reads: `label` (the mechanic-label lines), `other` (the whole paragraphs of labels the grammar has no key for), `stat` (the stat block's paragraphs), else the lines. */
-export const listOf = p => (p?.label ? 'label' : p?.other ? 'other' : p?.stat ? 'stat' : '');
+const listOf = p => (p?.label ? 'label' : p?.other ? 'other' : p?.stat ? 'stat' : '');
 
 /** The lines a selector searches: `labelLines` for a `label` selector, `otherLines` for an `other` one, else `lines`. `which` may also be `true` (label). */
-export const linesFor = (block, which) => (which === 'other' ? block.otherLines : which === 'stat' ? block.statText : which ? block.labelLines : block.lines) ?? [];
+const linesFor = (block, which) => (which === 'other' ? block.otherLines : which === 'stat' ? block.statText : which ? block.labelLines : block.lines) ?? [];
 
 /**
  * The `last` words that end just before the `n`th colon of a line, leaving out the `skip` words nearest the colon (the printed

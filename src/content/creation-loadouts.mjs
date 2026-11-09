@@ -16,8 +16,6 @@ import { buildPayload } from '../data/builders/item-payload.mjs';
 
 export { STARTER_RANK, STARTER_POTION_COUNT };
 
-export const LOADOUT_SLOTS = Object.freeze(['weapon', 'spell', 'unarmed', 'potion']);
-
 const clone = (value) => (globalThis.foundry?.utils?.deepClone ? globalThis.foundry.utils.deepClone(value) : structuredClone(value));
 
 /** Registered entries of one slot, in registration order. */

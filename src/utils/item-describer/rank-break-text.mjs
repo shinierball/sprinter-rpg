@@ -8,11 +8,11 @@
  * Strings live under `COG.ItemSummary.SpellSkill` in lang/en.json.
  */
 import { itemLine, t, conditionRefName, defineItemSummaryTemplates, str, whole } from './shared.mjs';
-import { formatRankBreak } from '../rank-breaks.mjs';
-import { durationSpec } from '../durations.mjs';
-import { getTagDefinition } from '../../data/tags.mjs';
-import { normalizeTagList } from '../tag-query.mjs';
-import { formatTiming, normalizeTiming } from '../timing.mjs';
+import { formatRankBreak } from '../skill/rank-breaks.mjs';
+import { durationSpec } from '../time/durations.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { normalizeTagList } from '../tag/tag-query.mjs';
+import { formatTiming, normalizeTiming } from '../time/timing.mjs';
 
 const KEY = 'COG.ItemSummary.SpellSkill';
 
@@ -42,7 +42,7 @@ const L = (key, data) => t(`${KEY}.${key}`, data);
 
 /** What a tier adds beyond `formatRankBreak` (which has no crit, damage type, timing, interrupt or light wording).
  * `ownDamageType` is the item's own damage type: a tier that repeats it adds nothing and says nothing. */
-export function tierExtras(tier, ownDamageType = '') {
+function tierExtras(tier, ownDamageType = '') {
   const out = [];
   if (whole(tier.critMultiplier) > 1) out.push(L('TierCrit', { n: whole(tier.critMultiplier) }));
   const dice = str(tier.baseDiceCountMod);
@@ -81,7 +81,7 @@ export function tierExtras(tier, ownDamageType = '') {
  *   "Ignores DR" line already carries a reached break's armor piercing (spells); weapons keep it in the break text.
  * @returns {string}
  */
-export function rankBreakBody(tier, { reached = false, legacy = '', ignoresDrShown = true, ownDamageType = '' } = {}) {
+function rankBreakBody(tier, { reached = false, legacy = '', ignoresDrShown = true, ownDamageType = '' } = {}) {
   if (!isObj(tier)) return reached ? '' : String(legacy || '');
   const shown = reached
     ? { ...tier, damageDice: '', rankDamageDice: 0, baseDiceMultiplier: 1, baseDiceCountMod: '', damageType: '', isArmorPiercing: ignoresDrShown ? false : tier.isArmorPiercing }
@@ -91,7 +91,7 @@ export function rankBreakBody(tier, { reached = false, legacy = '', ignoresDrSho
 }
 
 /** "At Rank N: ..." or, for a reached break, "From Rank N: ...". */
-export function rankBreakText(rank, body, reached) {
+function rankBreakText(rank, body, reached) {
   return L(reached ? 'FromRank' : 'AtRank', { rank, text: body });
 }
 

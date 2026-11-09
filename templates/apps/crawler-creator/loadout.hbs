@@ -28,6 +28,7 @@
                 <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
               {{/each}}
             </select>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=starterWeaponBadge}}
           </div>
           <div class="cog-choice-perk-badge">
             <i class="fa-solid fa-check"></i> Grants <strong>{{starterWeaponName}}</strong> skill at <strong>Rank 3</strong>, equips weapon in inventory, and adds attack.
@@ -44,10 +45,12 @@
                 <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
               {{/each}}
             </select>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=starterSpellBadge}}
             {{#if loadoutExampleOnly}}{{> "systems/sprinter-rpg/templates/shared/content-hint.hbs" key="COG.Content.LoadoutExample"}}{{/if}}
           </div>
           <div class="cog-choice-perk-badge mana-potion-badge">
             <i class="fa-solid fa-flask"></i> Includes <strong>{{starterPotionCount}} {{starterPotion.name}}</strong> in inventory &amp; Hotlist (refills mana to 100%).
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=starterPotion.sourceBadge}}
           </div>
         </div>
       {{/if}}
@@ -61,6 +64,7 @@
                 <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
               {{/each}}
             </select>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=starterUnarmedBadge}}
             {{#if loadoutExampleOnly}}{{> "systems/sprinter-rpg/templates/shared/content-hint.hbs" key="COG.Content.LoadoutExample"}}{{/if}}
           </div>
           <div class="cog-choice-perk-badge unarmed-badge">

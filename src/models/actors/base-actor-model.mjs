@@ -1,16 +1,22 @@
-import { getStatCaps } from '../../utils/stat-caps.mjs';
+import { getStatCaps } from '../../utils/character/stat-caps.mjs';
+import { percentStatMode } from '../../utils/character/stat-percent.mjs';
 import { DEFAULT_SIZE, getSizeInfo, sizeLabel } from '../../data/sizes.mjs';
 import { getCOGStatModifier } from '../../documents/actor/actor-constants.mjs';
-import { calculateItemHandsRequired } from '../../utils/wielding.mjs';
-import { collectActorTags } from '../../data/tags.mjs';
+import { calculateItemHandsRequired } from '../../utils/gear/wielding.mjs';
+import { collectActorTags } from '../../documents/active-tags.mjs';
 import {
-  collectGearBonuses, collectBuffBonuses, collectStaticDefense, collectDebuffEffects, resolvePersistentDebuffs, collectTagBonusGrants,
-  collectGearSkillBonuses, animalSkillsLockedFor, deriveSkillRanks, deriveSpellRanks, isUnsetScore, resolveBaseScore
+  collectGearBonuses, statBonuses, collectBuffBonuses, collectStaticDefense, collectDebuffEffects, resolvePersistentDebuffs, collectTagBonusGrants,
+  collectGearSkillBonuses, gearGrantKey, animalSkillsLockedFor, deriveSkillRanks, deriveSpellRanks, isUnsetScore, resolveBaseScore, mergeFloored
 } from './actor-derivation.mjs';
-import { getActiveModifierSources } from '../../utils/damage-modifiers.mjs';
-import { buildRollContext } from '../../utils/roll-context.mjs';
-import { collectSenses } from '../../utils/senses.mjs';
-import { resolveStatSubstitution } from '../../utils/narrow-modifiers.mjs';
+import { debuffInForce } from '../../utils/effects/debuff-force.mjs';
+import { flooredScore } from '../../utils/character/transform-rules.mjs';
+import { getActiveModifierSources } from '../../utils/roll/damage-modifiers.mjs';
+import { gearOfflineState, workingGear, offlineGear } from '../../utils/effects/gear-suppression.mjs';
+import { buildRollContext } from '../../utils/roll/roll-context.mjs';
+import { collectSenses } from '../../utils/character/senses.mjs';
+import { resolveStatSubstitution } from '../../utils/roll/narrow-modifiers.mjs';
+import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
+import { overlayContext, applyOverlayToAttributes } from './transform-overlay.mjs';
 
 /**
  * Base TypeDataModel for Sprinter RPG Actor types.
@@ -237,11 +243,19 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
   prepareDerivedBaseStats() {
     const actor = this.actor;
 
-    // 0. Cache active actor tags (explicit + derived + active items)
+    // 0. Is this actor in a zero zone? Read once per prepare; gear and Buff/Debuff readers take it from here.
+    this.gearOffline = gearOfflineState(actor);
+
+    // 0b. Cache active actor tags (explicit + derived + active items)
     this.tagSet = collectActorTags(actor || { system: this, type: this.actor?.type });
     this.allTags = Array.from(this.tagSet);
     // Derived rows (static defense, Health Bar stat) judge `self.*` only: no action, no other party
     const derivedContext = buildRollContext({ actor: actor || { system: this, type: this.actor?.type }, phase: 'derived' });
+
+    // 0c. A transformation overlay swaps the original race's written size and speed for the form's (derived, in memory)
+    const overlayCtx = overlayContext(actor, Array.from(actor?.items ?? []));
+    this.overlayCtx = overlayCtx;
+    applyOverlayToAttributes(this, overlayCtx);
 
     // 1. Normalize size
     if (this.attributes) {
@@ -254,7 +268,13 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
     // 2. Gather items, equipped gear and active buffs
     const items = Array.from(actor?.items ?? []);
     const equippedGear = items.filter(i => i.type === 'gear' && i.system?.equipped);
-    const gear = collectGearBonuses(equippedGear);
+    const percentMode = percentStatMode();
+    // In a zero zone worn gear stops contributing, kind by kind (gear-suppression.mjs)
+    const statGear = workingGear(actor, equippedGear, 'stats');
+    const armorGear = workingGear(actor, equippedGear, 'armor');
+    const rankGear = workingGear(actor, equippedGear, 'ranks');
+    const debuffGear = workingGear(actor, equippedGear, 'persistentDebuffs');
+    const gear = { stats: collectGearBonuses(statGear, percentMode).stats, dr: collectGearBonuses(armorGear, percentMode).dr };
 
     // 3. Resolve active external buffs (up to 3)
     const activeBuffs = actor?.getActiveBuffs ? actor.getActiveBuffs() : [];
@@ -264,6 +284,12 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
     const modifierSources = getActiveModifierSources(actor);
     if (this.attributes) this.attributes.senses = collectSenses(actor, modifierSources);
     const gearDefense = collectStaticDefense(modifierSources.filter(s => s.type === 'gear'), derivedContext);
+    // What the offline gear would have given, for the sheet's readouts
+    const offline = this.gearOffline.active ? {
+      stats: collectGearBonuses(offlineGear(actor, equippedGear, 'stats'), percentMode).stats,
+      armor: collectGearBonuses(offlineGear(actor, equippedGear, 'armor'), percentMode).dr,
+      defense: collectStaticDefense(offlineGear(actor, equippedGear, 'sources'), derivedContext)
+    } : null;
     const otherDefense = collectStaticDefense(modifierSources.filter(s => s.type !== 'gear'), derivedContext);
     const buffTempHp = gearDefense.tempHp + otherDefense.tempHp;
     const resistances = new Set([...gearDefense.resistances, ...otherDefense.resistances]);
@@ -271,10 +297,12 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
 
     // 4. Debuff stat penalties and limb changes: embedded debuff items plus persistent gear debuffs
     const debuffs = collectDebuffEffects([
-      ...items.filter(i => i.type === 'debuff'),
-      ...resolvePersistentDebuffs(items, equippedGear)
+      ...items.filter(i => i.type === 'debuff' && debuffInForce(i, { paused: this.gearOffline.active })), // paused by its switch, or in a zone unless part of a changed body
+      ...resolvePersistentDebuffs(items, debuffGear)
     ]);
+    const flooredStats = mergeFloored(buffs.floored, debuffs.floored);
     const buffStatBonuses = Object.fromEntries(Object.keys(buffs.stats).map(k => [k, buffs.stats[k] + debuffs.stats[k]]));
+    const buffStatPct = Object.fromEntries(Object.keys(buffs.pct).map(k => [k, buffs.pct[k] + debuffs.pct[k]]));
     const gearStatBonuses = gear.stats;
     const gearDR = gear.dr + gearDefense.dr;
     const gearEvade = gearDefense.evade;
@@ -293,18 +321,23 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
         // Race/class stat cap: shown beside the score, and flagged when the base score is above it.
         ability.statCap = statCaps[key] ?? null;
         ability.overCap = ability.statCap !== null && unenhanced > ability.statCap;
-        const flatMod = gearStatBonuses[key]?.flat || 0;
-        const pctMod = gearStatBonuses[key]?.pct || 0;
-        const buffMod = buffStatBonuses[key] || 0;
-
-        // Percentage bonus rounded up (e.g. +10% of 10 = +1)
-        const pctBonus = pctMod !== 0
-          ? (pctMod > 0 ? Math.ceil((unenhanced * pctMod) / 100) : Math.floor((unenhanced * pctMod) / 100))
+        const { gearBonus, buffBonus } = statBonuses(unenhanced, gearStatBonuses[key], buffStatBonuses[key], buffStatPct[key]);
+        ability.gearBonus = gearBonus;
+        // Offline readout: what the worn gear that stopped responding would have added (0 outside a zone)
+        ability.offlineGearBonus = offline
+          ? statBonuses(unenhanced, offline.stats[key], 0, 0).gearBonus
           : 0;
-
-        ability.gearBonus = flatMod + pctBonus;
-        ability.buffBonus = buffMod;
-        ability.value = unenhanced + ability.gearBonus + ability.buffBonus;
+        ability.buffBonus = buffBonus;
+        // Overlay: the form's stat minus what the original race wrote, on top of the stored base
+        ability.transformBonus = overlayCtx?.statDeltas?.[key] ?? 0;
+        ability.value = unenhanced + ability.gearBonus + ability.buffBonus + ability.transformBonus;
+        // A negative row with a minimum (D5) never takes the score below it; fed the inclusive score, as flooredScore wants
+        const floorRow = flooredStats[key];
+        if (floorRow && floorRow.sum < 0) {
+          const floored = flooredScore(ability.value, floorRow.sum, floorRow.floor);
+          ability.buffBonus += floored - ability.value;
+          ability.value = floored;
+        }
         ability.mod = getCOGStatModifier(ability.value);
       }
     }
@@ -320,6 +353,7 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
       if (this.attributes.evade) {
         this.attributes.evade.items = gearEvade;
         this.attributes.evade.gear = gearEvade;
+        this.attributes.evade.offline = offline ? offline.defense.evade : 0;
         this.attributes.evade.fromBuffs = modifierEvade;
         this.attributes.evade.total = dexMod + evadeBuffs + modifierEvade + gearEvade;
       }
@@ -329,8 +363,10 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
         const drBuffs = Number(this.attributes.dr.buffs) || 0;
         this.attributes.dr.items = gearDR;
         this.attributes.dr.gear = gearDR;
+        this.attributes.dr.offline = offline ? offline.armor + offline.defense.dr : 0;
         this.attributes.dr.fromModifiers = modifierDR;
-        this.attributes.dr.total = drArmor + drBuffs + modifierDR + gearDR;
+        this.attributes.dr.fromTransform = overlayCtx?.drDelta ?? 0;
+        this.attributes.dr.total = drArmor + drBuffs + modifierDR + gearDR + this.attributes.dr.fromTransform;
       }
 
       // Lift limit (book): Strength score x 15 lb; a `lift` statSubstitutions row swaps the stat. Shown, never enforced.
@@ -435,7 +471,7 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
       this.attributes.limbs.handsWarning = handsWarning;
     }
 
-    return { items, equippedGear, activeBuffs };
+    return { items, equippedGear, rankGear, activeBuffs };
   }
 
   /**
@@ -443,9 +479,16 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
    * Runs for every actor type that derives base stats; call after `prepareDerivedBaseStats()`.
    * @param {{items: object[], equippedGear: object[], activeBuffs: object[]}} ctx
    */
-  prepareDerivedItemRanks({ items = [], equippedGear = [], activeBuffs = [] } = {}) {
-    const gearSkillBonuses = collectGearSkillBonuses(equippedGear);
-    const tagGrants = collectTagBonusGrants({ equippedGear, activeBuffs, items });
+  prepareDerivedItemRanks({ items = [], equippedGear = [], rankGear = equippedGear, activeBuffs = [] } = {}) {
+    // The form race's fixed skill and spell rows read like gear rows (a skill the engine created for it carries its rank already)
+    const formGear = this.overlayCtx?.skillGear ? [this.overlayCtx.skillGear] : [];
+    const gearSkillBonuses = collectGearSkillBonuses([...rankGear, ...formGear]);
+    for (const item of items) {
+      if (!formGear.length || !transformationOfItem(item) || !['skill', 'spell'].includes(item.type)) continue;
+      const id = item.system?.identifier;
+      if (id) gearSkillBonuses.delete(gearGrantKey(item.type, id));
+    }
+    const tagGrants = collectTagBonusGrants({ equippedGear: rankGear, activeBuffs, items });
     const opts = { abilities: this.abilities, gearSkillBonuses, tagGrants };
     deriveSkillRanks(items.filter(i => i.type === 'skill'), { ...opts, animalSkillsLocked: animalSkillsLockedFor(this.tagSet, items) });
     deriveSpellRanks(items.filter(i => i.type === 'spell'), opts);

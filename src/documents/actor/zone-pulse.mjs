@@ -13,10 +13,10 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { isActiveGM } from '../../utils/gm-relay.mjs';
-import { combatText } from '../../utils/combat-round-text.mjs';
-import { findAreaRegions, tokensInRegion } from '../../utils/region-shapes.mjs';
-import { isMarkerActor } from '../../utils/marker.mjs';
-import { positionAfterMovement } from '../../utils/movement-position.mjs';
+import { combatText } from '../../utils/combat/combat-round-text.mjs';
+import { findAreaRegions, tokensInRegion } from '../../utils/area/region-shapes.mjs';
+import { isMarkerActor } from '../../utils/area/marker.mjs';
+import { positionAfterMovement } from '../../utils/combat/movement-position.mjs';
 import { pulseRows } from '../combat-aura-pulse.mjs';
 import { applyAuraPulse, auraSideOf, markAppliedRound, normalizeAuraFilter, withAuraLock } from './aura-pulse.mjs';
 import { findAuraEffects, removeAuraItems } from './aura-relay.mjs';
@@ -117,7 +117,7 @@ export async function onZoneTokenMove(tokenDoc, movement = null) {
 }
 
 /** Delete a zone's group (core and splash): directly when owner or GM, else through `areaDeleteRegions`. */
-export function endAreaGroup(scene, groupId) {
+function endAreaGroup(scene, groupId) {
   return deleteAreaGroup(scene, groupId);
 }
 
@@ -128,7 +128,7 @@ export function endAreaGroup(scene, groupId) {
  * @returns {Promise<object|null>} a ZonePulseReport `{ groupId, regionUuid, itemName, itemSystem, casterName, pulse,
  *   conditions, removed, expired }`, or null when the zone was skipped
  */
-export async function pulseZone(region, { combat, round = combat?.round } = {}) {
+async function pulseZone(region, { combat, round = combat?.round } = {}) {
   const flags = areaFlags(region);
   if (!flags || flags.kind !== 'zone' || flags.role !== 'core' || !combat) return null;
   const scene = region.parent;

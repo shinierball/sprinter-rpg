@@ -17,6 +17,7 @@
         <div class="cog-field-group flex-2">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="cog-field-label">Name</span>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=sourceBadge text=true}}
             {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
           </div>
           <input class="cog-field-input" name="name" type="text" value="{{actor.name}}" placeholder="Mob Name" />
@@ -42,6 +43,7 @@
             {{/each}}
           </select>
         </div>
+        {{> "systems/sprinter-rpg/templates/actors/parts/sex-select.hbs"}}
       </div>
 
       <div class="cog-field-row">
@@ -69,15 +71,7 @@
         {{> "systems/sprinter-rpg/templates/actors/parts/identity-pet.hbs"}}
       {{else if isMercenary}}
         {{> "systems/sprinter-rpg/templates/actors/parts/identity-mercenary.hbs"}}
-      {{else if isVehicle}}
-        {{> "systems/sprinter-rpg/templates/actors/parts/identity-vehicle.hbs"}}
       {{else}}
-      {{#if canResumeFloorSim}}
-      <div class="cog-field-row cog-fsim-resume-row">
-        <button type="button" class="cog-fsim-btn primary" data-action="resumeFloorSim"><i class="fa-solid fa-stairs"></i> {{localize 'COG.FloorSim.Resume'}}</button>
-        <span class="cog-rule-hint">{{localize 'COG.FloorSim.ResumeHint'}}</span>
-      </div>
-      {{/if}}
       <div class="cog-field-row">
         <div class="cog-field-group flex-2">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -85,6 +79,7 @@
             {{#if trophyBadges.hasBadges}}
               {{{trophyBadges.html}}}
             {{/if}}
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=sourceBadge text=true}}
             {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
           </div>
           <input class="cog-field-input" name="name" type="text" value="{{actor.name}}" placeholder="Crawler Name" />
@@ -113,6 +108,7 @@
           </select>
           {{#if raceClassHint}}<span class="cog-rule-hint cog-race-class-hint"><i class="fa-solid fa-circle-info"></i> {{raceClassHint}}</span>{{/if}}
         </div>
+        {{> "systems/sprinter-rpg/templates/actors/parts/sex-select.hbs"}}
         <div class="cog-field-group flex-1">
           <span class="cog-field-label">Gender/Pronouns</span>
           <input class="cog-field-input" name="system.details.gender" type="text" value="{{system.details.gender}}" placeholder="Gender/Pronouns" />
@@ -278,7 +274,7 @@
         <div class="cog-attribute-title">Strength{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="str" data-tooltip="Spend a pending Stat point on Strength"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
         <div class="cog-attribute-values">
           <div class="cog-stat-box">
-            <input class="cog-stat-input" name="system.abilities.str.value" type="number" value="{{system.abilities.str.value}}" readonly title="Enhanced: {{system.abilities.str.unenhanced}} base{{#if system.abilities.str.gearBonus}} ({{#if (gt system.abilities.str.gearBonus 0)}}+{{/if}}{{system.abilities.str.gearBonus}} gear){{/if}}" />
+            <input class="cog-stat-input" name="system.abilities.str.value" type="number" value="{{system.abilities.str.value}}" readonly title="{{offlineReadouts.stats.str}}" />
             <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
           </div>
           <span class="cog-stat-slash">/</span>
@@ -299,7 +295,7 @@
         <div class="cog-attribute-title">Intelligence{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="int" data-tooltip="Spend a pending Stat point on Intelligence"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
         <div class="cog-attribute-values">
           <div class="cog-stat-box">
-            <input class="cog-stat-input" name="system.abilities.int.value" type="number" value="{{system.abilities.int.value}}" readonly title="Enhanced: {{system.abilities.int.unenhanced}} base{{#if system.abilities.int.gearBonus}} ({{#if (gt system.abilities.int.gearBonus 0)}}+{{/if}}{{system.abilities.int.gearBonus}} gear){{/if}}" />
+            <input class="cog-stat-input" name="system.abilities.int.value" type="number" value="{{system.abilities.int.value}}" readonly title="{{offlineReadouts.stats.int}}" />
             <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
           </div>
           <span class="cog-stat-slash">/</span>
@@ -320,7 +316,7 @@
         <div class="cog-attribute-title">Constitution{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="con" data-tooltip="Spend a pending Stat point on Constitution"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
         <div class="cog-attribute-values">
           <div class="cog-stat-box">
-            <input class="cog-stat-input" name="system.abilities.con.value" type="number" value="{{system.abilities.con.value}}" readonly title="Enhanced: {{system.abilities.con.unenhanced}} base{{#if system.abilities.con.gearBonus}} ({{#if (gt system.abilities.con.gearBonus 0)}}+{{/if}}{{system.abilities.con.gearBonus}} gear){{/if}}" />
+            <input class="cog-stat-input" name="system.abilities.con.value" type="number" value="{{system.abilities.con.value}}" readonly title="{{offlineReadouts.stats.con}}" />
             <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
           </div>
           <span class="cog-stat-slash">/</span>
@@ -341,7 +337,7 @@
         <div class="cog-attribute-title">Dexterity{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="dex" data-tooltip="Spend a pending Stat point on Dexterity"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
         <div class="cog-attribute-values">
           <div class="cog-stat-box">
-            <input class="cog-stat-input" name="system.abilities.dex.value" type="number" value="{{system.abilities.dex.value}}" readonly title="Enhanced: {{system.abilities.dex.unenhanced}} base{{#if system.abilities.dex.gearBonus}} ({{#if (gt system.abilities.dex.gearBonus 0)}}+{{/if}}{{system.abilities.dex.gearBonus}} gear){{/if}}" />
+            <input class="cog-stat-input" name="system.abilities.dex.value" type="number" value="{{system.abilities.dex.value}}" readonly title="{{offlineReadouts.stats.dex}}" />
             <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
           </div>
           <span class="cog-stat-slash">/</span>
@@ -362,7 +358,7 @@
         <div class="cog-attribute-title">Charisma{{#if system.details.pendingStatPoints}} <a class="cog-stat-spend" data-action="spendStatPoint" data-stat="cha" data-tooltip="Spend a pending Stat point on Charisma"><i class="fa-solid fa-circle-plus"></i></a>{{/if}}</div>
         <div class="cog-attribute-values">
           <div class="cog-stat-box">
-            <input class="cog-stat-input" name="system.abilities.cha.value" type="number" value="{{system.abilities.cha.value}}" readonly title="Enhanced: {{system.abilities.cha.unenhanced}} base{{#if system.abilities.cha.gearBonus}} ({{#if (gt system.abilities.cha.gearBonus 0)}}+{{/if}}{{system.abilities.cha.gearBonus}} gear){{/if}}" />
+            <input class="cog-stat-input" name="system.abilities.cha.value" type="number" value="{{system.abilities.cha.value}}" readonly title="{{offlineReadouts.stats.cha}}" />
             <span class="cog-stat-sublabel cog-stat-enhanced-label">Enhanced</span>
           </div>
           <span class="cog-stat-slash">/</span>
@@ -395,7 +391,7 @@
           </div>
           <span class="cog-formula-operator">+</span>
           <div class="cog-formula-item">
-            <input class="cog-box-input small" type="number" value="{{system.attributes.evade.items}}" readonly title="Items / Equipped Gear Bonus" />
+            <input class="cog-box-input small" type="number" value="{{system.attributes.evade.items}}" readonly title="{{offlineReadouts.evadeItems}}" />
             <span class="cog-stat-sublabel">Items</span>
           </div>
           <span class="cog-formula-operator">+</span>
@@ -421,7 +417,7 @@
           </div>
           <span class="cog-formula-operator">+</span>
           <div class="cog-formula-item">
-            <input class="cog-box-input small" type="number" value="{{system.attributes.dr.items}}" readonly title="Items / Equipped Gear DR Bonus" />
+            <input class="cog-box-input small" type="number" value="{{system.attributes.dr.items}}" readonly title="{{offlineReadouts.drItems}}" />
             <span class="cog-stat-sublabel">Items</span>
           </div>
           <span class="cog-formula-operator">+</span>
@@ -817,7 +813,7 @@
             <td>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img class="cog-bg-icon-box" src="{{spell.img}}" width="20" height="20" style="border: none; border-radius: 2px;" />
-                <a class="roll-spell cog-text-info" data-action="rollSpell" data-tooltip="Cast {{spell.name}}{{#if spell.summaryTip}}<br>{{spell.summaryTip}}{{/if}}" style="font-weight: bold; cursor: pointer;">{{spell.name}}</a>
+                <a class="roll-spell cog-text-info" data-action="rollSpell" data-tooltip="Cast {{spell.name}}{{#if spell.summaryTip}}<br>{{spell.summaryTip}}{{/if}}" style="font-weight: bold; cursor: pointer;">{{spell.name}}</a> {{#if spell.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{spell.offlineTip}}">[OFFLINE]</span>{{/if}}
               </div>
             </td>
             <td>

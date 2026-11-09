@@ -1,0 +1,13 @@
+{{!-- The banner at the top of the Conditions tab: one line for each affliction that has changed its victim. Context: `transformations` from src/sheets/crawler/context-transformation.mjs. --}}
+{{#if transformations.length}}
+<div class="cog-stat-block cog-transformation-banner" style="margin-bottom: 12px;">
+  <div class="cog-banner-header cog-bg-accent-strong-fill" style="font-size: 11px; padding: 3px 6px;">
+    <i class="fa-solid fa-masks-theater"></i> <span>{{localize "COG.Transform.Banner"}}</span>
+  </div>
+  <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
+    {{#each transformations as |t|}}
+      <div class="cog-transformation-banner-line" data-affliction-id="{{t.id}}" style="font-size: 12px;">{{t.banner}}</div>
+    {{/each}}
+  </div>
+</div>
+{{/if}}

@@ -11,12 +11,12 @@
  * Inputs are named `<rowPath>.<field>`; the query and the options list are action delegates (no `name`) that find their
  * row from `data-grant-path` / `data-grant-index`. Every control carries `data-row-field="<field>"`.
  */
-import { GRANT_KINDS, grantRowErrors } from '../../models/items/base-item-model.mjs';
-import { CHOICE_CATEGORY_QUERIES } from '../../data/race-class-applier.mjs';
-import { normalizeTiming } from '../../utils/timing.mjs';
-import { groupedTagOptions } from '../../utils/point-build-params.mjs';
-import { identifierOptions } from './identifier-options.mjs';
-import { ABILITIES, pickOptions, statOptions } from './options.mjs';
+import { GRANT_KINDS, grantRowErrors } from '../../models/items/grant-validation.mjs';
+import { CHOICE_CATEGORY_QUERIES } from '../../data/race-class-choices.mjs';
+import { normalizeTiming } from '../../utils/time/timing.mjs';
+import { groupedTagOptions } from '../../utils/character/point-build-params.mjs';
+import { identifierOptions, pickedBadge } from '../../utils/ui/identifier-options.mjs';
+import { ABILITIES, pickOptions, statOptions } from '../../utils/ui/field-options.mjs';
 import { buildPickList } from './context-pick-list.mjs';
 import { buildQueryView } from './context-query.mjs';
 import { queryBucketsAt } from './util.mjs';
@@ -34,15 +34,6 @@ export const GRANT_ROW_FIELDS = Object.freeze({
   'rank_cap:choice':  Object.freeze(['value', 'query', 'options', 'category', 'label'])
 });
 
-/** The two selects every row starts with. */
-export const GRANT_ROW_HEADER = Object.freeze(['kind', 'mode']);
-
-/** Schema fields of a grant row that have no control, with the reason. */
-export const GRANT_ROW_OMITTED = Object.freeze({
-  uuid: 'A drop or script sets it; a typed uuid is not a control anyone would use.',
-  cooldown: 'No example uses it; a row that has one keeps it.'
-});
-
 const ALL_BUCKETS = Object.freeze(['all', 'any', 'none']);
 const NUMBER_FIELDS = Object.freeze({
   value: { step: 'any' },
@@ -55,12 +46,12 @@ const CHECKBOX_FIELDS = Object.freeze(['distinct', 'onlyIfOwned']);
 const loc = (key, data) => globalThis.game?.i18n?.localize?.(key, data) ?? key;
 
 /** The modes a kind has in the table, `fixed` first. */
-export function grantModesOf(kind) {
+function grantModesOf(kind) {
   return Object.keys(GRANT_ROW_FIELDS).filter((key) => key.startsWith(`${kind}:`)).map((key) => key.slice(kind.length + 1));
 }
 
 /** The mode a row of `kind` really has: its own when the table shows it, else the kind's first (`fixed`). */
-export function grantModeFor(kind, mode) {
+function grantModeFor(kind, mode) {
   const modes = grantModesOf(kind);
   return modes.includes(mode) ? mode : (modes[0] ?? 'fixed');
 }
@@ -176,7 +167,8 @@ function fieldView(field, row, key, rowPath, ctx) {
   }
   if (field === 'identifier') {
     const source = kind === 'spell' ? (ctx.spells ?? 'spell') : (ctx.skills ?? 'skill');
-    return { ...base, isSelect: true, options: identifierOptions(source, row.identifier, { blankLabel: loc('COG.Rows.Grant.ChooseOne') }) };
+    const options = identifierOptions(source, row.identifier, { blankLabel: loc('COG.Rows.Grant.ChooseOne') });
+    return { ...base, isSelect: true, options, badge: pickedBadge(options) };
   }
   if (field === 'category') {
     const options = pickOptions(Object.keys(CHOICE_CATEGORY_QUERIES), row.category, { blankLabel: loc('COG.Rows.Grant.NoCategory') });

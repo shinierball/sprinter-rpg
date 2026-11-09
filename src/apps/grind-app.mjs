@@ -16,13 +16,13 @@ import { COGActor } from '../documents/actor.mjs';
 import { activeComplicationTable, isExampleComplicationTable, complicationFormula } from '../content/grind-complications.mjs';
 import { GRIND_MAP_TAGS, getRequiredGrindingHours, getAdvancementTarget, getSafeGrindingThreshold } from '../data/rules/grinding-rules.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
-import { getItemAllTags } from '../data/tags.mjs';
-import { getCurrentFloor } from '../utils/current-floor.mjs';
+import { getItemAllTags } from '../documents/active-tags.mjs';
+import { getCurrentFloor } from '../utils/floor/current-floor.mjs';
 import { parseFloorNumber } from '../documents/actor/actor-environment.mjs';
 import { buildAdvancementControls, runAdvancementControl } from './advancement-batch.mjs';
 import { openAwardLevels } from './award-levels-app.mjs';
-import { ruleSkillRank } from '../utils/rule-skills.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../utils/tag-behaviour.mjs';
+import { ruleSkillRank } from '../utils/skill/rule-skills.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../utils/tag/tag-behaviour.mjs';
 
 
 const TPL = `${SYSTEM_PATH}/templates/apps/grind-app`;

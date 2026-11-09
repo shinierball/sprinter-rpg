@@ -7,12 +7,16 @@
  *   { _id?, name, key (flags.sprinter-rpg.tableKey), tableNumber?, formula? ('1d6'), description?, img?, folder?,
  *     rows: [{ range: [lo, hi] | roll: n, name?: string, narrative?: string, options?: Option[], tableRef?: uuid, flags?: { <name>: boolean|number } }] }
  * Option (the `flags.sprinter-rpg.option` of one result; the human-readable `label`/`name` fills the result's name):
- *   { kind: 'named', docKind: 'skill'|'spell', uuid?, identifier, name }   a document result (documentUuid); without a uuid it is
- *     a text result that resolves by identifier through the catalogs (a book document the system does not ship)
+ *   { kind: 'named', docKind: 'skill'|'spell'|<an item type: 'gear', 'loot', ...>, uuid?, identifier, name }   a document result
+ *     (documentUuid); without a uuid it is a text result that resolves by identifier through the catalogs (a book document the
+ *     system does not ship)
  *   { kind: 'choice', docKind, query, label } | { kind: 'custom', label }
  *   { kind: 'lootSlot', slot, tier, spellsAllowed, label? }
  *   { kind: 'asTrigger', trigger, nameAddition, extraTags, label? }
  *   { kind: 'spell', identifier, uuid?, name? }
+ *   { kind: 'gold', formula, label? }                      loot box prize: gold, an integer or a Roll formula (7.3)
+ *   { kind: 'magicBase', base, label? }                    magic item generator: on an item type row, a `magicItemBases` id (7.3)
+ *   { kind: 'magic', property, damageTypes?, label? }      magic item generator: on a property row, a `magicProperties` kind id (7.3)
  * Every result of a row shares that row's range, so Foundry's own multi-result draw returns the whole row.
  * Written in the v14 TableResult shape: `type`, `name`, `description`, `documentUuid`, `range`, `weight`, `flags`.
  */
@@ -21,7 +25,7 @@ import { SYSTEM_ID } from '../../constants.mjs';
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 /** Option kinds the builder knows. Anything else is kept as a custom option with a warning. */
-export const FLOOR_OPTION_KINDS = Object.freeze(['named', 'choice', 'custom', 'lootSlot', 'asTrigger', 'spell', 'tableRef']);
+export const FLOOR_OPTION_KINDS = Object.freeze(['named', 'choice', 'custom', 'lootSlot', 'asTrigger', 'spell', 'tableRef', 'gold', 'magicBase', 'magic']);
 
 /** Text value: first array entry, trimmed (commas are kept: names may contain them). */
 function text(raw) {
@@ -66,12 +70,15 @@ function optionResult(option, range, types, warn, path) {
   const uuid = text(opt.uuid ?? opt.documentUuid);
   delete opt.uuid;
   delete opt.documentUuid;
-  const label = text(opt.label ?? opt.name ?? opt.identifier ?? opt.slot);
+  const label = text(opt.label ?? opt.name ?? opt.identifier ?? opt.slot ?? opt.formula ?? opt.base ?? opt.property);
   const documentBacked = (opt.kind === 'named' || opt.kind === 'spell' || opt.kind === 'tableRef') && Boolean(uuid);
   // A named or spell option with an identifier and no uuid resolves by identifier through the catalogs: valid, no warning.
   const byIdentifier = (opt.kind === 'named' || opt.kind === 'spell') && Boolean(text(opt.identifier));
   if ((opt.kind === 'named' || opt.kind === 'tableRef') && !uuid && !byIdentifier) warn(path, `${opt.kind} option has no uuid; written as a text result`);
   if (opt.kind === 'named' && !text(opt.identifier) && !uuid) warn(path, 'named option has neither identifier nor uuid');
+  if (opt.kind === 'gold' && !text(opt.formula)) warn(path, 'gold option has no formula');
+  if (opt.kind === 'magicBase' && !text(opt.base)) warn(path, 'magicBase option has no base id');
+  if (opt.kind === 'magic' && !text(opt.property)) warn(path, 'magic option has no property kind');
   return {
     type: documentBacked ? types.document : types.text,
     name: label,

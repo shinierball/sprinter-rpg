@@ -21,28 +21,36 @@ import { COG_ACHIEVEMENTS } from './achievements.mjs';
 // Registers the race and class delegates (the point-buy compiler is pure, no Foundry globals).
 import '../../data/builders/point-buy-payload.mjs';
 import { FLOOR_TABLE_SPECS } from './floor-tables/index.mjs';
+import { stampSpec, BUNDLED_SET_ID } from '../../utils/content-source.mjs';
+import { BUNDLED_AUTHORSHIP, authorshipFor } from './authorship.mjs';
+import { exampleCrawlerBuildOptions } from './examples/crawler-build.mjs';
 import { EXAMPLE_ITEM_SPECS, EXAMPLE_ACTOR_SPECS, EXAMPLE_TABLE_SPECS, examplePackSets } from './examples/index.mjs';
 
-/** Datasets whose entries carry no `type` of their own. */
-const typed = (type, list) => list.map(entry => ({ type, ...entry }));
+/** The source stamp of the bundled cog documents (7.7c; the 7.16 authorship is added per document); the floor tables are theme `all` and get none. */
+const BUNDLED_STAMP = Object.freeze({ theme: 'cog', set: BUNDLED_SET_ID });
+
+/** Datasets whose entries carry no `type` of their own; each carries the bundled source stamp. */
+const bundledStamp = entry => ({ ...BUNDLED_STAMP, authorship: authorshipFor(entry._id, BUNDLED_AUTHORSHIP) });
+const typed = (type, list) => list.map(entry => stampSpec({ type, ...entry }, bundledStamp(entry)));
+const bundled = list => list.map(entry => stampSpec(entry, bundledStamp(entry)));
 
 export const PACK_SPECS = Object.freeze([
   { pack: 'skills', documentName: 'Item', delegate: false, specs: typed('skill', COG_SKILLS) },
   { pack: 'spells', documentName: 'Item', delegate: false, specs: typed('spell', COG_SPELLS) },
   { pack: 'buffs', documentName: 'Item', delegate: false, specs: [...typed('buff', COG_BUFFS), ...typed('debuff', COG_DEBUFFS)] },
-  { pack: 'items', documentName: 'Item', delegate: false, specs: COG_ITEMS },
+  { pack: 'items', documentName: 'Item', delegate: false, specs: bundled(COG_ITEMS) },
   { pack: 'races', documentName: 'Item', specs: typed('race', COG_RACES) },
   { pack: 'classes', documentName: 'Item', specs: typed('class', COG_CLASSES) },
   { pack: 'mobs', documentName: 'Actor', delegate: false, specs: typed('mob', COG_MOBS) },
   { pack: 'pets', documentName: 'Actor', delegate: false, specs: typed('pet', COG_PETS) },
   { pack: 'mercenaries', documentName: 'Actor', delegate: false, specs: typed('mercenary', COG_MERCENARIES) },
   // Built by build:packs but not declared in system.json: the manager reads the registry catalog.
-  { pack: 'achievements', documentName: 'Item', delegate: false, specs: COG_ACHIEVEMENTS },
+  { pack: 'achievements', documentName: 'Item', delegate: false, specs: bundled(COG_ACHIEVEMENTS) },
   { pack: 'floor-tables', documentName: 'RollTable', specs: FLOOR_TABLE_SPECS },
   // The example sets (declared in system.json in the "Example Content" pack folder).
   // `sets`: build:packs writes one compendium folder per set and files the set's documents in it.
   { pack: 'examples-items', documentName: 'Item', specs: EXAMPLE_ITEM_SPECS, sets: examplePackSets('examples-items') },
-  { pack: 'examples-actors', documentName: 'Actor', specs: EXAMPLE_ACTOR_SPECS, sets: examplePackSets('examples-actors') },
+  { pack: 'examples-actors', documentName: 'Actor', specs: EXAMPLE_ACTOR_SPECS, buildOptions: exampleCrawlerBuildOptions, sets: examplePackSets('examples-actors') },
   { pack: 'examples-tables', documentName: 'RollTable', specs: EXAMPLE_TABLE_SPECS, sets: examplePackSets('examples-tables') }
 ]);
 

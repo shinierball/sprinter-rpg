@@ -1,7 +1,7 @@
 /**
  * Combat hooks. The combat tracker itself is the COGCombatTracker sidebar app (src/apps/combat-tracker.mjs).
  */
-import { isMarkerActor } from '../utils/marker.mjs';
+import { isMarkerActor } from '../utils/area/marker.mjs';
 
 /** A light marker is not a creature: it never joins a combat (returning false cancels the create). */
 export function onPreCreateCombatant(combatant) {

@@ -3,7 +3,8 @@
  * Every handler runs with `this` bound to the sheet. Shift-click rolls the last pick without the Attack Options pop-up.
  */
 import { rowItemId, rowItem } from './dom.mjs';
-import { skipOptions } from '../../utils/attack-options.mjs';
+import { skipOptions } from '../../utils/attack/attack-options.mjs';
+import { setItemEquipped } from '../../documents/item/enchantments.mjs';
 
 /** An owned item, or a synthesized skill attack (its `item` when it wraps one). */
 function attackFor(sheet, target) {
@@ -46,7 +47,7 @@ export const combatActions = {
   async toggleAttackEquipped(event, target) {
     if (!this.isEditable) return;
     const item = rowItem(this, target);
-    if (item) await item.update({ 'system.equipped': item.system?.equipped === false });
+    if (item) await setItemEquipped(item, item.system?.equipped === false);
   },
 
   /** View-only: show or hide the stowed attacks table and scroll back to the attacks section. */

@@ -1,9 +1,10 @@
 /**
  * src/content/specs/examples/creation-loadouts.mjs
  * The original example starter loadouts: one spell, one unarmed
- * package and one potion, each embedding its own payload spec as `fallback`. The reader (src/content/creation-loadouts.mjs)
+ * package and one potion. The spell and unarmed entries embed their payload spec as `fallback`; the potion names a Base Set loot document by `itemRef`. The reader (src/content/creation-loadouts.mjs)
  * offers them for a slot only when no provider registered an entry for that slot (answer 120 (a)). They are not catalog
- * documents, are not in `EXAMPLE_ITEM_SPECS`, and are never registered.
+ * documents and are not in `EXAMPLE_ITEM_SPECS`. The shiny provider (src/content/shiny-content-provider.mjs) registers them
+ * as the `creationLoadouts` of the `shiny` theme; the reader's fallback stays for an empty registry.
  */
 import { BACKSTAGE_BRAWLING, MIC_DROP } from './items/base-skills.mjs';
 import { PYROTECHNIC_CUE } from './items/base-set.mjs';
@@ -33,16 +34,7 @@ export const EXAMPLE_CREATION_LOADOUTS = Object.freeze([
     id: 'example.mana-spritzer',
     slot: 'potion',
     name: 'Green Room Mana Spritzer',
-    itemRef: 'green-room-mana-spritzer',
-    fallback: {
-      name: 'Green Room Mana Spritzer',
-      img: 'icons/svg/pill.svg',
-      system: {
-        identifier: 'green-room-mana-spritzer', quantity: 1, lootType: 'consumable', executionMode: 'all',
-        outcomes: [{ name: 'Refill Mana', type: 'restore_resource', resource: 'mana', mode: 'full', targetType: 'self' }],
-        tags: ['kind.loot', 'action.restore', 'resource.mana'],
-        description: '<p>Complimentary, lukewarm, and somehow it refills your mana completely.</p>'
-      }
-    }
+    // A real Base Set loot document (items/base-set.mjs), copied from the catalog so it carries its source stamp.
+    itemRef: 'green-room-mana-spritzer'
   }
 ]);

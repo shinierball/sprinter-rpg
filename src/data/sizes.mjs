@@ -8,6 +8,7 @@
  * Blank is not an id. A race stores `''` for "no size change"; every reader of a race's size sanitizes it and tests for
  * `''` before any lookup, because `getSizeInfo('')` is the Medium fallback.
  */
+import { firstScalar } from '../utils/first-scalar.mjs';
 
 export const DEFAULT_SIZE = 'medium';
 
@@ -19,18 +20,18 @@ export const CREATURE_SIZES = {};
 
 /** The medium entry as a frozen copy, so a module that removes `medium` cannot break the fallback. */
 export const FALLBACK_SIZE = Object.freeze({
-  id: DEFAULT_SIZE, size: 4, label: 'COG.Size.medium', token: 1, raceCost: 0, racePill: true
+  id: DEFAULT_SIZE, size: 4, label: 'COG.Size.medium', token: 1, raceCost: 0, racePill: true, junk: 32
 });
 
 const SEEDED_SIZES = [
-  { id: 'tiny', size: 1, label: 'COG.Size.tiny', token: 1, raceCost: 3 },
-  { id: 'small', size: 2, label: 'COG.Size.small', token: 1, raceCost: 3 },
-  { id: 'petite', size: 3, label: 'COG.Size.petite', token: 1, raceCost: 0 },
-  { id: 'medium', size: 4, label: 'COG.Size.medium', token: 1, raceCost: 0 },
-  { id: 'large', size: 5, label: 'COG.Size.large', token: 2, raceCost: 3 },
-  { id: 'huge', size: 6, label: 'COG.Size.huge', token: 3, raceCost: 3 },
-  { id: 'colossal', size: 7, label: 'COG.Size.colossal', token: 3, raceCost: 3, racePill: false },
-  { id: 'gargantuan', size: 8, label: 'COG.Size.gargantuan', token: 3, raceCost: 3, racePill: false }
+  { id: 'tiny', size: 1, label: 'COG.Size.tiny', token: 1, raceCost: 3, junk: 1 },
+  { id: 'small', size: 2, label: 'COG.Size.small', token: 1, raceCost: 3, junk: 4 },
+  { id: 'petite', size: 3, label: 'COG.Size.petite', token: 1, raceCost: 0, junk: 16 },
+  { id: 'medium', size: 4, label: 'COG.Size.medium', token: 1, raceCost: 0, junk: 32 },
+  { id: 'large', size: 5, label: 'COG.Size.large', token: 2, raceCost: 3, junk: 64 },
+  { id: 'huge', size: 6, label: 'COG.Size.huge', token: 3, raceCost: 3, junk: 128 },
+  { id: 'colossal', size: 7, label: 'COG.Size.colossal', token: 3, raceCost: 3, junk: 256, racePill: false },
+  { id: 'gargantuan', size: 8, label: 'COG.Size.gargantuan', token: 3, raceCost: 3, junk: 512, racePill: false }
 ];
 
 /** The registry in use: the one on `CONFIG.COG.sizes` when set, else the module's own. */
@@ -46,6 +47,7 @@ export function sizeDefProblem(def) {
   if (typeof def.label !== 'string' || !def.label.trim()) return 'a label is required';
   if (def.token !== undefined && !(Number(def.token) >= 1)) return 'token must be 1 or more';
   if (def.raceCost !== undefined && !Number.isFinite(Number(def.raceCost))) return 'raceCost must be a number';
+  if (def.junk !== undefined && !(Number.isFinite(Number(def.junk)) && Number(def.junk) >= 0)) return 'junk must be a number, 0 or more';
   return '';
 }
 
@@ -57,13 +59,15 @@ export function normalizeSizeDef(def) {
     label: def.label.trim(),
     token: def.token === undefined ? 1 : Math.floor(Number(def.token)),
     raceCost: def.raceCost === undefined ? 0 : Number(def.raceCost),
-    racePill: def.racePill !== false
+    racePill: def.racePill !== false,
+    // Misc. Junk a plain item of this size costs to craft (Table 43); absent on a module size that sets none (crafting then charges size squared).
+    ...(def.junk === undefined ? {} : { junk: Math.floor(Number(def.junk)) })
   };
 }
 
 /**
  * Register (or replace) a size. A bad definition, or a number another id already has, is refused with a warning.
- * @param {{ id: string, size: number, label: string, token?: number, raceCost?: number, racePill?: boolean }} def
+ * @param {{ id: string, size: number, label: string, token?: number, raceCost?: number, racePill?: boolean, junk?: number }} def
  * @returns {boolean} whether the size was registered
  */
 export function registerSize(def) {
@@ -96,9 +100,7 @@ export function sizesInOrder() {
  * @returns {string}
  */
 export function sanitizeSizeId(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0].trim();
+  const val = firstScalar(raw);
   const text = String(val).trim().toLowerCase();
   if (text === '') return '';
   if (/^\d+(\.\d+)?$/.test(text)) {

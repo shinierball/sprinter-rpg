@@ -6,17 +6,19 @@
  */
 import { buildPayload } from '../../data/builders/item-payload.mjs';
 import {
-  FALLBACK_USED_FORM, LIGHT_USED_FORM, USED_FORM_BY_LOOT_TYPE, getUsedForm
+  FALLBACK_USED_FORM, LIGHT_USED_FORM, USED_FORM_BY_LOOT_TYPE, USED_FORM_NONE, getUsedForm
 } from '../../data/rules/used-forms.mjs';
+import { firstScalar } from '../../utils/first-scalar.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
-import { isRestorableUsage, JUNK_TAGS } from '../../utils/tag-mechanics.mjs';
+import { isRestorableUsage, JUNK_TAGS } from '../../utils/tag/tag-mechanics.mjs';
 
 /** The identifier prefix of every piece of used-form junk. */
-export const USED_IDENTIFIER_PREFIX = 'used-';
+const USED_IDENTIFIER_PREFIX = 'used-';
 
 /**
  * The used-form id an item leaves: its own `usedInto` when that is registered, else the default for its loot type, else
- * `burnt-torch` for a light source, else `spent-item`. An unknown id falls through with no error.
+ * `burnt-torch` for a light source, else `spent-item`. An unknown id falls through with no error. `usedInto: 'none'` returns
+ * `none`, which leaves nothing (`usedFormPayloadById` has no such form).
  * @param {object} item an Item document or `{ type, system }`
  * @param {{ ignoreOwn?: boolean, light?: boolean }} [params] `ignoreOwn` skips the item's own `usedInto` (the sheet names the
  *   default it would fall to); `light` says the item is a light source (the caller asks `emitsLight`, which this module cannot import)
@@ -24,6 +26,7 @@ export const USED_IDENTIFIER_PREFIX = 'used-';
  */
 export function resolveUsedFormId(item, { ignoreOwn = false, light = false } = {}) {
   const sys = item?.system ?? {};
+  if (!ignoreOwn && String(firstScalar(sys.usedInto)).trim().toLowerCase() === USED_FORM_NONE) return USED_FORM_NONE;
   const own = ignoreOwn ? null : getUsedForm(sys.usedInto);
   if (own) return own.id;
   const byType = USED_FORM_BY_LOOT_TYPE[String(sys.lootType ?? '').toLowerCase().trim()];
@@ -50,7 +53,7 @@ function originOf(item) {
  * @param {{ identifier: string, name: string, spellIdentifier: string }|null} [origin] set only for a restorable item
  * @returns {object|null} the payload, or null when the registry has no such form
  */
-export function usedFormPayloadById(formId, origin = null) {
+function usedFormPayloadById(formId, origin = null) {
   const form = getUsedForm(formId);
   if (!form) return null;
   const identifier = [form.id, origin?.identifier, origin?.spellIdentifier].filter(Boolean).join('-');
@@ -79,7 +82,7 @@ export function usedFormPayloadById(formId, origin = null) {
  * @param {{ light?: boolean }} [params] see {@link resolveUsedFormId}
  * @returns {object|null}
  */
-export function usedFormPayload(item, { light = false } = {}) {
+function usedFormPayload(item, { light = false } = {}) {
   return usedFormPayloadById(resolveUsedFormId(item, { light }), isRestorableUsage(item) ? originOf(item) : null);
 }
 
@@ -111,7 +114,7 @@ async function leavePayload(actor, payload) {
  * @param {{ light?: boolean }} [params] see {@link resolveUsedFormId}
  * @returns {Promise<object|null>} the junk item, or null
  */
-export function leaveUsedForm(actor, item, params = {}) {
+function leaveUsedForm(actor, item, params = {}) {
   return leavePayload(actor, usedFormPayload(item, params));
 }
 

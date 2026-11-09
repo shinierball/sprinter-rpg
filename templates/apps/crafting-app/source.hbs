@@ -1,0 +1,29 @@
+<div class="cog-crafting-source">
+  <div class="cog-crafting-row">
+    <label class="cog-crafting-field flex-1">
+      <span class="cog-field-label">{{localize "COG.CraftApp.Blueprint"}}</span>
+      <select class="cog-field-input cog-crafting-blueprint" data-change-action="setBlueprint">
+        {{#each blueprintOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+      </select>
+    </label>
+    {{#if hasBlueprint}}
+      <button type="button" class="cog-crafting-btn" data-action="openBlueprint" data-tooltip="{{localize 'COG.CraftApp.OpenBlueprintHint'}}"><i class="fa-solid fa-book-open"></i> {{localize "COG.CraftApp.OpenBlueprint"}}</button>
+    {{/if}}
+    <button type="button" class="cog-crafting-btn cog-crafting-draft" data-action="newDraftBlueprint" data-tooltip="{{localize 'COG.CraftApp.NewDraftHint'}}"><i class="fa-solid fa-pen-ruler"></i> {{localize "COG.CraftApp.NewDraft"}}</button>
+  </div>
+  {{#if noBlueprints}}<p class="cog-text-secondary cog-crafting-empty">{{localize "COG.CraftApp.NoBlueprintsHint"}}</p>{{/if}}
+  {{#if hasBlueprint}}
+    <div class="cog-crafting-row">
+      <span class="cog-badge">{{modeLabel}}</span>
+      {{#if isEnchantMode}}
+        <label class="cog-crafting-field flex-1">
+          <span class="cog-field-label">{{localize "COG.CraftApp.Target"}}</span>
+          <select class="cog-field-input cog-crafting-target" data-change-action="setTarget">
+            {{#each targetOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+          </select>
+        </label>
+        {{#if noTargets}}<span class="cog-text-secondary">{{localize "COG.CraftApp.NoTargetsHint"}}</span>{{/if}}
+      {{/if}}
+    </div>
+  {{/if}}
+</div>

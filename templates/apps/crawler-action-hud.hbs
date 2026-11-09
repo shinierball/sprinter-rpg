@@ -91,6 +91,33 @@
           {{/each}}
         </div>
       </div>
+
+      {{!-- CONDITIONS SECTION: the pause switch on each debuff --}}
+      {{#if debuffs.length}}
+      <div class="cog-action-hud-section">
+        <div class="cog-action-section-header">
+          <span class="cog-action-section-title"><i class="fa-solid fa-skull"></i> CONDITIONS ({{debuffs.length}})</span>
+        </div>
+        <div class="cog-action-list">
+          {{#each debuffs as |db|}}
+            <div class="cog-action-item" data-item-id="{{db.id}}">
+              <div class="cog-action-item-info">
+                <img class="cog-action-item-icon" src="{{db.img}}" alt="{{db.name}}" />
+                <div class="cog-action-item-details">
+                  <span class="cog-action-item-name" title="{{db.name}}">{{db.name}}</span>
+                  {{#if db.paused}}<span class="cog-action-item-sub">Paused</span>{{/if}}
+                </div>
+              </div>
+              <div class="cog-action-item-btns">
+                <button type="button" data-action="toggleDebuffPaused" class="cog-hud-btn cog-hud-btn-use" title="{{#if db.paused}}Switch on{{else}}Pause{{/if}}: {{db.name}}">
+                  <i class="fa-solid {{#if db.paused}}fa-play{{else}}fa-pause{{/if}}"></i>
+                </button>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
     </div>
     {{/unless}}
   </div>

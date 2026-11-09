@@ -1,0 +1,65 @@
+{{!-- STAT BONUSES: the add-a-row table over system.grants rows of kind stat (gear, buff, debuff). Each row can give a flat amount and a percent at once. --}}
+<div class="cog-stat-block cog-stat-grant-rows" style="margin-bottom: 10px;">
+  <div class="cog-banner-header" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
+    <span>{{#if statGrantIsPenalty}}{{localize "COG.StatGrant.TitlePenalty"}}{{else}}{{localize "COG.StatGrant.Title"}}{{/if}}</span>
+    <a class="cog-text-on-fill" data-action="addRow" data-row-table="statGrant" style="font-size: 10px; cursor: pointer;">
+      <i class="fa-solid fa-plus"></i> {{#if statGrantIsPenalty}}{{localize "COG.StatGrant.AddPenalty"}}{{else}}{{localize "COG.StatGrant.AddBonus"}}{{/if}}
+    </a>
+  </div>
+  <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
+    {{#if statGrantRows.length}}
+      <table class="cog-table" style="margin: 0; font-size: 11px;">
+        <thead>
+          <tr>
+            <th>{{localize "COG.StatGrant.Stat"}}</th>
+            <th style="width: 24%;">{{localize "COG.StatGrant.Label"}}</th>
+            <th style="width: 16%;">{{localize "COG.StatGrant.Flat"}}</th>
+            <th style="width: 20%;">{{localize "COG.StatGrant.Percent"}}</th>
+            {{#if statGrantShowMinimum}}<th style="width: 16%;" title="{{localize "COG.StatGrant.MinimumTooltip"}}">{{localize "COG.StatGrant.Minimum"}}</th>{{/if}}
+            {{#if statGrantShowLocked}}<th style="width: 20%;" title="{{localize "COG.StatGrant.LockedTooltip"}}">{{localize "COG.StatGrant.Locked"}}</th>{{/if}}
+            <th style="width: 8%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each statGrantRows as |mod|}}
+            <tr>
+              <td>
+                <select class="cog-field-input" name="system.grants.{{mod.idx}}.stat" style="font-size: 11px;">
+                  {{#each mod.options as |opt|}}
+                    <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                  {{/each}}
+                </select>
+              </td>
+              <td>
+                <input class="cog-field-input" type="text" name="system.grants.{{mod.idx}}.label" value="{{mod.label}}" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.grants.{{mod.idx}}.value" value="{{mod.value}}" placeholder="0" style="width: 100%; font-size: 11px; text-align: center;" />
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.grants.{{mod.idx}}.percent" value="{{mod.percent}}" placeholder="0" style="width: 100%; font-size: 11px; text-align: center;" />
+              </td>
+              {{#if @root.statGrantShowMinimum}}
+              <td>
+                <input class="cog-stat-input" type="number" min="0" name="system.grants.{{mod.idx}}.floor" value="{{mod.floor}}" placeholder="{{localize "COG.StatGrant.NoMinimum"}}" style="width: 100%; font-size: 11px; text-align: center;" />
+              </td>
+              {{/if}}
+              {{#if mod.showLocked}}
+              <td>
+                <input class="cog-stat-input" type="number" name="system.grants.{{mod.idx}}.locked" value="{{mod.locked}}" placeholder="{{localize "COG.StatGrant.NotLocked"}}" style="width: 100%; font-size: 11px; text-align: center;" />
+              </td>
+              {{/if}}
+              <td style="text-align: center;">
+                <a class="cog-text-accent" data-action="deleteRow" data-row-table="grant" data-index="{{mod.idx}}" data-tooltip="Delete" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="cog-text" style="text-align: center; font-style: italic; font-size: 11px; padding: 6px;">
+        {{#if statGrantIsPenalty}}{{localize "COG.StatGrant.EmptyPenalty"}}{{else}}{{localize "COG.StatGrant.EmptyBonus"}}{{/if}}
+      </div>
+    {{/if}}
+  </div>
+</div>

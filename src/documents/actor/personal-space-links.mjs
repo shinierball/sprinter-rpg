@@ -27,7 +27,7 @@ import { firstScalar } from '../../utils/first-scalar.mjs';
 export const RELAY_ACTION_PERSONAL_SPACE_LEAVE = 'personalSpaceLeave';
 export const RELAY_ACTION_CREATE_PERSONAL_SPACE = 'createPersonalSpace';
 
-export const SECOND_SPACE_REASON = 'Crawler already owns a personal space';
+const SECOND_SPACE_REASON = 'Crawler already owns a personal space';
 const MAX_NAME_LENGTH = 100;
 
 function levels() {

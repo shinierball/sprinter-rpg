@@ -1,0 +1,293 @@
+/* =======================================================
+   SPRINTER RPG - CORE STYLESHEET
+   ======================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* =======================================================
+   THEME TOKENS: semantic colour roles (replaces the hex-named tokens)
+   How Foundry v14 marks light and dark (client/game.mjs configureUI, document-sheet.mjs):
+   - The "Application color scheme" client setting puts `theme-dark` or `theme-light` on <body>.
+     With no preference it falls back to the browser's own light or dark preference and still sets one of
+     the two classes, so no @media query is needed here.
+   - The "Interface color scheme" setting puts `themed theme-dark|theme-light` on #interface (the chat
+     sidebar lives there) and on core sidebar apps.
+   - Document sheets carry `themed theme-<scheme>` on the window itself when a per-sheet theme is chosen.
+   Custom properties inherit, so each class re-declares the tokens on its own element and the nearest
+   themed ancestor wins. Light values are the default (:root); `.theme-dark` swaps them.
+   Roles, not hexes: text (strong, default, secondary, muted), surfaces, borders, and the hues accent,
+   danger, success, warning, gold, info, magic each with a text colour, a -tint and a -border; fills and
+   text-on-fill are fixed and identical in both themes (first block).
+   The four neutral text roles alias Foundry v14's own body-scoped theme variables (--color-text-emphatic,
+   -primary, -secondary, -subtle) with a hex fallback equal to Foundry's value, so system text follows core
+   and theme modules. Surfaces and borders keep system values: Foundry's equivalents are element-scoped
+   (.application, form fields) or images, so they cannot be aliased from <body>. Hex fallbacks must stay
+   plain 6-digit hex (the test helper substitutes them).
+   .cog-dark marks a subtree as dark in either theme: it re-applies the dark values. Panels follow the
+   theme (the light panel colour is warm paper, --cog-surface); the pin is for what stays dark on purpose: fixed fills
+   and their text, frames around white-glyph art, banner and tab strips, the HUD, and old chat cards, whose markup is
+   frozen in message.content. NEVER redefine or remove .cog-dark. Those selectors are listed in the last block, the
+   keep run, and in tests/fixtures/light-panels/keep-dark.mjs. Dark text roles on them alias Foundry's
+   theme-independent palette (--color-light-1..5). Text roles are AA on the window, surface and
+   surface-alt in both themes (tests/structural/colour-roles.test.mjs).
+   ======================================================= */
+
+/* Fixed colours: identical in every theme (fills, ink, text on fills). Fill values pass AA with white text. */
+:root {
+  --cog-on-fill: #ffffff;
+  --cog-on-bright: #111111;
+  --cog-ink: #000000;
+  --cog-panel-border: #444444;
+  --cog-sheen: rgba(255, 255, 255, 0.4);
+  --cog-accent-fill: #c0392b;
+  --cog-accent-strong-fill: #962d22;
+  --cog-danger-fill: #d12b1a;
+  --cog-success-fill: #1e8449;
+  --cog-warning-fill: #ad5210;
+  --cog-gold-fill: #8d681e;
+  --cog-info-fill: #2574a8;
+  --cog-magic-fill: #8e44ad;
+  --cog-neutral-fill: #66757a;
+  --cog-header-fill: #2c3e50;
+  --cog-icon-box: #2c3340;
+  --cog-meter-health: linear-gradient(to right, #d32f2f 0%, #e65100 20%, #f57c00 40%, #fbc02d 60%, #43a047 80%, #2e7d32 100%);
+  --cog-meter-shield: linear-gradient(90deg, #d4af37, #f1c40f);
+  --cog-badge-equipped: var(--cog-success-fill);
+  --cog-badge-spell: var(--cog-info-fill);
+  --cog-badge-attack: var(--cog-accent-fill);
+  --cog-badge-buff: var(--cog-success-fill);
+  --cog-badge-debuff: var(--cog-danger-fill);
+}
+
+:root,
+.theme-light {
+  --cog-text-strong: var(--color-text-emphatic, #111111);
+  --cog-text: var(--color-text-primary, #222222);
+  --cog-text-secondary: var(--color-text-secondary, #333333);
+  --cog-text-muted: var(--color-text-subtle, #555555);
+  --cog-window-bg: #f4f3f0;
+  --cog-surface: #fbf9f4;
+  --cog-surface-alt: #f8f8f6;
+  --cog-surface-muted: #ebebeb;
+  --cog-surface-strong: #bdc3c7;
+  --cog-input-bg: #ffffff;
+  --cog-border-strong: #000000;
+  --cog-border: #000000;
+  --cog-border-muted: #bdc3c7;
+  --cog-divider: #dddddd;
+  --cog-accent: #c0392b;
+  --cog-accent-strong: #962d22;
+  --cog-danger: #cb2a19;
+  --cog-success: #1b7a43;
+  --cog-warning: #a35612;
+  --cog-gold: #87641d;
+  --cog-info: #1e6fa7;
+  --cog-magic: #8e44ad;
+  --cog-danger-tint: #fdedec;
+  --cog-success-tint: #eafaf1;
+  --cog-warning-tint: #fdf2e9;
+  --cog-gold-tint: #fef9e7;
+  --cog-info-tint: #ebf5fb;
+  --cog-magic-tint: #f5eef8;
+  --cog-danger-border: #f5b7b1;
+  --cog-success-border: #a9dfbf;
+  --cog-warning-border: #f5cba7;
+  --cog-gold-border: #f9e79f;
+  --cog-info-border: #aed6f1;
+}
+
+.theme-dark {
+  --cog-text-strong: var(--color-text-emphatic, #f7f3e8);
+  --cog-text: var(--color-text-primary, #efe6d8);
+  --cog-text-secondary: var(--color-text-secondary, #e7d1b1);
+  --cog-text-muted: var(--color-text-subtle, #9f8475);
+  --cog-window-bg: #15151c;
+  --cog-surface: #1e1e29;
+  --cog-surface-alt: #22222d;
+  --cog-surface-muted: #2c2c3a;
+  --cog-surface-strong: #3d4450;
+  --cog-input-bg: #1e1e29;
+  --cog-border-strong: #607084;
+  --cog-border: #424e5e;
+  --cog-border-muted: #4f575d;
+  --cog-divider: #44444f;
+  --cog-accent: #e4685c;
+  --cog-accent-strong: #e8877d;
+  --cog-danger: #ef6b5e;
+  --cog-success: #2ecc71;
+  --cog-warning: #f39c12;
+  --cog-gold: #f1c40f;
+  --cog-info: #5dade2;
+  --cog-magic: #bb86fc;
+  --cog-danger-tint: #3d1f1d;
+  --cog-success-tint: #1f402d;
+  --cog-warning-tint: #3f2d1e;
+  --cog-gold-tint: #3f381f;
+  --cog-info-tint: #1e333f;
+  --cog-magic-tint: #3a2142;
+  --cog-danger-border: #663b37;
+  --cog-success-border: #3b6e50;
+  --cog-warning-border: #694f39;
+  --cog-gold-border: #6a6039;
+  --cog-info-border: #385568;
+}
+
+/* Always-dark panels: their subtree reads the dark token values whichever theme is active. */
+.cog-dark,
+/* 3.79 keep: dark on purpose */
+.cog-temp-bars-title,
+.cog-hands-warning-banner i,
+.cog-tier-chip,
+.star-silver,
+.star-gold,
+.star-platinum,
+.crawler-skull,
+.sheet-tabs.tabs,
+.cog-banner-header,
+.cog-banner-header.black,
+.cog-logo-box,
+.cog-rest-btn[data-rest-type="1hour"],
+.cog-temp-bars-container,
+.cog-temp-bar-slot,
+.cog-temp-bar-slot.depleted,
+.cog-hotlist-num,
+.cog-hotlist-img,
+.cog-hotlist-btn,
+.cog-hotlist-btn-gear,
+.cog-picker-item-icon,
+.cog-sm-icon,
+.cog-sm-source-badge.compendium,
+.cog-metrics-combat-select-wrapper select,
+.cog-reset-metrics-btn,
+.cog-badge-archived,
+.cog-open-archive-btn,
+.cog-crawler-avatar,
+.cog-badge-level,
+.cog-badge-favor,
+.cog-damage-sub-actions .cog-apply-damage-btn,
+.cog-surprise-toggle,
+.cog-step-nav-btn,
+.phase-crawler .cog-phase-header,
+.cog-combatant-img,
+.cog-step-round-btn,
+.cog-combat-nav-buttons button,
+.cog-archive-nav-bar,
+.cog-archive-tab-btn.active,
+.cog-xp-table thead,
+.cog-btn-secondary,
+.cog-pill.pill-untrained.highlight,
+.cog-badge-untrained,
+.outcome-crit-fail,
+.cog-reset-btn,
+.cog-array-pool .pool-num.used,
+.cog-skill-pill .stat-tag,
+.cog-slot-assign-btn-group,
+.buff-assign-slot-btn,
+.cog-hotbar-hud-header,
+.cog-hotbar-hud-slot,
+.cog-hotbar-slot-num,
+.cog-hotbar-slot-badge,
+.cog-hud-btn,
+.cog-action-hud-header,
+.cog-action-section-header,
+.cog-action-item,
+.cog-trophy-step-btn,
+.cog-hud-time-input,
+.cog-hud-adj-btn,
+.cog-hud-scene-btn,
+.cog-hud-crawler-input,
+.cog-crawler-hud-adj-btn,
+.cog-tag.passive,
+.cog-export-json-btn,
+.cog-import-json-btn,
+.cog-effect-icon-wrap,
+.cog-collapsible-summary,
+.cog-armor-piercing-badge,
+.cog-mob-creator-app .open-tag-manager-btn,
+.sheet-tabs .item,
+.sheet-tabs .item:hover,
+.cog-hp-seg::before,
+.cog-action-option:hover:not(:disabled),
+.cog-combat-nav-buttons .cog-combat-awards-btn:hover,
+.cog-archive-count-badge,
+.cog-hotbar-hud-bar,
+.cog-hotbar-hud-title i,
+.cog-hotbar-slot-name,
+.cog-hotbar-slot-detail,
+.cog-action-hud-panel,
+.cog-action-hud-title i,
+.cog-action-item-name,
+.cog-action-item-sub,
+.cog-floor-hud-inner,
+.cog-floor-hud-title,
+.cog-hud-time-display,
+.cog-hud-pill-collapsed,
+.cog-hud-collapsed-val,
+.cog-crawler-hud-inner,
+.cog-crawler-hud-title,
+.cog-crawler-hud-pill-collapsed,
+.cog-effect-duration-pill,
+.cog-effect-flyout,
+.cog-flyout-type-badge,
+.cog-flyout-val,
+.application.cog-sheet-window.personal-space .sheet-tabs,
+.application.cog-sheet-window.personal-space .sheet-tabs .item,
+.cog-query-pill,
+.cog-badge-info,
+.cog-query-add-btn,
+.cog-assist-offer-btn,
+.cog-assist-offer-btn:hover:not(:disabled) {
+  --cog-text-strong: var(--color-light-1, #f7f3e8);
+  --cog-text: var(--color-light-2, #efe6d8);
+  --cog-text-secondary: var(--color-light-3, #e7d1b1);
+  --cog-text-muted: var(--color-light-5, #9f8475);
+  --cog-window-bg: #15151c;
+  --cog-surface: #1e1e29;
+  --cog-surface-alt: #22222d;
+  --cog-surface-muted: #2c2c3a;
+  --cog-surface-strong: #3d4450;
+  --cog-input-bg: #1e1e29;
+  --cog-border-strong: #607084;
+  --cog-border: #424e5e;
+  --cog-border-muted: #4f575d;
+  --cog-divider: #44444f;
+  --cog-accent: #e4685c;
+  --cog-accent-strong: #e8877d;
+  --cog-danger: #ef6b5e;
+  --cog-success: #2ecc71;
+  --cog-warning: #f39c12;
+  --cog-gold: #f1c40f;
+  --cog-info: #5dade2;
+  --cog-magic: #bb86fc;
+  --cog-danger-tint: #3d1f1d;
+  --cog-success-tint: #1f402d;
+  --cog-warning-tint: #3f2d1e;
+  --cog-gold-tint: #3f381f;
+  --cog-info-tint: #1e333f;
+  --cog-magic-tint: #3a2142;
+  --cog-danger-border: #663b37;
+  --cog-success-border: #3b6e50;
+  --cog-warning-border: #694f39;
+  --cog-gold-border: #6a6039;
+  --cog-info-border: #385568;
+}
+
+.cog-sheet-window .window-content {
+  background: var(--cog-window-bg);
+  padding: 8px;
+  color: var(--cog-text-strong);
+  font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.cog-sheet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cog-sheet * {
+  box-sizing: border-box;
+}
+

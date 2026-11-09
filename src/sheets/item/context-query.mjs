@@ -5,9 +5,10 @@
  * training skills. Everything the template needs is computed here (CONTRIBUTING §5, precompute complex options).
  * Badges warn; nothing here ever blocks an edit.
  */
-import { TAG_NAMESPACES, getTagDefinition, isTargetSensitiveTag, isValidTag, splitRoleTag } from '../../data/tags.mjs';
+import { TAG_NAMESPACES, isTargetSensitiveTag, splitRoleTag } from '../../data/tag-vocabulary.mjs';
+import { getTagDefinition, isValidTag } from '../../data/tag-definitions.mjs';
 import { ROW_ARRAYS, rowKindOf } from '../../utils/row-kinds.mjs';
-import { queryReferences } from '../../utils/tag-query.mjs';
+import { queryReferences } from '../../utils/tag/tag-query.mjs';
 
 /** i18n keys of the bucket captions (the editor localizes them). */
 const QUERY_BUCKET_LABELS = Object.freeze({
@@ -17,7 +18,7 @@ const QUERY_BUCKET_LABELS = Object.freeze({
 });
 
 /** The role choices in display order. 'action' is the unprefixed tag (the action's own context). */
-export const QUERY_ROLES = Object.freeze(['action', 'self', 'subject', 'attacker']);
+const QUERY_ROLES = Object.freeze(['action', 'self', 'subject', 'attacker']);
 const ROLE_KEYS = Object.freeze({
   action: 'COG.Rows.Role.Action',
   self: 'COG.Rows.Role.Self',

@@ -4,7 +4,7 @@
  * at `CLEAN_UP_ORDER.AURA_PULSE` (after round-end effects, before durations, so an aura pulses in the round it
  * expires). Nothing pulses out of combat.
  */
-import { combatText } from '../utils/combat-round-text.mjs';
+import { combatText } from '../utils/combat/combat-round-text.mjs';
 import { conditionLabel } from './actor/condition-data.mjs';
 import { activeAurasOnScene, pulseAura } from './actor/aura-pulse.mjs';
 
@@ -75,7 +75,7 @@ export function pulseRows({ item, result }) {
  * @param {number} round
  * @returns {Promise<ChatMessage|null>}
  */
-export async function postAuraPulseCard(pulses, round) {
+async function postAuraPulseCard(pulses, round) {
   const rows = pulses.flatMap(pulseRows);
   if (!rows.length || typeof globalThis.ChatMessage?.create !== 'function') return null;
   const content = `<div class="cog-chat-card cog-round-end-card cog-aura-pulse-card">

@@ -3,7 +3,7 @@
  * directly for the GM or an owner of the regions, through the `areaDeleteRegions` relay for anyone else. The GM
  * refuses a requester who does not own the actor holding the source item.
  */
-import { findAreaRegions } from '../../utils/region-shapes.mjs';
+import { findAreaRegions } from '../../utils/area/region-shapes.mjs';
 import { deleteAreaGroup } from '../../documents/actor/area-relay.mjs';
 
 /**

@@ -1,0 +1,113 @@
+{{!--
+  The loot box part (7.3d, spec D5). Rendered by loot.hbs for lootType "box" only.
+  Context: lootBox = buildLootBoxContext(...) (src/sheets/item/context-loot-box.mjs).
+  The tier select is a schema input (system.box.tier). Every other control is an action delegate with no name, so the form
+  harvester never meets the prize rows. A player sees the tier and "Sealed"; the rows are rendered for the GM only.
+--}}
+<details class="cog-collapsible-block cog-loot-box" open>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="{{#if lootBox.tierIcon}}{{lootBox.tierIcon}}{{else}}fa-solid fa-box-open{{/if}}"></i> {{localize "COG.LootBoxSheet.Title"}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row">
+      <div class="cog-field-group flex-1">
+        <span class="cog-field-label">{{localize "COG.LootBoxSheet.Tier"}}</span>
+        <select class="cog-field-input" name="system.box.tier">
+          {{#each lootBox.tierOptions as |o|}}<option value="{{o.key}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+        </select>
+      </div>
+    </div>
+
+    {{#if lootBox.sealed}}
+      <div class="cog-loot-box-sealed cog-text-secondary"><i class="fa-solid fa-lock"></i> {{localize "COG.LootBoxSheet.Sealed"}}</div>
+    {{else}}
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.LootBoxSheet.Contents"}} ({{lootBox.count}})</span>
+        <div class="cog-loot-box-drop cog-bg-surface" data-loot-box-drop>
+          <span class="cog-text-secondary"><i class="fa-solid fa-arrow-down-to-bracket"></i> {{localize "COG.LootBoxSheet.Drop"}}</span>
+        </div>
+      </div>
+
+      {{#each lootBox.rows as |row|}}
+        <div class="cog-loot-box-row cog-bg-surface" data-box-row data-index="{{row.index}}">
+          <div class="cog-field-row">
+            <span class="cog-badge">{{row.kindLabel}}</span>
+            {{#if row.img}}<img class="cog-bg-icon-box" src="{{row.img}}" width="24" height="24" alt="" />{{/if}}
+            {{#if row.isTable}}
+              <select class="cog-field-input flex-1" data-change-action="pickBoxTable" data-index="{{row.index}}" title="{{localize 'COG.LootBoxSheet.Table'}}">
+                {{#each row.tableOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+              </select>
+              <select class="cog-field-input" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="as" title="{{localize 'COG.LootBoxSheet.TableAsHint'}}">
+                {{#each row.asOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+              </select>
+              <input class="cog-field-input" type="text" style="width: 64px;" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="times" value="{{row.times}}" placeholder="{{localize 'COG.LootBoxSheet.TimesPlaceholder'}}" title="{{localize 'COG.LootBoxSheet.TimesHint'}}" />
+            {{else if row.isGold}}
+              <input class="cog-field-input flex-1" type="text" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="formula" value="{{row.formula}}" placeholder="{{localize 'COG.LootBoxSheet.Formula'}}" title="{{localize 'COG.LootBoxSheet.Formula'}}" />
+            {{else if row.isMagicItem}}
+              <select class="cog-field-input flex-1" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="tier" title="{{localize 'COG.LootBoxSheet.Tier'}}">
+                {{#each row.tierOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+              </select>
+            {{else if row.isChoice}}
+              <select class="cog-field-input flex-1" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="itemType" title="{{localize 'COG.LootBoxSheet.ChoiceItemType'}}">
+                {{#each row.itemTypeOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+              </select>
+            {{else}}
+              <span class="flex-1">{{row.name}}</span>
+            {{/if}}
+            {{#if row.hasQuantity}}
+              <input class="cog-field-input" type="number" min="1" step="1" style="width: 56px;" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="quantity" value="{{row.quantity}}" title="{{localize 'COG.LootBoxSheet.Quantity'}}" />
+            {{/if}}
+            {{#if row.hasStem}}
+              <input class="cog-field-input" type="text" style="width: 120px;" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="name" value="{{row.name}}" placeholder="{{localize 'COG.LootBoxSheet.ChoiceStem'}}" title="{{localize 'COG.LootBoxSheet.ChoiceStem'}}" />
+            {{/if}}
+            {{#if row.hasRank}}
+              <input class="cog-field-input" type="number" min="1" step="1" style="width: 56px;" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="rank" value="{{row.rank}}" placeholder="1" title="{{localize 'COG.LootBoxSheet.Rank'}}" />
+            {{/if}}
+            {{#if row.isMagicItem}}
+              <button type="button" data-action="prerollBoxRow" data-index="{{row.index}}" data-tooltip="{{localize 'COG.LootBoxSheet.PrerollHint'}}"><i class="fa-solid fa-dice"></i> {{localize "COG.LootBoxSheet.Preroll"}}</button>
+            {{/if}}
+            {{#if row.canChoose}}
+              <button type="button" data-action="chooseBoxRow" data-index="{{row.index}}" data-tooltip="{{localize 'COG.LootBoxSheet.ChooseNowHint'}}"><i class="fa-solid fa-hand-pointer"></i> {{localize "COG.LootBoxSheet.ChooseNow"}}</button>
+            {{/if}}
+            <a class="cog-text-accent" data-action="removeBoxRow" data-index="{{row.index}}" data-tooltip="{{localize 'COG.LootBoxSheet.Remove'}}"><i class="fa-solid fa-xmark"></i></a>
+          </div>
+          <input class="cog-field-input" type="text" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="label" value="{{row.label}}" placeholder="{{localize 'COG.LootBoxSheet.Note'}}" />
+          {{#if row.isChoice}}
+            {{#if row.incomplete}}
+              <span class="cog-param-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.LootBoxSheet.ChoiceIncomplete"}}</span>
+            {{else}}
+              <span class="cog-text-secondary" data-choice-count>{{localize "COG.LootBoxSheet.ChoiceCandidates" count=row.candidateCount}}</span>
+            {{/if}}
+            <div class="cog-field-group cog-grant-query">
+              <span class="cog-field-label">{{localize "COG.LootBoxSheet.ChoiceQuery"}}</span>
+              {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=row.query tagOptions=row.tagOptions}}
+            </div>
+          {{/if}}
+          {{#if row.unresolved}}<span class="cog-text-warning">{{localize "COG.LootBoxSheet.Unresolved"}}</span>{{/if}}
+        </div>
+      {{else}}
+        <div class="cog-text-secondary">{{localize "COG.LootBoxSheet.Empty"}}</div>
+      {{/each}}
+
+      <div class="cog-field-row">
+        <button type="button" data-action="addBoxGold"><i class="fa-solid fa-coins"></i> {{localize "COG.LootBoxSheet.AddGold"}}</button>
+        <button type="button" data-action="addBoxMagicItem"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.LootBoxSheet.AddMagicItem"}}</button>
+        <button type="button" data-action="addBoxChoice"><i class="fa-solid fa-list-check"></i> {{localize "COG.LootBoxSheet.AddChoice"}}</button>
+        {{#if lootBox.hasTables}}
+          <select class="cog-field-input flex-1" data-change-action="addBoxTable">
+            {{#each lootBox.tablePicker as |o|}}<option value="{{o.value}}">{{o.label}}</option>{{/each}}
+          </select>
+        {{/if}}
+      </div>
+
+      {{#if lootBox.stackHint}}
+        <span class="cog-text-secondary" data-stack-hint><i class="fa-solid fa-layer-group"></i> {{localize "COG.LootBoxSheet.StackHint"}}</span>
+      {{/if}}
+
+      <label class="cog-field-group" data-tooltip="{{localize 'COG.LootBoxSheet.KeepSealedHint'}}">
+        <span class="cog-field-label">{{localize "COG.LootBoxSheet.KeepSealed"}}</span>
+        <input type="checkbox" data-change-action="toggleBoxKeepSealed" {{#if lootBox.keepSealed}}checked{{/if}} />
+      </label>
+    {{/if}}
+  </div>
+</details>

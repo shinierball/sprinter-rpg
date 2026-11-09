@@ -10,9 +10,9 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
-import { resolveAreaGeometry } from '../../utils/area-geometry.mjs';
-import { buildAreaRegions, findAreaRegions, findAuraRegions, sceneRegions, deleteRegions } from '../../utils/region-shapes.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
+import { resolveAreaGeometry } from '../../utils/area/area-geometry.mjs';
+import { buildAreaRegions, findAreaRegions, findAuraRegions, sceneRegions, deleteRegions } from '../../utils/area/region-shapes.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { auraRank } from './aura-effects.mjs';
 import { ownsAuraSource } from './aura-relay.mjs';
 
@@ -60,7 +60,7 @@ export function findHolderToken(scene, holder) {
  *   groupId?: string, casterToken?: object, kind?: 'zone'|'marker' }} p
  * @returns {object[]|null} region data, or null when the item has no area
  */
-export function planAreaRegions(item, { scene, origin, rotation = 0, userId, messageId = null, groupId, casterToken, kind } = {}) {
+function planAreaRegions(item, { scene, origin, rotation = 0, userId, messageId = null, groupId, casterToken, kind } = {}) {
   const holder = item?.parent ?? null;
   const geometry = resolveAreaGeometry(item, { rank: auraRank(holder, item) });
   if (!geometry) return null;
@@ -178,7 +178,7 @@ registerRelayAction(AREA_DELETE_REGIONS, {
  * @param {object[]} regions
  * @returns {Promise<boolean>} false when a request to the GM was refused or could not be delivered
  */
-export async function deleteAreaRegions(scene, regions) {
+async function deleteAreaRegions(scene, regions) {
   if (!scene || !regions?.length) return true;
   const user = globalThis.game?.user;
   const own = regions.filter(r => user?.isGM || r.isOwner);

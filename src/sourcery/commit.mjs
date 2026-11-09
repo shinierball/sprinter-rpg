@@ -7,15 +7,22 @@
  */
 import { buildPayload } from '../data/builders/item-payload.mjs';
 import { bookTableSpecs, defaultDocUuid } from './table-builders.mjs';
-import { BOOKS, IMPORT_PACKS, TABLE_PACK, JOURNAL_PACK, worldPackId, worldPackName } from './canon.mjs';
+import { BOOKS, IMPORT_PACKS, TABLE_PACK, JOURNAL_PACK, VEHICLE_PACK, worldPackId, worldPackName } from './canon.mjs';
 import { isLeftOut } from './import-plan.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 
-export const CATALOG_VERSION = 1;
+const CATALOG_VERSION = 1;
 const CHUNK = 50;
+const COG_THEME = 'cog';
 const MAX_ENTRIES = 5000;
 const ACTOR_PACKS = new Set(['mobs', 'pets', 'mercenaries']);
 const isRecord = v => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/** A document carrying the source stamp of the book that filled it (7.7c): `{ theme: 'cog', set: <book id>, authorship: 'human' }` (7.16), replacing `bundled`. */
+function stampedWithBook(doc, book) {
+  const flags = isRecord(doc.flags) ? doc.flags : {};
+  return { ...doc, flags: { ...flags, [SYSTEM_ID]: { ...(isRecord(flags[SYSTEM_ID]) ? flags[SYSTEM_ID] : {}), source: { theme: COG_THEME, set: book, authorship: 'human' } } } };
+}
 
 /** `Compendium.world.sourcery-skills.Item.<id>` for a canon document link; the system pack for packs the importer does not own. */
 function worldUuidFor(owned) {
@@ -43,12 +50,23 @@ export function buildCommitSet(plan, { canon, warnings = [] }) {
   const skipped = (id, hidden) => hidden && (leftOut.has(id) || !planned.has(id));
   // `not-found`: the book was provided and does not have it, so this run's (empty) result replaces the old one.
   const keepable = new Set((plan.entities ?? []).filter(e => e.state === 'unresolved' && e.reason !== 'not-found').map(e => e.id));
+  // The documents a provided book matched carry that book as their set; the rest keep `bundled`.
+  // A document read from another book's PDF (its recipe book `own: false`) carries the book that PDF is
+  // (`plan.files[fileIndex].best`), not the recipe's; a file that is no recognised book leaves the recipe's book.
+  const setOf = (e) => {
+    const b = plan.books?.[e.book];
+    return b?.own === false ? (plan.files?.[b.fileIndex]?.best ?? e.book) : e.book;
+  };
+  const bookOfId = new Map((plan.entities ?? []).filter(e => e.book && e.state !== 'unresolved').map(e => [e.id, setOf(e)]));
   const borrowed = new Map((plan.entities ?? []).filter(e => e.state !== 'unresolved' && e.book && plan.books?.[e.book]?.own === false).map(e => [e.id, e.book]));
   for (const def of IMPORT_PACKS) {
     const entry = (canon ?? []).find(p => p.pack === def.pack);
     if (!entry) continue;
     // The provenance flag travels on the hydrated payload.
-    const docs = entry.docs.filter(({ id, hidden }) => !skipped(id, hidden)).map(({ id, doc }) => structuredClone(plan.hydrated.get(id) ?? doc));
+    const docs = entry.docs.filter(({ id, hidden }) => !skipped(id, hidden)).map(({ id, doc }) => {
+      const out = structuredClone(plan.hydrated.get(id) ?? doc);
+      return bookOfId.has(id) ? stampedWithBook(out, bookOfId.get(id)) : out;
+    });
     packs.push({ ...def, packId: worldPackId(def.pack), docs });
     owned.add(def.pack);
   }
@@ -65,14 +83,17 @@ export function buildCommitSet(plan, { canon, warnings = [] }) {
   const options = { uuidFor: worldUuidFor(owned), nameFor, tableUuid, rollTableUuid: (recipe) => tableUuid(recipe.id) };
   const rollTables = [];
   const journals = [];
+  const vehicles = [];
   for (const [bookId, results] of Object.entries(plan.tableResults)) {
     const file = plan.books[bookId].tables;
     const specs = bookTableSpecs(file, results, { ...options, label: `Tables (${plan.books[bookId].label})` });
-    for (const spec of specs.rollTables) rollTables.push(buildPayload('rolltable', spec, { warnings }));
-    if (file.journalId) journals.push(buildPayload('journal', specs.journal, { warnings }));
+    for (const spec of specs.rollTables) rollTables.push(stampedWithBook(buildPayload('rolltable', spec, { warnings }), bookId));
+    for (const spec of specs.vehicles) vehicles.push(stampedWithBook(buildPayload('mount_vehicle', spec, { warnings }), bookId));
+    if (file.journalId) journals.push(stampedWithBook(buildPayload('journal', specs.journal, { warnings }), bookId));
   }
   if (rollTables.length) packs.push({ ...TABLE_PACK, packId: worldPackId(TABLE_PACK.pack), docs: rollTables });
   if (journals.length) packs.push({ ...JOURNAL_PACK, packId: worldPackId(JOURNAL_PACK.pack), docs: journals });
+  if (vehicles.length) packs.push({ ...VEHICLE_PACK, packId: worldPackId(VEHICLE_PACK.pack), docs: vehicles });
   return { packs, warnings, keepable, borrowed, tableBooks: new Set(Object.keys(plan.tableResults ?? {})) };
 }
 
@@ -129,7 +150,7 @@ const readBetter = (before, now) => !!before && !now?.own && (before.own || befo
  * @returns {Set<string>} kept document `_id`s
  */
 function keptIds(def, docs, set, betterBefore) {
-  const tables = def.pack === TABLE_PACK.pack || def.pack === JOURNAL_PACK.pack;
+  const tables = def.pack === TABLE_PACK.pack || def.pack === JOURNAL_PACK.pack || def.pack === VEHICLE_PACK.pack;
   const keep = new Set();
   for (const doc of docs) {
     const flag = sourceryFlag(doc);

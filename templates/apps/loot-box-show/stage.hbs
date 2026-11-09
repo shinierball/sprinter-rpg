@@ -1,0 +1,27 @@
+<section class="cog-lootbox-stage {{motionClass}}" {{#unless showStage}}hidden{{/unless}}
+  style="--cog-lootbox-rate: {{speed}};{{#if stage}} --cog-tier-color: {{stage.box.color}};{{/if}}">
+  {{#if stage}}
+    <header class="cog-lootbox-stage-head">
+      <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{stage.box.color}};"><i class="{{stage.box.icon}}"></i> {{stage.box.tierLabel}}</span>
+      <strong class="cog-lootbox-stage-name">{{stage.box.name}}</strong>
+      <span class="cog-lootbox-stage-count">{{stage.boxOf}}</span>
+    </header>
+    <div class="cog-lootbox-box is-{{stage.phase}}{{#if stage.opened}} is-opened{{/if}} {{stage.fxClass}}" data-phase="{{stage.phase}}" data-fx="{{stage.box.fx}}"
+      style="--cog-tier-color: {{stage.box.color}}; --cog-shake-level: {{stage.box.level}};">
+      <div class="cog-lootbox-burst" aria-hidden="true"></div>
+      <div class="cog-lootbox-lid" aria-hidden="true"></div>
+      <div class="cog-lootbox-body" aria-hidden="true"><i class="{{stage.box.icon}}"></i></div>
+    </div>
+    {{#if stage.kept}}<p class="cog-lootbox-kept"><span class="cog-state-badge">{{stage.kept}}</span></p>{{/if}}
+    <ul class="cog-lootbox-prize-cards" aria-live="polite">
+      {{#each stage.cards}}
+        {{> "systems/sprinter-rpg/templates/apps/loot-box-show/prize.hbs"}}
+      {{/each}}
+    </ul>
+    <div class="cog-lootbox-captions">
+      {{#each stage.captions}}
+        <p class="cog-lootbox-caption{{#if notice}} is-notice{{/if}}{{#if isNew}} is-new{{/if}}"><em>{{text}}</em></p>
+      {{/each}}
+    </div>
+  {{/if}}
+</section>

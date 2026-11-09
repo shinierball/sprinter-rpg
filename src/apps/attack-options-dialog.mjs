@@ -8,10 +8,10 @@
  * the window needs no open sheet (the token HUD has none). Names and labels are only ever displayed.
  */
 import { SYSTEM_PATH } from '../constants.mjs';
-import { dialogAnswer } from '../utils/dialog-answer.mjs';
-import { attackText } from '../utils/attack-text.mjs';
-import { cameraText } from '../utils/cameras.mjs';
-import { calledPlayLabel, isChecked } from '../utils/roll-context.mjs';
+import { dialogAnswer } from '../utils/ui/dialog-answer.mjs';
+import { attackText } from '../utils/attack/attack-text.mjs';
+import { cameraText } from '../utils/roll/cameras.mjs';
+import { calledPlayLabel, isChecked } from '../utils/roll/roll-context.mjs';
 
 const TEMPLATE = `${SYSTEM_PATH}/templates/apps/attack-options.hbs`;
 const t = (key, data) => attackText(`COG.AttackOptions.${key}`, data);

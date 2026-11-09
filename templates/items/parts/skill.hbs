@@ -35,10 +35,63 @@
     </select>
   </div>
   <div class="cog-field-group">
+    <span class="cog-field-label" title="How the effect reaches its target.">Delivery</span>
+    <select name="system.delivery" class="cog-field-input">
+      {{#each deliveryOptions as |d|}}<option value="{{d.value}}" {{#if d.selected}}selected{{/if}}>{{d.label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label" title="Range in feet.">Range (ft)</span>
+    <input class="cog-field-input" type="number" name="system.rangeFeet" value="{{system.rangeFeet}}" min="0" placeholder="0" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label" title="Uncheck to stop this skill from ranking up.">Can Gain Ranks</span>
+    <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;">
+      <input class="cog-checkbox-lg" type="checkbox" name="system.canGainRanks" {{#if system.canGainRanks}}checked{{/if}} />
+    </label>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label" title="Whose Rank this skill uses: its own, or the current Floor number.">Rank Source</span>
+    <select name="system.rankSource" class="cog-field-input">
+      {{#each rankSourceOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="cog-field-group">
     <span class="cog-field-label" title="The book's wording for this check. Human text only; nothing reads it.">Check Note</span>
     <input type="text" name="system.checkNote" class="cog-field-input" value="{{system.checkNote}}">
   </div>
 </div>
+
+{{#if specialty.show}}
+<div class="cog-field-row cog-specialty" style="margin-bottom: 8px; flex-wrap: wrap; align-items: flex-end; gap: 8px;">
+  <div class="cog-field-group" title="{{localize "COG.Skill.Specialty.Hint"}}">
+    <span class="cog-field-label">{{localize "COG.Skill.Specialty.Label"}}</span>
+    <strong class="cog-specialty-value">{{specialty.label}}</strong>
+  </div>
+  {{#if specialty.groups.length}}
+  <div class="cog-field-group">
+    <select class="cog-field-input" data-change-action="setSkillSpecialty">
+      <option value="">{{localize "COG.Skill.Specialty.None"}}</option>
+      {{#each specialty.groups as |group|}}
+        <optgroup label="{{group.label}}">
+          {{#each group.options as |opt|}}
+            <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+          {{/each}}
+        </optgroup>
+      {{/each}}
+    </select>
+  </div>
+  {{/if}}
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Skill.Specialty.Custom"}}</span>
+    <input class="cog-field-input" type="text" data-specialty-custom placeholder="item.watch" />
+  </div>
+  <button type="button" data-action="setSkillSpecialty" data-source="custom"><i class="fa-solid fa-check"></i></button>
+  {{#if specialty.value}}
+  <button type="button" data-action="clearSkillSpecialty"><i class="fa-solid fa-xmark"></i></button>
+  {{/if}}
+</div>
+{{/if}}
 
 <div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap; gap: 12px;">
   {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=cooldownEditor}}
@@ -118,6 +171,12 @@
       </div>
       <div class="cog-field-row" style="margin-bottom: 6px;">
         <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label" title="Shown in the Choose Damage Effect dialog. Human text only; nothing computes from it.">Technique Description</span>
+          <input class="cog-field-input" type="text" name="system.techniqueConfig.description" value="{{system.techniqueConfig.description}}" style="font-size: 11px;" />
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 6px;">
+        <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label">Technique Damage Bonus</span>
           <input class="cog-field-input" type="text" name="system.techniqueConfig.damageBonus" value="{{system.techniqueConfig.damageBonus}}" placeholder="e.g. +2d4 or 1d8" style="font-size: 11px;" />
         </div>
@@ -158,13 +217,13 @@
           {{/each}}
         </select>
       </div>
-      <div class="cog-field-group" style="flex: 2;">
-        <span class="cog-field-label cog-text-secondary" style="font-style: italic;">
-          <i class="fa-solid fa-info-circle"></i> Critical Hit Multipliers
-        </span>
-        <div class="cog-text-muted" style="font-size: 11px; padding-top: 4px;">
-          Configured directly per milestone break below (selectable Ranks 1–20).
-        </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label" title="Critical Hit Multiplier at Rank 5 (the Rank breaks below carry their own).">Crit x (Rank 5)</span>
+        <input class="cog-field-input" type="number" name="system.critMultiplierR5" value="{{system.critMultiplierR5}}" min="1" placeholder="1" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label" title="Critical Hit Multiplier at Rank 15 (the Rank breaks below carry their own).">Crit x (Rank 15)</span>
+        <input class="cog-field-input" type="number" name="system.critMultiplierR15" value="{{system.critMultiplierR15}}" min="1" placeholder="1" style="font-size: 11px;" />
       </div>
     </div>
 
@@ -320,10 +379,7 @@
         {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedResistancesPicker}}
         {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedImmunitiesPicker}}
       </div>
-      <div class="cog-field-group" style="margin-bottom: 0;">
-        <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Granted Buffs to Characters Inside Aura (Comma-Separated)</span>
-        <input class="cog-field-input" type="text" name="system.area.grantedBuffs" value="{{areaGrantedBuffsString}}" placeholder="e.g. Strength Buff, Blessed" list="cog-available-buffs-list-{{item.id}}" style="font-size: 11px;" />
-      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedBuffsPicker}}
     </div>
 
     {{!-- Aura Healing & Cleansing Sub-Block --}}
@@ -344,10 +400,7 @@
           <span class="cog-field-label">HoT Rounds</span>
           <input class="cog-field-input" type="number" name="system.area.hotRounds" value="{{#if system.area.hotRounds}}{{system.area.hotRounds}}{{/if}}" placeholder="3" min="1" style="font-size: 11px;" />
         </div>
-        <div class="cog-field-group" style="flex: 1;">
-          <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Cleanse Debuffs Inside Aura</span>
-          <input class="cog-field-input" type="text" name="system.area.cleanseDebuffs" value="{{areaCleanseDebuffsString}}" placeholder="e.g. Bleeding, Burned" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
-        </div>
+        {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaCleanseDebuffsPicker}}
       </div>
     </div>
 
@@ -375,14 +428,8 @@
           </select>
         </div>
       </div>
-      <div class="cog-field-group" style="margin-bottom: 0;">
-        <span class="cog-field-label"><i class="fa-solid fa-skull cog-text-accent"></i> Inflicted Aura Debuffs & Conditions (Comma-Separated)</span>
-        <input class="cog-field-input" type="text" name="system.area.inflictedDebuffs" value="{{areaInflictedDebuffsString}}" placeholder="e.g. Fear, Charmed, Asleep, Paralyzed" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
-      </div>
-      <div class="cog-field-group" style="margin-bottom: 0;">
-        <span class="cog-field-label"><i class="fa-solid fa-hourglass-half cog-text-accent"></i> Conditions Applied Each Pulse (Comma-Separated)</span>
-        <input class="cog-field-input" type="text" name="system.area.pulseConditions" value="{{areaPulseConditionsString}}" placeholder="e.g. condition.burned, condition.blinded" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
-      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaInflictedDebuffsPicker}}
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaPulseConditionsPicker}}
     </div>
 
   </div>
@@ -432,6 +479,12 @@
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.rankDamageDice" value="{{system.rankBreaks.rank5.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
         </div>
         <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label" title="Whose Rank the additional Rank Damage Dice use.">Rank Dice Source</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank5.rankDiceSource" style="font-size: 11px;">
+            {{#each rank5DiceSourceOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> Crit Multiplier</span>
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.critMultiplier" value="{{#if system.rankBreaks.rank5.critMultiplier}}{{system.rankBreaks.rank5.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="Critical Hit Multiplier (e.g. 2x, 4x, 8x)" />
         </div>
@@ -457,6 +510,10 @@
         <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> Upgraded Temp HP/Bar</span>
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.tempBars.hpPerSlot" value="{{system.rankBreaks.rank5.tempBars.hpPerSlot}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> + Temp Bars Granted</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank5.tempBars.barsGranted" value="{{system.rankBreaks.rank5.tempBars.barsGranted}}" placeholder="0" min="0" style="font-size: 11px;" />
         </div>
         <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> + Healing Bars</span>
@@ -545,6 +602,12 @@
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.rankDamageDice" value="{{system.rankBreaks.rank10.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
         </div>
         <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label" title="Whose Rank the additional Rank Damage Dice use.">Rank Dice Source</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank10.rankDiceSource" style="font-size: 11px;">
+            {{#each rank10DiceSourceOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> Crit Multiplier</span>
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.critMultiplier" value="{{#if system.rankBreaks.rank10.critMultiplier}}{{system.rankBreaks.rank10.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="Critical Hit Multiplier (e.g. 2x, 4x, 8x)" />
         </div>
@@ -570,6 +633,10 @@
         <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> Upgraded Temp HP/Bar</span>
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.tempBars.hpPerSlot" value="{{system.rankBreaks.rank10.tempBars.hpPerSlot}}" placeholder="6" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> + Temp Bars Granted</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank10.tempBars.barsGranted" value="{{system.rankBreaks.rank10.tempBars.barsGranted}}" placeholder="0" min="0" style="font-size: 11px;" />
         </div>
         <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> + Healing Bars</span>
@@ -658,6 +725,12 @@
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.rankDamageDice" value="{{system.rankBreaks.rank15.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
         </div>
         <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label" title="Whose Rank the additional Rank Damage Dice use.">Rank Dice Source</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank15.rankDiceSource" style="font-size: 11px;">
+            {{#each rank15DiceSourceOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> Crit Multiplier</span>
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.critMultiplier" value="{{#if system.rankBreaks.rank15.critMultiplier}}{{system.rankBreaks.rank15.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="Critical Hit Multiplier (e.g. 2x, 4x, 8x)" />
         </div>
@@ -683,6 +756,10 @@
         <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> Upgraded Temp HP/Bar</span>
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.tempBars.hpPerSlot" value="{{system.rankBreaks.rank15.tempBars.hpPerSlot}}" placeholder="8" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> + Temp Bars Granted</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank15.tempBars.barsGranted" value="{{system.rankBreaks.rank15.tempBars.barsGranted}}" placeholder="0" min="0" style="font-size: 11px;" />
         </div>
         <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> + Healing Bars</span>
@@ -771,6 +848,12 @@
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.rankDamageDice" value="{{system.rankBreaks.rank20.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
         </div>
         <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label" title="Whose Rank the additional Rank Damage Dice use.">Rank Dice Source</span>
+          <select class="cog-field-input" name="system.rankBreaks.rank20.rankDiceSource" style="font-size: 11px;">
+            {{#each rank20DiceSourceOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> Crit Multiplier</span>
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.critMultiplier" value="{{#if system.rankBreaks.rank20.critMultiplier}}{{system.rankBreaks.rank20.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="Critical Hit Multiplier (e.g. 2x, 4x, 8x)" />
         </div>
@@ -796,6 +879,10 @@
         <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> Upgraded Temp HP/Bar</span>
           <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.tempBars.hpPerSlot" value="{{system.rankBreaks.rank20.tempBars.hpPerSlot}}" placeholder="10" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> + Temp Bars Granted</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.rank20.tempBars.barsGranted" value="{{system.rankBreaks.rank20.tempBars.barsGranted}}" placeholder="0" min="0" style="font-size: 11px;" />
         </div>
         <div class="cog-field-group" style="flex: 1;">
           <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> + Healing Bars</span>
@@ -873,16 +960,20 @@
       <table class="cog-table" style="margin: 0; font-size: 11px;">
         <thead>
           <tr>
-            <th style="width: 30%;">Damage Type</th>
-            <th style="width: 20%;">Fixed Bonus</th>
-            <th style="width: 25%;">Dice (Optional)</th>
-            <th style="width: 20%;">Min Rank</th>
+            <th style="width: 22%;">Label</th>
+            <th style="width: 22%;">Damage Type</th>
+            <th style="width: 16%;">Fixed Bonus</th>
+            <th style="width: 20%;">Dice (Optional)</th>
+            <th style="width: 15%;">Min Rank</th>
             <th style="width: 5%;"></th>
           </tr>
         </thead>
         <tbody>
           {{#each system.rankDamageParts as |mod idx|}}
             <tr>
+              <td>
+                <input class="cog-field-input" type="text" name="system.rankDamageParts.{{idx}}.label" value="{{mod.label}}" style="width: 100%; font-size: 11px;" />
+              </td>
               <td>
                 <select class="cog-field-input" name="system.rankDamageParts.{{idx}}.type" style="font-size: 11px;">
                   {{#each ../damageTypes as |dt|}}
@@ -918,6 +1009,10 @@
 <div class="cog-field-group" style="margin-bottom: 8px;">
   <span class="cog-field-label">Notes & Upgrades</span>
   <textarea class="cog-field-input" name="system.notes" style="height: 120px;">{{system.notes}}</textarea>
+</div>
+<div class="cog-field-group" style="margin-bottom: 8px;">
+  <span class="cog-field-label">Description</span>
+  {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
 </div>
 
 {{#if availableBuffs.length}}

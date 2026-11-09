@@ -1,9 +1,10 @@
 import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
-import { isAuraItem } from '../utils/tag-mechanics.mjs';
+import { HIDEABLE_HUD_CLASS } from '../utils/effects/hud-visibility.mjs';
+import { isAuraItem } from '../utils/tag/tag-mechanics.mjs';
 import { COGToolApp } from './tool-app.mjs';
-import { durationRounds, durationRemainingLabel, durationConfigText } from '../utils/durations.mjs';
+import { durationRounds, durationRemainingLabel, durationConfigText } from '../utils/time/durations.mjs';
 import { getSingleton } from './singleton.mjs';
-import { activeDispels, isBuffSuppressed, removeDispelEntry } from '../utils/dispel.mjs';
+import { activeDispels, isBuffDispelled, removeDispelEntry } from '../utils/effects/dispel.mjs';
 /**
  * Sprinter RPG — Pathfinder 2e-Style Active Effects & Auras Panel
  *
@@ -22,7 +23,7 @@ export class COGEffectsPanel extends COGToolApp {
 
   static DEFAULT_OPTIONS = {
     id: 'cog-effects-panel',
-    classes: ['cog-hud-overlay', 'cog-effects-panel'],
+    classes: ['cog-hud-overlay', HIDEABLE_HUD_CLASS, 'cog-effects-panel'],
     window: { frame: false, positioned: false, resizable: false, minimizable: false },
     actions: {
       toggleFlyout: COGEffectsPanel.#onToggleFlyout,
@@ -209,7 +210,7 @@ export class COGEffectsPanel extends COGToolApp {
       const sys = item.system || {};
       if (!sys.active) continue;
       if (effects.some(e => e.itemId === (item.id || item._id))) continue;
-      if (isBuffSuppressed(actor, item)) continue; // listed by its dispel row below
+      if (isBuffDispelled(actor, item)) continue; // listed by its dispel row below
 
       const remainingRounds = Number(sys.durationConfig?.remainingRounds ?? durationRounds(sys.durationConfig));
       const durationLabel = remainingRounds > 0 ? `${remainingRounds}r` : (sys.duration || '∞');

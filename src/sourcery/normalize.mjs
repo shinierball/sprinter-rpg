@@ -75,7 +75,7 @@ export function bodyPrefixHash(text) {
 export const LINE_WORDS = 8;
 export const MAX_LINE_WORDS = 40;
 /** Hex characters kept of a line hash: a selector chooses among the lines of one block, so 64 bits is ample. */
-export const LINE_HASH_CHARS = 16;
+const LINE_HASH_CHARS = 16;
 
 /**
  * Line selector hash: the first `words` normalised words of a line (the prefix-hash normaliser, so bullets,

@@ -4,9 +4,9 @@
  * spell is granted at. Rows are added by the skill picker or by dropping a skill or spell on the gear sheet, so a
  * row always names its document (the grant validator rejects half-filled rows).
  */
-import { identifierOptions } from './identifier-options.mjs';
+import { identifierOptions, pickedBadge } from '../../utils/ui/identifier-options.mjs';
 import { grantDisplayName } from '../../models/actors/actor-derivation.mjs';
-import { toRowArray } from '../../models/items/base-item-model.mjs';
+import { toRowArray } from '../../models/items/grant-validation.mjs';
 
 /** Kinds the gear bonus table edits. */
 export const GEAR_GRANT_KINDS = Object.freeze(['skill', 'spell']);
@@ -51,16 +51,20 @@ export function addGearGrant(stored, ref, { value = 1, replaceIndex = null } = {
  * identifier select (catalog entries of the row's kind; a non-catalog identifier is kept as its own option).
  * @param {Array|object} grants
  * @param {{skills?: object[], spells?: object[]}} [lists] the entries to offer (default: the registry catalogs)
- * @returns {Array<{idx: number, kind: string, isSpell: boolean, identifier: string, name: string, value: number, rank: number, options: Array<{value: string, label: string, selected: boolean}>}>}
+ * @returns {Array<{idx: number, kind: string, isSpell: boolean, identifier: string, name: string, label: string, value: number, rank: number, enchantment: string, options: Array<{value: string, label: string, selected: boolean}>}>}
  */
 export function gearGrantRows(grants, lists = {}) {
   return toRowArray(grants).flatMap((row, idx) => {
     if (!isGearBonusGrant(row)) return [];
     const name = grantDisplayName(row, row.kind);
+    const options = identifierOptions((row.kind === 'spell' ? lists.spells : lists.skills) ?? row.kind, row.identifier, { fallbackLabel: name });
     return [{
-      idx, kind: row.kind, isSpell: row.kind === 'spell', identifier: row.identifier || '', name,
+      idx, kind: row.kind, isSpell: row.kind === 'spell', identifier: row.identifier || '', name, label: typeof row.label === 'string' ? row.label : '',
       value: Number(row.value) || 0, rank: Number(row.rank) || 1,
-      options: identifierOptions((row.kind === 'spell' ? lists.spells : lists.skills) ?? row.kind, row.identifier, { fallbackLabel: name })
+      // The ledger id of the enchantment that wrote the row (3.15): the table shows an [ENCHANTMENT] badge for it
+      enchantment: typeof row.enchantment === 'string' ? row.enchantment : '',
+      options,
+      sourceBadge: pickedBadge(options)
     }];
   });
 }

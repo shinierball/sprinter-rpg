@@ -3,18 +3,18 @@
  * temporary shield bars and the precomputed selector options (CONTRIBUTING §5).
  */
 import { buildTagPills } from '../base/tag-editor.mjs';
-import { actorTagEditVerdict, isDerivedActorTag } from '../../utils/actor-tag-permissions.mjs';
-import { collectActorTags } from '../../data/tags.mjs';
-import { camerasOffered, cameraArmView } from '../../utils/cameras.mjs';
-import { mobDifficultyShift, MOB_QUALITIES } from '../../documents/actor/combat-targeting.mjs';
+import { actorTagEditVerdict, isDerivedActorTag } from '../../utils/tag/actor-tag-permissions.mjs';
+import { collectActorTags } from '../../documents/active-tags.mjs';
+import { sexSelectView } from '../../utils/tag/sex.mjs';
+import { camerasOffered, cameraArmView } from '../../utils/roll/cameras.mjs';
+import { mobDifficultyShift, MOB_QUALITIES } from '../../documents/actor/attack-targets.mjs';
 import { COGActor } from '../../documents/actor.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
-import { getHpPerBar } from '../../apps/combat-metrics.mjs';
+import { getHpPerBar } from '../../documents/combat-metrics.mjs';
 import { DEFAULT_SIZE, getSizeInfo, sizeOptions } from '../../data/sizes.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { BOSS_TIERS, bossActionBudget } from '../../data/mob-creation-rules.mjs';
-import { pendingFloorRun } from '../../apps/floor-simulator/pending.mjs';
-import { isRaceClassLocked, raceClassText, raceClassUnlockFloor } from '../../utils/race-class-floor.mjs';
+import { isRaceClassLocked, raceClassText, raceClassUnlockFloor } from '../../utils/character/race-class-floor.mjs';
 
 const FLOOR_OPTIONS = [
   'Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6',
@@ -39,7 +39,7 @@ function optionsWithCustom(values, current) {
 /** Most bars that still leave each segment wide enough (about 42px on the default 838px bar) for the HP number above the percentage. */
 const MAX_BARS_WITH_HP_NUMBER = 20;
 
-function healthSegments(numBars, hpPerBar) {
+export function healthSegments(numBars, hpPerBar) {
   const showHp = numBars <= MAX_BARS_WITH_HP_NUMBER;
   const segments = [];
   for (let i = 1; i <= numBars; i++) {
@@ -209,7 +209,6 @@ export function prepareCoreContext(context, actor) {
   context.currentRaceLabel = rc.currentRaceLabel;
   context.currentClassLabel = rc.currentClassLabel;
   prepareRaceClassHints(context, actor);
-  // Resume Floor Simulator: only while the crawler's floor run has arrivals left, for the owner or the GM.
   prepareTagEditor(context, actor);
-  context.canResumeFloorSim = context.isCrawler && Boolean(actor.isOwner || game.user?.isGM) && Boolean(pendingFloorRun(actor));
+  context.sexSelect = sexSelectView(actor, collectActorTags(actor));
 }

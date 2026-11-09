@@ -6,6 +6,7 @@
         <div>
           <div style="display: flex; align-items: center; gap: 6px;">
             <span class="cog-text-strong" style="font-size: 14px; font-weight: bold;">{{cond.name}}</span>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=cond.sourceBadge}}
             <span class="cog-badge {{#if cond.isBuff}}cog-badge-spell{{else}}cog-badge-attack{{/if}}" style="font-size: 9px; padding: 1px 4px;">
               {{upper cond.type}}
             </span>

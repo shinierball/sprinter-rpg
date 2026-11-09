@@ -7,13 +7,17 @@
  * Text goes under `COG.ItemSummary.Effects` in lang/en.json and is registered with `defineItemSummaryTemplates`.
  * Nothing here reads names, descriptions or notes.
  */
-import { itemLine, t, conditionName, defineItemSummaryTemplates, str, num, signed, integer } from './shared.mjs';
-import { durationConfigText } from '../durations.mjs';
-import { interruptEffectsText } from '../interrupts.mjs';
-import { normalizeTagList } from '../tag-query.mjs';
-import { getTagDefinition } from '../../data/tags.mjs';
+import { itemLine, t, conditionName, defineItemSummaryTemplates, str, num, signed, integer, humanizeId } from './shared.mjs';
+import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
+import { SYSTEM_ID } from '../../constants.mjs';
+import { normalizeTransform, TRANSFORM_CUES, CURE_WINDOWS } from '../character/transform-rules.mjs';
+import { durationConfigText } from '../time/durations.mjs';
+import { interruptEffectsText } from '../combat/interrupts.mjs';
+import { normalizeTagList } from '../tag/tag-query.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { COG_ACHIEVEMENT_TIERS } from '../../data/rules/achievement-tiers.mjs';
-import { BONUS_NUMBERS } from '../space-upgrade-fields.mjs';
+import { BONUS_NUMBERS } from './space-upgrade-fields.mjs';
+import { tableTierParts, tableTierText } from './blocks-crafting.mjs';
 
 const K = 'COG.ItemSummary.Effects.';
 
@@ -28,6 +32,12 @@ defineItemSummaryTemplates({
   [`${K}LimbLegs`]: 'Legs {delta}',
   [`${K}LimbHands`]: 'Hands {delta}',
   [`${K}Duration`]: 'Duration: {duration}',
+  [`${K}TransformForms`]: 'Changes into: {forms}',
+  [`${K}TransformEffects`]: 'Adds: {effects}',
+  [`${K}TransformCue`]: 'Reminder: {cue}',
+  [`${K}TransformCure`]: 'Cure after the change: {window}',
+  [`${K}Secret`]: 'Asks the GM to hide it from players when it lands',
+  [`${K}Paused`]: 'Paused',
   [`${K}EndsWithCombat`]: 'Ends when combat ends',
   [`${K}InterruptTouch`]: 'Interrupt at touch range of the {origin}',
   [`${K}InterruptRange`]: 'Interrupt within {feet} ft of the {origin}',
@@ -68,7 +78,6 @@ defineItemSummaryTemplates({
   [`${K}TrainingAny`]: 'any of {tags}',
   [`${K}Crafting`]: 'Crafting table: {parts}',
   [`${K}CraftingType`]: '{type}',
-  [`${K}CraftingTier`]: 'tier {tier}',
   [`${K}CraftingUpgrade`]: 'next tier costs {cost} gold'
 });
 
@@ -113,6 +122,37 @@ const debuffSeverity = {
   describe(item) {
     const severity = str(sysOf(item).severity);
     return severity ? [itemLine('mod', t(`${K}Severity`, { severity }), 'system.severity')] : [];
+  }
+};
+
+/** One line each for the affliction's forms, added effects, reminder and cure window; a hidden debuff's lines are GM-only. */
+const debuffTransform = {
+  id: 'debuff-transform',
+  group: 'effect',
+  applies: isType('debuff'),
+  describe(item, ctx) {
+    const sys = sysOf(item);
+    const lines = [];
+    const block = normalizeTransform(sys.transform);
+    if (block) {
+      if (block.forms.length) {
+        const forms = block.forms.map((f) => f.label || findCatalogEntry('races', f.race)?.name || humanizeId(f.race)).join(', ');
+        lines.push(itemLine('mod', t(`${K}TransformForms`, { forms }), 'system.transform.forms'));
+      }
+      if (block.effects.length) {
+        const effects = block.effects.map((id) => conditionName('debuffs', id, ctx)).join(', ');
+        lines.push(itemLine('mod', t(`${K}TransformEffects`, { effects }), 'system.transform.effects'));
+      }
+      if (block.cue) lines.push(itemLine('timing', t(`${K}TransformCue`, { cue: TRANSFORM_CUES[block.cue]?.label || block.cue }), 'system.transform.cue'));
+      if (block.forms.length || block.effects.length) {
+        lines.push(itemLine('timing', t(`${K}TransformCure`, { window: CURE_WINDOWS[block.curable]?.label || block.curable }), 'system.transform.curable'));
+      }
+    }
+    // The secret and switched-off lines carry no hidden data of their own, but `secret` is a GM note: GM-only.
+    if (sys.secret === true) lines.push({ ...itemLine('mod', t(`${K}Secret`), 'system.secret'), gmOnly: true });
+    if (sys.paused === true) lines.push(itemLine('mod', t(`${K}Paused`), 'system.paused'));
+    if (item?.flags?.[SYSTEM_ID]?.hidden === true) for (const line of lines) line.gmOnly = true;
+    return lines;
   }
 };
 
@@ -284,8 +324,7 @@ const spaceCrafting = {
     const parts = [];
     const type = str(ct.tableTypeTag);
     if (type) parts.push(t(`${K}CraftingType`, { type: getTagDefinition(type)?.label || type }));
-    const tier = [ct.baseTier, ct.purchasedTiers, ct.couponTiers].reduce((sum, n) => sum + Math.max(0, integer(n)), 0);
-    if (tier > 0) parts.push(t(`${K}CraftingTier`, { tier }));
+    if (tableTierParts(ct).tier > 0) parts.push(tableTierText(ct));
     if (num(ct.upgradeCostGold) > 0) parts.push(t(`${K}CraftingUpgrade`, { cost: num(ct.upgradeCostGold) }));
     return parts.length ? [itemLine('reward', t(`${K}Crafting`, { parts: parts.join(', ') }), 'system.craftingTable')] : [];
   }
@@ -293,6 +332,6 @@ const spaceCrafting = {
 
 /** @type {ReadonlyArray<import('./shared.mjs').ItemSummaryBlock>} */
 export const BLOCKS = Object.freeze([
-  buffHeal, debuffDamage, debuffSeverity, limbModifiers, effectDuration, interrupt, light,
+  buffHeal, debuffDamage, debuffSeverity, debuffTransform, limbModifiers, effectDuration, interrupt, light,
   achievementReward, spaceCost, spaceBonuses, spaceTraining, spaceCrafting
 ]);

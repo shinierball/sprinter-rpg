@@ -5,9 +5,10 @@
  */
 import { COGToolApp } from './tool-app.mjs';
 import { catalogEntries } from '../content/catalog-lookup.mjs';
+import { unifiedCatalogSync } from '../content/unified-catalog.mjs';
 import { COG_ACHIEVEMENT_TIERS } from '../data/rules/achievement-tiers.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
-import { addAiFavor } from '../chat/actions/ai-favor-tally.mjs';
+import { awardAchievement } from '../documents/actor/achievement-award.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/achievement-manager`;
 
@@ -61,25 +62,7 @@ export class COGAchievementManagerApp extends COGToolApp {
    * @returns {Array<object>}
    */
   getUnifiedAchievements() {
-    const world = [];
-    if (typeof game !== 'undefined' && game.items) {
-      for (const item of game.items) {
-        if (item.type !== 'achievement') continue;
-        world.push({
-          id: item.id,
-          name: item.name,
-          type: 'achievement',
-          img: item.img || 'icons/svg/upgrade.svg',
-          source: 'world',
-          system: structuredClone(item.system || {})
-        });
-      }
-    }
-    const overridden = new Set(world.map(w => w.system?.identifier).filter(Boolean));
-    const catalog = catalogEntries('achievements')
-      .filter(entry => !(entry.system?.identifier && overridden.has(entry.system.identifier)))
-      .map(entry => structuredClone(entry));
-    return [...catalog, ...world].map(entry => ({ ...entry, key: entry._id ?? entry.id }));
+    return unifiedCatalogSync('achievement').map(row => ({ ...row, key: row.id }));
   }
 
   /**
@@ -188,44 +171,22 @@ export class COGAchievementManagerApp extends COGToolApp {
       return null;
     }
 
-    const itemData = {
+    const result = await awardAchievement(actor, {
       name: achData.name,
-      type: 'achievement',
-      img: achData.img || 'icons/svg/upgrade.svg',
+      img: achData.img,
       system: {
-        quote: achData.system?.quote || '',
-        reward: achData.system?.reward || 'Special Recognition',
-        rewardContents: achData.system?.rewardContents || '',
-        tier: achData.system?.tier || 'bronze',
-        floor: actor.system?.details?.floor || 'Floor 1',
-        dateEarned: new Date().toLocaleDateString(),
-        session: '',
-        favor: Number(achData.system?.favor) || 0,
-        xp: Number(achData.system?.xp) || 0,
-        description: achData.system?.description || ''
+        quote: achData.system?.quote,
+        reward: achData.system?.reward,
+        rewardContents: achData.system?.rewardContents,
+        tier: achData.system?.tier,
+        favor: achData.system?.favor,
+        xp: achData.system?.xp,
+        description: achData.system?.description,
+        rewardBoxes: achData.system?.rewardBoxes
       }
-    };
-
-    const created = await actor.createEmbeddedDocuments('Item', [itemData]);
-    const createdItem = created?.[0];
-
-    // Apply Favor if specified
-    const favorBonus = Number(achData.system?.favor) || 0;
-    if (favorBonus > 0) {
-      await addAiFavor(actor, favorBonus, achData.name || 'Achievement');
-    }
-
-    // Apply XP if specified
-    const xpBonus = Number(achData.system?.xp) || 0;
-    if (xpBonus > 0) {
-      const curXp = Number(actor.system?.details?.xp?.value) || 0;
-      await actor.update({ 'system.details.xp.value': curXp + xpBonus });
-    }
-
-    // Announce to chat
-    if (createdItem && typeof actor.announceAchievement === 'function') {
-      await actor.announceAchievement(createdItem);
-    }
+    });
+    if (!result || result.declined) return null;
+    const createdItem = result.item;
 
     ui.notifications?.info(`Achievement "${achData.name}" awarded to ${actor.name}!`);
     this.render();

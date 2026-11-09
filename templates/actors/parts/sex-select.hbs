@@ -1,0 +1,11 @@
+{{!-- Sex select: reads and writes the actor's own creature.* sex tag. No `name`: it is not a schema input (GEMINI §5). --}}
+<div class="cog-field-group flex-1 cog-sex-select">
+  <span class="cog-field-label">{{localize "COG.Sex.Label"}}</span>
+  <select class="cog-field-input" data-change-action="setSex" title="{{localize 'COG.Sex.Title'}}">
+    {{#each sexSelect.options as |opt|}}
+      <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{#if opt.value}}{{opt.label}}{{else}}{{localize "COG.Sex.Blank"}}{{/if}}</option>
+    {{/each}}
+  </select>
+  {{#if sexSelect.extra}}<span class="cog-soft-hint cog-sex-extra">{{localize "COG.Sex.Multiple"}}</span>{{/if}}
+  {{#with sexSelect.derivedHint as |d|}}<span class="cog-soft-hint cog-sex-derived">{{#if d.source}}{{localize "COG.Sex.DerivedFrom" sex=d.sex item=d.source}}{{else}}{{localize "COG.Sex.DerivedTag" sex=d.sex}}{{/if}}</span>{{/with}}
+</div>

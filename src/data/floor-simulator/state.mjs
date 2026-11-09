@@ -6,13 +6,12 @@
  * Step handler interface (see steps/index.mjs): `{ kind, skipped?, plan(step, state, ctx), resolve(step, stepSpec, state, ctx, rng) }`.
  */
 import { rollFormula } from '../../utils/rng.mjs';
+import { firstScalar } from '../../utils/first-scalar.mjs';
 
 /** Defensive text: arrays and comma lists collapse to the first entry (CONTRIBUTING §4). */
 export function cleanText(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
+  let val = firstScalar(raw);
   if (typeof val === 'number') val = String(val);
-  if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0];
   return typeof val === 'string' ? val.trim() : '';
 }
 
@@ -40,7 +39,7 @@ export function readSpecValue(raw) {
 }
 
 /** The smallest and largest total of an `NdS`, `NdS+k` or `NdS-k` formula, or null when unsupported. */
-export function formulaRange(formula) {
+function formulaRange(formula) {
   const m = /^(\d+)d(\d+)(?:([+-])(\d+))?$/.exec(String(formula ?? '').replace(/\s+/g, '').toLowerCase());
   if (!m) return null;
   const count = Number(m[1]);

@@ -9,19 +9,21 @@
  * A frameless ApplicationV2 overlay: open it with `COGFloorClockHUD.get().render({ force: true })`.
  */
 
+import { toggleWorldZeroZone, worldZeroZone } from '../utils/effects/zero-zone.mjs';
+import { HIDEABLE_HUD_CLASS } from '../utils/effects/hud-visibility.mjs';
 import { COGActor } from '../documents/actor.mjs';
 import { COGCrawlerClockHUD } from './crawler-clock-hud.mjs';
 import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { getSingleton } from './singleton.mjs';
 import { advanceDungeonTime, bumpSceneEpoch, getSceneEpoch, SCENE_EPOCH_REASONS } from '../documents/actor/dungeon-time.mjs';
-import { formatSeconds } from '../utils/timing.mjs';
+import { formatSeconds, SECONDS_PER_HOUR } from '../utils/time/timing.mjs';
 
 /** "5" for whole hours, "5h 30m" with a fraction. The timer is the hours left; world time moves it down. */
 function hoursText(hours) {
   const h = Number(hours) || 0;
   if (Number.isInteger(h)) return String(h);
-  return formatSeconds(Math.round(h * 3600));
+  return formatSeconds(Math.round(h * SECONDS_PER_HOUR));
 }
 
 export class COGFloorClockHUD extends COGToolApp {
@@ -29,13 +31,14 @@ export class COGFloorClockHUD extends COGToolApp {
 
   static DEFAULT_OPTIONS = {
     id: 'cog-floor-clock-hud',
-    classes: ['cog-hud-overlay', 'cog-floor-clock-hud'],
+    classes: ['cog-hud-overlay', HIDEABLE_HUD_CLASS, 'cog-floor-clock-hud'],
     window: { frame: false, positioned: false, resizable: false, minimizable: false },
     actions: {
       toggleCollapsed: COGFloorClockHUD.#onToggleCollapsed,
       adjustTimer: COGFloorClockHUD.#onAdjustTimer,
       setTimer: COGFloorClockHUD.#onSetTimer,
-      newScene: COGFloorClockHUD.#onNewScene
+      newScene: COGFloorClockHUD.#onNewScene,
+      toggleZeroZone: COGFloorClockHUD.#onToggleZeroZone
     }
   };
 
@@ -66,6 +69,9 @@ export class COGFloorClockHUD extends COGToolApp {
     context.dungeonTime = formatSeconds(globalThis.game?.time?.worldTime);
     context.sceneNumber = getSceneEpoch() + 1;
     context.currentFloor = COGActor.getCurrentFloor();
+    // The pill is GM-only: crawlers never see the words (617).
+    context.zeroZone = Boolean(context.isGM) && worldZeroZone();
+    context.zeroZoneLabel = globalThis.game?.i18n?.localize?.('COG.Hud.ZeroZonePill') ?? 'ZERO ZONE';
     return context;
   }
 
@@ -138,12 +144,16 @@ export class COGFloorClockHUD extends COGToolApp {
     if (delta < 0) {
       // Taking time off is time passing: the floor timer and world time move together (3.12).
       const exact = parseFloat(target.dataset.seconds);
-      await advanceDungeonTime(Number.isFinite(exact) && exact > 0 ? exact : -delta * 3600);
+      await advanceDungeonTime(Number.isFinite(exact) && exact > 0 ? exact : -delta * SECONDS_PER_HOUR);
     } else {
       // Adding time is a correction: the floor timer changes, the world clock does not.
       await COGActor.setFloorTimer(COGActor.getFloorTimer() + delta);
     }
     await this.render();
+  }
+
+  static async #onToggleZeroZone() {
+    await toggleWorldZeroZone();
   }
 
   static async #onNewScene() {

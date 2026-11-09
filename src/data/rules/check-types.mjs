@@ -12,8 +12,9 @@
  * - tool     a tool or crafting check
  * - none     no check
  */
+import { firstScalar } from '../../utils/first-scalar.mjs';
 
-export const DEFAULT_CHECK_TYPE = 'stat';
+const DEFAULT_CHECK_TYPE = 'stat';
 
 /** @typedef {{ id: string, label: string }} CheckTypeDef `label`: a `lang/` key, or plain text from a module */
 
@@ -50,10 +51,8 @@ export function checkTypeLabel(id) {
 
 /** A check type id from stored data, sanitised (CONTRIBUTING §4). An unregistered id is kept, not reset. */
 export function sanitizeCheckType(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
+  const val = firstScalar(raw);
   if (typeof val !== 'string') return DEFAULT_CHECK_TYPE;
-  if (val.includes(',')) val = val.split(',')[0];
   return val.trim() || DEFAULT_CHECK_TYPE;
 }
 

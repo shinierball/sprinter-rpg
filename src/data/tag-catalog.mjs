@@ -1,10 +1,10 @@
-import { COG_OUTCOME_CONFIG } from '../apps/session-manager/roll-outcomes.mjs';
+import { COG_OUTCOME_CONFIG } from '../documents/session/roll-outcomes.mjs';
 import {
-  AIMING_CONDITION, CONTEST_TAGS, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS, SAME_SIZE_SITUATION
+  AIMING_CONDITION, CONTEST_TAGS, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS, SAME_SIZE_SITUATION, VEHICLE_TAGS
 } from './tag-vocabulary.mjs';
 
 /**
- * The built-in tag definitions. Data only; lookups and registration live in `tags.mjs`, which re-exports `COG_TAGS`.
+ * The built-in tag definitions. Data only; lookups and registration live in `tag-definitions.mjs`.
  */
 
 export const COG_TAGS = [
@@ -29,7 +29,7 @@ export const COG_TAGS = [
   { id: 'kind.upgrade', label: 'Space Upgrade', namespace: 'kind' },
   { id: 'kind.technique', label: 'Combat Technique', namespace: 'kind' },
   { id: 'kind.core', label: 'Core Action', namespace: 'kind', flags: ['no-ranks'] },
-  // Derived from the actor type (`collectActorTags`, tags.mjs); registered so tag pickers can offer them.
+  // Derived from the actor type (`collectActorTags`, documents/active-tags.mjs); registered so tag pickers can offer them.
   { id: 'kind.crawler', label: 'Crawler', namespace: 'kind' },
   { id: 'kind.mob', label: 'Mob', namespace: 'kind' },
   { id: 'kind.npc', label: 'NPC / Creature', namespace: 'kind' },
@@ -44,6 +44,7 @@ export const COG_TAGS = [
   { id: 'space.suite', label: 'Penthouse Sponsor Suite', namespace: 'space' },
   { id: 'space.guild_hall', label: 'Guild Safe House', namespace: 'space' },
   { id: 'space.safe_room', label: 'Certified Safe Room', namespace: 'space' },
+  { id: 'scene.safe_room', label: 'Safe Room Scene', namespace: 'scene', description: 'A scene where crawlers open loot boxes without a Rule Break. Set by the Safe Room checkbox in Scene Config.' },
 
   // --- Space Upgrades ---
   { id: 'upgrade.rest', label: 'Rest & Recovery Upgrade', namespace: 'upgrade' },
@@ -59,6 +60,7 @@ export const COG_TAGS = [
   { id: 'heritage.earth', label: 'Earth Heritage', namespace: 'heritage', description: 'The race comes from Earth.', descriptive: true },
   { id: 'heritage.alien', label: 'Alien Heritage', namespace: 'heritage', description: 'The race comes from another world.', descriptive: true },
   { id: 'heritage.pet', label: 'Pet Heritage', namespace: 'heritage', description: 'The race is a pet or companion race (the engine reads companion.pet for that).', descriptive: true },
+  { id: 'race.form', label: 'Transformation Form', namespace: 'race', description: 'The race is only a form an affliction changes a victim into. Race pickers leave it out; applying it by hand still works.' },
   { id: 'companion.pet', label: 'Pet Companion', namespace: 'companion' },
   { id: 'companion.vehicle', label: 'Vehicle', namespace: 'companion' },
   { id: 'companion.mount', label: 'Mount / Beast of Burden', namespace: 'companion', flags: ['mount'] },
@@ -140,6 +142,47 @@ export const COG_TAGS = [
   { id: 'material.crafting', label: 'Crafting Material', namespace: 'material', description: 'Loot that crafting can use as a reagent.' },
   { id: 'material.misc_junk', label: 'Misc. Junk', namespace: 'material', description: 'The baseline crafting reagent: broken, empty or burnt leftovers.' },
 
+  // --- Crafting (3.15): tables, coupons, the step being rolled, material and item state. ---
+  { id: 'crafting.table.alchemist', label: 'Alchemy Table', namespace: 'crafting', description: 'A crafting table for potions and reagents.' },
+  { id: 'crafting.table.arcanist', label: 'Arcanist Table', namespace: 'crafting', description: 'A crafting table for scrolls and magical work.' },
+  { id: 'crafting.table.blacksmith', label: 'Smithing Table', namespace: 'crafting', description: 'A crafting table for weapons and armor.' },
+  { id: 'crafting.table.tattoo', label: 'Tattoo Table', namespace: 'crafting', description: 'A crafting table for tattoos.' },
+  { id: 'crafting.table.makeup', label: 'Makeup Table', namespace: 'crafting', description: 'A crafting table for makeup and cosmetics.' },
+  { id: 'crafting.table.tinkerer', label: 'Workbench', namespace: 'crafting', description: 'A crafting table for gadgets and mechanisms.' },
+  { id: 'crafting.table.props', label: 'Prop Shop Table', namespace: 'crafting', description: 'A crafting table for props and costumes.' },
+  { id: 'crafting.coupon.table', label: 'Table Upgrade Coupon', namespace: 'crafting', description: 'Loot that adds one tier to a crafting table when applied.' },
+  { id: 'crafting.mode.mundane', label: 'Crafting a Plain Item', namespace: 'crafting', engine: true, description: 'Set by the engine on the check that builds the base item.' },
+  { id: 'crafting.mode.enchant', label: 'Crafting an Enchantment', namespace: 'crafting', engine: true, description: 'Set by the engine on a check that applies an enchantment to an item.' },
+  { id: 'crafting.mode.item', label: 'Crafting an Item', namespace: 'crafting', engine: true, description: 'Set by the engine on a check made for a blueprint that makes a new item.' },
+  { id: 'material.unsalvageable', label: 'Unsalvageable Material', namespace: 'material', description: 'A crafting material that is never given back when a craft fails.' },
+  { id: 'item.broken', label: 'Broken', namespace: 'item', description: 'The item is broken. It can be repaired.' },
+  { id: 'item.destroyed', label: 'Destroyed', namespace: 'item', description: 'The item is destroyed and cannot be repaired.' },
+  { id: 'item.trap', label: 'Trap', namespace: 'item', description: 'A trap. Crafting rows may test it on the item being made.' },
+  { id: 'item.explosive', label: 'Explosive', namespace: 'item', description: 'An explosive device. Crafting rows may test it on the item being made.' },
+
+  // --- Vehicles (3.44; the vehicle rules read them: src/data/rules/vehicle-rules.mjs) ---
+  { id: VEHICLE_TAGS.skillDriving, label: 'Drives Wheeled Vehicles', namespace: 'vehicle', description: 'A skill that drives vehicles with three or more wheels or tracks. A vehicle kind finds its driving skill by this tag.' },
+  { id: VEHICLE_TAGS.skillChopper, label: 'Drives Two-Wheeled Vehicles', namespace: 'vehicle', description: 'A skill that drives motorcycles and the like. A vehicle kind finds its driving skill by this tag.' },
+  { id: `${VEHICLE_TAGS.kindPrefix}wheeled`, label: 'Wheeled Vehicle', namespace: 'vehicle', engine: true, description: 'Derived on a vehicle of this kind.' },
+  { id: `${VEHICLE_TAGS.kindPrefix}two_wheeled`, label: 'Two-Wheeled Vehicle', namespace: 'vehicle', engine: true, description: 'Derived on a vehicle of this kind.' },
+  { id: `${VEHICLE_TAGS.kindPrefix}other`, label: 'Other Vehicle', namespace: 'vehicle', engine: true, description: 'Derived on a vehicle of this kind.' },
+  { id: `${VEHICLE_TAGS.upgradePrefix}armor`, label: 'Vehicle Armor', namespace: 'vehicle', description: 'Gear installed on a vehicle as armor.' },
+  { id: `${VEHICLE_TAGS.upgradePrefix}mounted_weapon`, label: 'Vehicle Mounted Weapon', namespace: 'vehicle', description: 'Gear installed on a vehicle as a mounted weapon.' },
+  { id: `${VEHICLE_TAGS.upgradePrefix}speed`, label: 'Vehicle Speed Upgrade', namespace: 'vehicle', description: 'Gear installed on a vehicle to make it faster.' },
+  { id: `${VEHICLE_TAGS.upgradePrefix}magic`, label: 'Vehicle Magic Upgrade', namespace: 'vehicle', description: 'Gear installed on a vehicle that works magic on its driving.' },
+  { id: `${VEHICLE_TAGS.upgradePrefix}style`, label: 'Vehicle Style Upgrade', namespace: 'vehicle', description: 'Gear installed on a vehicle for show.' },
+  { id: `${VEHICLE_TAGS.checkPrefix}performance`, label: 'Vehicle Performance Check', namespace: 'vehicle', engine: true, description: 'Set by the engine on a driving check that decides how the vehicle performs this round.' },
+  { id: `${VEHICLE_TAGS.checkPrefix}decelerate`, label: 'Vehicle Deceleration Check', namespace: 'vehicle', engine: true, description: 'Set by the engine on a check to stop the vehicle where the driver wants.' },
+  { id: `${VEHICLE_TAGS.checkPrefix}ram`, label: 'Vehicle Ram', namespace: 'vehicle', engine: true, description: 'Set by the engine on a ram, its damage and the Evade against it.' },
+  { id: `${VEHICLE_TAGS.checkPrefix}board`, label: 'Vehicle Boarding Check', namespace: 'vehicle', engine: true, description: 'Set by the engine on the Dex check to board a moving vehicle.' },
+  { id: `${VEHICLE_TAGS.checkPrefix}contest`, label: 'Vehicle Contest Leg', namespace: 'vehicle', engine: true, description: 'Set by the engine on a race or chase leg driven in a vehicle.' },
+  { id: `${VEHICLE_TAGS.checkPrefix}weapon`, label: 'Vehicle Weapon Shot', namespace: 'vehicle', engine: true, description: 'Set by the engine on an attack with a vehicle-mounted weapon.' },
+  { id: `${VEHICLE_TAGS.checkPrefix}evade`, label: 'Vehicle Evade', namespace: 'vehicle', engine: true, description: 'Set by the engine on a driver\'s check to dodge an attack on the vehicle.' },
+  { id: VEHICLE_TAGS.explosion, label: 'Vehicle Explosion', namespace: 'vehicle', engine: true, description: 'Set by the engine on the damage of an exploding vehicle; the vehicle\'s DR does not protect against it.' },
+  { id: VEHICLE_TAGS.driving, label: 'Driving a Moving Vehicle', namespace: 'situation', engine: true, description: 'Set by the engine on the rolls of a vehicle\'s driver while it moves.' },
+  { id: VEHICLE_TAGS.headOn, label: 'Head-On or From Behind', namespace: 'situation', description: 'The attack or Evade is straight ahead of or behind a vehicle, so its speed does not count.' },
+  { id: VEHICLE_TAGS.mountedOnly, label: 'Mounted Use Only', namespace: 'rule', flags: ['mounted-only'], description: 'A weapon made for use while mounted or driving; a driver uses it without Disadvantage.' },
+
   // --- Contests ---
   { id: CONTEST_TAGS.race, label: 'Race Check', namespace: 'contest', engine: true, description: 'Set by the engine on a check made for a leg of a race.' },
   { id: CONTEST_TAGS.chase, label: 'Chase Check', namespace: 'contest', engine: true, description: 'Set by the engine on a check made for a leg of a chase.' },
@@ -193,6 +236,7 @@ export const COG_TAGS = [
   { id: 'delivery.aura', label: 'Aura (Token Follower)', namespace: 'delivery' },
   { id: 'delivery.self', label: 'Self', namespace: 'delivery' },
   { id: 'delivery.target', label: 'Target Creature', namespace: 'delivery' },
+  { id: 'delivery.burst', label: 'Burst', namespace: 'delivery' },
 
   // --- Duration Types ---
   { id: 'duration.instant', label: 'Instantaneous', namespace: 'duration' },
@@ -349,6 +393,8 @@ export const COG_TAGS = [
   { id: 'check.spell', label: 'Spell Cast Roll', namespace: 'check' },
   { id: 'check.assist', label: 'Assist Roll', namespace: 'check' },
   { id: 'check.surprise', label: 'Surprise Check', namespace: 'check' },
+  { id: VEHICLE_TAGS.check, label: 'Vehicle Check', namespace: 'check' },
+  { id: 'check.crafting', label: 'Crafting Check', namespace: 'check', description: 'Set by the engine on a check made for a crafting step.' },
 
   // --- Roll outcomes (card condition tags; ids are the COG_ROLL_OUTCOMES keys) ---
   ...Object.entries(OUTCOME_TAGS)
@@ -368,6 +414,10 @@ export const COG_TAGS = [
   { id: 'situation.disadvantaged', label: 'Disadvantaged', namespace: 'situation', engine: true },
   { id: 'situation.critical_hit', label: 'Critical Hit', namespace: 'situation', engine: true },
   { id: 'situation.damage_effect', label: 'Damage Effect Used', namespace: 'situation', engine: true },
+  {
+    id: 'situation.specialty', label: 'Your Specialty', namespace: 'situation', engine: true,
+    description: "Set by the engine when the item being made, or the target, carries the rolling skill's chosen specialty."
+  },
   {
     id: 'situation.amazing_success', label: 'Amazing Success (this target)', namespace: 'situation', engine: true,
     description: "Set by the engine for a target the attack beat by 10 or more. Not set on a Natural 20; a Critical Hit supersedes it. For 'Amazing Success or better' use any of this and Critical Hit."
@@ -396,6 +446,8 @@ export const COG_TAGS = [
   { id: 'creature.elemental', label: 'Elemental', namespace: 'creature' },
   { id: 'creature.male', label: 'Male', namespace: 'creature' },
   { id: 'creature.female', label: 'Female', namespace: 'creature' },
+  { id: 'creature.nonbinary', label: 'Non-binary', namespace: 'creature' },
+  { id: 'creature.sex_other', label: 'Other', namespace: 'creature' },
 
   // --- Combat Technique Targets ---
   { id: 'technique.wrestling', label: 'Wrestling Technique', namespace: 'technique', references: 'id.skill.dccskl0000000015' },
@@ -440,7 +492,8 @@ export const COG_TAGS = [
   { id: 'rule.grind-map-borough', label: 'Borough Map (+2 grinding hours)', namespace: 'rule' },
   { id: 'rule.offset-disadvantage', label: 'Offsets Disadvantage on Attacks', namespace: 'rule', description: 'Descriptive: the GM offsets disadvantage on attacks.', descriptive: true },
   { id: 'rule.anti-piercing', label: 'Anti-Piercing Armor', namespace: 'rule', flags: ['anti-piercing'] },
-  { id: 'rule.mount', label: 'Mount / Rideable Companion', namespace: 'rule', flags: ['mount'] },
+  { id: 'rule.works-in-zero-zone', label: 'Works in Zero Zone', namespace: 'rule', flags: ['works-in-zero-zone'] },
+  { id: 'rule.mount',label: 'Mount / Rideable Companion', namespace: 'rule', flags: ['mount'] },
   { id: 'rule.pet-skill', label: 'Pet Signature Skill', namespace: 'rule', description: 'Descriptive: marks a pet signature skill; the GM adjudicates it.', descriptive: true },
   { id: 'rule.taunt', label: 'Taunt', namespace: 'rule', description: 'Draws enemy attacks toward the bearer (the redirect itself is the interrupt row on the skill).', descriptive: true },
   { id: 'rule.no-redirect', label: 'Cannot Be Redirected or Intercepted', namespace: 'rule', flags: ['no-redirect'] },

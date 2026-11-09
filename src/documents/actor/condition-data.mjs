@@ -4,8 +4,9 @@
  */
 import { catalogEntries, conditionRefTag, conditionRefTagId, conditionMatcher } from '../../content/catalog-lookup.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
-import { getTagDefinition } from '../../data/tags.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
+import { carrySourceStamp } from '../../utils/content-source.mjs';
 
 export { conditionRefTag };
 
@@ -29,7 +30,7 @@ export function conditionItemData(ref, options = {}) {
   const slug = tagId.replace(/^condition\./, '');
   const flags = {
     [SYSTEM_ID]: {
-      source: options.source || options.sourceItem?.name || null,
+      inflictedBy: options.source || options.sourceItem?.name || null,
       sourceItemId: options.sourceItem?.id || options.sourceItemId || null,
       conditionTag: tagId || null
     }
@@ -40,7 +41,7 @@ export function conditionItemData(ref, options = {}) {
   if (!match && typeof game !== 'undefined' && game.items) match = game.items.find(i => i.type === 'debuff' && same(i));
 
   if (match) {
-    return {
+    return carrySourceStamp({
       name: match.name,
       type: 'debuff',
       img: options.img || match.img || 'icons/svg/skull.svg',
@@ -51,7 +52,7 @@ export function conditionItemData(ref, options = {}) {
         tags: Array.from(new Set([...(match.system?.tags || []), tagId].filter(Boolean)))
       },
       flags
-    };
+    }, match);
   }
   // Any `condition.*` tag has a definition, so a plain name counts as a condition only when a debuff matched it.
   if (options.requireKnown && !/^(condition\.|id\.debuff\.)/.test(String(ref ?? '').trim())) return null;

@@ -7,7 +7,7 @@
   </div>
   <div class="cog-field-group">
     <span class="cog-field-label">Description</span>
-    <textarea class="cog-field-input" name="system.description" style="height: 100px;">{{system.description}}</textarea>
+    {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
   </div>
 {{/if}}
 
@@ -20,6 +20,10 @@
   <div class="cog-field-group">
     <span class="cog-field-label">Notes</span>
     <textarea class="cog-field-input" name="system.notes" style="height: 100px;">{{system.notes}}</textarea>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">Description</span>
+    {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
   </div>
 {{/if}}
 </section>

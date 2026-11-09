@@ -1,0 +1,6 @@
+{{!-- GM only: writes a blueprint from the item's enchantments. A data-action with no name attribute: nothing is saved on the item. --}}
+{{#if isGM}}{{#if system.enchantments.length}}
+<div class="cog-field-group cog-copy-blueprint">
+  <button type="button" class="cog-btn cog-dark cog-bg-header-fill cog-text-on-fill" data-action="copyAsBlueprint" title="{{localize "COG.CopyBlueprint.Hint"}}"><i class="fa-solid fa-scroll"></i> {{localize "COG.CopyBlueprint.Button"}}</button>
+</div>
+{{/if}}{{/if}}

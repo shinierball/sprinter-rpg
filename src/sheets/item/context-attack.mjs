@@ -1,6 +1,6 @@
 import { buildAsTriggerContext } from './context-as-triggers.mjs';
 import { conditionLabel } from '../../documents/actor/condition-data.mjs';
-import { describeAttackMechanics } from '../../utils/attack-mechanics.mjs';
+import { describeAttackMechanics } from '../../utils/attack/attack-mechanics.mjs';
 import { buildOnHitContext } from './context-on-hit.mjs';
 
 /** Attack-only context: disclosure flags and the Amazing Success trigger editor. */

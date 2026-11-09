@@ -3,12 +3,13 @@
  * Centralized interface for browsing, creating, and maintaining skills.
  */
 import { COGToolApp } from './tool-app.mjs';
-import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
+import { CatalogBrowserMixin } from './catalog-browser.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
 import { checkTypeLabel } from '../data/rules/check-types.mjs';
-import { catalogEntries } from '../content/catalog-lookup.mjs';
-import { resolveFullItemData, getCompendiumEntries } from './manager-source.mjs';
-import { itemIdentifier } from '../utils/identifier.mjs';
-import { isCombatSkill, isPassiveSkill, skillGroupLabel } from '../utils/tag-mechanics.mjs';
+import { searchRows } from '../content/unified-catalog.mjs';
+import { SOURCE_INDEX_FIELD } from '../utils/content-source.mjs';
+import { getOrCreateItemFolder } from '../utils/ui/world-folder.mjs';
+import { isCombatSkill, isPassiveSkill, skillGroupLabel } from '../utils/tag/tag-mechanics.mjs';
 import { addGearGrant, isGearBonusGrant } from '../sheets/item/gear-grants.mjs';
 
 
@@ -25,7 +26,7 @@ export const SKILL_MANAGER_INDEX_FIELDS = Object.freeze([
   'system.identifier', 'system.checkNote',
   'system.stat', 'system.checkType', 'system.tags', 'system.notes', 'img',
   'system.isAttack', 'system.isTechnique', 'system.hasDamage', 'system.baseDamage',
-  'system.optionalEffects', 'system.techniqueConfig', 'system.upgrades', 'system.rankBreaks'
+  'system.optionalEffects', 'system.techniqueConfig', 'system.upgrades', 'system.rankBreaks', SOURCE_INDEX_FIELD
 ]);
 
 /** Whether a list row belongs under a pill: combat and passive by tag, utility when it is neither. */
@@ -36,15 +37,21 @@ function skillMatchesPill(skill, pill) {
   return false;
 }
 
-export class COGSkillManager extends COGToolApp {
+export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
+  static CATALOG = {
+    kind: 'skill',
+    fields: SKILL_MANAGER_INDEX_FIELDS,
+    collection: 'skills',
+    list: 'getUnifiedSkills',
+    search: { input: '.cog-sm-search', clear: '.cog-sm-search-clear', parts: ['list'] }
+  };
+
   static DEFAULT_OPTIONS = {
     id: 'cog-skill-manager',
     classes: ['cog-sheet-window', 'cog-skill-manager-window'],
     position: { width: 800, height: 740 },
     window: { title: 'Sprinter RPG — Skill Library & Manager', icon: 'fa-solid fa-book-bookmark', resizable: true },
     actions: {
-      setSearch: COGSkillManager.#onSetSearch,
-      clearSearch: COGSkillManager.#onClearSearch,
       setCategory: COGSkillManager.#onSetCategory,
       setStat: COGSkillManager.#onSetStat,
       createSkill: COGSkillManager.#onCreateSkill,
@@ -65,12 +72,10 @@ export class COGSkillManager extends COGToolApp {
 
   constructor(options = {}) {
     super(options);
-    this.actor = options.actor || null;
     this.item = options.item || null;
     this.onSelect = options.onSelect || null;
     this.activeCategory = options.activeCategory || 'all';
     this.activeStat = 'all';
-    this.searchQuery = '';
     /** @type {Set<string>} skill names ticked for "Add Selected"; survives list re-renders */
     this.selectedSkills = new Set();
   }
@@ -80,123 +85,38 @@ export class COGSkillManager extends COGToolApp {
    * @returns {Promise<Folder|null>}
    */
   async getOrCreateSkillsFolder() {
-    if (typeof game === 'undefined' || !game.folders) return null;
-    let folder = game.folders.find(f => f.type === 'Item' && f.flags?.[SYSTEM_ID]?.folderKey === SKILLS_FOLDER_KEY);
-    if (!folder && (game.user?.isGM || game.user?.can?.('FOLDER_CREATE'))) {
-      try {
-        folder = await Folder.create({
-          name: 'Skills',
-          type: 'Item',
-          color: '#c0392b',
-          flags: { [SYSTEM_ID]: { folderKey: SKILLS_FOLDER_KEY } }
-        });
-      } catch (err) {
-        console.warn('Sprinter RPG | Could not create Skills folder:', err);
-      }
-    }
-    return folder;
+    return getOrCreateItemFolder(SKILLS_FOLDER_KEY, 'Skills', { color: '#c0392b' });
   }
 
-  /**
-   * Retrieve all skills from official CONFIG, compendium pack, and world items.
-   * @returns {Promise<Array<object>>}
-   */
-  async getUnifiedSkills() {
-    // Rows are keyed by document id, never by name (the Spell Manager's rule): catalog and compendium
-    // entries share one row per `system.identifier`, and each world skill is its own row even when names match.
-    const skillsMap = new Map();
-    const catalogKey = (entry) => `ref:${itemIdentifier(entry) || entry._id || entry.id}`;
+  /** The skills of every source (pack, registered, world), one row per reference and one per world skill. */
+  getUnifiedSkills() {
+    return this.catalogRows();
+  }
 
-    // 1. From the registered skill packs
-    const index = await getCompendiumEntries('skills', { fields: SKILL_MANAGER_INDEX_FIELDS });
-    for (const entry of index) {
-      skillsMap.set(catalogKey(entry), {
-        id: entry._id,
-        _id: entry._id,
-        name: entry.name,
-        img: entry.img || 'icons/svg/book.svg',
-        source: 'compendium',
-        isCompendium: true,
-        isWorld: false,
-        system: {
-          stat: entry.system?.stat || 'str',
-          checkType: entry.system?.checkType || 'stat',
-          notes: entry.system?.notes || '',
-          ...entry.system
-        }
-      });
-    }
-
-    // 2. From the registered skill definitions
-    for (const s of catalogEntries('skills')) {
-      const key = catalogKey(s);
-      if (!skillsMap.has(key)) {
-        skillsMap.set(key, {
-          id: s._id || key,
-          _id: s._id || key,
-          name: s.name,
-          img: s.img || 'icons/svg/book.svg',
-          source: 'compendium',
-          isCompendium: true,
-          isWorld: false,
-          system: {
-            stat: s.system?.stat || 'str',
-            checkType: s.system?.checkType || 'stat',
-            notes: s.system?.notes || '',
-            ...s.system
-          }
-        });
-      }
-    }
-
-    // 3. From world items (custom/user created skills in Foundry items section)
-    if (typeof game !== 'undefined' && game.items) {
-      for (const item of game.items) {
-        if (item.type === 'skill') {
-          skillsMap.set(`world:${item.id}`, {
-            id: item.id,
-            _id: item.id,
-            name: item.name,
-            img: item.img || 'icons/svg/book.svg',
-            source: 'world',
-            isCompendium: false,
-            isWorld: true,
-            system: {
-              stat: item.system?.stat || 'str',
-              checkType: item.system?.checkType || 'stat',
-              notes: item.system?.notes || '',
-              ...(item.system || {})
-            }
-          });
-        }
-      }
-    }
-
-    // Determine 'isAdded' state if actor or item is present
-    const ownedIdentifiers = new Set(
-      this.actor?.items?.filter(i => i.type === 'skill').map(i => itemIdentifier(i)) ?? []
-    );
-
+  /** @override */
+  decorateRow(row) {
+    const system = { stat: 'str', checkType: 'stat', notes: '', ...row.system };
     const gearSkillIds = new Set(
       (Array.isArray(this.item?.system?.grants) ? this.item.system.grants : [])
         .filter(g => isGearBonusGrant(g) && g.kind === 'skill').map(g => g.identifier)
     );
+    const skill = { ...row, system };
+    return {
+      ...skill,
+      isAddedToActor: row.isOwned,
+      isAddedToItem: Boolean(system.identifier) && gearSkillIds.has(system.identifier),
+      statUpper: (system.stat || 'str').toUpperCase(),
+      checkTypeLabel: checkTypeLabel(system.checkType),
+      // Pills and the group chip read tags: the stored skillGroup.* / weaponGroup.* tags, and `action.passive` from the check type.
+      isCombat: isCombatSkill({ type: 'skill', system }),
+      isPassive: isPassiveSkill({ type: 'skill', system }),
+      groupLabel: skillGroupLabel(skill)
+    };
+  }
 
-    const skills = Array.from(skillsMap.values()).map(skill => {
-      return {
-        ...skill,
-        isAddedToActor: ownedIdentifiers.has(itemIdentifier(skill)),
-        isAddedToItem: Boolean(skill.system?.identifier) && gearSkillIds.has(skill.system.identifier),
-        statUpper: (skill.system.stat || 'str').toUpperCase(),
-        checkTypeLabel: checkTypeLabel(skill.system.checkType),
-        // Pills and the group chip read tags: the stored skillGroup.* / weaponGroup.* tags, and `action.passive` from the check type.
-        isCombat: isCombatSkill({ type: 'skill', system: skill.system }),
-        isPassive: isPassiveSkill({ type: 'skill', system: skill.system }),
-        groupLabel: skillGroupLabel(skill)
-      };
-    });
-
-    return skills.sort((a, b) => a.name.localeCompare(b.name));
+  /** The strings the search box matches against. */
+  searchText(skill) {
+    return [skill.name, skill.system.stat, skill.system.notes, checkTypeLabel(skill.system.checkType), skill.system.checkNote, skill.groupLabel];
   }
 
   /** @override */
@@ -215,7 +135,7 @@ export class COGSkillManager extends COGToolApp {
     };
 
     // Filter skills based on state
-    const filteredSkills = allSkills.filter(s => {
+    const filteredSkills = searchRows(allSkills, this.searchQuery, (s) => this.searchText(s)).filter(s => {
       // Category filter
       if (this.activeCategory !== 'all') {
         if (this.activeCategory === 'world') {
@@ -230,17 +150,6 @@ export class COGSkillManager extends COGToolApp {
         if ((s.system.stat || '').toLowerCase() !== this.activeStat) return false;
       }
 
-      // Text search query
-      const q = (this.searchQuery || '').toLowerCase().trim();
-      if (q) {
-        const nameMatch = s.name.toLowerCase().includes(q);
-        const statMatch = (s.system.stat || '').toLowerCase().includes(q);
-        const notesMatch = (s.system.notes || '').toLowerCase().includes(q);
-        const typeMatch = checkTypeLabel(s.system.checkType).toLowerCase().includes(q) || (s.system.checkNote || '').toLowerCase().includes(q);
-        const groupMatch = (s.groupLabel || '').toLowerCase().includes(q);
-        if (!nameMatch && !statMatch && !notesMatch && !typeMatch && !groupMatch) return false;
-      }
-
       return true;
     });
 
@@ -249,14 +158,9 @@ export class COGSkillManager extends COGToolApp {
       counts,
       activeCategory: this.activeCategory,
       activeStat: this.activeStat,
-      searchQuery: this.rawSearchQuery !== undefined ? this.rawSearchQuery : this.searchQuery,
       isPicker: Boolean(this.actor || this.item || this.onSelect),
-      isActorPicker: Boolean(this.actor),
       isItemPicker: Boolean(this.item),
-      actor: this.actor,
-      item: this.item,
-      isGM: typeof game !== 'undefined' ? Boolean(game.user?.isGM) : true,
-      canCreate: typeof game !== 'undefined' ? (game.user?.isGM || game.user?.can?.('ITEM_CREATE')) : true
+      item: this.item
     });
   }
 
@@ -265,10 +169,7 @@ export class COGSkillManager extends COGToolApp {
    */
   async openCreateSkillDialog() {
     const folder = await this.getOrCreateSkillsFolder();
-    const ItemClass = CONFIG.Item?.documentClass
-      ?? globalThis.foundry?.documents?.Item
-      ?? globalThis.Item;
-    const created = await ItemClass.create({
+    return this.createBlankDocument({
       name: 'New Custom Skill',
       type: 'skill',
       img: 'icons/svg/book.svg',
@@ -281,29 +182,7 @@ export class COGSkillManager extends COGToolApp {
         critMultiplierR15: 1,
         notes: ''
       }
-    });
-
-    if (created && typeof created.sheet?.render === 'function') {
-      created.sheet.render({ force: true });
-    }
-    this.render();
-    return created;
-  }
-
-  static async #onSetSearch(event, target) {
-    const val = target.value ?? '';
-    this.rawSearchQuery = val;
-    this.searchQuery = String(val).toLowerCase().trim();
-    // The clear control sits in the (not re-rendered) controls part: toggle it in place.
-    this.element?.querySelector?.('.cog-sm-search-clear')?.toggleAttribute('hidden', !val);
-    await this.render({ parts: ['list'] });
-  }
-
-  static async #onClearSearch() {
-    this.rawSearchQuery = '';
-    this.searchQuery = '';
-    await this.render();
-    this.element?.querySelector?.('.cog-sm-search')?.focus?.();
+    }, { onActor: false });
   }
 
   static async #onSetCategory(event, target) {
@@ -360,19 +239,18 @@ export class COGSkillManager extends COGToolApp {
       return;
     }
 
-    const allSkills = await this.getUnifiedSkills();
-    const toCreate = [];
-    for (const id of checkedIds) {
-      const def = allSkills.find(s => String(s.id) === id);
-      if (def) {
-        const full = await resolveFullItemData(def, 'skills');
-        toCreate.push({ ...full, type: 'skill', system: { ...full.system, rank: 0 } });
-      }
+    const rows = await this.getUnifiedSkills();
+    let added = 0;
+    for (const row of rows.filter(r => checkedIds.includes(String(r.id)))) {
+      const created = await this.addRowToActor(row, {
+        mutate: (p) => ({ ...p, type: 'skill', system: { ...p.system, rank: 0 } }),
+        notify: false,
+        render: false
+      });
+      if (created) added += 1;
     }
-
-    if (toCreate.length) {
-      await this.actor.createEmbeddedDocuments('Item', toCreate);
-      ui.notifications?.info(`Added ${toCreate.length} skill(s) to ${this.actor.name}.`);
+    if (added) {
+      ui.notifications?.info(`Added ${added} skill(s) to ${this.actor.name}.`);
       this.close();
     }
   }

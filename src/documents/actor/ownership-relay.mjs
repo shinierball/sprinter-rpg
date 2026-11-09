@@ -196,7 +196,7 @@ function entitledLevel(target, source, user) {
  * The ownership level `source`'s owners are entitled to on `target`, derived from the documents only.
  * @returns {number|null} null when `source` has no standing on a personal space or vehicle
  */
-export function grantLevel(target, source) {
+function grantLevel(target, source) {
   if (target?.type === 'personal_space' || target?.type === 'mount_vehicle') return linkLevel(target, source);
   return levels().OWNER;
 }

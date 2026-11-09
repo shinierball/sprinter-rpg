@@ -10,15 +10,17 @@
  */
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
-import { escapeAttr, sameSideCombatants } from '../../utils/interrupts.mjs';
-import { getAssistSpec, calledPlayDestination, rollerTokenIdOf } from '../../utils/check-assists.mjs';
-import { rollAssistDice } from '../../utils/assist-roll.mjs';
-import { CHECK_TAGS, isOutcomeTag, isFreeInterruptItem } from '../../utils/tag-mechanics.mjs';
-import { matchesTagQueryIgnoring } from '../../utils/tag-query.mjs';
+import { sameSideCombatants } from '../../utils/combat/interrupts.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { getAssistSpec, calledPlayDestination, rollerTokenIdOf } from '../../utils/roll/check-assists.mjs';
+import { rollAssistDice } from '../../utils/roll/assist-roll.mjs';
+import { CHECK_TAGS, isOutcomeTag, isFreeInterruptItem } from '../../utils/tag/tag-mechanics.mjs';
+import { matchesTagQueryIgnoring } from '../../utils/tag/tag-query.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
 import { isNoGmReason, getActiveGM } from '../../utils/gm-relay.mjs';
-import { getCalledPlays } from '../combat.mjs';
+import { getCalledPlays } from '../combat/called-plays.mjs';
 import { assistText } from '../../chat/render/check-assists.mjs';
+import { attackTargetEntries } from './attack-targets.mjs';
 
 const CHECK_TAG_VALUES = new Set(Object.values(CHECK_TAGS));
 const notify = (level, text) => globalThis.ui?.notifications?.[level]?.(text);
@@ -124,7 +126,7 @@ async function chooseAlly(actor, callerCbt, combat, options) {
     const givenId = typeof given === 'string' ? given : given.id;
     return { allies, chosen: allies.find((a) => a.combatant.id === givenId || a.actor.id === givenId) ?? null };
   }
-  const targeted = typeof actor._attackTargetEntries === 'function' ? actor._attackTargetEntries(options) : [];
+  const targeted = attackTargetEntries(actor, options);
   for (const t of targeted) {
     const tokenId = t.token?.id ?? t.token?.document?.id ?? null;
     const hit = allies.find((a) => (tokenId && a.combatant.tokenId === tokenId) || a.actor.id === t.actor.id);
@@ -289,7 +291,8 @@ export async function callPlay(actor, skill, options = {}) {
       type: spec.actionType || 'play',
       label: skill.name,
       note: assistText('CalledPlayNote', { ally: ally.actor.name })
-    });
+    }, { ruleBreak });
+    if (recorded?.declined) return { ok: false, reason: 'refused' };
     if (!recorded?.success) {
       // The relay already warned (no GM for an unowned combatant): one warning per click.
       return { ok: false, reason: 'no-gm-action' };

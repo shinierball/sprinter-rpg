@@ -5,45 +5,49 @@
  * tables (Past Traumas, Loose Ends, Regrets). Each background row names a sample skill by catalog `ref`; the 44 skills
  * (`creation-sample-skills.mjs`) are registered as the `shiny` skill catalog. Written for this system; nothing here comes
  * from a rulebook. A content theme or a Sourcery import registers its own species and tables instead
- * (`creation-samples-provider.mjs`).
+ * (`shiny-content-provider.mjs`).
  */
-import { SAMPLE_SKILLS, sampleSkillRef } from './creation-sample-skills.mjs';
+import { SAMPLE_SKILLS } from './creation-sample-skills.mjs';
 
-/** A skill a sample background offers: its stat and catalog `ref` come from the one sample skill (`creation-sample-skills.mjs`). */
-const s = (name) => ({ name, stat: SAMPLE_SKILLS[sampleSkillRef(name)].stat, ref: sampleSkillRef(name) });
+/** A skill a sample background offers, by identifier: its name, stat and catalog `ref` come from the one sample skill (`creation-sample-skills.mjs`). */
+const s = (identifier) => {
+  const skill = SAMPLE_SKILLS[identifier];
+  if (!skill) throw new Error(`No sample skill with identifier "${identifier}"`);
+  return { name: skill.name, stat: skill.stat, ref: identifier };
+};
 
 export const SAMPLE_BACKGROUND_MATRICES = {
   tier1: [
-    { name: 'Mall Rat', skills: [s('Haggling'), s('Perception'), s('Sprinting')] },
-    { name: 'Waiting-Room Regular', skills: [s('Small Talk'), s('Eavesdropping'), s('Endurance')] },
-    { name: 'Basement Inventor', skills: [s('Repair'), s('Electronics'), s('Scavenging')] },
-    { name: 'Hallway Monitor', skills: [s('Intimidate'), s('Perception'), s('Bookkeeping')] },
-    { name: 'Backyard Daredevil', skills: [s('Climbing'), s('Jumping'), s('Endurance')] },
-    { name: 'Studio Audience Kid', skills: [s('Crowd Work'), s('Stage Presence'), s('Sprinting')] }
+    { name: 'Mall Rat', skills: [s('haggling'), s('perception'), s('sprinting')] },
+    { name: 'Waiting-Room Regular', skills: [s('small-talk'), s('eavesdropping'), s('endurance')] },
+    { name: 'Basement Inventor', skills: [s('repair'), s('electronics'), s('scavenging')] },
+    { name: 'Hallway Monitor', skills: [s('intimidate'), s('perception'), s('bookkeeping')] },
+    { name: 'Backyard Daredevil', skills: [s('climbing'), s('jumping'), s('endurance')] },
+    { name: 'Studio Audience Kid', skills: [s('crowd-work'), s('stage-presence'), s('sprinting')] }
   ],
   tier2: [
-    { name: 'Night-School Paralegal', skills: [s('Investigation'), s('Persuasion'), s('Bookkeeping')] },
-    { name: 'Lifeguard Certificate', skills: [s('Swimming'), s('First Aid'), s('Perception')] },
-    { name: 'Community Theatre', skills: [s('Stage Presence'), s('Deception'), s('Juggling')] },
-    { name: 'Junior Varsity Bench', skills: [s('Throwing'), s('Endurance'), s('Wrestling')] },
-    { name: 'Scout Troop Dropout', skills: [s('Knot Tying'), s('Map Reading'), s('Survival')] },
-    { name: 'Online Tutorial Graduate', skills: [s('Electronics'), s('Lockpicking'), s('Research')] }
+    { name: 'Night-School Paralegal', skills: [s('investigation'), s('persuasion'), s('bookkeeping')] },
+    { name: 'Lifeguard Certificate', skills: [s('swimming'), s('first-aid'), s('perception')] },
+    { name: 'Community Theatre', skills: [s('stage-presence'), s('deception'), s('juggling')] },
+    { name: 'Junior Varsity Bench', skills: [s('throwing'), s('endurance'), s('wrestling')] },
+    { name: 'Scout Troop Dropout', skills: [s('knot-tying'), s('map-reading'), s('survival')] },
+    { name: 'Online Tutorial Graduate', skills: [s('electronics'), s('lockpicking'), s('research')] }
   ],
   tier3: [
-    { name: 'Contestant Coordinator', skills: [s('Crowd Work'), s('Negotiation'), s('Camera Awareness')] },
-    { name: 'Night-Shift Security', skills: [s('Perception'), s('Intimidate'), s('Baton')] },
-    { name: 'Line Cook', skills: [s('Cooking'), s('Knife Work'), s('Endurance')] },
-    { name: 'Delivery Courier', skills: [s('Driving'), s('Map Reading'), s('Sprinting')] },
-    { name: 'Insurance Adjuster', skills: [s('Read People'), s('Bookkeeping'), s('Persuasion')] },
-    { name: 'Moving-Company Lifter', skills: [s('Lifting'), s('Endurance'), s('Rope Work')] }
+    { name: 'Contestant Coordinator', skills: [s('crowd-work'), s('negotiation'), s('camera-awareness')] },
+    { name: 'Night-Shift Security', skills: [s('perception'), s('intimidate'), s('baton')] },
+    { name: 'Line Cook', skills: [s('cooking'), s('knife-work'), s('endurance')] },
+    { name: 'Delivery Courier', skills: [s('driving'), s('map-reading'), s('sprinting')] },
+    { name: 'Insurance Adjuster', skills: [s('read-people'), s('bookkeeping'), s('persuasion')] },
+    { name: 'Moving-Company Lifter', skills: [s('lifting'), s('endurance'), s('rope-work')] }
   ],
   tier4: [
-    { name: 'Escape Room Enthusiast', skills: [s('Lockpicking'), s('Research'), s('Puzzle Solving')] },
-    { name: 'Competitive Karaoke', skills: [s('Stage Presence'), s('Endurance'), s('Heckler Management')] },
-    { name: 'Weekend Birdwatcher', skills: [s('Perception'), s('Stealth'), s('Tracking')] },
-    { name: 'Extreme Couponing', skills: [s('Haggling'), s('Bookkeeping'), s('Scavenging')] },
-    { name: 'Amateur Parkour', skills: [s('Parkour'), s('Climbing'), s('Jumping')] },
-    { name: 'Home Brewing', skills: [s('Chemistry'), s('Cooking'), s('Hold Your Liquor')] }
+    { name: 'Escape Room Enthusiast', skills: [s('lockpicking'), s('research'), s('puzzle-solving')] },
+    { name: 'Competitive Karaoke', skills: [s('stage-presence'), s('endurance'), s('heckler-management')] },
+    { name: 'Weekend Birdwatcher', skills: [s('perception'), s('stealth'), s('tracking')] },
+    { name: 'Extreme Couponing', skills: [s('haggling'), s('bookkeeping'), s('scavenging')] },
+    { name: 'Amateur Parkour', skills: [s('parkour'), s('climbing'), s('jumping')] },
+    { name: 'Home Brewing', skills: [s('chemistry'), s('cooking'), s('hold-your-liquor')] }
   ]
 };
 

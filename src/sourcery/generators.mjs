@@ -10,7 +10,6 @@
 import { fieldMapFor } from './field-maps.mjs';
 import { QUALIFIER_CONDITIONS, AI_FAVOR_PHRASE, AI_FAVOR_NO_EFFECT_TEXT, AI_FAVOR_BOSS_TEXT } from '../data/ai-favor-qualifiers.mjs';
 
-export { QUALIFIER_CONDITIONS, AI_FAVOR_PHRASE, AI_FAVOR_NO_EFFECT_TEXT, AI_FAVOR_BOSS_TEXT };
 const QUALIFIER_TEXT = Object.freeze({ none: '', noEffect: AI_FAVOR_NO_EFFECT_TEXT, boss: AI_FAVOR_BOSS_TEXT });
 
 /** Labels the generators write; the book-text test splits at them. */

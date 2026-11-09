@@ -3,6 +3,9 @@
  * Pre-configured companions ready for adventuring, mounting, and combat.
  */
 
+// The one pet armor two companions wear: its name is written once, here (the items and the equipment slots read it).
+const TITANIUM_CHOMP_CAPS = "Titanium Chomp Caps";
+
 export const COG_PETS = [
   {
     _id: "dccpet0000000001",
@@ -36,7 +39,7 @@ export const COG_PETS = [
       },
       gearSlots: {
         saddle: "Adamantine War Saddle",
-        head: "Titanium Chomp Caps"
+        head: TITANIUM_CHOMP_CAPS
       }
     },
     items: [
@@ -79,24 +82,24 @@ export const COG_PETS = [
           slot: "saddle",
           equipped: true,
           drBonus: 2,
-          abilityModifiers: {
-            str: { value: 2, type: "flat" },
-            con: { value: 2, type: "flat" }
-          },
+          grants: [
+            { kind: "stat", stat: "str", value: 2 },
+            { kind: "stat", stat: "con", value: 2 }
+          ],
           tags: ["kind.gear", "companion.mount", "companion.pet", "rule.mount", "role.rider"]
         }
       },
       {
-        name: "Titanium Chomp Caps",
+        name: TITANIUM_CHOMP_CAPS,
         type: "gear",
         system: {
           slot: "head",
           equipped: true,
           damageParts: [{ dice: "1d4", type: "Bludgeoning" }],
-          abilityModifiers: {
-            con: { value: 2, type: "flat" },
-            str: { value: 1, type: "flat" }
-          },
+          grants: [
+            { kind: "stat", stat: "con", value: 2 },
+            { kind: "stat", stat: "str", value: 1 }
+          ],
           tags: ["kind.gear", "companion.pet"]
         }
       }
@@ -174,9 +177,7 @@ export const COG_PETS = [
           slot: "saddle",
           equipped: true,
           drBonus: 1,
-          abilityModifiers: {
-            con: { value: 4, type: "flat" }
-          },
+          grants: [{ kind: "stat", stat: "con", value: 4 }],
           tags: ["kind.gear", "companion.mount", "companion.pet", "rule.mount"]
         }
       }
@@ -253,9 +254,7 @@ export const COG_PETS = [
         system: {
           slot: "head",
           equipped: true,
-          abilityModifiers: {
-            str: { value: 2, type: "flat" }
-          },
+          grants: [{ kind: "stat", stat: "str", value: 2 }],
           damageParts: [{ dice: "1d6", type: "Piercing" }],
           ignoreDR: true,
           tags: ["kind.gear", "companion.pet", "action.armor_piercing"]
@@ -294,7 +293,7 @@ export const COG_PETS = [
         floor: "2nd Floor"
       },
       gearSlots: {
-        head: "Titanium Chomp Caps"
+        head: TITANIUM_CHOMP_CAPS
       }
     },
     items: [
@@ -329,16 +328,16 @@ export const COG_PETS = [
         }
       },
       {
-        name: "Titanium Chomp Caps",
+        name: TITANIUM_CHOMP_CAPS,
         type: "gear",
         system: {
           slot: "head",
           equipped: true,
           damageParts: [{ dice: "1d4", type: "Bludgeoning" }],
-          abilityModifiers: {
-            con: { value: 2, type: "flat" },
-            str: { value: 1, type: "flat" }
-          },
+          grants: [
+            { kind: "stat", stat: "con", value: 2 },
+            { kind: "stat", stat: "str", value: 1 }
+          ],
           tags: ["kind.gear", "companion.pet"]
         }
       }
@@ -416,9 +415,7 @@ export const COG_PETS = [
           slot: "saddle",
           equipped: true,
           defenseModifiers: [{ kind: "evade", value: 2 }],
-          abilityModifiers: {
-            dex: { value: 3, type: "flat" }
-          },
+          grants: [{ kind: "stat", stat: "dex", value: 3 }],
           tags: ["kind.gear", "companion.mount", "companion.pet", "rule.mount"]
         }
       }
@@ -499,10 +496,10 @@ export const COG_PETS = [
           equipped: true,
           drBonus: 2,
           defenseModifiers: [{ kind: "evade", value: 1 }],
-          abilityModifiers: {
-            int: { value: 2, type: "flat" },
-            dex: { value: 2, type: "flat" }
-          },
+          grants: [
+            { kind: "stat", stat: "int", value: 2 },
+            { kind: "stat", stat: "dex", value: 2 }
+          ],
           tags: ["kind.gear", "companion.mount", "companion.pet", "rule.mount", "role.rider"]
         }
       }

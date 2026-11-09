@@ -1,0 +1,25 @@
+{{!-- Vehicle Health: 10 Health Bar slots of `size` HP (3.44g). Max and HP per slot are derived from the size, so they are readouts. --}}
+<div class="cog-health-section cog-vehicle-health">
+  <div class="cog-hp-numeric-row">
+    <span class="cog-field-label">Health</span>
+    <div class="cog-hp-input-group">
+      <input class="cog-hp-input" name="system.attributes.hp.value" type="number" min="0" value="{{system.attributes.hp.value}}" title="Current HP" />
+      <span class="cog-hp-slash">/</span>
+      <span class="cog-vehicle-hp-max" title="10 slots of {{hpPerBar}} HP (the size value)">{{system.attributes.hp.max}}</span>
+    </div>
+    <span class="cog-field-label">Temp:</span>
+    <input class="cog-hp-input cog-vehicle-hp-temp" name="system.attributes.hp.temp" type="number" value="{{system.attributes.hp.temp}}" placeholder="0" />
+    <span class="cog-vehicle-hp-pct">{{system.attributes.hp.pct}}%</span>
+  </div>
+  <div class="cog-health-bar-wrapper" style="--hp-val: {{system.attributes.hp.value}}; --hp-max: {{system.attributes.hp.max}}; --hp-pct: {{system.attributes.hp.pct}}; --hp-segments: {{healthSegments.length}};" data-tooltip="HP: {{system.attributes.hp.value}} / {{system.attributes.hp.max}} ({{hpPerBar}} HP per slot)">
+    <div class="cog-health-fill-overlay"></div>
+    <div class="cog-health-segments" style="grid-template-columns: repeat({{healthSegments.length}}, 1fr);">
+      {{#each healthSegments}}
+        <div class="cog-hp-seg">
+          {{#if this.showHp}}<span class="cog-hp-seg-hp">{{this.hpPerBar}}</span>{{/if}}
+          <span class="cog-hp-seg-pct">{{this.label}}</span>
+        </div>
+      {{/each}}
+    </div>
+  </div>
+</div>

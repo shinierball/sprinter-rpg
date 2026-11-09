@@ -12,11 +12,14 @@
  *
  * A definition is `{ id, name, img?, description?, value?, system? }`; `system` overlays the junk's schema fields.
  */
+import { firstScalar } from '../../utils/first-scalar.mjs';
 
 /** The form an item with no `usedInto` and no loot-type default leaves. */
 export const FALLBACK_USED_FORM = 'spent-item';
 /** Loot type to the form it leaves when the item names none. */
 export const USED_FORM_BY_LOOT_TYPE = Object.freeze({ scroll: 'used-scroll', scratch_ticket: 'used-ticket' });
+/** The `usedInto` value that leaves nothing behind (7.3a): the unit is spent and no junk is made. Not a registry entry. */
+export const USED_FORM_NONE = 'none';
 /** The form a light source that is spent leaves when it names none. */
 export const LIGHT_USED_FORM = 'burnt-torch';
 
@@ -64,7 +67,7 @@ export function usedFormDefProblem(def) {
 }
 
 /** Normalize a valid definition to the stored entry shape. */
-export function normalizeUsedFormDef(def) {
+function normalizeUsedFormDef(def) {
   const text = (v) => (typeof v === 'string' && v.trim() ? v.trim() : '');
   return {
     id: def.id,
@@ -100,9 +103,7 @@ for (const def of SEEDED_USED_FORMS) USED_FORMS[def.id] = normalizeUsedFormDef(d
  * @returns {object|null}
  */
 export function getUsedForm(id) {
-  let val = id ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0].trim();
+  const val = firstScalar(id);
   const key = String(val).trim();
   const registry = liveRegistry();
   return key && Object.hasOwn(registry, key) ? registry[key] : null;

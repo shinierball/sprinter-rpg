@@ -19,7 +19,7 @@
       <div class="cog-field-row" style="margin-bottom: 6px; align-items: flex-end;">
         <div class="cog-field-group small">
           <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.TypeLabel"}}</span>
-          <select name="system.asTriggers.{{entry.index}}.type" class="cog-field-input">
+          <select name="{{entry.typeName}}" class="cog-field-input">
             {{#each entry.typeOptions as |opt|}}
               <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
             {{/each}}
@@ -27,7 +27,7 @@
         </div>
         <div class="cog-field-group" {{#unless entry.isDebuff}}hidden{{/unless}}>
           <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.DebuffLabel"}}</span>
-          <select name="system.asTriggers.{{entry.index}}.identifier" class="cog-field-input">
+          <select name="{{entry.identifierName}}" class="cog-field-input">
             {{#each entry.debuffOptions as |opt|}}
               <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
             {{/each}}
@@ -35,13 +35,14 @@
         </div>
         <div class="cog-field-group" {{#unless entry.isNarrative}}hidden{{/unless}}>
           <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.TextLabel"}}</span>
-          <input class="cog-field-input" type="text" name="system.asTriggers.{{entry.index}}.text" value="{{entry.text}}" maxlength="500" placeholder="{{localize 'COG.AmazingSuccess.Editor.TextPlaceholder'}}" />
+          <input class="cog-field-input" type="text" name="{{entry.textName}}" value="{{entry.text}}" maxlength="500" placeholder="{{localize 'COG.AmazingSuccess.Editor.TextPlaceholder'}}" />
         </div>
         <div class="cog-field-group small">
           <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.NameLabel"}}</span>
-          <input class="cog-field-input" type="text" name="system.asTriggers.{{entry.index}}.label" value="{{entry.label}}" placeholder="{{localize 'COG.AmazingSuccess.Editor.NamePlaceholder'}}" />
+          <input class="cog-field-input" type="text" name="{{entry.labelName}}" value="{{entry.label}}" placeholder="{{localize 'COG.AmazingSuccess.Editor.NamePlaceholder'}}" />
         </div>
         {{#if entry.ruleBreak}}<span class="cog-badge cog-badge-rule-break">[RULE BREAK]</span>{{/if}}
+        {{#if entry.enchantment}}<span class="cog-badge cog-badge-info">{{localize "COG.CraftSheet.Badge.Enchantment"}}</span>{{/if}}
         <a class="cog-text-accent" data-action="removeAsTrigger" data-index="{{entry.index}}" data-tooltip="{{localize 'COG.AmazingSuccess.Editor.Remove'}}" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
       </div>
     {{/each}}

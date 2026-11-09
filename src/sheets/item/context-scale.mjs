@@ -6,8 +6,8 @@
  * States: no block (the kind scales nothing and the row has no scale); collapsed (a scalable kind with no scale:
  * the source select only); full (a scale is set, also on a kind that cannot use it, which adds the inert badge).
  */
-import { ROLE_TAG_PREFIXES } from '../../data/tags.mjs';
-import { canDefer, describeScale, getScalar, hasScale, listScalars, scaleInert, scalePhase, scaleSpecErrors } from '../../utils/scalars.mjs';
+import { ROLE_TAG_PREFIXES } from '../../data/tag-vocabulary.mjs';
+import { canDefer, describeScale, getScalar, hasScale, listScalars, scaleInert, scalePhase, scaleSpecErrors } from '../../utils/roll/scalars.mjs';
 import { buildQueryView } from './context-query.mjs';
 import { queryBucketsAt } from './util.mjs';
 

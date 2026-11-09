@@ -1,12 +1,12 @@
 /**
  * Interrupt chat buttons: trigger an interrupt, retarget the interrupter.
  */
-import { findActorToken } from '../../utils/interrupts.mjs';
+import { findActorToken } from '../../utils/combat/interrupts.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
-import { findEvadeFor } from '../../utils/evade-link.mjs';
+import { findEvadeFor } from '../../utils/attack/evade-link.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { mobAttackText, TARGET_VIA } from '../../utils/declared-attacks.mjs';
+import { mobAttackText, TARGET_VIA } from '../../utils/combat/declared-attacks.mjs';
 
 /**
  * A Catcher takes an un-evaded hit (3.18): catching a declared attack the defender already avoided with an Evade is a

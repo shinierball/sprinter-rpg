@@ -5,7 +5,7 @@
  *
  * Row shape: `{ id, label, kind: 'flat'|'crawlerKill', levels?, tag?, gmAdjustable? }`.
  */
-import { levelsForCrawlerKill } from '../utils/skill-advancement.mjs';
+import { levelsForCrawlerKill } from '../utils/skill/skill-advancement.mjs';
 
 const boss = (tier, label, levels) => ({
   id: `boss.${tier}`, label: `${label} Boss`, kind: 'flat', levels, tag: `mob.tier.${tier}`, gmAdjustable: true

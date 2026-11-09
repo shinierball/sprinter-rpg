@@ -1,0 +1,8 @@
+<footer class="cog-theme-cleanup-footer">
+  {{#if isRestoreTab}}
+    <button type="button" class="cog-btn cog-btn-primary" data-action="restoreAllPoops" {{#unless hasRestorable}}disabled{{/unless}}><i class="fa-solid fa-rotate-left"></i> {{localize "COG.ThemeCleanup.RestoreAll"}}</button>
+  {{else}}
+    <button type="button" class="cog-btn cog-btn-primary" data-action="replaceAll"><i class="fa-solid fa-poo"></i> {{localize "COG.ThemeCleanup.Replace"}} ({{tickedCount}})</button>
+  {{/if}}
+  <button type="button" class="cog-btn cog-btn-secondary" data-action="notNow">{{localize "COG.ThemeCleanup.NotNow"}}</button>
+</footer>

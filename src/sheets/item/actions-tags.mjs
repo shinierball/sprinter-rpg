@@ -3,11 +3,12 @@
  * the `condition` of a modifier row). Every handler runs with `this` = the item sheet.
  */
 import { COGTagManager } from '../../apps/tag-manager.mjs';
-import { RANK_BREAK_THRESHOLDS, getTagDefinition, registerCustomTag, roleTag } from '../../data/tags.mjs';
+import { RANK_BREAK_THRESHOLDS, roleTag } from '../../data/tag-vocabulary.mjs';
+import { getTagDefinition, registerCustomTag } from '../../data/tag-definitions.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
 import { rankBreakFillPatch } from '../../apps/rank-break-parser.mjs';
 import { getAvailableDebuffs } from './catalogs.mjs';
-import { normalizeTagList } from '../../utils/tag-query.mjs';
+import { normalizeTagList } from '../../utils/tag/tag-query.mjs';
 import { composeQueryTag } from './context-query.mjs';
 import { queryBucketsAt } from './util.mjs';
 import { addTagFromInput, removeTagFromDocument } from '../base/tag-editor.mjs';

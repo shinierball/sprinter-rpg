@@ -6,11 +6,13 @@
  */
 
 import { COGToolApp } from './tool-app.mjs';
-import { COG_TAGS, TAG_NAMESPACES, registerCustomTag, isDescriptiveTag, isIdentityNamespace } from '../data/tags.mjs';
-import { tagIndex } from './tag-index.mjs';
+import { COG_TAGS } from '../data/tag-catalog.mjs';
+import { TAG_NAMESPACES, isIdentityNamespace } from '../data/tag-vocabulary.mjs';
+import { registerCustomTag, isDescriptiveTag } from '../data/tag-definitions.mjs';
+import { tagIndex } from '../utils/tag/tag-index.mjs';
 import { openTagSystemJournal } from '../data/journal-tag-system.mjs';
 import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
-import { getTagBehaviour } from '../utils/tag-behaviour.mjs';
+import { getTagBehaviour } from '../utils/tag/tag-behaviour.mjs';
 import {
   TAG_ROWS_ROOT, TAG_ROW_DELEGATES, applyRowsForm, buildTagEditorContext, hostForTag, resetTagOverride, setTagFlag
 } from './tag-rows-editor.mjs';

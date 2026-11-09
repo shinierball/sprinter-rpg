@@ -17,6 +17,9 @@
         <a class="cog-dark cog-text-gold" data-action="openGearPicker" data-tooltip="{{localize "COG.Content.GearPickerTooltip"}}" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
           <i class="fa-solid fa-shirt"></i> Select Gear
         </a>
+        <a class="cog-text-on-fill cog-pull-common" data-action="pullOutCommonItem" data-tooltip="{{localize "COG.PullOut.Tooltip"}}" style="cursor: pointer; margin-left: 4px; font-size: 12px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-hand-holding"></i> {{localize "COG.PullOut.Link"}}
+        </a>
         <a class="cog-text-on-fill" data-action="createItem" data-type="gear" data-tooltip="Create custom gear" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
           <i class="fa-solid fa-plus"></i> Custom Gear
         </a>
@@ -64,7 +67,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.head}}
             <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.head.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.head.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.head.name}} {{#if equippedBySlot.head.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.head.offlineTip}}">[{{equippedBySlot.head.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.head" value="{{system.gearSlots.head}}" placeholder="{{#if equippedBySlot.head}}{{equippedBySlot.head.name}}{{else}}Notes...{{/if}}" />
@@ -75,7 +78,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.torso}}
             <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.torso.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.torso.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.torso.name}} {{#if equippedBySlot.torso.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.torso.offlineTip}}">[{{equippedBySlot.torso.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.torso" value="{{system.gearSlots.torso}}" placeholder="{{#if equippedBySlot.torso}}{{equippedBySlot.torso.name}}{{else}}Notes...{{/if}}" />
@@ -86,7 +89,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.arms}}
             <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.arms.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.arms.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.arms.name}} {{#if equippedBySlot.arms.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.arms.offlineTip}}">[{{equippedBySlot.arms.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.arms" value="{{system.gearSlots.arms}}" placeholder="{{#if equippedBySlot.arms}}{{equippedBySlot.arms.name}}{{else}}Notes...{{/if}}" />
@@ -97,7 +100,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.hands}}
             <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.hands.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.hands.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.hands.name}} {{#if equippedBySlot.hands.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.hands.offlineTip}}">[{{equippedBySlot.hands.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.hands" value="{{system.gearSlots.hands}}" placeholder="{{#if equippedBySlot.hands}}{{equippedBySlot.hands.name}}{{else}}Notes...{{/if}}" />
@@ -108,7 +111,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.legs}}
             <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.legs.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.legs.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.legs.name}} {{#if equippedBySlot.legs.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.legs.offlineTip}}">[{{equippedBySlot.legs.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.legs" value="{{system.gearSlots.legs}}" placeholder="{{#if equippedBySlot.legs}}{{equippedBySlot.legs.name}}{{else}}Notes...{{/if}}" />
@@ -119,7 +122,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.feet}}
             <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.feet.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.feet.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.feet.name}} {{#if equippedBySlot.feet.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.feet.offlineTip}}">[{{equippedBySlot.feet.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.feet" value="{{system.gearSlots.feet}}" placeholder="{{#if equippedBySlot.feet}}{{equippedBySlot.feet.name}}{{else}}Notes...{{/if}}" />
@@ -131,7 +134,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.collar}}
             <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.collar.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.collar.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.collar.name}} {{#if equippedBySlot.collar.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.collar.offlineTip}}">[{{equippedBySlot.collar.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.collar" value="{{system.gearSlots.collar}}" placeholder="{{#if equippedBySlot.collar}}{{equippedBySlot.collar.name}}{{else}}Collar...{{/if}}" />
@@ -142,7 +145,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.barding}}
             <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.barding.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.barding.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.barding.name}} {{#if equippedBySlot.barding.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.barding.offlineTip}}">[{{equippedBySlot.barding.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.barding" value="{{system.gearSlots.barding}}" placeholder="{{#if equippedBySlot.barding}}{{equippedBySlot.barding.name}}{{else}}Barding...{{/if}}" />
@@ -153,7 +156,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.saddle}}
             <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.saddle.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.saddle.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.saddle.name}} {{#if equippedBySlot.saddle.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.saddle.offlineTip}}">[{{equippedBySlot.saddle.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.saddle" value="{{system.gearSlots.saddle}}" placeholder="{{#if equippedBySlot.saddle}}{{equippedBySlot.saddle.name}}{{else}}Saddle...{{/if}}" />
@@ -164,7 +167,7 @@
         <div style="display: flex; gap: 4px; flex: 1; align-items: center;">
           {{#if equippedBySlot.pack}}
             <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; font-size: 10px; border-radius: 3px; white-space: nowrap;" title="{{equippedBySlot.pack.bonusesSummary}}">
-              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.pack.name}}
+              <i class="fa-solid fa-shield-halved"></i> {{equippedBySlot.pack.name}} {{#if equippedBySlot.pack.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{equippedBySlot.pack.offlineTip}}">[{{equippedBySlot.pack.offlineBadge}}]</span>{{/if}}
             </span>
           {{/if}}
           <input class="cog-field-input" type="text" name="system.gearSlots.pack" value="{{system.gearSlots.pack}}" placeholder="{{#if equippedBySlot.pack}}{{equippedBySlot.pack.name}}{{else}}Pack...{{/if}}" />
@@ -178,7 +181,7 @@
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
               {{#each equippedBySlot.accessory as |acc|}}
                 <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="padding: 1px 5px; font-size: 9px; border-radius: 2px;" title="{{acc.bonusesSummary}}">
-                  {{acc.name}}
+                  {{acc.name}} {{#if acc.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{acc.offlineTip}}">[{{acc.offlineBadge}}]</span>{{/if}}
                 </span>
               {{/each}}
             </div>
@@ -217,6 +220,9 @@
         <a class="cog-dark cog-text-gold" data-action="openItemPicker" data-tooltip="{{localize "COG.Content.ItemPickerTooltip"}}" style="cursor: pointer; margin-left: 6px; font-size: 12px; font-weight: normal; text-transform: none;">
           <i class="fa-solid fa-box-open"></i> Select Item/Gear
         </a>
+        <a class="cog-text-on-fill" data-action="openCraftingApp" data-tooltip="{{localize "COG.CraftApp.OpenerHint"}}" style="cursor: pointer; margin-left: 4px; font-size: 12px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-hammer"></i> {{localize "COG.CraftApp.Title"}}
+        </a>
         <a class="cog-text-on-fill" data-action="createItem" data-type="gear" data-tooltip="Create custom gear" style="cursor: pointer; margin-left: 4px; font-size: 12px; font-weight: normal; text-transform: none;">
           <i class="fa-solid fa-shield"></i> Custom Gear
         </a>
@@ -225,6 +231,33 @@
         </a>
       </div>
     </div>
+
+    {{!-- Loot boxes are not inventory: players see them and open them all at once; the GM manages each one --}}
+    {{#if lootBoxes.length}}
+    <div class="cog-loot-box-strip cog-bg-surface-muted" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 6px 8px; margin-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <strong class="cog-text-strong" style="font-size: 12px; text-transform: uppercase;"><i class="fa-solid fa-box-open"></i> {{localize "COG.LootBoxSheet.StripTitle"}}</strong>
+        <a class="cog-text-info" data-action="openLootBoxes" data-tooltip="{{localize "COG.LootBoxSheet.OpenAllHint"}}" style="cursor: pointer; font-size: 12px; font-weight: bold;">
+          <i class="fa-solid fa-box-open"></i> {{localize "COG.LootBoxSheet.OpenAll" count=lootBoxUnits}}
+        </a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+        {{#each lootBoxes as |box|}}
+          <div class="cog-loot-box-tile cog-bg-window{{#if ../isGM}} draggable{{/if}}" data-item-id="{{box.id}}"{{#if ../isGM}} draggable="true"{{/if}} style="display: flex; align-items: center; gap: 6px; border: 1px solid {{box.tierColor}}; border-radius: 4px; padding: 3px 8px; font-size: 12px;">
+            <i class="{{box.tierIcon}} cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{box.tierColor}};"></i>
+            <span class="cog-text-strong" style="font-weight: bold;">{{box.name}}</span>
+            <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{box.tierColor}}; font-size: 10px; text-transform: uppercase;">{{box.tierLabel}}</span>
+            <span class="cog-text-secondary">{{localize "COG.LootBoxSheet.BoxQuantity" count=box.quantity}}</span>
+            {{#if ../isGM}}
+              <a class="cog-text-info" data-action="useItem" data-tooltip="{{localize "COG.LootBoxSheet.UseBox"}}" style="cursor: pointer;"><i class="fa-solid fa-box-open"></i></a>
+              <a class="item-edit" data-action="editItem" data-tooltip="Edit"><i class="fa-solid fa-edit"></i></a>
+              <a class="item-delete" data-action="deleteItem" data-tooltip="Delete"><i class="fa-solid fa-trash"></i></a>
+            {{/if}}
+          </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
 
     <table class="cog-attacks-table" style="width: 100%;">
       <thead>
@@ -239,7 +272,7 @@
       <tbody>
         {{!-- Gear Items --}}
         {{#each gear as |item|}}
-          <tr class="draggable {{#if item.system.equipped}}cog-bg-danger-tint{{/if}}" data-item-id="{{item.id}}" draggable="true">
+          <tr class="draggable {{#if item.system.equipped}}cog-bg-danger-tint{{/if}}{{#if item.isOffline}} cog-gear-offline{{/if}}" data-item-id="{{item.id}}" draggable="true">
             <td>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <button class="cog-bg-none" type="button" data-action="toggleGearEquipped" data-tooltip="{{#if item.system.equipped}}Equipped to {{upper item.system.slot}} (Click to unequip){{else}}Unequipped (Click to equip to {{upper item.system.slot}}){{/if}}" style="border: none; cursor: pointer; padding: 2px 4px; font-size: 14px;">
@@ -253,8 +286,13 @@
                   <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;">{{item.name}}</span>
                   <span class="cog-stat-sublabel" style="display: inline-block; margin-left: 4px; text-transform: uppercase;">[{{item.system.slot}}]</span>
                   {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=item.cooldownBadge}}
+                  {{> "systems/sprinter-rpg/templates/items/parts/provenance-badges.hbs" provenance=item.provenance}}
                   {{#if item.system.equipped}}
                     <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px; margin-left: 4px;">EQUIPPED</span>
+                  {{/if}}
+                  {{#if item.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{item.offlineTip}}">[{{item.offlineBadge}}]</span>{{/if}}
+                  {{#if item.brokenState}}
+                    <span class="cog-badge cog-bg-danger-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px; margin-left: 4px;">{{item.brokenLabel}}</span>
                   {{/if}}
                   {{#if item.displayEffects}}<div class="cog-text cog-attack-effects" style="font-size: 10px; margin-top: 2px;">{{item.displayEffects}}</div>{{/if}}
                   {{#if item.bonusesSummary}}
@@ -283,6 +321,9 @@
               <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{item.system.notes}}" placeholder="Notes..." />
             </td>
             <td style="text-align: center;">
+              {{#if item.brokenState}}
+                <a class="cog-text-warning" data-action="repairItem" data-tooltip="{{localize "COG.Repair.Tooltip"}}" style="cursor: pointer; margin-right: 6px;"><i class="fa-solid fa-screwdriver-wrench"></i></a>
+              {{/if}}
               {{#if item.canActivate}}
                 <a class="cog-text-accent" data-action="useItem" data-tooltip="Activate Gear" style="cursor: pointer; margin-right: 6px;"><i class="fa-solid fa-bolt"></i></a>
               {{/if}}
@@ -298,6 +339,7 @@
             <td>
               <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;">{{item.name}}</span>
               {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=item.cooldownBadge}}
+              {{> "systems/sprinter-rpg/templates/items/parts/provenance-badges.hbs" provenance=item.provenance}}
             </td>
             <td>
               <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.quantity" value="{{item.system.quantity}}" style="width: 44px;" />

@@ -12,14 +12,6 @@
 <span class="cog-fsim-change">{{before}} <i class="fa-solid fa-arrow-right"></i> <strong>{{after}}</strong>{{#if capped}} <span class="cog-fsim-badge cap">{{localize 'COG.FloorSim.Capped'}}{{#if overflow}} (+{{overflow}}){{/if}}</span>{{/if}}{{#if ruleBreak}} <span class="cog-fsim-badge break">{{localize 'COG.FloorSim.RuleBreakBadge'}}</span>{{/if}}{{#if note}} <em>{{note}}</em>{{/if}}</span>
 {{/inline}}
 <section class="cog-fsim-panel">
-{{#if empty}}
-  <h3>{{localize 'COG.FloorSim.Empty.Title'}}</h3>
-  <p class="cog-fsim-note">{{localize 'COG.FloorSim.NoPendingRun'}}</p>
-{{else}}
-{{#if finishing}}
-  <h3>{{localize 'COG.FloorSim.Finish.Title'}}</h3>
-  <p class="cog-fsim-note">{{localize 'COG.FloorSim.Finish.Note'}}</p>
-{{else}}
 {{#with panel as |p|}}
 
   {{#if p.isLevel}}
@@ -187,6 +179,13 @@
               {{/if}}
             </label>
           {{/each}}
+          {{#if braceletRace}}
+            <div class="cog-fsim-line">
+              <span>{{localize 'COG.FloorSim.Loot.BraceletRace'}}</span> {{> rollbtn braceletRace.die}}
+              <span class="cog-fsim-marker {{braceletRace.marker}}">{{#if (eq braceletRace.marker 'rolled')}}{{localize 'COG.FloorSim.Marker.Rolled'}}{{/if}}{{#if (eq braceletRace.marker 'chosen')}}{{localize 'COG.FloorSim.Marker.Chosen'}}{{/if}}{{#if (eq braceletRace.marker 'open')}}{{localize 'COG.FloorSim.Marker.Open'}}{{/if}}</span>
+            </div>
+            {{#if braceletRace.name}}<p class="cog-fsim-narrative">{{braceletRace.name}}{{#unless braceletRace.installed}} ({{localize 'COG.FloorSim.Loot.BraceletRaceMissing'}}){{/unless}}{{#if braceletRace.narrative}}: {{braceletRace.narrative}}{{/if}}</p>{{/if}}
+          {{/if}}
           {{#if scrollRoll}}<div class="cog-fsim-line"><span>{{localize 'COG.FloorSim.Loot.ScrollSpell'}}</span> {{> rollbtn scrollRoll}}</div>{{/if}}
           {{#if scroll}}
             <div class="cog-fsim-line">
@@ -296,6 +295,7 @@
 
   {{#if p.isRaceClass}}
     <h3>{{localize 'COG.FloorSim.Step.raceClass'}}</h3>
+    {{#if p.emptyListsNote}}<p class="cog-fsim-note cog-ai-hidden-note">{{p.emptyListsNote}}</p>{{/if}}
     <label class="cog-fsim-field"><span>{{localize 'COG.FloorSim.RaceClass.Race'}}</span>
       <select data-change-action="setField" data-type="text" data-path="{{p.racePath}}">
         <option value="">{{localize 'COG.FloorSim.RaceClass.Later'}}</option>
@@ -309,6 +309,44 @@
       </select>
     </label>
     {{#if p.laterChosen}}<p class="cog-fsim-note">{{localize 'COG.FloorSim.RaceClass.LaterNote'}}</p>{{/if}}
+    {{#each p.kinds as |k|}}
+      <div class="cog-fsim-card">
+        <div class="cog-fsim-card-head"><span class="cog-fsim-badge">{{localize k.labelKey}}</span> <strong>{{k.name}}</strong> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=k.sourceBadge}}</div>
+        {{#unless k.hasFields}}<p class="cog-fsim-note">{{localize 'COG.CrawlerCreator.RaceClass.NoFields'}}</p>{{/unless}}
+        {{#each k.choices}}
+          <label class="cog-fsim-field"><span>{{label}}{{#if rank}} (+{{rank}}){{/if}}</span>
+            <select data-change-action="setField" data-type="text" data-path="{{path}}">
+              {{#each options}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+            </select>
+          </label>
+        {{/each}}
+        {{#each k.pools as |pool|}}
+          <p class="cog-fsim-counter{{#if pool.over}} over{{/if}}">{{pool.line}}{{#if pool.over}} <span class="cog-fsim-badge break">{{localize 'COG.FloorSim.RuleBreakBadge'}}</span>{{/if}}</p>
+          <div class="cog-fsim-line">
+            {{#each pool.rows}}
+              <label class="cog-fsim-field"><span>{{upper stat}}</span>
+                <input type="number" class="cog-fsim-die-input" min="0" data-change-action="setPoolStat" data-type="int" data-kind="{{k.kind}}" data-grant="{{pool.grantIndex}}" data-stat="{{stat}}" value="{{value}}" />
+              </label>
+            {{/each}}
+          </div>
+        {{/each}}
+        {{#if k.startingItems.length}}
+          <h4>{{localize 'COG.CrawlerCreator.RaceClass.StartingItems'}}</h4>
+          <ul class="cog-fsim-picklist">
+            {{#each k.startingItems}}
+              <li class="cog-fsim-pickrow{{#if accepted}} checked{{/if}}"><label><input type="checkbox" data-change-action="toggleStartingItem" data-kind="{{k.kind}}" data-index="{{index}}" {{#if accepted}}checked{{/if}} /> {{label}}</label></li>
+            {{/each}}
+          </ul>
+        {{/if}}
+        {{#each k.startingChoices}}
+          <label class="cog-fsim-field"><span>{{label}}</span>
+            <select data-change-action="setField" data-type="text" data-path="{{path}}">
+              {{#each options}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+            </select>
+          </label>
+        {{/each}}
+      </div>
+    {{/each}}
   {{/if}}
 
   {{#if p.isReview}}
@@ -322,7 +360,7 @@
     {{/if}}
     {{#each p.sections}}
       <div class="cog-fsim-log">
-        <h4>{{localize labelKey}}</h4>
+        <h4>{{#if floorLabel}}{{floorLabel}} &middot; {{/if}}{{localize labelKey}}</h4>
         <ul>
           {{#each entries}}
             <li><strong>{{label}}</strong> {{#if (or before after)}}{{> change this}}{{/if}} <span class="cog-fsim-muted">{{origin}}</span>{{#if pendingDie}} <span class="cog-fsim-badge cap">{{localize 'COG.FloorSim.Marker.Open'}}</span>{{/if}}{{#if ruleBreak}} <span class="cog-fsim-badge break">{{localize 'COG.FloorSim.RuleBreakBadge'}}</span>{{/if}}
@@ -335,6 +373,4 @@
   {{/if}}
 
 {{/with}}
-{{/if}}
-{{/if}}
 </section>

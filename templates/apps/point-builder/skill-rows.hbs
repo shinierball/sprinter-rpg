@@ -17,7 +17,7 @@
       <div class="cog-entry-adder-row cog-pb-row" data-row="skills" data-index="{{@index}}">
         <select id="{{@root.rootId}}-skills-{{@index}}-identifier" data-change-action="setRowField" data-row-field="identifier" title="Pick a skill from the catalog, or leave it custom">
           {{#each this.identifierOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
-        </select>
+        </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=this.identifierBadge}}
         <input type="text" id="{{@root.rootId}}-skills-{{@index}}-name" data-input-action="setRowField" data-change-action="setRowField" data-row-field="name" value="{{this.name}}" placeholder="Skill name">
         <select id="{{@root.rootId}}-skills-{{@index}}-rank" data-change-action="setRowField" data-row-field="rank">
           {{#each this.rankOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
@@ -41,7 +41,7 @@
       <div class="cog-entry-adder-row cog-pb-row" data-row="spells" data-index="{{@index}}">
         <select id="{{@root.rootId}}-spells-{{@index}}-identifier" data-change-action="setRowField" data-row-field="identifier" title="Pick a spell from the catalog, or leave it custom">
           {{#each this.identifierOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
-        </select>
+        </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=this.identifierBadge}}
         <input type="text" id="{{@root.rootId}}-spells-{{@index}}-name" data-input-action="setRowField" data-change-action="setRowField" data-row-field="name" value="{{this.name}}" placeholder="Spell name">
         <select id="{{@root.rootId}}-spells-{{@index}}-rank" data-change-action="setRowField" data-row-field="rank">
           {{#each this.rankOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}

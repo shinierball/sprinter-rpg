@@ -5,6 +5,7 @@
         <i class="fa-solid fa-hourglass-half fa-spin-pulse cog-text-warning" style="--fa-animation-duration: 4s;"></i>
         <span class="cog-hud-collapsed-val cog-dark cog-text-warning" style="font-weight: bold;">{{floorTimerShort}}</span>
       </button>
+      {{#if zeroZone}}<button type="button" class="cog-hud-zero-zone-pill cog-text-on-fill" data-action="toggleZeroZone" title="{{zeroZoneLabel}}: click to end">{{zeroZoneLabel}}</button>{{/if}}
     </div>
   {{else}}
     <div class="cog-floor-hud-inner">
@@ -15,6 +16,7 @@
         <div class="cog-floor-hud-title">
           <span class="cog-hud-floor-badge">Floor {{currentFloor}}</span>
           <span class="cog-hud-label">Collapse Clock</span>
+          {{#if zeroZone}}<button type="button" class="cog-hud-zero-zone-pill cog-text-on-fill" data-action="toggleZeroZone" title="{{zeroZoneLabel}}: click to end">{{zeroZoneLabel}}</button>{{/if}}
         </div>
         <div class="cog-floor-hud-time-row">
           {{#if isGM}}

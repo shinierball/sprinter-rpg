@@ -8,6 +8,14 @@
     </div>
   </div>
 
+  {{#each lootBoxOpeners as |opener|}}
+    <div style="margin-bottom: 8px;">
+      <button type="button" data-action="openLootBoxes" data-crawler-uuid="{{opener.uuid}}" data-tooltip="{{localize "COG.LootBoxSheet.OpenAllHint"}}">
+        <i class="fa-solid fa-box-open"></i> {{localize "COG.LootBoxSheet.OpenFor" name=opener.name count=opener.units}}
+      </button>
+    </div>
+  {{/each}}
+
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px;">
     {{#each stashedItems.all as |item|}}
       <div class="draggable cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 8px; display: flex; justify-content: space-between; align-items: center;" data-item-id="{{item.id}}">

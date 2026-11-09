@@ -8,21 +8,12 @@ import { COG_TAGS } from '../data/tag-catalog.mjs';
 import { catalogEntries } from '../content/catalog-lookup.mjs';
 
 /**
- * The debuff names the parser looks for when the caller gives none: the tag catalog's `condition.*` labels, then the
- * names of the debuffs in the content catalogs (the system's own, and an import's).
- * @returns {string[]}
- */
-export function catalogDebuffNames() {
-  return catalogDebuffRefs().map(ref => ref.name);
-}
-
-/**
  * The debuffs the parser looks for when the caller gives none, each with the reference a match stores: a catalog debuff's
  * identifier, or a `condition.*` tag that no catalog debuff of that name answers for. A name the tag catalog and a catalog
  * debuff share is listed once, with the debuff's identifier.
  * @returns {{ name: string, identifier: string }[]}
  */
-export function catalogDebuffRefs() {
+function catalogDebuffRefs() {
   const debuffs = [];
   for (const entry of catalogEntries('debuffs')) {
     if (typeof entry?.name === 'string' && entry.name.trim()) debuffs.push({ name: entry.name.trim(), identifier: String(entry.system?.identifier ?? '').trim() });
@@ -47,7 +38,7 @@ function knownDebuff(entry) {
  * @param {object|string} upgrades
  * @returns {{ rank5: string, rank10: string, rank15: string }}
  */
-export function parseUpgrades(upgrades) {
+function parseUpgrades(upgrades) {
   if (!upgrades) return { rank5: '', rank10: '', rank15: '' };
   if (typeof upgrades === 'object') {
     return {

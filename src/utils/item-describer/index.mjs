@@ -10,19 +10,20 @@
  * Block sources: the `DESCRIBERS` of `feature-describer.mjs` (wrapped unchanged), `describeAttackMechanics`
  * (`attack-lines.mjs`) and the three block files owned by the S2 steps.
  */
-import { DESCRIBERS } from '../feature-describer.mjs';
+import { DESCRIBERS } from './feature-describer.mjs';
 import { describeAttackLines } from './attack-lines.mjs';
 import { ITEM_SUMMARY_GROUPS, t, itemLine, defineItemSummaryTemplates } from './shared.mjs';
 import { BLOCKS as SPELL_SKILL_BLOCKS } from './blocks-spell-skill.mjs';
 import { BLOCKS as GEAR_LOOT_BLOCKS } from './blocks-gear-loot.mjs';
 import { BLOCKS as EFFECT_BLOCKS } from './blocks-effects.mjs';
 import { BLOCKS as IDENTITY_BLOCKS } from './blocks-identity.mjs';
+import { BLOCKS as CRAFTING_BLOCKS } from './blocks-crafting.mjs';
 
 export { ITEM_SUMMARY_BADGES, ITEM_SUMMARY_KINDS, ITEM_SUMMARY_GROUPS, itemSummaryTemplates, defineItemSummaryTemplates } from './shared.mjs';
 
 /** Block ids for the wrapped `DESCRIBERS`, in the same order as that list. */
 const WRAPPED_IDS = Object.freeze([
-  'grants-stat', 'stat-caps', 'grants-skill', 'defense', 'rows-damage', 'rows-attack', 'rows-check', 'rows-mana',
+  'grants-stat', 'stat-caps', 'grants-skill', 'defense', 'rows-damage', 'rows-attack', 'rows-check', 'rows-craft', 'rows-vehicle', 'rows-mana',
   'rows-recovery', 'rows-substitution', 'rows-popularity', 'rows-ai-favor', 'movement', 'senses', 'requires',
   'starting-items', 'descriptive-tags'
 ]);
@@ -63,7 +64,7 @@ const grantedEffectsBlock = {
 
 /** Every block, in registry order. */
 export const ITEM_SUMMARY_BLOCKS = Object.freeze([
-  ...wrapped, attackBlock, grantedEffectsBlock, ...SPELL_SKILL_BLOCKS, ...GEAR_LOOT_BLOCKS, ...EFFECT_BLOCKS, ...IDENTITY_BLOCKS
+  ...wrapped, attackBlock, grantedEffectsBlock, ...SPELL_SKILL_BLOCKS, ...GEAR_LOOT_BLOCKS, ...EFFECT_BLOCKS, ...IDENTITY_BLOCKS, ...CRAFTING_BLOCKS
 ]);
 
 /** The ids of all blocks. */

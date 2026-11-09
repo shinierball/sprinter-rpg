@@ -431,4 +431,47 @@
       </div>
     </div>
   {{/if}}
+
+  {{!-- TAB 5: SECRETS (GM only) --}}
+  {{#if (eq activeTab 'secrets')}}
+    <div class="cog-secrets-tab-content">
+      <div class="cog-ledger-table-wrap">
+        <table class="cog-ledger-table cog-secrets-table">
+          <thead>
+            <tr>
+              <th>Crawler</th>
+              <th>Effect</th>
+              <th>Stage</th>
+              <th>Landed</th>
+              <th>Cue</th>
+              <th>Cure window</th>
+              <th>GM note</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each secretRows}}
+              <tr class="cog-secret-row" data-secret-kind="{{this.kind}}">
+                <td>{{this.actorName}}</td>
+                <td>{{this.name}}</td>
+                <td>{{this.stage}}</td>
+                <td>{{this.landed}}</td>
+                <td>{{this.cue}}</td>
+                <td>{{this.window}}</td>
+                <td><input data-change-action="saveSecretNote" type="text" class="cog-secret-note" data-key="{{this.key}}" value="{{this.note}}" placeholder="Note" /></td>
+                <td>
+                  <button data-action="openSecret" type="button" data-key="{{this.key}}">Open</button>
+                  {{#if this.canReveal}}<button data-action="revealSecret" type="button" data-key="{{this.key}}">Reveal</button>{{/if}}
+                  {{#if this.canChange}}<button data-action="changeSecret" type="button" data-key="{{this.key}}">Change</button>{{/if}}
+                  {{#if this.canCure}}<button data-action="cureSecret" type="button" data-key="{{this.key}}">Cure</button>{{/if}}
+                </td>
+              </tr>
+            {{else}}
+              <tr><td colspan="8" class="cog-text-muted">No secrets are held and no transformations are waiting or changed.</td></tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {{/if}}
 </div>

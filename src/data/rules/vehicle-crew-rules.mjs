@@ -7,6 +7,7 @@
  * role. A role is a registry id (`VEHICLE_ROLES`, exposed as `CONFIG.COG.vehicleRoles`): shown and stored, read by no
  * mechanic yet. Nothing here throws or blocks (CONTRIBUTING rule 2): over-capacity is reported, the caller asks for a Rule Break.
  */
+import { firstScalar } from '../../utils/first-scalar.mjs';
 
 export const DEFAULT_VEHICLE_ROLE = 'passenger';
 
@@ -18,12 +19,9 @@ export const VEHICLE_ROLES = {};
 const ROLE_ID = /^[A-Za-z][\w.-]*$/;
 
 /** First entry of an array, first item of a comma string, trimmed; anything else is ''. (CONTRIBUTING §4.) */
-function firstString(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val !== 'string') return '';
-  if (val.includes(',')) val = val.split(',')[0];
-  return val.trim();
+function trimmedScalar(raw) {
+  const val = firstScalar(raw);
+  return typeof val === 'string' ? val.trim() : '';
 }
 
 /**
@@ -47,13 +45,13 @@ registerVehicleRole({ id: 'gunner', label: 'Gunner', hint: 'No rule effect yet; 
 
 /** A role id from user input: sanitised, and an unregistered id becomes 'passenger'. @returns {string} a registered id */
 export function sanitizeVehicleRole(raw) {
-  const id = firstString(raw);
+  const id = trimmedScalar(raw);
   return Object.hasOwn(VEHICLE_ROLES, id) ? id : DEFAULT_VEHICLE_ROLE;
 }
 
 /** The definition to show or apply; an unregistered or malformed id falls back to the 'passenger' definition. */
 export function vehicleRoleInfo(id) {
-  const key = firstString(id);
+  const key = trimmedScalar(id);
   return VEHICLE_ROLES[Object.hasOwn(VEHICLE_ROLES, key) ? key : DEFAULT_VEHICLE_ROLE];
 }
 
@@ -68,7 +66,7 @@ export function vehicleRoleOptions(selectedId) {
  * disabled) gets an extra disabled "Unknown role" option that carries `selected`, so the stored value stays visible.
  */
 export function vehicleRoleSelectOptions(storedId) {
-  const id = firstString(storedId);
+  const id = trimmedScalar(storedId);
   if (!id || !ROLE_ID.test(id) || Object.hasOwn(VEHICLE_ROLES, id)) return vehicleRoleOptions(id);
   const known = vehicleRoleOptions(id).map((o) => ({ ...o, selected: false, disabled: false }));
   return [...known, { id, label: `Unknown role (${id})`, hint: '', selected: true, disabled: true }];
@@ -82,7 +80,7 @@ const OP_IDS = new Set(Object.values(CREW_OPS));
 
 /** A stored role: a well-formed id is kept as is (even unregistered); missing or malformed becomes 'passenger'. */
 function storedRole(raw) {
-  const id = firstString(raw);
+  const id = trimmedScalar(raw);
   return ROLE_ID.test(id) ? id : DEFAULT_VEHICLE_ROLE;
 }
 
@@ -134,7 +132,7 @@ export function crewCapacity(system) {
  */
 export function planCrewChange(crew, op, ref, capacity, opts = {}) {
   const before = cleanCrew(crew);
-  const uuid = firstString(ref);
+  const uuid = trimmedScalar(ref);
   const cap = capacity && typeof capacity === 'object' ? capacity : crewCapacity(null);
   const limited = cap.limited === true;
   const total = count(cap.total);

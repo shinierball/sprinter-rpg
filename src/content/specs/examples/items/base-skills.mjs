@@ -15,21 +15,21 @@ import { SAMPLE_SKILL_SPECS } from '../../../../data/creation-sample-skills.mjs'
 import { STARTER_WEAPON_LOADOUTS } from '../../../../data/creation-loadouts.mjs';
 
 const GROUP = {
-  social: ['Haggling', 'Small Talk', 'Crowd Work', 'Stage Presence', 'Persuasion', 'Deception', 'Negotiation', 'Heckler Management', 'Intimidate', 'Read People'],
-  knowledge: ['Research', 'Investigation', 'Map Reading', 'Bookkeeping', 'Camera Awareness', 'Puzzle Solving'],
-  movement: ['Sprinting', 'Climbing', 'Jumping', 'Swimming', 'Parkour'],
-  crafting: ['Chemistry', 'Cooking', 'Repair', 'Electronics', 'Knot Tying', 'Rope Work'],
-  survival: ['Survival', 'Tracking', 'Scavenging']
+  social: ['haggling', 'small-talk', 'crowd-work', 'stage-presence', 'persuasion', 'deception', 'negotiation', 'heckler-management', 'intimidate', 'read-people'],
+  knowledge: ['research', 'investigation', 'map-reading', 'bookkeeping', 'camera-awareness', 'puzzle-solving'],
+  movement: ['sprinting', 'climbing', 'jumping', 'swimming', 'parkour'],
+  crafting: ['chemistry', 'cooking', 'repair', 'electronics', 'knot-tying', 'rope-work'],
+  survival: ['survival', 'tracking', 'scavenging']
 };
 /** Second tags: the trap slot (4.6) needs two besides the extra; Wrestling carries the technique tag explicitly. */
-const EXTRA_TAGS = { 'Puzzle Solving': ['skillGroup.trap'], 'Knot Tying': ['skillGroup.trap'], Wrestling: ['technique.wrestling'] };
+const EXTRA_TAGS = { 'puzzle-solving': ['skillGroup.trap'], 'knot-tying': ['skillGroup.trap'], wrestling: ['technique.wrestling'] };
 
-const groupOf = (name) => Object.keys(GROUP).find((g) => GROUP[g].includes(name)) ?? 'utility';
+const groupOf = (identifier) => Object.keys(GROUP).find((g) => GROUP[g].includes(identifier)) ?? 'utility';
 
 const sampleSkills = SAMPLE_SKILL_SPECS.map((spec, i) => ({
   ...spec,
   _id: exampleId('bk', 'i', i + 1),
-  system: { ...spec.system, tags: [`skillGroup.${groupOf(spec.name)}`, ...(EXTRA_TAGS[spec.name] ?? [])] }
+  system: { ...spec.system, tags: [`skillGroup.${groupOf(spec.system.identifier)}`, ...(EXTRA_TAGS[spec.system.identifier] ?? [])] }
 }));
 
 /** One deadpan line per starter weapon, keyed by the loadout entry's `skillIdentifier`. */
@@ -54,6 +54,28 @@ const WEAPON_TEXT = {
   warhammer: 'Hits hard, ends arguments, and takes both hands.'
 };
 
+/** The name of each weapon skill, keyed by the loadout entry's `skillIdentifier`: written out, so a rename is one literal. */
+const WEAPON_SKILL_NAME = {
+  axe: 'Axe Training',
+  bow: 'Bow Training',
+  club: 'Club Training',
+  crossbow: 'Crossbow Training',
+  dagger: 'Dagger Training',
+  handgun: 'Handgun Training',
+  'herding-tools': 'Herding Tools Training',
+  'improvised-weapons': 'Improvised Weapons Training',
+  javelin: 'Javelin Training',
+  lance: 'Lance Training',
+  longsword: 'Longsword Training',
+  polearm: 'Polearm Training',
+  quarterstaff: 'Quarterstaff Training',
+  rapier: 'Rapier Training',
+  shotgun: 'Shotgun Training',
+  shuriken: 'Shuriken Training',
+  slingshot: 'Slingshot Training',
+  warhammer: 'Warhammer Training'
+};
+
 /** The `weapon.*` tag of a starter weapon: its loadout id with underscores; the improvised weapon's registered tag has no plural. */
 const weaponTag = (id) => (id === 'improvised weapons' ? 'weapon.improvised' : `weapon.${id.replace(/\s+/g, '_')}`);
 
@@ -62,7 +84,7 @@ const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const weaponSkills = STARTER_WEAPON_LOADOUTS.map((w, i) => ({
   type: 'skill',
   _id: exampleId('bk', 'i', 45 + i),
-  name: `${w.name} Training`,
+  name: WEAPON_SKILL_NAME[w.skillIdentifier],
   img: w.img,
   system: {
     identifier: w.skillIdentifier,

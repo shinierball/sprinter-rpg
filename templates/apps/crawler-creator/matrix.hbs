@@ -34,6 +34,7 @@
               <label class="cog-skill-pill flexrow {{#if this.checked}}checked{{/if}}">
                 <input type="checkbox" class="cog-skill-checkbox" name="creator-skill-{{../key}}-{{@index}}" data-change-action="toggleSkill" data-tier="{{../key}}" data-skill="{{this.key}}" data-prop-list="tierSelections.{{../key}}.skills" data-value="{{this.key}}" {{#if this.checked}}checked{{/if}} />
                 <span class="skill-name">{{this.name}}</span>
+                {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=this.sourceBadge}}
                 <span class="stat-tag stat-{{this.stat}}">{{this.stat}}</span>
               </label>
             {{else}}

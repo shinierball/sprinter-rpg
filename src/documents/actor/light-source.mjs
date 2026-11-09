@@ -3,17 +3,16 @@
  * `emits-light` rule flag (the core `rule.emits-light` tag, derived from radii, or a module tag carrying the flag).
  * This module resolves the light such an item emits at its current Rank; igniting and extinguishing tokens (3.16c) is the second half of this file; following and the leash are 3.16d.
  */
-import { getItemRank } from '../../data/tags.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
-import { resolveReachedRankBreaks } from '../../utils/rank-breaks.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
+import { resolveReachedRankBreaks, getItemRank } from '../../utils/skill/rank-breaks.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { findActorToken } from '../../utils/interrupts.mjs';
+import { findActorToken } from '../../utils/combat/interrupts.mjs';
 import { getOrCreateLightMarker } from './light-marker.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
-import { TIME_UNITS, timingAmount } from '../../utils/timing.mjs';
-import { expiryStamp } from '../../utils/durations.mjs';
+import { TIME_UNITS, timingAmount } from '../../utils/time/timing.mjs';
+import { expiryStamp } from '../../utils/time/durations.mjs';
 import { currentTimeContext } from './dungeon-time.mjs';
 import { registerExpirySource } from './duration-expiry.mjs';
 import { leaveUsedFormById, resolveUsedFormId } from './used-items.mjs';
@@ -121,7 +120,7 @@ export function findLightTokens(predicate = () => true) {
 }
 
 /** Light tokens an item lit (a consumed torch's stack item may be gone, but its tokens keep its uuid). */
-export function litTokensForItem(item) {
+function litTokensForItem(item) {
   const uuid = item?.uuid;
   return uuid ? findLightTokens((flag) => flag.sourceItemUuid === uuid) : [];
 }
@@ -322,10 +321,6 @@ export function extinguish(item) {
   return extinguishTokens(litTokensForItem(item));
 }
 
-/** Put out every light an actor owns (the owner's token HUD button). */
-export function extinguishOwnerLights(actor) {
-  return extinguishTokens(findLightTokens((flag) => flag.ownerUuid === actor?.uuid));
-}
 
 registerRelayAction(RELAY_ACTION_CREATE_LIGHT_TOKEN, {
   authorize: (payload, requester) => {

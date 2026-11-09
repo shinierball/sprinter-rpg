@@ -3,13 +3,13 @@
  * Built like the item sheet's other editors, so a live sheet can adopt them later by calling this and including the
  * `identity-rows` partial. The Race and Class Creators use it through a `PerkRowsHost`. The grant rows, starting items, senses, movement, stat caps and `requires`.
  */
+import { offeredEntries } from '../../utils/content-source.mjs';
 import { tagPickerOptions } from './row-host.mjs';
 import { GRANT_ROW_FIELDS, grantRowView } from './grant-row-fields.mjs';
 import { buildQueryView } from './context-query.mjs';
-import { pickOptions } from './options.mjs';
+import { pickOptions } from '../../utils/ui/field-options.mjs';
 import { queryBucketsAt, toArray } from './util.mjs';
-import { startingItemErrors } from '../../models/items/base-item-model.mjs';
-import { catalogEntries } from '../../content/catalog-lookup.mjs';
+import { startingItemErrors } from '../../models/items/grant-validation.mjs';
 
 /** The Add chips of the grant rows, one per kind and mode (`kind:mode`), with their label keys. */
 export function grantAddBar() {
@@ -17,7 +17,7 @@ export function grantAddBar() {
 }
 
 /** Item types a starting item can name: every builder item type except the lore types, plus the two companion actors. */
-export const STARTING_ITEM_TYPES = Object.freeze([
+const STARTING_ITEM_TYPES = Object.freeze([
   'skill', 'spell', 'attack', 'gear', 'buff', 'debuff', 'loot', 'space_upgrade', 'actor:pet', 'actor:mount'
 ]);
 
@@ -32,7 +32,7 @@ function identifierSuggestions(itemType) {
   const kind = CATALOG_KIND[itemType] ?? 'items';
   const seen = new Set();
   const out = [];
-  for (const def of catalogEntries(kind)) {
+  for (const def of offeredEntries(kind)) {
     if (kind === 'items' && def?.type !== itemType) continue;
     const value = def?.system?.identifier || def?._id || def?.id;
     if (!value || seen.has(value)) continue;

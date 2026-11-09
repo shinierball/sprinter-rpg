@@ -1,0 +1,71 @@
+<div class="cog-crafting-plan">
+  {{#if plan}}
+    {{#if plan.empty}}
+      <p class="cog-text-secondary cog-crafting-empty">{{localize "COG.CraftApp.EmptyPlan"}}</p>
+    {{else}}
+      <table class="cog-crafting-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>{{localize "COG.CraftApp.Step"}}</th>
+            <th>{{localize "COG.CraftApp.Difficulty"}}</th>
+            <th>{{localize "COG.CraftApp.HoursColumn"}}</th>
+            <th>{{localize "COG.CraftApp.Skill"}}</th>
+            <th>{{localize "COG.CraftApp.Materials"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each plan.steps as |step|}}
+            <tr class="cog-crafting-step" data-step="{{step.index}}">
+              <td>{{step.number}}</td>
+              <td>
+                <strong class="cog-text-strong">{{step.label}}</strong>
+                <div class="cog-text-secondary">{{step.kindLabel}}{{#if step.categoryLabel}}, {{step.categoryLabel}} {{step.bonusLevel}}{{/if}}</div>
+                {{#if step.needsTable}}
+                  <div class="cog-text-secondary">{{localize "COG.CraftApp.Table"}}: {{#if step.tableNames}}{{step.tableNames}}, {{/if}}{{localize "COG.CraftApp.Tier"}} {{step.tableTier}}{{#if step.tableNote}} ({{step.tableNote}}){{/if}}</div>
+                {{/if}}
+                {{#if step.bonusNote}}
+                  <div class="cog-text-secondary">{{step.bonusNote}}</div>
+                {{/if}}
+              </td>
+              <td class="cog-crafting-dc">{{step.dc}}</td>
+              <td class="cog-crafting-hours">{{step.hours}}</td>
+              <td>
+                {{#if step.hasSkillOptions}}
+                  <select class="cog-field-input cog-crafting-skill" data-change-action="setSkill" data-step="{{step.index}}">
+                    {{#each step.skillOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+                  </select>
+                {{else}}
+                  <span class="cog-text-secondary">{{localize "COG.CraftApp.NoSkill"}}</span>
+                {{/if}}
+              </td>
+              <td>
+                {{#each step.materials as |m|}}
+                  <div class="cog-crafting-material {{#if m.short}}cog-crafting-short{{/if}}">
+                    {{m.text}}: {{m.summary}}{{#if m.from}} <span class="cog-text-secondary">({{m.from}})</span>{{/if}}
+                  </div>
+                {{/each}}
+                {{#if step.junk}}<div class="cog-crafting-material">{{localize "COG.CraftApp.Junk"}}: {{step.junk}}</div>{{/if}}
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      <div class="cog-crafting-total cog-text-secondary">{{localize "COG.CraftApp.TotalHours"}}: <strong class="cog-text-strong">{{plan.totalHours}}</strong></div>
+    {{/if}}
+    {{#if plan.hasWarnings}}
+      <ul class="cog-crafting-warnings">
+        {{#each plan.warnings as |w|}}
+          <li class="cog-crafting-warning" data-code="{{w.code}}"><span class="cog-state-badge cog-badge-rule-break">{{localize "COG.CraftApp.RuleBreak"}}</span> {{w.message}}</li>
+        {{/each}}
+      </ul>
+    {{/if}}
+    {{#if plan.hasNotices}}
+      <ul class="cog-crafting-notices">
+        {{#each plan.notices as |n|}}<li class="cog-crafting-notice cog-text-secondary" data-code="{{n.code}}"><i class="fa-solid fa-circle-info"></i> {{n.message}}</li>{{/each}}
+      </ul>
+    {{/if}}
+  {{else}}
+    <p class="cog-text-secondary cog-crafting-empty">{{localize "COG.CraftApp.PickBlueprint"}}</p>
+  {{/if}}
+</div>

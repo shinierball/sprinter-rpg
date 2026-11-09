@@ -18,6 +18,7 @@ import { syncActorOwnership } from '../documents/actor/ownership-relay.mjs';
 import { userOwnsActor } from '../documents/actor/personal-space-links.mjs';
 import { SYSTEM_PATH, SYSTEM_ID } from '../constants.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
+import { sourceBadge, isContentOff } from '../utils/content-source.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../utils/rule-break-visibility.mjs';
 import { registerRelayAction, requestRelay } from '../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
@@ -37,7 +38,7 @@ export function canManageContract(mercActor, user = globalThis.game?.user) {
 }
 
 /** Relay action: add or remove a mercenary in an employer crawler's `system.companions.mercenaries`. */
-export const MERCENARY_COMPANION_RELAY = 'mercenaryCompanion';
+const MERCENARY_COMPANION_RELAY = 'mercenaryCompanion';
 
 /** The employer's companion list after adding or removing the mercenary id; null when nothing changes. */
 function nextMercenaryList(employer, mercenaryId, add) {
@@ -74,7 +75,7 @@ registerRelayAction(MERCENARY_COMPANION_RELAY, {
  * employer (GM or owner); a party-mate's crawler owned by another player goes through the GM relay.
  * @returns {Promise<boolean>} true when the list is in sync; false when no GM could apply it (the relay warned)
  */
-export async function setEmployerMercenary(employer, mercActor, add) {
+async function setEmployerMercenary(employer, mercActor, add) {
   const list = nextMercenaryList(employer, mercActor?.id, add);
   if (!list) return true;
   if (userOwnsActor(employer, globalThis.game?.user)) {
@@ -86,7 +87,7 @@ export async function setEmployerMercenary(employer, mercActor, add) {
 }
 
 /** Relay action: write a hire's contract on a mercenary the hiring player does not own yet. */
-export const MERCENARY_CONTRACT_RELAY = 'mercenaryContract';
+const MERCENARY_CONTRACT_RELAY = 'mercenaryContract';
 
 /** The longest contract one hire may sign (the Guild's day box). */
 export const MAX_CONTRACT_DAYS = 90;
@@ -206,7 +207,7 @@ export async function signContract(merc, crawler, request, { ruleBreak = false }
  * contract comes from `mercenaryContractTerms`; only the request (days, link choice) is sent.
  * @returns {Promise<boolean>} false when the days are invalid or no GM could apply it (the relay warned)
  */
-export async function applyMercenaryContract(mercActor, crawler, request, { ruleBreak = false } = {}) {
+async function applyMercenaryContract(mercActor, crawler, request, { ruleBreak = false } = {}) {
   if (userOwnsActor(mercActor, globalThis.game?.user)) {
     return (await signContract(mercActor, crawler, request, { ruleBreak })).ok;
   }
@@ -285,7 +286,7 @@ export class COGMercenaryGuildApp extends COGToolApp {
     } : null;
 
     // 2. Resolve All Mercenaries (World Actors + Catalog Templates)
-    const worldMercs = worldActors.filter(a => a.type === 'mercenary');
+    const worldMercs = worldActors.filter(a => a.type === 'mercenary' && !isContentOff(a));
     const mercList = [];
 
     // World mercenaries
@@ -296,6 +297,7 @@ export class COGMercenaryGuildApp extends COGToolApp {
     // Catalog pre-configured mercenaries (available for instant enlistment if not present in world)
     const enlistedIds = new Set(worldMercs.map(wm => wm.flags?.[SYSTEM_ID]?.catalogId).filter(Boolean));
     for (const cat of contentRegistry.getMercenaries()) {
+      if (isContentOff(cat)) continue;
       if (!enlistedIds.has(catalogMercId(cat))) {
         mercList.push(this._formatMercenaryData(cat, true));
       }
@@ -404,6 +406,7 @@ export class COGMercenaryGuildApp extends COGToolApp {
     return {
       id: merc._id || merc.id,
       name: merc.name,
+      sourceBadge: sourceBadge(merc),
       img: merc.img || 'icons/svg/mystery-man.svg',
       isCatalog,
       actorRef: isCatalog ? null : merc,
@@ -647,7 +650,7 @@ export class COGMercenaryGuildApp extends COGToolApp {
       flags: { [SYSTEM_ID]: { catalogId: catalogMercId(cat) } }
     };
 
-    const created = await ActorClass.create(actorData);
+    const created = await ActorClass.create(actorData, { cogSystemMade: true });
     return created;
   }
 

@@ -11,7 +11,7 @@
  */
 
 import { COGToolApp } from '../tool-app.mjs';
-import { normalizeBaseDamage } from '../../utils/base-damage.mjs';
+import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
 import {
   BOSS_TIERS,
   hbSlots,
@@ -24,19 +24,19 @@ import { getCOGStatModifier } from '../../documents/actor/actor-constants.mjs';
 import {
   buildAttackItem,
   MOB_TRAIT_TYPES
-} from './build.mjs';
+} from '../../data/builders/mob-payload.mjs';
 import { buildPayload } from '../../data/builders/item-payload.mjs';
 import { debuffIdentifier } from '../../utils/identifier.mjs';
-import { describeAttackMechanics } from '../../utils/attack-mechanics.mjs';
+import { describeAttackMechanics } from '../../utils/attack/attack-mechanics.mjs';
 import { conditionLabel } from '../../documents/actor/condition-data.mjs';
-import { listAreaShapes } from '../../utils/area-geometry.mjs';
+import { listAreaShapes } from '../../utils/area/area-geometry.mjs';
 import { buildOnHitDebuffPicker } from '../../sheets/item/context-on-hit.mjs';
 import { buildPickList } from '../../sheets/item/context-pick-list.mjs';
 import { unitOptions } from '../../sheets/item/context-timing.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
-import { COG_TAGS } from '../../data/tags.mjs';
-import { COG_DAMAGE_TYPES } from '../../data/buffs.mjs';
-import { ABILITIES, choiceOptions } from '../../sheets/item/options.mjs';
+import { COG_TAGS } from '../../data/tag-catalog.mjs';
+import { COG_DAMAGE_TYPES } from '../../data/damage-types.mjs';
+import { ABILITIES, choiceOptions } from '../../utils/ui/field-options.mjs';
 import { checkTypeOptions } from '../../data/rules/check-types.mjs';
 import { COGTagManager } from '../tag-manager.mjs';
 import { SYSTEM_PATH } from '../../constants.mjs';

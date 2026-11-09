@@ -1,18 +1,26 @@
 import { SYSTEM_ID } from '../constants.mjs';
 import { contentRegistry } from '../content/registry.mjs';
+import { recordedPicks } from '../utils/character/recorded-picks.mjs';
+import { readSourceStamp } from '../utils/content-source.mjs';
 import { isRedacted, emptiedPaths } from '../sourcery/redacted.mjs';
+import { firstScalar } from '../utils/first-scalar.mjs';
 /**
  * Sprinter RPG - Compendium Synchronization Engine
  * Handles globally unique item/spell/class/race/buff/debuff idempotence and
  * propagates compendium modifications across all world actors and items.
  */
 
+const structuredCloneSafe = (value) => {
+  if (value === undefined || value === null) return value;
+  try { return structuredClone(value); } catch (_) { return JSON.parse(JSON.stringify(value)); }
+};
+
 /**
  * Checks whether a document belongs to a compendium pack.
  * @param {object} doc
  * @returns {boolean}
  */
-export function isCompendiumDocument(doc) {
+function isCompendiumDocument(doc) {
   if (!doc) return false;
   return Boolean(
     doc.pack ||
@@ -65,12 +73,16 @@ export function compendiumLinkFor(def) {
     flags.sourceUuid = uuid;
     stats.compendiumSource = uuid;
   }
+  // The source stamp (7.7c) travels with the copy; a copy that already has one keeps it (see `stampCompendiumLink`).
+  const source = readSourceStamp(def);
+  if (source) flags.source = source;
   return { flags, stats };
 }
 
 /** Merges the {@link compendiumLinkFor} link into item creation data (`flags` and `_stats`), in place. */
 export function stampCompendiumLink(data, def) {
   const link = compendiumLinkFor(def);
+  if (readSourceStamp(data)) delete link.flags.source;
   if (Object.keys(link.flags).length) {
     data.flags = { ...(data.flags || {}), [SYSTEM_ID]: { ...(data.flags?.[SYSTEM_ID] || {}), ...link.flags } };
   }
@@ -85,7 +97,7 @@ export function stampCompendiumLink(data, def) {
  * @param {string} itemType - Item type (spell, gear, loot, skill, etc.)
  * @returns {object} Merged system data with actor progression preserved
  */
-export function preserveItemActorState(existingItem, compendiumSystem, itemType) {
+function preserveItemActorState(existingItem, compendiumSystem, itemType) {
   const merged = structuredClone(compendiumSystem || {});
   const existingSystem = existingItem.system || {};
 
@@ -162,9 +174,7 @@ export function preserveItemActorState(existingItem, compendiumSystem, itemType)
 
 /** An identifier from stored data: an array takes its first entry, a comma string its first part, then trimmed. */
 function sanitizeIdentifier(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0];
+  const val = firstScalar(raw);
   return typeof val === 'string' ? val.trim() : '';
 }
 
@@ -230,6 +240,8 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
     const actorItems = Array.from(actor.items ?? []);
     const matchingItems = actorItems.filter(item => {
       if (item.type !== type) return false;
+      // A transformation's item belongs to its affliction, not to the sync
+      if (item.flags?.[SYSTEM_ID]?.transformationOf) return false;
 
       // Check explicit source references
       const sourceId = item.flags?.core?.sourceId || item.flags?.[SYSTEM_ID]?.sourceUuid;
@@ -241,6 +253,12 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
 
       return false;
     });
+
+    // The picks the crawler made when this race or class was applied, read before the sync overwrites the embedded item
+    const appliedFlag = type === 'race' || type === 'class'
+      ? actor.getFlag?.(SYSTEM_ID, type === 'race' ? 'appliedRace' : 'appliedClass') : null;
+    const appliedItem = appliedFlag?.itemId ? matchingItems.find(item => (item.id || item._id) === appliedFlag.itemId) : null;
+    const embeddedBefore = appliedItem ? structuredCloneSafe(appliedItem.system?.toObject?.() ?? appliedItem.system) : null;
 
     if (matchingItems.length > 0) {
       actorsUpdated++;
@@ -254,9 +272,9 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
         };
 
         if (typeof item.update === 'function') {
-          await item.update(updatePayload);
+          await item.update(updatePayload, { cogAuthorship: false });
         } else if (typeof actor.updateEmbeddedDocuments === 'function') {
-          await actor.updateEmbeddedDocuments('Item', [{ _id: item.id || item._id, ...updatePayload }]);
+          await actor.updateEmbeddedDocuments('Item', [{ _id: item.id || item._id, ...updatePayload }], { cogAuthorship: false });
         }
         itemsUpdated++;
       }
@@ -272,7 +290,10 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
         // The appliers resolve an identifier, never a name (names are placeholders before an import, CONTRIBUTING rule 2)
         const identifier = sanitizeIdentifier(compendiumItem.system?.identifier);
         if (identifier) {
-          await apply.call(actor, identifier, { interactive: false });
+          // The recorded picks go back as selections; one that no longer fits the updated item takes the default
+          const { COGRaceClassApplier } = await import('./race-class-applier.mjs');
+          const picks = recordedPicks(embeddedBefore, compendiumItem, COGRaceClassApplier.detectChoices(compendiumItem));
+          await apply.call(actor, identifier, { interactive: false, ...picks });
         } else {
           console.warn(`Sprinter RPG | ${type} "${id}" has no identifier; ${actor.name ?? 'an actor'} was not re-applied`);
         }
@@ -301,7 +322,7 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
       };
 
       if (typeof wItem.update === 'function') {
-        await wItem.update(updatePayload);
+        await wItem.update(updatePayload, { cogAuthorship: false });
       }
       worldItemsUpdated++;
     }

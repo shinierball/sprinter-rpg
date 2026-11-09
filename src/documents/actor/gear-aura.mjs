@@ -10,7 +10,8 @@
  *
  * The aura tag (`delivery.aura` / `shape.aura`) tells an aura from an area weapon, whose `area` block describes a blast.
  */
-import { isAuraItem } from '../../utils/tag-mechanics.mjs';
+import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
+import { isGearSuppressed } from '../../utils/effects/gear-suppression.mjs';
 
 /** True for a gear item that can emit an aura. */
 export function isGearAura(item) {
@@ -50,7 +51,11 @@ export async function onGearAuraItemCreate(item, _options, userId) {
   const holder = wielderOf(item);
   if (!holder || !isGearAura(item) || !ownUserChange(userId)) return null;
   const wearing = item.system.equipped === true;
-  if (wearing && !item.system.hasActivatedAbility) return holder.activateAura(item);
+  if (wearing && !item.system.hasActivatedAbility) {
+    // A passive aura does not start while the gear is offline; the zone's end starts it (GM reconcile).
+    if (!isGearSuppressed(holder, item, 'aura')) return holder.activateAura(item);
+    return item.system.active ? holder.deactivateAura(item) : null;
+  }
   if (item.system.active) return holder.deactivateAura(item);
   return null;
 }
@@ -62,7 +67,9 @@ export async function onGearAuraItemUpdate(item, changes, _options, userId) {
   const equipped = changes?.system?.equipped ?? changes?.['system.equipped'];
   if (typeof equipped !== 'boolean') return null;
   if (equipped) {
-    return !item.system.hasActivatedAbility && !item.system.active ? holder.activateAura(item) : null;
+    return !item.system.hasActivatedAbility && !item.system.active && !isGearSuppressed(holder, item, 'aura')
+      ? holder.activateAura(item)
+      : null;
   }
   return item.system.active ? holder.deactivateAura(item) : null;
 }

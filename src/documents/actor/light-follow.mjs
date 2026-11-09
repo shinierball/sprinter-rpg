@@ -10,14 +10,14 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { isActiveGM } from '../../utils/gm-relay.mjs';
-import { isMarkerActor } from '../../utils/marker.mjs';
-import { positionAfterMovement } from '../../utils/movement-position.mjs';
-import { pixelsPerUnit } from '../../utils/region-shapes.mjs';
+import { isMarkerActor } from '../../utils/area/marker.mjs';
+import { positionAfterMovement } from '../../utils/combat/movement-position.mjs';
+import { pixelsPerUnit } from '../../utils/area/region-shapes.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { LIGHT_FLAG, lightFlagOf, findLightTokens, extinguishTokens } from './light-source.mjs';
 
 /** Operation option marking a move this module issued, so its own `moveToken` echo is ignored. */
-export const LIGHT_MOVE_OPTION = 'lightFollow';
+const LIGHT_MOVE_OPTION = 'lightFollow';
 
 const isOwnLightMove = (operation) => Boolean(operation?.[SYSTEM_ID]?.[LIGHT_MOVE_OPTION]);
 
@@ -48,7 +48,7 @@ export function feetBetween(a, b, atA = a, atB = b) {
 }
 
 /** The owner's own (non-light) token on the light's scene, or null. */
-export function ownerTokenOf(lightDoc) {
+function ownerTokenOf(lightDoc) {
   const flag = lightFlagOf(lightDoc);
   if (!flag) return null;
   return sceneTokens(lightDoc.parent).find((d) => !lightFlagOf(d) && !isMarkerActor(d) && d.actor?.uuid === flag.ownerUuid) ?? null;
@@ -113,7 +113,7 @@ export async function onLightTokenMove(tokenDoc, movement, operation, user) {
  *   its move ends (`moveToken` fires at the start, so the documents still hold the origin); defaults to the documents
  * @returns {Promise<'inside'|'confirmed'|'clamped'|'skipped'>}
  */
-export async function checkLeash(lightDoc, origin, { lightAt = lightDoc, ownerAt = null } = {}) {
+async function checkLeash(lightDoc, origin, { lightAt = lightDoc, ownerAt = null } = {}) {
   const flag = lightFlagOf(lightDoc);
   const leash = Number(flag?.leash) || 0;
   if (!flag || flag.mode !== 'free' || flag.attached || leash <= 0 || !canUpdate(lightDoc)) return 'skipped';
@@ -182,16 +182,18 @@ export async function attachLight(lightDoc) {
   const combatant = combat ? ownerCombatant(combat, flag.ownerUuid, ownerTokenOf(lightDoc)) : null;
   if (combat && combatant) {
     const actions = combat.getCombatantActions?.(combatant) ?? { spent: 0, max: Infinity };
+    let confirmed = false;
     if (actions.spent >= actions.max) {
       const answer = await confirmRuleBreak({
         title: 'No Action Left',
         message: `${combatant.name} has no Action left (${actions.spent}/${actions.max}). Attach the light anyway as a Rule Break?`
       });
       if (!answer.confirmed) return false;
+      confirmed = true;
     }
     const recorded = await combat.recordCombatantAction(combatant, {
       type: 'other', label: 'Attach Light', category: 'utility', note: `Attached ${lightDoc.name || 'light'}`
-    });
+    }, { ruleBreak: confirmed });
     if (recorded && recorded.success === false) return false;
   }
   await lightDoc.update(lightFlagUpdate(flag, { attached: true, priorMode: flag.mode, ruleBreak: false }));

@@ -3,12 +3,23 @@
  * add / remove writes behind its `addTag` and `removeTag` actions. The document is whatever owns `system.tags`; an
  * actor sheet passes a `verdict` (see `actor-tag-permissions.mjs`) that refuses an edit the user may not make.
  */
-import { getTagDefinition, isDescriptiveTag } from '../../data/tags.mjs';
+import { getCustomTags, getTagDefinition, isDescriptiveTag, TAG_MAP } from '../../data/tag-definitions.mjs';
+
+/**
+ * A typed tag id in the case its registry entry has (`skillgroup.combat` is `skillGroup.combat`); an id nobody registered
+ * stays as typed. The entry lower-cases what it is given, but several registered ids are camel-cased and a lower-cased copy is
+ * a different, unregistered tag.
+ */
+function registeredTagCase(lowered) {
+  if (!lowered) return lowered;
+  for (const id of TAG_MAP.keys()) if (id.toLowerCase() === lowered) return id;
+  return getCustomTags().find((t) => typeof t?.id === 'string' && t.id.toLowerCase() === lowered)?.id ?? lowered;
+}
 
 /** @typedef {(tagId: string) => { ok: boolean, reason?: string }} TagVerdict */
 
 /** One pill: id, label, namespace and the descriptive flag, as the partial renders it. */
-export function describeTag(id, fallbackNamespace = 'custom') {
+function describeTag(id, fallbackNamespace = 'custom') {
   const def = getTagDefinition(id);
   return { id, label: def?.label || id, namespace: def?.namespace || fallbackNamespace, descriptive: isDescriptiveTag(id) };
 }
@@ -40,7 +51,7 @@ function refuse(tagId, reason) {
  * @returns {Promise<boolean>} true when the document changed
  */
 export async function addTagFromInput(doc, input, { verdict } = {}) {
-  const value = String(input?.value ?? '').trim().toLowerCase();
+  const value = registeredTagCase(String(input?.value ?? '').trim().toLowerCase());
   if (!value) return false;
   const check = verdict?.(value);
   if (check && !check.ok) { refuse(value, check.reason); return false; }

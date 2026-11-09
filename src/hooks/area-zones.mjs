@@ -6,7 +6,7 @@ import { COGCombat } from '../documents/combat.mjs';
 import { pulseZones, onAreaRegionDeleted, endCombatZones, onZoneTokenMove } from '../documents/actor/zone-pulse.mjs';
 
 /** Clean Up order of the zone step: right after `aura-pulse` (150). */
-export const AREA_ZONES_ORDER = 160;
+const AREA_ZONES_ORDER = 160;
 
 COGCombat.registerCleanUpStep('area-zones', (combat, { round }) => pulseZones(combat, { round }), { order: AREA_ZONES_ORDER });
 

@@ -7,8 +7,8 @@
  * Labels are i18n keys (module text passes through Foundry's `localize` unchanged).
  */
 import { ROW_ARRAYS, getRowKind, kindOf, listRowKinds, rowKindOf } from '../../utils/row-kinds.mjs';
-import { SCOPED_ARRAYS, isScopedSource } from '../../utils/damage-modifiers.mjs';
-import { choiceOptions } from './options.mjs';
+import { SCOPED_ARRAYS, isScopedSource } from '../../utils/roll/damage-modifiers.mjs';
+import { choiceOptions } from '../../utils/ui/field-options.mjs';
 import { hasSystemField } from './util.mjs';
 
 /** Per array: banner icon and the `COG.Rows.Array.<key>.*` group. Block order is `ROW_ARRAYS` order. */
@@ -17,6 +17,8 @@ export const ARRAY_UI = Object.freeze({
   defenseModifiers: { icon: 'fa-shield-halved', key: 'Defense' },
   attackModifiers: { icon: 'fa-crosshairs', key: 'Attack' },
   checkModifiers: { icon: 'fa-dice-d20', key: 'Check' },
+  craftModifiers: { icon: 'fa-hammer', key: 'Craft' },
+  vehicleModifiers: { icon: 'fa-car-side', key: 'Vehicle' },
   manaCostModifiers: { icon: 'fa-flask', key: 'ManaCost' },
   recoveryModifiers: { icon: 'fa-bed', key: 'Recovery' },
   popularityTriggers: { icon: 'fa-star', key: 'Popularity' },
@@ -41,6 +43,9 @@ export const FIELD_UI = Object.freeze({
       'defenseModifiers:reflect': 'COG.Rows.Field.ReflectMinSlots',
       attackModifiers: 'COG.Rows.Field.Bonus',
       checkModifiers: 'COG.Rows.Field.Bonus',
+      'checkModifiers:degreeShift': 'COG.Rows.Field.ShiftSteps',
+      craftModifiers: 'COG.Rows.Field.CraftMaxBonus',
+      'vehicleModifiers:moveAdd': 'COG.Rows.Field.VehicleMoveAdd',
       manaCostModifiers: 'COG.Rows.Field.Mana',
       popularityTriggers: 'COG.Rows.Field.PopularityAmount',
       aiFavorRatings: 'COG.Rows.Field.AiFavorAmount'
@@ -48,7 +53,7 @@ export const FIELD_UI = Object.freeze({
   },
   dice: { placeholder: '1d6' },
   stat: { options: 'stats' },
-  multiplier: { step: 'any' },
+  multiplier: { step: 'any', labels: { 'vehicleModifiers:moveMultiply': 'COG.Rows.Field.VehicleMoveMultiplier', 'craftModifiers:batchTime': 'COG.Rows.Field.CraftBatchMultiplier', craftModifiers: 'COG.Rows.Field.CraftTimeMultiplier' } },
   damageType: {
     input: 'select',
     options: 'damageTypes',
@@ -72,12 +77,14 @@ export const FIELD_UI = Object.freeze({
   maxRank: { rankGated: true, placeholderKey: 'COG.Rows.Placeholder.NoCeiling' },
   usesPer: {},
   disabled: { header: true },
+  // The ledger id of the enchantment that wrote the row (3.15): never an input, the editor shows a badge for it
+  enchantment: { stamp: true },
   condition: { input: 'query' },
   scaleBy: { input: 'scale' }
 });
 
 /** Row keys the editor places itself (header, condition, scale), never as a field of the kind. */
-const FRAME_FIELDS = Object.freeze(['label', 'disabled', 'condition', 'scaleBy']);
+const FRAME_FIELDS = Object.freeze(['label', 'disabled', 'condition', 'scaleBy', 'enchantment']);
 
 const ABILITY_SHORT = Object.freeze({ str: 'StrShort', dex: 'DexShort', con: 'ConShort', int: 'IntShort', cha: 'ChaShort' });
 
@@ -95,7 +102,7 @@ function withSelected(entries, current) {
 }
 
 /** The label key for a field: `'<array>:<kind>'`, then `'<array>'`, then `COG.Rows.Field.<field>`. */
-export function fieldLabelKey(field, arrayKey, kindId) {
+function fieldLabelKey(field, arrayKey, kindId) {
   const labels = FIELD_UI[field]?.labels ?? {};
   return labels[`${arrayKey}:${kindId}`] ?? labels[arrayKey] ?? `COG.Rows.Field.${field}`;
 }

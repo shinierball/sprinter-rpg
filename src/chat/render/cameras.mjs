@@ -4,7 +4,7 @@
  * (the four result buttons while the result is unknown or picked by hand, Award when settling is due, the withheld AI
  * Favor button). Built with createElement and textContent.
  */
-import { cameraText } from '../../utils/cameras.mjs';
+import { cameraText } from '../../utils/roll/cameras.mjs';
 import { cameraAwardPlan, cameraChangesText, cameraRowLabel } from '../actions/cameras.mjs';
 
 function el(doc, tag, cls, text) {

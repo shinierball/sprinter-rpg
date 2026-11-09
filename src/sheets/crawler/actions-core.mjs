@@ -4,8 +4,7 @@
  * Every handler runs with `this` bound to the sheet.
  */
 
-import { nextCameraChoice, armedCamera } from '../../utils/cameras.mjs';
-import { openFloorSimulator } from '../../apps/floor-simulator/floor-simulator-app.mjs';
+import { nextCameraChoice, armedCamera } from '../../utils/roll/cameras.mjs';
 
 /** Limb fields only a GM may change. */
 export const GM_ONLY_LIMB_FIELDS = Object.freeze([
@@ -28,11 +27,6 @@ async function applySelection(sheet, target, kind) {
 export const coreActions = {
   async exportPdf() {
     return this._onExportPdf();
-  },
-
-  /** Resume Floor Simulator: reopen the simulator on this crawler's pending floor run. */
-  resumeFloorSim() {
-    return openFloorSimulator(this.actor);
   },
 
   spendStatPoint(event, target) {

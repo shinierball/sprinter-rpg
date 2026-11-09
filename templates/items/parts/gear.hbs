@@ -1,17 +1,17 @@
 <section class="cog-item-body cog-item-body-gear">
+{{#if brokenState}}
+<div class="cog-field-row" style="margin-bottom: 8px; align-items: center;">
+  <span class="cog-badge cog-bg-danger-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 6px; border-radius: 2px;">{{brokenLabel}}</span>
+  {{#if canRepair}}
+  <button type="button" class="cog-btn cog-bg-warning-fill cog-text-on-fill" data-action="repairItem" data-tooltip="{{localize "COG.Repair.Tooltip"}}" style="margin-left: 8px; font-size: 11px; padding: 3px 8px; border-radius: 3px; cursor: pointer;"><i class="fa-solid fa-screwdriver-wrench"></i> {{localize "COG.Repair.Button"}}</button>
+  {{/if}}
+</div>
+{{/if}}
 <div class="cog-field-row" style="margin-bottom: 8px; align-items: center;">
   <div class="cog-field-group">
     <span class="cog-field-label">Slot</span>
     <select name="system.slot" class="cog-field-input">
-      <option value="head" {{#if (eq system.slot "head")}}selected{{/if}}>Head</option>
-      <option value="torso" {{#if (eq system.slot "torso")}}selected{{/if}}>Torso</option>
-      <option value="arms" {{#if (eq system.slot "arms")}}selected{{/if}}>Arms</option>
-      <option value="hands" {{#if (eq system.slot "hands")}}selected{{/if}}>Hands/Holding</option>
-      <option value="legs" {{#if (eq system.slot "legs")}}selected{{/if}}>Legs</option>
-      <option value="feet" {{#if (eq system.slot "feet")}}selected{{/if}}>Feet</option>
-      <option value="accessory" {{#if (eq system.slot "accessory")}}selected{{/if}}>Accessory</option>
-      <option value="tattoo" {{#if (eq system.slot "tattoo")}}selected{{/if}}>Tattoo</option>
-      <option value="patch" {{#if (eq system.slot "patch")}}selected{{/if}}>Patch</option>
+      {{#each gearSlotOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
     </select>
   </div>
   <div class="cog-field-group small" style="text-align: center;">
@@ -23,7 +23,7 @@
   <div class="cog-field-group small" style="text-align: center;">
     <span class="cog-field-label">Is Weapon</span>
     <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;">
-      <input type="checkbox" name="system.isWeapon" {{#if (or system.isWeapon (eq system.slot "hands"))}}checked{{/if}} class="cog-checkbox-lg" />
+      <input type="checkbox" name="system.isWeapon" {{#if isWeaponChecked}}checked{{/if}} class="cog-checkbox-lg" />
     </label>
   </div>
   <div class="cog-field-group small">
@@ -49,7 +49,7 @@
 </div>
 
 {{!-- WEAPON PROFICIENCY & HANDLING --}}
-{{#if (or system.isWeapon (eq system.slot "hands"))}}
+{{#if isWeaponChecked}}
 <details class="cog-collapsible-block" {{#if hasProficiencyConfigured}}open{{/if}}>
   <summary class="cog-collapsible-summary cog-bg-accent-strong-fill">
     <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-crosshairs"></i> WEAPON PROFICIENCY & HANDLING</span>
@@ -216,84 +216,15 @@
 {{> "systems/sprinter-rpg/templates/items/parts/as-triggers.hbs"}}
 {{/if}}
 
-{{!-- STAT MODIFIERS (FLAT VS %) --}}
-<details class="cog-collapsible-block" {{#if hasAbilityModifiers}}open{{/if}}>
+
+{{!-- STAT BONUSES (system.grants rows of kind stat: flat and percent, equipped only) --}}
+<details class="cog-collapsible-block" {{#if statGrantRows.length}}open{{/if}}>
   <summary class="cog-collapsible-summary">
-    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-dumbbell"></i> ABILITY MODIFIERS (EQUIPPED ONLY)</span>
-    <span class="cog-toggle-indicator {{#if hasAbilityModifiers}}active{{/if}}">{{#if hasAbilityModifiers}}[ACTIVE STAT BONUSES]{{else}}[CLICK TO CONFIGURE STAT MODIFIERS]{{/if}}</span>
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-dumbbell"></i> STAT BONUSES (EQUIPPED ONLY)</span>
+    <span class="cog-toggle-indicator {{#if statGrantRows.length}}active{{/if}}">{{#if statGrantRows.length}}[{{statGrantRows.length}} STAT BONUSES]{{else}}[CLICK TO ADD STAT BONUSES]{{/if}}</span>
   </summary>
   <div class="cog-collapsible-content" style="padding: 0;">
-    <table class="cog-table" style="margin: 0; font-size: 11px;">
-      <thead>
-        <tr>
-          <th style="width: 25%;">Ability</th>
-          <th style="width: 35%;">Modifier Value (+/-)</th>
-          <th style="width: 40%;">Type (Flat vs %)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="cog-text-accent" style="font-weight: bold;">STR (Strength)</td>
-          <td>
-            <input class="cog-field-input" type="number" name="system.abilityModifiers.str.value" value="{{system.abilityModifiers.str.value}}" placeholder="0" style="text-align: center;" />
-          </td>
-          <td>
-            <select class="cog-field-input" name="system.abilityModifiers.str.type">
-              <option value="flat" {{#if (or (eq system.abilityModifiers.str.type "flat") (not system.abilityModifiers.str.type))}}selected{{/if}}>Flat</option>
-              <option value="pct" {{#if (eq system.abilityModifiers.str.type "pct")}}selected{{/if}}>%</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td class="cog-text-accent" style="font-weight: bold;">INT (Intelligence)</td>
-          <td>
-            <input class="cog-field-input" type="number" name="system.abilityModifiers.int.value" value="{{system.abilityModifiers.int.value}}" placeholder="0" style="text-align: center;" />
-          </td>
-          <td>
-            <select class="cog-field-input" name="system.abilityModifiers.int.type">
-              <option value="flat" {{#if (or (eq system.abilityModifiers.int.type "flat") (not system.abilityModifiers.int.type))}}selected{{/if}}>Flat</option>
-              <option value="pct" {{#if (eq system.abilityModifiers.int.type "pct")}}selected{{/if}}>%</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td class="cog-text-accent" style="font-weight: bold;">CON (Constitution)</td>
-          <td>
-            <input class="cog-field-input" type="number" name="system.abilityModifiers.con.value" value="{{system.abilityModifiers.con.value}}" placeholder="0" style="text-align: center;" />
-          </td>
-          <td>
-            <select class="cog-field-input" name="system.abilityModifiers.con.type">
-              <option value="flat" {{#if (or (eq system.abilityModifiers.con.type "flat") (not system.abilityModifiers.con.type))}}selected{{/if}}>Flat</option>
-              <option value="pct" {{#if (eq system.abilityModifiers.con.type "pct")}}selected{{/if}}>%</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td class="cog-text-accent" style="font-weight: bold;">DEX (Dexterity)</td>
-          <td>
-            <input class="cog-field-input" type="number" name="system.abilityModifiers.dex.value" value="{{system.abilityModifiers.dex.value}}" placeholder="0" style="text-align: center;" />
-          </td>
-          <td>
-            <select class="cog-field-input" name="system.abilityModifiers.dex.type">
-              <option value="flat" {{#if (or (eq system.abilityModifiers.dex.type "flat") (not system.abilityModifiers.dex.type))}}selected{{/if}}>Flat</option>
-              <option value="pct" {{#if (eq system.abilityModifiers.dex.type "pct")}}selected{{/if}}>%</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td class="cog-text-accent" style="font-weight: bold;">CHA (Charisma)</td>
-          <td>
-            <input class="cog-field-input" type="number" name="system.abilityModifiers.cha.value" value="{{system.abilityModifiers.cha.value}}" placeholder="0" style="text-align: center;" />
-          </td>
-          <td>
-            <select class="cog-field-input" name="system.abilityModifiers.cha.type">
-              <option value="flat" {{#if (or (eq system.abilityModifiers.cha.type "flat") (not system.abilityModifiers.cha.type))}}selected{{/if}}>Flat</option>
-              <option value="pct" {{#if (eq system.abilityModifiers.cha.type "pct")}}selected{{/if}}>%</option>
-            </select>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    {{> "systems/sprinter-rpg/templates/items/parts/stat-grant-rows.hbs"}}
   </div>
 </details>
 
@@ -330,7 +261,7 @@
         <tbody>
           {{#each gearGrantRows as |row|}}
             <tr>
-              <td><span class="cog-badge">{{#if row.isSpell}}[SPELL]{{else}}[SKILL]{{/if}}</span></td>
+              <td><span class="cog-badge">{{#if row.isSpell}}[SPELL]{{else}}[SKILL]{{/if}}</span>{{#if row.enchantment}} <span class="cog-badge cog-badge-info">{{localize "COG.CraftSheet.Badge.Enchantment"}}</span>{{/if}}</td>
               <td>
                 <div style="display: flex; align-items: center; gap: 4px;">
                   <select class="cog-field-input" name="system.grants.{{row.idx}}.identifier" style="font-size: 11px; flex: 1;">
@@ -338,10 +269,12 @@
                       <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
                     {{/each}}
                   </select>
+                  {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=row.sourceBadge}}
                   {{#unless row.isSpell}}
                     <a class="cog-text" data-action="openSkillPicker" data-index="{{row.idx}}" data-tooltip="{{localize "COG.Content.PickFromCompendium"}}" style="cursor: pointer; padding: 2px 4px;"><i class="fa-solid fa-book-bookmark"></i></a>
                   {{/unless}}
                 </div>
+                <input class="cog-field-input" type="text" name="system.grants.{{row.idx}}.label" value="{{row.label}}" placeholder="{{localize "COG.Content.GrantLabelPlaceholder"}}" title="{{localize "COG.Content.GrantLabelTooltip"}}" style="font-size: 11px; width: 100%; margin-top: 3px;" />
               </td>
               <td>
                 <input class="cog-stat-input" type="number" name="system.grants.{{row.idx}}.value" value="{{row.value}}" style="width: 100%; font-size: 11px;" />
@@ -504,10 +437,7 @@
         {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedResistancesPicker}}
         {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedImmunitiesPicker}}
       </div>
-      <div class="cog-field-group" style="margin-bottom: 0;">
-        <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Granted Buffs to Characters Inside Aura (Comma-Separated)</span>
-        <input class="cog-field-input" type="text" name="system.area.grantedBuffs" value="{{areaGrantedBuffsString}}" placeholder="buff identifiers, e.g. strength-buff, blessed" list="cog-available-buffs-list-{{item.id}}" style="font-size: 11px;" />
-      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedBuffsPicker}}
     </div>
 
     {{!-- Aura Healing & Cleansing Sub-Block --}}
@@ -528,10 +458,7 @@
           <span class="cog-field-label">HoT Rounds</span>
           <input class="cog-field-input" type="number" name="system.area.hotRounds" value="{{#if system.area.hotRounds}}{{system.area.hotRounds}}{{/if}}" placeholder="3" min="1" style="font-size: 11px;" />
         </div>
-        <div class="cog-field-group" style="flex: 1;">
-          <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> Cleanse Debuffs Inside Aura</span>
-          <input class="cog-field-input" type="text" name="system.area.cleanseDebuffs" value="{{areaCleanseDebuffsString}}" placeholder="e.g. Bleeding, Burned" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
-        </div>
+        {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaCleanseDebuffsPicker}}
       </div>
     </div>
 
@@ -558,17 +485,20 @@
           </select>
         </div>
       </div>
-      <div class="cog-field-group" style="margin-bottom: 0;">
-        <span class="cog-field-label"><i class="fa-solid fa-skull cog-text-accent"></i> Inflicted Aura Debuffs & Conditions (Comma-Separated)</span>
-        <input class="cog-field-input" type="text" name="system.area.inflictedDebuffs" value="{{areaInflictedDebuffsString}}" placeholder="e.g. Fear, Charmed, Asleep, Paralyzed" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
-      </div>
-      <div class="cog-field-group" style="margin-bottom: 0;">
-        <span class="cog-field-label"><i class="fa-solid fa-hourglass-half cog-text-accent"></i> Conditions Applied Each Pulse (Comma-Separated)</span>
-        <input class="cog-field-input" type="text" name="system.area.pulseConditions" value="{{areaPulseConditionsString}}" placeholder="e.g. condition.burned, condition.blinded" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
-      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaInflictedDebuffsPicker}}
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaPulseConditionsPicker}}
     </div>
   </div>
 </details>
+
+{{!-- COOLDOWN for gear whose rows (not an activated ability) use it; with an ability the editor is in its block below --}}
+{{#if showStandaloneCooldown}}
+<div class="cog-field-row" style="margin-bottom: 8px;" data-standalone-cooldown>
+  <div class="cog-field-group">
+    {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=cooldownEditor}}
+  </div>
+</div>
+{{/if}}
 
 {{!-- ACTIVATED ABILITY / ON-USE EFFECTS --}}
 <details class="cog-collapsible-block" {{#if hasActivatedAbilityConfigured}}open{{/if}}>
@@ -650,17 +580,7 @@
                   {{/if}}
                   <td>
                     <select class="cog-field-input" data-index="{{idx}}" name="system.outcomes.{{idx}}.type" style="width: 100%; font-size: 11px;">
-                      <option value="buff" {{#if out.typeIs.buff}}selected{{/if}}>Grant Buff</option>
-                      <option value="debuff" {{#if out.typeIs.debuff}}selected{{/if}}>Inflict Debuff</option>
-                      <option value="heal" {{#if out.typeIs.heal}}selected{{/if}}>Heal Bars</option>
-                      <option value="heal_over_time" {{#if out.typeIs.heal_over_time}}selected{{/if}}>Heal over Time (HoT)</option>
-                      <option value="mend_injury" {{#if out.typeIs.mend_injury}}selected{{/if}}>Mend Injury</option>
-                      <option value="cure_debuff" {{#if out.typeIs.cure_debuff}}selected{{/if}}>Cure Debuff</option>
-                      <option value="skill_rank" {{#if out.typeIs.skill_rank}}selected{{/if}}>Raise Skill (+)</option>
-                      <option value="stat_permanent" {{#if out.typeIs.stat_permanent}}selected{{/if}}>Stat Boost (+)</option>
-                      <option value="spell" {{#if out.typeIs.spell}}selected{{/if}}>Spell / Damage</option>
-                      <option value="roll_table" {{#if out.typeIs.roll_table}}selected{{/if}}>Roll Table</option>
-                      <option value="custom" {{#if out.typeIs.custom}}selected{{/if}}>Custom</option>
+                      {{#each out.typeOptionsGear as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
                     </select>
                   </td>
                   <td>
@@ -683,6 +603,17 @@
                         <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rounds" value="{{out.rounds}}" placeholder="3" style="width: 40px; font-size: 11px;" />
                         <span style="font-size: 10px;">rnds</span>
                       </div>
+                    {{else if (eq out.type "restore_resource")}}
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.resource" style="width: 30%; font-size: 11px;">
+                          {{#each out.resourceOptions as |rOpt|}}<option value="{{rOpt.value}}" {{#if rOpt.selected}}selected{{/if}}>{{rOpt.label}}</option>{{/each}}
+                        </select>
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.mode" style="width: 35%; font-size: 11px;">
+                          <option value="full" {{#if out.restoreFull}}selected{{/if}}>Full</option>
+                          <option value="amount" {{#unless out.restoreFull}}selected{{/unless}}>Amount</option>
+                        </select>
+                        <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.amount" value="{{out.amount}}" placeholder="10" style="width: 35%; font-size: 11px;" />
+                      </div>
                     {{else if (eq out.type "mend_injury")}}
                       <select class="cog-field-input" name="system.outcomes.{{idx}}.injurySeverity" style="width: 100%; font-size: 11px;">
                         <option value="minor" {{#if (eq out.injurySeverity "minor")}}selected{{/if}}>Minor Injury</option>
@@ -690,15 +621,25 @@
                         <option value="all" {{#if (eq out.injurySeverity "all")}}selected{{/if}}>All Injuries</option>
                       </select>
                     {{else if (eq out.type "cure_debuff")}}
-                      <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.cureFilter" value="{{out.cureFilter}}" placeholder="All, Burned, Poisoned..." style="width: 100%; font-size: 11px;" />
+                      {{> "systems/sprinter-rpg/templates/items/parts/outcome-cure-filter.hbs" out=out idx=idx}}
                     {{else if (eq out.type "skill_rank")}}
                       <div style="display: flex; gap: 4px; align-items: center;">
                         <select class="cog-field-input" name="system.outcomes.{{idx}}.skillIdentifier" style="width: 70%; font-size: 11px;">
                       {{#each out.skillOptions as |sk|}}
                         <option value="{{sk.value}}" {{#if sk.selected}}selected{{/if}}>{{sk.label}}</option>
                       {{/each}}
-                    </select>
+                    </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.skillBadge}}
                         <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rankBonus" value="{{out.rankBonus}}" placeholder="+1" style="width: 30%; font-size: 11px;" />
+                      </div>
+                    {{else if (eq out.type "learn_spell")}}
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.spellIdentifier" style="width: 70%; font-size: 11px;">
+                          <option value="">-- Choose Spell --</option>
+                          {{#each out.spellOptions as |sOpt|}}
+                            <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
+                          {{/each}}
+                        </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.spellBadge}}
+                        <input class="cog-field-input" type="number" min="1" name="system.outcomes.{{idx}}.rank" value="{{out.rank}}" placeholder="Rank 1" style="width: 30%; font-size: 11px;" />
                       </div>
                     {{else if (eq out.type "stat_permanent")}}
                       <div style="display: flex; gap: 4px; align-items: center;">
@@ -715,21 +656,22 @@
                         {{#each out.buffOptions as |bOpt|}}
                           <option value="{{bOpt.value}}" {{#if bOpt.selected}}selected{{/if}}>{{bOpt.label}}</option>
                         {{/each}}
-                      </select>
+                      </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.buffBadge}}
                     {{else if (eq out.type "debuff")}}
                       <select class="cog-field-input" data-change-action="selectOutcomeDebuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.debuffIdentifier" style="width: 100%; font-size: 11px;">
                         <option value="">-- Choose Existing Debuff --</option>
                         {{#each out.debuffOptions as |dOpt|}}
                           <option value="{{dOpt.value}}" {{#if dOpt.selected}}selected{{/if}}>{{dOpt.label}}</option>
                         {{/each}}
-                      </select>
+                      </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.debuffBadge}}
                     {{else if (eq out.type "spell")}}
                       <select class="cog-field-input" data-change-action="selectOutcomeSpell" data-index="{{idx}}" name="system.outcomes.{{idx}}.spellIdentifier" style="width: 100%; font-size: 11px;">
                         <option value="">-- Choose Spell --</option>
                         {{#each out.spellOptions as |sOpt|}}
                           <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
                         {{/each}}
-                      </select>
+                      </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.spellBadge}}
+{{> "systems/sprinter-rpg/templates/items/parts/outcome-spell-damage.hbs" out=out idx=idx}}
                     {{else if (eq out.type "roll_table")}}
                       <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" name="system.outcomes.{{idx}}.tableUuid" style="width: 100%; font-size: 11px;">
                         <option value="">-- Choose Roll Table --</option>
@@ -737,6 +679,8 @@
                           <option value="{{tOpt.uuid}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.name}}</option>
                         {{/each}}
                       </select>
+                    {{else if out.isEnchantItem}}
+                      <span class="cog-text-secondary">{{localize "COG.CraftSheet.Outcome.Summary" count=out.enchantTemplates.length}}</span>
                     {{else}}
                       <div data-outcome-damage>
                       <div style="display: flex; gap: 4px;">
@@ -766,6 +710,24 @@
                     <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="Flavor & rules description..." style="width: 100%; font-size: 11px;" />
                   </td>
                 </tr>
+            {{#if out.isEnchantItem}}
+              <tr>
+                <td colspan="6" class="cog-outcome-enchant-table">
+                  <label class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.EnchantTable.Label"}}</label>
+                  <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" style="width: 100%; font-size: 11px;">
+                    {{#each out.enchantTableOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{#if tOpt.group}}{{tOpt.group}}: {{/if}}{{tOpt.name}}</option>{{/each}}
+                  </select>
+                  <div class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.EnchantTable.Hint"}}</div>
+                </td>
+              </tr>
+            {{/if}}
+            {{#if out.isEnchantItem}}
+              <tr>
+                <td colspan="6" class="cog-outcome-enchantments">
+                  {{> "systems/sprinter-rpg/templates/items/parts/enchantment-templates.hbs" templates=out.enchantTemplates templatesPath=out.enchantTemplatesPath}}
+                </td>
+              </tr>
+            {{/if}}
               {{/each}}
             </tbody>
           </table>
@@ -784,6 +746,9 @@
 </details>
 
 {{> "systems/sprinter-rpg/templates/items/parts/on-hit.hbs"}}
+
+{{!-- ENCHANTMENTS (3.15): the ledger of what this gear was enchanted with --}}
+{{> "systems/sprinter-rpg/templates/items/parts/enchantment-ledger.hbs"}}
 
 {{!-- PERSISTENT BUFFS & DEBUFFS ON THE WIELDER (EQUIPPED); resistances and immunities are Defense rows (3.38) --}}
 <details class="cog-collapsible-block" {{#if persistentEffectsPicker.hasValues}}open{{/if}}>
@@ -824,8 +789,12 @@
 </details>
 
 <div class="cog-field-group">
-  <span class="cog-field-label">Notes & Description</span>
+  <span class="cog-field-label">Notes</span>
   <textarea class="cog-field-input" name="system.notes" style="height: 80px;">{{system.notes}}</textarea>
+</div>
+<div class="cog-field-group" style="margin-top: 8px;">
+  <span class="cog-field-label">Description</span>
+  {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
 </div>
 
 
@@ -845,4 +814,5 @@
   </datalist>
 {{/if}}
 
+{{> "systems/sprinter-rpg/templates/items/parts/copy-blueprint.hbs"}}
 </section>

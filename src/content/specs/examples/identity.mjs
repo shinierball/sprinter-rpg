@@ -139,7 +139,7 @@ export const EXAMPLE_IDENTITY_SPECS = Object.freeze([
     img: 'icons/svg/upgrade.svg',
     system: {
       identifier: 'rehearsal-room',
-      description: '<p>A mirror, a mark on the floor, and a stage manager who sighs. +1 defense, 20 more stash space, faster rests, a level 1 workstation, Studio Audience Approval on everyone who rests here, and one training session per 30 hours for social or combat skills (2 hours, +1 to the advancement roll).</p>',
+      description: '<p>A mirror, a mark on the floor, and a stage manager who sighs. +1 defense, 20 more stash space, faster rests, Studio Audience Approval on everyone who rests here, and one training session per 30 hours for social or combat skills (2 hours, +1 to the advancement roll).</p>',
       tags: ['upgrade.training'],
       tier: 1,
       cost: 500,
@@ -148,7 +148,6 @@ export const EXAMPLE_IDENTITY_SPECS = Object.freeze([
         defenseBonus: 1,
         stashCapacityBonus: 20,
         restRecoveryBonus: 1,
-        workstationLevel: 1,
         buffs: ['studio-audience-approval']
       },
       training: {

@@ -13,8 +13,8 @@
 import { SYSTEM_ID } from '../constants.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
-import { readEvadeRecord, findEvadeFor, appliedBeforeEvade } from '../utils/evade-link.mjs';
-import { isMobSide } from '../utils/combat-sides.mjs';
+import { readEvadeRecord, findEvadeFor, appliedBeforeEvade } from '../utils/attack/evade-link.mjs';
+import { isMobSide } from '../utils/combat/combat-sides.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { messageAuthorId, parseMessageContent, applyCardEffect, isGmAuthored } from '../chat/chat-relay.mjs';
 import { getDamageApplications } from '../chat/damage-applications.mjs';
@@ -22,7 +22,7 @@ import {
   DECLARED_ATTACKS_FLAG, DECLARATION_STATUS, TARGET_VIA, SKIP_REASONS,
   declarationFromMessage, listDeclarations, sanitizeDeclaration, findDeclarationTarget, evadeSummaryOf,
   isDeclarationId, mobAttackText
-} from '../utils/declared-attacks.mjs';
+} from '../utils/combat/declared-attacks.mjs';
 
 /** Relay action for every declaration write; `payload.op` names the write. */
 export const DECLARED_ATTACK_RELAY = 'declaredAttack';
@@ -60,7 +60,7 @@ const owns = (user, actor) => Boolean(user?.isGM || actor?.testUserPermission?.(
  * attacker that is on the mob side, written by a GM or by an owner of that attacker.
  * @returns {{ ok: true, attacker: object, message: object }|{ ok: false, reason: string }}
  */
-export function verifyMobAttackMessage(message) {
+function verifyMobAttackMessage(message) {
   const flags = message?.flags?.[SYSTEM_ID];
   if (!message || flags?.isAutoHit !== true) return { ok: false, reason: 'not-attack' };
   const attacker = resolveActorByUuid(flags.attackerUuid);
@@ -394,7 +394,8 @@ export async function recordEvadeOnDeclaration(evader, evadeMessage, attackMessa
   try {
     const c = combatantOfActor(combat, evader);
     if (c && interrupt && typeof combat.recordInterruptAction === 'function') {
-      await combat.recordInterruptAction(c, interrupt, { type: interrupt.id });
+      const recorded = await combat.recordInterruptAction(c, interrupt, { type: interrupt.id, ruleBreak });
+      if (recorded?.declined) return null;
     }
     return await combat.recordDeclaredEvade({ declarationId: attackMessageId, evadeMessage, ruleBreak });
   } catch (err) {

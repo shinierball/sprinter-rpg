@@ -8,11 +8,11 @@
  * application gets no row (the record on the actor still exists).
  */
 import { SYSTEM_ID } from '../constants.mjs';
-import { isApplicationId } from '../apps/damage-undo.mjs';
+import { isApplicationId } from '../utils/damage/damage-undo.mjs';
 import { messageAuthorId } from './chat-relay.mjs';
-import { MAX_TARGET_LINES } from '../utils/per-target-damage.mjs';
+import { MAX_TARGET_LINES } from '../utils/damage/per-target-damage.mjs';
 
-export const DAMAGE_APPLICATIONS_FLAG = 'damageApplications';
+const DAMAGE_APPLICATIONS_FLAG = 'damageApplications';
 
 /** The user may update this message: GM, or the author. */
 export function canModifyMessage(message, user = globalThis.game?.user) {

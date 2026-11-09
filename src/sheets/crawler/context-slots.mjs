@@ -1,25 +1,20 @@
 /**
  * Hotlist (10 quick-access slots) and external buff slot (max 3) context for page 1.
  *
- * Hotlist slots store an owned item's id and resolve through `utils/hotlist.mjs`. Option groups are precomputed (CONTRIBUTING §5).
+ * Hotlist slots store an owned item's id and resolve through `utils/ui/hotlist.mjs`. Option groups are precomputed (CONTRIBUTING §5).
  */
 import { firstScalar } from '../../utils/first-scalar.mjs';
-import { hotlistSlotId, resolveHotlistItem, isActivatableGear } from '../../utils/hotlist.mjs';
+import { hotlistSlotId, resolveHotlistItem, isActivatableGear } from '../../utils/ui/hotlist.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
-import { primaryDamagePart, formatDamagePart } from '../../utils/damage-parts.mjs';
-import { classifyBuff } from '../../utils/buff-classify.mjs';
+import { primaryDamagePart, formatDamagePart } from '../../utils/damage/damage-parts.mjs';
+import { classifyBuff } from '../../utils/effects/buff-classify.mjs';
 import { describeItem, summaryText } from '../../utils/item-describer/index.mjs';
-import { spellRole, spellRoleLabel } from '../../utils/tag-mechanics.mjs';
+import { spellRole, spellRoleLabel } from '../../utils/tag/tag-mechanics.mjs';
 
 export const HOTLIST_SLOT_COUNT = 10;
 export const EXTERNAL_BUFF_SLOT_COUNT = 3;
 
 const norm = (s) => String(s ?? '').toLowerCase().trim();
-
-/** First entry of an array or comma-joined buff slot value. */
-function firstValue(raw) {
-  return String(firstScalar(raw) ?? '').trim();
-}
 
 function hotlistSlotDisplay(resolved, actor) {
   const display = {
@@ -213,8 +208,7 @@ export async function prepareExternalBuffs(context, actor) {
 
   for (let i = 1; i <= EXTERNAL_BUFF_SLOT_COUNT; i++) {
     const key = `buff${i}`;
-    let valStr = firstValue(raw[key]);
-    if (valStr.includes(',')) valStr = valStr.split(',')[0].trim();
+    const valStr = String(firstScalar(raw[key]) ?? '').trim();
 
     const resolved = actor.resolveBuff(valStr);
     const { badge, detail } = resolved ? await buffBadge(resolved) : { badge: '', detail: '' };

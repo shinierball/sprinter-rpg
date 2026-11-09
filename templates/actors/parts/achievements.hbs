@@ -185,6 +185,7 @@
       </select>
     </div>
 
+    {{#if isGM}}
     <div style="display: flex; gap: 8px;">
       <button class="cog-dark cog-bg-header-fill cog-text-on-fill" type="button" data-action="openAchievementPicker" title="Browse the Achievement Catalog & Grant Presets" style="border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 3px 8px; font-size: 11px; font-family: 'Oswald', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 4px;">
         <i class="fa-solid fa-book-bookmark"></i> Achievement Catalog
@@ -193,6 +194,7 @@
         <i class="fa-solid fa-plus"></i> New Achievement
       </a>
     </div>
+    {{/if}}
   </div>
 
   {{!-- ACHIEVEMENTS LIST --}}
@@ -207,6 +209,7 @@
             <h4 class="cog-text-strong" style="margin: 0; font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: bold; letter-spacing: 0.5px;">
               {{item.name}}
             </h4>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=item.sourceBadge}}
             <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{item.tierColor}}; font-size: 10px; font-family: 'Oswald', sans-serif; text-transform: uppercase; font-weight: bold; padding: 1px 6px; border-radius: 3px; border: 1px solid {{item.tierColor}};">
               {{item.tierLabel}}
             </span>
@@ -222,7 +225,8 @@
             {{/if}}
           </div>
 
-          {{!-- Action Buttons --}}
+          {{!-- Action Buttons: the GM's; players only see the trophy --}}
+          {{#if @root.isGM}}
           <div style="display: flex; align-items: center; gap: 6px;">
             <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="announceAchievement" title="Announce Achievement to Chat" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 2px 8px; font-size: 10px; font-family: 'Oswald', sans-serif; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 4px;">
               <i class="fa-solid fa-bullhorn"></i> Announce
@@ -230,6 +234,7 @@
             <a class="item-edit cog-text-secondary" data-action="editItem" title="Edit Achievement" style="cursor: pointer; padding: 2px 4px;"><i class="fa-solid fa-edit"></i></a>
             <a class="item-delete cog-text-accent" data-action="deleteItem" title="Delete Achievement" style="cursor: pointer; padding: 2px 4px;"><i class="fa-solid fa-trash"></i></a>
           </div>
+          {{/if}}
         </div>
 
         {{!-- Dungeon AI Announcement Quote --}}
@@ -285,9 +290,11 @@
         <p style="margin: 0 0 14px 0; font-size: 12px; font-style: italic; max-width: 440px; margin-left: auto; margin-right: auto; line-height: 1.4;">
           “The Dungeon AI sees all, Crawler. And so far, it hasn't seen you do anything worth commemorating. Go kill a boss, blow something up, or humiliate yourself on live camera.”
         </p>
+        {{#if @root.isGM}}
         <button class="cog-bg-accent-fill cog-text-on-fill" type="button" data-action="openAchievementPicker" style="border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 6px 14px; font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: bold; cursor: pointer;">
           <i class="fa-solid fa-book-bookmark"></i> Open Achievement Catalog
         </button>
+        {{/if}}
       </div>
     {{/each}}
   </div>

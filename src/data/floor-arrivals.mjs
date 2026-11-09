@@ -4,7 +4,7 @@
  * dice, counts); table keys are structural identifiers, not book text. Floors 4 and 5 each build on the Third
  * Floor crawler, not on each other, so the runs are data: `{ 3: [3], 4: [3, 4], 5: [3, 5] }`.
  */
-import { parseFloorNumber } from '../utils/floor-number.mjs';
+import { parseFloorNumber } from '../utils/floor/floor-number.mjs';
 
 /** The six tutorial experience tables, in index (Table 28) order. */
 export const TUTORIAL_EXPERIENCE_TABLES = Object.freeze([
@@ -73,7 +73,7 @@ const plainObject = (v) => v && typeof v === 'object' && !Array.isArray(v) && Ob
  * The arrival definitions: `CONFIG.COG.floorArrivals` when a module or GM supplied some, else the shipped data.
  * @returns {Record<number, object>}
  */
-export function getFloorArrivals() {
+function getFloorArrivals() {
   const custom = globalThis.CONFIG?.COG?.floorArrivals;
   return plainObject(custom) ? custom : FLOOR_ARRIVALS;
 }
@@ -122,6 +122,3 @@ export function startLevelForFloor(floor) {
   const level = Math.trunc(Number(last?.level));
   return Number.isFinite(level) && level >= 1 ? level : 1;
 }
-
-/** Start Level per start floor, derived from the runs (S1's table). */
-export const FLOOR_START_LEVELS = Object.freeze(Object.fromEntries(CREATOR_START_FLOORS.map(n => [n, startLevelForFloor(n)])));

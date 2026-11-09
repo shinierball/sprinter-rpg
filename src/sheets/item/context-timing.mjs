@@ -5,12 +5,13 @@
  * flag, the scalar engine's scale editor view, and a plain-text readout. Every name is built from `path`, so a sheet that
  * mounts the partial once per path binds each `system.*` name exactly once.
  */
-import { formatTiming, normalizeTiming, timeUnitsFor } from '../../utils/timing.mjs';
-import { scaleSpecErrors } from '../../utils/scalars.mjs';
+import { formatTiming, normalizeTiming, timeUnitsFor } from '../../utils/time/timing.mjs';
+import { scaleSpecErrors } from '../../utils/roll/scalars.mjs';
 import { scaleView } from './context-scale.mjs';
-import { hasConflictingUsageTags, isJunkItem, itemUsage, usageLabel } from '../../utils/tag-mechanics.mjs';
+import { hasConflictingUsageTags, isJunkItem, itemUsage, usageLabel } from '../../utils/tag/tag-mechanics.mjs';
 import { getUsedForm, usedFormsInOrder } from '../../data/rules/used-forms.mjs';
 import { resolveUsedFormId } from '../../documents/actor/used-items.mjs';
+import { isLootBoxType } from '../../models/items/loot-model.mjs';
 import { emitsLight } from '../../documents/actor/light-source.mjs';
 
 /** A lang key's text, or `fallback` when Foundry's catalogue is not loaded or lacks it. */
@@ -24,7 +25,7 @@ function text(key, fallback) {
 }
 
 /** Shown name of a unit: the lang catalogue (`COG.Timing.Unit.<id>`), else the registry's own label. */
-export function unitLabel(def) {
+function unitLabel(def) {
   return text(`COG.Timing.Unit.${def.id}`, def.label);
 }
 
@@ -153,7 +154,8 @@ export function buildTimingContext(context, item) {
     context.usageReadout = {
       kind,
       isJunk,
-      showUsedInto: kind === 'consumable' && !isJunk,
+      // A loot box is spent without leaving a used form, so it offers no choice.
+      showUsedInto: kind === 'consumable' && !isJunk && !isLootBoxType(sys.lootType),
       label: usageLabel(kind),
       conflict,
       warning: conflict ? text('COG.Usage.ConflictWarning', 'This item stores more than one usage tag. It is read as {kind}.').replace('{kind}', usageLabel(kind)) : ''

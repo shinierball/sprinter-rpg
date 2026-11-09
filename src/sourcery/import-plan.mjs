@@ -28,9 +28,9 @@ import { hydrateBookTables } from './tables.mjs';
 import { BOOKS } from './canon.mjs';
 
 /** A recipe book is matched to a PDF only when this share of its anchors resolved (booklike, not an edition gate). */
-export const MIN_FRACTION = 0.2;
+const MIN_FRACTION = 0.2;
 /** A file that matches fewer anchors than this is only taken as a book when nothing matches better. */
-export const LOW_FRACTION = 0.5;
+const LOW_FRACTION = 0.5;
 /**
  * Below this share of a book's entries the summary warns that the file may be another printing. Measured on the five
  * official PDFs (2026-10-29): each matches 100% of its own book's anchors. 90% sits clearly below that, so a printing
@@ -150,10 +150,8 @@ export function recognise(loaded, recipes, canon, { minFraction = MIN_FRACTION }
   return { files, books, anchoredIn, waitingTables, waitingTableRecipes };
 }
 
-export { providedKeys };
-
 /** Mapped paths that still hold the spec's own wording after hydration (the entry does not lend their source, or text is generated). */
-export function keptOursPaths(spec, skipped, kind) {
+function keptOursPaths(spec, skipped, kind) {
   const mapped = new Set((fieldMapFor(kind) ?? []).map(m => m.path));
   return skipped.filter(s => mapped.has(s.path) && fieldClass(kind, s.path) !== FIELD_CLASS.NAME && s.reason !== 'emptied').map(s => s.path).filter((p) => {
     let cur = spec;

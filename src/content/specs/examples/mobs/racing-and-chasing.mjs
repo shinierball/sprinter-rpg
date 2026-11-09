@@ -6,7 +6,7 @@
  * state, replayed by `tests/integration/examples-authorable-3-49.test.mjs`. `move` is set on the live sheet after creation
  * (see tests/fixtures/examples/creator-exemptions.mjs).
  */
-import '../../../../apps/mob-creator/build.mjs'; // registers the `mob` payload delegate (pure)
+import '../../../../data/builders/mob-payload.mjs'; // registers the `mob` payload delegate (pure)
 import { exampleId } from '../ids.mjs';
 
 const ID = Object.freeze({

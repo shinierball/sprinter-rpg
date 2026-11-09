@@ -1,0 +1,1051 @@
+/* =======================================================
+   SKILL LIBRARY & MANAGER APPLICATION STYLES
+   ======================================================= */
+.cog-skill-manager-window .window-content {
+  background: var(--cog-window-bg);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cog-skill-manager-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+}
+
+/* Parts are direct children of the window content, so the window content carries the layout */
+.cog-skill-manager-window .window-content {
+  gap: 8px;
+}
+.cog-skill-manager-window .cog-sm-list-container {
+  min-height: 0;
+}
+
+.cog-sm-controls {
+  background: var(--cog-surface-muted);
+  padding: 8px;
+  border-radius: 4px;
+  border: 1.5px solid var(--cog-panel-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cog-sm-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cog-sm-search-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cog-sm-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--cog-text);
+  font-size: 13px;
+}
+
+.cog-sm-search {
+  width: 100%;
+  padding: 6px 28px 6px 30px;
+  border: 1.5px solid var(--cog-border-strong);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-weight: 600;
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+  outline: none;
+}
+
+.cog-sm-search:focus {
+  border-color: var(--cog-accent);
+  color: var(--cog-text-strong);
+  background: var(--cog-surface);
+}
+
+.cog-sm-search::placeholder {
+  color: var(--cog-accent);
+  font-style: italic;
+  font-weight: normal;
+  opacity: 1;
+}
+
+.cog-sm-search-clear {
+  color: var(--cog-text-secondary) !important;
+}
+
+.cog-sm-search-clear:hover {
+  color: var(--cog-accent) !important;
+}
+
+/* Dedicated Search Bars for Spell and Condition Managers */
+.spell-search-input,
+.condition-search-input {
+  background: var(--cog-input-bg) !important;
+  color: var(--cog-text-strong) !important;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-weight: 600;
+  border: 1.5px solid var(--cog-border-strong) !important;
+  border-radius: 3px;
+  padding: 4px 28px 4px 8px;
+}
+
+.spell-search-input:focus,
+.condition-search-input:focus {
+  border-color: var(--cog-accent) !important;
+  color: var(--cog-text-strong) !important;
+  background: var(--cog-input-bg) !important;
+  outline: none;
+}
+
+.spell-search-input::placeholder,
+.condition-search-input::placeholder {
+  color: var(--cog-accent);
+  font-style: italic;
+  font-weight: normal;
+  opacity: 1;
+}
+
+.spell-search-clear,
+.condition-search-clear {
+  color: var(--cog-text-secondary) !important;
+}
+
+.spell-search-clear:hover,
+.condition-search-clear:hover {
+  color: var(--cog-accent) !important;
+}
+
+.cog-sm-action-btn {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border: 1.5px solid var(--cog-ink);
+  border-radius: 3px;
+  padding: 6px 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.cog-sm-action-btn:hover {
+  background: var(--cog-danger-fill);
+  color: var(--cog-on-fill);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--cog-ink) 30%, transparent);
+}
+
+.cog-sm-gear-bonus-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--cog-surface);
+  border: 1.5px solid var(--cog-border-strong);
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.cog-sm-gear-bonus-box input {
+  width: 44px;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid var(--cog-border-muted);
+  border-radius: 3px;
+  padding: 2px;
+}
+
+.cog-sm-categories {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.cog-sm-category-btn {
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-secondary);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1px solid var(--cog-ink);
+  border-radius: 3px;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.cog-sm-category-btn:hover {
+  background: var(--cog-surface-strong);
+  color: var(--cog-text-strong);
+}
+
+.cog-sm-category-btn.active {
+  background: var(--cog-danger-fill);
+  color: var(--cog-on-fill);
+  border-color: var(--cog-accent-strong-fill);
+  text-shadow: 1px 1px 1px var(--cog-ink);
+}
+
+.cog-sm-count-badge {
+  background: color-mix(in srgb, var(--cog-ink) 10%, transparent);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+.cog-sm-category-btn.active .cog-sm-count-badge {
+  background: color-mix(in srgb, var(--cog-ink) 40%, transparent);
+}
+
+.cog-sm-stat-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cog-sm-stat-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cog-text);
+  margin-right: 4px;
+}
+
+.cog-sm-stat-pill {
+  background: var(--cog-surface);
+  color: var(--cog-text);
+  border: 1px solid var(--cog-border-muted);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.cog-sm-stat-pill:hover {
+  background: var(--cog-surface-alt);
+}
+
+.cog-sm-stat-pill.active {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  border-color: var(--cog-ink);
+}
+
+.cog-sm-list-container {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--cog-surface);
+  border: 1.5px solid var(--cog-panel-border);
+  border-radius: 3px;
+}
+
+.cog-sm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.cog-sm-table thead {
+  position: sticky;
+  top: 0;
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  z-index: 2;
+}
+
+.cog-sm-table th {
+  padding: 6px 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-align: left;
+  border-right: 1px solid var(--cog-panel-border);
+}
+
+.cog-sm-table th:last-child {
+  border-right: none;
+}
+
+.cog-sm-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--cog-divider);
+  vertical-align: middle;
+}
+
+.cog-sm-row:hover {
+  background: var(--cog-surface-alt);
+}
+
+.cog-sm-row.is-added {
+  background: var(--cog-success-tint);
+}
+
+.cog-sm-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cog-sm-icon {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  background: var(--cog-surface-muted);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.cog-sm-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cog-text-strong);
+}
+
+.cog-sm-on-sheet-badge {
+  font-size: 9px;
+  color: var(--cog-success);
+  font-weight: 700;
+}
+
+.cog-sm-on-gear-badge {
+  font-size: 9px;
+  color: var(--cog-warning);
+  font-weight: 700;
+}
+
+.cog-sm-stat-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.cog-sm-stat-badge.stat-str { background: var(--cog-danger-tint); color: var(--cog-accent-strong); border: 1px solid var(--cog-danger-border); }
+.cog-sm-stat-badge.stat-dex { background: var(--cog-success-tint); color: var(--cog-success); border: 1px solid var(--cog-success-border); }
+.cog-sm-stat-badge.stat-con { background: var(--cog-warning-tint); color: var(--cog-warning); border: 1px solid var(--cog-gold-border); }
+.cog-sm-stat-badge.stat-int { background: var(--cog-info-tint); color: var(--cog-info); border: 1px solid var(--cog-info-border); }
+.cog-sm-stat-badge.stat-cha { background: var(--cog-magic-tint); color: var(--cog-magic); border: 1px solid var(--cog-border-muted); }
+
+.cog-sm-category-tag {
+  font-size: 11px;
+  color: var(--cog-text-secondary);
+  background: var(--cog-surface-muted);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--cog-divider);
+  display: inline-block;
+}
+
+.cog-sm-source-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  letter-spacing: 0.5px;
+}
+
+.cog-sm-source-badge.compendium {
+  background: var(--cog-header-fill);
+  color: var(--cog-text);
+}
+
+.cog-sm-notes {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--cog-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cog-sm-select-for-item {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--cog-success-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-success-fill);
+  border-radius: 3px;
+  padding: 3px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cog-sm-select-for-item:hover {
+  background: color-mix(in srgb, var(--cog-success-fill), var(--cog-ink) 15%);
+}
+
+.cog-sm-empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--cog-text);
+}
+
+/* ==========================================================================
+   Combat Metrics & AI Awards Application
+   ========================================================================== */
+
+.cog-combat-metrics-window .window-content {
+  padding: 0;
+  background: var(--cog-window-bg);
+  color: var(--cog-text);
+  font-family: 'Oswald', sans-serif;
+  overflow-y: hidden;
+}
+
+.cog-combat-metrics-form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Header Controls Bar */
+.cog-metrics-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--cog-surface);
+  border-bottom: 2px solid var(--cog-accent);
+  padding: 10px 16px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.cog-metrics-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cog-trophy-icon {
+  font-size: 26px;
+  color: var(--cog-warning);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--cog-warning) 40%, transparent);
+}
+
+.cog-metrics-main-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--cog-text-strong);
+  text-transform: uppercase;
+}
+
+.cog-metrics-subtitle {
+  font-size: 11px;
+  color: var(--cog-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cog-metrics-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cog-metrics-combat-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--cog-text);
+}
+
+.cog-metrics-combat-select-wrapper select {
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+}
+
+.cog-reset-metrics-btn {
+  background: var(--cog-accent-strong-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-accent-strong-fill);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s ease;
+}
+
+.cog-reset-metrics-btn:hover {
+  background: color-mix(in srgb, var(--cog-accent-strong-fill), var(--cog-ink) 15%);
+}
+
+.cog-badge-archived {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--cog-header-fill);
+  color: var(--cog-text);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--cog-border-muted);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.cog-open-archive-btn {
+  background: var(--cog-header-fill);
+  color: var(--cog-text);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s ease;
+}
+
+.cog-open-archive-btn:hover {
+  background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%);
+  color: var(--cog-on-fill);
+}
+
+/* Post-Battle XP & Level Progression Banner in Metrics Window */
+.cog-metrics-xp-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--cog-surface) 0%, var(--cog-danger-tint) 100%);
+  border: 1.5px solid var(--cog-accent);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--cog-ink) 40%, transparent);
+}
+
+.cog-xp-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cog-xp-cap-icon {
+  font-size: 24px;
+  color: var(--cog-gold);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--cog-gold) 40%, transparent);
+}
+
+.cog-xp-banner-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cog-text-strong);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.cog-xp-banner-desc {
+  display: block;
+  font-size: 11px;
+  color: var(--cog-text-secondary);
+  margin-top: 2px;
+}
+
+.cog-xp-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cog-xp-awarded-pill {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--cog-success-fill);
+  color: var(--cog-on-fill);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+.cog-award-encounter-xp-btn {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-danger-fill);
+  border-radius: 3px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.cog-award-encounter-xp-btn:hover {
+  background: var(--cog-danger-fill);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cog-danger) 50%, transparent);
+}
+
+.cog-undo-encounter-xp-btn {
+  background: var(--cog-danger-tint);
+  color: var(--cog-text);
+  border: 1px solid var(--cog-accent-strong);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s ease;
+}
+
+.cog-undo-encounter-xp-btn:hover {
+  background: var(--cog-accent-strong-fill);
+  color: var(--cog-on-fill);
+}
+
+/* Previously Dispatched Awards */
+.cog-previous-awards-section {
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.cog-previous-awards-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cog-previous-award-pill {
+  background: var(--cog-info-tint);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--cog-text);
+}
+
+/* Dual stat box in crawler card header */
+.cog-crawler-stat-banner {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cog-stat-damage-taken {
+  background: var(--cog-info-tint);
+  border: 1.5px solid var(--cog-info);
+  border-radius: 4px;
+  padding: 4px 10px;
+  text-align: center;
+  min-width: 70px;
+}
+
+.cog-stat-damage-taken .cog-stat-label {
+  color: var(--cog-info);
+}
+
+/* Metrics Body */
+.cog-metrics-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+}
+
+.cog-crawler-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.cog-crawler-card {
+  background: var(--cog-surface);
+  border: 1.5px solid var(--cog-panel-border);
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--cog-ink) 40%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.cog-crawler-avatar {
+  background: var(--cog-window-bg);
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  border: 1.5px solid var(--cog-accent);
+  object-fit: cover;
+}
+
+.cog-crawler-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cog-crawler-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--cog-text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cog-badge-level {
+  background: var(--cog-header-fill);
+  color: var(--cog-text);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cog-badge-favor {
+  background: var(--cog-info-fill);
+  color: var(--cog-on-fill);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.cog-stat-banner {
+  flex-shrink: 0;
+}
+
+.cog-stat-damage {
+  background: var(--cog-danger-tint);
+  border: 1.5px solid var(--cog-danger);
+  border-radius: 4px;
+  padding: 4px 10px;
+  text-align: center;
+  min-width: 70px;
+}
+
+.cog-stat-number {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cog-danger);
+  line-height: 1;
+}
+
+.cog-stat-label {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--cog-accent-strong);
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+/* KPI Row */
+.cog-kpi-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.cog-kpi-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  color: var(--cog-text-secondary);
+}
+
+.cog-kpi-pill strong {
+  color: var(--cog-text-strong);
+}
+
+.cog-adjust-damage-btn {
+  background: var(--cog-info-tint);
+  color: var(--cog-text);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+
+.cog-adjust-damage-btn:hover {
+  background: var(--cog-surface-strong);
+  color: var(--cog-text-strong);
+}
+
+/* Attacks Section & Table in Combat Metrics Dashboard */
+.cog-combat-metrics-window .cog-metrics-attacks-section,
+.cog-combat-metrics-window .cog-skills-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cog-combat-metrics-window .cog-section-label {
+  margin: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--cog-gold);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cog-combat-metrics-window .cog-metrics-attacks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cog-combat-metrics-window .cog-metrics-attacks-table th {
+  background: var(--cog-surface);
+  color: var(--cog-text-secondary);
+  padding: 4px 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--cog-panel-border);
+  text-align: left;
+}
+
+.cog-combat-metrics-window .cog-metrics-attacks-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--cog-panel-border);
+  color: var(--cog-text);
+}
+
+.cog-combat-metrics-window .cog-metrics-attacks-table tr:last-child td {
+  border-bottom: none;
+}
+
+.cog-combat-metrics-window .cog-attack-name {
+  color: var(--cog-text-strong);
+}
+
+.cog-combat-metrics-window .cog-attack-type-tag {
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-secondary);
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+/* Tactical Skills Section */
+.cog-skills-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cog-skill-pill {
+  background: var(--cog-info-tint);
+  border: 1px solid var(--cog-panel-border);
+  color: var(--cog-text-secondary);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cog-skill-pill strong {
+  color: var(--cog-text);
+}
+
+.cog-skill-count {
+  color: var(--cog-info);
+  font-weight: bold;
+}
+
+.cog-empty-hint {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--cog-text-muted);
+  padding: 4px 0;
+}
+
+/* Empty State */
+.cog-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--cog-text);
+}
+
+.cog-empty-state i {
+  font-size: 48px;
+  margin-bottom: 14px;
+  color: var(--cog-text-secondary);
+}
+
+.cog-empty-state h3 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  color: var(--cog-text);
+  letter-spacing: 1px;
+}
+
+/* AI Awards Dispatch Console */
+.cog-awards-console {
+  background: var(--cog-window-bg);
+  border-top: 2px solid var(--cog-accent);
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.cog-awards-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cog-danger);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.cog-awards-form-grid {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.cog-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--cog-text-secondary);
+}
+
+.cog-form-group select,
+.cog-form-group input {
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-strong);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 5px 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+}
+
+.cog-form-group select:focus,
+.cog-form-group input:focus {
+  border-color: var(--cog-danger);
+  outline: none;
+}
+
+.cog-form-quote-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+.cog-dispatch-award-btn {
+  background: linear-gradient(135deg, var(--cog-accent-fill), var(--cog-accent-strong-fill));
+  color: var(--cog-on-fill);
+  border: 1.5px solid var(--cog-gold-fill);
+  border-radius: 3px;
+  padding: 6px 14px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--cog-ink) 30%, transparent);
+  transition: all 0.2s ease;
+}
+
+.cog-dispatch-award-btn:hover {
+  background: linear-gradient(135deg, var(--cog-danger-fill), var(--cog-accent-fill));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--cog-danger) 50%, transparent);
+  transform: translateY(-1px);
+}
+

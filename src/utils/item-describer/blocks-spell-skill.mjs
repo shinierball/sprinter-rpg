@@ -11,24 +11,27 @@
  * The describer does no Rank math of its own: which breaks are reached comes from `resolveReachedRankBreaks`.
  * Text lives under `COG.ItemSummary.SpellSkill` in lang/en.json (identical defaults are registered below).
  */
-import { normalizeBaseDamage, baseDamageText } from '../base-damage.mjs';
+import { normalizeBaseDamage, baseDamageText } from '../damage/base-damage.mjs';
 import {
   itemLine, t, conditionRefName, conditionName, documentName, defineItemSummaryTemplates, str, token, whole, signed, humanizeId, healBarsText, tempBarsText
 } from './shared.mjs';
 import { describeAttackLines } from './attack-lines.mjs';
-import { hotRoundsOf } from '../hot-rounds.mjs';
+import { hotRoundsOf } from '../time/hot-rounds.mjs';
+import { specialtyLabel } from '../skill/skill-specialty-options.mjs';
 import { rankBreakLine } from './rank-break-text.mjs';
-import { getItemAllTags, getItemRank, getTagDefinition, RANK_BREAK_THRESHOLDS } from '../../data/tags.mjs';
-import { resolveReachedRankBreaks } from '../rank-breaks.mjs';
-import { collectOnHitEffects } from '../on-hit.mjs';
-import { effectiveDuration, durationConfigText } from '../durations.mjs';
-import { cooldownLabel, hasCooldown } from '../cooldowns.mjs';
+import { getItemAllTags } from '../../documents/active-tags.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { RANK_BREAK_THRESHOLDS } from '../../data/tag-vocabulary.mjs';
+import { resolveReachedRankBreaks, getItemRank } from '../skill/rank-breaks.mjs';
+import { collectOnHitEffects } from '../attack/on-hit.mjs';
+import { effectiveDuration, durationConfigText } from '../time/durations.mjs';
+import { cooldownLabel, hasCooldown } from '../time/cooldowns.mjs';
 import { checkTypeLabel } from '../../data/rules/check-types.mjs';
 import { techniqueBandSummary, effectIdentifiers } from '../../documents/actor/actor-techniques.mjs';
 import { resolveSpellCost } from '../../documents/actor/spell-cast.mjs';
 import { healingBarsFor, cleanseListFor } from '../../documents/actor/use-card-parts.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../tag-behaviour.mjs';
-import { skillGroupLabel, spellRole, spellRoleLabel, PRIMARY_ATTACK_TAGS } from '../tag-mechanics.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../tag/tag-behaviour.mjs';
+import { skillGroupLabel, spellRole, spellRoleLabel, PRIMARY_ATTACK_TAGS } from '../tag/tag-mechanics.mjs';
 
 const KEY = 'COG.ItemSummary.SpellSkill';
 
@@ -41,6 +44,7 @@ defineItemSummaryTemplates({
   [`${KEY}.NoRankGain`]: 'Cannot gain Ranks by training',
   [`${KEY}.SpellRole`]: '{type} spell',
   [`${KEY}.SkillGroup`]: 'Group: {group}',
+  [`${KEY}.Specialty`]: 'Specialty: {label}',
   [`${KEY}.CheckTypeNoStat`]: 'Check: {type}',
   [`${KEY}.AiFavor`]: 'AI Favor {n}',
   [`${KEY}.ManaCost`]: '{n} Mana',
@@ -177,6 +181,8 @@ function describeCast(item, ctx) {
   } else {
     const group = str(skillGroupLabel(item));
     if (group) out.push(itemLine('skill', L('SkillGroup', { group }), 'system.tags'));
+    const specialty = specialtyLabel(sys.specialty);
+    if (specialty) out.push(itemLine('skill', L('Specialty', { label: specialty }), 'system.specialty'));
     const checkType = str(sys.checkType);
     if (checkType) {
       const label = str(checkTypeLabel(checkType)) || checkType;

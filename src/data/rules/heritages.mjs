@@ -16,12 +16,13 @@
  *   creator: true offers it as a pill in the Race Creator
  *   companion: true marks the group that `companion.pet` races join
  */
+import { firstScalar } from '../../utils/first-scalar.mjs';
 
 export const DEFAULT_HERITAGE = 'earth';
 export const HERITAGE_TAG_PREFIX = 'heritage.';
 
-/** The note an Earth Origin Box origin appends: a race of Earth heritage, and an Earth class. */
-export const EARTH_ORIGIN_NOTE = 'Earth Origin Box, with a hobby skill potion inside';
+/** The note a Silver Earth Box origin appends: a race of Earth heritage, and an Earth class. */
+export const SILVER_EARTH_NOTE = 'Silver Earth Box, with a hobby skill potion inside';
 const ALIEN_NOTE = 'Off-World Fanbase Popularity (Home-Planet Audience Appeal)';
 
 const ID_PATTERN = /^[a-z][a-z0-9_.-]*$/;
@@ -33,12 +34,12 @@ const SEEDED_HERITAGES = [
   {
     id: 'earth', order: 1, creator: true, icon: 'fa-earth-americas',
     label: 'COG.Heritage.earth.label', group: 'COG.Heritage.earth.group', pill: 'COG.Heritage.earth.pill',
-    note: EARTH_ORIGIN_NOTE,
+    note: SILVER_EARTH_NOTE,
     perk: {
-      id: 'earth_origin_box',
-      name: 'Earth Origin Box (Hobby Skill Potion)',
+      id: 'dccitm0000000012',
+      name: 'Silver Earth Box (Hobby Skill Potion)',
       category: 'Earth Heritage',
-      description: 'An Earth Origin Box with a hobby skill potion inside (3 Ranks in a hobby skill), and every Earth Class is open to you.'
+      description: 'A Silver Earth Box with a hobby skill potion inside (3 Ranks in a hobby skill), and every Earth Class is open to you.'
     }
   },
   {
@@ -127,9 +128,7 @@ export function heritagesInOrder() {
  * @returns {string}
  */
 export function sanitizeHeritageId(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0].trim();
+  const val = firstScalar(raw);
   const text = String(val).trim().toLowerCase();
   return text || DEFAULT_HERITAGE;
 }

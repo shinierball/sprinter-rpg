@@ -25,7 +25,7 @@ const sceneTokens = (scene) => {
  * `operation.movement` (the request's instructions, keyed by token id). Movement ids are per token, so the shared
  * operation is the only link between tokens moved by one drag.
  */
-export function tokensMovedWith(operation) {
+function tokensMovedWith(operation) {
   const ids = new Set();
   for (const source of [operation?._movement, operation?.movement]) {
     if (source && typeof source === 'object') for (const id of Object.keys(source)) ids.add(id);
@@ -41,7 +41,7 @@ const vehicleOp = { [SYSTEM_ID]: { [VEHICLE_MOVE_OPTION]: true } };
  * @param {object} vehicleTokenDoc token document of a mount_vehicle
  * @returns {object[]} token documents (never the vehicle's own token)
  */
-export function occupantTokensOf(vehicleTokenDoc) {
+function occupantTokensOf(vehicleTokenDoc) {
   const vehicle = vehicleTokenDoc?.actor;
   if (vehicle?.type !== 'mount_vehicle') return [];
   const refs = new Set(crewMembers(vehicle).occupants.map((o) => o.uuid));

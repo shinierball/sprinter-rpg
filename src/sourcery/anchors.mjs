@@ -58,6 +58,7 @@
 import { LINE_WORDS, MAX_LINE_WORDS } from './normalize.mjs';
 import { NAME_EDIT_INSERT } from './text.mjs';
 import { KINDS } from './grammars.mjs';
+import { firstScalar } from '../utils/first-scalar.mjs';
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const HASH = /^[0-9a-f]{64}$/;
@@ -84,11 +85,8 @@ const isRecord = v => !!v && typeof v === 'object' && !Array.isArray(v);
 
 /** First element of an array, first part of a comma list (CONTRIBUTING §4), trimmed string. */
 function scalarString(raw) {
-  let v = raw ?? '';
-  if (Array.isArray(v)) v = v[0] ?? '';
-  if (typeof v !== 'string') return '';
-  if (v.includes(',')) v = v.split(',')[0];
-  return v.trim();
+  const v = firstScalar(raw);
+  return typeof v === 'string' ? v.trim() : '';
 }
 
 function readInt(raw, max) {

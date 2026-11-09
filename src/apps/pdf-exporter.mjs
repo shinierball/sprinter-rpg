@@ -3,13 +3,15 @@ import { findCatalogEntry } from '../content/catalog-lookup.mjs';
 import { isWeaponGear } from '../documents/actor.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { checkTypeLabel } from '../data/rules/check-types.mjs';
-import { normalizeBaseDamage, baseDamageText } from '../utils/base-damage.mjs';
-import { primaryDamagePart } from '../utils/damage-parts.mjs';
-import { toHitBonusText } from '../utils/to-hit-display.mjs';
+import { normalizeBaseDamage, baseDamageText } from '../utils/damage/base-damage.mjs';
+import { primaryDamagePart } from '../utils/damage/damage-parts.mjs';
+import { toHitBonusText } from '../utils/attack/to-hit-display.mjs';
 import { describeItem, summaryText } from '../utils/item-describer/index.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { DEFAULT_SIZE, sizeName } from '../data/sizes.mjs';
-import { spellRole, spellRoleLabel } from '../utils/tag-mechanics.mjs';
+import { spellRole, spellRoleLabel } from '../utils/tag/tag-mechanics.mjs';
+import { effectiveRace, overlayOf } from '../utils/character/overlay-state.mjs';
+import { firstScalar } from '../utils/first-scalar.mjs';
 
 function getPDFDocument() {
   return globalThis.PDFLib?.PDFDocument || importedPDFDocument;
@@ -94,9 +96,7 @@ function formatMod(mod) {
  */
 export async function resolveBuffDescription(actor, rawVal) {
   if (!rawVal) return '';
-  let str = String(rawVal).trim();
-  if (Array.isArray(rawVal)) str = String(rawVal[0] || '').trim();
-  if (str.includes(',')) str = str.split(',')[0].trim();
+  const str = String(firstScalar(rawVal) || '').trim();
   if (!str) return '';
 
   let buff = null;
@@ -251,7 +251,8 @@ export async function exportCrawlerToPdf(actor, options = {}) {
   const spells = items.filter(i => i.type === 'spell');
   const gear = items.filter(i => i.type === 'gear');
   const loot = items.filter(i => i.type === 'loot' || i.type === 'consumable');
-  const races = items.filter(i => i.type === 'race');
+  // The race in force: a transformation's form while one is laid over the crawler, else the original
+  const raceInUse = effectiveRace(items);
   const classes = items.filter(i => i.type === 'class');
   const deities = items.filter(i => i.type === 'deity');
   const sponsors = items.filter(i => i.type === 'sponsor');
@@ -261,7 +262,7 @@ export async function exportCrawlerToPdf(actor, options = {}) {
   // =========================================================================
   // 1. Identity
   setTextField(form, 'Name', actor.name || '');
-  const raceName = details.race || (races[0] ? races[0].name : '');
+  const raceName = (overlayOf(items) ? raceInUse?.name : details.race) || raceInUse?.name || '';
   setTextField(form, 'Race', raceName);
   setTextField(form, 'Gender', details.gender || '');
   setTextField(form, 'level', details.level != null ? details.level : 1);
@@ -594,7 +595,7 @@ export async function exportCrawlerToPdf(actor, options = {}) {
   // =========================================================================
   // Racial Abilities (22 lines: Text Field 301036, 301038, ..., 301078)
   const racialTraits = [];
-  if (races[0]) racialTraits.push(...await featureLinesForPdf(races[0], 22));
+  if (raceInUse) racialTraits.push(...await featureLinesForPdf(raceInUse, 22));
   for (let i = 0; i < 22; i++) {
     const fieldName = `Text Field ${301036 + 2 * i}`;
     setTextField(form, fieldName, racialTraits[i] || '');
@@ -663,14 +664,3 @@ export async function saveCrawlerPdf(actor, options = {}) {
 
   return pdfBytes;
 }
-
-export const COGPdfExporter = {
-  exportCrawlerToPdf,
-  saveCrawlerPdf,
-  loadTemplatePdf,
-  resolveTemplateSource,
-  notifyNoSheetPdf,
-  resolveAssetUrl,
-  resolveBuffDescription,
-  resolveHotlistDisplay
-};

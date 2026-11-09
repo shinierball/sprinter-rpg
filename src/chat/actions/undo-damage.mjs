@@ -16,8 +16,8 @@
  *  - Archived combats are not touched.
  *  - Temp bars replaced since the hit are not restored (tempBarsSkipped).
  */
-import { COGCombatMetrics } from '../../apps/combat-metrics.mjs';
-import { findDamageUndoRecord, isApplicationId } from '../../apps/damage-undo.mjs';
+import { COGCombatMetrics } from '../../documents/combat-metrics.mjs';
+import { findDamageUndoRecord, isApplicationId } from '../../utils/damage/damage-undo.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { getActiveGM, registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { canWriteTarget } from '../chat-relay.mjs';
@@ -36,7 +36,7 @@ export function parseUndoDamage(button) {
 /**
  * Local (true) or through the GM (false). The caller has already checked ownership.
  */
-export function canUndoDamageLocally(target, applicationId) {
+function canUndoDamageLocally(target, applicationId) {
   const user = game.user;
   if (!user || user.isGM) return true;
   if (getActiveGM()) return false;

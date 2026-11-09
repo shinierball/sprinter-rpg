@@ -1,0 +1,41 @@
+{{!--
+  The material lines of a blueprint step (3.15): a label, the loot it takes by identifier or by tag query, how many, and
+  whether a failed craft may return it. Parameters: materials = views from materialViews (context-blueprint.mjs),
+  materialsPath = the document path of the list (the Add and Remove controls name it).
+  Line inputs are named under their path; Add, Remove and the query editor are action delegates without a `name`.
+--}}
+<div class="cog-craft-materials" data-materials-path="{{materialsPath}}">
+  <div class="cog-banner-header cog-modifier-header">
+    <span><i class="fa-solid fa-boxes-stacked"></i> {{localize "COG.CraftSheet.Materials.Title"}}</span>
+    <a class="cog-modifier-add" data-action="addCraftMaterial" data-materials-path="{{materialsPath}}"><i class="fa-solid fa-plus"></i> {{localize "COG.CraftSheet.Materials.Add"}}</a>
+  </div>
+  {{#each materials as |m|}}
+    <div class="cog-modifier-card" data-material-index="{{m.index}}">
+      <div class="cog-field-row">
+        <div class="cog-field-group">
+          <span class="cog-field-label">{{localize "COG.CraftSheet.Materials.Label"}}</span>
+          <input class="cog-field-input" type="text" name="{{m.labelName}}" value="{{m.label}}" />
+        </div>
+        <div class="cog-field-group">
+          <span class="cog-field-label">{{localize "COG.CraftSheet.Materials.Identifier"}}</span>
+          <input class="cog-field-input" type="text" name="{{m.identifierName}}" value="{{m.identifier}}" />
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.CraftSheet.Materials.Quantity"}}</span>
+          <input class="cog-field-input" type="number" min="1" step="1" name="{{m.quantityName}}" value="{{m.quantity}}" />
+        </div>
+        <label class="cog-field-group small" data-tooltip="{{localize 'COG.CraftSheet.Materials.SalvageableHint'}}">
+          <span class="cog-field-label">{{localize "COG.CraftSheet.Materials.Salvageable"}}</span>
+          <input type="checkbox" name="{{m.salvageableName}}" {{#if m.salvageable}}checked{{/if}} />
+        </label>
+        <span class="cog-modifier-controls">
+          <a class="cog-modifier-delete" data-action="removeCraftMaterial" data-materials-path="{{../materialsPath}}" data-index="{{m.index}}" data-tooltip="{{localize 'COG.CraftSheet.Materials.Remove'}}"><i class="fa-solid fa-trash"></i></a>
+        </span>
+      </div>
+      <span class="cog-field-label">{{localize "COG.CraftSheet.Materials.Query"}}</span>
+      {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=m.query tagOptions=m.tagOptions}}
+    </div>
+  {{else}}
+    <div class="cog-modifier-hint">{{localize "COG.CraftSheet.Materials.Empty"}}</div>
+  {{/each}}
+</div>

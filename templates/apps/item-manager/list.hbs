@@ -8,8 +8,10 @@
             <div>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span class="cog-text-strong" style="font-size: 14px; font-weight: bold;">{{item.name}}</span>
-                {{#if item.isCompendium}}
-                  <span class="cog-badge cog-bg-window cog-text-gold" style="border: 1px solid var(--cog-gold); font-size: 9px; padding: 0 4px;" title="{{localize "COG.Content.ItemCompendiumBadge"}}">CANONICAL</span>
+                {{#if item.sourceBadge}}
+                  {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=item.sourceBadge}}
+                {{else if item.isCompendium}}
+                  <span class="cog-badge cog-bg-window cog-text-gold" style="border: 1px solid var(--cog-gold); font-size: 9px; padding: 0 4px;" title="{{localize "COG.Content.ItemCompendiumBadge"}}">COMPENDIUM</span>
                 {{/if}}
               </div>
               <div style="display: flex; gap: 4px; align-items: center; margin-top: 2px; flex-wrap: wrap;">

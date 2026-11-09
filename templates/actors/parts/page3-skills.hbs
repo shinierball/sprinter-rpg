@@ -53,15 +53,22 @@
                 {{#if skill.isGranted}}
                   <span style="font-weight: bold; flex: 1;" title="Granted by equipped gear: {{skill.itemSources}}"{{#if skill.summaryTip}} data-tooltip="{{skill.summaryTip}}"{{/if}}>{{skill.name}}</span>
                   <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;" title="Granted by equipped gear: {{skill.itemSources}}">GEAR</span>
+                   {{#if skill.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{skill.offlineTip}}">[OFFLINE]</span>{{/if}}
                 {{else}}
                   <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="name" value="{{skill.name}}"{{#if skill.summaryTip}} data-tooltip="{{skill.summaryTip}}"{{/if}} style="font-weight: bold; flex: 1;" />
                 {{/if}}
+                {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=skill.sourceBadge}}
                 {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=skill.cooldownBadge}}
                 {{#if skill.isCore}}
                   <span class="cog-badge cog-badge-core" title="Core action: every crawler has it. It has no Ranks.">[CORE]</span>
                 {{/if}}
                 {{#if skill.isUnusable}}
                   <span class="cog-badge cog-badge-danger cog-bg-accent-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px; font-weight: bold;" title="Animal Skill: you are no longer an animal. Using it is a Rule Break.">[UNUSABLE]</span>
+                {{/if}}
+                {{#if skill.specialtyLabel}}
+                  <span class="cog-badge cog-dark cog-bg-header-fill cog-text" style="font-size: 8px; padding: 1px 3px; border-radius: 2px;" title="{{localize "COG.Skill.Specialty.Label"}}: {{skill.specialtyLabel}}">
+                    {{localize "COG.Skill.Specialty.Label"}}: {{skill.specialtyLabel}}
+                  </span>
                 {{/if}}
                 {{#if skill.groupLabel}}
                   <span class="cog-badge cog-dark cog-bg-header-fill cog-text" style="font-size: 8px; padding: 1px 3px; border-radius: 2px;" title="Skill Group: {{skill.groupLabel}}">

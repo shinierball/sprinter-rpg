@@ -286,23 +286,24 @@ export const COG_ITEMS = [
     "_id": "dccacc0000000001",
     "name": "Crown of the Desolation",
     "type": "gear",
-    "img": "icons/svg/circle.svg",
+    "img": "icons/commodities/treasure/crown-blue-gold.webp",
     "system": {
       "slot": "head",
       "quantity": 1,
       "value": 120,
       "equipped": false,
-      "abilityModifiers": {
-        "int": {
-          "value": 1,
-          "type": "flat"
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "int",
+          "value": 1
         },
-        "cha": {
-          "value": 1,
-          "type": "flat"
+        {
+          "kind": "stat",
+          "stat": "cha",
+          "value": 1
         }
-      },
-      "grants": [],
+      ],
       "notes": "+1 INT and +1 CHA while worn.",
       "description": "An ornate gilded circlet humming with ancient dungeon authority. Makes the wearer look both commanding and slightly intimidating.",
       "tags": [
@@ -316,7 +317,7 @@ export const COG_ITEMS = [
     "_id": "dccacc0000000002",
     "name": "Ring of Minor Flames",
     "type": "gear",
-    "img": "icons/svg/circle.svg",
+    "img": "icons/equipment/finger/ring-cabochon-gold-red.webp",
     "system": {
       "slot": "accessory",
       "quantity": 1,
@@ -364,7 +365,7 @@ export const COG_ITEMS = [
     "_id": "dccacc0000000003",
     "name": "Tortoise Shell Ring",
     "type": "gear",
-    "img": "icons/svg/circle.svg",
+    "img": "icons/equipment/finger/ring-cabochon-bronze-green.webp",
     "system": {
       "slot": "accessory",
       "quantity": 1,
@@ -383,19 +384,19 @@ export const COG_ITEMS = [
     "_id": "dccacc0000000004",
     "name": "Enchanted Pet Collar",
     "type": "gear",
-    "img": "icons/svg/circle.svg",
+    "img": "icons/equipment/neck/choker-round-copper.webp",
     "system": {
       "slot": "accessory",
       "quantity": 1,
       "value": 90,
       "equipped": false,
-      "abilityModifiers": {
-        "cha": {
-          "value": 1,
-          "type": "flat"
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "cha",
+          "value": 1
         }
-      },
-      "grants": [],
+      ],
       "notes": "+1 Charisma. Suitable for any companion.",
       "description": "A glamorous red velvet collar studded with sparkling imitation rubies. Guaranteed to impress the broadcast audience.",
       "tags": [
@@ -554,7 +555,7 @@ export const COG_ITEMS = [
         {
           "name": "Detox Cleansing",
           "type": "cure_debuff",
-          "cureFilter": "all",
+          "debuffTarget": "all",
           "targetType": "self",
           "description": "Removes all active debuffs from the crawler."
         }
@@ -756,17 +757,17 @@ export const COG_ITEMS = [
       "value": 120,
       "equipped": false,
       "drBonus": 2,
-      "abilityModifiers": {
-        "str": {
-          "value": 2,
-          "type": "flat"
-        },
-        "con": {
-          "value": 2,
-          "type": "flat"
-        }
-      },
       "grants": [
+        {
+          "kind": "stat",
+          "stat": "str",
+          "value": 2
+        },
+        {
+          "kind": "stat",
+          "stat": "con",
+          "value": 2
+        },
         {
           "kind": "skill",
           "identifier": "raptor-sprint-mount",
@@ -802,19 +803,19 @@ export const COG_ITEMS = [
       "value": 95,
       "equipped": false,
       "drBonus": 1,
-      "abilityModifiers": {
-        "str": {
-          "value": 3,
-          "type": "flat"
-        }
-      },
       "damageParts": [
         {
           "dice": "1d4",
           "type": "Piercing"
         }
       ],
-      "grants": [],
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "str",
+          "value": 3
+        }
+      ],
       "notes": "+3 STR and +1 DR for mount. Vicious steel spikes deal 1d4 Piercing damage to any creature attempting to grapple or board the mount.",
       "description": "Studded with barbed iron quills, this aggressive saddle turns the mount's back into a lethal hazard for opportunistic flankers.",
       "tags": [
@@ -841,13 +842,13 @@ export const COG_ITEMS = [
           "value": 2
         }
       ],
-      "abilityModifiers": {
-        "dex": {
-          "value": 3,
-          "type": "flat"
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "dex",
+          "value": 3
         }
-      },
-      "grants": [],
+      ],
       "notes": "+3 DEX and +2 Evade for mount. Increases land move speed by +10ft.",
       "description": "Woven from enchanted spider silk and featherweight carbon mesh. Barely weighs three ounces, allowing high-speed banking and agile turns.",
       "tags": [
@@ -869,13 +870,13 @@ export const COG_ITEMS = [
       "value": 70,
       "equipped": false,
       "drBonus": 1,
-      "abilityModifiers": {
-        "con": {
-          "value": 4,
-          "type": "flat"
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "con",
+          "value": 4
         }
-      },
-      "grants": [],
+      ],
       "notes": "+4 CON and +1 DR for mount. Increases inventory carrying capacity by 200 lbs and holds up to 10 stowed items.",
       "description": "Double-gusset leather panniers paired with a sturdy wooden tree saddle. Allows companions to pack substantial dungeon spoils.",
       "tags": [
@@ -904,17 +905,18 @@ export const COG_ITEMS = [
           "value": 1
         }
       ],
-      "abilityModifiers": {
-        "int": {
-          "value": 2,
-          "type": "flat"
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "int",
+          "value": 2
         },
-        "dex": {
-          "value": 2,
-          "type": "flat"
+        {
+          "kind": "stat",
+          "stat": "dex",
+          "value": 2
         }
-      },
-      "grants": [],
+      ],
       "notes": "+2 INT, +2 DEX, +2 DR. Grants fire resistance to rider and +10ft Fly speed to aerial mounts.",
       "description": "An exquisite golden saddle embossed with warding runes. Shields both flyer and rider from scorching dragon flames and gale-force wind shears.",
       "tags": [
@@ -936,12 +938,6 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 110,
       "equipped": false,
-      "abilityModifiers": {
-        "str": {
-          "value": 2,
-          "type": "flat"
-        }
-      },
       "damageParts": [
         {
           "dice": "1d6",
@@ -949,7 +945,13 @@ export const COG_ITEMS = [
         }
       ],
       "ignoreDR": true,
-      "grants": [],
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "str",
+          "value": 2
+        }
+      ],
       "notes": "+2 STR. Adds +1d6 Piercing damage to all bite and natural attacks. Diamond facets ignore 2 points of target DR (Armor Piercing).",
       "description": "Industrial diamond shards crimped onto dental molds. Transforms ordinary animal jaws into high-speed hydraulic drills that chew through steel carapaces.",
       "tags": [
@@ -970,16 +972,6 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 85,
       "equipped": false,
-      "abilityModifiers": {
-        "con": {
-          "value": 2,
-          "type": "flat"
-        },
-        "str": {
-          "value": 1,
-          "type": "flat"
-        }
-      },
       "damageParts": [
         {
           "dice": "1d4",
@@ -987,6 +979,16 @@ export const COG_ITEMS = [
         }
       ],
       "grants": [
+        {
+          "kind": "stat",
+          "stat": "con",
+          "value": 2
+        },
+        {
+          "kind": "stat",
+          "stat": "str",
+          "value": 1
+        },
         {
           "kind": "skill",
           "identifier": "lockjaw-clamp",
@@ -1019,19 +1021,19 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 125,
       "equipped": false,
-      "abilityModifiers": {
-        "dex": {
-          "value": 2,
-          "type": "flat"
-        }
-      },
       "damageParts": [
         {
           "dice": "1d6",
           "type": "Lightning"
         }
       ],
-      "grants": [],
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "dex",
+          "value": 2
+        }
+      ],
       "notes": "+2 DEX. Adds +1d6 Lightning damage to bite and natural strikes. Critical hits deliver a static shock that stuns minor mobs for 1 round.",
       "description": "Polished 24k gold dental crowns wired to a microscopic piezoelectric spark battery. Every bite crackles with blue electrical arc discharge.",
       "tags": [
@@ -1051,23 +1053,24 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 150,
       "equipped": false,
-      "abilityModifiers": {
-        "str": {
-          "value": 2,
-          "type": "flat"
-        },
-        "cha": {
-          "value": 2,
-          "type": "flat"
-        }
-      },
       "onHit": {
         "lifesteal": {
           "minSlotsLost": 1,
           "heal": 1
         }
       },
-      "grants": [],
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "str",
+          "value": 2
+        },
+        {
+          "kind": "stat",
+          "stat": "cha",
+          "value": 2
+        }
+      ],
       "notes": "+2 STR, +2 CHA. Life Leech: heals the pet 1 Health Bar slot each time a natural bite attack takes at least 1 Health Bar slot from a living target (the bite and the living target are for the GM to judge).",
       "description": "Carved from dark blood-agate and fitted over natural fangs. Syphons vitality directly from enemies into the companion.",
       "tags": [
@@ -1086,19 +1089,19 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 95,
       "equipped": false,
-      "abilityModifiers": {
-        "dex": {
-          "value": 2,
-          "type": "flat"
-        }
-      },
       "damageParts": [
         {
           "dice": "1d4",
           "type": "Poison"
         }
       ],
-      "grants": [],
+      "grants": [
+        {
+          "kind": "stat",
+          "stat": "dex",
+          "value": 2
+        }
+      ],
       "notes": "+2 DEX. Adds +1d4 Poison damage and inflicts the Poisoned debuff on target when scoring a hit with natural attacks.",
       "description": "Hollowed synthetic emerald fangs filled with concentrated dungeon viper toxin that reloads automatically after every rest.",
       "tags": [
@@ -1138,17 +1141,37 @@ export const COG_ITEMS = [
   },
   {
     "_id": "dccitm0000000012",
-    "name": "Earth Origin Box",
+    "name": "Silver Earth Box",
     "type": "loot",
     "img": "icons/svg/chest.svg",
     "system": {
       "quantity": 1,
-      "notes": "Earth Hobby Potion (3 Skill Ranks in one hobby Skill) plus at least one bonus item.",
+      "notes": "Trinkets from Table 73 and a Random Origin Potion from Table 74.",
       "description": "",
       "tags": [
         "kind.loot"
       ],
       "lootType": "box",
+      "box": {
+        "tier": "silver",
+        "contents": [
+          {
+            "kind": "table",
+            "tableKey": "sourcery.t-core-73",
+            "as": "item",
+            "times": "1d2",
+            "label": "Trinket"
+          },
+          {
+            "kind": "table",
+            "tableKey": "sourcery.t-core-74",
+            "as": "skillPotion",
+            "rank": 3,
+            "name": "Random Origin Potion"
+          }
+        ],
+        "whenEmpty": ""
+      },
       "identifier": "dccitm0000000012"
     },
     "flags": {
@@ -1269,6 +1292,193 @@ export const COG_ITEMS = [
         "kind.upgrade",
         "upgrade.crafting_table"
       ]
+    }
+  },
+  {
+    "_id": "dccitm0000000014",
+    "name": "",
+    "type": "gear",
+    "img": "icons/svg/shield.svg",
+    "system": {
+      "slot": "accessory",
+      "quantity": 1,
+      "drBonus": 1,
+      "description": "",
+      "tags": [
+        "kind.gear",
+        "vehicle.upgrade.armor"
+      ],
+      "identifier": "dccitm0000000014"
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm0000000015",
+    "name": "",
+    "type": "gear",
+    "img": "icons/svg/wingfoot.svg",
+    "system": {
+      "slot": "accessory",
+      "quantity": 1,
+      "hasActivatedAbility": true,
+      "executionMode": "all",
+      "description": "",
+      "outcomes": [
+        {
+          "type": "buff",
+          "name": "Speed Burst",
+          "buffIdentifier": "speed-burst",
+          "targetType": "self"
+        }
+      ],
+      "tags": [
+        "kind.gear",
+        "vehicle.upgrade.speed"
+      ],
+      "identifier": "dccitm0000000015"
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm0000000016",
+    "name": "",
+    "type": "gear",
+    "img": "icons/svg/sword.svg",
+    "system": {
+      "slot": "accessory",
+      "quantity": 1,
+      "description": "",
+      "damageModifiers": [
+        {
+          "label": "Ram damage",
+          "mode": "add",
+          "value": 1,
+          "scaleBy": {
+            "source": "floor"
+          },
+          "condition": {
+            "all": [
+              "vehicle.check.ram"
+            ]
+          }
+        }
+      ],
+      "tags": [
+        "kind.gear",
+        "vehicle.upgrade.mounted_weapon"
+      ],
+      "identifier": "dccitm0000000016"
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm0000000017",
+    "name": "",
+    "type": "gear",
+    "img": "icons/svg/aura.svg",
+    "system": {
+      "slot": "accessory",
+      "quantity": 1,
+      "cooldown": {
+        "value": 1,
+        "unit": "floor"
+      },
+      "description": "",
+      "checkModifiers": [
+        {
+          "label": "Soften a Fail",
+          "kind": "degreeShift",
+          "value": 1,
+          "condition": {
+            "all": [
+              "check.vehicle"
+            ]
+          }
+        }
+      ],
+      "tags": [
+        "kind.gear",
+        "vehicle.upgrade.magic"
+      ],
+      "identifier": "dccitm0000000017"
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm0000000018",
+    "name": "",
+    "type": "gear",
+    "img": "icons/svg/dice-target.svg",
+    "system": {
+      "slot": "accessory",
+      "quantity": 1,
+      "cooldown": {
+        "value": 1,
+        "unit": "floor"
+      },
+      "description": "",
+      "checkModifiers": [
+        {
+          "label": "Reroll",
+          "kind": "reroll",
+          "condition": {
+            "all": [
+              "check.vehicle"
+            ]
+          }
+        }
+      ],
+      "tags": [
+        "kind.gear",
+        "vehicle.upgrade.style"
+      ],
+      "identifier": "dccitm0000000018"
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description"
+          ]
+        }
+      }
     }
   }
 ];

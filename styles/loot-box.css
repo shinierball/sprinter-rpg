@@ -1,0 +1,678 @@
+/* =======================================================
+   Loot Box Showcase (7.3e; templates/apps/loot-box-show/, src/apps/loot-box-show.mjs)
+   The tier colour arrives only as --cog-tier-color on the stage, the box, a rail chip and a summary box (the
+   cog-fg-dyn pattern). Step lengths at 1x match src/utils/loot/loot-box-timeline.mjs; --cog-lootbox-rate (1 or 2) divides
+   them. Six opening effects, one class each: cog-lootbox-fx-<fx> (a module that adds an fx ships its own rule).
+   Reduced motion (the OS preference or the lootBoxShow client setting) swaps every keyframe for a fade.
+   ======================================================= */
+.cog-lootbox-show-window {
+  --cog-tier-color: var(--cog-accent);
+  --cog-lootbox-rate: 1;
+}
+
+.cog-lootbox-show-window .window-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+.cog-lootbox-show-window [hidden] {
+  display: none;
+}
+
+.cog-lootbox-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 380px;
+  padding: 14px 16px 18px;
+  overflow: hidden;
+  color: var(--cog-text);
+  background:
+    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--cog-tier-color) 28%, transparent), transparent 62%),
+    var(--cog-window-bg);
+}
+
+.cog-lootbox-stage-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cog-lootbox-stage-name {
+  flex: 1;
+  font-size: 1.15em;
+  color: var(--cog-text-strong);
+}
+
+.cog-lootbox-stage-count {
+  color: var(--cog-text-muted);
+  font-size: 0.85em;
+}
+
+/* The box: a lid over a body, both in the tier colour; the burst layer sits behind them. */
+.cog-lootbox-box {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  margin: 18px 0 6px;
+  transform-origin: 50% 90%;
+}
+
+.cog-lootbox-body {
+  position: absolute;
+  inset: 26px 6px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--cog-tier-color);
+  border-radius: 6px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--cog-tier-color) 70%, transparent), color-mix(in srgb, var(--cog-tier-color) 30%, transparent));
+  color: var(--cog-text-strong);
+  font-size: 44px;
+}
+
+.cog-lootbox-body i {
+  filter: drop-shadow(0 0 6px var(--cog-tier-color));
+}
+
+.cog-lootbox-lid {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  height: 24px;
+  border: 3px solid var(--cog-tier-color);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--cog-tier-color) 85%, transparent);
+  transform-origin: 10% 100%;
+}
+
+.cog-lootbox-box.is-opened .cog-lootbox-lid {
+  opacity: 0;
+  transform: translate(-60%, -150%) rotate(-28deg);
+}
+
+.cog-lootbox-burst {
+  position: absolute;
+  inset: -60px;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cog-lootbox-box.is-opened .cog-lootbox-burst {
+  opacity: 0.35;
+  background: radial-gradient(circle, color-mix(in srgb, var(--cog-tier-color) 60%, transparent), transparent 65%);
+}
+
+/* Phases (full motion). Only the step's own element animates, so a re-render for the next step does not replay it. */
+.cog-lootbox-box.is-arrive {
+  animation: cog-lootbox-arrive calc(700ms / var(--cog-lootbox-rate)) cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+}
+
+.cog-lootbox-box.is-shake {
+  animation: cog-lootbox-shake calc(150ms / var(--cog-lootbox-rate)) ease-in-out infinite;
+}
+
+.cog-lootbox-box.is-burst .cog-lootbox-lid {
+  animation: cog-lootbox-lid-off calc(450ms / var(--cog-lootbox-rate)) ease-out both;
+}
+
+.cog-lootbox-box.is-burst .cog-lootbox-body {
+  animation: cog-lootbox-thump calc(450ms / var(--cog-lootbox-rate)) ease-out both;
+}
+
+@keyframes cog-lootbox-arrive {
+  from { opacity: 0; transform: translateX(-140%) scale(0.6) rotate(-12deg); }
+  to { opacity: 1; transform: none; }
+}
+
+/* The wobble grows with the tier level (--cog-shake-level: the tier's place in the tier order). */
+@keyframes cog-lootbox-shake {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(calc(-1deg * (3 + 1.5 * var(--cog-shake-level, 0)))) translateX(-2px); }
+  75% { transform: rotate(calc(1deg * (3 + 1.5 * var(--cog-shake-level, 0)))) translateX(2px); }
+}
+
+@keyframes cog-lootbox-lid-off {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translate(-60%, -150%) rotate(-28deg); }
+}
+
+@keyframes cog-lootbox-thump {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.12, 0.9); }
+  100% { transform: scale(1); }
+}
+
+/* The six opening effects: the burst layer during the burst step. */
+.cog-lootbox-box.is-burst .cog-lootbox-burst {
+  animation-duration: calc(800ms / var(--cog-lootbox-rate));
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+/* pop (Bronze): one ring that swells and fades. */
+.cog-lootbox-fx-pop.is-burst .cog-lootbox-burst {
+  animation-name: cog-lootbox-fx-pop;
+  background: radial-gradient(circle, transparent 38%, var(--cog-tier-color) 40%, transparent 46%);
+}
+
+@keyframes cog-lootbox-fx-pop {
+  from { opacity: 1; transform: scale(0.2); }
+  to { opacity: 0; transform: scale(1.4); }
+}
+
+/* shine (Silver): a bright band sweeps across. */
+.cog-lootbox-fx-shine.is-burst .cog-lootbox-burst {
+  animation-name: cog-lootbox-fx-shine;
+  border-radius: 0;
+  background: linear-gradient(110deg, transparent 35%, color-mix(in srgb, var(--cog-tier-color) 80%, transparent) 48%, var(--cog-sheen) 50%, color-mix(in srgb, var(--cog-tier-color) 80%, transparent) 52%, transparent 65%);
+  background-size: 250% 100%;
+}
+
+@keyframes cog-lootbox-fx-shine {
+  from { opacity: 1; background-position: 120% 0; }
+  to { opacity: 0.2; background-position: -60% 0; }
+}
+
+/* sparkle (Gold): scattered points that twinkle outwards. */
+.cog-lootbox-fx-sparkle.is-burst .cog-lootbox-burst {
+  animation-name: cog-lootbox-fx-sparkle;
+  background:
+    radial-gradient(circle at 20% 30%, var(--cog-tier-color) 0 3%, transparent 4%),
+    radial-gradient(circle at 78% 22%, var(--cog-sheen) 0 2%, transparent 3%),
+    radial-gradient(circle at 70% 75%, var(--cog-tier-color) 0 3%, transparent 4%),
+    radial-gradient(circle at 28% 80%, var(--cog-sheen) 0 2%, transparent 3%),
+    radial-gradient(circle at 50% 12%, var(--cog-tier-color) 0 2%, transparent 3%),
+    radial-gradient(circle at 90% 50%, var(--cog-tier-color) 0 2%, transparent 3%),
+    radial-gradient(circle at 10% 55%, var(--cog-sheen) 0 2%, transparent 3%);
+}
+
+@keyframes cog-lootbox-fx-sparkle {
+  0% { opacity: 0; transform: scale(0.4) rotate(0); }
+  30% { opacity: 1; }
+  60% { opacity: 0.5; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.3) rotate(25deg); }
+}
+
+/* beam (Platinum): a column of light rises out of the box. */
+.cog-lootbox-fx-beam.is-burst .cog-lootbox-burst {
+  animation-name: cog-lootbox-fx-beam;
+  inset: -220px 36px 40px;
+  border-radius: 40% 40% 0 0;
+  background: linear-gradient(to top, var(--cog-tier-color), color-mix(in srgb, var(--cog-tier-color) 40%, transparent) 60%, transparent);
+  transform-origin: 50% 100%;
+}
+
+@keyframes cog-lootbox-fx-beam {
+  0% { opacity: 0; transform: scaleY(0) scaleX(0.4); }
+  35% { opacity: 1; transform: scaleY(1) scaleX(1); }
+  100% { opacity: 0; transform: scaleY(1.1) scaleX(1.6); }
+}
+
+/* flare (Legendary): rays turn around the box. */
+.cog-lootbox-fx-flare.is-burst .cog-lootbox-burst {
+  animation-name: cog-lootbox-fx-flare;
+  background:
+    radial-gradient(circle, transparent 20%, var(--cog-window-bg) 70%),
+    repeating-conic-gradient(var(--cog-tier-color) 0deg 10deg, transparent 10deg 30deg);
+}
+
+@keyframes cog-lootbox-fx-flare {
+  from { opacity: 1; transform: rotate(0) scale(0.5); }
+  to { opacity: 0; transform: rotate(120deg) scale(1.3); }
+}
+
+/* nova (Celestial): a flash, then a wide ring and a glow. */
+.cog-lootbox-fx-nova.is-burst .cog-lootbox-burst {
+  animation-name: cog-lootbox-fx-nova;
+  inset: -140px;
+  background:
+    radial-gradient(circle, var(--cog-sheen) 0 8%, transparent 14%),
+    radial-gradient(circle, transparent 40%, var(--cog-tier-color) 43%, transparent 50%),
+    radial-gradient(circle, color-mix(in srgb, var(--cog-tier-color) 50%, transparent), transparent 70%);
+}
+
+@keyframes cog-lootbox-fx-nova {
+  0% { opacity: 1; transform: scale(0.1); }
+  20% { opacity: 1; transform: scale(0.5); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+.cog-lootbox-kept {
+  margin: 0;
+}
+
+/* Prizes: dealt one at a time; only the newest card animates. */
+.cog-lootbox-show-window .cog-lootbox-prize-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cog-lootbox-prize-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--cog-border);
+  border-left: 4px solid var(--cog-tier-color);
+  border-radius: 4px;
+  background: var(--cog-surface-alt);
+  color: var(--cog-text);
+}
+
+.cog-lootbox-prize-card.is-new {
+  animation: cog-lootbox-deal calc(450ms / var(--cog-lootbox-rate)) cubic-bezier(0.2, 0.8, 0.3, 1.3) both;
+}
+
+@keyframes cog-lootbox-deal {
+  from { opacity: 0; transform: translateY(-40px) scale(0.7) rotate(-6deg); }
+  to { opacity: 1; transform: none; }
+}
+
+.cog-lootbox-prize-img {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--cog-tier-color);
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+.cog-lootbox-prize-icon {
+  flex: 0 0 40px;
+  font-size: 28px;
+  text-align: center;
+  color: var(--cog-gold);
+}
+
+.cog-lootbox-prize-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cog-lootbox-prize-name strong,
+.cog-lootbox-gold-amount {
+  font-family: 'Oswald', sans-serif;
+  color: var(--cog-text-strong);
+}
+
+.cog-lootbox-prize-qty {
+  color: var(--cog-text-secondary);
+}
+
+.cog-lootbox-generated {
+  margin-left: 4px;
+  font-size: 0.75em;
+}
+
+.cog-lootbox-prize-label,
+.cog-lootbox-prize-summary {
+  font-size: 0.85em;
+  color: var(--cog-text-secondary);
+}
+
+.cog-lootbox-prize-lines {
+  margin: 4px 0 0;
+  padding-left: 14px;
+  font-size: 0.85em;
+}
+
+.cog-lootbox-prize-line.is-pending {
+  color: var(--cog-warning);
+  font-style: italic;
+}
+
+.cog-lootbox-open-sheet {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.85em;
+  color: var(--cog-accent);
+  cursor: pointer;
+}
+
+.cog-lootbox-captions {
+  width: 100%;
+  text-align: center;
+}
+
+.cog-lootbox-show-window .cog-lootbox-caption {
+  margin: 2px 0;
+  color: var(--cog-text-secondary);
+  list-style: none;
+}
+
+.cog-lootbox-show-window .cog-lootbox-caption.is-notice {
+  color: var(--cog-warning);
+}
+
+.cog-lootbox-caption.is-new {
+  animation: cog-lootbox-fade-in calc(400ms / var(--cog-lootbox-rate)) ease-out both;
+}
+
+@keyframes cog-lootbox-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cog-lootbox-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes cog-lootbox-glow {
+  0% { opacity: 0; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.35; }
+}
+
+/* The rail: every box of the show in order, the one on stage outlined. */
+.cog-lootbox-rail {
+  padding: 6px 12px;
+  border-top: 1px solid var(--cog-divider);
+  background: var(--cog-surface-muted);
+}
+
+.cog-lootbox-rail ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cog-lootbox-rail-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 2px solid var(--cog-tier-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cog-tier-color) 18%, transparent);
+  color: var(--cog-text);
+  font-family: 'Oswald', sans-serif;
+  opacity: 0.45;
+}
+
+.cog-lootbox-rail-box.is-done {
+  opacity: 0.7;
+}
+
+.cog-lootbox-rail-box.is-current {
+  opacity: 1;
+  background: color-mix(in srgb, var(--cog-tier-color) 40%, transparent);
+  box-shadow: 0 0 0 2px var(--cog-accent);
+}
+
+.cog-lootbox-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--cog-divider);
+}
+
+.cog-lootbox-controls button {
+  flex: 0 0 auto;
+  width: auto;
+  font-family: 'Oswald', sans-serif;
+}
+
+.cog-lootbox-controls button.active {
+  border-color: var(--cog-accent);
+  color: var(--cog-accent);
+}
+
+/* The summary: every prize, grouped by box. Boxes flow in a grid in opening order; a box with several prizes takes a whole row. */
+.cog-lootbox-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  column-gap: 8px;
+  align-content: start;
+  padding: 12px 16px;
+  max-height: 70vh;
+}
+
+.cog-lootbox-summary[hidden] {
+  display: none;
+}
+
+.cog-lootbox-summary > .cog-lootbox-summary-head,
+.cog-lootbox-summary > .cog-lootbox-gold-total,
+.cog-lootbox-summary > .cog-lootbox-summary-box.is-wide {
+  grid-column: 1 / -1;
+}
+
+.cog-lootbox-summary-box:not(.is-wide) .cog-lootbox-prize-cards {
+  grid-template-columns: 1fr;
+}
+
+.cog-lootbox-summary-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cog-lootbox-summary-head h2 {
+  flex: 1;
+  margin: 0 0 6px;
+  border-bottom: 2px solid var(--cog-accent);
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  color: var(--cog-text-strong);
+}
+
+.cog-lootbox-summary-box {
+  margin-bottom: 10px;
+}
+
+.cog-lootbox-summary-box h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  border: none;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.05em;
+}
+
+.cog-lootbox-show-window .cog-lootbox-gold-total {
+  margin: 6px 0 0;
+  font-family: 'Oswald', sans-serif;
+  color: var(--cog-gold);
+}
+
+/* Reduced motion, from the client setting (cog-lootbox-motion-reduced on the stage): no wobble, no flying lid or
+   bouncing cards; arrivals fade in, the lid fades out and the effect is a soft glow. */
+.cog-lootbox-motion-reduced .cog-lootbox-box.is-arrive,
+.cog-lootbox-motion-reduced .cog-lootbox-prize-card.is-new,
+.cog-lootbox-motion-reduced .cog-lootbox-caption.is-new {
+  animation: cog-lootbox-fade-in calc(300ms / var(--cog-lootbox-rate)) ease-out both;
+}
+
+.cog-lootbox-motion-reduced .cog-lootbox-box.is-shake,
+.cog-lootbox-motion-reduced .cog-lootbox-box.is-burst .cog-lootbox-body {
+  animation: none;
+}
+
+.cog-lootbox-motion-reduced .cog-lootbox-box.is-burst .cog-lootbox-lid {
+  animation: cog-lootbox-fade-out calc(300ms / var(--cog-lootbox-rate)) ease-out both;
+}
+
+.cog-lootbox-motion-reduced .cog-lootbox-box.is-opened .cog-lootbox-lid {
+  transform: none;
+}
+
+.cog-lootbox-motion-reduced .cog-lootbox-box.is-burst .cog-lootbox-burst {
+  inset: -60px;
+  border-radius: 50%;
+  transform: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--cog-tier-color) 60%, transparent), transparent 65%);
+  animation: cog-lootbox-glow calc(300ms / var(--cog-lootbox-rate)) ease-out both;
+}
+
+/* Reduced motion, from the OS preference: the same swap for every show. */
+@media (prefers-reduced-motion: reduce) {
+  .cog-lootbox-stage .cog-lootbox-box.is-arrive,
+  .cog-lootbox-stage .cog-lootbox-prize-card.is-new,
+  .cog-lootbox-stage .cog-lootbox-caption.is-new {
+    animation: cog-lootbox-fade-in calc(300ms / var(--cog-lootbox-rate)) ease-out both;
+  }
+
+  .cog-lootbox-stage .cog-lootbox-box.is-shake,
+  .cog-lootbox-stage .cog-lootbox-box.is-burst .cog-lootbox-body {
+    animation: none;
+  }
+
+  .cog-lootbox-stage .cog-lootbox-box.is-burst .cog-lootbox-lid {
+    animation: cog-lootbox-fade-out calc(300ms / var(--cog-lootbox-rate)) ease-out both;
+  }
+
+  .cog-lootbox-stage .cog-lootbox-box.is-opened .cog-lootbox-lid {
+    transform: none;
+  }
+
+  .cog-lootbox-stage .cog-lootbox-box.is-burst .cog-lootbox-burst {
+    inset: -60px;
+    border-radius: 50%;
+    transform: none;
+    background: radial-gradient(circle, color-mix(in srgb, var(--cog-tier-color) 60%, transparent), transparent 65%);
+    animation: cog-lootbox-glow calc(300ms / var(--cog-lootbox-rate)) ease-out both;
+  }
+}
+/* ===== end Loot Box Showcase ===== */
+
+/* 7.7e compendium badges: the source chip inside a compendium directory entry (chip look lives with 7.7d) */
+.cog-compendium-source-chip {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-left: auto;
+  margin-right: 4px;
+}
+
+/* 3.19b: at Step 5 the Next button reads End Round & Reset and the Clean Up summary is highlighted */
+.cog-step-current-banner.cog-step-cleanup {
+  border: 1px solid var(--cog-gold);
+  border-radius: 3px;
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-step-nav-btn.cog-end-round {
+  width: auto;
+  padding: 0 8px;
+  gap: 6px;
+  white-space: nowrap;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+}
+
+/* 7.17a: a player hid the crawler HUD (hotlist bar, actions, effects panel, both clocks) for this browser.
+   The overlays keep rendering, so collapse state and drag position survive. 7.17b zero zone darkens players the same way. */
+body.cog-hud-hidden .cog-hideable-hud,
+body.cog-zero-zone-dark .cog-hideable-hud {
+  display: none !important;
+}
+
+/* 7.17b: the GM-only ZERO ZONE pill on the floor clock; clicking it ends the zone. */
+.cog-hud-zero-zone-pill {
+  background: var(--cog-accent-fill);
+  border: 1px solid var(--cog-accent-strong-fill);
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 1px 6px;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* 7.16e authorship mark: the glyph inside the source chip, and the "Authorship…" dialog */
+.cog-authorship-glyph {
+  font-size: 9px;
+  margin-left: 1px;
+}
+
+.cog-authorship-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  font-family: 'Oswald', sans-serif;
+}
+
+.cog-authorship-hint {
+  margin: 0;
+  color: var(--cog-text-muted);
+}
+
+.cog-authorship-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 1px solid var(--cog-border, currentColor);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.cog-authorship-choice.is-checked {
+  border-color: var(--cog-accent-fill);
+}
+
+.cog-authorship-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cog-authorship-footer {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* Theme cleanup window */
+.cog-theme-cleanup-window .window-content { display: flex; flex-direction: column; gap: 6px; }
+.cog-theme-cleanup-headline { font-weight: 600; margin: 0 0 6px; }
+.cog-theme-cleanup-tabs { display: flex; gap: 6px; }
+.cog-theme-cleanup-list { flex: 1; overflow-y: auto; }
+.cog-theme-cleanup-section { margin: 8px 0 2px; }
+.cog-theme-cleanup-owner h4 { margin: 6px 0 2px; }
+.cog-theme-cleanup-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.cog-theme-cleanup-name { flex: 1; }
+.cog-theme-cleanup-type, .cog-theme-cleanup-owner-name, .cog-theme-cleanup-hint, .cog-theme-cleanup-empty { opacity: 0.8; }
+.cog-theme-cleanup-footer { display: flex; justify-content: flex-end; gap: 6px; }
+
+/* Gear that is not responding (offline): the row reads muted, like a suspended Buff. */
+.cog-gear-offline { opacity: 0.6; }
+
+/* 7.16f hiding AI-written content: a compendium entry the setting hides, the count line, and the creator's empty-list note */
+.cog-authorship-hidden {
+  display: none;
+}
+
+.cog-authorship-hidden-note,
+.cog-ai-hidden-note {
+  margin: 4px 8px;
+  color: var(--cog-text-muted);
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+}

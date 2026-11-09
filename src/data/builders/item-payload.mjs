@@ -2,7 +2,7 @@
  * src/data/builders/item-payload.mjs
  * The one normalising entry point for creation payloads.
  *
- * `buildPayload(type, spec)` (also exported as `buildItemPayload`, the same function) turns an authoring spec into a
+ * `buildPayload(type, spec)` turns an authoring spec into a
  * document creation payload `{ _id?, name, type, img, system, ... }`. It normalises, it does not compute: no prose
  * parsing, no grant inference. Types with a budget (race, class, mob, personal_space, crawler) keep their builders;
  * those register themselves with `registerPayloadDelegate` and their result continues through the same validation.
@@ -11,13 +11,20 @@
  * `console.warn`. Pure: no Foundry globals at import (the DataModel pass reads `CONFIG` only when it runs).
  */
 
-import { getTagDefinition, splitRoleTag } from '../tags.mjs';
-import { grantRowErrors, normalizeItemSystemData, RUNTIME_ONLY_SYSTEM_KEYS, GRANTED_EFFECT_TYPES } from '../../models/items/base-item-model.mjs';
+import { getTagDefinition } from '../tag-definitions.mjs';
+import { splitRoleTag } from '../tag-vocabulary.mjs';
+import { sanitizeLootBox, sanitizeRewardBoxes } from '../loot-box-rows.mjs';
+import { grantRowErrors, GRANTED_EFFECT_TYPES } from '../../models/items/grant-validation.mjs';
+import { normalizeItemSystemData, RUNTIME_ONLY_SYSTEM_KEYS } from '../../models/items/base-item-model.mjs';
+import { fillEnchantmentTemplateIds } from '../../utils/loot/outcome-defaults.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
+import { normalizeTransform } from '../../utils/character/transform-rules.mjs';
 import { isRedacted, placeholderName, placeholderBase } from '../../sourcery/redacted.mjs';
 import { buildRollTablePayload } from './rolltable-payload.mjs';
 import { buildJournalPayload } from './journal-payload.mjs';
+import { applyTokenDefaults, TOKEN_DEFAULTS } from '../token-defaults.mjs';
+import { readSourceStamp, stampSpec } from '../../utils/content-source.mjs';
 
 /** Item document types the builder knows. */
 export const PAYLOAD_ITEM_TYPES = Object.freeze([
@@ -94,11 +101,6 @@ const delegates = new Map();
  */
 export function registerPayloadDelegate(type, fn) {
   if (typeof type === 'string' && typeof fn === 'function') delegates.set(type, fn);
-}
-
-/** @returns {boolean} whether a budget builder is registered for `type` */
-export function hasPayloadDelegate(type) {
-  return delegates.has(type);
 }
 
 /** First entry of an array or comma-delimited string, trimmed (CONTRIBUTING §4). */
@@ -236,11 +238,16 @@ export function buildPayload(type, spec = {}, options = {}) {
         payload.system.occupantUuids = [];
       }
     } else {
-      payload = delegate(input);
+      payload = docType === 'crawler' ? delegate(input, options) : delegate(input);
     }
     payload = structuredClone(payload ?? {});
     payload.type = docType;
     if (input._id && !payload._id) payload._id = input._id;
+    // A budget builder's payload replaces the spec, so the spec's own embedded items would be lost: append them to the
+    // delegate's (a mob's slots, a space's none) and let step 8 normalise both lists the same way.
+    if (Array.isArray(input.items) && input.items.length) {
+      payload.items = [...(Array.isArray(payload.items) ? payload.items : []), ...structuredClone(input.items)];
+    }
     // Race and class: a canonical entry's `system` overlay wins over the budget builder's result (see mergeOverlay).
     if (OVERLAY_TYPES.has(docType) && isPlainObject(input.system)) {
       payload.system = mergeOverlay(isPlainObject(payload.system) ? payload.system : {}, structuredClone(input.system));
@@ -259,6 +266,11 @@ export function buildPayload(type, spec = {}, options = {}) {
   if (isRedacted(input) && !(typeof input.name === 'string' && input.name.trim())) {
     const base = DEFAULT_NAMES[weaponPseudo ? 'weapon' : nameKey] ?? DEFAULT_NAMES[docType] ?? `New ${docType.charAt(0).toUpperCase()}${docType.slice(1)}`;
     payload.name = placeholderName(placeholderBase(input, base, docType), payload._id ?? input._id);
+  }
+
+  // Actors carry the prototype token defaults, as `_preCreate` gives a hand-made one (a compendium import skips that fill).
+  if (isActor && options?.normalize !== false && !options?.nested) {
+    applyTokenDefaults(payload, input, globalThis.CONFIG?.COG?.tokenDefaults ?? TOKEN_DEFAULTS);
   }
 
   const system = isPlainObject(payload.system) ? payload.system : {};
@@ -282,6 +294,12 @@ export function buildPayload(type, spec = {}, options = {}) {
     if (!isActor && !isRedacted(input) && (typeof system.identifier !== 'string' || !system.identifier.trim())) {
       system.identifier = slugifyIdentifier(payload.name);
     }
+  }
+
+  // An enchantment template left without an id gets its label's slug, the id the sheet's Add button gives it (7.20n).
+  if (normalize && docType === 'loot') {
+    fillEnchantmentTemplateIds(system.blueprint?.enchantments);
+    if (Array.isArray(system.outcomes)) for (const row of system.outcomes) if (isPlainObject(row)) fillEnchantmentTemplateIds(row.enchantments);
   }
 
   // 5. Icon.
@@ -310,6 +328,16 @@ export function buildPayload(type, spec = {}, options = {}) {
     normalizeItemSystemData(docType, system);
     // Runtime-derived keys no schema persists stay out of the payload unless the spec itself named them.
     for (const key of RUNTIME_ONLY_SYSTEM_KEYS) if (!specKeys.has(key)) delete system[key];
+  }
+  // Loot box arrays (7.3a): tier input may be an array or a comma string; an unknown row kind is kept with a warning.
+  if (docType === 'loot' && system.box !== undefined) system.box = sanitizeLootBox(system.box, (path, message) => warn(`system.${path}`, message));
+  if (docType === 'achievement' && system.rewardBoxes !== undefined) system.rewardBoxes = sanitizeRewardBoxes(system.rewardBoxes, (path, message) => warn(`system.${path}`, message));
+  // An affliction must change the victim into something: at least one form or one added effect.
+  if (docType === 'debuff' && system.transform !== undefined && system.transform !== null) {
+    const block = normalizeTransform(system.transform);
+    if (!block || (block.forms.length === 0 && block.effects.length === 0)) {
+      warn('system.transform', 'an affliction changes into nothing: name at least one form or one added effect', 'spec');
+    }
   }
   if (Array.isArray(system.grants)) {
     system.grants.forEach((grant, i) => {
@@ -363,14 +391,11 @@ export function buildPayload(type, spec = {}, options = {}) {
   return payload;
 }
 
-/** Same function; the name reads better for item types. */
-export const buildItemPayload = buildPayload;
-
 /**
  * Compile a list of specs (each `{ type, ... }`) into payloads. `strict` turns any warning into a thrown Error naming
  * every problem (used by build:packs); otherwise warnings are returned in `options.warnings` or logged.
  * @param {object[]} specs
- * @param {{ strict?: boolean, warnings?: Array, delegate?: boolean, dataModel?: boolean, normalize?: boolean }} [options] see `buildPayload` for the last two
+ * @param {{ strict?: boolean, warnings?: Array, delegate?: boolean, dataModel?: boolean, normalize?: boolean, buildOptions?: (spec: object) => object }} [options] see `buildPayload` for the delegate, dataModel and normalize; `buildOptions` gives the extra options one spec is built with (a crawler's floor tables and Race and Class definitions)
  * @returns {object[]} payloads in order
  */
 export function compileSpecs(specs, options = {}) {
@@ -378,10 +403,13 @@ export function compileSpecs(specs, options = {}) {
   const out = [];
   for (const [i, spec] of (Array.isArray(specs) ? specs : []).entries()) {
     const own = [];
-    const built = buildPayload(spec?.type, spec, { warnings: own, delegate: options.delegate, dataModel: options.dataModel, normalize: options.normalize });
+    const built = buildPayload(spec?.type, spec, { warnings: own, delegate: options.delegate, dataModel: options.dataModel, normalize: options.normalize, ...(options.buildOptions?.(spec) ?? {}) });
     const label = `${spec?.name ?? `#${i}`}`;
     for (const w of own) collected.push({ ...w, path: `${label}: ${w.path}` });
-    out.push(built);
+    // The source stamp of the spec (7.7c) survives a builder that rebuilds `flags` (mobs, crawlers, spaces), on the
+    // document and on each embedded item that has none of its own.
+    const stamp = readSourceStamp(spec);
+    out.push(stamp ? stampSpec(built, stamp) : built);
   }
   if (options.strict && collected.length) {
     throw new Error(`Spec warnings:\n${collected.map(w => `  ${w.path}: ${w.message}`).join('\n')}`);
@@ -398,5 +426,5 @@ export function compileSpecs(specs, options = {}) {
  * @returns {object[]}
  */
 export function compilePackSpecs(entry, options = {}) {
-  return compileSpecs(entry?.specs, { ...options, delegate: entry?.delegate ?? options.delegate, dataModel: entry?.dataModel ?? options.dataModel, normalize: entry?.normalize ?? options.normalize });
+  return compileSpecs(entry?.specs, { ...options, delegate: entry?.delegate ?? options.delegate, dataModel: entry?.dataModel ?? options.dataModel, normalize: entry?.normalize ?? options.normalize, buildOptions: entry?.buildOptions ?? options.buildOptions });
 }

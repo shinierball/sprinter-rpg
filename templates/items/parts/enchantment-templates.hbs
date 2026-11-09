@@ -1,0 +1,15 @@
+{{!--
+  A list of enchantment templates with its Add control (3.15): a blueprint's, or an `enchant_item` outcome's.
+  Parameters: templates = views from buildTemplateViews, templatesPath = the document path of the list.
+--}}
+<div class="cog-enchantment-templates" data-templates-path="{{templatesPath}}">
+  <div class="cog-banner-header cog-modifier-header">
+    <span><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.CraftSheet.Template.ListTitle"}}</span>
+    <a class="cog-modifier-add" data-action="addEnchantmentTemplate" data-templates-path="{{templatesPath}}"><i class="fa-solid fa-plus"></i> {{localize "COG.CraftSheet.Template.Add"}}</a>
+  </div>
+  {{#each templates as |tpl|}}
+    {{> "systems/sprinter-rpg/templates/items/parts/enchantment-template.hbs" tpl=tpl}}
+  {{else}}
+    <div class="cog-modifier-hint">{{localize "COG.CraftSheet.Template.Empty"}}</div>
+  {{/each}}
+</div>

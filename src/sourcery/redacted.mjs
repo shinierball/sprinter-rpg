@@ -8,7 +8,7 @@
  * document is no longer redacted. Pure.
  */
 
-import { MOB_TIER_PREFIX } from '../utils/tag-mechanics.mjs';
+import { MOB_TIER_PREFIX } from '../utils/tag/tag-mechanics.mjs';
 
 /** Flag scope (the system id; kept literal so the builders can use it). */
 const SCOPE = 'sprinter-rpg';

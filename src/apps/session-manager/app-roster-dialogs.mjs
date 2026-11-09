@@ -2,8 +2,8 @@
  * Session manager UI: party roster and create-party dialogs.
  */
 
-import { dialogAnswer } from '../../utils/dialog-answer.mjs';
-import { COGSessionEngine } from './session-engine.mjs';
+import { dialogAnswer } from '../../utils/ui/dialog-answer.mjs';
+import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 
 export const sessionRosterDialogsMixin = {
   /**

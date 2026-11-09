@@ -5,7 +5,7 @@
  * `spec.confirmedRuleBreaks` moves it to `confirmed` and marks its log entries `ruleBreak: true`. The result
  * always reflects the spec as given, so confirming never changes a number, only whether it may be applied.
  */
-import { floorLabel } from '../../utils/floor-number.mjs';
+import { floorLabel } from '../../utils/floor/floor-number.mjs';
 import { getFloorArrival, remainingArrivals, runForStartFloor } from '../floor-arrivals.mjs';
 import { cleanInt, cleanText, createState } from './state.mjs';
 import { getStepHandler } from './steps/index.mjs';

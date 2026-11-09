@@ -3,7 +3,7 @@
     <ol class="cog-fsim-steps">
       {{#each steps}}
         <li>
-          <button type="button" class="cog-fsim-step {{status}}{{#if active}} active{{/if}}" data-action="goStep" data-step="{{id}}">
+          <button type="button" class="cog-fsim-step {{status}}{{#if active}} active{{/if}}{{#if stage}} stage{{/if}}{{#if nested}} nested{{/if}}" data-action="goStep" data-step="{{id}}">
             <span class="cog-fsim-step-mark">{{#if (eq status 'done')}}<i class="fa-solid fa-check"></i>{{else}}<i class="fa-regular fa-circle"></i>{{/if}}</span>
             <span class="cog-fsim-step-label">{{localize labelKey}}</span>
             {{#if breaks}}<span class="cog-fsim-badge break">{{localize 'COG.FloorSim.RuleBreakBadge'}}</span>{{/if}}
@@ -12,6 +12,5 @@
         </li>
       {{/each}}
     </ol>
-    {{#if followNote}}<p class="cog-fsim-note">{{localize 'COG.FloorSim.Rail.FollowNote'}}</p>{{/if}}
   {{/unless}}
 </nav>

@@ -6,13 +6,14 @@
  * `src/apps/`, so every stage can be unit-tested with plain objects.
  */
 
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
-import { droppedTickText } from '../../utils/ticked-subject.mjs';
-import { buildRollContext, actionTagsOf, roleTagsOf, parseRollContext, retargetContext, serializeRollContext } from '../../utils/roll-context.mjs';
-import { resolveTargetParts, resolveApplyRows, breakdownLines, multiplierOf } from '../../utils/per-target-damage.mjs';
-import { clickTargetsOf } from '../../utils/scalars.mjs';
-import { damageTypeToElement, normalizeElementTag } from '../../data/tags.mjs';
-import { amazingNames } from '../../utils/amazing-success.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
+import { workingGear } from '../../utils/effects/gear-suppression.mjs';
+import { droppedTickText } from '../../utils/roll/ticked-subject.mjs';
+import { buildRollContext, actionTagsOf, roleTagsOf, parseRollContext, retargetContext, serializeRollContext } from '../../utils/roll/roll-context.mjs';
+import { resolveTargetParts, resolveApplyRows, breakdownLines, multiplierOf } from '../../utils/damage/per-target-damage.mjs';
+import { clickTargetsOf } from '../../utils/roll/scalars.mjs';
+import { damageTypeToElement, normalizeElementTag } from '../../data/tag-vocabulary.mjs';
+import { amazingNames } from '../../utils/roll/amazing-success.mjs';
 
 /**
  * The DR that still counts against Armor-Piercing damage: the `drBonus` of equipped gear carrying the Anti-Piercing
@@ -22,8 +23,7 @@ import { amazingNames } from '../../utils/amazing-success.mjs';
  */
 export function antiPiercingGearDr(actor) {
   let total = 0;
-  for (const item of (actor?.items || [])) {
-    if (item.type !== 'gear' || !item.system?.equipped) continue;
+  for (const item of workingGear(actor, actor?.items, 'armor')) {
     if (hasRuleFlag(item, RULE_FLAGS.antiPiercing)) total += Number(item.system.drBonus) || 0;
   }
   return total;

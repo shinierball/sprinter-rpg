@@ -4,7 +4,7 @@ Feel free to use this as you will or fork it.  Happy to talk shop if you want to
 
 This repository is a copy of each release. Development happens in a private repository, and each release replaces the whole tree here, so pull requests are not merged. Issues are welcome.
 
-A pull request is still welcome as a suggestion: the owner reads it, and a change worth having is written again in the private repository, where it goes through the same checks as everything else. A pull request is public as soon as it is opened, so please do not paste text from a rulebook into one, even to explain a rule: cite the book and the page.
+A pull request is still welcome as a suggestion: I'll read it, and a change worth having is written again in the private repository, where it goes through the same checks as everything else. A pull request is public as soon as it is opened, so please do not paste text from a rulebook into one, even to explain a rule: cite the book and the page. Tests are required - but if you have a great idea in code I can write them for you.
 
 This repository holds the files the system runs from and a few guides for module authors. It has no tests, scripts or build, so some instructions below refer to things you will not find here.
 
@@ -18,8 +18,8 @@ Comments in the code cite these as `CONTRIBUTING rule N` and `CONTRIBUTING §N`.
 1. **This game's mechanics only.** Formulas and terms follow the rules this system implements. Nothing comes in from other RPGs.
 2. **Permissive adjudication.** The system works out and shows budgets, costs and limits, and never hard-blocks a player or GM. Past a limit, a short confirmation asks whether to go ahead as a Rule Break. If so, the action proceeds and records `ruleBreak: true`, and the GM rules on it.
 3. **Tests.** Every feature, schema change and fix has unit tests over real logic, and done means lint and the tests pass with 0 failures. The tests live in the private repository where the system is developed, not in this one.
-4. **Eat your own dog food.** Bundled content goes through the builders (`buildPayload(spec)`) and tag APIs that users have.
-5. **Reuse.** Use what Foundry or this code already provides before writing a new one: logic, data shapes, CSS and interfaces.
+4. **Eat your own dog food.** Bundled content goes through the builders (`buildPayload(spec)`) and tag APIs that users have access to.
+5. **Reuse.** Use what Foundry or this code already provides before reinventing the wheel: logic, data shapes, CSS and interfaces.
 
 ### Architecture
 
@@ -29,13 +29,13 @@ Comments in the code cite these as `CONTRIBUTING rule N` and `CONTRIBUTING §N`.
 4. **Sanitize what comes in.** Imported and user data may hold arrays or comma lists where a string belongs. Validate it, and fall back safely on a missing registry entry.
 5. **Keep forms intact.** `name="system.path"` is only for a primary input, and never twice in one form, since Foundry packs duplicates into arrays. Other controls use `data-action`. Precompute option lists in the sheet's context, and register new partials in `preloadTemplates` or the sheet's `PARTS`.
 6. **Theme.** Use the theme tokens in `styles/`, Oswald for headings, and clear state badges.
-7. **Example content.** A release that adds a tag, row kind, schema field or creator control ships examples that use it, as spec files under `src/content/specs/examples/`, compiled into the example compendiums when a release is built. An example mob, race, class or crawler must be possible to make in its creator.
+7. **Example content.** A release that adds a tag, row kind, schema field or creator control ships examples that use it, as spec files under `src/content/specs/examples/`, compiled into the example compendiums when a release is built. An example mob, race, class or crawler must be possible to make in its creator (see dogfood)
 
 ### Book content
 
 The books' flavour text, descriptions, and character and place names stay out of this repository; owners bring them in from their own PDFs through the Sourcery importer. Examples are original, not adapted from the books.
 
-Before a release is published, it is scanned against the book text, and the packaged zip is scanned for names the project must not carry.
+Before a release is published, it is scanned against the book text, and the packaged zip is scanned for names the project must not carry. Respect IP rights and the work of others.
 
 ### Document ids
 

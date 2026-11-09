@@ -2,6 +2,7 @@
         <div class="cog-field-group flex-2">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span class="cog-field-label">Name</span>
+            {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=sourceBadge text=true}}
             {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
           </div>
           <input class="cog-field-input" name="name" type="text" value="{{actor.name}}" placeholder="Pet Name" />

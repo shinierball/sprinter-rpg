@@ -1,0 +1,7 @@
+{{#each provenance.entries as |entry|}}
+  {{#if (eq entry.kind "source")}}
+    {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=entry.badge text=(not ../provenance.compact)}}
+  {{else}}
+  <span class="cog-provenance-chip cog-fg-dyn" data-provenance="{{entry.kind}}" data-tooltip="{{entry.tooltip}}" style="--cog-fg-dyn: {{entry.color}};"><i class="{{entry.icon}}"></i> {{entry.label}}</span>
+  {{/if}}
+{{/each}}

@@ -1,0 +1,61 @@
+{{!--
+  One enchantment template (3.15): what an enchantment adds before it is applied. Used by the loot blueprint part and by the
+  `enchant_item` outcome rows. Parameter: tpl = a view from buildTemplateViews (src/sheets/item/context-blueprint.mjs).
+  Scalar inputs are named under tpl.path and bound to the schema. The row editors are the item sheet's own (modifier-rows
+  and grant-rows); their controls sit inside [data-template-path], which sends addRow, deleteRow and the others to this
+  template's rows. Query editors, Add and Remove controls are action delegates without a `name`.
+--}}
+<div class="cog-modifier-block cog-enchantment-template" data-array="enchantmentTemplate">
+  <div class="cog-banner-header cog-modifier-header">
+    <span><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.CraftSheet.Template.Title" number=tpl.number}}</span>
+    <a class="cog-modifier-delete" data-action="removeEnchantmentTemplate" data-templates-path="{{tpl.templatesPath}}" data-index="{{tpl.index}}" data-tooltip="{{localize 'COG.CraftSheet.Template.Remove'}}"><i class="fa-solid fa-trash"></i></a>
+  </div>
+  <div class="cog-modifier-body">
+    <div class="cog-field-row">
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Template.Label"}}</span>
+        <input class="cog-field-input" type="text" name="{{tpl.labelName}}" value="{{tpl.label}}" />
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Template.Property"}}</span>
+        <input class="cog-field-input" type="text" name="{{tpl.propertyName}}" value="{{tpl.property}}" placeholder="{{localize 'COG.CraftSheet.Template.PropertyHint'}}" />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Template.Category"}}</span>
+        <select class="cog-field-input" name="{{tpl.categoryName}}">
+          {{#each tpl.categoryOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Template.BonusLevel"}}</span>
+        <input class="cog-field-input" type="number" min="0" step="1" name="{{tpl.bonusLevelName}}" value="{{tpl.bonusLevel}}" />
+      </div>
+    </div>
+
+    {{#if tpl.craft}}
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Template.Skills"}}</span>
+        {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=tpl.skills tagOptions=tpl.tagOptions}}
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.CraftSheet.Template.Tables"}}</span>
+        {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=tpl.tables tagOptions=tpl.tagOptions}}
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/craft-materials.hbs" materials=tpl.materials materialsPath=tpl.materialsPath}}
+    {{/if}}
+
+    <div data-template-path="{{tpl.path}}">
+      {{#each tpl.blocks as |block|}}
+        {{> "systems/sprinter-rpg/templates/items/parts/modifier-rows.hbs" block=block tagOptions=../tpl.tagOptions}}
+      {{/each}}
+      {{> "systems/sprinter-rpg/templates/items/parts/grant-rows.hbs" grants=tpl.grants}}
+      <div class="cog-modifier-addbar">
+        <span class="cog-field-label">{{localize "COG.Rows.AddRow"}}</span>
+        {{#each tpl.addBar as |b|}}
+          <a class="cog-modifier-add-chip" data-action="addRow" data-row-table="{{b.arrayKey}}"><i class="fa-solid {{b.icon}}"></i> {{localize b.labelKey}}</a>
+        {{/each}}
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/as-triggers.hbs" asTriggers=tpl.asTriggers}}
+    </div>
+  </div>
+</div>

@@ -8,15 +8,16 @@
  * - A field with no input in the rendered form is left out, so the update leaves it untouched.
  * - Players cannot write GM-only fields (the gold value of gear and loot).
  */
-import { RANK_BREAK_THRESHOLDS } from '../../data/tags.mjs';
+import { enchantmentTemplateId } from '../../utils/loot/outcome-defaults.mjs';
+import { RANK_BREAK_THRESHOLDS } from '../../data/tag-vocabulary.mjs';
 import { normalizeOutcome } from '../../models/items/base-item-model.mjs';
+import { isWeaponFlagShown } from '../../utils/gear/wield-mode.mjs';
 import { objectRowArrayKeys, toArray, toStringList } from './util.mjs';
 
 /** `system` paths holding string arrays that may be authored as comma-separated text. */
 const STRING_LIST_PATHS = [
   'associatedSkills', 'optionalEffects',
-  'healing.cleanseDebuffs', 'bonuses.buffs',
-  'area.grantedBuffs', 'area.inflictedDebuffs', 'area.pulseConditions', 'area.cleanseDebuffs'
+  'healing.cleanseDebuffs', 'bonuses.buffs'
 ];
 
 /**
@@ -40,6 +41,56 @@ function mergeRows(stored, submitted) {
       ? foundry.utils.mergeObject(foundry.utils.deepClone(prior), row, { inplace: false })
       : row;
   });
+}
+
+/**
+ * Submitted enchantment templates (a blueprint's, or an `enchant_item` outcome's) laid over the stored ones by index. A
+ * template's tag queries, Amazing Success triggers and any row key without an input are kept; its material lines and each
+ * `rows.<array>` are merged by index like any row table (the submitted count wins), so a key that was not submitted at all
+ * stays as stored.
+ */
+function mergeTemplates(stored, submitted) {
+  const base = toArray(stored);
+  return toArray(submitted).map((tpl, i) => {
+    const prior = foundry.utils.deepClone(base[i] ?? {});
+    if (!tpl || typeof tpl !== 'object') return prior;
+    const { materials, rows, ...scalars } = tpl;
+    const out = foundry.utils.mergeObject(prior, scalars, { inplace: false });
+    if (materials !== undefined) out.materials = mergeRows(prior.materials, materials);
+    if (rows && typeof rows === 'object') {
+      out.rows = { ...(prior.rows ?? {}) };
+      for (const key of Object.keys(rows)) out.rows[key] = mergeRows(prior.rows?.[key], rows[key]);
+    }
+    return out;
+  }).reduce((all, out, i) => {
+    // The id is the label's slug: a changed label resets it (unique among the other templates of this list).
+    const prior = base[i];
+    const relabelled = out && typeof out === 'object' && prior && typeof prior === 'object' && String(out.label ?? '') !== String(prior.label ?? '');
+    const others = () => [...all, ...base.slice(i + 1)].map((t) => t?.id);
+    all.push(relabelled ? { ...out, id: enchantmentTemplateId(out.label, others()) } : out);
+    return all;
+  }, []);
+}
+
+/** The blueprint part's submission: a blank Difficulty override is null, material lines and templates merge by index. */
+function mergeBlueprint(stored, submitted) {
+  const out = { ...submitted };
+  if (out.dc !== undefined) out.dc = blankToNull(out.dc);
+  if (out.materials !== undefined) out.materials = mergeRows(stored?.materials, out.materials);
+  if (out.enchantments !== undefined) out.enchantments = mergeTemplates(stored?.enchantments, out.enchantments);
+  return out;
+}
+
+/** An outcome's `enchantments` arrive as an index-keyed object (inputs named `system.outcomes.K.enchantments.N.…`): merge them with the stored list. */
+function mergeOutcomeTemplates(stored, submitted) {
+  const base = toArray(stored);
+  const rows = submitted && typeof submitted === 'object' ? Object.entries(submitted) : [];
+  for (const [key, row] of rows) {
+    if (row && typeof row === 'object' && row.enchantments && typeof row.enchantments === 'object' && !Array.isArray(row.enchantments)) {
+      row.enchantments = mergeTemplates(base[Number(key)]?.enchantments, row.enchantments);
+    }
+  }
+  return submitted;
 }
 
 /** A modifier row's blank `scaleBy.source` means no scaling: the whole `scaleBy` is stored as null. */
@@ -74,8 +125,30 @@ function mergeIndexedRows(stored, submitted) {
     if (row.rank !== undefined) merged.rank = Math.max(1, parseInt(row.rank, 10) || 1);
     if (row.identifier !== undefined) merged.identifier = String(row.identifier ?? '').trim() || prior.identifier;
     if (row.cooldown !== undefined) merged.cooldown = cleanTiming(row.cooldown);
+    // A stat row's Minimum (7.1g): blank means no minimum, anything else a whole number from 0 up
+    if (row.floor !== undefined) {
+      const floor = blankToNull(row.floor);
+      if (floor === null) delete merged.floor;
+      else merged.floor = Math.max(0, Math.trunc(floor));
+    }
     return merged;
   });
+}
+
+/**
+ * A debuff's Transformation section (7.1g): the form rows (`system.transform.forms.N.*`) laid over the stored rows by
+ * index with their text trimmed. The effects have no input (their pick list writes them), so they stay as stored. A
+ * debuff that is not a transformation has no section, so a submitted block is dropped rather than creating one.
+ */
+function cleanTransform(stored, submitted) {
+  if (!stored || typeof stored !== 'object' || !submitted || typeof submitted !== 'object') return undefined;
+  const out = { ...submitted };
+  if (out.forms !== undefined) {
+    out.forms = mergeRows(stored.forms, out.forms).map((row) => Object.fromEntries(
+      Object.entries(row ?? {}).map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])
+    ));
+  }
+  return out;
 }
 
 /** A blank or non-numeric value becomes null; anything else is the number. */
@@ -156,6 +229,16 @@ function cleanOutcomes(outcomes) {
 }
 
 /**
+ * The gear Weapon box on save. A flag never set (null) stays unset while the box still shows what the sheet drew, so a first
+ * submit changes nothing and a hands-slot gear stays a weapon by default; unticking (or ticking against the default) stores it.
+ */
+function settleWeaponFlag(item, sys) {
+  const stored = item.system ?? {};
+  if (sys.isWeapon === undefined || stored.isWeapon != null) return;
+  if (sys.isWeapon === isWeaponFlagShown(stored)) delete sys.isWeapon;
+}
+
+/**
  * Normalise an item sheet submission in place.
  * @param {COGItem} item the edited item (stored values fill gaps; never mutated)
  * @param {object} data expanded form data (`{ name, system: {...} }`), mutated and returned
@@ -166,21 +249,33 @@ export function processItemFormData(item, data, { isGM } = {}) {
   const sys = data.system;
   if (!sys || typeof sys !== 'object') return data;
 
+  if (item.type === 'gear') settleWeaponFlag(item, sys);
   if (!isGM) for (const field of GM_ONLY_FIELDS[item.type] ?? []) delete sys[field];
 
   for (const path of STRING_LIST_PATHS) {
     const value = getPath(sys, path);
     if (typeof value === 'string') setPath(sys, path, toStringList(value));
   }
+  if (sys.outcomes !== undefined) sys.outcomes = mergeOutcomeTemplates(item.system?.outcomes, sys.outcomes);
+  if (sys.blueprint && typeof sys.blueprint === 'object') sys.blueprint = mergeBlueprint(item.system?.blueprint, sys.blueprint);
   for (const path of objectRowArrayKeys(item)) {
     if (INDEXED_ROW_PATHS.includes(path) || sys[path] === undefined) continue;
     sys[path] = clearBlankScale(mergeRows(item.system?.[path], sys[path]));
   }
   if (sys.grants !== undefined) sys.grants = mergeIndexedRows(item.system?.grants, sys.grants);
+  if (sys.transform !== undefined) {
+    const transform = cleanTransform(item.system?.transform, sys.transform);
+    if (transform) sys.transform = transform; else delete sys.transform;
+  }
   // A blank number input means "unset" for a nullable number: an attack's hit difficulty then falls back to the mob's Evade.
   if (sys.hitDifficulty !== undefined) sys.hitDifficulty = blankToNull(sys.hitDifficulty);
   if (sys.cooldown && typeof sys.cooldown === 'object') sys.cooldown = cleanTiming(sys.cooldown);
   if (sys.durationConfig && typeof sys.durationConfig === 'object') sys.durationConfig = cleanTiming(sys.durationConfig);
+  // The Light section is always on the sheet, so its burn time posts on every save; an amount of 0 is an untimed light (null).
+  if (sys.light?.duration && typeof sys.light.duration === 'object') {
+    const burn = cleanTiming(sys.light.duration);
+    sys.light.duration = burn.value > 0 ? burn : null;
+  }
 
   if (sys.rankBreaks && typeof sys.rankBreaks === 'object') {
     for (const key of Object.keys(sys.rankBreaks)) {

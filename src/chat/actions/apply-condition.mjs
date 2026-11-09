@@ -1,7 +1,7 @@
 /**
  * "Apply Debuff" / "Apply Condition" chat button.
  */
-import { getTagDefinition } from '../../data/tags.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { resolveActorByUuid, findTokenByActorUuid, isSameActor } from '../../utils/actor-uuid.mjs';
 import { applyCardEffect, registerChatApplier, canWriteTarget } from '../chat-relay.mjs';
 import { tokensInCardArea } from './area-membership.mjs';

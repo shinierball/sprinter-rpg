@@ -34,9 +34,11 @@
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img class="cog-bg-icon-box" src="{{spell.img}}" style="width: 22px; height: 22px; border: 1px solid var(--cog-panel-border); border-radius: 3px; object-fit: contain;" />
                 <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="name" value="{{spell.name}}"{{#if spell.summaryTip}} data-tooltip="{{spell.summaryTip}}"{{/if}} style="font-weight: bold; flex: 1;" />
+                {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=spell.sourceBadge}}
                 {{#if spell.isGranted}}
                   <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;" title="Granted by equipped gear: {{spell.itemSources}}">[EQUIPPED GEAR]</span>
                 {{/if}}
+                {{#if spell.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{spell.offlineTip}}">[OFFLINE]</span>{{/if}}
                 {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=spell.cooldownBadge}}
                 <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;" title="Spell role: {{spell.roleLabel}}">{{upper spell.roleLabel}}</span>
               </div>

@@ -4,9 +4,9 @@
  * cleanse list. Every function takes the actor first and never uses `this`.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { tempBarBaseSlots } from '../../utils/temp-bars.mjs';
+import { tempBarBaseSlots } from '../../utils/damage/temp-bars.mjs';
 import { absorbElementOf } from './aura-effects.mjs';
-import { resolveAreaGeometry, areaReach } from '../../utils/area-geometry.mjs';
+import { resolveAreaGeometry, areaReach } from '../../utils/area/area-geometry.mjs';
 
 /**
  * The `ChatMessage.create` data posted when an active aura is cast again and so dismissed.

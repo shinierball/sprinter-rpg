@@ -8,8 +8,8 @@ import { catalogEntries } from './catalog-lookup.mjs';
 import { EXAMPLE_GRIND_COMPLICATION_TABLE } from './specs/examples/grind-complications.mjs';
 
 /** Display defaults for rows without an icon or colour. */
-export const DEFAULT_COMPLICATION_ICON = 'fa-solid fa-dice-d20';
-export const DEFAULT_COMPLICATION_COLOR = '#7f8c8d';
+const DEFAULT_COMPLICATION_ICON = 'fa-solid fa-dice-d20';
+const DEFAULT_COMPLICATION_COLOR = '#7f8c8d';
 
 /** First registered table; the example table when none is registered. */
 export function activeComplicationTable() {

@@ -5,7 +5,8 @@
  * complete with round-by-round action timelines, MVP awards, and participant summaries.
  */
 
-import { COGCombat, COG_ACTION_TYPES } from '../documents/combat.mjs';
+import { COGCombat } from '../documents/combat.mjs';
+import { COG_ACTION_TYPES } from '../documents/combat/action-ledger.mjs';
 import { COGExperienceTracker } from './xp-tracker.mjs';
 import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';

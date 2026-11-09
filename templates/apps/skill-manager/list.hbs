@@ -51,10 +51,10 @@
               <span style="font-size: 11px;">{{skill.checkTypeLabel}}</span>
             </td>
             <td style="text-align: center;">
-              {{#if skill.isCompendium}}
+              {{#if skill.sourceBadge}}
+                {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=skill.sourceBadge}}
+              {{else if skill.isCompendium}}
                 <span class="cog-sm-source-badge compendium" title="{{localize "COG.Content.SkillCompendiumBadge"}}">COMPENDIUM</span>
-              {{else}}
-                <span class="cog-sm-source-badge world" title="Custom World Item Skill">WORLD</span>
               {{/if}}
             </td>
             <td>

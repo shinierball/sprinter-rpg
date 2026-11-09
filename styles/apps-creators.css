@@ -1,0 +1,1354 @@
+/* =======================================================
+   IN-SHEET SKILLS GRINDING CONTROLS (PAGE 3)
+   ======================================================= */
+.cog-sheet-skill-grind-block {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.cog-sheet-alloc-btn {
+  background: var(--cog-magic-tint);
+  border: 1px solid var(--cog-gold);
+  color: var(--cog-gold);
+  border-radius: 2px;
+  font-size: 10px;
+  padding: 1px 4px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+}
+
+.cog-sheet-alloc-btn:hover {
+  background: var(--cog-gold-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-sheet-advance-btn {
+  background: linear-gradient(90deg, var(--cog-success-fill), color-mix(in srgb, var(--cog-success-fill), var(--cog-on-fill) 25%));
+  border: 1px solid var(--cog-success-fill);
+  color: var(--cog-on-fill);
+  border-radius: 2px;
+  font-size: 10px;
+  padding: 2px 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 2px color-mix(in srgb, var(--cog-success) 40%, transparent); }
+  50% { box-shadow: 0 0 8px color-mix(in srgb, var(--cog-success) 80%, transparent); }
+  100% { box-shadow: 0 0 2px color-mix(in srgb, var(--cog-success) 40%, transparent); }
+}
+
+/* ---------------- GOLD VALUE & DETERMINE VALUE ---------------- */
+.cog-gold-value {
+  color: var(--cog-gold);
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cog-gold-value-hidden {
+  color: var(--cog-text-muted);
+  font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.inventory-sort-select {
+  font-family: 'Roboto Condensed', sans-serif;
+  height: 22px;
+  line-height: 20px;
+}
+
+/* ---------------- ITEM & EQUIPMENT LIBRARY (COGItemManager) ---------------- */
+.cog-item-manager-window {
+  min-width: 650px;
+  min-height: 500px;
+}
+
+.cog-item-card-row {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.cog-item-card-row:hover {
+  background-color: var(--cog-surface-strong) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cog-ink) 40%, transparent);
+}
+
+.item-category-pill {
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+.item-category-pill:hover {
+  filter: brightness(1.2);
+}
+
+.item-category-pill.is-active {
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-accent) 70%, transparent);
+  font-weight: bold;
+}
+
+.cog-item-card-draggable {
+  cursor: grab;
+}
+
+.cog-item-card-draggable:active {
+  cursor: grabbing;
+}
+
+/* =========================================================================
+   CLASS CREATOR STUDIO (Option A: Terminal Ledger Accordion Studio)
+   ========================================================================= */
+
+.cog-class-creator-app .window-content {
+  padding: 0;
+  background: var(--cog-window-bg);
+  color: var(--cog-text);
+  font-family: 'Oswald', sans-serif;
+  overflow: hidden;
+}
+
+.cog-class-creator-studio {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  background: var(--cog-window-bg);
+  color: var(--cog-text);
+  overflow: hidden;
+}
+
+/* Header */
+.cog-studio-header {
+  padding: 10px 16px;
+  background: linear-gradient(180deg, var(--cog-surface-muted) 0%, var(--cog-window-bg) 100%);
+  border-bottom: 2px solid var(--cog-accent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cog-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cog-text-strong);
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cog-header-title i {
+  color: var(--cog-danger);
+}
+
+.cog-header-subtitle {
+  font-size: 11px;
+  color: var(--cog-text-muted);
+  font-family: 'Roboto Condensed', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.cog-header-preset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cog-preset-label {
+  font-size: 11px;
+  color: var(--cog-text-secondary);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cog-preset-select {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+}
+
+/* Studio Layout */
+.cog-studio-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  height: calc(100% - 58px);
+  overflow: hidden;
+}
+
+/* Left Column: Builder */
+.cog-studio-builder {
+  padding: 14px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--cog-window-bg);
+}
+
+.cog-builder-section {
+  background: var(--cog-surface);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--cog-ink) 25%, transparent);
+}
+
+.cog-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cog-text);
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--cog-panel-border);
+  padding-bottom: 5px;
+}
+
+.cog-section-title i {
+  color: var(--cog-accent);
+}
+
+.cog-section-badge {
+  font-size: 10px;
+  font-family: 'Roboto Condensed', sans-serif;
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-secondary);
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: auto;
+  font-weight: normal;
+}
+
+/* Forms & Inputs */
+.cog-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cog-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cog-form-group.cog-span-2 {
+  grid-column: span 2;
+}
+
+.cog-form-group label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--cog-text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.cog-label-hint {
+  font-size: 10px;
+  color: var(--cog-text-muted);
+  text-transform: none;
+}
+
+.cog-form-group input[type="text"],
+.cog-form-group textarea {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  border: 1px solid var(--cog-panel-border) !important;
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 13px;
+}
+
+.cog-form-group input[type="text"]:focus,
+.cog-form-group textarea:focus {
+  border-color: var(--cog-accent);
+  outline: none;
+  box-shadow: 0 0 5px color-mix(in srgb, var(--cog-accent) 40%, transparent);
+}
+
+/* Archetype Pills */
+.cog-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cog-type-pill {
+  height: auto;
+  min-height: 24px;
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  color: var(--cog-text-secondary);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Oswald', sans-serif;
+}
+
+.cog-type-pill:hover {
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-strong);
+}
+
+.cog-type-pill.selected {
+  background: var(--cog-accent-fill);
+  border-color: var(--cog-danger-fill);
+  color: var(--cog-on-fill);
+  font-weight: 600;
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--cog-accent) 40%, transparent);
+}
+
+/* Checkbox Labels */
+.cog-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--cog-text);
+  cursor: pointer;
+}
+
+.cog-checkbox-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+}
+
+/* Inside a .cog-form-group the generic field and label rules would turn the checkbox into a padded dark box
+   and the label into small uppercase text; keep a plain checkbox with its sentence label. */
+.cog-form-group label.cog-checkbox-label {
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--cog-text);
+}
+
+.cog-form-group .cog-checkbox-label input[type="checkbox"] {
+  flex: 0 0 auto;
+  padding: 0;
+  margin: 0;
+}
+
+/* Ability Score Grid */
+.cog-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cog-stats-grid.has-dr {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.cog-stat-box {
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 8px 4px;
+  min-width: 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cog-stat-box.cog-dr-box {
+  border-color: var(--cog-panel-border);
+  background: var(--cog-info-tint);
+}
+
+.cog-dr-box .cog-stat-header {
+  color: var(--cog-info);
+}
+
+.cog-stat-header {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--cog-gold);
+  letter-spacing: 0.5px;
+}
+
+.cog-stat-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.cog-stat-step-btn,
+.cog-dr-step-btn {
+  background: var(--cog-surface-muted);
+  border: 1px solid var(--cog-panel-border);
+  color: var(--cog-text-strong);
+  width: 22px;
+  height: 22px;
+  line-height: 20px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.cog-stat-step-btn:hover {
+  background: var(--cog-accent-fill);
+  border-color: var(--cog-danger-fill);
+}
+
+.cog-dr-step-btn:hover {
+  background: var(--cog-info-fill);
+  border-color: var(--cog-info-fill);
+}
+
+.cog-stat-val {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--cog-text-strong);
+  min-width: 24px;
+}
+
+.cog-stat-val.positive {
+  color: var(--cog-success);
+}
+
+.cog-stat-val.negative {
+  color: var(--cog-danger);
+}
+
+.cog-stat-cost-tag {
+  font-size: 10px;
+  color: var(--cog-text-secondary);
+  font-family: 'Roboto Condensed', sans-serif;
+}
+
+/* Adders & Lists */
+.cog-entry-adder-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cog-entry-adder-row input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  border: 1px solid var(--cog-panel-border) !important;
+  border-radius: 3px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.cog-entry-adder-row select {
+  flex: 0 0 auto;
+  width: auto;
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  border: 1px solid var(--cog-panel-border) !important;
+  border-radius: 3px;
+  padding: 5px 6px;
+  font-size: 12px;
+}
+
+.cog-entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+/* Inline editable creator rows: the adder row's controls, wrapped, with a cost and a Remove at the end. */
+.cog-pb-row {
+  flex-wrap: wrap;
+}
+
+.cog-pb-row .cog-entry-cost {
+  margin-left: auto;
+}
+
+.cog-entry-item {
+  display: flex;
+  align-items: center;
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.cog-entry-item.detriment {
+  border-left: 3px solid var(--cog-warning);
+}
+
+.cog-entry-name {
+  flex: 1;
+  color: var(--cog-text-strong);
+}
+
+.cog-entry-cost {
+  color: var(--cog-success);
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.cog-entry-cost.refund {
+  color: var(--cog-warning);
+}
+
+.cog-tag {
+  font-size: 9px;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.cog-tag.passive {
+  background: var(--cog-header-fill);
+  color: var(--cog-text);
+}
+
+.cog-btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--cog-text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.cog-btn-icon:hover {
+  color: var(--cog-danger);
+}
+
+/* Accordion Catalog */
+.cog-catalog-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cog-search-box {
+  display: flex;
+  align-items: center;
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  gap: 6px;
+}
+
+.cog-search-box i {
+  color: var(--cog-text-muted);
+}
+
+.cog-search-box input {
+  background: transparent;
+  border: none;
+  color: var(--cog-text-strong);
+  width: 100%;
+  font-size: 12px;
+}
+
+.cog-search-box input:focus {
+  outline: none;
+}
+
+.cog-filter-pills {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.cog-filter-pill {
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  color: var(--cog-text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.cog-filter-pill:hover,
+.cog-filter-pill.active {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border-color: var(--cog-danger-fill);
+}
+
+.cog-accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cog-accordion-tier {
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--cog-window-bg);
+}
+
+.cog-accordion-header {
+  width: 100%;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  padding: 7px 10px;
+  background: var(--cog-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.cog-accordion-header:hover {
+  background: var(--cog-surface-muted);
+}
+
+.cog-accordion-header:focus-visible {
+  outline: 2px solid var(--cog-accent);
+  outline-offset: -2px;
+}
+
+.cog-chevron {
+  width: 14px;
+  color: var(--cog-accent);
+  font-size: 11px;
+}
+
+.cog-tier-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cog-text-strong);
+}
+
+.cog-tier-cost-badge {
+  font-size: 10px;
+  background: var(--cog-success-fill);
+  color: var(--cog-on-fill);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-weight: bold;
+  margin-left: auto;
+}
+
+.cog-accordion-tier.detriments .cog-tier-cost-badge {
+  background: var(--cog-warning-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-tier-count {
+  font-size: 10px;
+  color: var(--cog-text-muted);
+}
+
+.cog-accordion-body {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--cog-window-bg);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.cog-subtier-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--cog-warning);
+  font-weight: bold;
+  padding: 4px 6px 2px 6px;
+  border-bottom: 1px solid var(--cog-panel-border);
+}
+
+.cog-perk-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cog-perk-card:hover {
+  background: var(--cog-surface);
+  border-color: var(--cog-panel-border);
+}
+
+.cog-perk-card.selected {
+  background: var(--cog-danger-tint);
+  border-color: var(--cog-accent);
+}
+
+.cog-perk-card.detriment.selected {
+  background: var(--cog-gold-tint);
+  border-color: var(--cog-warning);
+}
+
+.cog-perk-card input[type="checkbox"] {
+  margin-top: 2px;
+}
+
+.cog-perk-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cog-perk-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-perk-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cog-text-strong);
+}
+
+.cog-perk-category {
+  font-size: 9px;
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-secondary);
+  padding: 1px 4px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.cog-perk-cost {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--cog-success);
+  font-weight: bold;
+}
+
+.cog-perk-cost.refund {
+  color: var(--cog-warning);
+}
+
+.cog-perk-desc {
+  font-size: 10px;
+  color: var(--cog-text-muted);
+  font-family: 'Roboto Condensed', sans-serif;
+  line-height: 1.3;
+}
+
+/* Point-build parameter pickers (E7.7) */
+.cog-param-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 4px 10px 8px 34px;
+}
+
+.cog-param-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.cog-param-picker.missing select,
+.cog-param-picker.missing input {
+  border-color: var(--cog-accent);
+}
+
+.cog-param-warning {
+  color: var(--cog-warning);
+  font-size: 10px;
+}
+
+/* Alert Banner */
+.cog-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.cog-alert-banner.warning {
+  background: var(--cog-warning-tint);
+  border: 1px solid var(--cog-warning);
+  color: var(--cog-warning);
+}
+
+/* Right Column: Sticky Sidebar Receipt */
+.cog-studio-sidebar {
+  background: var(--cog-window-bg);
+  border-left: 1px solid var(--cog-panel-border);
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.cog-sticky-receipt {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cog-receipt-header-card {
+  background: var(--cog-surface);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cog-ink) 30%, transparent);
+}
+
+.cog-gauge-title {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--cog-text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.cog-gauge-numbers {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.cog-spent-num {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--cog-text-strong);
+  line-height: 1;
+}
+
+.cog-gauge-divider {
+  font-size: 20px;
+  color: var(--cog-text-muted);
+}
+
+.cog-budget-num {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--cog-text-secondary);
+}
+
+.cog-bp-label {
+  font-size: 12px;
+  color: var(--cog-danger);
+  font-weight: bold;
+  margin-left: 2px;
+}
+
+.cog-legality-badge {
+  padding: 5px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cog-legality-badge.legal {
+  background: var(--cog-success-tint);
+  border: 1px solid var(--cog-success);
+  color: var(--cog-success);
+}
+
+.cog-legality-badge.overbudget {
+  background: var(--cog-warning-tint);
+  border: 1px solid var(--cog-warning);
+  color: var(--cog-warning);
+}
+
+.cog-soft-hint {
+  font-size: 9px;
+  font-weight: normal;
+  color: var(--cog-text-secondary);
+  font-family: 'Roboto Condensed', sans-serif;
+  text-transform: none;
+}
+
+.cog-budget-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--cog-panel-border);
+}
+
+.cog-breakdown-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cog-b-lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--cog-text-muted);
+}
+
+.cog-b-val {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--cog-text-strong);
+}
+
+.cog-b-val.positive {
+  color: var(--cog-warning);
+}
+
+/* Receipt Items */
+.cog-receipt-items-card {
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.cog-items-title {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--cog-text-secondary);
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--cog-panel-border);
+  padding-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-receipt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.cog-receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.cog-receipt-row:nth-child(even) {
+  background: var(--cog-window-bg);
+}
+
+.cog-receipt-row.extra-point {
+  color: var(--cog-warning);
+}
+
+.cog-r-label {
+  color: var(--cog-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.cog-r-cost {
+  color: var(--cog-success);
+  font-weight: bold;
+  font-size: 10px;
+}
+
+.cog-r-cost.refund {
+  color: var(--cog-warning);
+}
+
+.cog-receipt-empty {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--cog-text-muted);
+  text-align: center;
+  padding: 10px 0;
+}
+
+/* Target Crawler Card */
+.cog-target-crawler-card {
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cog-target-crawler-card label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--cog-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cog-target-crawler-select {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+/* Action Buttons */
+.cog-receipt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cog-receipt-actions .cog-btn {
+  width: 100%;
+  padding: 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--cog-border-strong);
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.cog-save-class-btn {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-save-class-btn:hover {
+  background: var(--cog-danger-fill);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cog-accent) 40%, transparent);
+}
+
+.cog-apply-crawler-btn {
+  background: var(--cog-success-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-apply-crawler-btn:hover {
+  background: color-mix(in srgb, var(--cog-success-fill), var(--cog-ink) 15%);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cog-success) 40%, transparent);
+}
+
+.cog-export-json-btn,
+.cog-import-json-btn {
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-export-json-btn:hover,
+.cog-import-json-btn:hover {
+  background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%);
+}
+
+.cog-btn.cog-reset-btn {
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-secondary);
+  border: 1px solid var(--cog-panel-border);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: 'Oswald', sans-serif;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.cog-btn.cog-reset-btn:hover {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-add-skill-btn,
+.cog-add-spell-btn,
+.cog-add-statPools-btn,
+.cog-add-rankBonuses-btn,
+.cog-add-custom-benefit-btn,
+.cog-add-custom-detriment-btn {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-ink);
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cog-add-skill-btn:hover,
+.cog-add-spell-btn:hover,
+.cog-add-statPools-btn:hover,
+.cog-add-rankBonuses-btn:hover,
+.cog-add-custom-benefit-btn:hover,
+.cog-add-custom-detriment-btn:hover {
+  background: var(--cog-danger-fill);
+}
+
+/* Creator example text is a hint, not a warning: muted, not the accent red the sheets use */
+.cog-studio-builder input::placeholder,
+.cog-studio-builder textarea::placeholder {
+  color: var(--cog-text-muted);
+}
+
+/* Race creator custom benefit / detriment chips */
+.cog-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cog-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  border: 1px solid var(--cog-border);
+  border-radius: 3px;
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-strong);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+}
+
+.cog-tag-chip.custom-benefit {
+  border-color: var(--cog-success);
+}
+
+.cog-tag-chip.custom-detriment {
+  border-color: var(--cog-accent);
+}
+
+.cog-tag-chip .cog-tag-cost {
+  font-weight: 700;
+  color: var(--cog-accent);
+}
+
+.cog-tag-chip .cog-tag-remove {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: pointer;
+  color: var(--cog-accent);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ========================================================================= */
+/* RACE CREATOR STUDIO STYLES */
+/* ========================================================================= */
+
+.cog-race-creator-studio {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  background: var(--cog-window-bg);
+  color: var(--cog-text);
+  overflow: hidden;
+}
+
+.cog-save-race-btn {
+  background: var(--cog-magic-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-save-race-btn:hover {
+  background: color-mix(in srgb, var(--cog-magic-fill), var(--cog-ink) 15%);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cog-magic) 40%, transparent);
+}
+
+/* Heritage Selector */
+.cog-heritage-pill {
+  flex: 1 1 140px;
+  min-width: 0;
+  /* Foundry gives every button a fixed height; the long heritage labels wrap, so the pill grows to hold them. */
+  height: auto;
+  min-height: 24px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+  text-align: center;
+  background: var(--cog-window-bg);
+  color: var(--cog-text-secondary);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.cog-heritage-pill:hover {
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-strong);
+  border-color: var(--cog-panel-border);
+}
+
+.cog-heritage-pill.selected {
+  background: var(--cog-info-tint);
+  color: var(--cog-info);
+  border-color: var(--cog-info);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-info) 30%, transparent);
+}
+
+.cog-heritage-pill[data-heritage="Earth"].selected {
+  background: var(--cog-success-tint);
+  color: var(--cog-success);
+  border-color: var(--cog-success);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-success) 30%, transparent);
+}
+
+.cog-heritage-pill[data-heritage="Alien"].selected {
+  background: var(--cog-magic-tint);
+  color: var(--cog-magic);
+  border-color: var(--cog-magic);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-magic) 30%, transparent);
+}
+
+/* Size Selector Pills */
+.cog-size-pills-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.cog-size-pill {
+  height: auto;
+  min-height: 24px;
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cog-size-pill:hover {
+  background: var(--cog-surface-muted);
+  border-color: var(--cog-panel-border);
+}
+
+.cog-size-pill.selected {
+  background: var(--cog-gold-tint);
+  border-color: var(--cog-warning);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-warning) 30%, transparent);
+}
+
+.cog-size-pill-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--cog-text-strong);
+}
+
+.cog-size-pill-cost {
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 10px;
+  color: var(--cog-text-muted);
+}
+
+.cog-size-pill.selected .cog-size-pill-cost {
+  color: var(--cog-warning);
+  font-weight: bold;
+}
+
+/* Hands & Limbs Enforcement Styles */
+.cog-hands-warning-banner {
+  background: var(--cog-accent-fill);
+  border: 1px solid var(--cog-accent-strong-fill);
+  color: var(--cog-on-fill);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--cog-ink) 25%, transparent);
+}
+
+.cog-hands-warning-banner i {
+  color: var(--cog-gold);
+  font-size: 14px;
+}
+
+.cog-limbs-bar {
+  background: color-mix(in srgb, var(--cog-ink) 40%, transparent);
+  border-radius: 3px;
+}
+
+.is-exceeded-input {
+  border-color: var(--cog-accent);
+  color: var(--cog-danger);
+  font-weight: bold;
+}
+

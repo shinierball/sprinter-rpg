@@ -9,8 +9,8 @@
   </div>
   <span class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Content.BackgroundTablesHint"}}</span>
 
-  {{#if sourceryThemeInactive}}
-  <span class="cog-rule-hint"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.Content.SourceryThemeInactive"}}</span>
+  {{#if sourceryNotPrimary}}
+  <span class="cog-rule-hint"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.Content.SourceryNotPrimary"}}</span>
   {{/if}}
   {{#unless hasBackgroundTables}}
   <span class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Content.NoBackgroundTables"}}</span>

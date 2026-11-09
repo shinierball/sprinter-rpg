@@ -106,7 +106,7 @@ function evaluateFormula(formula) {
   return null;
 }
 
-export { isWeaponGear, calculateItemHandsRequired } from '../../utils/wielding.mjs';
+export { isWeaponGear } from '../../utils/gear/wielding.mjs';
 
 /**
  * Calculate required cumulative XP to reach the next level.

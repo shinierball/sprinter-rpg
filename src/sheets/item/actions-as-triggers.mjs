@@ -2,7 +2,7 @@
  * Amazing Success trigger editor actions (E6.9 B2, D8). The book allows one trigger per weapon; adding another is
  * a Rule Break confirm (never a block), stored with `ruleBreak: true`. Every handler runs with `this` = the item sheet.
  */
-import { asTriggerCount } from '../../utils/amazing-success.mjs';
+import { asTriggerCount } from '../../utils/roll/amazing-success.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { rowIndex, toArray } from './util.mjs';
 
@@ -13,7 +13,8 @@ export const AS_TRIGGER_ACTIONS = {
   async addAsTrigger() {
     if (!this.isEditable) return;
     const item = this.item;
-    const count = asTriggerCount(item);
+    // A template host (an enchantment template's rows) counts its own triggers; the item type check would read none.
+    const count = item.templatePath ? stored(item).length : asTriggerCount(item);
     let ruleBreak = false;
     if (count >= 1) {
       const res = await confirmRuleBreak({

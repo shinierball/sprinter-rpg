@@ -10,6 +10,7 @@
  * A frameless ApplicationV2 overlay: open it with `COGCrawlerClockHUD.get().render({ force: true })`.
  */
 
+import { HIDEABLE_HUD_CLASS } from '../utils/effects/hud-visibility.mjs';
 import { COGActor } from '../documents/actor.mjs';
 import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
@@ -20,7 +21,7 @@ export class COGCrawlerClockHUD extends COGToolApp {
 
   static DEFAULT_OPTIONS = {
     id: 'cog-crawler-clock-hud',
-    classes: ['cog-hud-overlay', 'cog-crawler-clock-hud'],
+    classes: ['cog-hud-overlay', HIDEABLE_HUD_CLASS, 'cog-crawler-clock-hud'],
     window: { frame: false, positioned: false, resizable: false, minimizable: false },
     actions: {
       toggleCollapsed: COGCrawlerClockHUD.#onToggleCollapsed,
@@ -139,4 +140,3 @@ export class COGCrawlerClockHUD extends COGToolApp {
   }
 }
 
-export { COGCrawlerClockHUD as COGCrawlerCountHUD };

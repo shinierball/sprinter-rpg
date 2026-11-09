@@ -1,0 +1,12 @@
+<div class="cog-crafting-footer cog-bg-surface">
+  {{#if hasBlueprint}}
+    <label class="cog-crafting-field" data-tooltip="{{#if batchable}}{{localize 'COG.CraftApp.QuantityBatch'}}{{else}}{{localize 'COG.CraftApp.QuantityEach'}}{{/if}}">
+      <span class="cog-field-label">{{localize "COG.CraftApp.Quantity"}}</span>
+      <input class="cog-field-input cog-crafting-quantity" type="number" min="1" step="1" value="{{quantity}}" data-change-action="setQuantity" id="{{rootId}}-quantity" />
+    </label>
+  {{/if}}
+  {{#if result}}
+    <span class="cog-crafting-result {{#if result.success}}cog-text-success{{else}}cog-text-secondary{{/if}}">{{result.summary}}{{#if result.ruleBreak}} <span class="cog-state-badge cog-badge-rule-break">{{localize "COG.CraftApp.RuleBreak"}}</span>{{/if}}</span>
+  {{/if}}
+  <button type="button" class="cog-crafting-btn cog-crafting-go" data-action="craft" {{#unless canCraft}}disabled{{/unless}}><i class="fa-solid fa-hammer"></i> {{localize "COG.CraftApp.Craft"}}</button>
+</div>

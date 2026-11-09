@@ -1,5 +1,6 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
+import { BUNDLED_SET_ID, withSourceStamp } from '../../utils/content-source.mjs';
 
 /** Background table lookup, rolling and RollTable creation (code). The table rows are content: registered by a provider (samples, a theme, the Sourcery import), none bundled. */
 
@@ -185,7 +186,7 @@ export async function ensureBackgroundTables() {
   for (const tableKey of tableKeys) {
     const tableDef = tables[tableKey] || getBackgroundTable(tableKey);
     if (!tableDef) continue;
-    const existing = game.tables.find(t => t.name === tableDef.name || t.flags?.[SYSTEM_ID]?.tableKey === tableKey);
+    const existing = game.tables.find(t => t.flags?.[SYSTEM_ID]?.tableKey === tableKey);
 
     if (existing) {
       // If table exists but has 0 results, populate them
@@ -202,7 +203,10 @@ export async function ensureBackgroundTables() {
     } else if (typeof RollTableClass.create === 'function') {
       try {
         const tableData = createBackgroundRollTableData(tableKey);
-        const newTable = await RollTableClass.create(tableData, { renderSheet: false });
+        // The table carries the stamp of the theme its definition came from; a theme-free ('all') definition is system-made.
+        const theme = contentRegistry.getBackgroundTableTheme(tableKey);
+        const stamped = theme ? withSourceStamp(tableData, { theme, set: BUNDLED_SET_ID }) : tableData;
+        const newTable = await RollTableClass.create(stamped, { renderSheet: false, cogSystemMade: !theme });
         if (newTable) createdOrFound.push(newTable);
       } catch (err) {
         console.warn(`Sprinter RPG | Could not create RollTable ${tableDef.name}:`, err);

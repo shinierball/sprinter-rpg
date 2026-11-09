@@ -21,10 +21,10 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, dispatchRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { maxOfDiceFormula } from '../../utils/dice-max.mjs';
-import { TIME_UNITS } from '../../utils/timing.mjs';
-import { durationSpec } from '../../utils/durations.mjs';
-import { hotRoundsOf } from '../../utils/hot-rounds.mjs';
+import { maxOfDiceFormula } from '../../utils/roll/dice-max.mjs';
+import { TIME_UNITS } from '../../utils/time/timing.mjs';
+import { durationSpec } from '../../utils/time/durations.mjs';
+import { hotRoundsOf } from '../../utils/time/hot-rounds.mjs';
 import { computeAuraTempBars, buildAuraEffectItems, buildAuraDebuffItem } from './aura-effects.mjs';
 
 export const AURA_GRANT_TEMP_BARS = 'auraGrantTempBars';

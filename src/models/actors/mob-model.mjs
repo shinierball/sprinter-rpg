@@ -1,10 +1,12 @@
 import { getCurrentFloor } from '../../documents/actor/actor-environment.mjs';
+import { resolveHpPerBar } from '../../utils/damage/hp-per-bar.mjs';
 import { BaseActorDataModel } from './base-actor-model.mjs';
-import { resolveStatSubstitution } from '../../utils/narrow-modifiers.mjs';
-import { buildRollContext } from '../../utils/roll-context.mjs';
+import { resolveStatSubstitution } from '../../utils/roll/narrow-modifiers.mjs';
+import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { getCOGStatModifier } from '../../documents/actor.mjs';
 import { bossTierFromTags, hbSlots, slotPercentages, statBudget, statSpent } from '../../data/mob-creation-rules.mjs';
-import { MOB_BOSS_TAG, MOB_UNIQUE_TAG } from '../../utils/tag-mechanics.mjs';
+import { MOB_UNIQUE_TAG } from '../../utils/tag/tag-mechanics.mjs';
+import { MOB_BOSS_TAG } from '../../data/tag-vocabulary.mjs';
 
 /**
  * TypeDataModel for Mob Actors in Sprinter RPG.
@@ -132,8 +134,7 @@ export class MobDataModel extends BaseActorDataModel {
     const hbSub = this.actor ? resolveStatSubstitution(this.actor, 'healthBar', 'con', buildRollContext({ actor: this.actor, phase: 'derived' })) : null;
     const conMod = hbSub?.substituted ? hbSub.mod : (this.abilities?.con?.mod ?? getCOGStatModifier(this.abilities?.con?.value ?? 10));
     const sourceHpPerBar = this._source?.attributes?.hp?.hpPerBar;
-    const explicitHpPerBar = Number(sourceHpPerBar !== undefined ? sourceHpPerBar : this.attributes.hp?.hpPerBar) || 0;
-    const hpPerBar = explicitHpPerBar > 0 ? explicitHpPerBar : (conMod > 0 ? conMod : 1);
+    const hpPerBar = resolveHpPerBar(sourceHpPerBar !== undefined ? sourceHpPerBar : this.attributes.hp?.hpPerBar, conMod);
 
     this.attributes.hp.derivedBars = derivedBars;
     this.attributes.hp.bars = bars;

@@ -1,9 +1,10 @@
 import { SYSTEM_ID } from '../../constants.mjs';
-import { getCurrentFloor } from '../../utils/current-floor.mjs';
+import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { openApplications } from '../../compat.mjs';
-import { parseFloorNumber, floorLabel } from '../../utils/floor-number.mjs';
+import { parseFloorNumber, floorLabel } from '../../utils/floor/floor-number.mjs';
+import { SECONDS_PER_HOUR } from '../../utils/time/timing.mjs';
 
 export const RELAY_ACTION_DECREMENT_FLOOR_TIMER = 'decrementFloorTimer';
 
@@ -51,12 +52,12 @@ registerRelayAction(RELAY_ACTION_DECREMENT_FLOOR_TIMER, {
 
 /** Seconds in `hours`, free of float noise (so 1/6 h is 600 s). */
 function hoursToSeconds(hours) {
-  return Math.round(hours * 3600 * 1000) / 1000;
+  return Math.round(hours * SECONDS_PER_HOUR * 1000) / 1000;
 }
 
 /** GM side of `advanceDungeonTime`: lower the floor timer, then move Foundry world time. Call inside the queue. */
 async function applyDungeonTime(seconds) {
-  const next = Math.max(0, Math.round((getFloorTimer() - seconds / 3600) * 1e6) / 1e6);
+  const next = Math.max(0, Math.round((getFloorTimer() - seconds / SECONDS_PER_HOUR) * 1e6) / 1e6);
   await setFloorTimer(next);
   const time = globalThis.game?.time;
   if (typeof time?.advance === 'function') await time.advance(seconds);
@@ -135,14 +136,14 @@ export async function advanceDungeonTime(seconds, { actorUuid } = {}) {
   const s = Number(seconds) || 0;
   if (s <= 0) return getFloorTimer();
   if (isNonGM()) {
-    const reply = await requestRelay(RELAY_ACTION_DECREMENT_FLOOR_TIMER, { hours: s / 3600, actorUuid });
+    const reply = await requestRelay(RELAY_ACTION_DECREMENT_FLOOR_TIMER, { hours: s / SECONDS_PER_HOUR, actorUuid });
     return reply.ok && Number.isFinite(reply.result) ? reply.result : getFloorTimer();
   }
   return enqueueFloorTimer(() => applyDungeonTime(s));
 }
 
 /**
- * Take hours off the floor clock: `advanceDungeonTime(hours * 3600)`, so world time moves with it.
+ * Take hours off the floor clock: `advanceDungeonTime(hours * SECONDS_PER_HOUR)`, so world time moves with it.
  * @param {number} hours
  * @param {{ actorUuid?: string }} [opts] the actor the time is spent for (required for players)
  * @returns {Promise<number|null>} the clock after the change (unchanged when refused), null without settings
@@ -208,60 +209,3 @@ export async function incrementCrawlerCount(amount = 1) {
   const nextVal = cur + inc;
   return setCrawlerCount(nextVal);
 }
-
-export const actorEnvironmentMixin = {
-  getCurrentFloor() {
-    return getCurrentFloor();
-  },
-  getFloorTimer() {
-    return getFloorTimer();
-  },
-  setFloorTimer(hours) {
-    return setFloorTimer(hours);
-  },
-  decrementFloorTimer(hours, opts) {
-    return decrementFloorTimer(hours, opts);
-  },
-  getCrawlerCount() {
-    return getCrawlerCount();
-  },
-  setCrawlerCount(count) {
-    return setCrawlerCount(count);
-  },
-  decrementCrawlerCount(amount) {
-    return decrementCrawlerCount(amount);
-  },
-  incrementCrawlerCount(amount) {
-    return incrementCrawlerCount(amount);
-  }
-};
-
-export const actorEnvironmentStaticMixin = {
-  getCurrentFloor() {
-    return getCurrentFloor();
-  },
-  setCurrentFloor(floor) {
-    return setCurrentFloor(floor);
-  },
-  getFloorTimer() {
-    return getFloorTimer();
-  },
-  setFloorTimer(hours) {
-    return setFloorTimer(hours);
-  },
-  decrementFloorTimer(hours, opts) {
-    return decrementFloorTimer(hours, opts);
-  },
-  getCrawlerCount() {
-    return getCrawlerCount();
-  },
-  setCrawlerCount(count) {
-    return setCrawlerCount(count);
-  },
-  decrementCrawlerCount(amount) {
-    return decrementCrawlerCount(amount);
-  },
-  incrementCrawlerCount(amount) {
-    return incrementCrawlerCount(amount);
-  }
-};

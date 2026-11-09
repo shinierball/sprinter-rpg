@@ -1,8 +1,6 @@
-import { SYSTEM_ID } from '../constants.mjs';
 /**
  * Sprinter RPG - Rank Damage Die & Upgrades Utility
- * Implements the Rank Damage Die scaling table,
- * upgrade parsing, and combat difficulty calculations.
+ * Implements the Rank Damage Die scaling table and the Rank damage dice a roll is granted.
  */
 
 /**
@@ -114,23 +112,3 @@ export function getEffectRankDice(effectData, attackRank, effectRank) {
   return out;
 }
 
-/**
- * Standard Evade difficulty formula:
- * Target Evade (Standard Difficulty) = 10 + Foe Dex Mod + Floor Number
- * @param {number} [foeDexMod=0]
- * @param {number|null} [floorNumber=null]
- * @returns {number}
- */
-export function getEvadeTargetDifficulty(foeDexMod = 0, floorNumber = null) {
-  let floor = floorNumber;
-  if (floor === null || floor === undefined) {
-    try {
-      const stored = globalThis.game?.settings?.get?.(SYSTEM_ID, 'currentFloor');
-      const parsed = parseInt(stored, 10);
-      floor = Number.isFinite(parsed) && parsed >= 1 ? parsed : 1;
-    } catch (_) {
-      floor = 1;
-    }
-  }
-  return 10 + (Number(foeDexMod) || 0) + (Number(floor) || 1);
-}

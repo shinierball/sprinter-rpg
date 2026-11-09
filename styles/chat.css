@@ -1,0 +1,206 @@
+/* ==========================================================================
+   Chat Damage Cards & Apply Damage Button
+   ========================================================================== */
+
+.cog-damage-card {
+  font-family: 'Oswald', sans-serif;
+  background: var(--cog-surface-alt);
+  border: 1.5px solid var(--cog-accent-strong);
+  border-radius: 5px;
+  padding: 8px 10px;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--cog-ink) 15%, transparent);
+}
+
+.cog-damage-card-header {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cog-accent-strong);
+  border-bottom: 1px solid var(--cog-divider);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.cog-damage-card-result {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cog-damage-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--cog-accent);
+  line-height: 1;
+}
+
+.cog-damage-formula {
+  font-size: 12px;
+  color: var(--cog-text);
+}
+
+.cog-typed-breakdown {
+  background: var(--cog-surface-alt);
+  border: 1px solid var(--cog-divider);
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin-bottom: 8px;
+}
+
+.cog-damage-part-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 4px;
+  font-size: 11px;
+  border-bottom: 1px dashed var(--cog-divider);
+}
+
+.cog-damage-part-row:last-child {
+  border-bottom: none;
+}
+
+.cog-mult-tag {
+  color: var(--cog-warning);
+  font-weight: bold;
+  font-size: 10px;
+}
+
+.cog-source-tag {
+  color: var(--cog-text);
+  font-size: 10px;
+  font-style: italic;
+}
+
+/* Per target box: the target rows a damage card applies per token */
+.cog-per-target-box {
+  background: var(--cog-surface-alt);
+  border: 1px dashed var(--cog-divider);
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.cog-per-target-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10px;
+  color: var(--cog-text);
+}
+
+.cog-per-target-rows {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+}
+
+.cog-per-target-label {
+  font-style: italic;
+  color: var(--cog-text);
+}
+
+.cog-per-target-crit {
+  color: var(--cog-warning);
+  font-weight: bold;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.cog-damage-effects {
+  font-size: 11px;
+  color: var(--cog-text);
+  margin-bottom: 6px;
+  border-left: 2px solid var(--cog-danger);
+  padding-left: 6px;
+}
+
+.cog-damage-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.cog-apply-damage-btn {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-accent-strong-fill);
+  border-radius: 3px;
+  padding: 5px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.15s ease;
+}
+
+.cog-apply-damage-btn:hover {
+  background: var(--cog-danger-fill);
+}
+
+.cog-damage-sub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cog-damage-sub-actions .cog-apply-damage-btn {
+  flex: 1 1 auto;
+  min-width: max-content;
+  white-space: normal;
+  line-height: 1.2;
+  font-size: 10px;
+  padding: 3px 5px;
+  background: var(--cog-header-fill);
+  border-color: var(--cog-panel-border);
+}
+
+.cog-damage-sub-actions .cog-apply-damage-btn:hover {
+  background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%);
+}
+
+.cog-combat-awards-btn:hover {
+  background: var(--cog-danger-fill) !important;
+  color: var(--cog-on-fill);
+}
+
+.roll-spell-dmg-from-card {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-accent-strong-fill);
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.roll-spell-dmg-from-card:hover {
+  background: var(--cog-danger-fill);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--cog-danger) 40%, transparent);
+}
+
+.cog-combat-awards-header-btn {
+  color: var(--cog-danger);
+}
+
+.cog-combat-awards-header-btn:hover {
+  color: var(--cog-gold);
+}
+

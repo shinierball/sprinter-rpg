@@ -10,16 +10,17 @@
  */
 
 import { findPointBuildEntry } from '../../content/point-build.mjs';
-import { ARCHETYPE_TO_TAG, getTagDefinition } from '../tags.mjs';
+import { getTagDefinition } from '../tag-definitions.mjs';
 import { DEFAULT_SIZE, sanitizeSizeId } from '../sizes.mjs';
-import { EARTH_ORIGIN_NOTE, getHeritage, sanitizeHeritageId } from '../rules/heritages.mjs';
+import { FORM_RACE_TAG, ARCHETYPE_TO_TAG } from '../tag-vocabulary.mjs';
+import { SILVER_EARTH_NOTE, getHeritage, sanitizeHeritageId } from '../rules/heritages.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
-import { validateGrantRow, validateStartingItem } from '../../models/items/base-item-model.mjs';
-import { normalizeBaseDamage } from '../../utils/base-damage.mjs';
-import { applyPerkRows, catalogRows, PERK_ROW_PATHS } from '../../utils/perk-rows.mjs';
+import { validateGrantRow, validateStartingItem } from '../../models/items/grant-validation.mjs';
+import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
+import { applyPerkRows, catalogRows, PERK_ROW_PATHS } from '../../utils/character/perk-rows.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
-import { normalizeTiming } from '../../utils/timing.mjs';
-import { unfilledParams } from '../../utils/point-build-params.mjs';
+import { normalizeTiming } from '../../utils/time/timing.mjs';
+import { unfilledParams } from '../../utils/character/point-build-params.mjs';
 import { COG_BENEFIT_TIERS, COG_DETRIMENT_TIERS } from '../rules/point-build-tiers.mjs';
 import { registerPayloadDelegate } from './item-payload.mjs';
 
@@ -44,7 +45,7 @@ const STAT_NAMES = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int
 const POOL_STATS = ['str', 'dex', 'con', 'int', 'cha'];
 
 /** The `stat` pool grant row a creator stat pool compiles to: the valid options only, and the label when it has one. */
-export function statPoolGrantRow(pool) {
+function statPoolGrantRow(pool) {
   const options = (Array.isArray(pool?.options) ? pool.options : []).filter(o => POOL_STATS.includes(o));
   const row = { kind: 'stat', mode: 'pool', value: Number(pool?.value), options };
   const label = String(pool?.label ?? '').trim();
@@ -53,7 +54,7 @@ export function statPoolGrantRow(pool) {
 }
 
 /** The `rank_bonus` grant row a creator rank bonus compiles to. `cost` is a ledger label and never reaches it. */
-export function rankBonusGrantRow(bonus) {
+function rankBonusGrantRow(bonus) {
   const row = { kind: 'rank_bonus', value: Number(bonus?.value) };
   if (bonus?.tag) row.tag = String(bonus.tag).trim();
   if (bonus?.query) row.query = bonus.query;
@@ -183,6 +184,7 @@ export function blankPointBuySpec(builderType = 'class', seed = {}) {
     prerequisites: seed.prerequisites || '',
     heritage: sanitizeHeritageId(seed.heritage),
     size: sanitizeSizeId(seed.size ?? DEFAULT_SIZE),
+    ...(builderType === 'race' ? { form: seed.form === true } : {}),
     stats: {
       str: Number(seed.stats?.str) || 0,
       dex: Number(seed.stats?.dex) || 0,
@@ -299,10 +301,10 @@ export function buildPointBuyPayload(spec = {}) {
   const descHtml = spec.description ? `<p>${spec.description}</p>` : '';
   const abilities = compileAbilitiesList(spec);
   const abilitiesHtml = abilities.length ? `<ul>${abilities.map(a => `<li>${a}</li>`).join('')}</ul>` : '';
-  // The Earth / Alien note: a race's heritage note, and the Earth class's Earth Origin Box note.
+  // The Earth / Alien note: a race's heritage note, and the Earth class's Silver Earth Box note.
   const heritageNote = builderType === 'race'
     ? (getHeritage(spec.heritage)?.note ?? '')
-    : (spec.isEarthClass === true ? EARTH_ORIGIN_NOTE : '');
+    : (spec.isEarthClass === true ? SILVER_EARTH_NOTE : '');
   const noteHtml = heritageNote && !descHtml.includes(heritageNote) ? `<p>${heritageNote}</p>` : '';
 
   const isRuleBreak = Boolean(spec.ruleBreak || spec.isRuleBreak);
@@ -373,7 +375,8 @@ export function buildPointBuyPayload(spec = {}) {
     ...(Array.isArray(spec.debuffs) ? spec.debuffs : []).map(d => grantedEffectEntry('debuff', d))
   ].filter(Boolean);
   const structuredFields = applyPerkRows({ grants, tags: [] }, perkRows); // appends to `grants` in place
-  const structuredTags = structuredFields.tags;
+  // A race ticked "Transformation form" carries the tag that keeps race pickers from offering it (7.1g)
+  const structuredTags = builderType === 'race' && spec.form === true ? [...structuredFields.tags, FORM_RACE_TAG] : structuredFields.tags;
   delete structuredFields.grants;
   delete structuredFields.tags;
 
@@ -405,8 +408,6 @@ export function buildPointBuyPayload(spec = {}) {
     }
   };
 }
-
-export const buildPointBuyItemPayload = buildPointBuyPayload;
 
 /**
  * Pure compiler function that builds a Race Item document creation payload from a spec.

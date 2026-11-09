@@ -1,10 +1,13 @@
 /** Spell-only context: rank-gated tags, damage preview, healing and disclosure flags. */
-import { COG_TAGS, RANK_BREAK_THRESHOLDS, getCustomTags, getTagDefinition } from '../../data/tags.mjs';
-import { FAVORED_TAG_PREFIX } from '../../utils/tag-mechanics.mjs';
-import { hasOnHitDebuff } from '../../utils/on-hit.mjs';
+import { COG_TAGS } from '../../data/tag-catalog.mjs';
+import { RANK_BREAK_THRESHOLDS } from '../../data/tag-vocabulary.mjs';
+import { getCustomTags, getTagDefinition } from '../../data/tag-definitions.mjs';
+import { FAVORED_TAG_PREFIX } from '../../utils/tag/tag-mechanics.mjs';
+import { hasOnHitDebuff } from '../../utils/attack/on-hit.mjs';
 import { buildOnHitContext } from './context-on-hit.mjs';
-import { normalizeBaseDamage, baseDamageDice } from '../../utils/base-damage.mjs';
+import { normalizeBaseDamage, baseDamageDice } from '../../utils/damage/base-damage.mjs';
 import { buildBaseDamageContext, buildHealingContext, buildRankBreakTagText, buildRankBreakViews } from './context-common.mjs';
+import { deliveryModes, pickOptions, RANK_DICE_SOURCES } from '../../utils/ui/field-options.mjs';
 
 /**
  * The Favored picker: the item's explicit `favored.*` tags as pills and the registered `favored.*` tags it does not
@@ -43,6 +46,8 @@ export function buildSpellContext(context, item) {
 
   buildBaseDamageContext(context, { ownStatLabel: 'Spell stat' });
   buildHealingContext(context);
+  context.deliveryOptions = pickOptions(deliveryModes(), sys.delivery);
+  context.rank15DiceSourceOptions = pickOptions(RANK_DICE_SOURCES, sys.rankBreaks?.rank15?.rankDiceSource || 'attack');
   context.hasAuraConfigured = Boolean(sys.area?.hasArea);
   context.hasArmorPiercingConfigured = Boolean(sys.ignoreDR);
   context.hasRankDamagePartsConfigured = sys.rankDamageParts?.length > 0;

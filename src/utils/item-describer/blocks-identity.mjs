@@ -4,9 +4,10 @@
  * `defineItemSummaryTemplates`. Nothing here reads names, descriptions or notes.
  */
 import { itemLine, t, defineItemSummaryTemplates, humanizeId } from './shared.mjs';
-import { isFloorRanked } from '../rank-source.mjs';
+import { isFloorRanked } from '../skill/rank-source.mjs';
 import { sanitizeSizeId, sizeText } from '../../data/sizes.mjs';
-import { ARCHETYPE_TO_TAG, getTagDefinition } from '../../data/tags.mjs';
+import { ARCHETYPE_TO_TAG } from '../../data/tag-vocabulary.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
 
 const K = 'COG.ItemSummary.Identity.';
 

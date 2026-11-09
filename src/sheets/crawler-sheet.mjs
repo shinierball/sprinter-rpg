@@ -24,17 +24,16 @@ import { prepareStory } from './crawler/context-story.mjs';
 import { coreActions, GM_ONLY_LIMB_FIELDS } from './crawler/actions-core.mjs';
 import { combatActions } from './crawler/actions-combat.mjs';
 import { itemActions } from './crawler/actions-items.mjs';
+import { transformationActions } from './crawler/actions-transformation.mjs';
 import { slotActions } from './crawler/actions-slots.mjs';
 import { grindActions } from './crawler/actions-grind.mjs';
 import { storyActions } from './crawler/actions-story.mjs';
 import { tagActions, addActorTag } from './crawler/actions-tags.mjs';
 import { achievementActions, applyAchievementFilter } from './crawler/actions-achievements.mjs';
 import { dropItem, dropActor } from './crawler/drop.mjs';
-import { completeItemTransfer } from './base/item-transfer.mjs';
-import { MOB_BOSS_TAG, MOB_TIER_PREFIX } from '../utils/tag-mechanics.mjs';
-
-export { prepareAttackDisplay } from './crawler/attack-display.mjs';
-export { isWeaponGear } from '../documents/actor.mjs';
+import { completeItemTransfer, refuseGmOnlyDrop } from './base/item-transfer.mjs';
+import { MOB_TIER_PREFIX } from '../utils/tag/tag-mechanics.mjs';
+import { MOB_BOSS_TAG } from '../data/tag-vocabulary.mjs';
 
 const PARTS_PATH = `${SYSTEM_PATH}/templates/actors/parts`;
 
@@ -84,6 +83,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
       ...coreActions,
       ...combatActions,
       ...itemActions,
+      ...transformationActions,
       ...slotActions,
       ...grindActions,
       ...storyActions,
@@ -113,16 +113,15 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
       templates: [
         `${PARTS_PATH}/identity-pet.hbs`,
         `${PARTS_PATH}/identity-mercenary.hbs`,
-        `${PARTS_PATH}/identity-vehicle.hbs`,
-        `${PARTS_PATH}/vehicle-role-select.hbs`,
-        `${PARTS_PATH}/hotlist.hbs`
+        `${PARTS_PATH}/hotlist.hbs`,
+        `${PARTS_PATH}/sex-select.hbs`
       ],
       scrollable: ['']
     },
     page4: { template: `${PARTS_PATH}/page4-inventory.hbs`, scrollable: [''] },
     page3: { template: `${PARTS_PATH}/page3-skills.hbs`, templates: [`${PARTS_PATH}/spells.hbs`], scrollable: [''] },
     conditions: { template: `${PARTS_PATH}/conditions.hbs`, scrollable: [''] },
-    story: { template: `${PARTS_PATH}/story-extras.hbs`, templates: [`${PARTS_PATH}/companions.hbs`, `${PARTS_PATH}/vehicle-role-select.hbs`], scrollable: [''] },
+    story: { template: `${PARTS_PATH}/story-extras.hbs`, templates: [`${PARTS_PATH}/companions.hbs`, `${PARTS_PATH}/vehicle-role-select.hbs`, `${SYSTEM_PATH}/templates/actors/vehicle/drive-controls.hbs`], scrollable: [''] },
     achievements: { template: `${PARTS_PATH}/achievements.hbs`, scrollable: [''] }
   };
 
@@ -230,7 +229,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
 
   /** @override */
   async _onDropItem(event, item) {
-    if (!this.actor.isOwner) return null;
+    if (!this.actor.isOwner || refuseGmOnlyDrop(item, this.actor)) return null;
     const result = await dropItem(this, event, item);
     // Race / class drops apply the item rather than embedding a copy, so only embedded results transfer.
     if (result && !['race', 'class'].includes(item.type)) await completeItemTransfer(item, this.actor);

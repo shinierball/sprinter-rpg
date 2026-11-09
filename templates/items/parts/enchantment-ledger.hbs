@@ -1,0 +1,47 @@
+{{!--
+  The Enchantments block of a gear or loot sheet (3.15): what the item has been enchanted with. The rows each entry wrote
+  sit in the item's own row editors, marked [ENCHANTMENT]; Remove takes the entry and those rows off.
+  Context: enchantmentLedger = { entries (each with a ruleBreakBadge built by ruleBreakBadgeHtml), count, hasEntries, hazard, notice, badge } (context-blueprint.mjs), owner.
+  No input here has a `name`: the ledger is written by applying and removing enchantments, not by the form.
+--}}
+<details class="cog-collapsible-block cog-enchantment-ledger" {{#if enchantmentLedger.hasEntries}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.CraftSheet.Ledger.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if enchantmentLedger.hasEntries}}active{{/if}}">{{enchantmentLedger.badge}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    {{#if enchantmentLedger.hazard}}
+      <div class="cog-enchantment-notice"><span class="cog-badge cog-badge-rule-break">{{enchantmentLedger.notice}}</span></div>
+    {{/if}}
+    {{#if enchantmentLedger.hasEntries}}
+      <table class="cog-table">
+        <thead>
+          <tr>
+            <th>{{localize "COG.CraftSheet.Ledger.Name"}}</th>
+            <th>{{localize "COG.CraftSheet.Ledger.Category"}}</th>
+            <th>{{localize "COG.CraftSheet.Ledger.BonusLevel"}}</th>
+            <th>{{localize "COG.CraftSheet.Ledger.MethodHeader"}}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each enchantmentLedger.entries as |entry|}}
+            <tr data-enchantment-id="{{entry.id}}">
+              <td>{{entry.label}} {{#if entry.ruleBreak}}{{{entry.ruleBreakBadge}}}{{/if}}</td>
+              <td>{{entry.categoryLabel}}</td>
+              <td>{{entry.bonusLevel}}</td>
+              <td>{{entry.methodLabel}}</td>
+              <td>
+                {{#if ../owner}}
+                  <a class="cog-text-accent" data-action="removeItemEnchantment" data-id="{{entry.id}}" data-tooltip="{{localize 'COG.CraftSheet.Ledger.RemoveHint'}}"><i class="fa-solid fa-trash"></i> {{localize "COG.CraftSheet.Ledger.Remove"}}</a>
+                {{/if}}
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="cog-text-secondary">{{localize "COG.CraftSheet.Ledger.Empty"}}</div>
+    {{/if}}
+  </div>
+</details>

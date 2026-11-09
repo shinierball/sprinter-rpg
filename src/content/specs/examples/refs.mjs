@@ -2,7 +2,7 @@
  * src/content/specs/examples/refs.mjs
  * Committed ids and identifiers of the 3.4 example documents, plus the
  * two tags the examples need registered (the module tag of section 3 row `tagrows:rule-rows` and the custom situation
- * of row `roll:custom-situation`). The examples content provider (src/content/examples-content-provider.mjs) registers
+ * of row `roll:custom-situation`). The shiny content provider (src/content/shiny-content-provider.mjs) registers
  * the tags; build:packs and the tests register them before compiling.
  *
  * Reference rule (section 4): an example never names another document. A field whose reader accepts a
@@ -110,10 +110,28 @@ export const EXAMPLE_LIVE_AUDIENCE_TAG = Object.freeze({
   description: 'A studio audience is watching. Some things go better in front of a crowd.'
 });
 
+/** The table attachment the Hot Glue Holster carries: a blueprint's `tables` query can require it, and its rows speed up crafts. */
+export const EXAMPLE_GLUE_HOLSTER_TAG = Object.freeze({
+  id: 'crafting.attachment.glue_holster',
+  label: 'Glue Holster',
+  namespace: 'crafting',
+  description: 'A table attachment: the glue gun is always within reach, so props take less time.'
+});
+
+/** The tag the Loot Boxes choice example queries: gear that is a souvenir of the show. */
+export const EXAMPLE_SOUVENIR_TAG = Object.freeze({
+  id: 'prize.souvenir',
+  label: 'Souvenir',
+  namespace: 'prize',
+  description: 'Merchandise from the show. It is a keepsake first and equipment second.'
+});
+
 /** Every tag the examples need registered, as fresh copies (registerTag stores what it is given). */
 export function exampleTagDefinitions() {
   return [
     { ...EXAMPLE_CUE_LIGHT_TAG, rows: structuredClone(EXAMPLE_CUE_LIGHT_TAG.rows), flags: [...EXAMPLE_CUE_LIGHT_TAG.flags] },
-    { ...EXAMPLE_LIVE_AUDIENCE_TAG }
+    { ...EXAMPLE_LIVE_AUDIENCE_TAG },
+    { ...EXAMPLE_GLUE_HOLSTER_TAG },
+    { ...EXAMPLE_SOUVENIR_TAG }
   ];
 }

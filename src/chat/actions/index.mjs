@@ -11,6 +11,7 @@ import { handleTriggerInterrupt, handleRetargetInterrupter } from './interrupts.
 import { handleApplyHealing, handleApplyMana, handleApplyHoT } from './restore.mjs';
 import { handleApplyBuff } from './apply-buff.mjs';
 import { handleApplyCondition } from './apply-condition.mjs';
+import { handleChangeVictim, handleRevertTransformation, handleRevealSecret, handleKeepSecret } from './transformation.mjs';
 import { handleCleanseDebuff, handleMendInjury, handleCureDebuff } from './cure.mjs';
 import { handleGrantSkillRank, handleGrantStat } from './grant-progression.mjs';
 import { handleDrawTable } from './draw-table.mjs';
@@ -25,8 +26,21 @@ import { handleUseAssist, handleApplyAssist, handleResolveCalledPlay } from './u
 import { handleCameraPickRow, handleCameraAward, handleCameraChoice, handleCameraWithheld } from './cameras.mjs';
 import { handleContestRoll, handleContestDrop, handleContestPropose } from './contest.mjs';
 import { handleTauntDeclared, handleResolveDeclared } from './declared-attacks.mjs';
+import { handleLootBoxWatch } from './loot-box-watch.mjs';
+import {
+  handleVehicleChoose, handleVehicleOffer, handleVehicleBoardAnyway, handleVehicleRamDamage, handleVehicleCollision,
+  handleVehicleExplode, handleVehicleExplodeDismiss
+} from './vehicle-check.mjs';
+import { handleHitVehicle, handleVehicleEvade } from './vehicle-combat.mjs';
 
 export const CHAT_ACTIONS = Object.freeze({
+  crawlerVehicleChoose: handleVehicleChoose,
+  crawlerVehicleOffer: handleVehicleOffer,
+  crawlerVehicleBoardAnyway: handleVehicleBoardAnyway,
+  crawlerVehicleRamDamage: handleVehicleRamDamage,
+  crawlerVehicleCollision: handleVehicleCollision,
+  crawlerVehicleExplode: handleVehicleExplode,
+  crawlerVehicleExplodeDismiss: handleVehicleExplodeDismiss,
   crawlerApplyDamage: handleApplyDamage,
   crawlerApplyReflect: handleApplyReflect,
   crawlerRollSpellAttack: handleRollSpellAttack,
@@ -43,6 +57,10 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerCleanseDebuff: handleCleanseDebuff,
   crawlerMendInjury: handleMendInjury,
   crawlerCureDebuff: handleCureDebuff,
+  crawlerChangeVictim: handleChangeVictim,
+  crawlerRevertTransformation: handleRevertTransformation,
+  crawlerRevealSecret: handleRevealSecret,
+  crawlerKeepSecret: handleKeepSecret,
   crawlerGrantSkillRank: handleGrantSkillRank,
   crawlerGrantStat: handleGrantStat,
   crawlerDrawTable: handleDrawTable,
@@ -64,5 +82,9 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerContestDrop: handleContestDrop,
   crawlerContestPropose: handleContestPropose,
   crawlerTauntDeclared: handleTauntDeclared,
-  crawlerResolveDeclared: handleResolveDeclared
+  crawlerResolveDeclared: handleResolveDeclared,
+  crawlerHitVehicle: handleHitVehicle,
+  crawlerVehicleEvade: handleVehicleEvade,
+  // 7.3c: the spec names it without the `crawler` prefix (no core chat-log action has this name)
+  lootBoxWatch: handleLootBoxWatch
 });

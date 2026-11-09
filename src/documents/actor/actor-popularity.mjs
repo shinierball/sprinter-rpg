@@ -1,7 +1,7 @@
 /**
  * Popularity awards. The roll paths and the kill path call `awardPopularity`; it collects the
  * `popularityTriggers` rows of the actor's race, class, equipped gear and buffs (`evaluateRows`), matches
- * them against the event (`utils/popularity.mjs`), asks for a Rule Break confirmation on a row whose `oncePer` is used
+ * them against the event (`utils/floor/popularity.mjs`), asks for a Rule Break confirmation on a row whose `oncePer` is used
  * up, and writes `details.popularity` plus the once-per record. Nothing counts below floor 2.
  *
  * A client that cannot write the actor (a player applying damage for a crawler they do not own) asks the GM through
@@ -12,20 +12,20 @@
  */
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
-import { evaluateRows } from '../../utils/damage-modifiers.mjs';
+import { evaluateRows } from '../../utils/roll/damage-modifiers.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { extractD20Result } from '../../apps/session-manager/roll-outcomes.mjs';
+import { extractD20Result } from '../session/roll-outcomes.mjs';
 import {
   matchPopularityTriggers, popularityActive, popularityTokens, usedKeys, recordUsage
-} from '../../utils/popularity.mjs';
-import { POPULARITY_EVENTS } from '../../models/items/base-item-model.mjs';
-import { buildKillContext, parseRollContext, serializeRollContext } from '../../utils/roll-context.mjs';
+} from '../../utils/floor/popularity.mjs';
+import { POPULARITY_EVENTS } from '../../models/fields/modifier-fields.mjs';
+import { buildKillContext, parseRollContext, serializeRollContext } from '../../utils/roll/roll-context.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
-import { COGSessionEngine } from '../../apps/session-manager.mjs';
+import { COGSessionEngine } from '../session/session-engine.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
-import { findDamageUndoRecord, isApplicationId, markDamageUndoKillAwarded } from '../../apps/damage-undo.mjs';
+import { findDamageUndoRecord, isApplicationId, markDamageUndoKillAwarded } from '../../utils/damage/damage-undo.mjs';
 
 export const AWARD_POPULARITY = 'awardPopularity';
 const USAGE_FLAG = 'popularityUsage';
@@ -77,7 +77,7 @@ export function resolvePopularityAward(actor, event, context, tokens = currentTo
  * Runs on a client that can write the actor (the owner, or the GM through the relay).
  * @returns {Promise<{ total: number, awarded: Array<object> }>}
  */
-export function applyPopularityAward(actor, args) {
+function applyPopularityAward(actor, args) {
   // one queue per actor, and the current value is read inside it, so two awards both land (3.56e)
   return runKeyed(`popularity:${actor?.uuid ?? ''}`, () => writePopularityAward(actor, args));
 }
@@ -226,71 +226,71 @@ export async function addPopularity(actor, delta, reason) {
   COGSessionEngine.adjustPopularity({ actorId: actor.id, delta, reason }).catch(() => {});
 }
 
-export const actorPopularityMixin = {
-  /**
-   * Award popularity for an event the engine saw.
-   *
-   * @param {'crit'|'critFail'|'kill'} event
-   * @param {object} [ctx]
-   * @param {object} ctx.context the event's RollContext: the roll's own context for a crit or critFail, or for a kill the
-   *   per-target `popularity` context (`buildRollContext({ actor: killer, phase: 'popularity', tags, other: victim })`),
-   *   where the victim's tags are `subject.*`
-   * @param {object} [ctx.options] `interactive: false` skips the Rule Break prompt
-   * @returns {Promise<{ total: number, awarded: Array<object>, skipped?: string }>}
-   */
-  async awardPopularity(event, ctx = {}) {
-    if (!POPULARITY_EVENTS.includes(event)) return { total: 0, awarded: [], skipped: 'event' };
-    if (!popularityActive(getCurrentFloor())) return { total: 0, awarded: [], skipped: 'floor' };
-    const application = readApplication(ctx.application);
-    // a kill that names an application is judged on the context rebuilt from its undo record, as the GM does (3.56o)
-    const context = (event === 'kill' && application ? killContextOf(this, application) : null) ?? ctx.context;
-    if (!context?.tags) return { total: 0, awarded: [], skipped: 'no-context' };
-    const combatId = typeof ctx.combatId === 'string' ? ctx.combatId : '';
-    const tokens = currentTokens(this, combatId);
-    const { awards, exceeded } = resolvePopularityAward(this, event, context, tokens);
-    if (awards.length === 0 && exceeded.length === 0) return { total: 0, awarded: [], skipped: 'no-match' };
+/**
+ * Award popularity for an event the engine saw.
+ *
+ * @param {object} actor the actor awarded
+ * @param {'crit'|'critFail'|'kill'} event
+ * @param {object} [ctx]
+ * @param {object} ctx.context the event's RollContext: the roll's own context for a crit or critFail, or for a kill the
+ *   per-target `popularity` context (`buildRollContext({ actor: killer, phase: 'popularity', tags, other: victim })`),
+ *   where the victim's tags are `subject.*`
+ * @param {object} [ctx.options] `interactive: false` skips the Rule Break prompt
+ * @returns {Promise<{ total: number, awarded: Array<object>, skipped?: string }>}
+ */
+export async function awardPopularity(actor, event, ctx = {}) {
+  if (!POPULARITY_EVENTS.includes(event)) return { total: 0, awarded: [], skipped: 'event' };
+  if (!popularityActive(getCurrentFloor())) return { total: 0, awarded: [], skipped: 'floor' };
+  const application = readApplication(ctx.application);
+  // a kill that names an application is judged on the context rebuilt from its undo record, as the GM does (3.56o)
+  const context = (event === 'kill' && application ? killContextOf(actor, application) : null) ?? ctx.context;
+  if (!context?.tags) return { total: 0, awarded: [], skipped: 'no-context' };
+  const combatId = typeof ctx.combatId === 'string' ? ctx.combatId : '';
+  const tokens = currentTokens(actor, combatId);
+  const { awards, exceeded } = resolvePopularityAward(actor, event, context, tokens);
+  if (awards.length === 0 && exceeded.length === 0) return { total: 0, awarded: [], skipped: 'no-match' };
 
-    // A row past its once-per limit needs the player's Rule Break; with no UI (or a refusal) it is skipped
-    // A non-owner is never asked: a Rule Break on a crawler is its owner's or the GM's call (3.56e)
-    const canWrite = Boolean(globalThis.game?.user?.isGM) || Boolean(this.isOwner);
-    const confirmedKeys = [];
-    for (const entry of canWrite ? exceeded : []) {
-      const label = entry.row.label || entry.source?.name || 'This trigger';
-      const res = await confirmRuleBreak({
-        title: t('COG.Popularity.RuleBreakTitle'),
-        message: t('COG.Popularity.RuleBreakMessage', { label, scope: entry.scope }),
-        options: ctx.options ?? {}
-      });
-      if (res.confirmed) confirmedKeys.push(entry.key);
-    }
-    if (awards.length === 0 && confirmedKeys.length === 0) return { total: 0, awarded: [], skipped: exceeded.length ? 'once-per' : 'no-match' };
-
-    const payload = { event, context: serializeRollContext(context), confirmedKeys, combatId: combatId || tokenCombatId(tokens), ...(application ? { application } : {}) };
-    if (canWrite) {
-      const direct = () => applyPopularityAward(this, { ...payload, context, triggeredBy: globalThis.game?.user?.id ?? '' });
-      if (!application) return direct();
-      return runKeyed(`kill-award:${application.victimUuid}:${application.applicationId}`, async () => {
-        const result = await direct();
-        await markKillPaid(application).catch(() => {});
-        return result;
-      });
-    }
-    // a non-owner may only ask for a kill, and never for a Rule Break; the GM checks the application
-    if (event !== 'kill' || !application) return { total: 0, awarded: [], skipped: 'not-owner' };
-    payload.confirmedKeys = [];
-    const res = await requestRelay(AWARD_POPULARITY, { actorUuid: this.uuid, ...payload });
-    return res.ok ? (res.result ?? { total: 0, awarded: [] }) : { total: 0, awarded: [], skipped: res.reason ?? 'relay' };
-  },
-
-  /**
-   * Award popularity for a finished d20 roll: a natural 20 is a `crit`, a natural 1 a `critFail`.
-   * @param {object} roll the evaluated roll
-   * @param {object} [ctx] same as `awardPopularity` (`context` = the roll's RollContext)
-   */
-  async awardPopularityForRoll(roll, ctx = {}) {
-    const d20 = extractD20Result(roll);
-    const event = d20 === 20 ? 'crit' : d20 === 1 ? 'critFail' : '';
-    if (!event) return { total: 0, awarded: [], skipped: 'no-event' };
-    return this.awardPopularity(event, ctx);
+  // A row past its once-per limit needs the player's Rule Break; with no UI (or a refusal) it is skipped
+  // A non-owner is never asked: a Rule Break on a crawler is its owner's or the GM's call (3.56e)
+  const canWrite = Boolean(globalThis.game?.user?.isGM) || Boolean(actor.isOwner);
+  const confirmedKeys = [];
+  for (const entry of canWrite ? exceeded : []) {
+    const label = entry.row.label || entry.source?.name || 'This trigger';
+    const res = await confirmRuleBreak({
+      title: t('COG.Popularity.RuleBreakTitle'),
+      message: t('COG.Popularity.RuleBreakMessage', { label, scope: entry.scope }),
+      options: ctx.options ?? {}
+    });
+    if (res.confirmed) confirmedKeys.push(entry.key);
   }
-};
+  if (awards.length === 0 && confirmedKeys.length === 0) return { total: 0, awarded: [], skipped: exceeded.length ? 'once-per' : 'no-match' };
+
+  const payload = { event, context: serializeRollContext(context), confirmedKeys, combatId: combatId || tokenCombatId(tokens), ...(application ? { application } : {}) };
+  if (canWrite) {
+    const direct = () => applyPopularityAward(actor, { ...payload, context, triggeredBy: globalThis.game?.user?.id ?? '' });
+    if (!application) return direct();
+    return runKeyed(`kill-award:${application.victimUuid}:${application.applicationId}`, async () => {
+      const result = await direct();
+      await markKillPaid(application).catch(() => {});
+      return result;
+    });
+  }
+  // a non-owner may only ask for a kill, and never for a Rule Break; the GM checks the application
+  if (event !== 'kill' || !application) return { total: 0, awarded: [], skipped: 'not-owner' };
+  payload.confirmedKeys = [];
+  const res = await requestRelay(AWARD_POPULARITY, { actorUuid: actor.uuid, ...payload });
+  return res.ok ? (res.result ?? { total: 0, awarded: [] }) : { total: 0, awarded: [], skipped: res.reason ?? 'relay' };
+}
+
+/**
+ * Award popularity for a finished d20 roll: a natural 20 is a `crit`, a natural 1 a `critFail`.
+ * @param {object} actor
+ * @param {object} roll the evaluated roll
+ * @param {object} [ctx] same as `awardPopularity` (`context` = the roll's RollContext)
+ */
+export async function awardPopularityForRoll(actor, roll, ctx = {}) {
+  const d20 = extractD20Result(roll);
+  const event = d20 === 20 ? 'crit' : d20 === 1 ? 'critFail' : '';
+  if (!event) return { total: 0, awarded: [], skipped: 'no-event' };
+  return awardPopularity(actor, event, ctx);
+}

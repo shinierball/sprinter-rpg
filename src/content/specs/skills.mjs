@@ -5239,6 +5239,26 @@ export const COG_SKILLS = [
       "notes": "Used for crafting potions and poisons up to +5 bonus level.",
       "upgrades": "",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Crafts up to bonus 5",
+          "kind": "maxBonus",
+          "value": 5,
+          "minRank": 0
+        },
+        {
+          "label": "Crafts up to bonus 10",
+          "kind": "maxBonus",
+          "value": 10,
+          "minRank": 5
+        },
+        {
+          "label": "No extra batch time",
+          "kind": "batchTime",
+          "multiplier": 0,
+          "minRank": 10
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -6884,7 +6904,7 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "stat",
       "checkNote": "Stat Check",
-      "notes": "Acquired via Earth Hobby Potion.",
+      "notes": "Acquired via Random Origin Potion.",
       "upgrades": "Rank 5: Throw range Str × 20 feet.\nRank 10: Add 1 Rank damage die to thrown Attacks.\nRank 15: Throw range Str × 30 feet.",
       "checked": false,
       "damageModifiers": [],
@@ -7136,6 +7156,54 @@ export const COG_SKILLS = [
       "notes": "Piloting motorcycles. Disadvantage on Attacks while piloting; cannot use two-handed weapons.",
       "upgrades": "Rank 5: Chopper has +5ft Move.\nRank 10: Attacking while piloting no longer suffers Disadvantage.\nRank 15: Chopper has +5ft Move; Advantage on crazy stunts.",
       "checked": false,
+      "attackModifiers": [
+        {
+          "label": "No Disadvantage when attacking while piloting",
+          "kind": "waive",
+          "option": "driver",
+          "value": 0,
+          "scope": "owner",
+          "minRank": 10
+        }
+      ],
+      "checkModifiers": [
+        {
+          "label": "Advantage on crazy stunts",
+          "kind": "advantage",
+          "advantage": "advantage",
+          "value": 0,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "vehicle.check.performance"
+            ]
+          }
+        }
+      ],
+      "vehicleModifiers": [
+        {
+          "label": "Chopper Move +5 ft",
+          "kind": "moveAdd",
+          "value": 5,
+          "minRank": 5,
+          "condition": {
+            "all": [
+              "vehicle.kind.two_wheeled"
+            ]
+          }
+        },
+        {
+          "label": "Chopper Move +5 ft",
+          "kind": "moveAdd",
+          "value": 5,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "vehicle.kind.two_wheeled"
+            ]
+          }
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -7223,7 +7291,8 @@ export const COG_SKILLS = [
       "tags": [
         "kind.skill",
         "skillGroup.utility",
-        "stat.dex"
+        "stat.dex",
+        "vehicle.skill.chopper"
       ],
       "techniqueConfig": {
         "isArmorPiercing": false
@@ -8496,6 +8565,57 @@ export const COG_SKILLS = [
       "notes": "Operate four-wheeled vehicles in extreme circumstances.",
       "upgrades": "Rank 5: No Disadvantage when attacking while driving.\nRank 10: Vehicle has +5ft Move; Advantage to Evade vehicle attacks.\nRank 15: Vehicle has +5ft Move; Advantage on extreme stunts.",
       "checked": false,
+      "attackModifiers": [
+        {
+          "label": "No Disadvantage when attacking while driving",
+          "kind": "waive",
+          "option": "driver",
+          "value": 0,
+          "scope": "owner",
+          "minRank": 5
+        }
+      ],
+      "checkModifiers": [
+        {
+          "label": "Advantage to Evade attacks on your vehicle",
+          "kind": "advantage",
+          "advantage": "advantage",
+          "value": 0,
+          "scope": "owner",
+          "minRank": 10,
+          "condition": {
+            "all": [
+              "vehicle.check.evade"
+            ]
+          }
+        },
+        {
+          "label": "Advantage on crazy stunts",
+          "kind": "advantage",
+          "advantage": "advantage",
+          "value": 0,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "vehicle.check.performance"
+            ]
+          }
+        }
+      ],
+      "vehicleModifiers": [
+        {
+          "label": "Vehicle Move +5 ft",
+          "kind": "moveAdd",
+          "value": 5,
+          "minRank": 10
+        },
+        {
+          "label": "Vehicle Move +5 ft",
+          "kind": "moveAdd",
+          "value": 5,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -8583,7 +8703,8 @@ export const COG_SKILLS = [
       "tags": [
         "kind.skill",
         "skillGroup.utility",
-        "stat.dex"
+        "stat.dex",
+        "vehicle.skill.driving"
       ],
       "techniqueConfig": {
         "isArmorPiercing": false
@@ -8883,6 +9004,62 @@ export const COG_SKILLS = [
       "notes": "Design and build mechanisms with moving parts, fluids, or chemicals out of Misc Junk.",
       "upgrades": "Rank 5: Specialize in mundane item type with Advantage.\nRank 10: Craft specialty item with +1 bonus level enchantment.\nRank 15: Craft up to +2 bonus level enchantment; takes half time.",
       "checked": false,
+      "checkModifiers": [
+        {
+          "label": "Advantage on your specialty",
+          "kind": "advantage",
+          "advantage": "advantage",
+          "value": 0,
+          "minRank": 5,
+          "condition": {
+            "all": [
+              "check.crafting",
+              "situation.specialty"
+            ]
+          }
+        }
+      ],
+      "craftModifiers": [
+        {
+          "label": "Crafts up to bonus 0",
+          "kind": "maxBonus",
+          "value": 0,
+          "minRank": 0
+        },
+        {
+          "label": "Specialty: crafts up to bonus 1",
+          "kind": "maxBonus",
+          "value": 1,
+          "minRank": 10,
+          "condition": {
+            "all": [
+              "situation.specialty"
+            ]
+          }
+        },
+        {
+          "label": "Specialty: crafts up to bonus 2",
+          "kind": "maxBonus",
+          "value": 2,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "situation.specialty"
+            ]
+          }
+        },
+        {
+          "label": "Specialty: half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "situation.specialty"
+            ]
+          }
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -9255,6 +9432,14 @@ export const COG_SKILLS = [
       "notes": "Safely prime, disarm, or manage explosive devices.",
       "upgrades": "",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -9384,6 +9569,62 @@ export const COG_SKILLS = [
       "notes": "Craft generic mundane items with no moving parts wholly out of Misc Junk.",
       "upgrades": "Rank 5: Specialize in mundane item with Advantage.\nRank 10: Craft specialty item with +1 bonus level enchantment.\nRank 15: Craft with up to +2 bonus level enchantment; takes half time.",
       "checked": false,
+      "checkModifiers": [
+        {
+          "label": "Advantage on your specialty",
+          "kind": "advantage",
+          "advantage": "advantage",
+          "value": 0,
+          "minRank": 5,
+          "condition": {
+            "all": [
+              "check.crafting",
+              "situation.specialty"
+            ]
+          }
+        }
+      ],
+      "craftModifiers": [
+        {
+          "label": "Crafts up to bonus 0",
+          "kind": "maxBonus",
+          "value": 0,
+          "minRank": 0
+        },
+        {
+          "label": "Specialty: crafts up to bonus 1",
+          "kind": "maxBonus",
+          "value": 1,
+          "minRank": 10,
+          "condition": {
+            "all": [
+              "situation.specialty"
+            ]
+          }
+        },
+        {
+          "label": "Specialty: crafts up to bonus 2",
+          "kind": "maxBonus",
+          "value": 2,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "situation.specialty"
+            ]
+          }
+        },
+        {
+          "label": "Specialty: half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "situation.specialty"
+            ]
+          }
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -9879,6 +10120,14 @@ export const COG_SKILLS = [
       "notes": "Build high-performance vehicle engines with Engine Stand attachment to Engineering Table.",
       "upgrades": "Rank 5: Build custom vehicles with no bonus level limits.\nRank 10: +10ft Move per +1 Bonus Level; use as Repair for engines.\nRank 15: Cut engine/vehicle crafting time in half.",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -10002,6 +10251,14 @@ export const COG_SKILLS = [
       "notes": "Critical Fails occur on Natural 1–4.",
       "upgrades": "Rank 5: Critical Fail on Nat 3-; determine type and status.\nRank 10: Critical Fail on Nat 2-; craft explosives with a demolitions table.\nRank 15: Critical Fail on Nat 1 as usual; create raw materials.",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -10256,6 +10513,14 @@ export const COG_SKILLS = [
       "notes": "",
       "upgrades": "",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 5
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -10511,6 +10776,14 @@ export const COG_SKILLS = [
       "notes": "Safely handle and deploy incendiary devices.",
       "upgrades": "Rank 5: Determine type, status, and raw materials.\nRank 10: Craft incendiary devices with a demolitions table.\nRank 15: Add +5 Splash at no added Difficulty; takes half time.",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -12607,6 +12880,34 @@ export const COG_SKILLS = [
       "notes": "Spend 2 hours to repair simple broken or damaged items.",
       "upgrades": "Rank 5: Repair things with moving parts.\nRank 10: Repairs take 1 hour.\nRank 15: Rebuild destroyed items.",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Half repair time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 10,
+          "condition": {
+            "all": [],
+            "any": [
+              "item.broken",
+              "item.destroyed"
+            ],
+            "none": []
+          }
+        },
+        {
+          "label": "Rebuilds destroyed items",
+          "kind": "rebuild",
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "item.destroyed"
+            ],
+            "any": [],
+            "none": []
+          }
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -13234,6 +13535,33 @@ export const COG_SKILLS = [
       "notes": "Collect, identify, sew, and iron patches onto clothing.",
       "upgrades": "Rank 5: Sew and iron patches onto clothing.\nRank 10: Craft enchanted patches (1 per gear slot, no accessory slot cost).\nRank 15: Takes half time; bonus value of patch enchantments increased by +1.",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Not a crafting skill yet",
+          "kind": "maxBonus",
+          "value": 0,
+          "minRank": 0,
+          "maxRank": 9
+        },
+        {
+          "label": "Tables give no bonus",
+          "kind": "tableTier",
+          "multiplier": 0,
+          "minRank": 10
+        },
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15
+        },
+        {
+          "label": "+1 bonus value, free",
+          "kind": "bonusValue",
+          "value": 1,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -13607,6 +13935,32 @@ export const COG_SKILLS = [
       "notes": "Forge mundane metal items, weapons, and armor.",
       "upgrades": "Rank 5: Craft items up to +5 bonus level.\nRank 10: Craft items up to +10 bonus level.\nRank 15: Smithing takes half time.",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Crafts up to bonus 0",
+          "kind": "maxBonus",
+          "value": 0,
+          "minRank": 0
+        },
+        {
+          "label": "Crafts up to bonus 5",
+          "kind": "maxBonus",
+          "value": 5,
+          "minRank": 5
+        },
+        {
+          "label": "Crafts up to bonus 10",
+          "kind": "maxBonus",
+          "value": 10,
+          "minRank": 10
+        },
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -14361,6 +14715,32 @@ export const COG_SKILLS = [
       "notes": "Create mundane and magical tattoos.",
       "upgrades": "Rank 5: Craft tattoos with up to +5 bonus level.\nRank 10: Craft tattoos with up to +10 bonus level.\nRank 15: Crafting tattoos takes half time.",
       "checked": false,
+      "craftModifiers": [
+        {
+          "label": "Crafts up to bonus 0",
+          "kind": "maxBonus",
+          "value": 0,
+          "minRank": 0
+        },
+        {
+          "label": "Crafts up to bonus 5",
+          "kind": "maxBonus",
+          "value": 5,
+          "minRank": 5
+        },
+        {
+          "label": "Crafts up to bonus 10",
+          "kind": "maxBonus",
+          "value": 10,
+          "minRank": 10
+        },
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {
@@ -14868,6 +15248,32 @@ export const COG_SKILLS = [
       "notes": "Craft traps using a demolitions table with Trap Module.",
       "upgrades": "",
       "checked": false,
+      "checkModifiers": [
+        {
+          "label": "Advantage on non-explosive traps",
+          "kind": "advantage",
+          "advantage": "advantage",
+          "value": 0,
+          "minRank": 5,
+          "condition": {
+            "all": [
+              "check.crafting",
+              "item.trap"
+            ],
+            "none": [
+              "item.explosive"
+            ]
+          }
+        }
+      ],
+      "craftModifiers": [
+        {
+          "label": "Half crafting time",
+          "kind": "time",
+          "multiplier": 0.5,
+          "minRank": 15
+        }
+      ],
       "damageModifiers": [],
       "rankBreaks": {
         "rank5": {

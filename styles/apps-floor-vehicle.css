@@ -1,0 +1,985 @@
+/* ==========================================================================
+   Floor-start stages: templates/apps/floor-simulator/* (mounted by the Crawler Creator)
+   ========================================================================== */
+.cog-fsim-field { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--cog-text-secondary); }
+.cog-fsim-field > span { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; }
+.cog-fsim-panel select,
+.cog-fsim-panel input[type="text"],
+.cog-fsim-panel input[type="number"] { background: var(--cog-window-bg); color: var(--cog-text); border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 6px; font-size: 12px; }
+.cog-fsim-panel select:focus,
+.cog-fsim-panel input:focus { border-color: var(--cog-accent); outline: none; box-shadow: 0 0 0 1px var(--cog-accent); }
+
+.cog-fsim-rail { grid-area: rail; background: var(--cog-surface); border: 1.5px solid var(--cog-panel-border); border-radius: 4px; padding: 6px; overflow-y: auto; }
+.cog-fsim-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.cog-fsim-step { width: 100%; display: flex; align-items: center; gap: 6px; text-align: left; background: transparent; color: var(--cog-text-secondary); border: 1px solid transparent; border-radius: 3px; padding: 4px 6px; font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 0.4px; text-transform: uppercase; cursor: pointer; }
+.cog-fsim-step:hover { background: var(--cog-surface-muted); }
+.cog-fsim-step.active { background: var(--cog-accent-strong-fill); color: var(--cog-on-fill); border-color: var(--cog-accent-fill); }
+.cog-fsim-step.done .cog-fsim-step-mark { color: var(--cog-success); }
+.cog-fsim-step.break { border-color: var(--cog-accent); }
+.cog-fsim-step-label { flex: 1; }
+.cog-fsim-dice-count { font-size: 10px; background: var(--cog-surface-strong); color: var(--cog-text); border-radius: 8px; padding: 0 6px; }
+
+.cog-fsim-panel { grid-area: panel; background: var(--cog-surface); border: 1.5px solid var(--cog-panel-border); border-radius: 4px; padding: 10px 14px; overflow-y: auto; }
+.cog-fsim-panel h3 { margin: 0 0 6px; font-family: 'Oswald', sans-serif; font-size: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--cog-danger); border-bottom: 1px solid var(--cog-panel-border); }
+.cog-fsim-panel h4 { margin: 8px 0 4px; font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--cog-text); border: 0; }
+.cog-fsim-big { font-family: 'Oswald', sans-serif; font-size: 16px; margin: 6px 0; }
+.cog-fsim-big.over, .cog-fsim-counter.over { color: var(--cog-gold); }
+.cog-fsim-note, .cog-fsim-muted { font-size: 11px; color: var(--cog-text-secondary); }
+.cog-fsim-narrative { font-size: 12px; font-style: italic; color: var(--cog-text-secondary); margin: 2px 0 6px; }
+.cog-fsim-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0; }
+.cog-fsim-counter { font-family: 'Oswald', sans-serif; font-size: 13px; margin: 4px 0; }
+
+.cog-fsim-die { display: inline-flex; align-items: center; gap: 4px; }
+.cog-fsim-die-input { width: 52px; }
+.cog-fsim-die.open .cog-fsim-die-input { border-style: dashed; }
+.cog-fsim-rolled-mark { color: var(--cog-success); font-size: 11px; }
+.cog-fsim-roll, .cog-fsim-btn { font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; background: var(--cog-surface-muted); color: var(--cog-text); border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 2px 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; width: auto; line-height: 1.6; }
+.cog-fsim-roll:hover, .cog-fsim-btn:hover:not(:disabled) { background: var(--cog-surface-strong); border-color: var(--cog-accent); }
+.cog-fsim-btn { font-size: 12px; padding: 5px 12px; }
+.cog-fsim-btn.primary { background: var(--cog-accent-fill); border-color: var(--cog-accent-strong-fill); color: var(--cog-on-fill); font-weight: bold; }
+.cog-fsim-btn.primary:hover:not(:disabled) { background: var(--cog-danger-fill); }
+.cog-fsim-btn.primary.rule-break { border-style: dashed; }
+.cog-fsim-btn.danger:hover:not(:disabled) { background: var(--cog-accent-strong-fill); }
+.cog-fsim-btn:disabled { opacity: 0.45; cursor: default; }
+.cog-fsim-chiprow { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+.cog-fsim-link { background: transparent; color: var(--cog-text-secondary); border: 0; cursor: pointer; padding: 0 4px; width: auto; }
+.cog-fsim-link:hover { color: var(--cog-danger); }
+
+.cog-fsim-badge { display: inline-block; font-family: 'Oswald', sans-serif; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; padding: 0 6px; border: 1px solid var(--cog-panel-border); border-radius: 3px; color: var(--cog-text-secondary); }
+.cog-fsim-badge.break { border-color: var(--cog-gold); color: var(--cog-gold); font-weight: bold; }
+.cog-fsim-badge.cap { border-color: var(--cog-warning); color: var(--cog-warning); }
+.cog-fsim-badge.spell { border-color: var(--cog-magic); color: var(--cog-magic); }
+.cog-fsim-badge.tome { border-color: var(--cog-info); color: var(--cog-info); }
+.cog-fsim-badge.tier { border-color: var(--cog-accent-strong-fill); color: var(--cog-on-fill); background: var(--cog-accent-strong-fill); }
+.cog-fsim-marker { font-size: 11px; font-family: 'Oswald', sans-serif; text-transform: uppercase; color: var(--cog-text-secondary); }
+.cog-fsim-marker.rolled { color: var(--cog-success); }
+.cog-fsim-marker.chosen { color: var(--cog-info); }
+
+.cog-fsim-picklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.cog-fsim-pickrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 2px 6px; border-radius: 3px; }
+.cog-fsim-pickrow.checked { background: var(--cog-surface-muted); }
+.cog-fsim-pickrow label { min-width: 160px; font-size: 13px; }
+.cog-fsim-rank { font-size: 11px; color: var(--cog-text-secondary); }
+.cog-fsim-change { font-size: 12px; }
+
+.cog-fsim-modes { display: flex; gap: 4px; margin-bottom: 6px; }
+.cog-fsim-mode { font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 11px; background: var(--cog-surface-muted); color: var(--cog-text-secondary); border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 3px 10px; cursor: pointer; width: auto; }
+.cog-fsim-mode.active { background: var(--cog-accent-strong-fill); color: var(--cog-on-fill); border-color: var(--cog-accent-fill); }
+.cog-fsim-slot, .cog-fsim-card { border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 6px 10px; margin: 6px 0; background: var(--cog-window-bg); }
+.cog-fsim-card { border-left: 4px solid var(--cog-accent-strong); }
+.cog-fsim-card-head { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.cog-fsim-skill { border-top: 1px dashed var(--cog-panel-border); padding-top: 4px; margin-top: 4px; }
+.cog-fsim-skill-head { display: flex; align-items: center; gap: 6px; }
+.cog-fsim-optchip { font-size: 11px; background: var(--cog-surface-muted); color: var(--cog-text); border: 1px solid var(--cog-panel-border); border-radius: 10px; padding: 1px 10px; cursor: pointer; width: auto; line-height: 1.6; }
+.cog-fsim-optchip.active { background: var(--cog-accent-strong-fill); border-color: var(--cog-accent-fill); }
+.cog-fsim-spellpick { margin: 4px 0 4px 8px; padding-left: 8px; border-left: 2px solid var(--cog-panel-border); }
+
+.cog-fsim-table { width: 100%; border-collapse: collapse; }
+.cog-fsim-table th, .cog-fsim-table td { padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--cog-panel-border); font-size: 13px; }
+.cog-fsim-table.small th, .cog-fsim-table.small td { font-size: 12px; padding: 2px 4px; }
+.cog-fsim-table tr.changed td, .cog-fsim-table tr.changed th { color: var(--cog-on-fill); }
+.cog-fsim-stepper { white-space: nowrap; }
+.cog-fsim-stepper button { background: var(--cog-surface-muted); color: var(--cog-text); border: 1px solid var(--cog-panel-border); border-radius: 3px; width: 24px; padding: 0; cursor: pointer; line-height: 1.6; }
+.cog-fsim-stepper button:hover { border-color: var(--cog-accent); }
+.cog-fsim-stepper-value { display: inline-block; min-width: 32px; text-align: center; font-family: 'Oswald', sans-serif; }
+
+.cog-fsim-breaks { border: 1px dashed var(--cog-gold); border-radius: 4px; padding: 4px 8px; margin: 6px 0; font-size: 12px; }
+.cog-fsim-breaks ul, .cog-fsim-log ul, .cog-fsim-warnings ul, .cog-fsim-previewlist { margin: 2px 0 2px 16px; padding: 0; font-size: 12px; }
+.cog-fsim-log h4 { color: var(--cog-danger); }
+
+.cog-fsim-preview { grid-area: preview; background: var(--cog-surface); border: 1.5px solid var(--cog-panel-border); border-radius: 4px; padding: 8px 10px; overflow-y: auto; }
+.cog-fsim-preview h3 { margin: 0 0 6px; font-family: 'Oswald', sans-serif; font-size: 14px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--cog-danger); border-bottom: 1px solid var(--cog-panel-border); }
+.cog-fsim-preview h4 { margin: 8px 0 2px; font-family: 'Oswald', sans-serif; font-size: 12px; text-transform: uppercase; color: var(--cog-text-secondary); border: 0; }
+.cog-fsim-previewline { font-size: 12px; margin: 4px 0; }
+
+.cog-fsim-footer-right { display: flex; gap: 6px; align-items: center; }
+.cog-fsim-step.stage { color: var(--cog-text); font-weight: bold; }
+.cog-fsim-step.nested { padding-left: 18px; font-size: 11px; }
+/* ===== end floor-start stages ===== */
+
+/* Crawler Creator floor start: the stage rail and the sticky preview beside the Induction parts or the stage panel */
+.cog-crawler-creator-window .window-content > [hidden] { display: none; }
+.cog-crawler-creator-window.cog-creator-staged .window-content {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) 250px;
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 10px;
+}
+.cog-creator-staged .window-content > * { grid-column: 2; }
+.cog-creator-staged .window-content > [data-application-part="identity"],
+.cog-creator-staged .window-content > [data-application-part="footer"] { grid-column: 1 / -1; }
+.cog-creator-staged .window-content > [data-application-part="panel"] { grid-column: 2; grid-row: 2 / span 6; }
+.cog-creator-staged .window-content > [data-application-part="rail"],
+.cog-creator-staged .window-content > [data-application-part="preview"] { grid-row: 2 / span 6; position: sticky; top: 0; align-self: start; max-height: 70vh; }
+.cog-creator-staged .window-content > [data-application-part="rail"] { grid-column: 1; }
+.cog-creator-staged .window-content > [data-application-part="preview"] { grid-column: 3; }
+
+/* ===== Vehicle sheet (3.44g) ===== */
+.cog-vehicle-identity {
+  border-bottom: 2px solid var(--cog-magic);
+  padding: 12px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.cog-vehicle-identity .profile-img {
+  border: 2px solid var(--cog-magic);
+  border-radius: 4px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.cog-vehicle-identity-fields {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cog-vehicle-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cog-vehicle-dr {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cog-vehicle-dr-total {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.cog-vehicle-person {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+}
+
+.cog-vehicle-person-name {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.cog-vehicle-person-none {
+  font-style: italic;
+  font-size: 12px;
+}
+
+.cog-vehicle-person .cog-btn-xs,
+.cog-vehicle-override .cog-btn-xs,
+.cog-vehicle-result-row .cog-btn-xs,
+.cog-vehicle-drive-controls .cog-btn-xs {
+  padding: 2px 8px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.cog-vehicle-health {
+  padding: 0 12px;
+}
+
+.cog-vehicle-hp-max {
+  font-weight: bold;
+  min-width: 36px;
+}
+
+.cog-vehicle-hp-temp {
+  border: 1px solid var(--cog-border);
+  width: 44px;
+}
+
+.cog-vehicle-hp-pct {
+  margin-left: 6px;
+  font-weight: bold;
+}
+
+.cog-vehicle-drive-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.cog-vehicle-speed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-vehicle-speed-input {
+  width: 72px;
+}
+
+.cog-vehicle-available.is-over {
+  color: var(--cog-danger);
+}
+
+.cog-vehicle-result {
+  color: var(--cog-on-fill);
+  font-weight: bold;
+}
+
+.cog-vehicle-result.is-good {
+  background-color: var(--cog-success-fill);
+}
+
+.cog-vehicle-result.is-bad {
+  background-color: var(--cog-danger-fill);
+}
+
+.cog-vehicle-evade-buff {
+  font-weight: bold;
+  color: var(--cog-info);
+}
+
+.cog-vehicle-drive-buttons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-vehicle-headon {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+}
+
+.cog-vehicle-panel {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cog-vehicle-driver-line {
+  font-size: 11px;
+  text-transform: none;
+  font-weight: normal;
+}
+
+.cog-vehicle-readouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+
+.cog-vehicle-readout {
+  display: flex;
+  flex-direction: column;
+  min-width: 90px;
+}
+
+.cog-vehicle-override {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px dashed var(--cog-border-muted);
+  padding-top: 8px;
+}
+
+.cog-vehicle-override-select {
+  width: auto;
+}
+
+.cog-vehicle-fixed {
+  font-size: 11px;
+}
+
+.cog-vehicle-aboard-drive {
+  flex-basis: 100%;
+}
+
+.cog-vehicle-upgrade-heading {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  background-color: var(--cog-surface-muted);
+  color: var(--cog-text-strong);
+}
+
+.cog-vehicle-upgrade-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-vehicle-upgrade-name button {
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 14px;
+}
+
+.cog-vehicle-upgrade-title {
+  font-weight: bold;
+}
+
+.cog-vehicle-upgrade-effects {
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.cog-vehicle-upgrade-actions {
+  text-align: center;
+  white-space: nowrap;
+  width: 90px;
+}
+
+.cog-vehicle-upgrade-tools {
+  display: inline-flex;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: normal;
+  text-transform: none;
+}
+
+.cog-vehicle-upgrade-tools a,
+.cog-vehicle-upgrade-actions a {
+  cursor: pointer;
+}
+
+.cog-vehicle-empty {
+  padding: 14px;
+  font-style: italic;
+  text-align: center;
+}
+/* ===== end Vehicle sheet ===== */
+
+/* Item sheet area block: shape, size and splash inputs, and the resolved-geometry line */
+.cog-area-shape-row {
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 4px;
+}
+.cog-area-shape-row .cog-field-group {
+  flex: 1;
+}
+.cog-area-shape-row .cog-field-input {
+  font-size: 11px;
+}
+.cog-area-geometry-summary {
+  font-size: 10px;
+  color: var(--cog-text-muted, inherit);
+  margin-bottom: 6px;
+}
+
+/* Attack Options pop-up (3.22-2) */
+.cog-attack-options-form {
+  font-family: 'Oswald', sans-serif;
+  padding: 4px 0;
+}
+
+.cog-attack-options-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+}
+
+.cog-attack-options-title {
+  font-size: 14px;
+  color: var(--cog-text-strong);
+}
+
+.cog-attack-options-formula {
+  font-size: 11px;
+  color: var(--cog-text-muted);
+}
+
+.cog-attack-options-header .cog-rule-hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.cog-attack-options-section {
+  margin: 0 0 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--cog-divider);
+  border-radius: 4px;
+}
+
+.cog-attack-options-section > legend {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--cog-text-strong);
+}
+
+.cog-attack-option {
+  display: block;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--cog-divider);
+  border-left-width: 3px;
+  border-radius: 4px;
+  background: var(--cog-surface);
+  cursor: pointer;
+}
+
+.cog-attack-option:has(input:checked) {
+  border-left-color: var(--cog-accent);
+}
+
+.cog-attack-option-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-attack-option-name {
+  font-size: 13px;
+  color: var(--cog-accent);
+}
+
+.cog-attack-option-none .cog-attack-option-name {
+  color: var(--cog-success);
+}
+
+.cog-attack-option-desc,
+.cog-attack-option-formula {
+  display: block;
+  margin-left: 24px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--cog-text);
+}
+
+.cog-attack-variants {
+  margin: -2px 0 6px 24px;
+  padding-left: 8px;
+  border-left: 2px solid var(--cog-divider);
+}
+
+.cog-attack-variant,
+.cog-attack-mark-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cog-attack-options input[type="checkbox"] {
+  outline: 1px solid var(--cog-text-muted);
+  outline-offset: -1px;
+}
+
+/* A radio is round: the checkbox ring above is an outline, which follows the control's border-radius, so give the radio the round one. */
+.cog-attack-options input[type="radio"] {
+  outline: 1px solid var(--cog-text-muted);
+  outline-offset: -1px;
+  border-radius: 50%;
+}
+
+.theme-dark .cog-attack-options input[type="checkbox"],
+.theme-dark .cog-attack-options input[type="radio"] {
+  color-scheme: dark;
+}
+
+.cog-attack-options .cog-badge-success {
+  background: var(--cog-success-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-attack-options .cog-badge-warning {
+  background: var(--cog-warning-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-attack-add-another {
+  border: 0;
+  cursor: pointer;
+}
+
+.cog-attack-options-footer {
+  margin: 4px 0 0;
+}
+
+/* ---------------- Sourcery importer ---------------- */
+.cog-sourcery-importer .cog-sourcery-header,
+.cog-sourcery-importer .cog-sourcery-files,
+.cog-sourcery-importer .cog-sourcery-preview,
+.cog-sourcery-importer .cog-sourcery-footer {
+  font-family: 'Oswald', sans-serif;
+  box-sizing: border-box;
+  padding: 8px 12px;
+}
+/* Header, file list and footer keep their size; only the preview scrolls, so the Import button stays in view. */
+.cog-sourcery-importer .window-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cog-sourcery-importer .cog-sourcery-header,
+.cog-sourcery-importer .cog-sourcery-footer { flex: 0 0 auto; }
+.cog-sourcery-importer .cog-sourcery-files { flex: 0 0 auto; max-height: 40%; overflow-y: auto; }
+.cog-sourcery-importer .cog-sourcery-preview { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.cog-sourcery-title { margin: 0; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--cog-accent); }
+.cog-sourcery-pick { position: relative; cursor: pointer; }
+.cog-sourcery-file-input { max-width: 14rem; color: var(--cog-on-fill); }
+.cog-sourcery-file-list, .cog-sourcery-books, .cog-sourcery-kinds { list-style: none; margin: 6px 0; padding: 0; }
+.cog-sourcery-file { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.cog-sourcery-file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cog-sourcery-bar { width: 140px; height: 8px; accent-color: var(--cog-accent-fill); }
+.cog-sourcery-group { border: 1px solid var(--cog-panel-border); margin: 6px 0; padding: 6px 8px; background: var(--cog-surface); }
+.cog-sourcery-footer { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--cog-panel-border); }
+.cog-sourcery-footer-spacer { flex: 1; }
+
+/* Options chip line on attack cards (3.22-6): effect, maneuvers, situations, Rule Break */
+.cog-attack-options-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.cog-attack-options-line .cog-options-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cog-attack-options-line .cog-badge-maneuver {
+  background: var(--cog-warning-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-attack-options-line .cog-badge-situation {
+  background: var(--cog-surface-alt);
+  color: var(--cog-text-muted);
+  border: 1px solid var(--cog-border-muted);
+}
+
+/* Shared multi-pick list (templates/items/parts/pick-list.hbs). */
+.cog-pick-row {
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.cog-pick-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.cog-pick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 24px;
+  margin-bottom: 4px;
+  padding: 3px;
+  border: 1px dashed var(--cog-border-muted);
+  border-radius: 3px;
+}
+
+.cog-badge.cog-pick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: none;
+  background: var(--cog-neutral-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-badge.cog-pick-chip-grantedResistances {
+  background: var(--cog-info-fill);
+}
+
+.cog-badge.cog-pick-chip-grantedImmunities {
+  background: var(--cog-warning-fill);
+}
+
+.cog-badge.cog-pick-chip-persistentBuffs {
+  background: var(--cog-badge-buff);
+}
+
+.cog-badge.cog-pick-chip-persistentDebuffs {
+  background: var(--cog-badge-debuff);
+}
+
+/* A value no catalog entry matches (a homebrew identifier or an unregistered damage type): kept, shown as typed. */
+.cog-badge.cog-pick-chip-unknown {
+  border: 1px dashed var(--cog-on-fill);
+  font-style: italic;
+}
+
+.cog-pick-chip-badge {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+.cog-pick-chip-remove {
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: none;
+  color: var(--cog-text-strong);
+}
+
+.cog-pick-empty {
+  align-self: center;
+  font-size: 10px;
+  font-style: italic;
+}
+
+.cog-pick-entry {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cog-pick-entry .cog-pick-select {
+  flex: 2;
+  min-width: 0;
+  font-size: 11px;
+}
+
+.cog-pick-entry .cog-pick-custom {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+}
+
+.cog-pick-entry .cog-pick-add {
+  font-size: 11px;
+  padding: 3px 6px;
+  white-space: nowrap;
+}
+
+.cog-pick-hint {
+  margin: 4px 0 0;
+  font-size: 10px;
+}
+
+/* Playing to the Cameras (E6.10): the radio group in the roll dialogs, the arm control and the card note */
+.cog-camera-toggles {
+  margin: 6px 0 0;
+  padding: 4px 8px;
+  border: 1px solid var(--cog-divider);
+  border-radius: 4px;
+}
+
+.cog-camera-toggles > legend {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.cog-camera-note {
+  margin-top: 4px;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--cog-text-muted);
+}
+
+.cog-camera-award-block {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.cog-camera-status {
+  color: var(--cog-text-muted);
+}
+
+.cog-camera-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.cog-camera-btn,
+.cog-camera-choice {
+  cursor: pointer;
+  border: 1px solid var(--cog-divider);
+  border-radius: 3px;
+  background: transparent;
+  font-family: var(--font-primary, 'Oswald', sans-serif);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.cog-camera-arm {
+  cursor: pointer;
+  border: 1px solid var(--cog-divider);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--cog-text-muted);
+  font-family: var(--font-primary, 'Oswald', sans-serif);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.cog-camera-arm.is-armed {
+  border-color: var(--cog-accent-strong-fill);
+  color: var(--cog-accent-strong-fill);
+  font-weight: bold;
+}
+
+/* ---------------- CONTEST TRACKER (3.45-5) ---------------- */
+.cog-contest-tracker { padding: 12px; font-family: 'Oswald', sans-serif; display: flex; flex-direction: column; gap: 10px; }
+.cog-contest-tracker .cog-ct-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.cog-contest-tracker .cog-ct-field { display: flex; flex-direction: column; gap: 2px; font-size: 11px; text-transform: uppercase; color: var(--cog-text-secondary); }
+.cog-contest-tracker .cog-ct-status { font-size: 11px; text-transform: uppercase; color: var(--cog-text-muted); }
+.cog-contest-tracker .cog-ct-hint { font-size: 12px; color: var(--cog-text-muted); }
+.cog-contest-tracker .cog-ct-warning { display: flex; gap: 10px; align-items: center; border: 1px solid var(--cog-warning); border-radius: 4px; padding: 6px 10px; }
+.cog-contest-tracker .cog-ct-section { border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 8px; background: var(--cog-surface); }
+.cog-contest-tracker .cog-ct-section-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; }
+.cog-contest-tracker .cog-ct-actions { display: flex; gap: 6px; align-items: center; }
+.cog-contest-tracker .cog-ct-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cog-contest-tracker .cog-ct-table td { padding: 2px 4px; vertical-align: middle; }
+.cog-contest-tracker .cog-ct-out td { opacity: 0.6; }
+.cog-contest-tracker .cog-ct-leg { border-top: 1px solid var(--cog-divider); padding: 6px 0; }
+.cog-contest-tracker .cog-ct-leg-head { display: flex; gap: 8px; align-items: center; }
+.cog-contest-tracker .cog-ct-leg-check { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0; }
+.cog-contest-tracker .cog-ct-result { width: 70px; }
+.cog-contest-tracker .cog-ct-badge { font-size: 10px; text-transform: uppercase; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 0 4px; }
+.cog-contest-tracker .cog-ct-rulebreak { border-color: var(--cog-warning); color: var(--cog-warning); }
+.cog-contest-tracker .cog-ct-proposal { font-size: 12px; color: var(--cog-warning); }
+.cog-contest-tracker .cog-ct-ready { border-color: var(--cog-success-fill); }
+.cog-contest-tracker .cog-ct-standings { margin: 0; padding-left: 18px; font-size: 13px; }
+.cog-contest-tracker .cog-ct-footer { display: flex; justify-content: flex-end; gap: 8px; }
+.cog-contest-tracker .cog-ct-table-pick { max-width: 200px; }
+
+/* ---------------- CONTEST CARD (3.45-4 / 3.45-6) ---------------- */
+.cog-contest-card { font-family: 'Oswald', sans-serif; color: var(--cog-text); background: var(--cog-surface); border: 1px solid var(--cog-divider); border-left: 3px solid var(--cog-accent); border-radius: 4px; padding: 6px 8px; }
+.cog-contest-card .cog-contest-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 14px; font-weight: bold; text-transform: uppercase; color: var(--cog-accent-strong); border-bottom: 1px solid var(--cog-divider); padding-bottom: 4px; margin-bottom: 6px; }
+.cog-contest-card .cog-contest-status,
+.cog-contest-card .cog-contest-leg-status { font-size: 10px; font-weight: normal; letter-spacing: 0.5px; color: var(--cog-text-muted); }
+.cog-contest-card .cog-contest-floor { margin-left: auto; font-size: 11px; font-weight: normal; color: var(--cog-text-muted); }
+.cog-contest-card .cog-contest-leg { padding: 4px 0; border-top: 1px solid var(--cog-divider); }
+.cog-contest-card .cog-contest-leg[data-leg-status="open"] .cog-contest-leg-head { color: var(--cog-accent-strong); }
+.cog-contest-card .cog-contest-leg[data-leg-status="pending"] { opacity: 0.7; }
+.cog-contest-card .cog-contest-leg-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 13px; text-transform: uppercase; }
+.cog-contest-card .cog-contest-check { font-size: 11px; color: var(--cog-text-secondary); }
+.cog-contest-card .cog-contest-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cog-contest-card .cog-contest-table td { padding: 2px 4px; vertical-align: middle; }
+.cog-contest-card .cog-contest-table td:last-child { text-align: right; white-space: nowrap; }
+.cog-contest-card .cog-contest-row.cog-contest-out td:not(:last-child) { opacity: 0.55; text-decoration: line-through; }
+.cog-contest-card .cog-contest-role { font-size: 10px; text-transform: uppercase; color: var(--cog-text-muted); }
+.cog-contest-card .cog-contest-pending { color: var(--cog-text-muted); }
+.cog-contest-card .cog-contest-note { font-size: 11px; color: var(--cog-text-muted); }
+.cog-contest-card .cog-contest-override { font-size: 11px; color: var(--cog-warning); }
+.cog-contest-card .cog-contest-roll,
+.cog-contest-card .cog-contest-propose,
+.cog-contest-card .cog-contest-drop { font-family: 'Oswald', sans-serif; font-size: 10px; text-transform: uppercase; line-height: 1.3; width: auto; height: auto; padding: 2px 6px; margin-left: 4px; border-radius: 3px; cursor: pointer; transition: all 0.15s ease; }
+.cog-contest-card .cog-contest-roll { background: var(--cog-accent-fill); color: var(--cog-on-fill); border: 1px solid var(--cog-accent-strong-fill); }
+.cog-contest-card .cog-contest-roll:hover { background: var(--cog-danger-fill); }
+.cog-contest-card .cog-contest-propose,
+.cog-contest-card .cog-contest-drop { background: var(--cog-surface-muted); color: var(--cog-text); border: 1px solid var(--cog-surface-strong); }
+.cog-contest-card .cog-contest-propose:hover,
+.cog-contest-card .cog-contest-drop:hover { border-color: var(--cog-accent); color: var(--cog-accent-strong); }
+.cog-contest-card .cog-contest-summary { margin: 6px 0 0; padding-left: 18px; font-size: 12px; color: var(--cog-text-secondary); }
+.cog-contest-card .cog-contest-outcome { margin-top: 6px; padding: 3px 6px; font-size: 13px; font-weight: bold; text-transform: uppercase; color: var(--cog-on-fill); background: var(--cog-accent-fill); border-radius: 3px; }
+
+/* A custom perk's Mechanics rows editor: the item sheet's row editor, set under its perk row. */
+.cog-perk-entry {
+  margin-bottom: 6px;
+}
+
+.cog-perk-rows-form {
+  margin: 4px 0 8px 12px;
+  padding: 6px 8px;
+  border-left: 3px solid var(--cog-divider);
+}
+
+.cog-perk-rows-toggle.active {
+  border-color: var(--cog-accent-fill);
+}
+
+/* The grant row editor and the creators' stat pool and rank bonus lists. */
+.cog-subsection-title {
+  margin: 10px 0 4px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--cog-text-secondary);
+}
+
+.cog-spec-grants-form {
+  margin-left: 0;
+}
+
+.cog-grant-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cog-grant-row-incomplete {
+  border-left: 3px solid var(--cog-accent-fill);
+  padding-left: 6px;
+}
+
+.cog-grant-row .cog-grant-query,
+.cog-grant-row .cog-grant-options {
+  flex: 1 1 100%;
+}
+
+/* "What this does" on chat cards: a closed native <details>; lines reuse the feature-list rules. */
+.cog-card-summary {
+  margin: 6px 0;
+  border-top: 1px solid var(--cog-divider);
+  font-size: 11px;
+}
+
+.cog-card-summary > summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--cog-text-muted);
+}
+
+.cog-card-summary .cog-feature-line {
+  font-size: 11px;
+  padding: 1px 0;
+}
+
+.cog-card-summary-heading {
+  font-weight: bold;
+  margin: 4px 0 2px;
+}
+
+/* Crafting editors on the item sheet (3.15): the blueprint output drop zone, template cards and the table tier readout */
+.cog-blueprint-output {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px dashed var(--cog-border-muted);
+  border-radius: 3px;
+}
+.cog-enchantment-template {
+  margin-bottom: 8px;
+}
+.cog-enchantment-notice {
+  margin-bottom: 6px;
+}
+.cog-crafting-tier,
+.cog-crafting-tier-actions {
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.cog-outcome-enchantments {
+  padding: 4px 0 8px;
+}
+
+/* The crafting app (3.15 S6b) */
+.cog-crafting-app-window .window-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+.cog-crafting-header,
+.cog-crafting-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+}
+.cog-crafting-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.cog-crafting-meta {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+.cog-crafting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cog-crafting-source,
+.cog-crafting-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cog-crafting-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cog-crafting-btn {
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 4px 10px;
+}
+.cog-crafting-go {
+  margin-left: auto;
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  font-weight: bold;
+}
+.cog-crafting-go:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cog-crafting-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.cog-crafting-table th,
+.cog-crafting-table td {
+  border-bottom: 1px solid var(--cog-panel-border);
+  padding: 4px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+.cog-crafting-dc,
+.cog-crafting-hours {
+  text-align: center;
+  white-space: nowrap;
+}
+.cog-crafting-short {
+  color: var(--cog-danger);
+}
+.cog-crafting-warnings,
+.cog-crafting-notices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cog-crafting-empty {
+  margin: 4px 0;
+}
+

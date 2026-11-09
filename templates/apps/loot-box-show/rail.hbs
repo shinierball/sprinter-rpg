@@ -1,0 +1,9 @@
+<nav class="cog-lootbox-rail" {{#unless showStage}}hidden{{/unless}}>
+  <ol>
+    {{#each rail}}
+      <li class="cog-lootbox-rail-box is-{{state}}" style="--cog-tier-color: {{color}};" title="{{name}} ({{tierLabel}})">
+        <i class="{{icon}}" aria-hidden="true"></i><span class="cog-lootbox-rail-label">{{number}}</span>
+      </li>
+    {{/each}}
+  </ol>
+</nav>

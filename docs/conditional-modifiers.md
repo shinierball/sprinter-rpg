@@ -14,11 +14,15 @@ Module authors: [engine-extension.md](engine-extension.md) registers new scalars
 | `defenseModifiers` | `kind` | `self`, `attacker` | yes |
 | `attackModifiers` | `kind` | `self`, `subject` | yes (shared table with checks) |
 | `checkModifiers` | `kind` | `self`, `subject`, `attacker` | yes (shared table with attacks) |
+| `craftModifiers` | `kind` | `self` | yes |
+| `vehicleModifiers` | `kind` | `self` | yes |
 | `manaCostModifiers` | `mode` | `self` | no |
 | `recoveryModifiers` | (none) | `self` | no |
 | `popularityTriggers` | (none) | `self`, `subject` | no |
 | `aiFavorRatings` | (none) | `self`, `subject` | no |
 | `statSubstitutions` | (none) | `self`, `subject` | no |
+| `boxContents` | `kind` | `self` | yes (loot box prizes, not a modifier row; see below) |
+| `magicProperties` | `property` | `self` | yes (magic item generator properties, not a modifier row; see below) |
 
 `attackModifiers` apply to attack rolls only; `checkModifiers` apply to every roll of a skill, attacks included, so a to-hit total is the check rows plus the attack rows. The two arrays share one kind table: a kind registered on one is available on both. The source of truth is `ROW_ARRAYS` in `src/utils/row-kinds.mjs`.
 
@@ -48,7 +52,7 @@ A row on any active source (equipped gear, an active buff, an owned skill, the r
 
 ## 3. Conditions, contexts and roles
 
-Every roll builds one context (`buildRollContext`, `src/utils/roll-context.mjs`). A row's condition is matched against its tags:
+Every roll builds one context (`buildRollContext`, `src/utils/roll/roll-context.mjs`). A row's condition is matched against its tags:
 
 | Prefix | Means | Example |
 |---|---|---|
@@ -61,7 +65,7 @@ The roles an array sees are listed in section 1; the editor only offers those. W
 
 **Situations** are unprefixed tags in the `situation.` namespace:
 
-- The engine sets six itself: `situation.in_combat`, `situation.disadvantaged` (the net roll is Disadvantage), `situation.critical_hit`, `situation.amazing_success` (not on a Critical Hit), `situation.damage_effect` (the attack uses a Damage Effect) and `situation.same_size` (attacker and target the same size; a roll may also tick it by hand). A roll inside a racing or chasing contest also carries `contest.race` or `contest.chase`.
+- The engine sets seven itself: `situation.in_combat`, `situation.disadvantaged` (the net roll is Disadvantage), `situation.critical_hit`, `situation.amazing_success` (not on a Critical Hit), `situation.damage_effect` (the attack uses a Damage Effect), `situation.specialty` (the item you make, or your target, carries the rolling skill's chosen specialty) and `situation.same_size` (attacker and target the same size; a roll may also tick it by hand). A roll inside a racing or chasing contest also carries `contest.race` or `contest.chase`.
 - Any other situation a row mentions is offered in the roll dialog as a toggle (e.g. `situation.aiming`). A situation flagged `maneuver` is listed under Maneuvers in the Attack Options pop-up.
 - "+ New situation" in any condition editor creates a world situation tag on the spot.
 
@@ -96,6 +100,23 @@ The kind decides what a row does. Built-ins (labels as in the editor):
 | attack / check | `bonus` | value, dice, stat | |
 | attack / check | `advantage` | advantage | One Advantage or Disadvantage reason; reasons net out (more Advantage → 2d20kh, more Disadvantage → 2d20kl, equal → 1d20) |
 | check | `assist` | dice, option (`replace`, `add`) | Changes the dice an assist skill rolls; never touches ordinary checks |
+| check | `reroll` | none | After the roll the roller may roll the check again and keep the new result; the source item's cooldown gates each use (3.44) |
+| check | `degreeShift` | value, option (`failOnly`, `any`) | After the roll the roller may move the result's degree `value` steps (default 1); a Fail never shifts past Near Miss into a success |
+| attack / check | `waive` | option (a `rollPenalties` id; `driver` is built in) | The named engine roll penalty does not apply to the rolls the row matches |
+| vehicle | `moveAdd` | value | Adds feet to a vehicle's Move; read by `vehicleMoveOf` from the vehicle's installed gear and active buffs and from its driver's skills |
+| vehicle | `moveMultiply` | multiplier | Multiplies a vehicle's Move after the additions; matching rows multiply |
+| craft | `maxBonus` | value | The highest enchantment bonus level the holder crafts; the highest matching row wins, no matching row is no limit, and a craft above it asks a Rule Break |
+| craft | `time` | multiplier | Multiplies the hours of a craft; matching rows multiply |
+| craft | `batchTime` | multiplier | Multiplies the minutes a batch adds for each extra unit; matching rows multiply |
+| craft | `rebuild` | none | A Repair check can rebuild a destroyed item without a Rule Break; condition it on `item.destroyed` |
+| craft | `tableTier` | multiplier | Multiplies the crafting table's tier for the step; matching rows multiply, `0` means tables give no bonus (the step still needs a table and a space) |
+| craft | `bonusValue` | value | Adds to every number an enchantment writes (grants `stat`/`skill`/`rank_bonus` `value`, and each row kind's `scaled: 'whole'` field), with no extra Difficulty or time; matching rows add |
+
+`craftModifiers` rows sit on skills, worn gear and the space upgrades of a personal space (a crafting table, or an attachment tagged `crafting.attachment.<id>`). Their conditions read the craft check's tags (`check.crafting`, `crafting.mode.*`, the table type, the output's tags). A skill's rows apply only when that skill rolls the step, unless `scope: 'owner'`.
+
+`boxContents` is not a modifier array: it is the list of prizes in a loot box (`system.box.contents[]` on a loot item whose `lootType` is `box`), so it has no condition, scope or scale, and no editor of the modifier family. Its kinds are `item` (an item by uuid or identifier), `spell` (a Tome of the spell), `gold` (a number or a dice formula), `table` (rolls a RollTable) `magicItem` (a generated magic item) and `choice` (the opener picks one candidate of a tag `query`, of an `itemType`: an item, a Tome for a spell, a potion for a skill); a module adds a kind with `registerRowKind('boxContents', def)` and an `apply.boxOpen` handler (and `apply.boxChoose` when the opener must pick first). The kinds are descriptors until the open engine reads them.
+
+`magicProperties` is not a modifier array either: each "row" is the `magic` option (`{ kind: 'magic', property, damageTypes? }`) of a rolled property table row, read by the magic item generator (`src/utils/crafting/magic-item.mjs`) and never stored on a document. Its kinds are `stat`, `skill`, `passiveSkill`, `spell`, `dr`, `resistance`, `buff` and `restore`. A kind's `apply.magicItem(option, ctx)` returns `{ template, line }` (an enchantment template and the reveal's one-liner) or `null`, which records the row's own words as a pending ledger entry for the GM to finish; `buff` and `restore` always do. A module adds a kind with `registerRowKind('magicProperties', def)`.
 
 Mana cost (`add`, `multiply`), recovery, popularity, AI Favor and stat-substitution rows each have one fixed shape.
 
@@ -105,7 +126,7 @@ Mana cost (`add`, `multiply`), recovery, popularity, AI Favor and stat-substitut
 - `derived` (`tempHp`, `evade`): always derived-stat rows.
 - `never` (everything else): checked per hit, against the attack's tags.
 
-**Stages.** At roll time, damage rows feed the `damage` stage and target rows the `target` stage; defense rows feed `defense` (per hit), `derived`, `evade` and `reflect`; roll rows feed `rollBonus`, `rollAdvantage` and `assist`.
+**Stages.** At roll time, damage rows feed the `damage` stage and target rows the `target` stage; defense rows feed `defense` (per hit), `derived`, `evade` and `reflect`; roll rows feed `rollBonus`, `rollAdvantage`, `assist`, `afterRoll` (reroll, degree shift) and `waive`; vehicle rows feed `move`.
 
 A row whose kind is not registered (a removed module) does nothing, logs one warning and shows a badge in the editor.
 
@@ -150,7 +171,7 @@ A new moment ("when a template is placed", "at the start of my turn") is engine 
 
 A tag may carry `rows` and `flags`. Its rows behave as rows on whatever carries the tag (equipped gear, an active buff, an owned skill, the actor) and are owner-wide. Its flags are yes/no gates the engine reads with `hasRuleFlag(subject, flag)`; code never matches a `rule.*` id, so a renamed or replaced tag keeps the rule.
 
-The 14 core flags (`RULE_FLAGS`, `src/utils/tag-behaviour.mjs`): `no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`.
+The 16 core flags (`RULE_FLAGS`, `src/utils/tag/tag-behaviour.mjs`): `no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`, `mounted-only`, `works-in-zero-zone`.
 
 Example: `rule.aiming-offset` carries rows conditioned on `situation.aiming` and a ranged attack: Disadvantage, a to-hit bonus of the carrier's Rank (scalar `rank`), and `1d4` damage at Ranks 1, 5, 10 and 15 (four `add` rows with `minRank`). A skill that carries the tag gets the whole behaviour with no code.
 

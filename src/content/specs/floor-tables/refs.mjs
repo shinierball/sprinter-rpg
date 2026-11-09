@@ -23,7 +23,8 @@ export const FLOOR_TABLE_IDS = Object.freeze({
   'floor.experience.floor4': 'dccflt0900000000',
   'floor.loot.starting': 'dccflt1000000000',
   'floor.loot.upgrade': 'dccflt1100000000',
-  'floor.loot.spells': 'dccflt1200000000'
+  'floor.loot.spells': 'dccflt1200000000',
+  'floor.loot.braceletRace': 'dccflt1300000000'
 });
 
 /** The compendium UUID of an example table, by its tableKey. */
@@ -58,6 +59,9 @@ export const narrativeTrigger = (text, nameAddition, label) =>
 export const lootSpell = (id, identifier, name) => (isHiddenId(id)
   ? { kind: 'spell', identifier, name }
   : { kind: 'spell', identifier, name, uuid: packUuid('spells', 'Item', id) });
+
+/** A race result: a named option that carries the race's `system.identifier` and no uuid (it resolves by identifier). */
+export const raceResult = (identifier, name) => ({ kind: 'named', docKind: 'race', identifier, name });
 
 /** Tag queries the choice options use. */
 export const QUERIES = Object.freeze({

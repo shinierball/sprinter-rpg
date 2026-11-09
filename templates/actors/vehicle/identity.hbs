@@ -1,0 +1,81 @@
+{{!-- Vehicle identity (3.44g). Named inputs are 1-to-1 schema fields; owner and driver are readouts with action buttons. --}}
+<header class="cog-sheet-header cog-vehicle-identity">
+  <img class="profile-img cog-bg-icon-box" data-action="editImage" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="72" width="72" />
+  <div class="cog-vehicle-identity-fields">
+    <div class="cog-field-row">
+      <div class="cog-field-group flex-2">
+        <div class="cog-vehicle-label-row">
+          <span class="cog-field-label">Name</span>
+          {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=sourceBadge text=true}}
+          {{#if noBookText}}<span class="cog-badge cog-badge-no-book-text" title="{{noBookText.tooltip}}">{{noBookText.label}}</span>{{/if}}
+        </div>
+        <input class="cog-field-input" name="name" type="text" value="{{actor.name}}" placeholder="Vehicle Name" />
+      </div>
+      <div class="cog-field-group flex-1">
+        <span class="cog-field-label">Kind</span>
+        <select class="cog-field-input" name="system.kind">
+          {{#each vehicleKindOptions as |opt|}}
+            <option value="{{opt.id}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group flex-1">
+        <span class="cog-field-label">Size</span>
+        <select class="cog-field-input" name="system.attributes.size" title="Size sets 10 Health Bar slots of this many HP each">
+          {{#each sizeOptions as |opt|}}
+            <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">Move (ft)</span>
+        <input class="cog-field-input" name="system.attributes.move" type="number" min="0" step="5" value="{{system.attributes.move}}" title="Full Move. Upgrades and the driver's skill add to it (see the drive panel)." />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">DR</span>
+        <div class="cog-vehicle-dr">
+          <input class="cog-field-input" name="system.attributes.dr.armor" type="number" min="0" value="{{system.attributes.dr.armor}}" title="Armor DR" />
+          <span class="cog-vehicle-dr-total" title="Total DR with upgrades and Buffs">= {{system.attributes.dr.total}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cog-field-row">
+      <div class="cog-field-group flex-2">
+        <span class="cog-field-label">Bonded Owner</span>
+        <div class="cog-vehicle-person">
+          {{#if bondedOwner}}
+            <span class="cog-text-info cog-vehicle-person-name"><i class="fa-solid fa-link"></i> {{bondedOwner.name}}</span>
+            <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="vehicleOpenOwner" title="Open Owner Sheet"><i class="fa-solid fa-external-link"></i></button>
+            <button type="button" class="cog-btn-xs cog-bg-danger-fill cog-text-on-fill" data-action="vehicleUnlinkOwner" title="Unlink Owner"><i class="fa-solid fa-unlink"></i></button>
+          {{else}}
+            <span class="cog-text-muted cog-vehicle-person-none">Unowned Vehicle</span>
+          {{/if}}
+        </div>
+      </div>
+      <div class="cog-field-group flex-2">
+        <span class="cog-field-label">Driver</span>
+        <div class="cog-vehicle-person">
+          {{#if pilot}}
+            <span class="cog-text-warning cog-vehicle-person-name"><i class="fa-solid fa-id-badge"></i> {{pilot.name}}</span>
+            <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="vehicleCrew" data-op="stepDown" data-uuid="{{pilot.uuid}}" title="Step Down (stay aboard)">Step Down</button>
+          {{else}}
+            <span class="cog-text-muted cog-vehicle-person-none">No Driver</span>
+          {{/if}}
+        </div>
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">Seats</span>
+        <input class="cog-field-input" name="system.attributes.occupancy" type="number" min="0" step="1" value="{{system.attributes.occupancy}}" title="Seats including the driver. 0 = no limit" />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">Cargo</span>
+        <input class="cog-field-input" name="system.attributes.cargoOccupancy" type="number" min="0" step="1" value="{{system.attributes.cargoOccupancy}}" />
+      </div>
+      <div class="cog-field-group flex-2">
+        <span class="cog-field-label">Notes / Description</span>
+        <input class="cog-field-input" name="system.details.notes" type="text" value="{{system.details.notes}}" placeholder="Vehicle notes..." />
+      </div>
+    </div>
+  </div>
+</header>

@@ -1,7 +1,8 @@
 import { BaseActorDataModel } from './base-actor-model.mjs';
 import { getSizeInfo, sizeLabel } from '../../data/sizes.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
+import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
+import { effectiveRace } from '../../utils/character/overlay-state.mjs';
 
 /**
  * TypeDataModel for Pets / Companions.
@@ -61,7 +62,7 @@ export class PetDataModel extends BaseActorDataModel {
 
     // Data-driven Pet Size Progression
     // Evaluates embedded race item or assigned race definition
-    const embeddedRace = this.parent?.items?.find(i => i.type === 'race');
+    const embeddedRace = effectiveRace(this.parent?.items);
     let sizeProgression = embeddedRace?.system?.sizeProgression;
     if (!(Array.isArray(sizeProgression) && sizeProgression.length > 0) && this.details?.race) {
       const raceDef = COGRaceClassApplier?.findRace?.(this.details.race, { preferPet: true });

@@ -1,26 +1,28 @@
 /**
- * Catalog lookups for the item sheet's pickers: skills, buffs, debuffs, spells and roll tables
- * gathered from the system compendium, CONFIG.COG and world items. Deduplicated by lower-cased name
- * (first source wins) and sorted by name.
+ * Catalog lookups for the item sheet's pickers: skills, buffs, debuffs, spells and roll tables. The first four are the
+ * managers' merged lists (`unifiedCatalog`: keyed by id and identifier, never by name), sorted by name.
  */
-import { catalogEntries } from '../../content/catalog-lookup.mjs';
-import { getCompendiumEntries } from '../../apps/manager-source.mjs';
-import { skillGroupLabel } from '../../utils/tag-mechanics.mjs';
+import { SYSTEM_ID } from '../../constants.mjs';
+import { contentRegistry } from '../../content/registry.mjs';
+import { unifiedCatalog } from '../../content/unified-catalog.mjs';
+import { skillGroupLabel } from '../../utils/tag/tag-mechanics.mjs';
+import { SOURCE_INDEX_FIELD } from '../../utils/content-source.mjs';
 
 /** Index fields `skillEntry` reads from a pack skill (a pack index returns only what is requested). */
-export const SKILL_PICKER_INDEX_FIELDS = Object.freeze([
+const SKILL_PICKER_INDEX_FIELDS = Object.freeze([
   'system.identifier', 'system.stat', 'system.checkType', 'system.checkNote',
-  'system.notes', 'system.isTechnique', 'system.techniqueConfig', 'system.appliesToQuery', 'system.tags', 'img'
+  'system.notes', 'system.isTechnique', 'system.techniqueConfig', 'system.appliesToQuery', 'system.tags', 'img', SOURCE_INDEX_FIELD
 ]);
 
 const byName = (a, b) => a.name.localeCompare(b.name);
-const nameKey = (name) => String(name || '').toLowerCase().trim();
 
-function skillEntry(id, name, img, sys = {}) {
+function skillEntry({ id, name, img, system: sys = {}, sourceBadge }) {
   return {
     id,
     name,
     img: img || 'icons/svg/book.svg',
+    // The source chip's data (7.7d): the document's stamp, never its name
+    sourceBadge,
     // The group the pickers show next to the stat: from the skill's weaponGroup.* / skillGroup.* tags
     groupLabel: skillGroupLabel(sys.tags),
     system: {
@@ -41,65 +43,71 @@ function skillEntry(id, name, img, sys = {}) {
 }
 
 /**
- * Every skill from the system skills pack, CONFIG.COG.skills and world skill items.
+ * Every skill from the system skills pack, the registered skills and world skill items.
  * @returns {Promise<object[]>} `{ id, name, img, groupLabel, system: { identifier, stat, checkType, notes, isTechnique, techniqueConfig, tags, appliesToQuery } }`
  */
 export async function getCompendiumSkills() {
-  const skills = new Map();
-  for (const entry of await getCompendiumEntries('skills', { fields: SKILL_PICKER_INDEX_FIELDS })) {
-    skills.set(nameKey(entry.name), skillEntry(entry._id, entry.name, entry.img, entry.system));
-  }
-  for (const s of globalThis.CONFIG?.COG?.skills ?? []) {
-    const key = nameKey(s.name);
-    if (!skills.has(key)) skills.set(key, skillEntry(s._id, s.name, s.img, s.system));
-  }
-  for (const item of globalThis.game?.items ?? []) {
-    if (item.type !== 'skill') continue;
-    const key = nameKey(item.name);
-    if (!skills.has(key)) skills.set(key, skillEntry(item.id, item.name, item.img, item.system));
-  }
-  return [...skills.values()].sort(byName);
+  return (await unifiedCatalog('skill', { fields: SKILL_PICKER_INDEX_FIELDS })).map(skillEntry);
 }
 
-/** Base definitions plus world items of `type`, as `{ id, name, type, img, system }`. */
-function collectDefinitions(type, baseList, defaultImg) {
-  const map = new Map();
-  for (const def of baseList) {
-    const key = nameKey(def.name);
-    if (key && !map.has(key)) {
-      map.set(key, { id: def._id || def.id || def.name, name: def.name, type, img: def.img || defaultImg, system: def.system || {} });
-    }
-  }
-  for (const item of globalThis.game?.items ?? []) {
-    if (item.type !== type) continue;
-    const key = nameKey(item.name);
-    if (key && !map.has(key)) {
-      map.set(key, { id: item.id, name: item.name, type, img: item.img || defaultImg, system: item.system || {} });
-    }
-  }
-  return [...map.values()].sort(byName);
+/** The registered definitions of `kind` plus world items, as `{ id, name, type, img, system, sourceBadge }`. */
+async function definitionsOf(kind, type, options = {}) {
+  return (await unifiedCatalog(kind, options)).filter((row) => row.type === type)
+    .map(({ id, name, img, system, sourceBadge }) => ({ id, name, type, img, system, sourceBadge }));
 }
 
 /** @returns {Promise<object[]>} canonical buffs (CONFIG.COG.buffs) and world buff items */
 export async function getAvailableBuffs() {
-  return collectDefinitions('buff', catalogEntries('buffs'), 'icons/svg/aura.svg');
+  return definitionsOf('condition', 'buff');
 }
 
 /** @returns {Promise<object[]>} canonical debuffs (CONFIG.COG.debuffs) and world debuff items */
 export async function getAvailableDebuffs() {
-  return collectDefinitions('debuff', catalogEntries('debuffs'), 'icons/svg/skull.svg');
+  return definitionsOf('condition', 'debuff');
 }
 
 /** @returns {Promise<object[]>} canonical spells (CONFIG.COG.spells) and world spell items */
 export async function getAvailableSpells() {
-  return collectDefinitions('spell', catalogEntries('spells'), 'icons/svg/daze.svg');
+  return definitionsOf('spell', 'spell', { pack: false });
 }
 
-/** @returns {Promise<object[]>} world roll tables as `{ id, uuid, name, img }` */
-export async function getAvailableRollTables() {
+const TABLE_KEY_FLAG = `flags.${SYSTEM_ID}.tableKey`;
+const keyOf = (doc) => {
+  const raw = doc?.flags?.[SYSTEM_ID]?.tableKey;
+  return typeof raw === 'string' ? raw.trim() : '';
+};
+
+/**
+ * Roll tables as `{ id, uuid, key, name, img, group }`: the world's, and with `packs` also the entries of the
+ * Floor Simulator table packs and the imported table packs (each grouped by its pack label). `key` is the table's
+ * `tableKey` flag ('' when it has none). `roll_table` outcomes call this with no argument and see world tables only.
+ * @param {{ packs?: boolean }} [options]
+ * @returns {Promise<object[]>}
+ */
+export async function getAvailableRollTables({ packs = false } = {}) {
   const tables = [];
   for (const t of globalThis.game?.tables ?? []) {
-    tables.push({ id: t.id || t._id, uuid: t.uuid || t.id, name: t.name, img: t.img || 'icons/svg/d20-grey.svg' });
+    tables.push({ id: t.id || t._id, uuid: t.uuid || t.id, key: keyOf(t), name: t.name, img: t.img || 'icons/svg/d20-grey.svg', group: '' });
   }
-  return tables.sort(byName);
+  tables.sort(byName);
+  if (!packs) return tables;
+  const sources = [...contentRegistry.getFloorTablePacks(), ...contentRegistry.getPacksForKind('sourceryTables')];
+  const seen = new Set();
+  for (const { packId, pack } of sources) {
+    if (!pack || seen.has(packId)) continue;
+    seen.add(packId);
+    try {
+      const index = typeof pack.getIndex === 'function' ? await pack.getIndex({ fields: [TABLE_KEY_FLAG] }) : pack.index;
+      const group = pack.title || pack.metadata?.label || packId;
+      const entries = [];
+      for (const e of index ?? []) {
+        const id = e._id || e.id;
+        entries.push({ id, uuid: e.uuid || `Compendium.${packId}.RollTable.${id}`, key: keyOf(e), name: e.name, img: e.img || 'icons/svg/d20-grey.svg', group });
+      }
+      tables.push(...entries.sort(byName));
+    } catch (err) {
+      console.warn(`Sprinter RPG | Could not read table pack ${packId}:`, err);
+    }
+  }
+  return tables;
 }

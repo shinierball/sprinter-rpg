@@ -2,7 +2,7 @@
  * "Roll Opposed Contest" chat button.
  */
 import { resolveActorByUuid, isSameActor } from '../../utils/actor-uuid.mjs';
-import { isOutOfRangeOnMessage } from '../../utils/attack-range.mjs';
+import { isOutOfRangeOnMessage } from '../../utils/attack/attack-range.mjs';
 
 /**
  * @param {Event} event

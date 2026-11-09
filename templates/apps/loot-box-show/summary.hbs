@@ -1,0 +1,26 @@
+<section class="cog-lootbox-summary" {{#unless summary}}hidden{{/unless}}>
+  {{#if summary}}
+    <header class="cog-lootbox-summary-head">
+      <h2>{{summary.title}}</h2>
+      {{#if summary.ruleBreak}}{{{summary.ruleBreakBadge}}}{{/if}}
+    </header>
+    {{#each summary.boxes}}
+      <div class="cog-lootbox-summary-box{{#if wide}} is-wide{{/if}}" data-tier="{{tier}}" style="--cog-tier-color: {{color}};">
+        <h3>
+          <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: {{color}};"><i class="{{icon}}"></i> {{tierLabel}}</span>
+          {{name}}{{#if kept}} <span class="cog-state-badge">{{kept}}</span>{{/if}}
+        </h3>
+        <ul class="cog-lootbox-prize-cards">
+          {{#each prizes}}
+            {{#if isLine}}
+              <li class="cog-lootbox-caption{{#if notice}} is-notice{{/if}}"><em>{{text}}</em></li>
+            {{else}}
+              {{> "systems/sprinter-rpg/templates/apps/loot-box-show/prize.hbs"}}
+            {{/if}}
+          {{/each}}
+        </ul>
+      </div>
+    {{/each}}
+    {{#if summary.gold}}<p class="cog-lootbox-gold-total"><strong>{{summary.gold}}</strong></p>{{/if}}
+  {{/if}}
+</section>

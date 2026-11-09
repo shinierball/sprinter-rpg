@@ -5,15 +5,15 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { COGSessionEngine } from '../../apps/session-manager.mjs';
+import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { currentTimeContext } from '../../documents/actor/dungeon-time.mjs';
-import { dayIndex, DAY_HOURS, SECONDS_PER_HOUR } from '../../utils/timing.mjs';
+import { dayIndex, DAY_HOURS, SECONDS_PER_HOUR } from '../../utils/time/timing.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { isGmAuthored } from '../chat-relay.mjs';
 import { AI_FAVOR_TALLY_FLAG, renderAiFavorTallyCard, tallyText } from '../ai-favor-tally-card.mjs';
 
 /** The actor flag holding the "no AI Favor today" bar: `{ day }`, the day index it was set on (E6.10 D-C7). */
-export const AI_FAVOR_BAR_FLAG = 'aiFavorBar';
+const AI_FAVOR_BAR_FLAG = 'aiFavorBar';
 
 const BAR_TEXT = Object.freeze({
   'COG.AiFavor.BarTitle': 'No AI Favor Today',

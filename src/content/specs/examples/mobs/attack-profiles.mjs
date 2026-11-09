@@ -9,7 +9,7 @@
  * Rider references are bare debuff identifiers: registered conditions (`staggered`, `blinded`, ...) or the 3.4 example
  * debuffs (`stage-fright`, `wardrobe-malfunction`), never names (3.4 section 4 reference rule).
  */
-import '../../../../apps/mob-creator/build.mjs'; // registers the `mob` payload delegate (pure)
+import '../../../../data/builders/mob-payload.mjs'; // registers the `mob` payload delegate (pure)
 import { exampleId } from '../ids.mjs';
 
 const ID = Object.freeze({

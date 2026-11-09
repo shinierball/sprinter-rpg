@@ -8,24 +8,25 @@
  *
  * Strings live under `COG.ItemSummary.GearLoot` in lang/en.json; the defaults below are identical (a test checks it).
  */
-import { rollsNoDamage, baseDamageText as structuredDamageText } from '../base-damage.mjs';
+import { rollsNoDamage, baseDamageText as structuredDamageText } from '../damage/base-damage.mjs';
 import { itemLine, t, conditionName, documentName, humanizeId, defineItemSummaryTemplates, str, token, num, signed, healBarsText, tempBarsText } from './shared.mjs';
-import { isWeaponGear, getWieldMode, isNaturalWeapon } from '../wielding.mjs';
-import { getDamageParts, formatDamagePart, primaryDamagePart, attackDamageDisplay } from '../damage-parts.mjs';
-import { resolveAttackToHit, attackToHitStat } from '../to-hit-display.mjs';
-import { abilityModifierEntries } from '../ability-modifiers.mjs';
-import { statName, applyRowLabels, choiceLabel } from '../feature-describer.mjs';
-import { outcomeWeightTotal, outcomeChancePercent } from '../outcome-weights.mjs';
-import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeLearnRank, outcomeStatValue, outcomeRestore } from '../outcome-defaults.mjs';
-import { cooldownLabel, hasCooldown } from '../cooldowns.mjs';
-import { resolveReachedRankBreaks } from '../rank-breaks.mjs';
+import { isWeaponGear, getWieldMode, isNaturalWeapon } from '../gear/wielding.mjs';
+import { getDamageParts, formatDamagePart, primaryDamagePart, attackDamageDisplay } from '../damage/damage-parts.mjs';
+import { resolveAttackToHit, attackToHitStat } from '../attack/to-hit-display.mjs';
+import { statName, applyRowLabels, choiceLabel } from './feature-describer.mjs';
+import { outcomeWeightTotal, outcomeChancePercent } from '../loot/outcome-weights.mjs';
+import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeLearnRank, outcomeStatValue, outcomeRestore } from '../loot/outcome-defaults.mjs';
+import { cooldownLabel, hasCooldown } from '../time/cooldowns.mjs';
+import { resolveReachedRankBreaks } from '../skill/rank-breaks.mjs';
 import { rankBreakLine } from './rank-break-text.mjs';
-import { asTriggerLines } from '../amazing-success.mjs';
+import { asTriggerLines } from '../roll/amazing-success.mjs';
 import { resolveGrantName } from '../../data/race-class-grants.mjs';
 import { isScratchLootType, lootTypeLabel } from '../../models/items/loot-model.mjs';
-import { itemUsage, USAGE_KINDS, isAuraItem } from '../tag-mechanics.mjs';
+import { itemUsage, USAGE_KINDS, isAuraItem } from '../tag/tag-mechanics.mjs';
 import { describeAreaEffects } from './blocks-spell-skill.mjs';
 import { getUsedForm } from '../../data/rules/used-forms.mjs';
+import { enchantOutcomeEffect } from './blocks-crafting.mjs';
+import { ENCHANT_ITEM_OUTCOME } from '../loot/outcome-defaults.mjs';
 
 const K = 'COG.ItemSummary.GearLoot.';
 
@@ -45,7 +46,6 @@ defineItemSummaryTemplates({
   [`${K}Damage`]: 'Damage: {text}',
   [`${K}Crit`]: 'Critical hits multiply damage by {n}',
   [`${K}IgnoreDR`]: 'Ignores DR',
-  [`${K}AbilityMod`]: '{value} {stat}',
   [`${K}PersistentBuffs`]: 'While equipped, grants: {list}',
   [`${K}PersistentDebuffs`]: 'While equipped, inflicts: {list}',
   [`${K}Heal`]: 'Heals {bars} each round',
@@ -304,17 +304,6 @@ const weaponRankBreaks = {
 /*  Gear: stats, persistent effects, healing    */
 /* -------------------------------------------- */
 
-const abilityMods = {
-  id: 'ability-modifiers',
-  group: 'stat',
-  applies: (item) => isGear(item) && abilityModifierEntries(sysOf(item).abilityModifiers).length > 0,
-  describe: (item) => abilityModifierEntries(sysOf(item).abilityModifiers).map(({ stat, value, pct }) => itemLine(
-    'stat',
-    t(`${K}AbilityMod`, { value: `${signed(value)}${pct ? '%' : ''}`, stat: statName(stat) }),
-    `system.abilityModifiers.${stat}`
-  ))
-};
-
 const persistentBuffs = {
   id: 'persistent-buffs',
   group: 'other',
@@ -504,6 +493,8 @@ async function outcomeEffect(out, ctx) {
       if (!shown) return { kind: 'use', effect: t(`${K}OutcomeTableUnnamed`) };
       return { kind: 'use', effect: t(`${K}OutcomeTable`, { name: shown }), subject: shown };
     }
+    case ENCHANT_ITEM_OUTCOME:
+      return enchantOutcomeEffect(out);
     default:
       return { kind: 'use', effect: '' };
   }
@@ -542,6 +533,6 @@ const outcomes = {
 export const BLOCKS = Object.freeze([
   gearSlot, wieldMode, weaponFlag, gearAreaEffects, weaponClass, weaponSkills, optionalEffects,
   weaponToHit, weaponDamage, weaponCrit, ignoreDR, asTriggers, weaponRankBreaks,
-  abilityMods, persistentBuffs, persistentDebuffs, gearHealing, gearTempBars,
+  persistentBuffs, persistentDebuffs, gearHealing, gearTempBars,
   activatedAbility, lootType, usageLine, charges, lootCooldown, linkedSpell, outcomes
 ]);

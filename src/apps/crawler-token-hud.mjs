@@ -6,17 +6,20 @@
  *    positioned directly below the scene list (#navigation / #scene-list).
  */
 
-import { nextCameraChoice, armedCamera, camerasOffered, cameraArmView } from '../utils/cameras.mjs';
+import { HIDEABLE_HUD_CLASS } from '../utils/effects/hud-visibility.mjs';
+import { nextCameraChoice, armedCamera, camerasOffered, cameraArmView } from '../utils/roll/cameras.mjs';
 import { isWeaponGear } from '../documents/actor.mjs';
 import { SYSTEM_PATH, SYSTEM_ID } from '../constants.mjs';
 import { COGToolApp } from './tool-app.mjs';
-import { primaryDamagePart, formatDamagePart } from '../utils/damage-parts.mjs';
-import { isPassiveSkill, isAttackSkill, spellRole, spellRoleLabel } from '../utils/tag-mechanics.mjs';
-import { hotlistSlotId, resolveHotlistItem, isActivatableGear } from '../utils/hotlist.mjs';
-import { offersSpellAttack } from '../utils/spell-cast-link.mjs';
-import { attackText } from '../utils/attack-text.mjs';
-import { skipOptions } from '../utils/attack-options.mjs';
-import { rollDamageFromHitCard } from '../utils/hit-card-damage.mjs';
+import { primaryDamagePart, formatDamagePart } from '../utils/damage/damage-parts.mjs';
+import { isPassiveSkill, isAttackSkill, spellRole, spellRoleLabel } from '../utils/tag/tag-mechanics.mjs';
+import { hotlistSlotId, resolveHotlistItem, isActivatableGear } from '../utils/ui/hotlist.mjs';
+import { offersSpellAttack } from '../utils/attack/spell-cast-link.mjs';
+import { attackText } from '../utils/attack/attack-text.mjs';
+import { skipOptions } from '../utils/attack/attack-options.mjs';
+import { setItemEquipped } from '../documents/item/enchantments.mjs';
+import { setDebuffPaused, canSwitchDebuff } from '../documents/actor/debuff-switch.mjs';
+import { rollDamageFromHitCard } from '../utils/damage/hit-card-damage.mjs';
 
 /** Client-scoped setting holding the dragged position of the action HUD. */
 export const ACTION_HUD_POSITION_SETTING = 'actionHudPosition';
@@ -53,7 +56,7 @@ function replaceOrAppend(element, parentFor) {
 export class COGCrawlerHotbarHUD extends COGToolApp {
   static DEFAULT_OPTIONS = {
     id: 'cog-crawler-hotbar-hud',
-    classes: ['cog-hud-overlay', 'cog-crawler-hotbar-hud'],
+    classes: ['cog-hud-overlay', HIDEABLE_HUD_CLASS, 'cog-crawler-hotbar-hud'],
     window: { frame: false, positioned: false, resizable: false, minimizable: false },
     actions: {
       toggleCollapsed: COGCrawlerHotbarHUD.#onToggleCollapsed,
@@ -319,7 +322,7 @@ export class COGCrawlerHotbarHUD extends COGToolApp {
   static async #onToggleEquip(event, target) {
     const item = findActorItem(this.actor, target.dataset.itemId);
     if (item) {
-      await item.update({ 'system.equipped': !item.system?.equipped });
+      await setItemEquipped(item, !item.system?.equipped);
     }
   }
 
@@ -361,7 +364,7 @@ export class COGCrawlerHotbarHUD extends COGToolApp {
 export class COGCrawlerActionHUD extends COGToolApp {
   static DEFAULT_OPTIONS = {
     id: 'cog-crawler-action-hud',
-    classes: ['cog-hud-overlay', 'cog-crawler-action-hud'],
+    classes: ['cog-hud-overlay', HIDEABLE_HUD_CLASS, 'cog-crawler-action-hud'],
     window: { frame: false, positioned: false, resizable: false, minimizable: false },
     actions: {
       toggleCollapsed: COGCrawlerActionHUD.#onToggleCollapsed,
@@ -370,6 +373,7 @@ export class COGCrawlerActionHUD extends COGToolApp {
       attackHit: COGCrawlerActionHUD.#onAttackHit,
       attackDamage: COGCrawlerActionHUD.#onAttackDamage,
       rollSkill: COGCrawlerActionHUD.#onRollSkill,
+      toggleDebuffPaused: COGCrawlerActionHUD.#onToggleDebuffPaused,
       skillDamage: COGCrawlerActionHUD.#onSkillDamage
     }
   };
@@ -454,6 +458,11 @@ export class COGCrawlerActionHUD extends COGToolApp {
       }
     }
 
+    const debuffs = allItems.filter(i => i.type === 'debuff' && canSwitchDebuff(i)).map(i => ({
+      id: i.id, name: i.name, img: i.img || 'icons/svg/skull.svg', paused: i.system?.paused === true
+    }));
+    debuffs.sort((a, b) => a.name.localeCompare(b.name));
+
     // Sort alphabetically by name
     attacks.sort((a, b) => a.name.localeCompare(b.name));
     skills.sort((a, b) => a.name.localeCompare(b.name));
@@ -466,6 +475,7 @@ export class COGCrawlerActionHUD extends COGToolApp {
       cameraArm: camerasOffered(this.actor) ? cameraArmView(this.actor) : null,
       attacks,
       skills,
+      debuffs,
       attackCount: attacks.length,
       skillCount: skills.length
     });
@@ -629,6 +639,12 @@ export class COGCrawlerActionHUD extends COGToolApp {
     } else if (typeof item.roll === 'function') {
       await item.roll();
     }
+  }
+
+  /** Pause or resume a debuff (owner or GM). */
+  static async #onToggleDebuffPaused(event, target) {
+    const item = findActorItem(this.actor, target.closest('[data-item-id]')?.dataset.itemId);
+    if (item) await setDebuffPaused(item);
   }
 
   static async #onSkillDamage(event, target) {

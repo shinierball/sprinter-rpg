@@ -6,18 +6,6 @@
  */
 import { BOOK_IDS } from './book-ids.mjs';
 
-/**
- * Id -> reason, for runtime code that may name a hidden document. Every key is a book id (tests/content/no-book-shown-6-6).
- *   tag-expansion  a tag's `references` expansion, not a link: it takes effect once the book's document is imported
- *   private-tool   a maintainer tool that is not published and only proposes rows for imported perks
- */
-export const RUNTIME_REF_ALLOW = Object.freeze({
-  dccskl0000000012: 'tag-expansion',
-  dccskl0000000015: 'tag-expansion',
-  dccamr0000000006: 'private-tool',
-  dccitm0000000012: 'private-tool'
-});
-
 /** True when `id` is a book document id. */
 export function isHiddenId(id) {
   return typeof id === 'string' && BOOK_IDS.has(id);

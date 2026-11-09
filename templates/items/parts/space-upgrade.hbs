@@ -18,7 +18,7 @@
 
   <div class="cog-field-group">
     <span class="cog-field-label">Description</span>
-    <textarea class="cog-field-input" name="system.description" rows="3">{{system.description}}</textarea>
+    {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
   </div>
 
   <details class="cog-collapsible-block" open>
@@ -100,10 +100,23 @@
         {{#each craftingFields as |f|}}
           <div class="cog-field-group flex-1">
             <span class="cog-field-label">{{f.label}}</span>
-            <input class="cog-field-input" type="number" step="1" min="{{f.min}}" name="{{f.path}}" value="{{f.value}}" />
+            <input class="cog-field-input" type="number" step="1" min="{{f.min}}" name="{{f.path}}" value="{{f.value}}" placeholder="{{f.placeholder}}" />
           </div>
         {{/each}}
       </div>
+      {{!-- Effective tier (3.15): derived from the numbers above and the floors reached; buying and coupons write the numbers --}}
+      <div class="cog-field-row cog-crafting-tier">
+        <span class="cog-badge">{{localize "COG.CraftSheet.Table.TierBadge" tier=craftingTier.tier}}</span>
+        <span class="cog-text-secondary">{{craftingTier.breakdown}}</span>
+        <span class="cog-text-secondary">{{craftingTier.acquiredText}}</span>
+      </div>
+      {{#if craftingActions.visible}}
+        <div class="cog-field-row cog-crafting-tier-actions">
+          <button type="button" class="cog-btn" data-action="buyTableTier" data-tooltip="{{localize 'COG.CraftSheet.Table.BuyHint' cost=craftingActions.cost}}"><i class="fa-solid fa-coins"></i> {{localize "COG.CraftSheet.Table.Buy" cost=craftingActions.cost}}</button>
+          <button type="button" class="cog-btn" data-action="applyTableCoupon" data-tooltip="{{localize 'COG.CraftSheet.Table.CouponHint'}}"><i class="fa-solid fa-ticket"></i> {{localize "COG.CraftSheet.Table.Coupon" count=craftingActions.coupons}}</button>
+          <span class="cog-text-secondary">{{#if craftingActions.hasPayer}}{{localize "COG.CraftSheet.Table.Payer" name=craftingActions.payerName}}{{else}}{{localize "COG.CraftSheet.Table.NoPayer"}}{{/if}}</span>
+        </div>
+      {{/if}}
     </div>
   </details>
 </section>

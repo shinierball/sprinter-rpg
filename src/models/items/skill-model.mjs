@@ -1,23 +1,8 @@
-import {
-  BaseItemDataModel,
-  baseDamageField,
-  onHitField, contestField,
-  areaSchemaField,
-  interruptSchemaField,
-  damageModifiersField,
-  defenseModifiersField,
-  rollModifiersField,
-  popularityTriggersField,
-  aiFavorRatingsField,
-  rankDamagePartsField,
-  lightSchemaField,
-  auraStateField,
-  cooldownField,
-  rankBreakTimingFields,
-  useRecordsField,
-  durationConfigField
-} from './base-item-model.mjs';
-import { rankBreaksField } from '../../utils/rank-breaks.mjs';
+import { BaseItemDataModel } from './base-item-model.mjs';
+import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField } from '../fields/effect-fields.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, popularityTriggersField, aiFavorRatingsField } from '../fields/modifier-fields.mjs';
+import { cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
+import { rankBreaksField } from '../../utils/skill/rank-breaks.mjs';
 
 /**
  * Data Model for Sprinter RPG Skill Items.
@@ -35,6 +20,8 @@ export class SkillDataModel extends BaseItemDataModel {
       // A CONFIG.COG.checkTypes id (no `choices`: the registry validates, so a module can add one). `checkNote` is the book's wording: human text, never read by a mechanic.
       checkType: new fields.StringField({ initial: 'stat' }),
       checkNote: new fields.StringField({ initial: '' }),
+      // The crawler's chosen specialty: one tag id (an item's identity tag or an item type). Read by roll-context as `situation.specialty`.
+      specialty: new fields.StringField({ initial: '' }),
       canGainRanks: new fields.BooleanField({ initial: true }),
       rankSource: new fields.StringField({ initial: 'own', choices: ['own', 'floor'] }),
       isAttack: new fields.BooleanField({ initial: false }),
@@ -53,6 +40,8 @@ export class SkillDataModel extends BaseItemDataModel {
       defenseModifiers: defenseModifiersField(fields),
       attackModifiers: rollModifiersField(fields),
       checkModifiers: rollModifiersField(fields),
+      craftModifiers: craftModifiersField(fields),
+      vehicleModifiers: vehicleModifiersField(fields),
       rankDamageParts: rankDamagePartsField(fields),
 
       checked: new fields.BooleanField({ initial: false }),

@@ -6,8 +6,9 @@
  */
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { isGmOnlyItem, refuseGmOnlyItem, refuseStashedBox } from '../../documents/actor/gm-only-items.mjs';
 
-export const ITEM_TRANSFER_RELAY = 'transferItemDelete';
+const ITEM_TRANSFER_RELAY = 'transferItemDelete';
 
 /** The actor a dropped item currently belongs to, or null for world / compendium items. */
 function sourceActorOf(item) {
@@ -16,7 +17,7 @@ function sourceActorOf(item) {
 }
 
 /** True when the dropped item is embedded on an actor other than `targetActor`. */
-export function isCrossActorDrop(item, targetActor) {
+function isCrossActorDrop(item, targetActor) {
   const source = sourceActorOf(item);
   return Boolean(source && source.uuid !== targetActor?.uuid);
 }
@@ -33,6 +34,7 @@ registerRelayAction(ITEM_TRANSFER_RELAY, {
     const req = resolveRequest(payload);
     if (!req) return false;
     if (user?.isGM) return true;
+    if (isGmOnlyItem(req.item)) return false;
     return Boolean(req.target.testUserPermission?.(user, 'OWNER') && req.source.testUserPermission?.(user, 'OBSERVER'));
   },
   async apply(payload) {
@@ -42,6 +44,19 @@ registerRelayAction(ITEM_TRANSFER_RELAY, {
     return true;
   }
 });
+
+/**
+ * Whether a drop onto `targetActor` must be refused before the copy is made: a loot box going into or out of a
+ * personal space (anyone), or a loot box or achievement dragged from another actor by a non-GM. Warns once.
+ * @param {Item} item the dragged (source) item
+ * @param {Actor} targetActor
+ * @returns {boolean} true when refused
+ */
+export function refuseGmOnlyDrop(item, targetActor) {
+  const stash = targetActor?.type === 'personal_space' || sourceActorOf(item)?.type === 'personal_space';
+  if (stash && targetActor?.uuid !== sourceActorOf(item)?.uuid && refuseStashedBox(item)) return true;
+  return isCrossActorDrop(item, targetActor) && refuseGmOnlyItem(item);
+}
 
 /**
  * Finish a transfer after the copy was created on `targetActor`. No-op for same-actor and non-actor sources.

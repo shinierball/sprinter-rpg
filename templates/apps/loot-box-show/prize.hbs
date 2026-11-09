@@ -1,0 +1,33 @@
+{{!-- One prize card of the Loot Box Showcase (the stage and the summary). Context: a prize view; @root.labels. --}}
+<li class="cog-lootbox-prize-card{{#if isNew}} is-new{{/if}}{{#if isGold}} is-gold{{/if}}" data-prize-type="{{type}}">
+  {{#if isItem}}
+    {{#if img}}<img class="cog-lootbox-prize-img cog-bg-icon-box" src="{{img}}" alt="">{{/if}}
+    <div class="cog-lootbox-prize-body">
+      <div class="cog-lootbox-prize-name">
+        <strong>{{name}}</strong>{{#if showQuantity}} <span class="cog-lootbox-prize-qty">x{{quantity}}</span>{{/if}}
+        {{#if generated}}<span class="cog-state-badge cog-lootbox-generated">{{@root.labels.generated}}</span>{{/if}}
+        {{#if chosen}}<span class="cog-state-badge cog-lootbox-chosen">{{@root.labels.chosen}}</span>{{/if}}
+      </div>
+      {{#if label}}<div class="cog-lootbox-prize-label"><em>{{label}}</em></div>{{/if}}
+      {{#if summary}}<div class="cog-lootbox-prize-summary">{{summary}}</div>{{/if}}
+      {{#if lines.length}}
+        <ul class="cog-lootbox-prize-lines">
+          {{#each lines}}
+            <li class="cog-lootbox-prize-line{{#if pending}} is-pending{{/if}}">{{#if pending}}<i class="fa-solid fa-pen-ruler" title="{{@root.labels.gmToFinish}}"></i> {{/if}}{{text}}</li>
+          {{/each}}
+        </ul>
+      {{/if}}
+      {{#if @root.summary}}{{#if uuid}}
+        <a class="cog-lootbox-open-sheet" data-action="openPrize" data-uuid="{{uuid}}"><i class="fa-solid fa-up-right-from-square"></i> {{@root.summary.openSheet}}</a>
+      {{/if}}{{/if}}
+    </div>
+  {{else if isGold}}
+    <i class="cog-lootbox-prize-icon fa-solid fa-coins" aria-hidden="true"></i>
+    <div class="cog-lootbox-prize-body">
+      <strong class="cog-lootbox-gold-amount" data-gold-count>{{text}}</strong>
+      {{#if label}}<div class="cog-lootbox-prize-label"><em>{{label}}</em></div>{{/if}}
+    </div>
+  {{else}}
+    <div class="cog-lootbox-prize-body"><em>{{text}}</em></div>
+  {{/if}}
+</li>

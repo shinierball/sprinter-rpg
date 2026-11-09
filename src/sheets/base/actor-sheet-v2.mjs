@@ -1,6 +1,6 @@
 import { HandlebarsApplicationMixin, ActorSheetV2, getSortingHelpers } from '../../compat.mjs';
 import { COGSheetMixin } from './sheet-mixin.mjs';
-import { completeItemTransfer } from './item-transfer.mjs';
+import { completeItemTransfer, refuseGmOnlyDrop } from './item-transfer.mjs';
 
 const DEFAULT_SORT_DENSITY = 100000;
 
@@ -38,6 +38,7 @@ export class COGActorSheetV2 extends COGSheetMixin(HandlebarsApplicationMixin(Ac
   async _onDropItem(event, item) {
     if (!this.actor.isOwner) return null;
     if (item.parent?.uuid === this.actor.uuid) return this._onSortItem(event, item);
+    if (refuseGmOnlyDrop(item, this.actor)) return null;
     const created = await this._onDropItemCreate(item.toObject(), event);
     if (created && (!Array.isArray(created) || created.length)) await completeItemTransfer(item, this.actor);
     return created;

@@ -111,7 +111,7 @@ export async function onDeleteActor(actor) {
 }
 
 /** `deleteToken`: active GM only; only an unlinked token's synthetic actor is removed from crews. */
-export async function onDeleteToken(tokenDoc) {
+async function onDeleteToken(tokenDoc) {
   if (!isActiveGM() || !tokenDoc || tokenDoc.actorLink !== false) return;
   const actor = tokenDoc.actor ?? null;
   try {
@@ -131,7 +131,7 @@ export async function onDeleteToken(tokenDoc) {
  * @param {object} actorOrToken a vehicle actor (also an unlinked token's synthetic actor), or a token document
  * @returns {number} sheets closed
  */
-export function closeSheetsOfVehicleLostAccess(actorOrToken) {
+function closeSheetsOfVehicleLostAccess(actorOrToken) {
   const user = globalThis.game?.user;
   if (!user || user.isGM) return 0;
   const actor = actorOrToken?.documentName === 'Token' ? actorOrToken.actor : actorOrToken;

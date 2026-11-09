@@ -9,10 +9,18 @@
  * pack, built on the empty registry `build:packs` uses. Links between actors use `Actor.<_id>` UUIDs
  * and `_id`s: they resolve once the examples-actors pack is imported with its ids.
  */
-import '../../../apps/mob-creator/build.mjs'; // registers the `mob` payload delegate (pure)
+import '../../../data/builders/mob-payload.mjs'; // registers the `mob` payload delegate (pure)
 import '../../../data/builders/crawler-payload.mjs'; // registers the `crawler` payload delegate (pure)
 import '../../../documents/actor/personal-space-links.mjs'; // registers the `personal_space` payload delegate
-import { EXAMPLE_ACTOR_IDS as A, exampleActorUuid } from './refs.mjs';
+import { EXAMPLE_ACTOR_IDS as A, EXAMPLE_ITEM_IDS, exampleActorUuid } from './refs.mjs';
+import { EXAMPLE_IDENTITY_SPECS } from './identity.mjs';
+
+/** The Rehearsal Room as an embedded copy: the same spec as the example, no `_id` (the pack gives the copy its own). */
+const REHEARSAL_ROOM = (() => {
+  const spec = EXAMPLE_IDENTITY_SPECS.find((s) => s._id === EXAMPLE_ITEM_IDS['rehearsal-room']);
+  const { _id, ...rest } = structuredClone(spec);
+  return rest;
+})();
 
 const stats = (str, dex, con, int, cha) => ({
   str: { value: str, mod: Math.floor(str / 3) + 1 },
@@ -48,7 +56,8 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
     quests: [],
     outsideFeed: [],
     amenities: 'Snacks you cannot eat, a couch you cannot sit on.',
-    notes: '<p>Snacks you cannot eat, a couch you cannot sit on. Add the Rehearsal Room upgrade from the examples to train here.</p>'
+    notes: '<p>Snacks you cannot eat, a couch you cannot sit on. The Rehearsal Room upgrade is installed, so you can train here.</p>',
+    items: [REHEARSAL_ROOM]
   },
   {
     type: 'mob',
@@ -144,16 +153,15 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
     name: 'Prize Showcase Golf Cart',
     img: 'icons/svg/walk.svg',
     system: {
-      vehicleType: 'Ground',
+      kind: 'wheeled',
       ownerId: A['contestant-zero'],
       pilotUuid: exampleActorUuid('contestant-zero'),
       occupants: [
         { uuid: exampleActorUuid('contestant-zero'), role: 'passenger' },
         { uuid: exampleActorUuid('off-brand-bodyguard'), role: 'gunner' }
       ],
-      abilities: stats(6, 4, 9, 1, 1),
-      attributes: { hp: { value: 30, max: 30 }, move: 40, size: 'large' },
-      details: { level: 1, notes: '<p>It could be yours. It is, now. Please return it.</p>' }
+      attributes: { move: 40, size: 'large', occupancy: 4 },
+      details: { notes: '<p>It could be yours. It is, now. Please return it.</p>' }
     }
   },
   {

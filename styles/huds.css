@@ -1,0 +1,1052 @@
+/* =======================================================
+   CRAWLER TOKEN ACTION HUDS (HOTBAR & LEFT ACTION PANEL)
+   ======================================================= */
+
+/* --- 1. Crawler Hotbar Action HUD (Above Macro Bar) --- */
+#cog-crawler-hotbar-hud {
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 6px;
+  z-index: 70;
+  position: relative;
+  font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.cog-hotbar-hud-bar {
+  background: color-mix(in srgb, var(--cog-window-bg) 94%, transparent);
+  backdrop-filter: blur(6px);
+  border: 2px solid var(--cog-accent);
+  border-radius: 6px;
+  box-shadow: 0 -4px 15px color-mix(in srgb, var(--cog-ink) 60%, transparent), inset 0 1px 0 color-mix(in srgb, var(--cog-on-fill) 10%, transparent);
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  max-width: 95vw;
+}
+
+.cog-hotbar-hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--cog-window-bg);
+  border-bottom: 1px solid var(--cog-panel-border);
+  padding: 2px 6px;
+  border-radius: 4px 4px 0 0;
+  margin-bottom: 4px;
+}
+
+.cog-hotbar-hud-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cog-danger);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-hotbar-hud-title i {
+  color: var(--cog-gold);
+}
+
+.cog-hotbar-hud-ctrl-btn {
+  background: transparent;
+  border: none;
+  color: var(--cog-text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.cog-hotbar-hud-ctrl-btn:hover {
+  color: var(--cog-on-fill);
+}
+
+.cog-hotbar-hud-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(68px, 86px));
+  gap: 4px;
+}
+
+.cog-hotbar-hud-slot {
+  background: var(--cog-surface-muted);
+  border: 1.5px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 3px;
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cog-hotbar-hud-slot:hover {
+  border-color: var(--cog-accent);
+}
+
+.cog-hotbar-hud-slot.is-empty {
+  border-style: dashed;
+  border-color: var(--cog-panel-border);
+  background: color-mix(in srgb, var(--cog-window-bg) 40%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cog-hotbar-hud-slot.is-empty:hover {
+  border-color: var(--cog-border-muted);
+}
+
+.cog-hotbar-hud-slot.drag-over {
+  border-color: var(--cog-danger);
+  background: var(--cog-danger-tint);
+}
+
+.cog-hotbar-slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  margin-bottom: 2px;
+  gap: 2px;
+}
+
+.cog-hotbar-slot-num {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  color: var(--cog-warning);
+  background: var(--cog-window-bg);
+  padding: 0 4px;
+  border-radius: 2px;
+  border: 1px solid var(--cog-panel-border);
+}
+
+.cog-hotbar-slot-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 0 3px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 44px;
+}
+
+.cog-hotbar-slot-badge.spell {
+  background: var(--cog-magic-fill);
+}
+
+.cog-hotbar-slot-badge.attack {
+  background: var(--cog-accent-fill);
+}
+
+.cog-hotbar-slot-badge.gear {
+  background: var(--cog-success-fill);
+}
+
+.cog-hotbar-slot-badge.loot {
+  background: var(--cog-warning-fill);
+}
+
+.cog-hotbar-slot-badge.skill {
+  background: var(--cog-info-fill);
+}
+
+.hotlist-slot-clear {
+  color: var(--cog-text-muted);
+  cursor: pointer;
+  font-size: 9px;
+  padding: 0 2px;
+}
+
+.hotlist-slot-clear:hover {
+  color: var(--cog-danger);
+}
+
+.cog-hotbar-slot-body {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0;
+  overflow: hidden;
+  cursor: default;
+}
+
+.cog-hotbar-slot-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--cog-border-muted);
+  flex-shrink: 0;
+}
+
+.cog-hotbar-slot-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  line-height: 1.1;
+}
+
+.cog-hotbar-slot-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cog-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cog-hotbar-slot-detail {
+  font-size: 8px;
+  color: var(--cog-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cog-hotbar-slot-empty {
+  color: var(--cog-text-secondary);
+  font-size: 10px;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.cog-hotbar-slot-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.cog-hud-btn {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 2px 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--cog-on-fill);
+  background: var(--cog-header-fill);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  line-height: 1.2;
+}
+
+/* Icon-only spell buttons (Dmg, Atk): a slot row is ~78px, so Cast keeps its label and the rest show an icon and a tooltip. */
+.cog-hud-btn-icon {
+  flex: 0 0 22px;
+}
+
+.cog-hotbar-slot-actions:has(.cog-hud-btn-icon) .cog-hud-btn-spell i {
+  display: none;
+}
+
+.cog-hud-btn:hover {
+  background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%);
+  border-color: var(--cog-border-muted);
+}
+
+.cog-hud-btn-hit {
+  background: var(--cog-accent-strong-fill);
+  border-color: var(--cog-accent-fill);
+}
+
+.cog-hud-btn-hit:hover {
+  background: var(--cog-accent-fill);
+  border-color: var(--cog-danger-fill);
+}
+
+.cog-hud-btn-dmg {
+  background: var(--cog-accent-fill);
+  border-color: var(--cog-danger-fill);
+}
+
+.cog-hud-btn-dmg:hover {
+  background: var(--cog-danger-fill);
+}
+
+.cog-hud-btn-spell {
+  background: var(--cog-magic-fill);
+  border-color: var(--cog-magic-fill);
+}
+
+.cog-hud-btn-spell:hover {
+  background: color-mix(in srgb, var(--cog-magic-fill), var(--cog-ink) 15%);
+}
+
+.cog-hud-btn-gear {
+  background: var(--cog-success-fill);
+  border-color: var(--cog-success-fill);
+}
+
+.cog-hud-btn-gear.is-equipped {
+  background: var(--cog-success-fill);
+  border-color: var(--cog-success-fill);
+}
+
+.cog-hud-btn-gear:hover {
+  background: color-mix(in srgb, var(--cog-success-fill), var(--cog-ink) 15%);
+}
+
+.cog-hud-btn-use {
+  background: var(--cog-warning-fill);
+  border-color: var(--cog-warning-fill);
+}
+
+.cog-hud-btn-use:hover {
+  background: color-mix(in srgb, var(--cog-warning-fill), var(--cog-ink) 15%);
+}
+
+/* --- 2. Left Action HUD Panel (Below Scene List) --- */
+#cog-crawler-action-hud {
+  position: fixed;
+  z-index: 70;
+  pointer-events: auto;
+  font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  transition: opacity 0.2s ease;
+}
+
+.cog-action-hud-panel {
+  width: 240px;
+  background: color-mix(in srgb, var(--cog-window-bg) 94%, transparent);
+  backdrop-filter: blur(6px);
+  border: 2px solid var(--cog-accent);
+  border-radius: 6px;
+  box-shadow: 0 4px 15px color-mix(in srgb, var(--cog-ink) 60%, transparent), inset 0 1px 0 color-mix(in srgb, var(--cog-on-fill) 10%, transparent);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 120px);
+}
+
+.cog-action-hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--cog-window-bg);
+  border-bottom: 2px solid var(--cog-accent);
+  padding: 4px 8px;
+}
+
+.cog-action-hud-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cog-danger);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cog-action-hud-title i {
+  color: var(--cog-gold);
+}
+
+.cog-action-hud-toggle {
+  background: transparent;
+  border: none;
+  color: var(--cog-text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.cog-action-hud-toggle:hover {
+  color: var(--cog-on-fill);
+}
+
+.cog-action-hud-content {
+  overflow-y: auto;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cog-action-hud-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cog-action-section-header {
+  background: var(--cog-info-tint);
+  border-left: 3px solid var(--cog-accent);
+  padding: 2px 6px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cog-text);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.cog-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cog-action-item {
+  background: var(--cog-surface-muted);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: border-color 0.15s ease;
+}
+
+.cog-action-item:hover {
+  border-color: var(--cog-accent);
+}
+
+.cog-action-item-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-action-item-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--cog-border-muted);
+  flex-shrink: 0;
+}
+
+.cog-action-item-details {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  line-height: 1.1;
+}
+
+.cog-action-item-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cog-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cog-action-item-sub {
+  font-size: 9px;
+  color: var(--cog-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cog-action-item-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.cog-action-empty {
+  font-size: 10px;
+  color: var(--cog-text-muted);
+  font-style: italic;
+  padding: 4px;
+  text-align: center;
+}
+
+/* =======================================================
+   BOSS STARS & CRAWLER SKULLS (PUBLIC NOTORIETY BADGES)
+   ======================================================= */
+
+.cog-badge-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  vertical-align: middle;
+  padding: 1px 4px;
+  background: color-mix(in srgb, var(--cog-ink) 40%, transparent);
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--cog-on-fill) 10%, transparent);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--cog-ink) 50%, transparent);
+  font-size: 11px;
+}
+
+.cog-star-cluster,
+.cog-skull-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Star Tiers */
+.star-bronze {
+  color: var(--cog-gold);
+  text-shadow: 0 0 4px color-mix(in srgb, var(--cog-gold) 70%, transparent);
+}
+
+.star-silver {
+  color: var(--cog-text);
+  text-shadow: 0 0 4px color-mix(in srgb, var(--cog-on-fill) 80%, transparent), 0 0 8px color-mix(in srgb, var(--cog-on-fill) 50%, transparent);
+}
+
+.star-gold {
+  color: var(--cog-gold);
+  text-shadow: 0 0 5px color-mix(in srgb, var(--cog-gold) 90%, transparent), 0 0 10px color-mix(in srgb, var(--cog-warning) 60%, transparent);
+}
+
+.star-platinum {
+  color: var(--cog-info);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--cog-info) 90%, transparent), 0 0 12px color-mix(in srgb, var(--cog-info) 70%, transparent);
+}
+
+.star-legendary {
+  color: var(--cog-warning);
+  text-shadow: 0 0 6px var(--cog-warning), 0 0 12px color-mix(in srgb, var(--cog-danger) 80%, transparent);
+  animation: cog-legendary-pulse 2s infinite alternate;
+}
+
+.star-celestial {
+  color: var(--cog-magic);
+  text-shadow: 0 0 6px var(--cog-magic), 0 0 12px var(--cog-info), 0 0 16px var(--cog-magic);
+  animation: cog-celestial-pulse 1.8s infinite alternate;
+}
+
+.crawler-skull {
+  color: var(--cog-text);
+  text-shadow: 0 0 4px var(--cog-accent), 0 0 8px color-mix(in srgb, var(--cog-accent) 80%, transparent);
+}
+
+@keyframes cog-legendary-pulse {
+  from {
+    filter: drop-shadow(0 0 1px var(--cog-warning));
+  }
+  to {
+    filter: drop-shadow(0 0 4px var(--cog-danger));
+  }
+}
+
+@keyframes cog-celestial-pulse {
+  0% {
+    filter: hue-rotate(0deg) drop-shadow(0 0 2px var(--cog-magic));
+  }
+  100% {
+    filter: hue-rotate(45deg) drop-shadow(0 0 5px var(--cog-info));
+  }
+}
+
+/* Trophy Manager Card and Table */
+.cog-trophy-manager-card {
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.cog-trophy-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.cog-trophy-tier-card {
+  background: var(--cog-surface);
+  border-radius: 4px;
+  border: 1px solid var(--cog-panel-border);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Q446: tier icons and labels keep their registry colour, on a small dark chip so every tier reads on a light panel. */
+.cog-tier-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--cog-ink);
+}
+
+.cog-trophy-tier-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: bold;
+}
+
+.cog-trophy-tier-scope {
+  font-size: 9px;
+  color: var(--cog-text-secondary);
+  text-transform: uppercase;
+}
+
+.cog-trophy-tier-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.cog-trophy-count-pill {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--cog-text-strong);
+  min-width: 24px;
+  text-align: center;
+}
+
+.cog-trophy-step-btn {
+  background: var(--cog-header-fill);
+  border: 1px solid var(--cog-panel-border);
+  color: var(--cog-on-fill);
+  width: 22px;
+  height: 22px;
+  line-height: 20px;
+  text-align: center;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+  font-size: 10px;
+}
+
+.cog-trophy-step-btn:hover {
+  background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%);
+  border-color: var(--cog-info);
+}
+
+.cog-trophy-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.cog-trophy-log-table th {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-secondary);
+  text-align: left;
+  padding: 4px 6px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--cog-panel-border);
+}
+
+.cog-trophy-log-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--cog-panel-border);
+  color: var(--cog-text);
+}
+
+.cog-trophy-log-table tr:hover td {
+  background: color-mix(in srgb, var(--cog-on-fill) 3%, transparent);
+}
+
+/* =======================================================
+   FLOATING SCENE FLOOR TIMER CLOCK HUD
+   ======================================================= */
+.cog-start-grind-btn {
+  background: linear-gradient(90deg, var(--cog-accent-fill), var(--cog-warning-fill));
+  border: 1px solid var(--cog-danger-fill);
+  color: var(--cog-on-fill);
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--cog-ink) 40%, transparent);
+  transition: all 0.15s ease;
+}
+
+.cog-start-grind-btn:hover {
+  background: linear-gradient(90deg, var(--cog-danger-fill), var(--cog-warning-fill));
+  border-color: var(--cog-warning-fill);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cog-warning) 60%, transparent);
+  transform: translateY(-1px);
+}
+
+#cog-floor-clock-hud {
+  position: absolute;
+  top: 65px;
+  left: 120px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  font-family: 'Oswald', sans-serif;
+  user-select: none;
+  pointer-events: auto;
+  transition: all 0.2s ease;
+}
+
+.cog-floor-hud-inner {
+  background: color-mix(in srgb, var(--cog-window-bg) 95%, transparent);
+  border: 1.5px solid var(--cog-warning);
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--cog-ink) 70%, transparent);
+  color: var(--cog-on-fill);
+  backdrop-filter: blur(4px);
+}
+
+.cog-floor-hud-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cog-floor-hud-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.cog-floor-hud-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--cog-text-secondary);
+}
+
+.cog-hud-floor-badge {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+}
+
+.cog-floor-hud-time-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+.cog-hud-time-display {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--cog-warning);
+  letter-spacing: 0.5px;
+}
+
+.cog-hud-time-display small {
+  font-size: 10px;
+  color: var(--cog-text-muted);
+  margin-left: 2px;
+}
+
+.cog-hud-time-input {
+  width: 48px;
+  background: var(--cog-window-bg);
+  color: var(--cog-warning);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  font-weight: bold;
+  text-align: center;
+  font-size: 13px;
+  padding: 1px 2px;
+  font-family: 'Oswald', sans-serif;
+}
+
+.cog-hud-adj-btn,
+.cog-hud-scene-btn {
+  background: var(--cog-surface-muted);
+  border: 1px solid var(--cog-panel-border);
+  color: var(--cog-text-secondary);
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 1px 4px;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  font-weight: bold;
+  transition: all 0.15s ease;
+}
+
+.cog-hud-adj-btn:hover,
+.cog-hud-scene-btn:hover {
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  border-color: var(--cog-info);
+}
+
+.cog-floor-hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  border-left: 1px solid var(--cog-panel-border);
+  padding-left: 6px;
+}
+
+.cog-hud-grind-btn {
+  background: linear-gradient(90deg, var(--cog-accent-fill), var(--cog-warning-fill));
+  border: 1px solid var(--cog-danger-fill);
+  color: var(--cog-on-fill);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 0.5px;
+  transition: all 0.15s ease;
+}
+
+.cog-hud-grind-btn:hover {
+  background: linear-gradient(90deg, var(--cog-danger-fill), var(--cog-warning-fill));
+}
+
+.cog-floor-hud-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--cog-text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.cog-floor-hud-collapse-btn:hover {
+  color: var(--cog-on-fill);
+}
+
+.cog-hud-pill-collapsed {
+  background: color-mix(in srgb, var(--cog-window-bg) 95%, transparent);
+  border: 1.5px solid var(--cog-warning);
+  border-radius: 20px;
+  padding: 4px 10px;
+  color: var(--cog-on-fill);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cog-ink) 60%, transparent);
+  font-family: 'Oswald', sans-serif;
+  transition: all 0.15s ease;
+}
+
+.cog-hud-pill-collapsed:hover {
+  border-color: var(--cog-warning);
+  transform: scale(1.05);
+}
+
+.cog-hud-collapsed-val {
+  font-weight: bold;
+  color: var(--cog-warning);
+  font-size: 13px;
+}
+
+/* =======================================================
+   CRAWLER COUNTDOWN CLOCK HUD (SURVIVING CRAWLERS)
+   ======================================================= */
+#cog-crawler-clock-hud {
+  position: absolute;
+  top: 65px;
+  left: 260px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  font-family: 'Oswald', sans-serif;
+  user-select: none;
+  pointer-events: auto;
+  transition: all 0.2s ease;
+}
+
+.cog-crawler-hud-inner {
+  background: color-mix(in srgb, var(--cog-window-bg) 95%, transparent);
+  border: 1.5px solid var(--cog-accent);
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--cog-ink) 70%, transparent);
+  color: var(--cog-on-fill);
+  backdrop-filter: blur(4px);
+}
+
+.cog-crawler-hud-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cog-crawler-hud-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.cog-crawler-hud-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--cog-text-secondary);
+}
+
+.cog-hud-crawler-badge {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+.cog-crawler-hud-time-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+.cog-crawler-hud-time-display {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--cog-danger);
+  letter-spacing: 0.5px;
+}
+
+.cog-crawler-hud-time-display small {
+  font-size: 10px;
+  color: var(--cog-text-muted);
+  margin-left: 2px;
+}
+
+.cog-hud-crawler-input {
+  width: 76px;
+  background: var(--cog-window-bg);
+  color: var(--cog-danger);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  font-weight: bold;
+  text-align: center;
+  font-size: 12px;
+  padding: 1px 2px;
+  font-family: 'Oswald', sans-serif;
+}
+
+.cog-hud-crawler-input:focus {
+  border-color: var(--cog-danger);
+  outline: none;
+  background: var(--cog-surface);
+}
+
+.cog-crawler-hud-adj-btn {
+  background: var(--cog-surface-muted);
+  border: 1px solid var(--cog-panel-border);
+  color: var(--cog-text-secondary);
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 1px 4px;
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  font-weight: bold;
+  transition: all 0.15s ease;
+}
+
+.cog-crawler-hud-adj-btn:hover {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border-color: var(--cog-danger-fill);
+}
+
+.cog-crawler-hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  border-left: 1px solid var(--cog-panel-border);
+  padding-left: 6px;
+}
+
+.cog-crawler-hud-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--cog-text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.cog-crawler-hud-collapse-btn:hover {
+  color: var(--cog-on-fill);
+}
+
+.cog-crawler-hud-pill-collapsed {
+  background: color-mix(in srgb, var(--cog-window-bg) 95%, transparent);
+  border: 1.5px solid var(--cog-accent);
+  border-radius: 20px;
+  padding: 4px 10px;
+  color: var(--cog-on-fill);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cog-ink) 60%, transparent);
+  font-family: 'Oswald', sans-serif;
+  transition: all 0.15s ease;
+}
+
+.cog-crawler-hud-pill-collapsed:hover {
+  border-color: var(--cog-danger);
+  transform: scale(1.05);
+}
+
+.cog-crawler-hud-collapsed-val {
+  font-weight: bold;
+  color: var(--cog-danger);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+

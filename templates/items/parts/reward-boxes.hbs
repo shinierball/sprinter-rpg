@@ -1,0 +1,37 @@
+{{!--
+  The achievement's Reward Boxes editor (7.3d, spec D2). Rendered by achievement.hbs.
+  Context: rewardBoxes = buildRewardBoxesContext(...) (src/sheets/item/context-loot-box.mjs).
+  Every control is an action delegate with no name; the rows are written whole to system.rewardBoxes.
+--}}
+<div class="cog-field-group cog-reward-boxes" data-reward-boxes style="margin-bottom: 10px;">
+  <span class="cog-field-label" style="font-weight: bold;"><i class="fa-solid fa-box-open"></i> {{localize "COG.RewardBoxes.Title"}}</span>
+  <div class="cog-text-secondary">{{localize "COG.RewardBoxes.Hint"}}</div>
+  <div class="cog-loot-box-drop cog-bg-surface" data-reward-box-drop>
+    <span class="cog-text-secondary"><i class="fa-solid fa-arrow-down-to-bracket"></i> {{localize "COG.RewardBoxes.DropTemplate"}}</span>
+  </div>
+  {{#each rewardBoxes.rows as |row|}}
+    <div class="cog-field-row" data-reward-row data-index="{{row.index}}">
+      <select class="cog-field-input" data-change-action="editRewardBox" data-index="{{row.index}}" data-field="tier" title="{{localize 'COG.RewardBoxes.Tier'}}">
+        {{#each row.tierOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+      </select>
+      <input class="cog-field-input" type="number" min="1" step="1" style="width: 56px;" data-change-action="editRewardBox" data-index="{{row.index}}" data-field="quantity" value="{{row.quantity}}" title="{{localize 'COG.RewardBoxes.Quantity'}}" />
+      <span class="flex-1">
+        {{#if row.hasTemplate}}
+          <span class="cog-badge" title="{{localize 'COG.RewardBoxes.Template'}}">{{row.templateName}}</span>
+          <a class="cog-text-accent" data-action="clearRewardBoxTemplate" data-index="{{row.index}}" data-tooltip="{{localize 'COG.RewardBoxes.ClearTemplate'}}"><i class="fa-solid fa-link-slash"></i></a>
+        {{else}}
+          <span class="cog-text-secondary">{{localize "COG.RewardBoxes.NoTemplate"}}</span>
+        {{/if}}
+      </span>
+      <a class="cog-text-accent" data-action="removeRewardBox" data-index="{{row.index}}" data-tooltip="{{localize 'COG.RewardBoxes.Remove'}}"><i class="fa-solid fa-xmark"></i></a>
+    </div>
+  {{else}}
+    <div class="cog-text-secondary">{{localize "COG.RewardBoxes.None"}}</div>
+  {{/each}}
+  <div class="cog-field-row">
+    <button type="button" data-action="addRewardBox"><i class="fa-solid fa-plus"></i> {{localize "COG.RewardBoxes.Add"}}</button>
+    {{#if rewardBoxes.canGrant}}
+      <button type="button" data-action="grantRewardBoxes" data-tooltip="{{localize 'COG.RewardBoxes.GrantHint'}}"><i class="fa-solid fa-gift"></i> {{localize "COG.RewardBoxes.Grant"}}</button>
+    {{/if}}
+  </div>
+</div>

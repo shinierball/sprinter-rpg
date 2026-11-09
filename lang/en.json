@@ -1,6 +1,25 @@
 {
   "COG": {
     "Title": "Sprinter RPG",
+    "GearOffline": {
+      "Badge": "OFFLINE",
+      "Tip": "Not responding. Its bonuses are not applied.",
+      "GmSource": "Zero zone: {label}",
+      "StatTip": "{amount} gear not responding",
+      "AmountTip": "{amount} not responding"
+    },
+    "Skill": {
+      "Specialty": {
+        "Label": "Specialty",
+        "Hint": "Your crawler's pick. Rows marked 'your specialty' apply when the item you make, or your target, carries this tag.",
+        "None": "(not chosen)",
+        "ItemTypes": "Item types",
+        "Items": "Items",
+        "Custom": "Other tag",
+        "ChangeTitle": "Change Specialty",
+        "Change": "{skill} already specialises in {old}. Change it as a Rule Break?"
+      }
+    },
     "CheckType": {
       "stat": "Stat Check",
       "opposed": "Opposed Contest",
@@ -31,8 +50,8 @@
     "Heritage": {
       "earth": {
         "label": "Earth",
-        "group": "Earth Races (Earth Origin Box)",
-        "pill": "Earth Heritage (Earth Origin Box + Earth Classes)"
+        "group": "Earth Races (Silver Earth Box)",
+        "pill": "Earth Heritage (Silver Earth Box + Earth Classes)"
       },
       "alien": {
         "label": "Alien",
@@ -56,6 +75,411 @@
       "gargantuan": "Gargantuan",
       "noChange": "No change",
       "custom": "(Custom)"
+    },
+    "Vehicle": {
+      "Kind": {
+        "wheeled": "Wheeled",
+        "wheeledHint": "Anything that rolls on three or more wheels, or on treads. A driving skill steers it.",
+        "two_wheeled": "Two-wheeled",
+        "two_wheeledHint": "A motorcycle or the like. The driver needs a hand on the controls.",
+        "other": "Other",
+        "otherHint": "Anything else that carries a crew. Either driving skill will do."
+      },
+      "Result": {
+        "critical_success": "Critical hit: a burst of speed, or a favor from the audience.",
+        "boost": "Move +50% this round",
+        "favor": "Take 1 AI Favor instead",
+        "amazing_success": "Amazing Success: full Move, and Advantage on the next check to operate this vehicle.",
+        "success": "Success: full Move.",
+        "near_miss": "Near Miss: the vehicle loses 5 ft of Move this round.",
+        "failure": "Failure: the vehicle loses half its Move this round.",
+        "major_failure": "Major Failure: half Move, and the vehicle takes 10% damage.",
+        "critical_failure": "Critical Failure: the vehicle stalls, and takes 30% damage."
+      },
+      "Check": {
+        "performance": "Driving check",
+        "decelerate": "Brake",
+        "ram": "Ram",
+        "board": "Board a moving vehicle",
+        "contest": "Race or chase leg",
+        "weapon": "Mounted weapon",
+        "evade": "Swerve"
+      },
+      "Upgrade": {
+        "armor": "Armor",
+        "mounted_weapon": "Mounted weapon",
+        "speed": "Speed",
+        "magic": "Magic",
+        "style": "Style"
+      },
+      "Penalty": {
+        "driver": "Driving a vehicle"
+      },
+      "NotDriver": {
+        "Title": "Not the driver"
+      },
+      "SpeedAbove": {
+        "Title": "Vehicle speed",
+        "Message": "Speed {speed} is above this round's Move {available}. Drive faster anyway as a Rule Break?"
+      },
+      "HeadOn": {
+        "Label": "Head-on or from behind (speed does not count)"
+      },
+      "NearMiss": {
+        "Button": "Hits the vehicle"
+      },
+      "Evade": {
+        "Button": "Driver: evade with a Driving check"
+      },
+      "Fire": {
+        "Title": "Fire a mounted weapon"
+      },
+      "OneHanded": {
+        "Title": "Hand on the controls",
+        "Message": "{name} is driving a {kind} and needs a hand on the controls. Attack two-handed anyway as a Rule Break?"
+      }
+    },
+    "VehicleCheck": {
+      "Difficulty": "Difficulty {dc}",
+      "DifficultyOpen": "Difficulty not set",
+      "Stopped": "Stopped: the vehicle comes to a halt.",
+      "NotStopped": "The vehicle does not stop. The GM decides what happens.",
+      "Boarded": "Made it aboard.",
+      "NotBoarded": "Did not make it aboard.",
+      "BoardAnyway": "Board anyway (Rule Break)",
+      "OfferReroll": "Reroll: {label}",
+      "OfferShift": "Use {label}",
+      "Choose": "Take instead: {label}",
+      "RamHit": "The ram connects.",
+      "RamMiss": "The ram misses.",
+      "EvadeClear": "The vehicle swerves clear.",
+      "EvadeHit": "The hit lands.",
+      "RamDamage": "Roll ram damage",
+      "RuleBreak": "Rule Break: not the driver, or above the available Move."
+    },
+    "VehicleRam": {
+      "Dice": "Ram dice",
+      "CardTitle": "{name} rams {target}: Ram Damage",
+      "ApplyCollision": "Apply collision",
+      "RollDamage": "Roll ram damage",
+      "AlreadyRolled": "The ram damage has already been rolled for this ram.",
+      "CollisionSummary": "{name} takes half the ram damage and slows to {speed} ft.",
+      "CollisionLarger": "{name} hits something larger: full damage, and it stops."
+    },
+    "VehicleClear": {
+      "Note": "{user} cleared the result on {vehicle}. Was: {result}",
+      "Healed": "{hp} HP restored.",
+      "Favor": "{favor} AI Favor taken back from {name}."
+    },
+    "VehicleExplosion": {
+      "AtZero": "{name} is at 0%.",
+      "Explode": "Explode",
+      "NotNow": "Not this time",
+      "CardTitle": "{name} explodes",
+      "Aboard": "Aboard: {names}"
+    },
+    "VehicleUI": {
+      "NoDriveBy": "No drive-by: a driver must end its movement within range of a target to attack it.",
+      "MountedOnly": "While the vehicle moves, the driver attacks with Disadvantage, except with a mounted-only weapon or the vehicle's own weapons.",
+      "NoResult": "None",
+      "FixedResult": "Fixed result {total} against {dc}: {name}",
+      "NoDriver": "Nobody is driving.",
+      "NoRamTarget": "Target the token to ram first.",
+      "NoShooter": "Nobody aboard can fire this weapon.",
+      "DropRefused": "A vehicle takes gear (upgrades), Buffs and Debuffs.",
+      "OtherGear": "Other gear"
+    },
+    "VehicleBoard": {
+      "Title": "Board a moving vehicle",
+      "Message": "{name} is moving ({speed} ft). Board with a Dex check (Difficulty {dc})?",
+      "Roll": "Roll Dex",
+      "Waive": "Board without a check (Rule Break)",
+      "Cancel": "Cancel"
+    },
+    "EnchantmentCategory": {
+      "stat": "Stat",
+      "active": "Active skill or spell",
+      "passive": "Damage reduction, passive skill or spell",
+      "other": "Anything else"
+    },
+    "CraftWarn": {
+      "notInSpace": "Crafting with a table needs a personal space you are in.",
+      "noTable": "No crafting table for: {types}.",
+      "noTableAny": "There is no crafting table in this space.",
+      "belowFourthFloor": "Enchanting starts on floor {floor}.",
+      "targetMismatch": "{name} is not a target this blueprint accepts.",
+      "needsTarget": "This blueprint needs an item to enchant.",
+      "ThatItem": "That item",
+      "sameProperty": "Already has the same property: {list}.",
+      "secondAsTrigger": "An item gets one Amazing Success trigger.",
+      "missingMaterials": "Missing materials: {list}.",
+      "Material": "material",
+      "missingJunk": "Short {missing} Misc. Junk of {needed}.",
+      "notBatchable": "This blueprint does not make batches.",
+      "overSkillCap": "That is above bonus {cap}, the most this skill can craft.",
+      "clockShort": "This takes {hours} hours and {left} are left on the floor.",
+      "noSteps": "This blueprint has no size and no enchantments, so there is nothing to roll for.",
+      "hazard": "This item has 3 or more enchantments: applying another rolls 1d10, and 5 or less breaks it for good."
+    },
+    "Enchanting": {
+      "OverTitle": "Over-Enchanting",
+      "OverMessage": "{name} already has {count} enchantments. Another risks breaking it: roll 1d10, and on {breaksOn} or less it breaks permanently.",
+      "Roll": "Roll 1d10",
+      "Skip": "Skip the roll (Rule Break)",
+      "Cancel": "Cancel",
+      "SamePropertyTitle": "Same Property",
+      "SamePropertyMessage": "{name} already has this property ({label}). Add a second one as a Rule Break?",
+      "SecondAsTitle": "Second Amazing Success Trigger",
+      "SecondAsMessage": "{name} already has an Amazing Success trigger. Add a second one as a Rule Break?",
+      "BrokenTitle": "Broken Item",
+      "BrokenMessage": "{name} is broken. Equip it anyway as a Rule Break?",
+      "DestroyedMessage": "{name} is destroyed. Equip it anyway as a Rule Break?",
+      "AnEnchantment": "an enchantment"
+    },
+    "Upgrade": {
+      "TriggerLabel": "Amazing Success trigger",
+      "Record": "Upgrade"
+    },
+    "EnchantTable": {
+      "Title": "{table}",
+      "Rolled": "Rolled {total} ({formula})",
+      "Choice": "Upgrade",
+      "Record": "Record only: the GM applies this row",
+      "NewName": "New name",
+      "Apply": "Apply",
+      "NotFound": "Roll table \"{name}\" was not found. Nothing was applied.",
+      "NoRow": "{table} has no row for {total}. Nothing was applied.",
+      "NotWeaponTitle": "Not a Weapon",
+      "NotWeapon": "{item} is not a weapon. Add an Amazing Success trigger to it anyway as a Rule Break?",
+      "CardLine": "{table} rolled {total}: {label}, applied to {item}"
+    },
+    "MagicItem": {
+      "GeneratorLabel": "Magic item generator",
+      "EnchantedPrefix": "Enchanted",
+      "Base": {
+        "held": "Unremarkable Weapon",
+        "worn": "Unremarkable Garment",
+        "accessory": "Unremarkable Trinket",
+        "unknown": "Unremarkable Object"
+      },
+      "BaseLabel": {
+        "held": "Something held",
+        "worn": "Something worn",
+        "accessory": "Something clipped on"
+      },
+      "Line": {
+        "stat": "+{value} {stat}",
+        "statPercent": "+{percent}% {stat}",
+        "skill": "+{value} {skill}",
+        "spell": "{spell} at Rank {rank} (cooldown {hours} hours)",
+        "dr": "+{value} DR",
+        "resistance": "Resistance to {type}"
+      },
+      "Pending": "{words} (GM to finish)",
+      "Unique": "{words} (GM to finish; {missed} rolls skipped)",
+      "Warn": {
+        "NoRow": "{table} has no row for {total}; that roll gave nothing.",
+        "UnknownBase": "The item type row names no known base ({base}); the item is made from {fallback}.",
+        "NoPropertyTable": "{table} row {total} names no property table, so the item has no properties.",
+        "PropertyTableMissing": "The property table of {table} row {total} was not found, so the item has no properties.",
+        "UnknownProperty": "Property kind {kind} is not registered; the row is recorded for the GM.",
+        "PropertyFailed": "Property kind {kind} failed; the row is recorded for the GM.",
+        "UniqueTableMissing": "The table {table} row {total} points at was not found; the row is recorded for the GM."
+      }
+    },
+    "Outcome": {
+      "EnchantTable": {
+        "Label": "Roll on table",
+        "Hint": "On Use, roll this table and add the rolled row's Amazing Success trigger to the item.",
+        "None": "(no table: fixed enchantments only)"
+      }
+    },
+    "Craft": {
+      "BonusRaised": "+{n} bonus value ({source})",
+      "BonusNothingToRaise": "No number to raise",
+      "TableNoBonus": "Table tier +0 (tables give no bonus)",
+      "TableScaled": "tier {base} x{mult}",
+      "WastedScroll": "{name} read {item} with nothing equipped. The dumbass has wasted a valuable scroll. No reward. We do not encourage this behavior."
+    },
+    "CraftSheet": {
+      "Badge": {
+        "Enchantment": "[ENCHANTMENT]"
+      },
+      "Ledger": {
+        "Title": "ENCHANTMENTS",
+        "Badge": "[{count} ENCHANTED]",
+        "Name": "Enchantment",
+        "Category": "Category",
+        "BonusLevel": "Bonus level",
+        "MethodHeader": "How",
+        "Unnamed": "An enchantment",
+        "Empty": "Nothing has been enchanted onto this item.",
+        "Notice": "{count} enchantments: the next one rolls 1d10, and on 5 or less the item breaks for good.",
+        "Remove": "Remove",
+        "RemoveHint": "Take this enchantment off, with every row it added",
+        "Method": {
+          "craft": "Crafted",
+          "outcome": "Used from an item",
+          "floor-sim": "Floor simulator",
+          "gm": "Added by the GM",
+          "other": "Other"
+        }
+      },
+      "Blueprint": {
+        "Title": "BLUEPRINT",
+        "Mode": {
+          "Label": "Makes",
+          "enchant": "An enchantment on an item",
+          "item": "A new item"
+        },
+        "Quantity": "Units per success",
+        "Batchable": "Batchable",
+        "BatchableHint": "Several units can be made in one batch",
+        "OneRoll": "One roll",
+        "OneRollHint": "All the steps are made with a single check",
+        "Output": "The item it makes",
+        "DropOutput": "Drop an item here",
+        "ClearOutput": "Forget this item",
+        "Size": "Size",
+        "NoSize": "No size (no base step)",
+        "Dc": "Difficulty override",
+        "DcHint": "From the floor",
+        "Junk": "Extra Misc. Junk",
+        "Target": "Items it can go on (empty: any gear)",
+        "Skills": "Skills that can make it (empty: any)",
+        "Tables": "Tables it needs"
+      },
+      "Materials": {
+        "Title": "MATERIALS",
+        "Add": "Add material",
+        "Empty": "No materials.",
+        "Label": "Name",
+        "Identifier": "Identifier",
+        "Quantity": "Quantity",
+        "Salvageable": "Salvageable",
+        "SalvageableHint": "A failed craft can give this back",
+        "Remove": "Remove this material",
+        "Query": "Or any loot with these tags"
+      },
+      "Template": {
+        "ListTitle": "ENCHANTMENTS",
+        "Add": "Add enchantment",
+        "Empty": "No enchantments.",
+        "Title": "Enchantment {number}",
+        "Remove": "Remove this enchantment",
+        "NewLabel": "Enchantment {number}",
+        "Label": "Name",
+        "Property": "Property",
+        "PropertyHint": "Leave blank to read it from the rows",
+        "Category": "Category",
+        "UnknownCategory": "{value} (not registered)",
+        "BonusLevel": "Bonus level",
+        "Skills": "Skills that can apply it (empty: the blueprint's)",
+        "Tables": "Tables it needs (empty: the blueprint's)"
+      },
+      "Outcome": {
+        "Type": "Enchant an Item",
+        "Summary": "{count} enchantment(s), edit below"
+      },
+      "Table": {
+        "TierBadge": "[TIER {tier}]",
+        "Breakdown": "base {base}, bought {bought}, coupons {coupons}, floors {floors}",
+        "AcquiredAt": "installed at floor {floor}",
+        "NotInstalled": "Floors count once the table is installed in a space.",
+        "Buy": "Buy a tier ({cost} gold)",
+        "BuyHint": "Pay {cost} gold for one more tier",
+        "Coupon": "Apply a coupon ({count})",
+        "CouponHint": "Spend one table coupon for one more tier",
+        "Payer": "Paid by {name}",
+        "NoPayer": "The space has no owner crawler to pay.",
+        "Refused": {
+          "gold": "{name} does not have the gold.",
+          "maxTier": "The table is already at the highest tier.",
+          "noCoupon": "{name} has no table coupon."
+        }
+      }
+    },
+    "PullOut": {
+      "Link": "Pull out a common item",
+      "Tooltip": "Spend 1 Misc. Junk to pull out a common item",
+      "DialogTitle": "Pull out a common item",
+      "NameLabel": "Item name",
+      "Confirm": "Pull it out"
+    },
+    "Repair": {
+      "StepLabel": "Repair",
+      "Button": "Repair",
+      "Cancel": "Cancel",
+      "Tooltip": "Repair this item: roll a skill check, 2 hours",
+      "Broken": "BROKEN",
+      "Destroyed": "DESTROYED",
+      "DialogTitle": "Repair",
+      "PickSkill": "Skill to repair {name} with",
+      "UntrainedTitle": "Untrained Skill",
+      "UntrainedMessage": "You do not have {skill}. Roll untrained as a Rule Break?",
+      "DestroyedTitle": "Destroyed Item",
+      "DestroyedMessage": "{name} is destroyed. Rebuilding it needs Repair at a high Rank. Try anyway as a Rule Break?"
+    },
+    "CraftApp": {
+      "Title": "Crafting",
+      "OpenerHint": "Open the crafting window: blueprints, tables and materials",
+      "OpenerHere": "Craft here",
+      "OpenerBlueprint": "Craft from this blueprint",
+      "NoCrawlerForBlueprint": "This blueprint is not held by a crawler you own. Put it on your crawler or in your space first.",
+      "NoCrawler": "No crawler",
+      "Floor": "Floor",
+      "Clock": "Floor clock",
+      "Hours": "h",
+      "Space": "Personal space",
+      "NoSpace": "No personal space (Rule Break)",
+      "Blueprint": "Blueprint",
+      "NoBlueprint": "No blueprint chosen",
+      "StashBlueprint": "{name} (in the stash)",
+      "NoBlueprintsHint": "There is no blueprint on the crawler or in the stash. Start a draft blueprint to write your own.",
+      "PickBlueprint": "Pick a blueprint to see the plan.",
+      "OpenBlueprint": "Open",
+      "OpenBlueprintHint": "Open the blueprint's sheet",
+      "NewDraft": "New draft blueprint",
+      "NewDraftHint": "Freeform crafting: write your own blueprint on its sheet, then craft from it",
+      "DraftName": "Draft Blueprint",
+      "ModeEnchant": "Enchants gear",
+      "ModeItem": "Makes an item",
+      "Target": "Item to enchant",
+      "NoTarget": "No item chosen",
+      "EquippedGear": "{name} (equipped)",
+      "OnVehicle": "{name} (on {vehicle})",
+      "NoTargetsHint": "No gear on the crawler fits this blueprint.",
+      "EmptyPlan": "This blueprint has no steps yet. Open it and add a size or an enchantment.",
+      "BaseStep": "Make the item",
+      "EnchantStep": "Enchant",
+      "KindMundane": "Make",
+      "KindEnchant": "Enchant",
+      "Step": "Step",
+      "Difficulty": "Difficulty",
+      "HoursColumn": "Hours",
+      "Skill": "Skill",
+      "NoSkill": "No skill owned",
+      "SkillRank": "{name} (rank {rank})",
+      "Materials": "Materials",
+      "Material": "Material",
+      "MaterialLine": "{have} of {need}",
+      "FromCrawler": "carried",
+      "FromStash": "stash",
+      "Junk": "Misc. Junk",
+      "Table": "Table",
+      "Tier": "tier",
+      "TableNoBonus": "tables give no bonus",
+      "TableScaled": "base tier {base} x{mult}",
+      "BonusValue": "+{n} bonus value, no extra Difficulty or time",
+      "TotalHours": "Total hours",
+      "RuleBreak": "[RULE BREAK]",
+      "Quantity": "Quantity",
+      "QuantityBatch": "How many this batch makes",
+      "QuantityEach": "This blueprint is not a batch: each one takes the full time",
+      "Craft": "Craft",
+      "Refused": "Not crafted.",
+      "Succeeded": "Crafted.",
+      "Failed": "The attempt did not finish."
     },
     "TickedSubject": {
       "Dropped": "Ticked {tick} dropped: target is {target}"
@@ -104,6 +528,7 @@
     "Item": {
       "OutcomeDamageNoRoll": "Rolls no damage: enter dice as NdM",
       "OutcomeDamageStat": "Damage stat",
+      "OutcomeCureFilter": "Which debuffs this cures: all, one debuff, or a damage type",
       "TypeSkill": "Skill",
       "TypeAttack": "Attack",
       "TypeGear": "Gear",
@@ -152,6 +577,8 @@
       "scroll": "Spell scroll",
       "wand": "Wand",
       "scratch": "Lottery ticket",
+      "blueprint": "Blueprint",
+      "box": "Loot box",
       "consumable": "Consumable"
     },
     "BuffCard": {
@@ -159,6 +586,80 @@
       "DuplicateTitle": "Buff Already Applied",
       "DuplicateMessage": "{actor} already has {buff}. Apply a second copy as a Rule Break?",
       "RuleBreakLine": "{actor} took a second copy of {buff} as a Rule Break."
+    },
+    "Transform": {
+      "Title": "TRANSFORMATION",
+      "Enable": "Make this a transformation",
+      "NotAffliction": "An ordinary debuff. Make it a transformation to change its victim into a form when a person fires it.",
+      "Remove": "Not a transformation",
+      "RemoveTooltip": "Drop the forms, added effects, reminder and cure window",
+      "Forms": "Changes into",
+      "AddForm": "Add form",
+      "RemoveForm": "Remove this form",
+      "FormsEmpty": "No forms. The change only adds the effects below.",
+      "FormsNote": "Row 1 is the change; further rows are alternate forms. The original body needs no row. A form is a race made in the Race Creator.",
+      "Race": "Race",
+      "RaceChoose": "-- Choose a race --",
+      "FormLabel": "Label",
+      "FormLabelPlaceholder": "The race's name",
+      "TokenImage": "Token image",
+      "TokenImagePlaceholder": "No change",
+      "Browse": "Choose an image",
+      "GroupForms": "Transformation forms",
+      "GroupRaces": "Races",
+      "GroupWorld": "World races",
+      "GroupUnknown": "Not in the catalog",
+      "Adds": "Adds",
+      "AddsEmpty": "Adds nothing.",
+      "AddsChoose": "-- Add a buff or debuff --",
+      "AddsPlaceholder": "Identifier",
+      "AddsGroup": "Buffs and debuffs",
+      "AddsButton": "Add",
+      "Cue": "Reminder",
+      "CueNone": "No reminder",
+      "CueTooltip": "When a card with a Change button is posted. A reminder never changes anything on its own.",
+      "Curable": "Can be cured after the change",
+      "CurableTooltip": "Whether a cure undoes the change without asking a Rule Break.",
+      "Pending": "WAITING",
+      "PendingTooltip": "Has not changed its victim yet",
+      "Changed": "CHANGED",
+      "ChangedInto": "{actor} is {form}, changed by {affliction}.",
+      "ChangedOnly": "{actor} is changed by {affliction}.",
+      "OriginalBody": "Original body",
+      "Change": "Change",
+      "ChangeTooltip": "Change the victim now",
+      "ChangeForm": "Change form",
+      "Revert": "Revert",
+      "RevertTooltip": "Undo the change (asks a Rule Break when the cure window is closed)",
+      "Banner": "Transformation"
+    },
+    "Debuff": {
+      "Paused": "Paused",
+      "PausedTooltip": "A paused debuff does nothing until it is switched back on.",
+      "Secret": "Secret (ask the GM to hold it when it lands)",
+      "SecretTooltip": "When it lands, the GM is asked whether to hold it out of the player's sight."
+    },
+    "RaceCreatorForm": {
+      "Label": "Transformation form",
+      "Hint": "Race pickers leave this race out; an affliction names it. It can still be applied by hand."
+    },
+    "TransformCard": {
+      "Landed": "{affliction} landed on {actor}.",
+      "Death": "{actor} is at 0 Health with {affliction} pending.",
+      "Change": "Change {actor} now",
+      "NoRace": "Only crawlers change race; the added effects still apply.",
+      "Held": "{actor} is held by {affliction}: its cure window is closed.",
+      "Revert": "Revert as a Rule Break",
+      "NotPending": "{affliction} is no longer waiting to change {actor}.",
+      "NotAllowed": "Only the GM or an owner of {actor} can do that.",
+      "NotFound": "That character or affliction could not be found.",
+      "RefusePolicy": "This world does not allow Rule Breaks.",
+      "Secret": "{affliction} landed on {actor}. It is held secret.",
+      "Reveal": "Reveal to the player",
+      "Keep": "Keep secret",
+      "SecretKept": "{affliction} stays secret on {actor}. Reveal it from the Session Manager Secrets tab.",
+      "SecretGone": "That secret is no longer held.",
+      "GMOnly": "Only the GM can do that."
     },
     "ItemSummary": {
       "Heading": "What this does",
@@ -177,6 +678,7 @@
         "NoRankGain": "Cannot gain Ranks by training",
         "SpellRole": "{type} spell",
         "SkillGroup": "Group: {group}",
+        "Specialty": "Specialty: {label}",
         "CheckTypeNoStat": "Check: {type}",
         "AiFavor": "AI Favor {n}",
         "ManaCost": "{n} Mana",
@@ -270,7 +772,6 @@
         "Damage": "Damage: {text}",
         "Crit": "Critical hits multiply damage by {n}",
         "IgnoreDR": "Ignores DR",
-        "AbilityMod": "{value} {stat}",
         "PersistentBuffs": "While equipped, grants: {list}",
         "PersistentDebuffs": "While equipped, inflicts: {list}",
         "Heal": "Heals {bars} each round",
@@ -306,6 +807,35 @@
         "OutcomeTable": "Rolls on {name}",
         "OutcomeTableUnnamed": "Rolls on a table"
       },
+      "Crafting": {
+        "Enchantment": "Enchantment: {label} ({category}, bonus level {level}){extra}",
+        "EnchantmentRows": ", rows: {n}",
+        "EnchantmentRuleBreak": ", Rule Break",
+        "BlueprintEnchant": "Blueprint: adds enchantments to {target}",
+        "BlueprintAnyGear": "any gear",
+        "BlueprintItem": "Blueprint: makes {name}",
+        "BlueprintItemLinked": "a linked item",
+        "BlueprintItemUnnamed": "an item",
+        "BlueprintQuantity": "Makes {n} per success",
+        "BlueprintBatchable": "Can be made in batches",
+        "BlueprintOneRoll": "One roll covers every step",
+        "BlueprintSize": "Base item size: {size}",
+        "BlueprintDc": "Base step Difficulty {dc}",
+        "BlueprintJunk": "Misc. Junk beyond the size cost: {n}",
+        "BlueprintSkills": "Skills: {query}",
+        "BlueprintTables": "Tables: {query}",
+        "BlueprintMaterials": "Materials: {list}",
+        "BlueprintMaterial": "{n} x {name}",
+        "BlueprintStep": "Enchantment step: {label} ({category}, bonus level {level})",
+        "QueryAny": "any of {tags}",
+        "QueryNone": "not {tags}",
+        "OutcomeEnchant": "Enchants an equipped item: {list}",
+        "OutcomeEnchantNone": "Enchants an equipped item",
+        "OutcomeEnchantTable": "Rolls {table} for an Amazing Success trigger",
+        "ItemBroken": "Broken: unequipped until repaired",
+        "ItemDestroyed": "Destroyed for good",
+        "TableTier": "tier {tier} now: base {base}, bought {bought}, coupons {coupons}, floors {floors}"
+      },
       "Identity": {
         "RankFloor": "Rank follows the current Floor",
         "Archetype": "Archetype: {list}",
@@ -326,6 +856,12 @@
         "LimbLegs": "Legs {delta}",
         "LimbHands": "Hands {delta}",
         "Duration": "Duration: {duration}",
+        "TransformForms": "Changes into: {forms}",
+        "TransformEffects": "Adds: {effects}",
+        "TransformCue": "Reminder: {cue}",
+        "TransformCure": "Cure after the change: {window}",
+        "Secret": "Asks the GM to hide it from players when it lands",
+        "Paused": "Paused",
         "EndsWithCombat": "Ends when combat ends",
         "InterruptTouch": "Interrupt at touch range of the {origin}",
         "InterruptRange": "Interrupt within {feet} ft of the {origin}",
@@ -366,13 +902,33 @@
         "TrainingAny": "any of {tags}",
         "Crafting": "Crafting table: {parts}",
         "CraftingType": "{type}",
-        "CraftingTier": "tier {tier}",
         "CraftingUpgrade": "next tier costs {cost} gold"
       }
+    },
+    "StatGrant": {
+      "Title": "STAT BONUSES",
+      "TitlePenalty": "STAT PENALTIES",
+      "AddBonus": "Add Stat Bonus",
+      "AddPenalty": "Add Stat Penalty",
+      "Stat": "Ability / Stat",
+      "Label": "Label",
+      "Flat": "Flat (+/-)",
+      "Percent": "% (+/-)",
+      "Locked": "Locked",
+      "LockedTooltip": "The percent, worked out when the owner got the item. Edit it to re-work it.",
+      "NotLocked": "not yet",
+      "Minimum": "Minimum",
+      "MinimumTooltip": "The score never falls below this because of the rows that set a minimum.",
+      "NoMinimum": "none",
+      "EmptyBonus": "No stat bonuses. Click \"Add Stat Bonus\" above (e.g. +2 STR, or +10% STR).",
+      "EmptyPenalty": "No stat penalties. Click \"Add Stat Penalty\" above (e.g. -2 STR, or -10% STR)."
     },
     "Feature": {
       "Stat": "{value} {stat}",
       "StatPool": "Distribute {value} points among {options}",
+      "StatNow": "{text} ({value} now)",
+      "StatLocked": "{text} (locked at {value})",
+      "StatUnlocked": "{text} (not locked yet)",
       "StatCap": "{stat} cap {value}",
       "SkillRank": "+{rank} {name}",
       "SpellRank": "+{rank} {name}",
@@ -503,7 +1059,7 @@
       "SheetPdfHint": "Path to your own fillable character sheet PDF. Save to PDF fills this file. Leave empty to turn the export off.",
       "NoBackgroundTables": "No background tables are registered for the active content theme. Write the story traits by hand.",
       "SourceryImportBackgrounds": "Import the core rulebook or the Crawlers book with Sourcery to fill the background tables.",
-      "SourceryThemeInactive": "Sourcery content is imported in this world, but the Active Content Theme is not Rulebook Content, so the creator shows the sample tables. Switch the theme in Configure Settings to use the imported content.",
+      "SourceryNotPrimary": "Imported backgrounds and story tables are used when Rulebook Content is the primary theme (Configure Settings).",
       "NoMercenaryCatalog": "No catalog mercenaries are registered for the active content theme. Use Recruit Custom Mercenary to create one.",
       "SkillPickerTooltip": "Choose from the skill library",
       "GrantCoreSkills": "Grant core skills",
@@ -529,6 +1085,8 @@
       "AddSkillFromCompendiumTooltip": "Select and add skills from the compendium (or drop a skill or spell on this sheet)",
       "AddSkillFromCompendium": "Add Skill from Compendium",
       "PickFromCompendium": "Pick from compendium",
+      "GrantLabelPlaceholder": "Label (optional)",
+      "GrantLabelTooltip": "A name shown for this bonus instead of the skill or spell's own name",
       "NoGearSkillBonuses": "No skill or spell bonuses. Click \"Add Skill from Compendium\" above, or drop a skill or spell on this sheet.",
       "DamageReductionTooltip": "Damage Reduction (+1 DR per 2 BP, max +3 standard)",
       "BenefitsCatalogHeading": "4. Benefits Catalog",
@@ -547,8 +1105,7 @@
       "RuleBreakReason": "Race and Class are chosen on Floor {floor}; {actor} is on Floor {current}.",
       "UnlockHint": "Race and Class unlock on Floor {floor}",
       "CreatorHint": "Race and Class are chosen on Floor {floor}.",
-      "SpeciesLabel": "Origin: {species}",
-      "NotApplied": "{name} was not applied. Choose it on the crawler sheet."
+      "SpeciesLabel": "Origin: {species}"
     },
     "AiFavorTally": {
       "Title": "AI Favor Tally",
@@ -567,29 +1124,9 @@
       "ChatReason": "Combat tally: {item}"
     },
     "FloorSim": {
-      "Title": "Floor Simulator",
-      "Resume": "Resume Floor Simulator",
-      "ResumeHint": "This crawler's floor run is not finished.",
-      "NoPendingRun": "No floor run is pending for this crawler",
-      "NotOwner": "You do not own this crawler.",
-      "Refused": "The Floor Simulator could not run this arrival.",
-      "Header": {
-        "State": "Level {level} · {floor}",
-        "Target": "Target floor",
-        "Finishes": "finishes the run",
-        "Run": "Run",
-        "RollMode": "Roll mode"
-      },
-      "RollMode": {
-        "publicroll": "Public Roll",
-        "gmroll": "Private GM Roll",
-        "blindroll": "Blind GM Roll",
-        "selfroll": "Self Roll"
-      },
       "Rail": {
         "Label": "Steps",
-        "OpenDice": "Dice still to roll",
-        "FollowNote": "Floor 4 (or 5) follows after Race and Class."
+        "OpenDice": "Dice still to roll"
       },
       "RuleBreakBadge": "[RULE BREAK]",
       "Roll": "Roll",
@@ -658,6 +1195,8 @@
         },
         "Option": "Choice",
         "ScrollSpell": "Scroll spell",
+        "BraceletRace": "Bracelet race",
+        "BraceletRaceMissing": "not installed here; the bracelet is still tagged for it",
         "UpgradeRow": "Scroll of Upgrade row",
         "UpgradeTrigger": "Amazing Success trigger",
         "UpgradeName": "New weapon name",
@@ -707,20 +1246,42 @@
         "Warnings": "{count} notes",
         "None": "Nothing to preview."
       },
-      "Empty": {
-        "Title": "No floor run"
-      },
-      "Finish": {
-        "Title": "Finish the run",
-        "Note": "The chosen target floor is already reached. Finishing marks the run complete and changes nothing else."
-      },
       "RollAll": "Roll everything remaining",
-      "Abandon": "Abandon remaining floors",
       "Back": "Back",
-      "Next": "Next",
-      "Commit": "Commit Floor {floor} arrival",
-      "FinishRun": "Finish the run",
-      "Close": "Close"
+      "Next": "Next"
+    },
+    "CrawlerCreator": {
+      "Footer": {
+        "Ready": "Crawler is fully configured and ready to enter the dungeon.",
+        "Dice": { "One": "{n} die will be rolled for you", "Other": "{n} dice will be rolled for you" },
+        "Experiences": { "One": "{n} experience", "Other": "{n} experiences" },
+        "Loot": { "One": "{n} loot card", "Other": "{n} loot cards" },
+        "And": "{a} and {b}",
+        "NothingPicked": "{items} have nothing picked",
+        "NothingPickedOne": "{items} has nothing picked"
+      },
+      "Stage": {
+        "induction": "Induction",
+        "tutorial": "Tutorial Floors",
+        "raceClass": "Race & Class",
+        "floor4": "Floor 4",
+        "floor5": "Floor 5",
+        "review": "Review"
+      },
+      "RaceClass": {
+        "Pool": { "One": "{label}: {points} point, {left} left", "Other": "{label}: {points} points, {left} left" },
+        "PoolDefault": "Stat points",
+        "StartingItems": "Starting items",
+        "NoFields": "Nothing to choose."
+      }
+    },
+    "Sex": {
+      "Label": "Sex",
+      "Title": "Sets the creature sex tag on this actor's Tags list (creature.male, creature.female, ...).",
+      "Blank": "-- Not set --",
+      "Multiple": "More than one sex tag on the Tags list; the first is shown.",
+      "DerivedFrom": "Sex is {sex} from the tag on {item}",
+      "DerivedTag": "Sex is {sex} from a derived tag"
     },
     "Tags": {
       "ActorHeading": "Tags",
@@ -855,6 +1416,191 @@
       "BarTitle": "No AI Favor Today",
       "BarMessage": "{name} gets no AI Favor today ({left} left). Award anyway as a Rule Break?"
     },
+    "Award": {
+      "BoxName": "{tier} Loot Box",
+      "RepeatTitle": "Already Awarded",
+      "RepeatMessage": "{actor} already received {name}. Award it again as a Rule Break?",
+      "TemplateMissing": "The box template \"{name}\" was not found or is not a loot box, so a generic {tier} Loot Box was made.",
+      "GmOnly": "Only the GM can award achievements."
+    },
+    "LootBoxOpen": {
+      "NotSafeTitle": "Not in a Safe Room",
+      "NotSafeMessage": "{name} is not in a safe room. Open the boxes anyway as a Rule Break?",
+      "NoBoxes": "{name} has no unopened loot boxes.",
+      "GmOnlyItem": "Only the GM can move or change loot boxes and achievements.",
+      "OpenAllOnly": "Loot boxes are opened all at once. Use Open loot boxes.",
+      "NotStashable": "Loot boxes cannot go in or out of a stash. Open them instead.",
+      "Refused": "The GM could not open the loot boxes.",
+      "CreateFailed": "The loot box prizes could not be created, so no box was opened: {error}",
+      "PrizeMissing": "A prize was missing: {name}.",
+      "ChoiceNoPick": "A choice was not picked, so it gave nothing: {name}.",
+      "ChoiceWrongType": "The pick {name} is not a {type}, so it gave nothing.",
+      "ChoiceEmptyWarn": "{box} on {actor}: the choice \"{label}\" has nothing to pick from, so the box was not opened. Change its tags or use Choose now.",
+      "ChoiceEmptyReveal": "This box offers a choice with nothing to pick from, so it stays sealed. The GM has been told.",
+      "ChoiceTitle": "Choose Your Prizes",
+      "ChoiceIntro": "Some of the boxes {name} is opening offer a choice. Pick one prize for each.",
+      "ChoiceStale": "The choices changed while you were picking. Pick again from the new list.",
+      "ChoiceOpen": "Open",
+      "ChoiceCancel": "Cancel",
+      "ChoiceDefaultLabel": "Choose one",
+      "ChoiceGroup": "{tier}: {box}",
+      "ChoiceGroupUnit": "{tier}: {box} ({unit} of {units})",
+      "ChoiceHintSkill": "a skill potion of {rank} Ranks",
+      "ChoiceHintSpell": "a Tome at Rank {rank}",
+      "ChoiceBlocked": "{box}: \"{label}\" has nothing to pick from, so this box stays sealed. The GM has been told.",
+      "BadFormula": "A gold amount could not be rolled: \"{formula}\".",
+      "TableMissing": "The table was missing: {table}.",
+      "TableNoRow": "{table} rolled {total}, which no row covers.",
+      "TableTooDeep": "{table} links more than {depth} tables deep; the chain stops here.",
+      "Generator": {
+        "NoGenerator": "A {tier} box names no item generator that exists (\"{generator}\").",
+        "NoTables": "No item generator table was found for a {tier} box. Import the book tables or use the Shiny Tables compendium.",
+        "Failed": "The item generator failed for a {tier} box."
+      },
+      "UnknownKind": "A prize of an unknown kind (\"{kind}\") was skipped.",
+      "KindFailed": "A \"{kind}\" prize failed: {error}",
+      "EmptyReveal": "This box is empty. The GM has been notified.",
+      "EmptyWarn": "{box} on {actor} has nothing to give, so it was not opened. Fill it on its sheet.",
+      "KeptWarn": "{box} on {actor} is kept sealed until it is filled, so it was not opened.",
+      "CardTitle": "Loot Boxes Opened",
+      "CardOpened": "{actor} opened {count} of {total}.",
+      "CardGold": "{amount} gold",
+      "CardGoldTotal": "Gold: +{amount}",
+      "CardKept": "Not opened",
+      "CardChosen": "Chosen",
+      "Watch": "Watch",
+      "GmTitle": "Loot boxes: notes for the GM",
+      "GmPending": "{count} enchantment(s) to finish",
+      "OpenItem": "Open item",
+      "ShowNotBuilt": "The Loot Box Showcase is not loaded; the chat card has the results.",
+      "WatchMissing": "This card has no loot box results to replay."
+    },
+    "LootBoxShow": {
+      "Title": "Loot Box Showcase",
+      "TitleFor": "Loot Box Showcase: {actor}",
+      "SkipBox": "Skip box",
+      "SkipToSummary": "Skip to summary",
+      "Speed": "Speed {speed}x",
+      "Close": "Close",
+      "BoxOf": "Box {index} of {total}",
+      "SummaryTitle": "Your Prizes",
+      "OpenSheet": "Open sheet",
+      "Gold": "{amount} gold",
+      "GoldTotal": "Gold: +{amount}",
+      "Kept": "Not opened",
+      "Generated": "Generated",
+      "Chosen": "Chosen",
+      "GmToFinish": "GM to finish",
+      "NoSheet": "That prize is not in this world any more, or you cannot see it.",
+      "Setting": {
+        "MotionName": "Loot Box Showcase",
+        "MotionHint": "How the loot box opening show plays on this client. Full: the boxes shake and burst. Reduced: short fades, no shaking (also used when your system asks for reduced motion). Summary only: skip straight to the list of prizes.",
+        "Full": "Full show",
+        "Reduced": "Reduced motion",
+        "Summary": "Summary only",
+        "SoundName": "Loot Box Showcase sounds",
+        "SoundHint": "Play the drum and lid sounds when a loot box bursts open. Only this client hears them."
+      }
+    },
+    "LootBoxSheet": {
+      "Title": "Loot Box",
+      "Tier": "Box tier",
+      "Sealed": "Sealed: the contents are revealed on opening.",
+      "Contents": "Contents",
+      "Drop": "Drop items, spells or roll tables here to fill the box.",
+      "Empty": "Empty. An unfilled box gives its tier's default item when opened.",
+      "AddGold": "Add gold",
+      "AddMagicItem": "Add generated magic item",
+      "AddChoice": "Add a choice",
+      "Preroll": "Pre-roll",
+      "PrerollHint": "Roll these items now. Each becomes an item in the Loot Box Prizes folder that this row points at, so you can finish its enchantments before the box is opened.",
+      "PrerollFolder": "Loot Box Prizes",
+      "PrerollDone": "Pre-rolled {count} item(s) from {box}. Finish any pending enchantments on the items in the Loot Box Prizes folder.",
+      "PrerollPartial": "Pre-rolled {made} of {total} item(s) from {box}; the rest stays a generated item row.",
+      "PrerollFailed": "Could not pre-roll an item for {box}.",
+      "StackHint": "This stack shares its rows: Pre-roll and Choose now give every box in it the same prizes. Split the stack first for different ones.",
+      "ChooseNow": "Choose now",
+      "ChooseNowHint": "Pick the prize yourself instead of leaving it to whoever opens the box.",
+      "ChooseNowTitle": "Choose Now",
+      "ChooseNowIntro": "Pick the prize for {box}. The row becomes that prize.",
+      "ChooseNowLabel": "Choose one",
+      "ChooseNowConfirm": "Choose",
+      "ChooseNowCancel": "Cancel",
+      "ChooseNowNone": "Nothing in this world matches that choice, so there is nothing to pick.",
+      "ChooseNowDone": "Chose {name} for {box}.",
+      "ChooseNowFailed": "Could not create the prize for {box}.",
+      "ChoiceItemType": "What the opener picks",
+      "ChoiceStem": "Potion name stem",
+      "ChoiceQuery": "Offer anything carrying these tags",
+      "ChoiceIncomplete": "Add at least one tag, or this choice offers nothing",
+      "ChoiceCandidates": "{count} candidate(s) in this world",
+      "ChoiceType": {
+        "any": "Any item",
+        "gear": "Gear",
+        "loot": "Loot",
+        "skill": "Skill (potion)",
+        "spell": "Spell (tome)"
+      },
+      "TableAs": {
+        "printed": "As printed",
+        "skillPotion": "Skill potions",
+        "item": "Placeholder items"
+      },
+      "TableAsHint": "What each rolled row becomes: its printed words and documents, a skill potion of a custom Skill named for the entry, or a placeholder item named for the entry.",
+      "TimesPlaceholder": "Times",
+      "TimesHint": "How many times to roll the table: a number or a dice formula such as 1d2. Blank rolls the quantity.",
+      "ChooseNowTypeLabel": "Or type a name",
+      "ChooseNowTableEntry": "Table entry",
+      "AddTable": "Add a roll table...",
+      "KeepSealed": "Keep sealed until filled",
+      "KeepSealedHint": "An empty box with this set is not opened; the GM is warned instead.",
+      "Quantity": "Quantity",
+      "Formula": "Gold or formula",
+      "Rank": "Rank taught",
+      "Note": "Note",
+      "BoxTier": "This box's tier",
+      "Remove": "Remove",
+      "Table": "Roll table",
+      "Unresolved": "Not found in this world",
+      "Kind": {
+        "item": "Item",
+        "spell": "Spell tome",
+        "gold": "Gold",
+        "table": "Table",
+        "magicItem": "Generated magic item",
+        "choice": "Choice"
+      },
+      "OpenAll": "Open loot boxes ({count})",
+      "OpenAllHint": "Open every unopened loot box this crawler holds.",
+      "OpenFor": "Open loot boxes for {name} ({count})",
+      "UseBox": "Open this box",
+      "StripTitle": "Loot Boxes",
+      "BoxQuantity": "× {count}"
+    },
+    "RewardBoxes": {
+      "Title": "Reward Boxes",
+      "Hint": "Boxes this achievement hands to the crawler. A tier alone gives that tier's generic box; drop a box here to use it as a template.",
+      "Add": "Add box",
+      "Quantity": "Quantity",
+      "Tier": "Tier",
+      "Template": "Template box",
+      "NoTemplate": "Generic box",
+      "DropTemplate": "Drop a loot box here to use it as the template.",
+      "ClearTemplate": "Use the generic box",
+      "Remove": "Remove",
+      "Grant": "Grant reward boxes",
+      "GrantHint": "Give this crawler the boxes listed above.",
+      "GrantAgainTitle": "Already Granted",
+      "GrantAgainMessage": "{name} already granted its reward boxes to {actor}. Grant them again as a Rule Break?",
+      "Granted": "Granted {count} reward box(es) to {actor}.",
+      "NotBox": "{name} is not a loot box.",
+      "None": "No reward boxes."
+    },
+    "SafeRoom": {
+      "SceneLegend": "Sprinter RPG",
+      "SceneLabel": "Certified Safe Room",
+      "SceneHint": "Crawlers with a token on this scene open loot boxes without a Rule Break."
+    },
     "AttackOptions": {
       "Title": "{name}: Attack Options",
       "RollAttack": "Roll Attack",
@@ -980,6 +1726,33 @@
       "DeclareAttack": "Declare Attack",
       "NotOwner": "You do not own {name}."
     },
+    "Keybindings": {
+      "NextStep": "Next Combat Step",
+      "NextStepHint": "GM: advance the five-step combat round (the tracker's Next button).",
+      "PreviousStep": "Previous Combat Step",
+      "PreviousStepHint": "GM: go back one step of the five-step combat round.",
+      "ToggleHud": "Toggle Crawler HUD",
+      "ToggleZeroZone": "Toggle Zero Zone",
+      "ToggleZeroZoneHint": "GM: switch the world-wide zero zone on or off (crawlers' interface goes dark).",
+      "ToggleHudHint": "Hide or show the crawler HUD (hotlist bar, actions, effects and the clocks) on this browser."
+    },
+    "ZeroZoneGate": {
+      "PlayerTitle": "Interface",
+      "PlayerPrompt": "{notice} {verb} {name} anyway as a Rule Break?",
+      "GMTitle": "Zero Zone",
+      "GMPrompt": "{name}: zero zone, enhancements are offline. {verb} it anyway as a Rule Break?"
+    },
+    "Hud": {
+      "HideTool": "Hide Crawler HUD",
+      "ZeroZoneTool": "Zero Zone (GM)",
+      "ZeroZonePill": "ZERO ZONE",
+      "ZeroZoneSettingName": "Zero Zone",
+      "ZeroZoneSettingHint": "GM: while on, every player's crawler HUD (hotlist, actions, effects, clocks) goes dark. Players are never told why.",
+      "ZoneNotice": "Your interface isn't responding.",
+      "GMOnly": "Only the GM can change that.",
+      "SettingName": "Hide Crawler HUD",
+      "SettingHint": "Hides the hotlist bar, actions panel, effects panel and both clocks on this browser. Also on the Token controls and Shift+H."
+    },
     "Combat": {
       "RuleBreakTitle": "Rule Break",
       "SkipStep": "Jumping from {from} to {to} skips a step of the round. Jump ahead as a Rule Break?",
@@ -991,6 +1764,8 @@
       "ResolveDeclared": "Resolve now (Step 3)",
       "StepPrev": "Previous Combat Step",
       "StepNext": "Next Combat Step",
+      "EndRoundReset": "End Round & Reset",
+      "EndRoundResetTip": "Clean Up is done: end the round, reset every action and start the next round at Step 1.",
       "StepsReadOnly": "The GM moves the round along.",
       "Resolved": "Resolved",
       "Redirected": "Taunted",
@@ -1121,6 +1896,90 @@
         "permanent": "Until removed"
       }
     },
+    "ThemeCleanup": {
+      "Title": "Theme Cleanup",
+      "AiContent": {
+        "hide-ai": "AI-written content",
+        "hide-ai-edited": "AI-written and human-edited content"
+      },
+      "GMOnly": "Only a GM can open the theme cleanup.",
+      "Headline": "{themes} turned off. {owners} actors hold {documents} of its documents ({types}).",
+      "HeadlineNothingOff": "No theme is turned off. Restorable replaced documents are on the Restore tab.",
+      "HeadlineNone": "{themes} turned off. No actor holds any of its documents.",
+      "TabCleanup": "Cleanup",
+      "TabRestore": "Restore",
+      "OnActors": "On actors and tokens",
+      "Token": "(unlinked token)",
+      "NothingOnActors": "No actor or token holds a document of a turned-off theme.",
+      "WholeDocuments": "Whole documents of a turned-off theme",
+      "WholeHint": "These stay in the sidebar until you delete them. Tick the ones to delete.",
+      "Delete": "Delete",
+      "Replace": "Replace with Celestial AI Poop",
+      "NotNow": "Not now",
+      "Restore": "Restore",
+      "RestoreAll": "Restore all",
+      "NothingToRestore": "No Celestial AI Poop can be restored.",
+      "SummaryReplaced": "Replaced {count} documents on {owners} actors ({types}).",
+      "SummaryDeleted": "Deleted {count} whole documents.",
+      "SummaryRestored": "Restored {count} documents."
+    },
+    "ThemesOff": {
+      "PrimaryStaysOn": "{theme} is the primary theme, so it stays on. Choose another primary first."
+    },
+    "AiContent": {
+      "ConfirmTitle": "Hide AI-Written Content",
+      "ConfirmBody": "No human-written content fills these lists: {lists}. The crawler creator will have empty lists until you import your own books or make your own. Hide AI-written content anyway?",
+      "List": {
+        "races": "races",
+        "classes": "classes"
+      },
+      "HiddenCount": "{count} AI-written entries hidden",
+      "EmptyLists": "The race and class lists are empty because AI-written content is hidden (World Settings, AI-Written Content). Import your own books or make your own."
+    },
+    "Authorship": {
+      "Ai": "Written with AI",
+      "Edited": "AI-written, edited by a person",
+      "Human": "Written by a person",
+      "Control": "Authorship…",
+      "DialogTitle": "Authorship: {name}",
+      "Hint": "Who wrote the words of this document. This is the author of the text, not the dungeon AI.",
+      "Apply": "Apply",
+      "Cancel": "Cancel"
+    },
+    "Source": {
+      "Tooltip": "{theme} · {set}",
+      "TooltipRelease": "{theme} · {set} · {release}",
+      "TooltipUnknown": "Unregistered source: {theme} / {set}",
+      "TooltipOff": "{tooltip} (turned off)",
+      "HomebrewBy": "Homebrew · {name}",
+      "HomebrewLabel": "Homebrew ({name})"
+    },
+    "Provenance": {
+      "LootBox": "{tier} Loot Box",
+      "LootBoxFrom": "From {box}",
+      "LootBoxFromOn": "From {box}, opened {date}",
+      "LootBoxUnknown": "From a loot box",
+      "Generated": "Generated ({tier})",
+      "GeneratedRolls": "{rolls} rolls",
+      "GeneratedRollsMissed": "{rolls} rolls, {missed} missed",
+      "Preroll": "Pre-rolled",
+      "PrerollFor": "For {box}",
+      "PrerollUnknown": "Rolled ahead of opening",
+      "Replaced": "Replaced {name}",
+      "ReplacedWithSource": "Replaced {name} ({where})",
+      "ReplacedWhere": "{theme} · {set}",
+      "ReplacedOn": "{label}, {date}",
+      "ReplacedNoName": "a document",
+      "ReplacedUnknown": "Replaced (unknown)"
+    },
+    "CelestialAiPoop": {
+      "Restore": "Restore",
+      "RestoreHint": "GM only. Puts back the document this replaced and removes this item.",
+      "RestoreOffTitle": "Restore a turned-off document",
+      "RestoreOff": "{theme} is turned off. Restore {name} anyway?",
+      "Restored": "Restored {name}.",
+      "RestoreFailed": "Could not restore {name}: {error}"
+    },
     "NoBookText": {
       "Badge": "[NO BOOK TEXT]",
       "PartialBadge": "[PART BOOK TEXT]",
@@ -1179,6 +2038,18 @@
           "AddBar": "Popularity",
           "ConditionHint": "Applies when the event's tags match"
         },
+        "Craft": {
+          "Title": "Crafting limits and speed-ups",
+          "Add": "Add crafting modifier",
+          "AddBar": "Crafting",
+          "ConditionHint": "Applies when the craft check's tags match"
+        },
+        "Vehicle": {
+          "Title": "Vehicle Move",
+          "Add": "Add vehicle Move row",
+          "AddBar": "Vehicle Move",
+          "ConditionHint": "Applies when the vehicle's tags match (vehicle.kind.<id>)"
+        },
         "Substitution": {
           "Title": "Stat substitutions",
           "Add": "Add stat substitution",
@@ -1222,7 +2093,13 @@
         "PopularityAmount": "Popularity",
         "AiFavorAmount": "AI Favor rating",
         "DamageTypeAdd": "Damage type",
-        "DamageTypeOnly": "Only damage type"
+        "DamageTypeOnly": "Only damage type",
+        "CraftMaxBonus": "Highest bonus level",
+        "CraftTimeMultiplier": "Time multiplier",
+        "CraftBatchMultiplier": "Batch minutes multiplier",
+        "ShiftSteps": "Steps",
+        "VehicleMoveAdd": "Move (ft)",
+        "VehicleMoveMultiplier": "Move multiplier"
       },
       "Choice": {
         "None": "None",
@@ -1554,6 +2431,27 @@
               "replace": "Replace the formula",
               "add": "Add to the formula"
             }
+          },
+          "reroll": {
+            "Label": "Reroll after the roll",
+            "Hint": "After the check is rolled, its roller may roll it again and keep the new result. When the row sits on an item, that item's cooldown gates each use."
+          },
+          "degreeShift": {
+            "Label": "Shift the degree",
+            "Hint": "After the check is rolled, its roller may move the result's degree by Value steps. A Fail never shifts past Near Miss into a success. When the row sits on an item, that item's cooldown gates each use.",
+            "OptionLabel": "Shifts",
+            "Option": {
+              "failOnly": "Fail degrees only",
+              "any": "Any degree"
+            }
+          },
+          "waive": {
+            "Label": "Waive a roll penalty",
+            "Hint": "The roll penalty named by the option does not apply to the rolls this row matches.",
+            "OptionLabel": "Penalty waived",
+            "Option": {
+              "driver": "Driving a vehicle"
+            }
           }
         },
         "ManaCost": {
@@ -1582,6 +2480,102 @@
         "Substitution": {
           "default": {
             "Label": "Stat substitution"
+          }
+        },
+        "BoxContents": {
+          "item": {
+            "Label": "Item",
+            "Hint": "Gives this item (gear, loot, a consumable or a skill potion) when the box is opened."
+          },
+          "spell": {
+            "Label": "Spell tome",
+            "Hint": "Gives a Tome of this spell, read later to learn it at the listed Rank."
+          },
+          "gold": {
+            "Label": "Gold",
+            "Hint": "Adds gold when the box is opened. A whole number or a dice formula such as 2d6*10."
+          },
+          "table": {
+            "Label": "Roll table",
+            "Hint": "Rolls the table when the box is opened and gives what it rolls. It can roll several times, and turn each roll into a skill potion of a custom Skill or a placeholder item."
+          },
+          "magicItem": {
+            "Label": "Generated magic item",
+            "Hint": "Generates a fresh magic item when the box is opened. A blank tier uses the box's own tier."
+          },
+          "choice": {
+            "Label": "Choice",
+            "Hint": "The opener picks one thing matching the tags: an item, a Tome of a spell, or a potion for a skill."
+          }
+        },
+        "MagicProperties": {
+          "stat": {
+            "Label": "Stat bonus",
+            "Hint": "Adds to one Stat, sized by the box tier. A second Stat result picks a different Stat."
+          },
+          "skill": {
+            "Label": "Skill bonus",
+            "Hint": "Adds Skill Ranks to a skill the crawler owns (any skill when they own none), sized by the box tier."
+          },
+          "passiveSkill": {
+            "Label": "Passive skill",
+            "Hint": "Grants a passive skill at the current floor's number."
+          },
+          "spell": {
+            "Label": "Spell",
+            "Hint": "Grants a spell at a Rank sized by the box tier, with 2 hours of cooldown per Rank."
+          },
+          "dr": {
+            "Label": "Damage Reduction",
+            "Hint": "Adds 1 Damage Reduction."
+          },
+          "resistance": {
+            "Label": "Resistance",
+            "Hint": "Resistance to one of the listed damage types. With no list, the GM picks the type."
+          },
+          "buff": {
+            "Label": "Buff",
+            "Hint": "A benefit the GM decides. Recorded on the item for the GM to finish."
+          },
+          "restore": {
+            "Label": "Restore",
+            "Hint": "A restoring effect the GM decides. Recorded on the item for the GM to finish."
+          }
+        },
+        "Craft": {
+          "maxBonus": {
+            "Label": "Highest bonus level",
+            "Hint": "The most this crafter can enchant at. Above it the craft asks a Rule Break. The highest matching row wins; with no matching row there is no limit."
+          },
+          "time": {
+            "Label": "Crafting time",
+            "Hint": "Multiplies the hours a craft takes (0.5 halves them). Matching rows multiply."
+          },
+          "batchTime": {
+            "Label": "Batch time",
+            "Hint": "Multiplies the minutes a batch adds for each extra unit. Matching rows multiply."
+          },
+          "rebuild": {
+            "Label": "Rebuild destroyed items",
+            "Hint": "A Repair check can rebuild a destroyed item without a Rule Break. Condition it on item.destroyed."
+          },
+          "tableTier": {
+            "Label": "Table tier multiplier",
+            "Hint": "Multiplies the crafting table's tier for checks this row matches. 0 = tables give no bonus."
+          },
+          "bonusValue": {
+            "Label": "Extra bonus value",
+            "Hint": "Adds this much to the numbers an enchantment writes, with no extra Difficulty or time."
+          }
+        },
+        "Vehicle": {
+          "moveAdd": {
+            "Label": "Move added",
+            "Hint": "Adds feet to the vehicle's Move. Rows add together, then the multipliers apply."
+          },
+          "moveMultiply": {
+            "Label": "Move multiplier",
+            "Hint": "Multiplies the vehicle's Move after the additions (1.5 adds half again). Matching rows multiply."
           }
         }
       },
@@ -1636,6 +2630,13 @@
         "Title": "Reads as",
         "Nothing": "Does nothing yet"
       }
+    },
+    "CopyBlueprint": {
+      "Button": "Copy as blueprint",
+      "Hint": "GM only. Writes a new blueprint from this item's enchantments.",
+      "Name": "{name} Blueprint",
+      "Done": "Blueprint created: {name}.",
+      "NothingToCopy": "{name} has no enchantments to copy."
     }
   },
   "TYPES": {
@@ -1648,6 +2649,9 @@
       "marker": "Light Marker",
       "npc": "NPC / Creature",
       "mob": "Mob"
+    },
+    "RegionBehavior": {
+      "zeroZone": "Zero Zone"
     },
     "Item": {
       "skill": "Skill",

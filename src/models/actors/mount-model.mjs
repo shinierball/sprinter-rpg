@@ -1,10 +1,15 @@
 import { BaseActorDataModel } from './base-actor-model.mjs';
+import { tagQueryField } from '../fields/tag-fields.mjs';
 import { getSizeInfo, sizeLabel } from '../../data/sizes.mjs';
+import {
+  vehicleHealth, vehicleKindInfo, vehicleKindTag, sanitizeVehicleKind, DEFAULT_VEHICLE_KIND, ratedMove
+} from '../../data/rules/vehicle-rules.mjs';
 
 /**
  * TypeDataModel for Mounts and Vehicles.
- * Encapsulates structural durability (HP), carrying capacity (occupants),
- * movement speed, natural damage resistance (DR), abilities, hotlist, and owner/driver/occupant relationships (by actor UUID).
+ * Encapsulates structural durability (10 Health Bar slots of `size` HP), carrying capacity (occupants), full Move,
+ * natural damage resistance (DR), the kind (which skill drives it), the per-round drive state, and
+ * owner/driver/occupant relationships (by actor UUID). A vehicle has no stats, mana, Evade, limbs, level or hotlist.
  */
 export class MountVehicleDataModel extends BaseActorDataModel {
   /** @override */
@@ -13,7 +18,6 @@ export class MountVehicleDataModel extends BaseActorDataModel {
 
     return {
       tags: BaseActorDataModel.defineTagsField(),
-      abilities: BaseActorDataModel.defineAbilitiesField(),
       ownerId: new fields.StringField({ initial: '' }),
       pilotUuid: new fields.StringField({ initial: '' }),
       occupants: new fields.ArrayField(new fields.SchemaField({
@@ -23,24 +27,39 @@ export class MountVehicleDataModel extends BaseActorDataModel {
         // Boarded past the seat limit. Derived on the GM, never taken from a client payload.
         ruleBreak: new fields.BooleanField({ initial: false })
       }), { initial: [] }),
-      vehicleType: new fields.StringField({ initial: 'Ground' }),
+      // A CONFIG.COG.vehicleKinds id. No `choices`: the registry validates, so a module can add one.
+      kind: new fields.StringField({ initial: DEFAULT_VEHICLE_KIND }),
+      // Overrides the kind's skill query (the skill that drives a vehicle is found by tag, never by name).
+      operateSkills: tagQueryField(fields, { nullable: true, initial: null }),
+      drive: new fields.SchemaField({
+        // The speed now, in ft; 0 = stopped
+        currentMove: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        // The last Table 6 result, read lazily against the combat round
+        result: new fields.SchemaField({
+          outcome: new fields.StringField({ initial: '', blank: true }),
+          choice: new fields.StringField({ initial: '', blank: true }),
+          combatId: new fields.StringField({ initial: '' }),
+          round: new fields.NumberField({ integer: true, nullable: true, initial: null }),
+          messageId: new fields.StringField({ initial: '' }),
+          driverUuid: new fields.StringField({ initial: '' }),
+          applied: new fields.SchemaField({
+            damage: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+            aiFavor: new fields.NumberField({ integer: true, min: 0, initial: 0 })
+          }),
+          gm: new fields.BooleanField({ initial: false }),
+          ruleBreak: new fields.BooleanField({ initial: false }),
+          // When the GM set or cleared the result by hand; a card made before it cannot replace it
+          setAt: new fields.NumberField({ integer: true, min: 0, initial: 0 })
+        }),
+        // Actor uuid owed Advantage on their next operate check
+        advantageFor: new fields.StringField({ initial: '' })
+      }),
       attributes: new fields.SchemaField({
+        // Max, HP per slot and the slot count are derived from the size (10 slots of `size` HP). A null value is full health.
         hp: new fields.SchemaField({
-          value: new fields.NumberField({ required: true, integer: true, initial: 30 }),
-          max: new fields.NumberField({ required: true, integer: true, initial: 30 }),
+          value: new fields.NumberField({ required: true, nullable: true, integer: true, initial: null }),
           temp: new fields.NumberField({ integer: true, initial: 0 }),
-          pct: new fields.NumberField({ integer: true, initial: 100 }),
           tempBars: BaseActorDataModel.defineTempBarsField()
-        }),
-        mana: new fields.SchemaField({
-          value: new fields.NumberField({ required: true, integer: true, initial: 10 }),
-          max: new fields.NumberField({ required: true, integer: true, initial: 10 }),
-          pct: new fields.NumberField({ integer: true, initial: 100 })
-        }),
-        evade: new fields.SchemaField({
-          items: new fields.NumberField({ integer: true, initial: 0 }),
-          buffs: new fields.NumberField({ integer: true, initial: 0 }),
-          total: new fields.NumberField({ integer: true, initial: 4 })
         }),
         dr: new fields.SchemaField({
           armor: new fields.NumberField({ integer: true, initial: 2 }),
@@ -48,47 +67,14 @@ export class MountVehicleDataModel extends BaseActorDataModel {
           buffs: new fields.NumberField({ integer: true, initial: 0 }),
           total: new fields.NumberField({ integer: true, initial: 2 })
         }),
+        // Full Move in ft
         move: new fields.NumberField({ integer: true, initial: 40 }),
-        speed: new fields.SchemaField({
-          move: new fields.NumberField({ integer: true, initial: 40 }),
-          step: new fields.NumberField({ integer: true, initial: 10 }),
-          climb: new fields.NumberField({ integer: true, initial: 0 }),
-          swim: new fields.NumberField({ integer: true, initial: 0 }),
-          fly: new fields.NumberField({ integer: true, initial: 0 }),
-          burrow: new fields.NumberField({ integer: true, initial: 0 })
-        }),
-        aiFavor: new fields.NumberField({ integer: true, initial: 0 }),
-        debuffs: new fields.StringField({ initial: '' }),
         size: new fields.StringField({ initial: 'large' }),
         occupancy: new fields.NumberField({ integer: true, min: 0, initial: 4 }),
-        cargoOccupancy: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
-        accessories: new fields.StringField({ initial: '' }),
-        externalBuffs: new fields.SchemaField({
-          buff1: new fields.StringField({ initial: '' }),
-          buff2: new fields.StringField({ initial: '' }),
-          buff3: new fields.StringField({ initial: '' })
-        }),
-        limbs: BaseActorDataModel.defineLimbsField()
+        cargoOccupancy: new fields.NumberField({ integer: true, min: 0, initial: 0 })
       }),
       details: new fields.SchemaField({
-        level: new fields.NumberField({ initial: 1, integer: true, min: 1 }),
-        notes: new fields.HTMLField({ initial: '' }),
-        floor: new fields.StringField({ initial: '1st Floor' }),
-        bankedGrindHours: new fields.NumberField({ initial: 0, integer: true, min: 0 })
-      }),
-      gearSlots: BaseActorDataModel.defineGearSlotsField(),
-      currency: BaseActorDataModel.defineCurrencyField(),
-      hotlist: new fields.SchemaField({
-        slot1: new fields.StringField({ initial: '' }),
-        slot2: new fields.StringField({ initial: '' }),
-        slot3: new fields.StringField({ initial: '' }),
-        slot4: new fields.StringField({ initial: '' }),
-        slot5: new fields.StringField({ initial: '' }),
-        slot6: new fields.StringField({ initial: '' }),
-        slot7: new fields.StringField({ initial: '' }),
-        slot8: new fields.StringField({ initial: '' }),
-        slot9: new fields.StringField({ initial: '' }),
-        slot10: new fields.StringField({ initial: '' })
+        notes: new fields.HTMLField({ initial: '' })
       })
     };
   }
@@ -103,16 +89,26 @@ export class MountVehicleDataModel extends BaseActorDataModel {
       this.attributes.sizeNumber = sizeInfo.size;
       this.attributes.sizeLabel = sizeLabel(sizeInfo.id);
 
-      const hpVal = Number(this.attributes.hp?.value) || 0;
-      const hpMax = Number(this.attributes.hp?.max) || 1;
-      if (this.attributes.hp) {
-        this.attributes.hp.pct = Math.min(100, Math.max(0, Math.round((hpVal / hpMax) * 100)));
+      this.kind = sanitizeVehicleKind(this.kind);
+      this.attributes.kindInfo = vehicleKindInfo(this.kind);
+      if (this.tagSet) {
+        this.tagSet.add(vehicleKindTag(this.kind));
+        this.allTags = Array.from(this.tagSet);
       }
 
-      if (this.attributes.move !== undefined && this.attributes.speed) {
-        this.attributes.speed.move = this.attributes.move;
+      const health = vehicleHealth(sizeInfo.size);
+      if (this.attributes.hp) {
+        this.attributes.hp.max = health.max;
+        this.attributes.hp.hpPerBar = health.hpPerBar;
+        this.attributes.hp.bars = health.bars;
+        const raw = this.attributes.hp.value;
+        const hpVal = raw === null || raw === undefined || !Number.isFinite(Number(raw)) ? health.max : Math.max(0, Number(raw));
+        this.attributes.hp.value = hpVal;
+        this.attributes.hp.pct = Math.min(100, Math.max(0, Math.round((hpVal / health.max) * 100)));
       }
+
+      // The vehicle's own rated Move. The driver's rows are added lazily where a driver is known (vehicleMoveOf).
+      this.attributes.speed = { move: ratedMove({ full: this.attributes.move }) };
     }
   }
 }
-

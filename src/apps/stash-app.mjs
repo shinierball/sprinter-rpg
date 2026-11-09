@@ -11,6 +11,7 @@
 
 import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
+import { isGmOnlyItem, isUnopenedBox } from '../documents/actor/gm-only-items.mjs';
 
 const CATEGORIES = Object.freeze([
   { id: 'all', label: 'ALL ITEMS' },
@@ -73,6 +74,9 @@ export class COGStashApp extends COGToolApp {
     let crawlerBackpack = crawlerItems.filter(item => {
       if (!storableTypes.includes(item.type)) return false;
       if (item.system?.equipped) return false;
+      // Boxes are never stashed; achievements are the GM's, so a player's stash never offers them.
+      if (isUnopenedBox(item)) return false;
+      if (!globalThis.game?.user?.isGM && isGmOnlyItem(item)) return false;
       return true;
     });
 
@@ -81,7 +85,7 @@ export class COGStashApp extends COGToolApp {
       ? (Array.from(this.space.items ?? []))
       : [];
 
-    let spaceVault = spaceItems.filter(item => storableTypes.includes(item.type));
+    let spaceVault = spaceItems.filter(item => storableTypes.includes(item.type) && !isUnopenedBox(item));
 
     // Filter by search
     if (this.searchCrawler) {
@@ -152,7 +156,7 @@ export class COGStashApp extends COGToolApp {
     const crawlerItems = this.crawler.items
       ? (Array.from(this.crawler.items ?? []))
       : [];
-    const lootItems = crawlerItems.filter(i => i.type === 'loot');
+    const lootItems = crawlerItems.filter(i => i.type === 'loot' && !isUnopenedBox(i) && (globalThis.game?.user?.isGM || !isGmOnlyItem(i)));
     for (const loot of lootItems) {
       const success = await this.crawler.depositToPersonalSpace(loot.id, 1, { space: this.space });
       if (!success) break;

@@ -1,21 +1,8 @@
-import {
-  BaseItemDataModel,
-  baseDamageField,
-  onHitField, contestField,
-  areaSchemaField,
-  interruptSchemaField,
-  rankDamagePartsField,
-  rollModifiersField,
-  damageModifiersField,
-  defenseModifiersField,
-  lightSchemaField,
-  auraStateField,
-  cooldownField,
-  rankBreakTimingFields,
-  useRecordsField,
-  durationConfigField
-} from './base-item-model.mjs';
-import { rankBreaksField } from '../../utils/rank-breaks.mjs';
+import { BaseItemDataModel } from './base-item-model.mjs';
+import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField } from '../fields/effect-fields.mjs';
+import { rollModifiersField, damageModifiersField, defenseModifiersField } from '../fields/modifier-fields.mjs';
+import { cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
+import { rankBreaksField } from '../../utils/skill/rank-breaks.mjs';
 
 /**
  * Data Model for Sprinter RPG Spell Items.

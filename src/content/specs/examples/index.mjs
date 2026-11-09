@@ -20,6 +20,8 @@ import { EXAMPLE_IDENTITY_SPECS } from './identity.mjs';
 import { EXAMPLE_ACTOR_SPECS as MATRIX_ACTOR_SPECS } from './actors.mjs';
 import { EXAMPLE_TABLE_SPECS as MATRIX_TABLE_SPECS } from './tables.mjs';
 import { EXAMPLE_SET_META } from './sets.mjs';
+import { stampSpec } from '../../../utils/content-source.mjs';
+import { authorshipFor } from '../authorship.mjs';
 import { SPECS as attackProfilesMobs } from './mobs/attack-profiles.mjs';
 import { SPECS as racingItems } from './items/racing-and-chasing.mjs';
 import { SPECS as creatorRowsItems } from './items/creator-rows.mjs';
@@ -28,6 +30,16 @@ import { SPECS as plainLabelsMobs } from './mobs/plain-labels.mjs';
 import { SPECS as usedUpItems } from './items/used-up.mjs';
 import { SPECS as baseSkillsItems } from './items/base-skills.mjs';
 import { SPECS as baseSetItems } from './items/base-set.mjs';
+import { SPECS as craftingItems } from './items/crafting.mjs';
+import { SPECS as craftingActors } from './actors/crafting.mjs';
+import { SPECS as lootBoxesItems } from './items/loot-boxes.mjs';
+import { SPECS as lootBoxesTables } from './tables/loot-boxes.mjs';
+import { SPECS as vehiclesItems } from './items/vehicles.mjs';
+import { SPECS as vehiclesActors } from './actors/vehicles.mjs';
+import { SPECS as offlineModeItems } from './items/offline-mode.mjs';
+import { SPECS as floorStartsActors } from './actors/floor-starts.mjs';
+import { SPECS as contractClausesItems } from './items/contract-clauses.mjs';
+import { SPECS as contractClausesMobs } from './mobs/contract-clauses.mjs';
 import { SPECS as racingMobs } from './mobs/racing-and-chasing.mjs';
 import { SPECS as racingTables } from './tables/racing-and-chasing.mjs';
 
@@ -50,7 +62,17 @@ const RELEASE_FILES = Object.freeze([
   { set: 'plain-labels', kind: 'mobs', specs: plainLabelsMobs },
   { set: 'used-up', kind: 'items', specs: usedUpItems },
   { set: 'base-skills', kind: 'items', specs: baseSkillsItems },
-  { set: 'base-set', kind: 'items', specs: baseSetItems }
+  { set: 'base-set', kind: 'items', specs: baseSetItems },
+  { set: 'crafting', kind: 'items', specs: craftingItems },
+  { set: 'crafting', kind: 'actors', specs: craftingActors },
+  { set: 'loot-boxes', kind: 'items', specs: lootBoxesItems },
+  { set: 'loot-boxes', kind: 'tables', specs: lootBoxesTables },
+  { set: 'vehicles', kind: 'items', specs: vehiclesItems },
+  { set: 'vehicles', kind: 'actors', specs: vehiclesActors },
+  { set: 'offline-mode', kind: 'items', specs: offlineModeItems },
+  { set: 'floor-starts', kind: 'actors', specs: floorStartsActors },
+  { set: 'contract-clauses', kind: 'items', specs: contractClausesItems },
+  { set: 'contract-clauses', kind: 'mobs', specs: contractClausesMobs }
 ]);
 
 /** Kind order inside a set's `specs`: referenced documents come first. `mobs` are Actors (the examples-actors pack). */
@@ -66,16 +88,18 @@ const LEGACY_KINDS = Object.freeze({
   }
 });
 
-function kindsOf(id) {
+/** The shiny source stamp (7.7c, with the 7.16 authorship: the set's, or the ledger's for a named `_id`) on every spec of a set and on each embedded item without a stamp of its own. The spec files stay as they are. */
+function kindsOf(id, authorship) {
+  const stamp = { theme: 'shiny', set: id };
   const kinds = { items: [], actors: [], mobs: [], tables: [] };
   for (const [kind, specs] of Object.entries(LEGACY_KINDS[id] ?? {})) kinds[kind] = [...specs];
   for (const file of RELEASE_FILES.filter((f) => f.set === id)) kinds[file.kind].push(...file.specs);
-  return Object.freeze(Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.freeze(v)])));
+  return Object.freeze(Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.freeze(v.map((spec) => stampSpec(spec, { ...stamp, authorship: authorshipFor(spec._id, authorship) })))])));
 }
 
 /** Every example set: the metadata plus `kinds` (specs by kind) and `specs` (all kinds, in KIND_ORDER). */
 export const EXAMPLE_SETS = Object.freeze(EXAMPLE_SET_META.map((meta) => {
-  const kinds = kindsOf(meta.id);
+  const kinds = kindsOf(meta.id, meta.authorship);
   return Object.freeze({ ...meta, kinds, specs: Object.freeze(KIND_ORDER.flatMap((k) => kinds[k])) });
 }));
 

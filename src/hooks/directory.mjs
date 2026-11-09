@@ -4,7 +4,7 @@
  * V1 `renderSidebarTab` or `getApplicationHeaderButtons` hook is needed.
  */
 import { COGSkillManager } from '../apps/skill-manager.mjs';
-import { COGSessionManagerApp } from '../apps/session-manager.mjs';
+import { COGSessionManagerApp } from '../apps/session-manager/manager-app.mjs';
 import { COGCrawlerCreatorApp } from '../apps/crawler-creator.mjs';
 import { COGClassCreatorApp } from '../apps/class-creator.mjs';
 import { COGRaceCreatorApp } from '../apps/race-creator.mjs';
@@ -13,7 +13,7 @@ import { COGContestTrackerApp } from '../apps/contest-tracker.mjs';
 import { COGTagManager } from '../apps/tag-manager.mjs';
 import { COGMobCreatorApp } from '../apps/mob-creator/mob-creator-app.mjs';
 import { openGlobalItemCreatorDialog } from '../apps/item-creator-dialog.mjs';
-import { isMarkerActor } from '../utils/marker.mjs';
+import { isMarkerActor } from '../utils/area/marker.mjs';
 
 const CREATE_BUTTONS = '.create-document, .create-entry, [data-action="createEntry"], [data-action="createDocument"]';
 const HEADER_ACTIONS = '.header-actions, .action-buttons, header.directory-header .action-buttons';

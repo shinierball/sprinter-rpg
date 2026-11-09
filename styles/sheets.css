@@ -1,0 +1,2038 @@
+/* ---------------- TABS NAVIGATION ---------------- */
+.sheet-tabs.tabs {
+  display: flex;
+  background: var(--cog-window-bg);
+  border-bottom: 3px solid var(--cog-danger);
+  margin-bottom: 8px;
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+}
+
+.sheet-tabs .item {
+  flex: 1;
+  padding: 8px 4px;
+  text-align: center;
+  color: var(--cog-text-secondary);
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-right: 1px solid var(--cog-panel-border);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.sheet-tabs .item:last-child {
+  border-right: none;
+}
+
+.sheet-tabs .item:hover {
+  color: var(--cog-on-fill);
+  background: var(--cog-surface-muted);
+}
+
+.sheet-tabs .item.active {
+  color: var(--cog-on-fill);
+  background: var(--cog-danger-fill);
+  text-shadow: 1px 1px 2px var(--cog-ink);
+}
+
+/* ---------------- BODY & TABS ---------------- */
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sheet-body .tab {
+  display: none;
+}
+
+.sheet-body .tab.active {
+  display: block;
+}
+
+/* ---------------- BANNER HEADERS ---------------- */
+.cog-banner-header {
+  background-color: var(--cog-window-bg);
+  color: var(--cog-on-fill);
+  font-family: 'Oswald', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.cog-banner-header.red {
+  background-color: var(--cog-danger-fill);
+}
+
+.cog-banner-header.black {
+  background-color: var(--cog-surface-muted);
+}
+
+/* ---------------- FORM & FIELDS ---------------- */
+.cog-field-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.cog-field-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.cog-field-group.small {
+  flex: 0 0 75px;
+}
+
+.cog-field-group.flex-1 { flex: 1; }
+.cog-field-group.flex-2 { flex: 2; }
+
+.cog-field-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cog-text);
+  margin-bottom: 2px;
+}
+
+.cog-field-input {
+  border: none;
+  border-bottom: 2px solid var(--cog-border);
+  background: transparent;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 2px 4px;
+  width: 100%;
+  outline: none;
+  color: var(--cog-text-strong);
+}
+
+.cog-field-input:focus {
+  border-bottom-color: var(--cog-danger);
+  background-color: color-mix(in srgb, var(--cog-input-bg) 70%, transparent);
+}
+
+select.cog-field-input {
+  cursor: pointer;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+select.cog-field-input option {
+  font-family: 'Roboto Condensed', sans-serif;
+  font-weight: 600;
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+}
+
+select.cog-field-input optgroup {
+  font-family: 'Roboto Condensed', sans-serif;
+  font-weight: 800;
+  color: var(--cog-accent-strong);
+  background: var(--cog-surface-alt);
+}
+
+/* Universal High-Contrast Placeholders for Sheet and Form Inputs — Red Example Text */
+input::placeholder,
+textarea::placeholder,
+.cog-sheet input::placeholder,
+.cog-sheet textarea::placeholder,
+.cog-item-sheet input::placeholder,
+.cog-item-sheet textarea::placeholder,
+.cog-field-input::placeholder,
+.cog-stat-input::placeholder,
+.cog-box-input::placeholder,
+.cog-create-skill-form input::placeholder,
+.cog-create-skill-form textarea::placeholder,
+.cog-create-custom-item-form input::placeholder,
+.cog-create-custom-item-form textarea::placeholder,
+.cog-dialog-input::placeholder {
+  color: var(--cog-accent);
+  opacity: 1 !important;
+  font-style: italic !important;
+}
+
+.cog-example-text,
+.example-text {
+  color: var(--cog-accent);
+  font-style: italic;
+}
+
+.cog-sheet input,
+.cog-sheet select,
+.cog-sheet textarea,
+.cog-item-sheet input,
+.cog-item-sheet select,
+.cog-item-sheet textarea,
+.cog-field-input,
+.cog-stat-input {
+  color: var(--cog-text-strong);
+}
+
+/* The one checkbox rule for every system window and chat card. `.cog-window` is added by the shared window mixin
+   (every tool app and document sheet) and by the dialog hook (every DialogV2); chat cards carry `.cog-chat-card`.
+   Accent tick, a visible strong border in both schemes. At rest the border is the only box; the 2px accent outline
+   appears on :focus-visible alone (3.39 e). Component rules elsewhere only set size and spacing. */
+.cog-window input[type="checkbox"],
+.cog-chat-card input[type="checkbox"] {
+  appearance: auto;
+  accent-color: var(--cog-accent);
+  border: 1px solid var(--cog-border-strong);
+  border-radius: 3px;
+  background-color: var(--cog-input-bg);
+  cursor: pointer;
+}
+
+/* Core Foundry draws its own checkbox with ::before/::after Font Awesome glyphs (a filled square when unchecked, grey in the
+   light scheme). Our boxes are native (appearance: auto), so the core glyphs would paint over them: switch them off. */
+.cog-window input[type="checkbox"]::before,
+.cog-window input[type="checkbox"]::after,
+.cog-chat-card input[type="checkbox"]::before,
+.cog-chat-card input[type="checkbox"]::after {
+  content: none;
+}
+
+.cog-window input[type="checkbox"]:focus-visible,
+.cog-chat-card input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--cog-accent);
+}
+
+/* Dark scheme: a native unchecked box is dark-on-dark and Chromium ignores `border` on it, so draw the box edge as a
+   2px outline in the body text colour (kept off :focus-visible, which stays the accent ring). Chat cards are left out:
+   a chat message sits on the light parchment in either theme, where a dark native box reads as ticked. */
+.theme-dark .cog-window input[type="checkbox"] {
+  color-scheme: dark;
+  outline: 2px solid var(--cog-text);
+  outline-offset: -1px;
+}
+
+.theme-dark .cog-window input[type="checkbox"]:focus-visible,
+.theme-dark .cog-chat-card input[type="checkbox"]:focus-visible {
+  outline-color: var(--cog-accent);
+}
+
+.theme-dark input[type="checkbox"]:disabled {
+  opacity: 0.7;
+}
+
+.cog-checkbox-lg {
+  width: 18px;
+  height: 18px;
+}
+
+.cog-checkbox-center {
+  margin: 0 auto;
+  display: block;
+}
+
+.cog-manage-roster-dialog,
+.cog-create-party-dialog,
+.cog-add-event-form {
+  background: var(--cog-window-bg);
+  color: var(--cog-text);
+  padding: 10px;
+  border-radius: 4px;
+}
+
+/* ---------------- PAGE 1: HEADER & LOGO ---------------- */
+.cog-header-grid {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 10px;
+  background: var(--cog-surface);
+  border: 2px solid var(--cog-border-strong);
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.cog-logo-box {
+  background: var(--cog-window-bg);
+  color: var(--cog-on-fill);
+  padding: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cog-logo-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cog-danger);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.cog-logo-subtitle {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--cog-on-fill);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.cog-btn-save-pdf {
+  margin-top: 6px;
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-accent-strong-fill);
+  border-radius: 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.cog-btn-save-pdf:hover {
+  background: var(--cog-danger-fill);
+  color: var(--cog-on-fill);
+  transform: translateY(-1px);
+}
+
+.cog-details-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* Vehicle sheet: the details column is a `1fr` grid item (min-width auto), so the crew roster's min-content width pushed it past the sheet edge. Let it shrink. */
+.cog-sheet-window.mount-vehicle .cog-details-container {
+  min-width: 0;
+}
+
+/* ---------------- HEALTH BAR ---------------- */
+.cog-health-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.cog-hp-numeric-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cog-hp-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--cog-input-bg);
+  border: 2px solid var(--cog-border-strong);
+  padding: 1px 6px;
+}
+
+.cog-hp-input {
+  width: 44px;
+  border: none;
+  background: transparent;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  outline: none;
+}
+
+.cog-hp-slash {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--cog-text-secondary);
+}
+
+.cog-rest-buttons-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.cog-rest-label {
+  font-size: 10px;
+  color: var(--cog-text);
+  text-transform: uppercase;
+  margin-right: 2px;
+  font-weight: bold;
+}
+
+.cog-rest-btn {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--cog-panel-border);
+  color: var(--cog-on-fill);
+  line-height: 16px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cog-ink) 40%, transparent);
+}
+
+.cog-rest-btn:hover {
+  transform: translateY(-1px);
+}
+
+.cog-rest-btn[data-rest-type="1hour"] {
+  background: var(--cog-header-fill);
+  border-color: var(--cog-panel-border);
+}
+
+.cog-rest-btn[data-rest-type="1hour"]:hover {
+  background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-header-fill) 60%, transparent);
+}
+
+.cog-rest-btn[data-rest-type="short"] {
+  background: var(--cog-info-fill);
+  border-color: var(--cog-info-fill);
+}
+
+.cog-rest-btn[data-rest-type="short"]:hover {
+  background: color-mix(in srgb, var(--cog-info-fill), var(--cog-ink) 15%);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-info) 60%, transparent);
+}
+
+.cog-rest-btn[data-rest-type="long"] {
+  background: var(--cog-success-fill);
+  border-color: var(--cog-success-fill);
+}
+
+.cog-rest-btn[data-rest-type="long"]:hover {
+  background: color-mix(in srgb, var(--cog-success-fill), var(--cog-ink) 15%);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-success) 60%, transparent);
+}
+
+.cog-rest-btn[data-rest-type="fullDay"] {
+  background: var(--cog-magic-fill);
+  border-color: var(--cog-magic-fill);
+}
+
+.cog-rest-btn[data-rest-type="fullDay"]:hover {
+  background: color-mix(in srgb, var(--cog-magic-fill), var(--cog-ink) 15%);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-magic) 60%, transparent);
+}
+
+.cog-health-bar-wrapper {
+  position: relative;
+  width: 100%;
+  height: 38px;
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface-muted);
+  overflow: hidden;
+  container-type: inline-size;
+  --hp-fill: min(100%, max(0%, calc(100% * var(--hp-val, 1) / var(--hp-max, 1))));
+}
+
+.cog-health-segments {
+  display: grid;
+  grid-template-columns: repeat(var(--hp-segments, 10), 1fr);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+
+.cog-hp-seg {
+  border-right: 1px solid var(--cog-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cog-text-strong);
+  text-shadow: 0px 0px 2px var(--cog-on-fill);
+  position: relative;
+  user-select: none;
+}
+
+/* HP per bar sits above the percentage, as in the fillable sheet's boxed segments. */
+.cog-hp-seg-hp {
+  font-size: 15px;
+}
+
+.cog-hp-seg-pct {
+  font-size: 10px;
+}
+
+.cog-hp-seg:last-child {
+  border-right: none;
+}
+
+.cog-hp-seg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, transparent 49%, var(--cog-ink) 50%, transparent 51%);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.cog-health-fill-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background: var(--cog-meter-health);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  clip-path: inset(0 calc(100% - var(--hp-fill, 100%)) 0 0);
+  transition: clip-path 0.3s ease;
+}
+
+@supports not (clip-path: inset(0 0 0 0)) {
+  .cog-health-fill-overlay {
+    width: var(--hp-fill, 100%);
+    background-size: 100cqw 100%;
+    transition: width 0.3s ease;
+  }
+}
+
+/* ---------------- TEMPORARY HEALTH BARS (SHIELD) ---------------- */
+.cog-temp-bars-container {
+  margin-bottom: 6px;
+  background: var(--cog-surface);
+  border: 2px solid var(--cog-gold);
+  padding: 4px 6px;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-gold) 40%, transparent);
+}
+
+.cog-temp-bars-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.cog-temp-bars-title {
+  color: var(--cog-gold);
+  letter-spacing: 0.5px;
+}
+
+.cog-temp-bars-title i {
+  margin-right: 4px;
+}
+
+.cog-temp-bars-count {
+  color: var(--cog-on-fill);
+  font-size: 10px;
+}
+
+.cog-temp-bars-grid {
+  display: grid;
+  gap: 3px;
+  height: 18px;
+}
+
+.cog-temp-bar-slot {
+  position: relative;
+  background: var(--cog-surface-muted);
+  border: 1px solid var(--cog-gold);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cog-temp-bar-slot.depleted {
+  border-color: var(--cog-panel-border);
+  background: var(--cog-window-bg);
+  opacity: 0.5;
+}
+
+.cog-temp-bar-slot.active {
+  box-shadow: 0 0 4px var(--cog-warning);
+  border-color: var(--cog-warning);
+}
+
+.cog-temp-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--cog-meter-shield);
+  transition: width 0.3s ease;
+  z-index: 1;
+}
+
+.cog-temp-bar-label {
+  position: relative;
+  z-index: 2;
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cog-text-strong);
+  text-shadow: 0 0 2px var(--cog-on-fill);
+}
+
+.cog-temp-bar-slot.depleted .cog-temp-bar-label {
+  color: var(--cog-text-muted);
+  text-shadow: none;
+}
+
+/* ---------------- PAGE 1: MAIN GRID ---------------- */
+.cog-main-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr 200px;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Left Column: Attributes */
+.cog-attributes-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cog-attribute-card {
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface);
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cog-pending-stat-points {
+  margin: 0 0 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--cog-accent);
+  border-radius: 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  color: var(--cog-accent);
+  text-align: center;
+}
+
+.cog-stat-spend {
+  color: var(--cog-accent);
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.cog-attribute-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cog-text-strong);
+  border-bottom: 1px solid var(--cog-border);
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+}
+
+.cog-attribute-values {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.cog-stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.cog-stat-input {
+  width: 42px;
+  height: 26px;
+  text-align: center;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  border: 1px solid var(--cog-border);
+  background: var(--cog-input-bg);
+  outline: none;
+}
+
+.cog-stat-slash {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--cog-text-strong);
+}
+
+.cog-stat-sublabel {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--cog-text-strong);
+  margin-top: 2px;
+}
+
+.cog-stat-sublabel.cog-stat-enhanced-label {
+  color: var(--cog-accent); /* High-contrast theme red */
+  font-weight: 700;
+}
+
+.cog-stat-sublabel.cog-stat-unenhanced-label {
+  color: var(--cog-text-strong); /* High-contrast deep black */
+  font-weight: 700;
+}
+
+.cog-stat-sublabel.cog-stat-cap {
+  color: var(--cog-text-strong);
+  font-weight: 700;
+}
+
+.cog-stat-sublabel.cog-stat-cap.cog-over-cap {
+  color: var(--cog-accent);
+}
+
+/* "CAP 12 OVER CAP" stays on one line so an over-cap attribute card is no taller than its neighbours. */
+.cog-stat-sublabel.cog-stat-cap {
+  white-space: nowrap;
+}
+
+.cog-stat-sublabel.cog-stat-cap.cog-over-cap {
+  font-size: 9px;
+  letter-spacing: 0;
+}
+
+/* Skill Name input keeps a readable width inside the flex row beside the icon and type badge. */
+.cog-skills-table input[data-field="name"] {
+  min-width: 90px;
+  width: 100%;
+}
+
+.cog-attribute-mod-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--cog-surface-muted);
+  border: 1px solid var(--cog-border);
+  padding: 2px 6px;
+}
+
+.cog-mod-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cog-mod-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cog-text-strong);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.cog-mod-value:hover {
+  color: var(--cog-danger);
+}
+
+/* Middle Combat Column */
+.cog-combat-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cog-stat-block {
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface);
+}
+
+.cog-block-content {
+  padding: 6px;
+}
+
+.cog-formula-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+}
+
+.cog-sub-combat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cog-formula-row.cog-centered-row {
+  justify-content: space-around;
+}
+
+.cog-formula-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cog-formula-operator {
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.cog-box-input {
+  border: 2px solid var(--cog-border);
+  background: var(--cog-input-bg);
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 3px;
+  outline: none;
+}
+
+.cog-box-input.small { width: 44px; }
+.cog-box-input.medium { width: 62px; }
+select.cog-box-input.cog-size-select,
+.cog-box-input.cog-size-select {
+  width: 95px;
+  height: 28px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 4px;
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
+  background: var(--cog-input-bg);
+  border: 2px solid var(--cog-border);
+}
+
+/* Mana & Debuffs */
+.cog-mana-debuffs {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px;
+}
+
+.cog-mana-box {
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cog-mana-values {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.cog-debuffs-box {
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.cog-debuffs-input {
+  border: none;
+  resize: none;
+  padding: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  width: 100%;
+  background: transparent;
+  outline: none;
+}
+
+/* Right Column */
+.cog-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cog-portrait-box {
+  border: 2px solid var(--cog-border-strong);
+  height: 190px;
+  background: var(--cog-icon-box);
+  overflow: hidden;
+}
+
+.cog-portrait-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: none;
+  cursor: pointer;
+}
+
+.cog-external-buffs-box {
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface);
+  padding: 6px;
+}
+
+.cog-buff-slots-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cog-buff-slot-entry {
+  border: 1px solid var(--cog-border-muted);
+  border-radius: 3px;
+  padding: 4px 6px;
+  background: var(--cog-surface);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.cog-buff-slot-entry.is-active {
+  border-color: var(--cog-accent);
+  background: var(--cog-danger-tint);
+}
+
+.cog-buff-slot-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+.cog-buff-num {
+  font-weight: bold;
+  font-size: 12px;
+  color: var(--cog-text);
+}
+
+.cog-buff-slot-entry.is-active .cog-buff-num {
+  color: var(--cog-success);
+  font-weight: 900;
+}
+
+.cog-buff-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 1px 4px;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 2px;
+  color: var(--cog-on-fill);
+  background: var(--cog-neutral-fill);
+}
+
+.cog-buff-badge-stat {
+  background: var(--cog-info-fill);
+}
+
+.cog-buff-badge-temp-hp {
+  background: var(--cog-success-fill);
+}
+
+.cog-buff-badge-resist {
+  background: var(--cog-warning-fill);
+}
+
+.cog-buff-badge-immune {
+  background: var(--cog-magic-fill);
+}
+
+.cog-buff-badge-mult {
+  background: var(--cog-accent-fill);
+}
+
+.cog-buff-badge-combat {
+  background: var(--cog-warning-fill);
+}
+
+.cog-buff-badge-buff {
+  background: var(--cog-badge-buff);
+}
+
+.cog-buff-name {
+  font-weight: bold;
+  color: var(--cog-text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.cog-buff-detail {
+  font-size: 10px;
+  color: var(--cog-text-muted);
+  white-space: nowrap;
+}
+
+.external-buff-clear {
+  margin-left: auto;
+  color: var(--cog-text-secondary);
+  cursor: pointer;
+  padding: 1px 3px;
+  font-size: 11px;
+}
+
+.external-buff-clear:hover {
+  color: var(--cog-accent);
+}
+
+.cog-buff-select-wrapper {
+  width: 100%;
+}
+
+.external-buff-select {
+  width: 100%;
+  height: 22px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  border: 1px solid var(--cog-border-muted);
+  border-radius: 2px;
+  background: var(--cog-input-bg);
+  color: var(--cog-text);
+  padding: 1px 4px;
+  cursor: pointer;
+}
+
+.external-buff-select:focus {
+  border-color: var(--cog-accent);
+  outline: none;
+}
+
+/* ---------------- TABLES (ATTACKS & SKILLS & INVENTORY) ---------------- */
+.cog-attacks-section {
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface);
+}
+
+.cog-attacks-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+}
+
+.cog-attacks-table th {
+  border-bottom: 2px solid var(--cog-border-strong);
+  border-right: 1px solid var(--cog-border);
+  padding: 4px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  background: var(--cog-surface-muted);
+  color: var(--cog-text-strong);
+  text-align: center;
+}
+
+.cog-attacks-table th:last-child {
+  border-right: none;
+}
+
+.cog-attacks-table td {
+  border-bottom: 1px solid var(--cog-border);
+  border-right: 1px solid var(--cog-border);
+  padding: 4px 6px;
+  text-align: center;
+  vertical-align: middle;
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+}
+
+.cog-attacks-table td:last-child {
+  border-right: none;
+}
+
+/* Ensure no alternating row backgrounds on skills, spells, attacks, inventory */
+.cog-attacks-table tbody tr,
+.cog-attacks-table tbody tr:nth-child(even),
+.cog-attacks-table tbody tr:nth-child(odd),
+.cog-skills-table tbody tr,
+.cog-skills-table tbody tr:nth-child(even),
+.cog-skills-table tbody tr:nth-child(odd),
+.cog-spells-table tbody tr,
+.cog-spells-table tbody tr:nth-child(even),
+.cog-spells-table tbody tr:nth-child(odd) {
+  background: var(--cog-surface);
+  color: var(--cog-text-strong) !important;
+}
+
+.cog-skills-table td,
+.cog-spells-table td {
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+}
+
+.cog-skills-table input,
+.cog-spells-table input,
+.cog-skills-table select,
+.cog-spells-table select {
+  color: var(--cog-text-strong) !important;
+  background: var(--cog-input-bg) !important;
+}
+
+.cog-attacks-table tbody tr:hover,
+.cog-skills-table tbody tr:hover,
+.cog-spells-table tbody tr:hover {
+  background: var(--cog-surface-alt);
+}
+
+.cog-attack-roll-btn {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  border: none;
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cog-attack-roll-btn:hover {
+  background: var(--cog-danger-fill);
+}
+
+/* Attack-row formulas (to hit, damage): plain clickable text, no box. */
+.cog-formula-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cog-formula-link:hover {
+  color: var(--cog-accent);
+  background: none;
+}
+
+/* Item Action Controls (Edit & Delete) across all tables */
+.cog-attacks-table .item-actions,
+.cog-skills-table .item-actions,
+.cog-spells-table .item-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.cog-attacks-table .item-delete,
+.cog-skills-table .item-delete,
+.cog-spells-table .item-delete,
+.item-delete {
+  color: var(--cog-accent) !important;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 11px;
+  transition: color 0.15s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cog-attacks-table .item-delete:hover,
+.cog-skills-table .item-delete:hover,
+.cog-spells-table .item-delete:hover,
+.item-delete:hover {
+  color: var(--cog-danger) !important;
+  transform: scale(1.15);
+}
+
+.cog-attacks-table .item-edit,
+.cog-skills-table .item-edit,
+.cog-spells-table .item-edit,
+.item-edit {
+  color: var(--cog-text) !important;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 11px;
+  transition: color 0.15s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cog-attacks-table .item-edit:hover,
+.cog-skills-table .item-edit:hover,
+.cog-spells-table .item-edit:hover,
+.item-edit:hover {
+  color: var(--cog-info) !important;
+  transform: scale(1.15);
+}
+
+/* The debuff chip sits on a coloured fill: its name and remove link stay on-fill, hover included. */
+.cog-debuff-chip .item-edit,
+.cog-debuff-chip .item-edit:hover,
+.cog-debuff-chip .item-delete,
+.cog-debuff-chip .item-delete:hover {
+  color: var(--cog-on-fill) !important;
+}
+
+/* ---------------- COMBAT TECHNIQUES & MANEUVERS STRIP ---------------- */
+.cog-combat-techniques-strip {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--cog-surface-alt);
+  border: 1px solid var(--cog-divider);
+  border-radius: 4px;
+}
+
+.cog-technique-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--cog-accent);
+  background: var(--cog-surface);
+  color: var(--cog-text);
+  cursor: pointer;
+  font-family: var(--font-primary, 'Oswald', sans-serif);
+  font-size: 11px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.cog-technique-pill:hover {
+  background: var(--cog-warning-tint);
+  border-color: var(--cog-accent-strong);
+  transform: translateY(-1px);
+}
+
+.cog-technique-pill .cog-tech-name {
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.cog-technique-pill .cog-tech-summary {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+.cog-technique-pill .cog-tech-applies {
+  font-size: 9px;
+  color: var(--cog-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cog-technique-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.cog-technique-strip-title {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cog-technique-strip-hint {
+  font-size: 10px;
+}
+
+.cog-technique-strip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---------------- HOTLIST ---------------- */
+.cog-hotlist-section {
+  margin-top: 14px;
+}
+
+.cog-hotlist-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 8px;
+  background: var(--cog-surface-alt);
+}
+
+.cog-hotlist-box {
+  border: 2px solid var(--cog-border-strong);
+  border-radius: 4px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  background: var(--cog-surface);
+  min-height: 105px;
+  position: relative;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--cog-ink) 8%, transparent);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cog-hotlist-box:hover {
+  border-color: var(--cog-accent);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--cog-accent) 15%, transparent);
+}
+
+.cog-hotlist-box.is-empty {
+  border-style: dashed;
+  background: var(--cog-surface-alt);
+}
+
+.cog-hotlist-box.drag-over {
+  border-color: var(--cog-danger);
+  background: var(--cog-danger-tint);
+}
+
+.cog-hotlist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  gap: 4px;
+}
+
+.cog-hotlist-num {
+  font-family: 'Oswald', sans-serif;
+  font-weight: bold;
+  font-size: 11px;
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  padding: 1px 5px;
+  border-radius: 3px;
+  line-height: 1.2;
+}
+
+.cog-badge {
+  font-family: 'Oswald', sans-serif;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* A descriptive tag is a label the GM adjudicates; the badge reads as plain text, not a mechanic. */
+.cog-badge.cog-tag-descriptive-badge {
+  border: 1px dashed var(--cog-border-muted);
+  cursor: help;
+}
+
+/* Associated-skill pills show the skill's name as written, not uppercased like a state badge. */
+.cog-badge.cog-skill-pill {
+  text-transform: none;
+}
+
+.cog-badge-spell {
+  background: var(--cog-badge-spell);
+  color: var(--cog-on-fill);
+}
+
+.cog-badge-attack {
+  background: var(--cog-badge-attack);
+  color: var(--cog-on-fill);
+}
+
+.cog-badge-gear {
+  background: var(--cog-badge-equipped);
+  color: var(--cog-on-fill);
+}
+
+.cog-badge-cooldown {
+  text-transform: none; /* the badge text carries its own case: "COOLDOWN 3h", never "3H" */
+  background: var(--cog-warning-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-badge-item {
+  background: var(--cog-warning-fill);
+  color: var(--cog-on-fill);
+}
+
+/* Read-only list of granted features (race/class sheets, chat cards) */
+.cog-feature-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.cog-feature-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.cog-feature-badge {
+  flex: 0 0 auto;
+  color: var(--cog-on-fill);
+}
+
+.cog-feature-badge-stat { background: var(--cog-success-fill); }
+.cog-feature-badge-skill,
+.cog-feature-badge-spell { background: var(--cog-info-fill); }
+.cog-feature-badge-mod { background: var(--cog-accent-fill); }
+.cog-feature-badge-tag { background: var(--cog-neutral-fill); }
+.cog-feature-badge-attack { background: var(--cog-accent-fill); }
+.cog-feature-badge-cost { background: var(--cog-magic-fill); }
+.cog-feature-badge-damage { background: var(--cog-danger-fill); }
+.cog-feature-badge-heal { background: var(--cog-success-fill); }
+.cog-feature-badge-area { background: var(--cog-warning-fill); }
+.cog-feature-badge-on-hit { background: var(--cog-accent-strong-fill); }
+.cog-feature-badge-save { background: var(--cog-info-fill); }
+.cog-feature-badge-timing { background: var(--cog-neutral-fill); }
+.cog-feature-badge-use { background: var(--cog-gold-fill); }
+.cog-feature-badge-wield { background: var(--cog-neutral-fill); }
+.cog-feature-badge-interrupt { background: var(--cog-warning-fill); }
+.cog-feature-badge-light { background: var(--cog-gold-fill); }
+.cog-feature-badge-reward { background: var(--cog-success-fill); }
+.cog-feature-badge-buff { background: var(--cog-info-fill); }
+.cog-feature-badge-debuff { background: var(--cog-magic-fill); }
+
+/* Item with no structured effects: one muted line, no badge */
+.cog-feature-empty {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--cog-text-secondary);
+}
+
+.cog-feature-line[data-tooltip] .cog-feature-text {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+.hotlist-clear {
+  color: var(--cog-text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 1px 4px;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.hotlist-clear:hover {
+  color: var(--cog-accent);
+}
+
+.cog-hotlist-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--cog-text);
+  font-size: 11px;
+  gap: 2px;
+  padding: 6px 0;
+}
+
+.cog-hotlist-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.cog-hotlist-item-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-hotlist-img {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  object-fit: contain;
+  background: var(--cog-surface);
+  flex-shrink: 0;
+}
+
+.cog-hotlist-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  line-height: 1.15;
+}
+
+.cog-hotlist-name {
+  font-weight: bold;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--cog-text-strong);
+}
+
+.cog-hotlist-detail {
+  font-size: 10px;
+  color: var(--cog-text);
+  font-weight: normal;
+}
+
+.cog-hotlist-btn {
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  border: none;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  margin-top: 2px;
+  width: 100%;
+}
+
+.cog-hotlist-action-wrapper {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.cog-hotlist-action-wrapper .cog-hotlist-btn {
+  flex: 1;
+}
+
+.cog-hotlist-btn:hover {
+  opacity: 0.9;
+}
+
+.cog-hotlist-btn-attack {
+  background: var(--cog-accent-fill);
+}
+.cog-hotlist-btn-attack:hover {
+  background: var(--cog-accent-strong-fill);
+}
+
+.cog-hotlist-btn-spell {
+  background: var(--cog-info-fill);
+}
+.cog-hotlist-btn-spell:hover {
+  background: color-mix(in srgb, var(--cog-info-fill), var(--cog-ink) 15%);
+}
+
+.cog-hotlist-btn-gear {
+  background: var(--cog-header-fill);
+}
+.cog-hotlist-btn-gear.is-equipped {
+  background: var(--cog-success-fill);
+}
+.cog-hotlist-btn-gear:hover {
+  background: color-mix(in srgb, var(--cog-header-fill), var(--cog-ink) 15%);
+}
+.cog-hotlist-btn-gear.is-equipped:hover {
+  background: color-mix(in srgb, var(--cog-success-fill), var(--cog-ink) 15%);
+}
+
+.cog-hotlist-btn-use {
+  background: var(--cog-warning-fill);
+}
+.cog-hotlist-btn-use:hover {
+  background: color-mix(in srgb, var(--cog-warning-fill), var(--cog-ink) 15%);
+}
+
+.cog-hotlist-select-wrapper {
+  margin-top: 4px;
+  border-top: 1px dotted var(--cog-border-muted);
+  padding-top: 3px;
+}
+
+.cog-hotlist-select-wrapper select.hotlist-select {
+  width: 100%;
+  font-size: 10px;
+  font-family: 'Oswald', sans-serif;
+  border: 1px solid var(--cog-divider);
+  border-radius: 2px;
+  background: var(--cog-input-bg);
+  padding: 1px 2px;
+  height: 20px;
+  color: var(--cog-text-secondary);
+}
+
+.cog-hotlist-select-wrapper select.hotlist-select:focus {
+  border-color: var(--cog-accent);
+  outline: none;
+}
+
+.cog-page2-grid {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 10px;
+}
+
+.cog-gear-slots-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cog-gear-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cog-gear-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  width: 140px;
+  border-right: 2px solid var(--cog-border);
+}
+
+.cog-story-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cog-story-box {
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cog-story-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.cog-story-box-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-weight: bold;
+}
+
+.cog-roll-story-table-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border: 1px solid var(--cog-accent-strong-fill);
+  border-radius: 3px;
+  padding: 2px 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.cog-roll-story-table-btn:hover {
+  background: var(--cog-danger-fill);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--cog-danger) 40%, transparent);
+}
+
+/* Contest response card header: the outcome badge keeps its own line when the title is long. */
+.cog-contest-result-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  border-bottom: 1px solid var(--cog-divider);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.cog-contest-result-title {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.cog-contest-result-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.cog-story-roll-card .cog-story-result-text {
+  font-size: 13px;
+  color: var(--cog-text);
+  margin: 6px 0 2px 0;
+  line-height: 1.4;
+}
+
+/* ---------------- PAGE 5 & 6 GRIDS ---------------- */
+.cog-extras-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.cog-abilities-page-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 240px;
+  gap: 10px;
+}
+
+.cog-item-card {
+  border: 1px solid var(--cog-border);
+  margin-bottom: 6px;
+  padding: 4px 6px;
+  background: var(--cog-surface-alt);
+}
+
+.cog-card-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--cog-border-muted);
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+}
+
+.cog-card-header h3 {
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.cog-sponsors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cog-sponsor-box {
+  border: 2px solid var(--cog-border-strong);
+}
+
+/* ---------------- ITEM SHEET ---------------- */
+.cog-item-sheet .cog-item-header {
+  display: flex;
+  align-items: center;
+  background: var(--cog-surface);
+  border: 2px solid var(--cog-border-strong);
+  padding: 8px;
+}
+
+/* AppV2 item sheet: the header, the type's body part, interrupt and tags stack in one scrolling column,
+   and the last three read as one white panel. */
+.application.cog-sheet-window.cog-sheet.cog-item-sheet .window-content {
+  overflow-y: auto;
+}
+
+.cog-item-sheet .window-content > .cog-item-interrupt-section,
+.cog-item-sheet .window-content > .cog-item-tags-section {
+  background: var(--cog-surface);
+  border-left: 2px solid var(--cog-border-strong);
+  border-right: 2px solid var(--cog-border-strong);
+  padding: 10px;
+  border-top: 2px solid var(--cog-border-strong);
+}
+
+.cog-item-sheet .window-content > .cog-item-body {
+  background: var(--cog-surface);
+  border-left: 2px solid var(--cog-border-strong);
+  border-right: 2px solid var(--cog-border-strong);
+  padding: 10px;
+  margin-top: 10px;
+  border-top: 2px solid var(--cog-border-strong);
+}
+
+.cog-item-sheet .window-content > .cog-item-tags-section {
+  border-bottom: 2px solid var(--cog-border-strong);
+}
+
+/* The interrupt part always renders (one root) and hides itself unless the item acts as an interrupt. */
+.cog-item-sheet .window-content > [hidden] {
+  display: none;
+}
+
+/* ---------------- SKILL PICKER MODAL ---------------- */
+.cog-skill-picker-window .window-content {
+  padding: 8px;
+  background: var(--cog-surface-alt);
+  display: flex;
+  flex-direction: column;
+}
+
+.cog-skill-picker-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cog-picker-header {
+  margin-bottom: 8px;
+}
+
+.cog-picker-search {
+  width: 100%;
+  padding: 8px 12px;
+  font-family: 'Roboto Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid var(--cog-border-strong);
+  border-radius: 4px;
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+  outline: none;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--cog-ink) 10%, transparent);
+}
+
+.cog-picker-search::placeholder {
+  color: var(--cog-accent);
+  font-style: italic;
+  font-weight: normal;
+  opacity: 1;
+}
+
+.cog-picker-search:focus {
+  border-color: var(--cog-danger);
+  color: var(--cog-text-strong);
+  background: var(--cog-surface);
+}
+
+.cog-picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 520px;
+}
+
+.cog-picker-group {
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-surface);
+}
+
+.cog-picker-group-title {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 5px 10px;
+  border-bottom: 2px solid var(--cog-danger);
+}
+
+.cog-picker-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.cog-picker-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--cog-divider);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.cog-picker-item:last-child {
+  border-bottom: none;
+}
+
+.cog-picker-item:hover:not(.is-added) {
+  background: var(--cog-gold-tint);
+}
+
+.cog-picker-item.is-added {
+  background: var(--cog-surface-alt);
+  opacity: 0.75;
+  cursor: default;
+}
+
+.cog-picker-item input[type="checkbox"] {
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+.cog-picker-item-icon {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  background: var(--cog-surface-strong);
+  object-fit: contain;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+/* Icon boxes: core and system icons are white, so every box that frames one paints a strong surface
+   in both schemes (a light box made them vanish). */
+.cog-item-header-img {
+  width: 56px;
+  height: 56px;
+  margin-right: 10px;
+  border: 2px solid var(--cog-border-strong);
+  background: var(--cog-icon-box);
+  object-fit: contain;
+}
+
+/* Story tab: the Personal Safe Space icon sits on the same fixed dark box. */
+.cog-personal-space-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--cog-magic);
+  background: var(--cog-icon-box);
+}
+
+.cog-condition-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  border: 1px solid var(--cog-panel-border);
+  background: var(--cog-icon-box);
+  object-fit: contain;
+}
+
+/* Transformation controls on a debuff row of the Conditions tab */
+.cog-transform-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.cog-transform-controls a {
+  cursor: pointer;
+}
+
+.cog-transform-controls .cog-transform-form {
+  width: auto;
+  max-width: 140px;
+  font-size: 11px;
+}
+
+.directory-item .thumbnail {
+  background: var(--cog-icon-box);
+  border-radius: 4px;
+}
+
+.cog-picker-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cog-picker-item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cog-picker-item-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--cog-text-strong);
+}
+
+.cog-picker-item-stat {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--cog-accent);
+  background: var(--cog-danger-tint);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.cog-picker-item-type {
+  font-size: 11px;
+  color: var(--cog-text-secondary);
+  background: var(--cog-surface-muted);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.cog-picker-badge.added {
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--cog-success);
+  background: var(--cog-success-tint);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--cog-success-border);
+  margin-left: auto;
+}
+
+.cog-picker-item-desc {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--cog-text-secondary);
+}
+

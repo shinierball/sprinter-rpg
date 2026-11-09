@@ -1,4 +1,3 @@
-import { BaseItemDataModel } from './base-item-model.mjs';
 import { SkillDataModel } from './skill-model.mjs';
 import { AttackDataModel } from './attack-model.mjs';
 import { SpellDataModel } from './spell-model.mjs';
@@ -9,23 +8,6 @@ import { LootDataModel } from './loot-model.mjs';
 import { AchievementDataModel } from './achievement-model.mjs';
 import { RaceDataModel, ClassDataModel, DeityDataModel, SponsorDataModel } from './lore-model.mjs';
 import { SpaceUpgradeDataModel } from './space-upgrade-model.mjs';
-
-export {
-  BaseItemDataModel,
-  SkillDataModel,
-  AttackDataModel,
-  SpellDataModel,
-  GearDataModel,
-  BuffDataModel,
-  DebuffDataModel,
-  LootDataModel,
-  AchievementDataModel,
-  RaceDataModel,
-  ClassDataModel,
-  DeityDataModel,
-  SponsorDataModel,
-  SpaceUpgradeDataModel
-};
 
 export const ITEM_DATA_MODELS = {
   skill: SkillDataModel,

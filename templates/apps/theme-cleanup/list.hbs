@@ -1,0 +1,50 @@
+<div class="cog-theme-cleanup-list">
+  {{#if isCleanupTab}}
+    {{#if hasOwners}}
+      <h3 class="cog-theme-cleanup-section">{{localize "COG.ThemeCleanup.OnActors"}}</h3>
+      {{#each owners}}
+        <section class="cog-theme-cleanup-owner" data-owner-key="{{key}}">
+          <h4>{{name}}{{#if isToken}} <em>{{localize "COG.ThemeCleanup.Token"}}</em>{{/if}}</h4>
+          {{#each items}}
+            <label class="cog-theme-cleanup-row">
+              <input type="checkbox" data-change-action="toggleItem" data-set="item" data-key="{{key}}" {{#if ticked}}checked{{/if}}>
+              <span class="cog-theme-cleanup-name">{{name}}</span>
+              <span class="cog-theme-cleanup-type">{{type}}</span>
+              {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=sourceBadge}}
+            </label>
+          {{/each}}
+        </section>
+      {{/each}}
+    {{else}}
+      <p class="cog-theme-cleanup-empty">{{localize "COG.ThemeCleanup.NothingOnActors"}}</p>
+    {{/if}}
+    {{#if hasWhole}}
+      <h3 class="cog-theme-cleanup-section">{{localize "COG.ThemeCleanup.WholeDocuments"}}</h3>
+      <p class="cog-theme-cleanup-hint">{{localize "COG.ThemeCleanup.WholeHint"}}</p>
+      {{#each wholeDocs}}
+        <label class="cog-theme-cleanup-row" data-whole-kind="{{kind}}">
+          <input type="checkbox" data-change-action="toggleDelete" data-set="delete" data-key="{{key}}" {{#if ticked}}checked{{/if}}>
+          <span class="cog-theme-cleanup-name">{{name}}</span>
+          <span class="cog-theme-cleanup-type">{{kind}}</span>
+          {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=sourceBadge}}
+          <span class="cog-theme-cleanup-delete">{{localize "COG.ThemeCleanup.Delete"}}</span>
+        </label>
+      {{/each}}
+    {{/if}}
+  {{/if}}
+  {{#if isRestoreTab}}
+    {{#if hasRestorable}}
+      {{#each restorable}}
+        <div class="cog-theme-cleanup-row" data-restore-key="{{key}}">
+          <span class="cog-theme-cleanup-name">{{name}}</span>
+          <span class="cog-theme-cleanup-type">{{type}}</span>
+          <span class="cog-theme-cleanup-owner-name">{{owner}}</span>
+          {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=sourceBadge}}
+          <button type="button" class="cog-btn cog-btn-secondary" data-action="restoreOnePoop" data-key="{{key}}">{{localize "COG.ThemeCleanup.Restore"}}</button>
+        </div>
+      {{/each}}
+    {{else}}
+      <p class="cog-theme-cleanup-empty">{{localize "COG.ThemeCleanup.NothingToRestore"}}</p>
+    {{/if}}
+  {{/if}}
+</div>

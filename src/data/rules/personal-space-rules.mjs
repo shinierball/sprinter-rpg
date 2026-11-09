@@ -3,10 +3,6 @@
 import { contentRegistry } from '../../content/registry.mjs';
 import { buildPayload } from '../builders/item-payload.mjs';
 
-export function getSpaceTypeConfig(typeTag) {
-  return contentRegistry.getSpaceType(typeTag);
-}
-
 export function getSpaceTypeInfo(typeKey) {
   return contentRegistry.getSpaceType(typeKey);
 }
@@ -39,7 +35,6 @@ export function spaceUpgradeItemData(def) {
       defenseBonus: num(def?.defenseBonus),
       stashCapacityBonus: num(def?.stashBonus, def?.stashCapacityBonus),
       restRecoveryBonus: num(def?.hoursReduction, def?.restRecoveryBonus),
-      workstationLevel: num(def?.workstationLevel),
       mercenaryCapacityBonus: num(def?.mercenaryCapacity, def?.mercenaryCapacityBonus),
       petCapacityBonus: num(def?.petCapacityBonus),
       mountCapacityBonus: num(def?.mountCapacityBonus),

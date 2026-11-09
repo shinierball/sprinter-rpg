@@ -8,9 +8,9 @@
  * and the proposal are user text and never go through innerHTML.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { readCheckRecord, effectiveCheck } from '../../utils/check-assists.mjs';
-import { collectCheckAssistOffers, classifyAttackOutcome } from '../../utils/interrupts.mjs';
-import { appliedBeforeEvade } from '../../utils/evade-link.mjs';
+import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
+import { collectCheckAssistOffers, classifyAttackOutcome } from '../../utils/combat/interrupts.mjs';
+import { appliedBeforeEvade } from '../../utils/attack/evade-link.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { getDamageApplications } from '../damage-applications.mjs';
 
@@ -143,7 +143,7 @@ function decorateEvade(card, eff, record) {
 }
 
 /** The display line of one assist entry. */
-export function assistLineText(entry, eff) {
+function assistLineText(entry, eff) {
   if (entry.source === 'interrupt') {
     return assistText('LineInterrupt', { skill: entry.skillName || 'Assist', amount: entry.amount, name: entry.fromName, formula: entry.formula });
   }

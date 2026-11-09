@@ -29,6 +29,8 @@
       <option value="treasure" {{#if (eq system.lootType "treasure")}}selected{{/if}}>Treasure / Valuables</option>
       <option value="crafting" {{#if (eq system.lootType "crafting")}}selected{{/if}}>Crafting Material</option>
       <option value="quest" {{#if (eq system.lootType "quest")}}selected{{/if}}>Quest Item</option>
+      <option value="blueprint" {{#if (eq system.lootType "blueprint")}}selected{{/if}}>Crafting Blueprint</option>
+      <option value="box" {{#if (eq system.lootType "box")}}selected{{/if}}>{{localize "COG.LootType.box"}}</option>
     </select>
   </div>
   {{#if (or (eq system.lootType "consumable") (eq system.lootType "wand"))}}
@@ -41,7 +43,7 @@
       </select>
     </div>
   {{/if}}
-  {{#if (eq system.lootType "wand")}}
+  {{#if (or (eq system.lootType "wand") (eq system.lootType "consumable"))}}
     <div class="cog-field-group small">
       <span class="cog-field-label">Charges</span>
       <div style="display: flex; gap: 4px; align-items: center;">
@@ -54,7 +56,15 @@
 </div>
 {{> "systems/sprinter-rpg/templates/items/parts/usage-readout.hbs"}}
 
-{{#if (eq system.lootType "scroll")}}
+{{#if isBlueprint}}
+  {{> "systems/sprinter-rpg/templates/items/parts/blueprint.hbs"}}
+{{/if}}
+
+{{#if isLootBox}}
+  {{> "systems/sprinter-rpg/templates/items/parts/loot-box.hbs"}}
+{{/if}}
+
+{{#if (or (eq system.lootType "scroll") (eq system.lootType "wand"))}}
 <div class="cog-stat-block cog-bg-info-tint" style="margin-top: 8px; margin-bottom: 8px; border: 1px solid var(--cog-info); padding: 6px 8px;">
   <div style="display: flex; align-items: center; gap: 8px;">
     <span class="cog-text-info" style="font-weight: bold; font-size: 12px;"><i class="fa-solid fa-scroll"></i> Inscribed Spell:</span>
@@ -115,18 +125,7 @@
               </td>
               <td>
                 <select class="cog-field-input" data-index="{{idx}}" name="system.outcomes.{{idx}}.type" style="width: 100%; font-size: 11px;">
-                  <option value="spell" {{#if out.typeIs.spell}}selected{{/if}}>Spell / Damage</option>
-                  <option value="heal" {{#if out.typeIs.heal}}selected{{/if}}>Heal Bars</option>
-                  <option value="heal_over_time" {{#if out.typeIs.heal_over_time}}selected{{/if}}>Heal over Time (HoT)</option>
-                  <option value="mend_injury" {{#if out.typeIs.mend_injury}}selected{{/if}}>Mend Injury</option>
-                  <option value="cure_debuff" {{#if out.typeIs.cure_debuff}}selected{{/if}}>Cure Debuff</option>
-                  <option value="buff" {{#if out.typeIs.buff}}selected{{/if}}>Buff</option>
-                  <option value="debuff" {{#if out.typeIs.debuff}}selected{{/if}}>Debuff</option>
-                  <option value="skill_rank" {{#if out.typeIs.skill_rank}}selected{{/if}}>Skill Rank (+)</option>
-                  <option value="learn_spell" {{#if out.typeIs.learn_spell}}selected{{/if}}>Learn Spell (tome)</option>
-                  <option value="stat_permanent" {{#if out.typeIs.stat_permanent}}selected{{/if}}>Stat Boost (+)</option>
-                  <option value="roll_table" {{#if out.typeIs.roll_table}}selected{{/if}}>Roll Table</option>
-                  <option value="custom" {{#if out.typeIs.custom}}selected{{/if}}>Custom</option>
+                  {{#each out.typeOptionsLoot as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
                 </select>
               </td>
               <td>
@@ -149,6 +148,17 @@
                     <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rounds" value="{{out.rounds}}" placeholder="3" style="width: 40px; font-size: 11px;" />
                     <span style="font-size: 10px;">rnds</span>
                   </div>
+                {{else if (eq out.type "restore_resource")}}
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <select class="cog-field-input" name="system.outcomes.{{idx}}.resource" style="width: 30%; font-size: 11px;">
+                      {{#each out.resourceOptions as |rOpt|}}<option value="{{rOpt.value}}" {{#if rOpt.selected}}selected{{/if}}>{{rOpt.label}}</option>{{/each}}
+                    </select>
+                    <select class="cog-field-input" name="system.outcomes.{{idx}}.mode" style="width: 35%; font-size: 11px;">
+                      <option value="full" {{#if out.restoreFull}}selected{{/if}}>Full</option>
+                      <option value="amount" {{#unless out.restoreFull}}selected{{/unless}}>Amount</option>
+                    </select>
+                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.amount" value="{{out.amount}}" placeholder="10" style="width: 35%; font-size: 11px;" />
+                  </div>
                 {{else if (eq out.type "mend_injury")}}
                   <select class="cog-field-input" name="system.outcomes.{{idx}}.injurySeverity" style="width: 100%; font-size: 11px;">
                     <option value="minor" {{#if (eq out.injurySeverity "minor")}}selected{{/if}}>Minor Injury</option>
@@ -156,14 +166,14 @@
                     <option value="all" {{#if (eq out.injurySeverity "all")}}selected{{/if}}>All Injuries</option>
                   </select>
                 {{else if (eq out.type "cure_debuff")}}
-                  <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.cureFilter" value="{{out.cureFilter}}" placeholder="All, Burned, Poisoned..." style="width: 100%; font-size: 11px;" />
+                  {{> "systems/sprinter-rpg/templates/items/parts/outcome-cure-filter.hbs" out=out idx=idx}}
                 {{else if (eq out.type "skill_rank")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
                     <select class="cog-field-input" name="system.outcomes.{{idx}}.skillIdentifier" style="width: 70%; font-size: 11px;">
                       {{#each out.skillOptions as |sk|}}
                         <option value="{{sk.value}}" {{#if sk.selected}}selected{{/if}}>{{sk.label}}</option>
                       {{/each}}
-                    </select>
+                    </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.skillBadge}}
                     <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rankBonus" value="{{out.rankBonus}}" placeholder="+1" style="width: 30%; font-size: 11px;" />
                   </div>
                 {{else if (eq out.type "learn_spell")}}
@@ -173,7 +183,7 @@
                       {{#each out.spellOptions as |sOpt|}}
                         <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
                       {{/each}}
-                    </select>
+                    </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.spellBadge}}
                     <input class="cog-field-input" type="number" min="1" name="system.outcomes.{{idx}}.rank" value="{{out.rank}}" placeholder="Rank 1" style="width: 30%; font-size: 11px;" />
                   </div>
                 {{else if (eq out.type "stat_permanent")}}
@@ -191,14 +201,14 @@
                     {{#each out.buffOptions as |bOpt|}}
                       <option value="{{bOpt.value}}" {{#if bOpt.selected}}selected{{/if}}>{{bOpt.label}}</option>
                     {{/each}}
-                  </select>
+                  </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.buffBadge}}
                 {{else if (eq out.type "debuff")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeDebuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.debuffIdentifier" style="width: 100%; font-size: 11px;">
                     <option value="">-- Choose Existing Debuff --</option>
                     {{#each out.debuffOptions as |dOpt|}}
                       <option value="{{dOpt.value}}" {{#if dOpt.selected}}selected{{/if}}>{{dOpt.label}}</option>
                     {{/each}}
-                  </select>
+                  </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.debuffBadge}}
                 {{else if (eq out.type "roll_table")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" name="system.outcomes.{{idx}}.tableUuid" style="width: 100%; font-size: 11px;">
                     <option value="">-- Choose Roll Table --</option>
@@ -206,6 +216,8 @@
                       <option value="{{tOpt.uuid}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.name}}</option>
                     {{/each}}
                   </select>
+                {{else if out.isEnchantItem}}
+                  <span class="cog-text-secondary">{{localize "COG.CraftSheet.Outcome.Summary" count=out.enchantTemplates.length}}</span>
                 {{else}}
                   <div data-outcome-damage>
                   <div style="display: flex; gap: 4px;">
@@ -235,6 +247,24 @@
                 <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="Flavor & rules description..." style="width: 100%; font-size: 11px;" />
               </td>
             </tr>
+            {{#if out.isEnchantItem}}
+              <tr>
+                <td colspan="6" class="cog-outcome-enchant-table">
+                  <label class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.EnchantTable.Label"}}</label>
+                  <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" style="width: 100%; font-size: 11px;">
+                    {{#each out.enchantTableOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{#if tOpt.group}}{{tOpt.group}}: {{/if}}{{tOpt.name}}</option>{{/each}}
+                  </select>
+                  <div class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.EnchantTable.Hint"}}</div>
+                </td>
+              </tr>
+            {{/if}}
+            {{#if out.isEnchantItem}}
+              <tr>
+                <td colspan="6" class="cog-outcome-enchantments">
+                  {{> "systems/sprinter-rpg/templates/items/parts/enchantment-templates.hbs" templates=out.enchantTemplates templatesPath=out.enchantTemplatesPath}}
+                </td>
+              </tr>
+            {{/if}}
           {{/each}}
         </tbody>
       </table>
@@ -302,18 +332,7 @@
               {{/if}}
               <td>
                 <select class="cog-field-input" data-index="{{idx}}" name="system.outcomes.{{idx}}.type" style="width: 100%; font-size: 11px;">
-                  <option value="heal" {{#if out.typeIs.heal}}selected{{/if}}>Heal Bars (Fixed)</option>
-                  <option value="heal_over_time" {{#if out.typeIs.heal_over_time}}selected{{/if}}>Heal over Time (HoT)</option>
-                  <option value="mend_injury" {{#if out.typeIs.mend_injury}}selected{{/if}}>Mend Injury</option>
-                  <option value="cure_debuff" {{#if out.typeIs.cure_debuff}}selected{{/if}}>Cure Debuff(s)</option>
-                  <option value="buff" {{#if out.typeIs.buff}}selected{{/if}}>Grant Buff</option>
-                  <option value="debuff" {{#if out.typeIs.debuff}}selected{{/if}}>Inflict Debuff</option>
-                  <option value="skill_rank" {{#if out.typeIs.skill_rank}}selected{{/if}}>Raise Skill (+)</option>
-                  <option value="learn_spell" {{#if out.typeIs.learn_spell}}selected{{/if}}>Learn Spell (tome)</option>
-                  <option value="stat_permanent" {{#if out.typeIs.stat_permanent}}selected{{/if}}>Permanent Stat (+)</option>
-                  <option value="spell" {{#if out.typeIs.spell}}selected{{/if}}>Cast Spell / Damage</option>
-                  <option value="roll_table" {{#if out.typeIs.roll_table}}selected{{/if}}>Roll Table</option>
-                  <option value="custom" {{#if out.typeIs.custom}}selected{{/if}}>Custom</option>
+                  {{#each out.typeOptionsEffect as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
                 </select>
               </td>
               <td>
@@ -336,6 +355,17 @@
                     <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rounds" value="{{out.rounds}}" placeholder="3" style="width: 40px; font-size: 11px;" />
                     <span style="font-size: 10px;">rnds</span>
                   </div>
+                {{else if (eq out.type "restore_resource")}}
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <select class="cog-field-input" name="system.outcomes.{{idx}}.resource" style="width: 30%; font-size: 11px;">
+                      {{#each out.resourceOptions as |rOpt|}}<option value="{{rOpt.value}}" {{#if rOpt.selected}}selected{{/if}}>{{rOpt.label}}</option>{{/each}}
+                    </select>
+                    <select class="cog-field-input" name="system.outcomes.{{idx}}.mode" style="width: 35%; font-size: 11px;">
+                      <option value="full" {{#if out.restoreFull}}selected{{/if}}>Full</option>
+                      <option value="amount" {{#unless out.restoreFull}}selected{{/unless}}>Amount</option>
+                    </select>
+                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.amount" value="{{out.amount}}" placeholder="10" style="width: 35%; font-size: 11px;" />
+                  </div>
                 {{else if (eq out.type "mend_injury")}}
                   <select class="cog-field-input" name="system.outcomes.{{idx}}.injurySeverity" style="width: 100%; font-size: 11px;">
                     <option value="minor" {{#if (eq out.injurySeverity "minor")}}selected{{/if}}>Minor Injury</option>
@@ -343,14 +373,14 @@
                     <option value="all" {{#if (eq out.injurySeverity "all")}}selected{{/if}}>All Injuries</option>
                   </select>
                 {{else if (eq out.type "cure_debuff")}}
-                  <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.cureFilter" value="{{out.cureFilter}}" placeholder="All, Burned, Poisoned..." style="width: 100%; font-size: 11px;" />
+                  {{> "systems/sprinter-rpg/templates/items/parts/outcome-cure-filter.hbs" out=out idx=idx}}
                 {{else if (eq out.type "skill_rank")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
                     <select class="cog-field-input" name="system.outcomes.{{idx}}.skillIdentifier" style="width: 70%; font-size: 11px;">
                       {{#each out.skillOptions as |sk|}}
                         <option value="{{sk.value}}" {{#if sk.selected}}selected{{/if}}>{{sk.label}}</option>
                       {{/each}}
-                    </select>
+                    </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.skillBadge}}
                     <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rankBonus" value="{{out.rankBonus}}" placeholder="+1" style="width: 30%; font-size: 11px;" />
                   </div>
                 {{else if (eq out.type "learn_spell")}}
@@ -360,7 +390,7 @@
                       {{#each out.spellOptions as |sOpt|}}
                         <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
                       {{/each}}
-                    </select>
+                    </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.spellBadge}}
                     <input class="cog-field-input" type="number" min="1" name="system.outcomes.{{idx}}.rank" value="{{out.rank}}" placeholder="Rank 1" style="width: 30%; font-size: 11px;" />
                   </div>
                 {{else if (eq out.type "stat_permanent")}}
@@ -378,21 +408,22 @@
                     {{#each out.buffOptions as |bOpt|}}
                       <option value="{{bOpt.value}}" {{#if bOpt.selected}}selected{{/if}}>{{bOpt.label}}</option>
                     {{/each}}
-                  </select>
+                  </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.buffBadge}}
                 {{else if (eq out.type "debuff")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeDebuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.debuffIdentifier" style="width: 100%; font-size: 11px;">
                     <option value="">-- Choose Existing Debuff --</option>
                     {{#each out.debuffOptions as |dOpt|}}
                       <option value="{{dOpt.value}}" {{#if dOpt.selected}}selected{{/if}}>{{dOpt.label}}</option>
                     {{/each}}
-                  </select>
+                  </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.debuffBadge}}
                 {{else if (eq out.type "spell")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeSpell" data-index="{{idx}}" name="system.outcomes.{{idx}}.spellIdentifier" style="width: 100%; font-size: 11px;">
                     <option value="">-- Choose Spell --</option>
                     {{#each out.spellOptions as |sOpt|}}
                       <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
                     {{/each}}
-                  </select>
+                  </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.spellBadge}}
+{{> "systems/sprinter-rpg/templates/items/parts/outcome-spell-damage.hbs" out=out idx=idx}}
                 {{else if (eq out.type "roll_table")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" name="system.outcomes.{{idx}}.tableUuid" style="width: 100%; font-size: 11px;">
                     <option value="">-- Choose Roll Table --</option>
@@ -400,6 +431,8 @@
                       <option value="{{tOpt.uuid}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.name}}</option>
                     {{/each}}
                   </select>
+                {{else if out.isEnchantItem}}
+                  <span class="cog-text-secondary">{{localize "COG.CraftSheet.Outcome.Summary" count=out.enchantTemplates.length}}</span>
                 {{else}}
                   <div data-outcome-damage>
                   <div style="display: flex; gap: 4px;">
@@ -424,6 +457,24 @@
                 <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="Flavor & rules description..." style="width: 100%; font-size: 11px;" />
               </td>
             </tr>
+            {{#if out.isEnchantItem}}
+              <tr>
+                <td colspan="6" class="cog-outcome-enchant-table">
+                  <label class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.EnchantTable.Label"}}</label>
+                  <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" style="width: 100%; font-size: 11px;">
+                    {{#each out.enchantTableOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{#if tOpt.group}}{{tOpt.group}}: {{/if}}{{tOpt.name}}</option>{{/each}}
+                  </select>
+                  <div class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.EnchantTable.Hint"}}</div>
+                </td>
+              </tr>
+            {{/if}}
+            {{#if out.isEnchantItem}}
+              <tr>
+                <td colspan="6" class="cog-outcome-enchantments">
+                  {{> "systems/sprinter-rpg/templates/items/parts/enchantment-templates.hbs" templates=out.enchantTemplates templatesPath=out.enchantTemplatesPath}}
+                </td>
+              </tr>
+            {{/if}}
           {{/each}}
         </tbody>
       </table>
@@ -436,12 +487,16 @@
 </div>
 {{/if}}
 
+{{> "systems/sprinter-rpg/templates/items/parts/enchantment-ledger.hbs"}}
+
 <div class="cog-field-group">
   <span class="cog-field-label">Notes</span>
   <textarea class="cog-field-input" name="system.notes" style="height: 70px;">{{system.notes}}</textarea>
 </div>
 <div class="cog-field-group" style="margin-top: 8px;">
   <span class="cog-field-label">Description</span>
-  <textarea class="cog-field-input" name="system.description" style="height: 90px;">{{system.description}}</textarea>
+  {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
 </div>
+
+{{> "systems/sprinter-rpg/templates/items/parts/copy-blueprint.hbs"}}
 </section>

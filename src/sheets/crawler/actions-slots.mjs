@@ -5,7 +5,8 @@
  * Every handler runs with `this` bound to the sheet.
  */
 import { HOTLIST_SLOT_COUNT, EXTERNAL_BUFF_SLOT_COUNT } from './context-slots.mjs';
-import { skipOptions } from '../../utils/attack-options.mjs';
+import { skipOptions } from '../../utils/attack/attack-options.mjs';
+import { setItemEquipped } from '../../documents/item/enchantments.mjs';
 
 const HOTLIST_SLOTS = Array.from({ length: HOTLIST_SLOT_COUNT }, (_, i) => `slot${i + 1}`);
 const BUFF_SLOTS = Array.from({ length: EXTERNAL_BUFF_SLOT_COUNT }, (_, i) => `buff${i + 1}`);
@@ -72,7 +73,7 @@ export const slotActions = {
   async hotlistToggleEquip(event, target) {
     if (!this.isEditable) return;
     const item = hotlistItem(this, target);
-    if (item) await item.update({ 'system.equipped': !item.system?.equipped });
+    if (item) await setItemEquipped(item, !item.system?.equipped);
   },
 
   /** Skills roll; anything else is used (consumables, activated items). */

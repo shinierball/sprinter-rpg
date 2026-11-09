@@ -11,7 +11,7 @@
         <div class="cog-entry-adder-row cog-pb-row" data-row="buffs" data-index="{{@index}}">
           <select id="{{@root.rootId}}-buffs-{{@index}}-identifier" data-change-action="setRowField" data-row-field="identifier" title="Pick a buff from the catalog, or type your own">
             {{#each this.identifierOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
-          </select>
+          </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=this.identifierBadge}}
           <input type="text" id="{{@root.rootId}}-buffs-{{@index}}-name" data-input-action="setRowField" data-change-action="setRowField" data-row-field="name" value="{{this.name}}" placeholder="Buff name">
           {{#unless this.picked}}
             <input type="text" id="{{@root.rootId}}-buffs-{{@index}}-description" data-input-action="setRowField" data-change-action="setRowField" data-row-field="description" value="{{this.description}}" placeholder="Description / Effect">
@@ -34,7 +34,7 @@
         <div class="cog-entry-adder-row cog-pb-row" data-row="debuffs" data-index="{{@index}}">
           <select id="{{@root.rootId}}-debuffs-{{@index}}-identifier" data-change-action="setRowField" data-row-field="identifier" title="Pick a debuff from the catalog, or type your own">
             {{#each this.identifierOptions}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
-          </select>
+          </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=this.identifierBadge}}
           <input type="text" id="{{@root.rootId}}-debuffs-{{@index}}-name" data-input-action="setRowField" data-change-action="setRowField" data-row-field="name" value="{{this.name}}" placeholder="Debuff name">
           {{#unless this.picked}}
             <input type="text" id="{{@root.rootId}}-debuffs-{{@index}}-description" data-input-action="setRowField" data-change-action="setRowField" data-row-field="description" value="{{this.description}}" placeholder="Description / Drawback">

@@ -4,10 +4,11 @@
  * globals. `CONFIG.COG.contestKinds === CONTEST_KINDS` and `CONFIG.COG.chaseGround === CHASE_GROUND`; a module adds a
  * kind or changes the Ground a degree is worth with the register functions (or by writing the record directly).
  */
-import { COG_ROLL_OUTCOMES } from '../../apps/session-manager/roll-outcomes.mjs';
+import { COG_ROLL_OUTCOMES } from '../../documents/session/roll-outcomes.mjs';
 import { CONTEST_TAGS } from '../tag-vocabulary.mjs';
+import { firstScalar } from '../../utils/first-scalar.mjs';
 
-export const DEFAULT_CONTEST_KIND = 'race';
+const DEFAULT_CONTEST_KIND = 'race';
 
 const ID_PATTERN = /^[A-Za-z][\w.-]*$/;
 
@@ -65,29 +66,20 @@ export function registerChaseGround(degree, def) {
 }
 
 /** A single trimmed id from user input (CONTRIBUTING §4). */
-function firstString(raw) {
-  let val = raw ?? '';
-  if (Array.isArray(val)) val = val[0] ?? '';
-  if (typeof val !== 'string') return '';
-  if (val.includes(',')) val = val.split(',')[0];
-  return val.trim();
+function trimmedScalar(raw) {
+  const val = firstScalar(raw);
+  return typeof val === 'string' ? val.trim() : '';
 }
 
 /** A registered kind id for `raw`; an unregistered or malformed id becomes the default kind. */
 export function sanitizeContestKind(raw) {
-  const id = firstString(raw);
+  const id = trimmedScalar(raw);
   return Object.hasOwn(CONTEST_KINDS, id) ? id : DEFAULT_CONTEST_KIND;
 }
 
 /** The kind's definition; an unregistered or malformed id falls back to the default kind. */
 export function contestKindInfo(raw) {
   return CONTEST_KINDS[sanitizeContestKind(raw)];
-}
-
-/** Select options in registry order, `selected` precomputed (CONTRIBUTING §5). */
-export function contestKindOptions(selected) {
-  const current = sanitizeContestKind(selected);
-  return Object.values(CONTEST_KINDS).map((k) => ({ value: k.id, label: k.label, hint: k.hint ?? '', selected: k.id === current }));
 }
 
 registerContestKind({

@@ -34,10 +34,10 @@ export const ROW_TABLES = {
     field: 'rankDamageParts',
     blank: () => ({ type: 'Fire', value: 2, dice: '', minRank: 0 })
   },
-  /** A buff / debuff stat effect: a `grants` row of kind stat (the stat table's Add button). */
+  /** A gear, buff or debuff stat effect: a `grants` row of kind stat (the stat table's Add button). */
   statGrant: {
     field: 'grants',
-    blank: (item) => ({ kind: 'stat', stat: 'str', value: item.type === 'debuff' ? -2 : 2 })
+    blank: (item) => ({ kind: 'stat', stat: 'str', value: item.type === 'debuff' ? -2 : 2, percent: 0 })
   },
   /** Gear skill/spell bonus rows (`grants` kind skill | spell) are added through the skill picker or by dropping a skill or spell. */
   grant: {

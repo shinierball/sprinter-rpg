@@ -9,16 +9,16 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { COGDamage } from '../../documents/actor/damage-pipeline.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { escapeAttr } from '../../utils/interrupts.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { messageAuthorId } from '../chat-relay.mjs';
 import { indexDamageApplication } from '../damage-applications.mjs';
-import { findDamageUndoRecord, isApplicationId, markDamageUndoReflected } from '../../apps/damage-undo.mjs';
-import { earnedReflections } from '../../utils/damage-reflection.mjs';
+import { findDamageUndoRecord, isApplicationId, markDamageUndoReflected } from '../../utils/damage/damage-undo.mjs';
+import { earnedReflections } from '../../utils/damage/damage-reflection.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
 
 export const REFLECT_RELAY = 'chatReflectApply';
-export const REFLECT_ATTACK_NAME = 'Damage Reflection';
+const REFLECT_ATTACK_NAME = 'Damage Reflection';
 const MAX_REFLECT_SLOTS = 100;
 
 const plural = (n) => (n === 1 ? '' : 's');
@@ -51,7 +51,7 @@ export function readReflectRecord(message) {
  * same attacker, and earned the reflection at `reflectIndex`. The slots come from the record, never from the card.
  * @returns {{ ok: true, slots: number, label: string }|{ ok: false, reason: string }}
  */
-export function verifyReflection(record) {
+function verifyReflection(record) {
   const holder = resolveActorByUuid(record.holderUuid);
   if (!holder || !record.applicationId) return { ok: false, reason: 'no-application' };
   const undo = findDamageUndoRecord(holder, record.applicationId);
@@ -107,7 +107,7 @@ export async function postReflectOffers({ holder, attacker, reflections, applica
 }
 
 /** A user may trigger the card: a GM, or an owner of the holder on a card a GM or that owner wrote. */
-export function mayReflect(message, user, record = readReflectRecord(message)) {
+function mayReflect(message, user, record = readReflectRecord(message)) {
   if (!record || !user) return false;
   if (user.isGM) return true;
   const holder = resolveActorByUuid(record.holderUuid);

@@ -3,38 +3,31 @@
  * rank-break flags. Type-specific additions live in `context-<type>.mjs`.
  */
 import { recommendedWeaponSkillIdentifiers, recommendedOptionalEffects } from './weapon-recommendations.mjs';
-import { getItemAllTags, getCustomTags, COG_TAGS, TAG_NAMESPACES, normalizeElementTag } from '../../data/tags.mjs';
-import { isAuraItem, isInterruptItem, getInterruptRange, getInterruptTriggers } from '../../utils/tag-mechanics.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag-behaviour.mjs';
+import { getItemAllTags } from '../../documents/active-tags.mjs';
+import { getCustomTags } from '../../data/tag-definitions.mjs';
+import { COG_TAGS } from '../../data/tag-catalog.mjs';
+import { TAG_NAMESPACES, normalizeElementTag } from '../../data/tag-vocabulary.mjs';
+import { isAuraItem, isInterruptItem, getInterruptRange, getInterruptTriggers } from '../../utils/tag/tag-mechanics.mjs';
 import {
   ABILITIES, DEFAULT_DAMAGE_TYPES, ARCHETYPES,
   WEAPON_CATEGORIES, WEAPON_TYPES, FLOORS, PROFICIENCY_MODES, WIELD_MODES, TARGET_FILTERS,
   CONTEST_STATS, CONTEST_TYPES, INTERRUPT_RANGE_FROM, choiceOptions, pickOptions
-} from './options.mjs';
+} from '../../utils/ui/field-options.mjs';
 import { hasSystemField, toStringList } from './util.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
-import { toRowArray } from '../../models/items/base-item-model.mjs';
+import { PERCENT_STAT_MODES, percentStatMode } from '../../utils/character/stat-percent.mjs';
+import { toRowArray } from '../../models/items/grant-validation.mjs';
 import { checkTypeOptions } from '../../data/rules/check-types.mjs';
 import { sizeOptions } from '../../data/sizes.mjs';
 import { heritageOptions } from '../../data/rules/heritages.mjs';
 import { buildTagPills } from '../base/tag-editor.mjs';
 import { buildQueryView } from './context-query.mjs';
-import { listAreaShapes, resolveAreaGeometry, resolveAreaShapeId, areaReach } from '../../utils/area-geometry.mjs';
-import { identifierLabel, identifierOptions } from './identifier-options.mjs';
-import { buildPickList, plainEntries } from './context-pick-list.mjs';
+import { listAreaShapes, resolveAreaGeometry, resolveAreaShapeId, areaReach } from '../../utils/area/area-geometry.mjs';
+import { identifierLabel, identifierOptions } from '../../utils/ui/identifier-options.mjs';
+import { buildPickList, identifierEntries, plainEntries } from './context-pick-list.mjs';
 
 /** Buckets of a technique's `appliesToQuery`. */
-export const APPLIES_QUERY_BUCKETS = Object.freeze(['all', 'any', 'none']);
-
-/** Comma-joined display strings for `system.area` list fields. */
-const AREA_LIST_STRINGS = {
-  areaGrantedBuffsString: 'grantedBuffs',
-  areaInflictedDebuffsString: 'inflictedDebuffs',
-  areaPulseConditionsString: 'pulseConditions',
-  areaCleanseDebuffsString: 'cleanseDebuffs'
-};
-
-const listString = (raw) => (Array.isArray(raw) ? raw.join(', ') : (raw || ''));
+const APPLIES_QUERY_BUCKETS = Object.freeze(['all', 'any', 'none']);
 
 /**
  * The aura block's damage-type pickers: what allies inside the aura resist and are immune to. Damage types
@@ -42,7 +35,7 @@ const listString = (raw) => (Array.isArray(raw) ? raw.join(', ') : (raw || ''));
  * @param {object} area `system.area`
  * @param {string[]} damageTypes
  */
-export function buildAuraProtectionPickers(area, damageTypes) {
+function buildAuraProtectionPickers(area, damageTypes) {
   const entries = plainEntries(damageTypes);
   const picker = (list, label, icon, stored) => buildPickList({
     label, icon, emptyText: 'None.', choose: '+ Add damage type...', placeholder: 'Or another damage type...',
@@ -54,6 +47,49 @@ export function buildAuraProtectionPickers(area, damageTypes) {
   };
 }
 
+/** The registered `condition.*` tags as pick entries (value = the tag id, which is what the engine reads as a condition reference). */
+function conditionEntries() {
+  const seen = new Set();
+  const out = [];
+  for (const tag of [...COG_TAGS, ...getCustomTags()]) {
+    if (!tag?.id || tag.namespace !== 'condition' || !tag.label || seen.has(tag.id)) continue;
+    seen.add(tag.id);
+    out.push({ value: tag.id, label: tag.label });
+  }
+  return out.sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/** `system.area` field behind each aura effect picker key (the keys are `PICK_LISTS` entries in actions-lists.mjs). */
+const AREA_PICK_FIELDS = Object.freeze({
+  areaGrantedBuffs: 'grantedBuffs',
+  areaCleanseDebuffs: 'cleanseDebuffs',
+  areaInflictedDebuffs: 'inflictedDebuffs',
+  areaPulseConditions: 'pulseConditions'
+});
+
+/**
+ * The aura block's effect pickers: buffs granted inside the aura, debuffs and conditions it inflicts, conditions applied
+ * each pulse, and debuffs it cleanses. Each is the shared multi-pick list over its `system.area` string array. Buffs and
+ * debuffs are stored by identifier; conditions by their `condition.<id>` tag, the reference the aura and pulse code resolves.
+ * @param {object} area `system.area`
+ * @param {{availableBuffs?: object[], availableDebuffs?: object[]}} catalogs
+ */
+function buildAuraEffectPickers(area, { availableBuffs = [], availableDebuffs = [] } = {}) {
+  const buffs = identifierEntries(availableBuffs);
+  const debuffs = identifierEntries(availableDebuffs);
+  const effects = [...conditionEntries(), ...debuffs];
+  const picker = (list, label, icon, entries, choose, customLabel) => buildPickList({
+    label, icon, emptyText: 'None.', choose, placeholder: 'Or an identifier...',
+    lists: [{ list, stored: area?.[AREA_PICK_FIELDS[list]], entries, customLabel }]
+  });
+  return {
+    areaGrantedBuffsPicker: picker('areaGrantedBuffs', 'Granted Buffs (to characters inside the aura)', 'fa-sparkles', buffs, '+ Add buff...', 'Buff'),
+    areaCleanseDebuffsPicker: picker('areaCleanseDebuffs', 'Cleanse Debuffs Inside Aura', 'fa-sparkles', debuffs, '+ Add debuff...', 'Debuff'),
+    areaInflictedDebuffsPicker: picker('areaInflictedDebuffs', 'Inflicted Aura Debuffs & Conditions', 'fa-skull', effects, '+ Add debuff or condition...', 'Add'),
+    areaPulseConditionsPicker: picker('areaPulseConditions', 'Conditions Applied Each Pulse', 'fa-hourglass-half', effects, '+ Add condition...', 'Add')
+  };
+}
+
 /**
  * The shape select, size-input flags and the resolved-geometry line of an item's area block (spell, skill, gear).
  * Options come from the registered shape tags that carry geometry; fields show by the selected shape's size kind.
@@ -61,7 +97,7 @@ export function buildAuraProtectionPickers(area, damageTypes) {
  * @param {object} item the item (rank breaks and rank resolve the printed geometry)
  * @returns {{ options: object[], absorbElementOptions: object[], showRadius: boolean, showLength: boolean, anchorHint: string, summary: string }}
  */
-export function buildAreaShapeView(area, item) {
+function buildAreaShapeView(area, item) {
   const shapes = listAreaShapes();
   const current = resolveAreaShapeId(area?.shape);
   const anchorHint = (s) => (s.anchor === 'point' ? 'placed' : 'from caster');
@@ -105,7 +141,7 @@ export function cloneSystem(system) {
  * @param {{skills: object[], buffs: object[], debuffs: object[], spells: object[], tables: object[]}} catalogs
  */
 /** Display name of the skill an `associatedSkills` entry references, or the raw value when unresolved. */
-export function skillLabelFor(value, skills = []) {
+function skillLabelFor(value, skills = []) {
   const raw = String(value ?? '').trim().toLowerCase().replace(/^id\.skill\./, '');
   const hit = (skills || []).find((s) => raw && ((s.system?.identifier || '').toLowerCase() === raw || String(s.id || '').toLowerCase() === raw));
   return hit?.name || String(value ?? '');
@@ -135,10 +171,6 @@ export function buildCommonContext(context, item, catalogs) {
 
   context.damageTypes = globalThis.CONFIG?.COG?.damageTypes || [...DEFAULT_DAMAGE_TYPES];
 
-  for (const [key, field] of Object.entries(AREA_LIST_STRINGS)) {
-    context[key] = listString(sys.area?.[field]);
-  }
-  if (hasSystemField(item, 'area')) Object.assign(context, buildAuraProtectionPickers(sys.area, context.damageTypes));
 
   context.areaShapeView = buildAreaShapeView(sys.area, item);
 
@@ -163,7 +195,14 @@ export function buildCommonContext(context, item, catalogs) {
   context.floorOptions = choiceOptions(FLOORS, sys.floor || '');
 
   // Buff / debuff stat effects are `grants[kind: stat]` rows: the table edits them in place by their index in `grants`.
-  context.statGrantRows = statGrantRows(sys.grants);
+  // Percent is always live on buffs and debuffs, so only an owned item of another type, in fixed mode, shows the Locked column.
+  context.statGrantRows = statGrantRows(sys.grants, {
+    showLocked: item.type !== 'buff' && item.type !== 'debuff' && Boolean(item.actor) && percentStatMode() === PERCENT_STAT_MODES.FIXED
+  });
+  context.statGrantShowLocked = context.statGrantRows.some((r) => r.showLocked);
+  // The Minimum column (7.1g): a buff's or debuff's stat row can stop the score falling below a floor
+  context.statGrantShowMinimum = item.type === 'buff' || item.type === 'debuff';
+  context.statGrantIsPenalty =item.type === 'debuff';
 
   // Pill editors
   context.associatedSkillsList = toStringList(sys.associatedSkills);
@@ -198,6 +237,10 @@ export function buildCommonContext(context, item, catalogs) {
   context.optionalEffectPills = context.optionalEffectsList.map((id) => ({ id, label: identifierLabel(skills, id) }));
   context.availableBuffs = buffs;
   context.availableDebuffs = debuffs;
+  if (hasSystemField(item, 'area')) {
+    Object.assign(context, buildAuraProtectionPickers(sys.area, context.damageTypes));
+    Object.assign(context, buildAuraEffectPickers(sys.area, { availableBuffs: buffs, availableDebuffs: debuffs }));
+  }
   context.availableSpells = spells;
   context.spellIdentifierOptions = pickOptions(spells.filter(sp => sp?.system?.identifier).map(sp => ({ id: sp.system.identifier, label: sp.name })), sys.spellIdentifier);
   context.availableRollTables = tables;
@@ -250,7 +293,7 @@ export function buildCommonContext(context, item, catalogs) {
 }
 
 /** The registered `archetype.*` tags (core and custom) as multi-select options, with the class's stored ones selected. */
-export function archetypeTagOptions(selected) {
+function archetypeTagOptions(selected) {
   const chosen = new Set(Array.isArray(selected) ? selected : []);
   const options = [...COG_TAGS, ...getCustomTags()]
     .filter((t) => t?.id && (t.namespace || String(t.id).split('.')[0]) === 'archetype')
@@ -260,7 +303,7 @@ export function archetypeTagOptions(selected) {
 }
 
 /** Explicit (removable) and derived (read-only) tags for the tags part. */
-export function buildTagsData(item) {
+function buildTagsData(item) {
   const explicitTags = Array.isArray(item.system?.tags) ? item.system.tags : [];
   const allTags = item.allTags instanceof Set ? item.allTags : getItemAllTags(item);
   const derivedTags = [...allTags].filter((t) => !explicitTags.includes(t));
@@ -341,14 +384,20 @@ export function buildRankBreakViews(context, thresholds, { withDamageType = fals
  * The buff / debuff stat table rows: each `grants[kind: stat]` row with its index into `grants` (the inputs are named by
  * that index) and a precomputed stat select.
  * @param {Array|object} grants
- * @returns {Array<{ idx: number, stat: string, value: number, options: Array<{ value: string, label: string, selected: boolean }> }>}
+ * @param {{ showLocked?: boolean }} [opts] `showLocked`: the table has a Locked column (an owned item in fixed mode)
+ * @returns {Array<{ idx: number, stat: string, label: string, value: number, percent: number, locked: (number|string), showLocked: boolean, options: Array<{ value: string, label: string, selected: boolean }> }>}
  */
-export function statGrantRows(grants) {
+export function statGrantRows(grants, { showLocked = false } = {}) {
   return toRowArray(grants).flatMap((row, idx) => {
     if (row?.kind !== 'stat') return [];
     const stat = String(row.stat ?? '').toLowerCase();
     return [{
-      idx, stat, value: Number(row.value) || 0,
+      idx, stat, label: String(row.label ?? ''), value: Number(row.value) || 0, percent: Number(row.percent) || 0,
+      // An empty lock stays an empty input (not 0): the row is not locked yet
+      locked: row.locked === null || row.locked === undefined || row.locked === '' ? '' : Number(row.locked),
+      // An empty Minimum is no minimum (not 0)
+      floor: row.floor === null || row.floor === undefined || row.floor === '' ? '' : Number(row.floor),
+      showLocked,
       options: Object.entries(ABILITIES).map(([value, label]) => ({ value, label: `${value.toUpperCase()} (${label})`, selected: value === stat }))
     }];
   });
@@ -368,13 +417,14 @@ function lightModeOptions(current, { withUnchanged = false } = {}) {
 }
 
 /**
- * The Light section: shown only when the item has a `light` block and carries the `emits-light` rule flag (so adding
- * the tag reveals it). Animation choices come from Foundry's `CONFIG.Canvas.lightAnimations`.
+ * The Light section: shown on every item type that has a `light` block, so a blank item can be given a light. The light
+ * data stays the source of truth: radii above 0 derive `rule.emits-light`, with no stored flag. (Gating the section on
+ * that derived tag made it unreachable on a blank item.) Animation choices come from Foundry's `CONFIG.Canvas.lightAnimations`.
  * @param {object} context render context (mutated)
  * @param {COGItem} item
  */
-export function buildLightContext(context, item) {
-  context.isLightItem = hasSystemField(item, 'light') && hasRuleFlag(item, RULE_FLAGS.emitsLight);
+function buildLightContext(context, item) {
+  context.isLightItem = hasSystemField(item, 'light');
   if (!context.isLightItem) return;
   const light = context.system.light ?? {};
   const animations = globalThis.CONFIG?.Canvas?.lightAnimations ?? {};

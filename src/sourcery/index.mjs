@@ -5,22 +5,19 @@
  *
  *   TextSource -> buildIndex -> resolveRecipe / fetchBlock -> hydrate
  */
-export { sha256 } from './hash.mjs';
-export { normalizeHeading, normalizeBody, unwrap, headingKeys, headingHash, bodyPrefixHash, PREFIX_CHARS, lineHash, LINE_WORDS, MAX_LINE_WORDS } from './normalize.mjs';
-export { escapeHtml, plainText, paragraphsHtml, titleCaseHeading, casingMask, applyCasingMask, applyNameEdits, displayName } from './text.mjs';
-export { MemoryTextSource, sanitizeItem, sanitizePage, DEFAULT_PAGE_HEIGHT } from './text-source.mjs';
-export { PdfJsTextSource, PDFJS_OPTIONS, openPdfJsDocument } from './pdfjs-source.mjs';
-export { buildRuns, itemsToText, styleOf } from './runs.mjs';
-export { buildIndex, inMargin, runOf } from './indexer.mjs';
-export { GRAMMARS, KINDS, grammarFor } from './grammars.mjs';
-export { collectBlock, paragraphs, sliceBlock, cleanLine } from './slicer.mjs';
-export { readAnchor, readAnchorsEntry, readAnchorsFile, readPicks, readNameEdits, isSourceKey, readTargetPath } from './anchors.mjs';
-export {
-  candidatesFor, pickCandidate, estimateShift, resolveAnchor, resolveRecipe, fetchBlock, blockForHit, prefixSource, sourceText, blockPrefixHash, findLine,
-  applyPicks, keepOnly
-} from './resolver.mjs';
+// These re-exports keep the engine helpers below live for the dead-export rail, which counts them as used by this barrel.
+// Nothing reads them through this barrel; the sourcery scripts import the leaf modules directly.
+export { normalizeBody, headingHash, PREFIX_CHARS } from './normalize.mjs';
+export { casingMask, applyCasingMask, applyNameEdits } from './text.mjs';
+export { MemoryTextSource, sanitizeItem } from './text-source.mjs';
+export { PDFJS_OPTIONS } from './pdfjs-source.mjs';
+export { itemsToText } from './runs.mjs';
+export { GRAMMARS } from './grammars.mjs';
+export { paragraphs } from './slicer.mjs';
+export { readAnchor, readAnchorsEntry, readPicks, readNameEdits } from './anchors.mjs';
+export { fetchBlock, candidatesFor, pickCandidate, blockForHit, prefixSource, sourceText, blockPrefixHash, findLine, applyPicks, keepOnly } from './resolver.mjs';
 export { FIELD_MAPS, fieldMapFor } from './field-maps.mjs';
 export { hydrate, hydrateWithReport, FLAG_SCOPE } from './hydrator.mjs';
-export { sliceTable, hydrateTable, hydrateBookTables, similarity, isLayoutHint } from './tables.mjs';
-export { readTableRecipe, readTablesFile } from './table-recipes.mjs';
-export { rollTableSpec, journalSpec, bookTableSpecs, tablePageHtml, tableName, defaultDocUuid, CELL_JOIN } from './table-builders.mjs';
+export { sliceTable, hydrateTable, similarity } from './tables.mjs';
+export { readTableRecipe } from './table-recipes.mjs';
+export { rollTableSpec, vehicleSpecs, vehicleDocId, journalSpec, tablePageHtml, tableName } from './table-builders.mjs';

@@ -1,9 +1,9 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { isActiveGM } from '../../utils/gm-relay.mjs';
-import { clearDispelsForCombat } from '../../utils/dispel.mjs';
-import { isAuraItem } from '../../utils/tag-mechanics.mjs';
-import { TIME_UNITS, timingAmount, amountRounds } from '../../utils/timing.mjs';
-import { durationSpec, effectiveDuration, expiryStamp, isTimeExpired, tickRoundDuration } from '../../utils/durations.mjs';
+import { clearDispelsForCombat } from '../../utils/effects/dispel.mjs';
+import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
+import { TIME_UNITS, timingAmount, amountRounds } from '../../utils/time/timing.mjs';
+import { durationSpec, effectiveDuration, expiryStamp, isTimeExpired, tickRoundDuration } from '../../utils/time/durations.mjs';
 import { currentTimeContext } from './dungeon-time.mjs';
 import { auraRank } from './aura-effects.mjs';
 import { activeAurasOnScene } from './aura-pulse.mjs';
@@ -24,7 +24,7 @@ const TIMED_TYPES = new Set(['buff', 'debuff', 'spell', 'skill']);
 const asArray = (list) => (Array.isArray(list) ? list : Array.from(list?.values?.() ?? list ?? []));
 
 /** True when an effect is working: a debuff always, anything else while `system.active`. Gear is never timed. */
-export function isInForce(item) {
+function isInForce(item) {
   if (!item || item.type === 'gear') return false;
   if (item.type === 'debuff') return true;
   return item.system?.active === true;
@@ -41,7 +41,7 @@ const readChanged = (changed, path) => {
  * @param {{ time?: number }} [now] `currentTimeContext()`
  * @returns {{ 'system.durationConfig.expiresAt'?: number, 'system.durationConfig.remainingRounds'?: number }|null}
  */
-export function durationStampPatch(item, now = currentTimeContext(item?.actor ?? null)) {
+function durationStampPatch(item, now = currentTimeContext(item?.actor ?? null)) {
   if (!item || !TIMED_TYPES.has(item.type)) return null;
   const cfg = item.system?.durationConfig;
   if (!cfg) return null;
@@ -98,7 +98,7 @@ export function stampOnUpdate(item, changed) {
  * @param {Item} item
  * @param {{ combatants?: object }} [opts]
  */
-export async function expireEffect(actor, item, { combatants } = {}) {
+async function expireEffect(actor, item, { combatants } = {}) {
   if (item.type === 'debuff') {
     await item.delete();
     return;
@@ -155,7 +155,7 @@ function countsInRounds(item, actor) {
  * the combat's scene by actors who are not combatants.
  * @returns {Array<{ actor: Actor, item: Item, combatantId: string|null }>}
  */
-export function roundTimedEffects(combat) {
+function roundTimedEffects(combat) {
   const found = [];
   const seen = new Set();
   const take = (actor, item, combatantId) => {
@@ -208,7 +208,7 @@ export async function tickRoundEffects(combat, round) {
 // ---- Combat end ---------------------------------------------------------------------------------------------
 
 /** @returns {boolean} whether an effect lasts only as long as the combat */
-export function endsWithCombat(item) {
+function endsWithCombat(item) {
   const cfg = item?.system?.durationConfig;
   return Boolean(cfg?.endsWithCombat) || ['combat', 'scene'].includes(durationSpec(cfg).unit);
 }
@@ -252,7 +252,7 @@ const expirySources = new Map();
 export function registerExpirySource(id, source) {
   if (typeof id === 'string' && id && typeof source?.collect === 'function') expirySources.set(id, source);
 }
-export function unregisterExpirySource(id) { expirySources.delete(id); }
+export function unregisterExpirySourceForTests(id) { expirySources.delete(id); }
 
 /** Every world actor plus the unlinked token actors on every scene. */
 function sweepActors() {

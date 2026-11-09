@@ -6,27 +6,29 @@
  * healInfo, auraData, nonAuraTempBars, offersAttack, conditionTags, isBurstOrArea, conditionRounds,
  * appliedConditionTargets, summaryHtml }`, where `cost` is the `resolveSpellCost` result.
  */
-import { attackText } from '../../utils/attack-text.mjs';
-import { escapeAttr } from '../../utils/interrupts.mjs';
+import { attackText } from '../../utils/attack/attack-text.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
-import { normalizeBaseDamage, baseDamageText } from '../../utils/base-damage.mjs';
-import { schoolLineHtml } from '../../utils/school-line.mjs';
+import { normalizeBaseDamage, baseDamageText } from '../../utils/damage/base-damage.mjs';
+import { schoolLineHtml } from '../../utils/card/school-line.mjs';
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
-import { castLinkFlags } from '../../utils/spell-cast-link.mjs';
+import { castLinkFlags } from '../../utils/attack/spell-cast-link.mjs';
 import { spellConditionActionsHtml, targetFilterLabel } from './spell-card-parts.mjs';
-import { getItemAllTags } from '../../data/tags.mjs';
+import { getItemAllTags } from '../active-tags.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
-import { resolveReachedRankBreaks } from '../../utils/rank-breaks.mjs';
-import { outOfRangeLineHtml } from '../../utils/attack-range.mjs';
-import { cooldownLabel, hasCooldown } from '../../utils/cooldowns.mjs';
-import { spellCardDuration, effectiveDuration } from '../../utils/durations.mjs';
-import { TIME_UNITS } from '../../utils/timing.mjs';
-import { buildRollContext, rollContextDataAttr } from '../../utils/roll-context.mjs';
-import { favoredLabels, offersAreaTemplate, spellRole, spellRoleLabel } from '../../utils/tag-mechanics.mjs';
+import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
+import { outOfRangeLineHtml } from '../../utils/attack/attack-range.mjs';
+import { cooldownLabel, hasCooldown } from '../../utils/time/cooldowns.mjs';
+import { spellCardDuration, effectiveDuration } from '../../utils/time/durations.mjs';
+import { TIME_UNITS } from '../../utils/time/timing.mjs';
+import { buildRollContext, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
+import { favoredLabels, offersAreaTemplate, spellRole, spellRoleLabel } from '../../utils/tag/tag-mechanics.mjs';
 import {
   auraActiveBlockHtml, tempBarsLineHtml, damageSourcesPreviewHtml, areaTemplateButtonHtml
 } from './use-card-parts.mjs';
+import { getAttackDifficulty } from './attack-targets.mjs';
+import { getContestData, renderContestChallengeBlock } from './contest-blocks.mjs';
 
 /** The spell's rank for display and rank breaks. */
 const rankOf = (sys) => Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
@@ -221,7 +223,7 @@ function castAttackHtml(actor, spell, sys) {
   const statKey = (sys.stat || 'int').toLowerCase();
   const statMod = actor.system?.abilities?.[statKey]?.mod ?? 0;
   const label = actor.type === 'mob'
-    ? `${attackText('COG.SpellCast.DeclareAttack')} (auto-hit vs Evade DC ${actor.getAttackDifficulty?.(spell, getCurrentFloor?.() ?? 1) ?? ''})`
+    ? `${attackText('COG.SpellCast.DeclareAttack')} (auto-hit vs Evade DC ${getAttackDifficulty(actor, spell, getCurrentFloor())})`
     : `${attackText('COG.SpellCast.RollAttack')} (1d20 + Rank ${rank} + ${statKey.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod})`;
   return `
         <div style="margin-top: 8px;">
@@ -266,9 +268,9 @@ export function spellCastCard(actor, spell, opts, cast) {
   }
 
   // The hit card carries the contest block of an attack spell (3.47).
-  const contestData = actor.getContestData(spell, opts);
+  const contestData = getContestData(actor, spell, opts);
   if (contestData && !offersAttack) {
-    content += actor.renderContestChallengeBlock(spell, contestData, contestData.dc);
+    content += renderContestChallengeBlock(actor, spell, contestData, contestData.dc);
   }
 
   if (!offersAttack) {
@@ -292,6 +294,7 @@ export function spellCastCard(actor, spell, opts, cast) {
  */
 export function spellCastFlags(actor, spell, opts, cast, contestData) {
   const { cost, cooldownGate, castRange, manaRuleBreak, healInfo, isAura, auraData, offersAttack } = cast;
+  const zeroZoneFlags = cast.zeroZoneGate?.flags ?? {};
   return {
     [SYSTEM_ID]: {
       isSpellCast: true,
@@ -300,10 +303,11 @@ export function spellCastFlags(actor, spell, opts, cast, contestData) {
       baseManaCost: cost.baseManaCost,
       favoredPenalty: cost.favoredPenalty,
       manaModifiers: cost.manaMods.breakdown,
-      ruleBreak: manaRuleBreak || Boolean(cooldownGate.flags.ruleBreak) || castRange.ruleBreak || opts.itemRuleBreak === true,
+      ruleBreak: manaRuleBreak || Boolean(cooldownGate.flags.ruleBreak) || castRange.ruleBreak || zeroZoneFlags.ruleBreak === true || opts.itemRuleBreak === true,
       ...(castRange.flags.rangeRuleBreak ? { rangeRuleBreak: true } : {}),
       ...(castRange.flags.outOfRange ? { outOfRange: castRange.flags.outOfRange } : {}),
       ...(cooldownGate.flags.cooldownRuleBreak ? { cooldownRuleBreak: true } : {}),
+      ...(zeroZoneFlags.zeroZoneRuleBreak ? { zeroZoneRuleBreak: true } : {}),
       isFavored: cost.isFavored,
       freeCast: cost.isFreeCast,
       remainingMana: cost.isFreeCast ? cost.currentMana : cast.newMana,

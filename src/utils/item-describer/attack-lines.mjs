@@ -2,8 +2,8 @@
  * `describeAttackMechanics` as summary lines: each of its `parts` is one line with a badge. The sentences come from
  * `attack-mechanics.mjs` unchanged; this file only attaches a kind and a source path to each.
  */
-import { describeAttackMechanics } from '../attack-mechanics.mjs';
-import { isAreaAttack } from '../area-attack.mjs';
+import { describeAttackMechanics } from '../attack/attack-mechanics.mjs';
+import { isAreaAttack } from '../area/area-attack.mjs';
 import { conditionLabel } from '../../documents/actor/condition-data.mjs';
 import { itemLine, t } from './shared.mjs';
 

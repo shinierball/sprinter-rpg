@@ -2,9 +2,10 @@
  * Chat slash-command interceptor.
  */
 import { COGMercenaryGuildApp } from '../apps/mercenary-guild.mjs';
-import { COGSessionEngine } from '../apps/session-manager.mjs';
+import { COGSessionEngine } from '../documents/session/session-engine.mjs';
 import { COGRapidBatchImportApp } from '../apps/rapid-batch-import.mjs';
 import { COGRapidTextParser } from '../apps/rapid-text-parser.mjs';
+import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
 
 /**
  * Quick Chat Command Interceptor for Rapid In-Person Roll Logging
@@ -25,6 +26,16 @@ export function onChatMessageCommand(chatLog, message, chatData) {
   // Standalone Mercenary Guild triggers: /guild, /mercs, /mercenaries, /mercenary
   if (lower === '/guild' || lower === '/mercs' || lower === '/mercenaries' || lower === '/mercenary') {
     COGMercenaryGuildApp.open();
+    return false;
+  }
+
+  // Theme cleanup window (GM): /themes
+  if (lower === '/themes') {
+    if (!globalThis.game?.user?.isGM) {
+      globalThis.ui?.notifications?.warn?.(globalThis.game?.i18n?.localize?.('COG.ThemeCleanup.GMOnly') ?? 'COG.ThemeCleanup.GMOnly');
+    } else {
+      COGThemeCleanupApp.open();
+    }
     return false;
   }
 
