@@ -43,6 +43,8 @@
             <td style="text-align: center;">
               {{#if (or skill.isGranted skill.isCore)}}
                 <span class="cog-text-secondary" style="font-size: 11px;">—</span>
+              {{else if skill.useLocked}}
+                <i class="fa-solid fa-lock cog-text-secondary cog-skill-lock" title="{{skill.advanceNote}}. Using this skill does not mark it for advancement at this Rank." data-tooltip="{{skill.advanceNote}}"></i>
               {{else}}
                 <input class="cog-field-input cog-ac-success cog-checkbox-center" data-change-action="editItemField" type="checkbox" data-field="system.checked" {{#if skill.isChecked}}checked{{/if}} title="Marked when you use the skill in play. A marked skill gets a Skill Advancement Check at the next 2-hour check (Rank 4 or lower) or end of floor (Rank 5 or higher)." />
               {{/if}}
@@ -59,8 +61,17 @@
                 {{/if}}
                 {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=skill.sourceBadge}}
                 {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=skill.cooldownBadge}}
+                {{#if skill.useLocked}}
+                  <span class="cog-badge cog-badge-core cog-skill-lock-badge" style="white-space: nowrap;" data-tooltip="{{skill.advanceNote}}">[LOCKED]</span>
+                {{/if}}
                 {{#if skill.isCore}}
                   <span class="cog-badge cog-badge-core" title="Core action: every crawler has it. It has no Ranks.">[CORE]</span>
+                {{/if}}
+                {{#if skill.highRankBadge}}
+                  <span class="cog-badge cog-badge-core" title="{{skill.highRankBadge}}">[{{skill.highRankBadge}}]</span>
+                {{/if}}
+                {{#if skill.highRankBadge}}
+                  <span class="cog-badge cog-badge-core" title="{{skill.highRankTip}}">[{{skill.highRankBadge}}]</span>
                 {{/if}}
                 {{#if skill.isUnusable}}
                   <span class="cog-badge cog-badge-danger cog-bg-accent-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px; font-weight: bold;" title="Animal Skill: you are no longer an animal. Using it is a Rule Break.">[UNUSABLE]</span>

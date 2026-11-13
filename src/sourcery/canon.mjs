@@ -14,7 +14,8 @@ import { isHiddenId } from '../content/visibility.mjs';
 /** Compiled document type -> Sourcery kind (the grammar and field map). A type absent here has no grammar (pets, mercenaries). */
 export const KIND_OF_TYPE = Object.freeze({
   skill: 'skill', spell: 'spell', race: 'race', class: 'class', mob: 'mob', gear: 'gear', loot: 'gear',
-  buff: 'buff', debuff: 'debuff', achievement: 'achievement', space_upgrade: 'space'
+  buff: 'buff', debuff: 'debuff', achievement: 'achievement', space_upgrade: 'space', deity: 'deity',
+  patron: 'patron'
 });
 
 /** The books that have committed recipes (`src/content/sourcery/<id>.anchors.json`), in tie-break order. */

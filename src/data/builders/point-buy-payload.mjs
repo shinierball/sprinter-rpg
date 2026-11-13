@@ -14,15 +14,17 @@ import { getTagDefinition } from '../tag-definitions.mjs';
 import { DEFAULT_SIZE, sanitizeSizeId } from '../sizes.mjs';
 import { FORM_RACE_TAG, ARCHETYPE_TO_TAG } from '../tag-vocabulary.mjs';
 import { SILVER_EARTH_NOTE, getHeritage, sanitizeHeritageId } from '../rules/heritages.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { validateGrantRow, validateStartingItem } from '../../models/items/grant-validation.mjs';
+import { requirementRowErrors } from '../../models/items/requirement-validation.mjs';
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
 import { applyPerkRows, catalogRows, PERK_ROW_PATHS } from '../../utils/character/perk-rows.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
 import { normalizeTiming } from '../../utils/time/timing.mjs';
+import { cleanRankLimits } from '../../utils/skill/advancement-routes.mjs';
 import { unfilledParams } from '../../utils/character/point-build-params.mjs';
 import { COG_BENEFIT_TIERS, COG_DETRIMENT_TIERS } from '../rules/point-build-tiers.mjs';
 import { registerPayloadDelegate } from './item-payload.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 /**
  * The DR a point-build benefit grants: its own `drBonus`, else the catalog benefit with its id's.
@@ -182,6 +184,7 @@ export function blankPointBuySpec(builderType = 'class', seed = {}) {
     name: seed.name || '',
     description: seed.description || '',
     prerequisites: seed.prerequisites || '',
+    requirements: Array.isArray(seed.requirements) ? seed.requirements.map(r => structuredClone(r)) : [],
     heritage: sanitizeHeritageId(seed.heritage),
     size: sanitizeSizeId(seed.size ?? DEFAULT_SIZE),
     ...(builderType === 'race' ? { form: seed.form === true } : {}),
@@ -203,7 +206,7 @@ export function blankPointBuySpec(builderType = 'class', seed = {}) {
           checkType: s.checkType || 'stat',
           checkNote: s.checkNote || '',
           baseDamage: normalizeBaseDamage(s.baseDamage),
-          canGainRanks: s.canGainRanks !== undefined ? Boolean(s.canGainRanks) : true,
+          rankLimits: cleanRankLimits(s.rankLimits),
           cooldown: normalizeTiming(s.cooldown),
           notes: s.notes || '',
           cost: (Number(s.rank) || 1) * 2
@@ -352,6 +355,13 @@ export function buildPointBuyPayload(spec = {}) {
   // custom benefit carries, and stat pools. Applied with the same function the perk conversion uses.
   const perkRows = [];
   const unfilled = []; // E7.7: picked entries whose parameters are not all chosen; their rows are left out, never half-filled
+  // A blank row from the editor carries `options` as null or an empty list: "any one of nothing" is no options at all.
+  const withoutEmptyOptions = (row) => { if (row.options === null || (Array.isArray(row.options) && !row.options.length)) delete row.options; return row; };
+  const keepRequirement = (row, name) => {
+    const errors = requirementRowErrors(row);
+    if (errors.length) unfilled.push({ id: 'requirements', name, params: errors });
+    return !errors.length;
+  };
   for (const picked of [...selectedBenefits, ...selectedDetriments]) {
     const entry = Array.isArray(picked?.rows) ? picked : findPointBuildEntry(picked?.id);
     perkRows.push(...catalogRows(entry, picked?.params));
@@ -364,9 +374,14 @@ export function buildPointBuyPayload(spec = {}) {
     if (Array.isArray(custom?.rows)) {
       perkRows.push(...custom.rows.filter(r => r && Object.hasOwn(PERK_ROW_PATHS, r.path) && r.row !== undefined
         && (r.path !== 'system.grants' || validateGrantRow(r.row))
-        && (r.path !== 'system.startingItems' || validateStartingItem(r.row))));
+        && (r.path !== 'system.startingItems' || validateStartingItem(r.row))
+        && (r.path !== 'system.requirements' || keepRequirement(r.row, `${custom.name || 'perk'} requirement`)))
+        .map(r => (r.path === 'system.requirements' ? { ...r, row: withoutEmptyOptions(structuredClone(r.row)) } : r)));
     }
   }
+  // Requirement rows cost no points. A row the validator rejects is left out and listed, never a hard block.
+  const requirementRows = [];
+  (Array.isArray(spec.requirements) ? spec.requirements : []).forEach((row, i) => { if (keepRequirement(row, `Requirement ${i + 1}`)) requirementRows.push(withoutEmptyOptions(structuredClone(row))); });
   for (const pool of Array.isArray(spec.statPools) ? spec.statPools : []) {
     if (statPoolCounts(pool)) perkRows.push({ path: 'system.grants', row: statPoolGrantRow(pool) });
   }
@@ -396,16 +411,10 @@ export function buildPointBuyPayload(spec = {}) {
       grants,
       ...(grantedEffects.length ? { grantedEffects } : {}),
       ...structuredFields,
+      ...(requirementRows.length || structuredFields.requirements?.length ? { requirements: [...requirementRows, ...(structuredFields.requirements ?? [])] } : {}),
       ...(structuredTags.length ? { tags: structuredTags } : {})
     },
-    flags: {
-      ...(spec.flags || {}),
-      [SYSTEM_ID]: {
-        ...(spec.flags?.[SYSTEM_ID] || {}),
-        ...(unfilled.length ? { unfilledParams: unfilled } : {}),
-        ...(isRuleBreak ? { ruleBreak: true } : {})
-      }
-    }
+    flags: withFlags({ flags: spec.flags }, { ...(unfilled.length ? { unfilledParams: unfilled } : {}), ...(isRuleBreak ? { ruleBreak: true } : {}) }).flags
   };
 }
 

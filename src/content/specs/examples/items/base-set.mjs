@@ -75,11 +75,10 @@ const DEBUFFS = [
       durationConfig: { type: 'rounds', value: 1 }
     }),
   debuff(29, 'Final Segment', 'icons/svg/skull.svg', 'condition.dying',
-    'The show is cutting to commercial and you are not invited back. You take -2 to every check for 3 rounds.',
+    'The show is cutting to commercial and you are not invited back. You cannot take Actions. You have as many rounds as your Con Mod, you lose one at the end of every round and one each time something would hurt you, and one Health Bar slot of healing brings you back.',
     {
       identifier: 'final-segment', severity: 'Major',
-      checkModifiers: [{ kind: 'bonus', value: -2 }],
-      durationConfig: { type: 'rounds', value: 3 }
+      durationConfig: { type: 'rounds', value: 1, scaleBy: { source: 'stat', stat: 'con' } }
     }),
   debuff(30, 'Taken to the Mat', 'icons/svg/falling.svg', 'condition.take_down',
     'Face down, arms out, referee counting. You take -2 to Evade checks for 1 round.',
@@ -100,7 +99,7 @@ export const PYROTECHNIC_CUE = Object.freeze({
     identifier: 'pyrotechnic-cue', rank: 1, stat: 'int', manaCost: 3, range: '30 feet', duration: 'Instantaneous',
     cooldown: { value: 0, unit: '' }, checkType: 'attack', baseDamage: { dice: '1d6', stat: 'int', damageType: 'Fire' }, delivery: 'target',
     tags: ['kind.spell', 'action.attack', 'element.fire', 'stat.int', 'delivery.target'],
-    description: '<p>The stage manager says "go", and a jet of stage fire answers. Single target, no refunds.</p>'
+    description: '<p>The stage manager says "go", and a jet of stage fire answers for 1d6 + Intelligence Fire damage. Single target, no refunds.</p>'
   }
 });
 
@@ -198,12 +197,27 @@ const picks = (name, ...list) => [{ name, cost: tierCost(list.reduce((sum, p) =>
 /** The creator keeps stats in this order; a spec written in another order would build another description. */
 const inStatOrder = (stats) => Object.fromEntries(['str', 'dex', 'con', 'int', 'cha'].filter((k) => stats[k] !== undefined).map((k) => [k, stats[k]]));
 
+/** The long name of each stat, for the numbers a description states. */
+const STAT_NAMES = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', cha: 'Charisma' };
+const signed = (n) => (n > 0 ? `+${n}` : String(n));
+const statsText = (stats) => Object.entries(stats).map(([k, v]) => `${signed(v)} ${STAT_NAMES[k]}`).join(', ');
+const listText = (names) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0]);
+
+/** What a class gives, in words, from the same data the creator reads: stats, fixed Skills and Spells, picks. */
+function classMechanics(stats, skills, spells, perk) {
+  const parts = [`${statsText(stats)}.`];
+  if (skills.length) parts.push(`Skills: ${listText(skills.map((k) => `${k.name} at Rank ${k.rank}`))}.`);
+  if (spells.length) parts.push(`Spells: ${listText(spells.map((k) => `${k.name} at Rank ${k.rank}`))}.`);
+  for (const p of perk ?? []) for (const { row: r } of p.rows) parts.push(`${p.name}: choose ${r.count} ${r.kind}${r.count > 1 ? 's' : ''} at Rank ${r.rank}.`);
+  return parts.join(' ');
+}
+
 const cls = (n, name, img, archetype, text, stats, skills, spells, perk) => ({
   type: 'class',
   _id: id(n),
   name,
   img,
-  description: text,
+  description: `${text} ${classMechanics(inStatOrder(stats), skills, spells, perk)}`,
   archetypes: [`archetype.${archetype}`],
   isEarthClass: true,
   stats: inStatOrder(stats),
@@ -270,7 +284,7 @@ const RACES = [
     _id: id(24),
     name: 'Human',
     img: 'icons/svg/mystery-man.svg',
-    description: 'From Earth, and therefore a little behind on the news. Brings a day job, which counts as a skill.',
+    description: 'From Earth, and therefore a little behind on the news. Brings a day job, which counts as a skill. +1 Constitution and +1 Charisma; Day Job: choose 1 skill at Rank 2.',
     size: 'medium',
     heritage: 'earth',
     stats: { con: 1, cha: 1 },
@@ -281,7 +295,7 @@ const RACES = [
     _id: id(25),
     name: 'Non-Human',
     img: 'icons/svg/aura.svg',
-    description: 'Not human. Better at everything. Do not ask how; the network\'s lawyers already did.',
+    description: 'Not human. Better at everything. Do not ask how; the network\'s lawyers already did. +10 to every stat, +10 Rank to every Skill, and Claw Swipe at Rank 3.',
     size: 'medium',
     heritage: 'alien',
     stats: { str: 10, dex: 10, con: 10, int: 10, cha: 10 },

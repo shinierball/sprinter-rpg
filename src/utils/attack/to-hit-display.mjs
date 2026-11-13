@@ -10,7 +10,7 @@
 import { buildRollContext, extendContext } from '../roll/roll-context.mjs';
 import { collectToHitModifiers } from '../roll/damage-modifiers.mjs';
 import { isOneHandedPenalty as hasOneHandedPenalty, isNaturalWeapon } from '../gear/wielding.mjs';
-import { primaryDamagePart } from '../damage/damage-parts.mjs';
+import { baseDamageStat } from '../damage/base-damage.mjs';
 
 /**
  * The stat an attack item rolls to hit with, as `rollAttack` picks it: the item's own `toHitStat`, else the matching
@@ -20,9 +20,9 @@ import { primaryDamagePart } from '../damage/damage-parts.mjs';
  * @param {object|null} [primaryPart] the item's first damage part
  * @returns {string} lower-case stat key
  */
-export function attackToHitStat(item, matchingSkill = null, primaryPart = null) {
+export function attackToHitStat(item, matchingSkill = null, baseDamage = null) {
   const sys = item?.system || {};
-  const stat = sys.toHitStat || matchingSkill?.system?.stat || primaryPart?.stat || (item?.type === 'gear' ? 'str' : 'dex');
+  const stat = sys.toHitStat || matchingSkill?.system?.stat || baseDamageStat(baseDamage) || (item?.type === 'gear' ? 'str' : 'dex');
   return String(stat).toLowerCase().trim();
 }
 
@@ -118,11 +118,11 @@ export function resolveAttackToHit(item, actor) {
     matchingSkill = resolved.matchingSkill ?? null;
     toHitRank = resolved.skillRank;
   }
-  const toHitStat = attackToHitStat(item, matchingSkill, primaryDamagePart(sys));
+  const toHitStat = attackToHitStat(item, matchingSkill, sys.baseDamage);
   const hit = attackToHitDisplay(actor, {
     item, skill: matchingSkill, stat: toHitStat, rank: toHitRank,
     isOneHandedPenalty: hasOneHandedPenalty(sys, { handless: isNaturalWeapon(item) }),
-    tags: [sys.weaponCategory, sys.weaponType, sys.slot].filter(Boolean)
+    tags: [sys.slot].filter(Boolean)
   });
   return { matchingSkill, toHitRank, toHitStat, hit };
 }

@@ -496,7 +496,7 @@
   border: 1px solid var(--cog-panel-border);
   border-radius: 3px;
   width: 20px;
-  height: 20px;
+  min-height: 20px;
   min-width: 20px;
   max-width: 20px;
   flex: 0 0 20px;
@@ -593,6 +593,29 @@
   background: var(--cog-danger-tint);
   color: var(--cog-accent-strong);
   border: 1px solid var(--cog-accent);
+}
+
+/* Dying and Dead badges (crawler sheet, combat tracker row). */
+.cog-badge-dying,
+.cog-badge-dead {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--cog-accent);
+  white-space: nowrap;
+}
+
+.cog-badge-dying {
+  background: var(--cog-danger-tint);
+  color: var(--cog-accent-strong);
+}
+
+.cog-badge-dead {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
 }
 
 .cog-hp-badge-pill {
@@ -750,7 +773,6 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  white-space: nowrap;
   transition: all 0.15s ease;
 }
 
@@ -769,7 +791,6 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  white-space: nowrap;
   transition: all 0.15s ease;
 }
 
@@ -980,7 +1001,6 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  white-space: nowrap;
 }
 
 .cog-spend-favor-btn:hover {
@@ -1230,7 +1250,7 @@
   border: 1px solid var(--cog-panel-border);
   border-radius: 3px;
   width: 22px;
-  height: 22px;
+  min-height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1480,7 +1500,7 @@
   border: 1px solid var(--cog-panel-border);
   border-radius: 3px;
   width: 24px;
-  height: 24px;
+  min-height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1899,7 +1919,6 @@
   cursor: pointer;
   color: var(--cog-text);
   transition: all 0.15s ease;
-  white-space: nowrap;
 }
 
 .cog-archive-round-btn:hover {

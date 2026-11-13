@@ -9,8 +9,16 @@ import { floorLabel } from '../../utils/floor/floor-number.mjs';
 import { startLevelForFloor } from '../floor-arrivals.mjs';
 import { DEFAULT_SIZE, sizesInOrder } from '../sizes.mjs';
 import { loadoutOptions } from '../../content/creation-loadouts.mjs';
+import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
+import { skillSelectionKey } from '../../content/registry/species.mjs';
+import { rngIndex } from '../../utils/rng.mjs';
 
 export const COG_STANDARD_ARRAY = [2, 3, 4, 5, 6];
+
+/** Skills a crawler picks in each of its four life stages. */
+export const STAGE_SKILL_PICKS = 2;
+/** Whole-draw attempts the random generator makes to find a crawler with no repeated Skill. */
+const RANDOM_STAGE_ATTEMPTS = 20;
 
 /**
  * Validate standard array assignment.
@@ -67,6 +75,7 @@ export function resolveSkillRanks(species = 'human', tierSelections = {}) {
  * Generate a randomized legal crawler setup.
  * @param {string} [chosenSpecies] - Optional forced species ('human' | 'animal')
  * @param {string} [floor] - Optional starting floor ('Floor 1', etc.)
+ * @param {Function|{die: Function}} [rng] - Draws the life-stage Skill picks (a `Math.random`-style function or an `{ die }` RNG)
  * @returns {object} Full valid creation state
  */
 // Contestant-style names for the random crawler generator. Original to this system.
@@ -80,7 +89,92 @@ export const RANDOM_ANIMAL_NAMES = [
 ];
 export const RANDOM_NAME_FALLBACK = 'Contestant 4417';
 
-export function generateRandomCrawler(chosenSpecies = null, floor = 'Floor 1') {
+/** Remove `count` random items from `list` (a copy) and return them in the order drawn. */
+function drawFrom(list, count, rng) {
+  const rest = [...list];
+  const drawn = [];
+  while (drawn.length < count && rest.length) drawn.push(...rest.splice(rngIndex(rng, rest.length), 1));
+  return drawn;
+}
+
+/** The value a stage selection stores for a matrix skill row: its `ref` when it has one, else its name. */
+const selectionValue = (sk) => (typeof sk === 'string' ? sk : (sk.ref ?? sk.name));
+
+/** The distinct Skills of a background (a row listed twice counts once), as held-skill records. */
+function distinctSkills(bg) {
+  const seen = new Map();
+  for (const sk of bg.skills || []) {
+    const row = typeof sk === 'string' ? { name: sk } : sk;
+    const key = skillSelectionKey(row);
+    if (key && !seen.has(key)) seen.set(key, { key, value: selectionValue(sk), ref: row.ref, name: row.name });
+  }
+  return [...seen.values()];
+}
+
+/**
+ * One random draw of the four life stages. Each stage tries its backgrounds in random order and takes the first with
+ * enough Skills the crawler does not hold yet (the species' inherent Skill and earlier stages count as held); when
+ * none has, it takes the background with the most unheld Skills and fills the rest from its other Skills.
+ * @returns {{tierSelections: object, held: Map<string, object>, repeats: number}}
+ */
+function drawStages(matrix, inherentSkill, rng) {
+  const held = new Map();
+  if (inherentSkill) {
+    const name = inherentSkill.name || inherentSkill.tag || 'Inherent Skill';
+    const key = skillSelectionKey({ ref: inherentSkill.ref, name });
+    held.set(key, { key, ref: inherentSkill.ref, name });
+  }
+  const tierSelections = {};
+  let repeats = 0;
+  for (let i = 1; i <= 4; i++) {
+    const tierKey = `tier${i}`;
+    const backgrounds = matrix[tierKey] || [];
+    if (backgrounds.length === 0) continue;
+    const options = backgrounds.map(bg => {
+      const skills = distinctSkills(bg);
+      return { bg, skills, fresh: skills.filter(sk => !held.has(sk.key)) };
+    });
+    let choice = drawFrom(options, options.length, rng).find(o => o.fresh.length >= STAGE_SKILL_PICKS);
+    if (!choice) {
+      const most = Math.max(...options.map(o => o.fresh.length));
+      choice = drawFrom(options.filter(o => o.fresh.length === most), 1, rng)[0];
+    }
+    const picks = drawFrom(choice.fresh, STAGE_SKILL_PICKS, rng);
+    if (picks.length < STAGE_SKILL_PICKS) {
+      const others = choice.skills.filter(sk => !picks.includes(sk));
+      const filler = drawFrom(others, STAGE_SKILL_PICKS - picks.length, rng);
+      repeats += filler.length;
+      picks.push(...filler);
+    }
+    for (const sk of picks) held.set(sk.key, sk);
+    tierSelections[tierKey] = {
+      backgroundId: choice.bg.id ?? choice.bg.name,
+      background: choice.bg.name,
+      skills: picks.map(sk => sk.value)
+    };
+  }
+  return { tierSelections, held, repeats };
+}
+
+/** The best of up to RANDOM_STAGE_ATTEMPTS draws: the first with no repeated Skill, else the one with the fewest. */
+function drawStageSkills(matrix, inherentSkill, rng) {
+  let best = null;
+  for (let attempt = 0; attempt < RANDOM_STAGE_ATTEMPTS; attempt++) {
+    const draw = drawStages(matrix, inherentSkill, rng);
+    if (!best || draw.repeats < best.repeats) best = draw;
+    if (best.repeats === 0) break;
+  }
+  return best;
+}
+
+/** Whether a weapon or unarmed loadout option trains a Skill the crawler already holds (by identifier, else by name). */
+function starterSkillHeld(option, held) {
+  const id = option.skillIdentifier;
+  const names = [findCatalogEntry('skills', id)?.name, option.name].filter(Boolean).map(n => String(n).toLowerCase().trim());
+  return [...held.values()].some(sk => (id && sk.ref === id) || names.includes(String(sk.name ?? '').toLowerCase().trim()));
+}
+
+export function generateRandomCrawler(chosenSpecies = null, floor = 'Floor 1', rng = Math.random) {
   const speciesList = contentRegistry.getSpeciesList();
   // A forced species that is not registered falls back to the registered list (baseline 'crawler' when empty)
   const forced = chosenSpecies ? contentRegistry.getSpecies(chosenSpecies) : null;
@@ -99,42 +193,19 @@ export function generateRandomCrawler(chosenSpecies = null, floor = 'Floor 1') {
     cha: shuffledNumbers[4]
   };
 
-  const tierSelections = {};
-  for (let i = 1; i <= 4; i++) {
-    const tierKey = `tier${i}`;
-    const backgrounds = matrix[tierKey] || [];
-    if (backgrounds.length === 0) continue;
-    const bg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-    
-    // Pick 2 distinct skills out of the background's list, by `ref` when the row has one, else by name
-    const keyOf = (sk) => (typeof sk === 'string' ? sk : (sk.ref ?? sk.name));
-    const bgSkills = [...bg.skills];
-    const pickedSkills = [];
-    if (bgSkills.length > 0) {
-      const firstIdx = Math.floor(Math.random() * bgSkills.length);
-      pickedSkills.push(keyOf(bgSkills[firstIdx]));
-      bgSkills.splice(firstIdx, 1);
-    }
-    if (bgSkills.length > 0) {
-      const secondIdx = Math.floor(Math.random() * bgSkills.length);
-      pickedSkills.push(keyOf(bgSkills[secondIdx]));
-    }
-
-    tierSelections[tierKey] = {
-      backgroundId: bg.id ?? bg.name,
-      background: bg.name,
-      skills: pickedSkills
-    };
-  }
+  const { tierSelections, held } = drawStageSkills(matrix, spec.inherentSkill, rng);
 
   const resolved = resolveSkillRanks(species, tierSelections);
 
   // Randomize Level 1 starter loadout
   const starterModes = ['weapon', 'spell', 'unarmed'];
   const starterMode = starterModes[Math.floor(Math.random() * starterModes.length)];
+  // A weapon or unarmed option whose Skill a life stage already gave is passed over while another option exists
   const pickId = (slot) => {
     const options = loadoutOptions(slot);
-    return options.length ? options[Math.floor(Math.random() * options.length)].id : '';
+    const fresh = slot === 'spell' ? options : options.filter(option => !starterSkillHeld(option, held));
+    const pool = fresh.length ? fresh : options;
+    return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : '';
   };
   const starterWeapon = pickId('weapon');
   const starterSpell = pickId('spell');

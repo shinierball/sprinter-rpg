@@ -18,6 +18,15 @@ import { stampLanding, cureByWindow } from './transformations.mjs';
 import { postCue } from './transform-cues.mjs';
 import { holdSecret } from '../pending-secrets.mjs';
 import { getSpellRank } from './spell-rank.mjs';
+import { confirmRuleBreak, withRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
+import { repeatVerdict, REPEAT_RULINGS } from './condition-repeat.mjs';
+import { askRepeatRuling } from './condition-repeat-ask.mjs';
+import { toStringList } from '../../utils/first-scalar.mjs';
+import { incomingEffectTags } from '../../utils/effects/incoming-effect.mjs';
+import { effectImmunityFor, immuneText } from '../../utils/effects/effect-immunity.mjs';
+import { isDyingDebuff, isDeadDebuff } from './dying.mjs';
+import { settleForfeitsOf } from './condition-expiry.mjs';
+import { confirmHealing, settleHealed } from './healing.mjs';
 
 /** A document's full tag list (explicit + derived) as an array. */
 function tagListOf(item) {
@@ -207,32 +216,6 @@ export function resolveBuff(actor, rawVal) {
 
 
 /**
- * Apply the stackable Fatigued debuff to this actor: -1 to all Checks, Move halved,
- * lasts until the end of a long rest.
- * @returns {Promise<Item>}
- */
-export async function applyFatiguedDebuff(actor) {
-  const debuffData = {
-    name: 'Fatigued',
-    type: 'debuff',
-    img: 'icons/svg/sleep.svg',
-    system: {
-      identifier: 'fatigued',
-      severity: 'Minor',
-      damageType: '',
-      damageModifiers: [],
-      duration: 'Until the end of a long rest.',
-      durationConfig: { type: 'long_rest', value: 0 },
-      description: 'Every Check takes -1 and Move is cut in half. Stacks. Wears off after a long rest.'
-    }
-  };
-  const created = await actor.createEmbeddedDocuments('Item', [debuffData]);
-  return created[0] || null;
-}
-
-
-
-/**
  * Mend injury debuffs from this actor.
  * @param {string} [severity='minor'] 'minor' | 'major' | 'long_term' | 'any'
  * @returns {Promise<Array<object>>} Removed debuffs
@@ -253,6 +236,8 @@ export async function mendInjury(actor, severity = 'minor') {
     if (norm === 'all' || norm === 'any') {
       toRemove.push(debuff);
     } else if (injuryTags.includes(wanted)) {
+      // A grade request ('minor', 'major') leaves the Long-Term form alone; only 'long_term', 'any' and 'all' take it.
+      if (wanted !== `${INJURY_NAMESPACE}.long_term` && injuryTags.includes(`${INJURY_NAMESPACE}.long_term`)) continue;
       toRemove.push(debuff);
       break;
     }
@@ -277,7 +262,8 @@ export async function mendInjury(actor, severity = 'minor') {
 /**
  * Cure debuffs matching filter: 'all', a condition (`condition.burned` or an identifier), or a damage type.
  * A changed transformation obeys its cure window (D9): open reverts it, closed asks a Rule Break and otherwise
- * stays; the stayed ones are on the result's `held`.
+ * stays; the stayed ones are on the result's `held`. `'all'` leaves Dying and Dead alone: Dying ends by healing or
+ * death, Dead by the GM; a filter that names the condition still removes it.
  * @param {string} [filter='all']
  * @param {object} [options] Rule Break options (`interactive: false` never opens a dialog)
  * @returns {Promise<Array<object>>} Removed debuffs (`held`: the transformations a closed window kept)
@@ -292,7 +278,7 @@ export async function cureDebuffs(actor, filter = 'all', options = {}) {
   for (const debuff of allDebuffs) {
     const dType = String(debuff.system?.damageType || '').toLowerCase().trim();
     if (norm === 'all') {
-      matched.push(debuff);
+      if (!isDyingDebuff(debuff) && !isDeadDebuff(debuff)) matched.push(debuff);
     } else if (debuffHasConditionRef(debuff, norm) || tagListOf(debuff).includes(`damage.${norm}`) || dType.includes(norm)) {
       matched.push(debuff);
     }
@@ -317,14 +303,19 @@ export async function cureDebuffs(actor, filter = 'all', options = {}) {
 
 /**
  * Apply fixed number of health bars of healing to this actor.
+ * A bearer of `no-healing` is asked a Rule Break first; a refusal heals nothing and returns `blocked: true`. A heal
+ * that restores a whole slot ends the bearer's `until_healed` debuffs.
  * @param {number} [bars=1]
+ * @param {object} [options] Rule Break options (`interactive: false` for an automatic heal)
  * @returns {Promise<object>}
  */
-export async function applyHealingBars(actor, bars = 1) {
+export async function applyHealingBars(actor, bars = 1, options = {}) {
   const hpPerBar = getHpPerBar(actor);
   const healAmt = bars * hpPerBar;
   const currentHp = Number(actor.system?.attributes?.hp?.value ?? actor.system?.attributes?.hp?.max ?? 0);
   const maxHp = Number(actor.system?.attributes?.hp?.max) || (10 * hpPerBar);
+  const gate = await confirmHealing(actor, options);
+  if (!gate.proceed) return { actualHealed: 0, newHp: currentHp, maxHp, bars, hpPerBar, blocked: true, reason: gate.reason };
   const newHp = restoredValue(currentHp, healAmt, maxHp);
   const actualHealed = Math.max(0, newHp - currentHp);
   const hpPct = maxHp > 0 ? Math.min(100, Math.max(0, Math.round((newHp / maxHp) * 100))) : 100;
@@ -332,7 +323,8 @@ export async function applyHealingBars(actor, bars = 1) {
     'system.attributes.hp.value': newHp,
     'system.attributes.hp.pct': hpPct
   });
-  return { actualHealed, newHp, maxHp, bars, hpPerBar };
+  await settleHealed(actor, { before: currentHp, after: newHp });
+  return { actualHealed, newHp, maxHp, bars, hpPerBar, ruleBreak: gate.ruleBreak };
 }
 
 
@@ -534,17 +526,40 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
     debuffData = conditionItemData(conditionTagOrData, options);
   }
 
+  // When it landed, on the clock a ledger slot's `timestamp` uses: Clean Up compares them for `next_action` debuffs.
+  debuffData.flags = { ...debuffData.flags, [SYSTEM_ID]: { ...debuffData.flags?.[SYSTEM_ID], landedAt: Date.now() } };
+
   const durationRounds = Math.floor(Number(options.durationRounds) || 0);
   if (durationRounds > 0) {
     debuffData.system.durationConfig = { type: 'rounds', value: durationRounds, remainingRounds: durationRounds };
   }
 
-  // Check if actor already has a debuff carrying this condition tag (its identifier's, never its name)
-  const itemsList = Array.from(actor.items ?? []);
-  const existing = itemsList.find(i => {
-    if (i.type !== 'debuff') return false;
-    return Boolean(tagId) && tagListOf(i).includes(tagId);
-  });
+  // An `effectImmunity` row that matches this Debuff stops it landing. Never a hard block (Directive 2): the GM or player may force it.
+  const immunity = effectImmunityFor(actor, incomingEffectTags({ debuff: debuffData }), { other: options.sourceActor ?? null });
+  if (immunity.immune) {
+    const sources = immunity.sources.join(', ');
+    const data = { actor: actor.name, effect: debuffData.name, sources };
+    const verdict = await confirmRuleBreak({
+      title: immuneText('Title', data, 'Immune'),
+      message: immuneText('Message', data, `${data.actor} is immune to ${data.effect} (${sources}). Apply anyway as a Rule Break?`),
+      options
+    });
+    if (!verdict.confirmed) return null;
+    debuffData = withRuleBreak(debuffData);
+  }
+
+  // What a second application does is the debuff's own `repeat` (refresh, stack, or promote), judged by `repeatVerdict`.
+  const verdict = repeatVerdict(actor.items, debuffData, tagId);
+  if (verdict.action === 'promote') {
+    await verdict.existing.delete();
+    return applyCondition(actor, verdict.into, { ...options, ...(immunity.immune ? { ruleBreak: true } : {}) });
+  }
+  if (verdict.action === 'ask') {
+    const ruling = await askRepeatRuling(actor, { existing: verdict.existing, incoming: debuffData, options });
+    if (ruling === null) return null;
+    if (ruling === REPEAT_RULINGS.NONE) return verdict.existing;
+  }
+  const existing = verdict.action === 'refresh' ? verdict.existing : null;
 
   if (existing) {
     if (typeof existing.update === 'function') {
@@ -552,7 +567,9 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
         'system.duration': debuffData.system.duration,
         ...(durationRounds > 0 ? { 'system.durationConfig': debuffData.system.durationConfig } : {}),
         'system.active': true,
-        'system.description': debuffData.system.description || existing.system.description || ''
+        [`flags.${SYSTEM_ID}.landedAt`]: debuffData.flags[SYSTEM_ID].landedAt,
+        'system.description': debuffData.system.description || existing.system.description || '',
+        ...(immunity.immune ? ruleBreakUpdate() : {})
       });
     } else {
       existing.system = existing.system || {};
@@ -586,6 +603,17 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
 
   // The `apply` cue's card. A secret affliction never reaches this create: the GM-side hold lands it and posts on reveal.
   if (created && isAffliction(created) && options.postCue !== false) await postCue(actor, created, 'apply');
+
+  // The debuffs that land with this one: one level deep (a companion's own list is not followed), never this debuff itself.
+  if (created && !options.companion) {
+    for (const id of toStringList(debuffData.system?.alsoApplies)) {
+      if (conditionRefTag(id) === tagId) continue;
+      await applyCondition(actor, id, { ...options, postCue: false, companion: true });
+    }
+  }
+
+  // A forfeit debuff (Shocked) landing on a combatant with an Action left takes it now.
+  if (created && !options.companion) await settleForfeitsOf(actor);
 
   return created;
 }

@@ -12,7 +12,8 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const PAGE_SORT_STEP = 100000;
+/** Foundry's sort density: the gap between pages (and any sorted documents), so one can be dropped between two. */
+export const PAGE_SORT_STEP = 100000;
 
 /** Text value: first array entry, trimmed. */
 function text(raw) {

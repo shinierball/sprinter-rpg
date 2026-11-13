@@ -28,6 +28,8 @@ import { USE_TAG_PREFIX } from '../../data/tag-vocabulary.mjs';
 import { headOnOfferFor } from '../vehicle/vehicle-combat.mjs';
 import { camerasOffered, armedCamera, cameraAudienceList, sanitizeCameraChoice } from '../roll/cameras.mjs';
 import { firstScalar } from '../first-scalar.mjs';
+import { skillRefSlug, readableSkillName } from '../skill/weapon-skill-options.mjs';
+import { escapeAttr } from '../escape-attr.mjs';
 
 /** The rule flag a situation tag carries to be listed under Maneuvers (3.22-4 registers it and flags `situation.aiming`). */
 const MANEUVER_FLAG = 'maneuver';
@@ -63,6 +65,7 @@ const isNoneId = (id) => !id || id === 'none';
  * @property {string[]|null} calledPlays Called Play ids used
  * @property {'attack'|'effect'} markTarget
  * @property {string|null} cameras Playing to the Cameras audience id ('' = none); null = not answered (the armed choice applies)
+ * @property {string} skill the weapon Skill identifier picked for this attack; '' = the default (7.51)
  */
 
 /** @returns {AttackChoices} */
@@ -78,7 +81,8 @@ function sanitiseChoices(raw, options = {}) {
     situations,
     calledPlays,
     markTarget: (src.markTarget ?? options.markTarget) === 'attack' ? 'attack' : 'effect',
-    cameras: src.cameras === undefined || src.cameras === null ? null : sanitizeCameraChoice(src.cameras)
+    cameras: src.cameras === undefined || src.cameras === null ? null : sanitizeCameraChoice(src.cameras),
+    skill: skillRefSlug(firstText(src.skill))
   };
 }
 
@@ -222,16 +226,19 @@ function maneuverNote(advantageFor, tag) {
  * @param {Array<{ id: string }>} [opts.calledPlays=[]] the Called Plays pending for this roll (hit mode)
  * @param {(situations: string[]) => object} [opts.advantageFor] the roll's advantage state with these situations ticked (D7 note)
  * @param {object} [opts.options] the roll's options (explicit targets), read for the head-on offer (hit mode)
+ * @param {Array<object>} [opts.skillOptions] the weapon's Skill options (`resolveWeaponSkills(...).options`, hit mode); the window lists them from two up
+ * @param {string} [opts.defaultSkill] the identifier the roll uses when the attacker picks none
+ * @param {string} [opts.chosenSkill] the Skill the roll already uses (a damage roll from a card or macro): the effects offered are that Skill's
  * @returns {{ mode: string, isMob: boolean, attackName: string, effects: object[], maneuvers: object[], situations: object[],
  *   calledPlays: object[], plainFormula: string, aiFavorIfNone: number, hasOptions: boolean, optionFor: (id: string) => object }}
  */
-export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', calledPlays = [], advantageFor = null, options: rollOptions = {} } = {}) {
+export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', calledPlays = [], advantageFor = null, options: rollOptions = {}, skillOptions = [], defaultSkill = '', chosenSkill = '' } = {}) {
   // A damage-mode model previews with the roll's own damage context, so building it reads the targets once.
   const damageContext = mode === 'damage' ? context : null;
   let effects = [];
   let offered = [];
   try {
-    const ids = typeof actor?.getSelectableDamageEffects === 'function' ? actor.getSelectableDamageEffects(attackItem) : [];
+    const ids = typeof actor?.getSelectableDamageEffects === 'function' ? actor.getSelectableDamageEffects(attackItem, { chosen: chosenSkill }) : [];
     effects = ids.map(id => effectOption(actor, attackItem, id, damageContext));
     offered = getOfferedSituations(actor, context, {
       ...(mode === 'damage' ? { keys: ['damageModifiers'], exclusive: true } : { isAttack: true }),
@@ -270,14 +277,27 @@ export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', c
     calledPlays: pending,
     cameras,
     armedCameras,
+    skills: mode === 'hit' ? skillChoiceRows(skillOptions) : [],
+    defaultSkill: mode === 'hit' ? String(defaultSkill || '') : '',
     get plainFormula() { return memo(this, 'plainFormula', () => previewFormula(actor, attackItem, 'none', damageContext)); },
     aiFavorIfNone,
-    hasOptions: effects.length > 0 || maneuvers.length > 0 || situations.length > 0 || pending.length > 0 || Boolean(armedCameras),
+    hasOptions: (mode === 'hit' && skillOptions.length > 1) || effects.length > 0 || maneuvers.length > 0 || situations.length > 0 || pending.length > 0 || Boolean(armedCameras),
     optionFor(id) {
       if (!cache.has(id)) cache.set(id, effectOption(actor, attackItem, id, damageContext));
       return cache.get(id);
     }
   };
+}
+
+/** The Skill options a window lists, each with its label (never a raw id: a Skill this world lacks reads as its identifier made readable). */
+function skillChoiceRows(options) {
+  return (Array.isArray(options) ? options : []).map((o) => {
+    const name = String(o.skill?.name || readableSkillName(o.identifier));
+    // A trained option shows its Rank even when the world lacks the Skill (an attack item's toHitRank applies, 1086)
+    const label = o.trained ? attackText('COG.Attack.Skill.Rank', { name, rank: o.rank })
+      : (o.inWorld ? attackText('COG.Attack.Skill.Untrained', { name }) : attackText('COG.Attack.Skill.NotInWorld', { name }));
+    return { identifier: o.identifier, name, rank: o.rank, trained: o.trained, inWorld: o.inWorld, listed: o.listed, label };
+  });
 }
 
 // -- Rule Break reasons (9) ----------------------------------------------------------------------------------------
@@ -287,10 +307,11 @@ export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', c
  * more than one effect, an effect the attack does not allow, a locked variant. Mobs earn no Untrained reason; their cooldowns count like a crawler's (3.22-8).
  * @param {ReturnType<typeof buildAttackOptions>} model
  * @param {AttackChoices} choices
- * @param {{ isMob?: boolean }} [opts]
+ * @param {{ isMob?: boolean, offered?: Iterable<string> }} [opts] `offered`: the Damage Effects the Skill actually used allows
+ *   (the window lists the default Skill's, so a changed Skill judges an effect against its own list, 7.52)
  * @returns {string[]}
  */
-export function ruleBreakReasons(model, choices, { isMob = model?.isMob === true } = {}) {
+export function ruleBreakReasons(model, choices, { isMob = model?.isMob === true, offered: offeredIds = null } = {}) {
   const reasons = [];
   const ids = choices?.effects ?? [];
   const option = (id) => (typeof model?.optionFor === 'function' ? model.optionFor(id) : (model?.effects ?? []).find(e => e.identifier === id));
@@ -305,7 +326,7 @@ export function ruleBreakReasons(model, choices, { isMob = model?.isMob === true
     }
   }
   if (ids.length > 1) reasons.push(attackText('COG.AttackChoices.Reason.Multiple'));
-  const offered = new Set((model?.effects ?? []).map(e => e.identifier));
+  const offered = new Set(offeredIds ?? (model?.effects ?? []).map(e => e.identifier));
   for (const id of ids) {
     if (!offered.has(id)) reasons.push(attackText('COG.AttackChoices.Reason.NotOffered', { name: option(id)?.name ?? id, attack: model?.attackName ?? '' }));
   }
@@ -323,10 +344,9 @@ export function ruleBreakReasons(model, choices, { isMob = model?.isMob === true
  */
 export async function confirmChoiceRuleBreaks(reasons, options = {}) {
   if (!reasons.length) return { proceed: true, ruleBreak: false };
-  const escape = (v) => String(v).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
   const check = await confirmRuleBreak({
     title: attackText('COG.AttackChoices.Confirm.Title'),
-    message: `${reasons.map(escape).join('<br>')}<br>${attackText('COG.AttackChoices.Confirm.Question')}`,
+    message: `${reasons.map(escapeAttr).join('<br>')}<br>${attackText('COG.AttackChoices.Confirm.Question')}`,
     reason: reasons.join(' '),
     options
   });
@@ -378,6 +398,7 @@ export function choicesFlag(choices, model, { ruleBreak = false, reasons = [] } 
     calledPlays: [...(choices.calledPlays ?? [])],
     markTarget: choices.markTarget,
     cameras: choices.cameras || '',
+    skill: choices.skill || '',
     ruleBreak: Boolean(ruleBreak),
     reasons: [...reasons]
   };
@@ -401,7 +422,8 @@ export function choicesFromMessage(message) {
       situations: flag.situations,
       calledPlays: flag.calledPlays,
       markTarget: flag.markTarget,
-      cameras: flag.cameras
+      cameras: flag.cameras,
+      skill: flag.skill
     }),
     ruleBreak: flag.ruleBreak === true,
     reasons: textList(flag.reasons)
@@ -463,7 +485,7 @@ function prompterFor(options) {
  * @param {ReturnType<typeof buildAttackOptions>} model
  * @param {object} options the roll options
  * @param {object} [ctx] `{ context }` handed to the pop-up
- * @returns {Promise<{ choices: AttackChoices, remember: boolean }|null>} null when the user cancelled the pop-up
+ * @returns {Promise<{ choices: AttackChoices, remember: boolean, skillAnswered?: boolean }|null>} null when the user cancelled the pop-up
  */
 export async function resolveAttackChoices(actor, item, model, options = {}, ctx = {}) {
   const resolved = await decideChoices(actor, item, model, options, ctx);
@@ -496,7 +518,8 @@ async function decideChoices(actor, item, model, options, ctx) {
   }
   const picked = await prompterFor(options)(actor, item, model, prefilled, { ...ctx, options, mode: model.mode });
   if (!picked) return null;
-  return { choices: withDefaults(picked, model), remember: true };
+  // A window with no Skill select (a damage roll) answers no Skill: the remembered Skill pick must survive it (7.51 review N3)
+  return { choices: withDefaults(picked, model), remember: true, skillAnswered: (model.skills ?? []).length > 1 };
 }
 
 /** Choices a caller left without Called Plays use every pending one. */
@@ -512,7 +535,7 @@ function withDefaults(choices, model) {
  */
 export async function commitPick(actor, item, resolved) {
   if (!resolved?.remember) return false;
-  return rememberAttackPick(globalThis.game?.user, actor, item, resolved.choices);
+  return rememberAttackPick(globalThis.game?.user, actor, item, resolved.choices, { keepSkill: resolved.skillAnswered === false });
 }
 
 /**

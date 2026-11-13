@@ -5,6 +5,7 @@ import { getHpPerBar } from '../../documents/combat-metrics.mjs';
 import { restoredValue } from '../../utils/damage/resource-restore.mjs';
 import { applyCardEffect, registerChatApplier } from '../chat-relay.mjs';
 import { resolveTargetActors } from './targets.mjs';
+import { confirmHealing, settleHealed } from '../../documents/actor/healing.mjs';
 
 const base = (target) => ({ targetUuid: target.uuid, targetName: target.name });
 
@@ -22,9 +23,12 @@ export async function applyHealingTo(targetActor, params) {
   const currentHp = Number(targetActor.system?.attributes?.hp?.value ?? targetActor.system?.attributes?.hp?.max ?? 0);
   const maxHp = Number(targetActor.system?.attributes?.hp?.max) || (10 * hpPerBar);
   const newHp = restoredValue(currentHp, healAmt, maxHp);
+  const gate = await confirmHealing(targetActor);
+  if (!gate.proceed) return { ...base(targetActor), actualHealed: 0, newHp: currentHp, maxHp, blocked: true };
   const actualHealed = Math.max(0, newHp - currentHp);
 
   await targetActor.update({ 'system.attributes.hp.value': newHp });
+  await settleHealed(targetActor, { before: currentHp, after: newHp });
   return { ...base(targetActor), actualHealed, newHp, maxHp };
 }
 

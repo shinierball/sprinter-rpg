@@ -1,4 +1,5 @@
 import { SYSTEM_ID } from '../constants.mjs';
+import { PAGE_SORT_STEP } from './builders/journal-payload.mjs';
 import { AUTHORING_PAGES } from './journal-tag-system/pages-authoring.mjs';
 import { ENGINE_PAGES } from './journal-tag-system/pages-engine.mjs';
 import { REFERENCE_PAGES } from './journal-tag-system/pages-reference.mjs';
@@ -39,9 +40,10 @@ export function tagSystemJournalPayload() {
   return {
     name: TAG_SYSTEM_JOURNAL_DATA.name,
     flags,
-    pages: TAG_SYSTEM_JOURNAL_DATA.pages.map((page) => ({
+    pages: TAG_SYSTEM_JOURNAL_DATA.pages.map((page, index) => ({
       name: page.name,
       type: page.type,
+      sort: (index + 1) * PAGE_SORT_STEP,
       title: { ...page.title },
       text: { format: page.text.format, content: String(page.text.content ?? '') }
     }))
@@ -50,7 +52,7 @@ export function tagSystemJournalPayload() {
 
 /**
  * Ensure the official Tag System Guide JournalEntry exists in the world.
- * If missing, creates it. If present, ensures pages are up to date.
+ * If missing, creates it. If its stored version differs from the system's, replaces its pages (GM edits are overwritten).
  * @returns {Promise<JournalEntry|null>}
  */
 export async function ensureTagSystemJournal() {
@@ -85,6 +87,22 @@ export async function ensureTagSystemJournal() {
   }
 
   if (existing) {
+    const version = globalThis.game?.system?.version;
+    const stored = existing.flags?.[SYSTEM_ID]?.version;
+    const refresh = version && String(version) !== String(stored ?? '');
+    // Only the active GM writes; a GM edit to the pages is overwritten when the system version changes.
+    if (refresh && globalThis.game?.user?.isActiveGM !== false) {
+      try {
+        const payload = tagSystemJournalPayload();
+        const oldIds = Array.from(existing.pages ?? [], (page) => page.id ?? page._id);
+        if (oldIds.length) await existing.deleteEmbeddedDocuments('JournalEntryPage', oldIds);
+        await existing.createEmbeddedDocuments('JournalEntryPage', payload.pages);
+        await existing.update({ [`flags.${SYSTEM_ID}.version`]: payload.flags[SYSTEM_ID].version });
+      } catch (err) {
+        console.warn("Sprinter RPG | Could not refresh Tag System Journal:", err);
+      }
+      return existing;
+    }
     const pageCount = existing.pages?.size ?? (Array.isArray(existing.pages) ? existing.pages.length : 0);
     if (pageCount === 0 && typeof existing.createEmbeddedDocuments === "function") {
       try {

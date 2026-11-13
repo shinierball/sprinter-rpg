@@ -4,6 +4,11 @@
 
 import { SYSTEM_ID } from '../../constants.mjs';
 
+/** World setting: the id of the session being recorded. */
+export const ACTIVE_SESSION_SETTING = 'activeSessionId';
+/** World setting: every recorded session. */
+export const SESSIONS_SETTING = 'sessions';
+
 export const sessionStoreMixin = {
   /**
    * Retrieve all sessions from world settings
@@ -11,7 +16,7 @@ export const sessionStoreMixin = {
    */
   getAllSessions() {
     try {
-      const stored = globalThis.game?.settings?.get?.(SYSTEM_ID, 'sessions');
+      const stored = globalThis.game?.settings?.get?.(SYSTEM_ID, SESSIONS_SETTING);
       if (Array.isArray(stored)) return structuredClone(stored);
     } catch (_) {}
     return [];
@@ -24,7 +29,7 @@ export const sessionStoreMixin = {
    */
   async saveAllSessions(sessions) {
     if (globalThis.game?.settings?.set) {
-      await globalThis.game.settings.set(SYSTEM_ID, 'sessions', sessions);
+      await globalThis.game.settings.set(SYSTEM_ID, SESSIONS_SETTING, sessions);
     }
     this._refreshOpenWindows();
     return sessions;
@@ -36,7 +41,7 @@ export const sessionStoreMixin = {
    */
   getActiveSessionId() {
     try {
-      return globalThis.game?.settings?.get?.(SYSTEM_ID, 'activeSessionId') || null;
+      return globalThis.game?.settings?.get?.(SYSTEM_ID, ACTIVE_SESSION_SETTING) || null;
     } catch (_) {
       return null;
     }
@@ -49,7 +54,7 @@ export const sessionStoreMixin = {
    */
   async setActiveSessionId(sessionId) {
     if (globalThis.game?.settings?.set) {
-      await globalThis.game.settings.set(SYSTEM_ID, 'activeSessionId', sessionId);
+      await globalThis.game.settings.set(SYSTEM_ID, ACTIVE_SESSION_SETTING, sessionId);
     }
     this._refreshOpenWindows();
     return sessionId;
@@ -171,6 +176,7 @@ export const sessionStoreMixin = {
       skillsUsed: {},
       untrainedAttempted: {},
       untrainedNames: {},
+      untrainedTrained: 0,
       spellsCast: {},
       lootBoxesAwarded: []
     };

@@ -6,22 +6,27 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { clientInZeroZone } from './zero-zone.mjs';
+import { zeroHealthState } from '../../documents/actor/zero-health-state.mjs';
 
 export const HUD_HIDDEN_SETTING = 'hudHidden';
 export const HIDEABLE_HUD_CLASS = 'cog-hideable-hud';
 export const BODY_HIDDEN = 'cog-hud-hidden';
 export const BODY_ZERO_ZONE_DARK = 'cog-zero-zone-dark';
+const BODY_DYING_DARK = 'cog-dying-dark';
 
 /**
- * Pure. Which body classes apply. A zero zone darkens players only (the GM keeps the overlays).
- * @returns {{ bodyClasses: string[], hidden: boolean, reason: 'zeroZone'|'user'|null }}
+ * Pure. Which body classes apply. A zero zone, or a player whose own character is Dying or Dead, darkens
+ * players only (the GM keeps the overlays).
+ * @returns {{ bodyClasses: string[], hidden: boolean, reason: 'zeroZone'|'dying'|'user'|null }}
  */
-export function hudVisibility({ userHidden = false, zeroZone = false, isGM = false } = {}) {
+export function hudVisibility({ userHidden = false, zeroZone = false, dying = false, isGM = false } = {}) {
   const bodyClasses = [];
   if (userHidden) bodyClasses.push(BODY_HIDDEN);
   const dark = Boolean(zeroZone) && !isGM;
   if (dark) bodyClasses.push(BODY_ZERO_ZONE_DARK);
-  const reason = dark ? 'zeroZone' : userHidden ? 'user' : null;
+  const dyingDark = Boolean(dying) && !isGM;
+  if (dyingDark) bodyClasses.push(BODY_DYING_DARK);
+  const reason = dark ? 'zeroZone' : dyingDark ? 'dying' : userHidden ? 'user' : null;
   return { bodyClasses, hidden: reason !== null, reason };
 }
 
@@ -34,9 +39,15 @@ export function isHudHidden() {
   }
 }
 
-/** The current state: the client setting plus the zero zone this client is in. */
+/** Whether this client's own character is Dying or Dead. */
+function clientDying() {
+  const state = zeroHealthState(globalThis.game?.user?.character);
+  return state.dying || state.dead;
+}
+
+/** The current state: the client setting, the zero zone this client is in, and whether its character is Dying or Dead. */
 export function currentHudState() {
-  return hudVisibility({ userHidden: isHudHidden(), zeroZone: clientInZeroZone(), isGM: Boolean(globalThis.game?.user?.isGM) });
+  return hudVisibility({ userHidden: isHudHidden(), zeroZone: clientInZeroZone(), dying: clientDying(), isGM: Boolean(globalThis.game?.user?.isGM) });
 }
 
 export async function setHudHidden(on) {
@@ -52,11 +63,11 @@ export async function toggleHudHidden() {
   return setHudHidden(!isHudHidden());
 }
 
-/** Make the body carry exactly the classes in `state.bodyClasses` (of the two this module owns). */
+/** Make the body carry exactly the classes in `state.bodyClasses` (of the three this module owns). */
 export function applyHudVisibility(doc = globalThis.document, state = currentHudState()) {
   const list = doc?.body?.classList;
   if (!list) return state;
-  for (const cls of [BODY_HIDDEN, BODY_ZERO_ZONE_DARK]) list.toggle(cls, state.bodyClasses.includes(cls));
+  for (const cls of [BODY_HIDDEN, BODY_ZERO_ZONE_DARK, BODY_DYING_DARK]) list.toggle(cls, state.bodyClasses.includes(cls));
   return state;
 }
 

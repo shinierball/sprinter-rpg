@@ -7,6 +7,8 @@
  * `system.identifier`; names are display text only.
  */
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
+import { HIGH_RANK_FLOOR } from '../../utils/skill/rank-limits.mjs';
+import { ADVANCEMENT_ROUTE_DEFS, ADVANCEMENT_ROUTES, openRoutes, routeAllowsGain } from '../../utils/skill/advancement-routes.mjs';
 import { isSkillUnusable } from '../../utils/skill/animal-skills.mjs';
 import { getRequiredGrindingHours, getAdvancementTarget } from '../../data/rules/grinding-rules.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
@@ -20,7 +22,8 @@ import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { checkTypeLabel, checkTypeOptions } from '../../data/rules/check-types.mjs';
 import { specialtyLabel } from '../../utils/skill/skill-specialty-options.mjs';
 import { buildSkillStandIn } from '../../utils/skill/skill-stand-in.mjs';
-import { collectGearSkillBonuses } from '../../models/actors/actor-derivation.mjs';
+import { rankGrantSources } from '../../utils/skill/rank-grant-sources.mjs';
+import { collectGearSkillBonuses, collectRankRaiseGrants, gearGrantKey, raiseRowsFor, raisedRank } from '../../models/actors/actor-derivation.mjs';
 import { sourceBadge } from '../../utils/content-source.mjs';
 import { workingGear } from '../../utils/effects/gear-suppression.mjs';
 import { offlineTip } from './gear-offline-display.mjs';
@@ -30,6 +33,28 @@ const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 function asList(raw) {
   if (Array.isArray(raw)) return raw;
   return raw && typeof raw === 'object' ? Object.values(raw) : [];
+}
+
+const SKILL_TEXT = {
+  'COG.Skill.HighRankBadge': 'Rank 16+ from the Sixth Floor',
+  'COG.Skill.HighRankTip': 'Rank {rank} is kept, and acts as 15 until the crawler reaches Floor {floor}.'
+};
+
+/** Localized sheet text, with the English default when no i18n is loaded. */
+function skillText(key, data) {
+  const i18n = globalThis.game?.i18n;
+  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
+  return SKILL_TEXT[key].replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
+}
+
+/**
+ * The lock badge of a skill whose Used mark is closed at its Rank (`system.rankLimits`): no mark box, and a note saying
+ * which ways still raise it ("Advances by Training, Magic").
+ */
+function advanceView(skill, rank) {
+  if (routeAllowsGain(skill, ADVANCEMENT_ROUTES.use, rank)) return { useLocked: false, advanceNote: '' };
+  const open = openRoutes(skill, rank).map((id) => ADVANCEMENT_ROUTE_DEFS[id].label);
+  return { useLocked: true, advanceNote: open.length ? `Advances by ${open.join(', ')}` : 'No way left to advance' };
 }
 
 /**
@@ -49,10 +74,15 @@ function decorateOwnedSkill(skill, actor, context) {
   }
   const baseRank = Number(skill.system?.rank) || 0;
   const reqHours = getRequiredGrindingHours(baseRank);
+  // A stored Rank above what acts (derived in `deriveSkillRanks`) is shown with a badge saying when it comes online
+  const inactiveHighRank = (Number(skill.storedRank) || 0) > (Number(skill.baseRank) || 0);
   const investedHours = Number(skill.system?.investedHours ?? skill.system?.grindHours) || 0;
   Object.assign(skill, {
     isChecked: Boolean(skill.system?.checked),
+    highRankBadge: inactiveHighRank ? skillText('COG.Skill.HighRankBadge', {}) : '',
+    highRankTip: inactiveHighRank ? skillText('COG.Skill.HighRankTip', { rank: skill.storedRank, floor: HIGH_RANK_FLOOR }) : '',
     isUnusable: isSkillUnusable(skill),
+    ...advanceView(skill, baseRank),
     requiredGrindHours: reqHours,
     advancementTarget: getAdvancementTarget(baseRank),
     investedHours,
@@ -85,22 +115,23 @@ function grantedSkill(data, actor) {
  */
 function gearGrantedSpells(gear, gearBonuses) {
   const granted = new Map();
-  const add = (identifier, rank, sources, extra = {}) => {
+  const add = (identifier, rank, sources, itemIds, extra = {}) => {
     if (!identifier) return;
-    if (!granted.has(identifier)) granted.set(identifier, { identifier, rank, sources: [], label: '', cooldown: null, ...extra });
+    if (!granted.has(identifier)) granted.set(identifier, { identifier, rank, sources: [], itemIds: [], label: '', cooldown: null, ...extra });
     const entry = granted.get(identifier);
     entry.rank = Math.max(entry.rank, rank);
     entry.sources.push(...sources);
+    entry.itemIds.push(...itemIds);
   };
   for (const data of gearBonuses.values()) {
-    if (data.kind === 'spell') add(data.identifier, data.rank || 1, data.sources, { label: data.label, cooldown: data.cooldown, grantSources: data.grantSources });
+    if (data.kind === 'spell') add(data.identifier, data.rank || 1, data.sources, data.itemIds, { label: data.label, cooldown: data.cooldown, grantSources: data.grantSources });
   }
   for (const item of gear) {
     if (!item.system?.equipped) continue;
     for (const out of asList(item.system.outcomes)) {
       if (out?.type !== 'spell') continue;
       if (!out.spellIdentifier) continue; // a row without a linked spell is a one-off effect, not a granted spell
-      add(out.spellIdentifier, Number(out.rank) || 1, [item.name], { label: out.spellName || out.name || '' });
+      add(out.spellIdentifier, Number(out.rank) || 1, [item.name], [item.id ?? item._id], { label: out.spellName || out.name || '' });
     }
   }
   return granted;
@@ -165,15 +196,19 @@ function grantedSpell(data, context) {
  *   gear-granted entries by their synthetic id, for the roll actions
  */
 export function prepareSkillsAndSpells(context, actor) {
-  const gearBonuses = collectGearSkillBonuses(context.gear.filter(g => g.system?.equipped));
+  const rankSources = rankGrantSources(actor, context.gear.filter(g => g.system?.equipped));
+  const gearBonuses = collectGearSkillBonuses(rankSources);
+  const rankRaises = collectRankRaiseGrants({ sources: rankSources });
   const ownedSkills = [...context.skills];
   const ownedSkillIds = new Set(ownedSkills.map(s => s.system?.identifier).filter(Boolean));
   for (const skill of ownedSkills) decorateOwnedSkill(skill, actor, context);
 
   // Gear-only abilities stay listed in a zone, marked offline when no working gear still grants them
-  const working = new Set(workingGear(actor, context.gear, 'grantedAbilities').map(g => g.name));
-  const markOffline = (entry, sources) => {
-    entry.isOffline = !sources.some(name => working.has(name));
+  const working = new Set(workingGear(actor, context.gear, 'grantedAbilities').map(g => g.id ?? g._id));
+  // A buff that grants an ability keeps it listed and online: only worn gear goes offline
+  const buffGrants = collectGearSkillBonuses(actor.getActiveBuffs?.() ?? []);
+  const markOffline = (entry, data) => {
+    entry.isOffline = !buffGrants.has(gearGrantKey(data.kind, data.identifier)) && !(data.itemIds ?? []).some(id => working.has(id));
     if (entry.isOffline) entry.offlineTip = offlineTip(actor);
   };
 
@@ -181,7 +216,7 @@ export function prepareSkillsAndSpells(context, actor) {
   for (const data of gearBonuses.values()) {
     if (data.kind !== 'skill' || ownedSkillIds.has(data.identifier)) continue;
     const skill = grantedSkill(data, actor);
-    markOffline(skill, data.sources ?? []);
+    markOffline(skill, data);
     grantedSkills.set(skill.id, skill);
     context.skills.push(skill);
   }
@@ -192,8 +227,10 @@ export function prepareSkillsAndSpells(context, actor) {
   const grantedSpells = new Map();
   for (const data of gearGrantedSpells(context.gear, gearBonuses).values()) {
     if (ownedSpellIds.has(data.identifier)) continue;
-    const spell = grantedSpell(data, context);
-    markOffline(spell, data.sources ?? []);
+    // A granted spell acts at its Rank raised by the rank_raise rows that name it
+    const rank = raisedRank(data.rank, raiseRowsFor({ system: { identifier: data.identifier } }, rankRaises));
+    const spell = grantedSpell({ ...data, rank }, context);
+    markOffline(spell, { ...data, kind: 'spell' });
     grantedSpells.set(spell.id, spell);
     context.spells.push(spell);
   }

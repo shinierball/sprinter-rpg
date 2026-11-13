@@ -12,12 +12,13 @@ import { t } from './shared.mjs';
 import { escapeAttr } from '../escape-attr.mjs';
 import { findConditionEntry } from '../../content/catalog-lookup.mjs';
 import { conditionItemData, conditionLabel } from '../../documents/actor/condition-data.mjs';
+import { GM_ACTOR_TYPES } from '../document-types.mjs';
 
 /** The describer, loaded on first use (see the file header). */
 const describer = () => import('./index.mjs');
 
 /** Owner types whose items never get an item summary (417); the effects they land still do (423). */
-const SKIP_OWNER_TYPES = Object.freeze(['mob', 'npc']);
+const SKIP_OWNER_TYPES = GM_ACTOR_TYPES;
 
 const PASSIVE_SKILL = Object.freeze(['system.stat', 'system.rank', 'system.boonBonus', 'system.checkType', 'system.tags']);
 
@@ -34,7 +35,7 @@ export const CARD_PROFILES = Object.freeze({
   castTempBars: Object.freeze(['system.tempBars']),
   use: Object.freeze([
     'system.lootType', 'system.executionMode', 'system.hasActivatedAbility', 'system.charges', 'system.cooldown',
-    'system.outcomes.*', 'system.slot', 'system.wieldMode', 'system.toHitStat', 'system.damageParts',
+    'system.outcomes.*', 'system.slot', 'system.wieldMode', 'system.toHitStat', 'system.baseDamage',
     'system.critMultiplier', 'system.isWeapon', 'system.tags'
   ]),
   passiveSkill: Object.freeze([...PASSIVE_SKILL]),
@@ -65,17 +66,16 @@ export function filterCardLines(lines, omit) {
   });
 }
 
-const esc = (v) => escapeAttr(v);
 
 const hasText = (l) => Boolean(l) && typeof l.text === 'string' && l.text !== '';
 
 function listHtml(lines) {
   const items = lines.map((l) => {
-    const tip = typeof l.ruleText === 'string' && l.ruleText.trim() ? ` data-tooltip="${esc(l.ruleText)}"` : '';
+    const tip = typeof l.ruleText === 'string' && l.ruleText.trim() ? ` data-tooltip="${escapeAttr(l.ruleText)}"` : '';
     // The same badge as the sheet's feature list (templates/items/parts/feature-list.hbs)
     const badge = typeof l.badge === 'string' && l.badge.trim()
-      ? `<span class="cog-badge cog-feature-badge cog-feature-badge-${esc(l.kind)}">[${esc(l.badge)}]</span> ` : '';
-    return `<li class="cog-feature-line"${tip}>${badge}<span class="cog-feature-text">${esc(l.text)}</span></li>`;
+      ? `<span class="cog-badge cog-feature-badge cog-feature-badge-${escapeAttr(l.kind)}">[${escapeAttr(l.badge)}]</span> ` : '';
+    return `<li class="cog-feature-line"${tip}>${badge}<span class="cog-feature-text">${escapeAttr(l.text)}</span></li>`;
   });
   return `<ul class="cog-feature-list">${items.join('')}</ul>`;
 }
@@ -89,10 +89,10 @@ export function cardSummaryHtml(groups) {
   const usable = (Array.isArray(groups) ? groups : []).filter((g) => Array.isArray(g?.lines) && g.lines.some(hasText));
   if (!usable.length) return '';
   const body = usable.map((g) => {
-    const heading = typeof g.heading === 'string' && g.heading.trim() ? `<div class="cog-card-summary-heading">${esc(g.heading)}</div>` : '';
+    const heading = typeof g.heading === 'string' && g.heading.trim() ? `<div class="cog-card-summary-heading">${escapeAttr(g.heading)}</div>` : '';
     return heading + listHtml(g.lines.filter(hasText));
   }).join('');
-  return `<details class="cog-card-summary"><summary><i class="fa-solid fa-circle-info"></i> ${esc(t('COG.ItemSummary.Heading'))}</summary>${body}</details>`;
+  return `<details class="cog-card-summary"><summary><i class="fa-solid fa-circle-info"></i> ${escapeAttr(t('COG.ItemSummary.Heading'))}</summary>${body}</details>`;
 }
 
 /** The item data a buff or debuff reference lands as (as `applyCondition` and `crawlerApplyBuff` resolve it), or null. */

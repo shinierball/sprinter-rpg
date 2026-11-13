@@ -3,7 +3,8 @@
  * Resolve anchors against a book index, with a tie-break between equal matches. Pure.
  *
  * Candidates for a heading anchor, in order: block headings with the hash; else alias headings (the text before a
- * parenthesis); else inline hits (table first cell, bold lead-in label). A table anchor looks up the `TABLE n:` label.
+ * parenthesis); else inline hits (table first cell, bold lead-in label). A table anchor looks up the `TABLE n:` label; a
+ * row anchor, the labels of that number whose table holds the row (the hit carries the row's hash; slicer.mjs cuts the row).
  * Among several candidates the choice is made by `pickCandidate`, one small replaceable function (191 a): the prefix
  * hash first, then the page nearest the hint corrected by the per-book shift, then the earliest in content order.
  * Nothing here ever blocks: no matching prefix means the nearest candidate hydrates and is marked.
@@ -14,6 +15,7 @@
  */
 import { grammarFor } from './grammars.mjs';
 import { collectBlock, sliceBlock } from './slicer.mjs';
+import { tableRowCells } from './table-slicer.mjs';
 import { bodyPrefixHash, lineHash, LINE_WORDS } from './normalize.mjs';
 
 const median = values => {
@@ -176,6 +178,8 @@ function withoutSegmentOpeners(index, hits, hash) {
 /** Candidate hits for an anchor, best class first (or only the class the anchor names with `via`). */
 export function candidatesFor(index, anchor) {
   if (anchor.kind === 'table') return index.tables.get(anchor.number) ?? [];
+  // A table row: the table's labels whose rows hold the named row (another printing without it does not resolve).
+  if (anchor.kind === 'row') return (index.tables.get(anchor.number) ?? []).filter(h => tableRowCells(index, h, anchor.hash));
   const hits = index.hashes.get(anchor.hash) ?? [];
   for (const via of anchor.via ? [anchor.via] : ['heading', 'alias', 'inline']) {
     const pool = hits.filter(h => h.via === via);

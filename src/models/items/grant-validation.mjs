@@ -1,5 +1,7 @@
+import { EFFECT_ITEM_TYPES } from '../../utils/document-types.mjs';
+
 /** Grant kinds. Roll, damage, DR and defense modifiers live in the `*Modifiers[]` fields, not here. */
-export const GRANT_KINDS = ['stat', 'skill', 'spell', 'rank_bonus', 'rank_cap'];
+export const GRANT_KINDS = ['stat', 'skill', 'spell', 'rank_bonus', 'rank_cap', 'rank_raise'];
 
 const GRANT_STATS = ['str', 'dex', 'con', 'int', 'cha'];
 
@@ -21,12 +23,14 @@ function hasTagQuery(query) {
 
 /**
  * Everything wrong with one grant row (empty array = valid):
- * - kind is one of stat | skill | spell | rank_bonus | rank_cap
+ * - kind is one of stat | skill | spell | rank_bonus | rank_cap | rank_raise
  * - stat: `stat` is a stat key and `value` is a finite number; a `mode: 'pool'` row has `value` points and
  *   `options` (stat keys) instead of one `stat`
  * - rank_cap: `value` is a finite number (the cap) and a fixed row names `identifier` or `tag`; a choice row
  *   names `query`, `options` or `category`
  * - rank_bonus: `value` is a finite number and `tag` or `query` selects what it applies to
+ * - rank_raise (fixed only): `floor` is an integer of 1 or more (the Rank N the target is raised to), `value` is a finite
+ *   number (the +M when already at N or higher), and `identifier`, `tag` or a `query` selects what it applies to
  * - skill | spell: a fixed row names `uuid` or `identifier`; a choice row names `query`, `options` or `category`;
  *   `rank` (when set) is a positive integer
  * @param {*} grant
@@ -70,6 +74,14 @@ export function grantRowErrors(grant) {
   if (kind === 'rank_bonus') {
     if (!isFiniteNumeric(grant.value)) errors.push('rank_bonus needs a numeric value');
     if (!nonEmptyString(grant.tag) && !hasTagQuery(grant.query)) errors.push('rank_bonus needs a tag or a query');
+    return errors;
+  }
+
+  if (kind === 'rank_raise') {
+    if (!isFiniteNumeric(grant.floor) || !Number.isInteger(Number(grant.floor)) || Number(grant.floor) < 1) errors.push('rank_raise needs a floor (Rank N) of 1 or more');
+    if (!isFiniteNumeric(grant.value)) errors.push('rank_raise needs a numeric value');
+    if (grant.mode === 'choice' || grant.mode === 'pool') errors.push('rank_raise is fixed only');
+    if (!nonEmptyString(grant.identifier) && !nonEmptyString(grant.tag) && !hasTagQuery(grant.query)) errors.push('rank_raise needs an identifier, a tag or a query');
     return errors;
   }
 
@@ -139,9 +151,6 @@ export function startingItemErrors(entry) {
 /** Whether a starting item entry names something to give (the creators drop an entry that does not). */
 export const validateStartingItem = (entry) => startingItemErrors(entry).length === 0;
 
-/** Item types a race or class can grant as an effect of its own. */
-export const GRANTED_EFFECT_TYPES = Object.freeze(['buff', 'debuff']);
-
 /**
  * Everything wrong with one `grantedEffects[]` entry (empty = valid): `type` is buff or debuff, `name` is non-empty and
  * `system` is a plain object with an identifier.
@@ -151,7 +160,7 @@ export const GRANTED_EFFECT_TYPES = Object.freeze(['buff', 'debuff']);
 export function grantedEffectErrors(entry) {
   if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return ['a granted effect must be an object'];
   const errors = [];
-  if (!GRANTED_EFFECT_TYPES.includes(entry.type)) errors.push(`type must be one of ${GRANTED_EFFECT_TYPES.join(', ')}`);
+  if (!EFFECT_ITEM_TYPES.includes(entry.type)) errors.push(`type must be one of ${EFFECT_ITEM_TYPES.join(', ')}`);
   if (typeof entry.name !== 'string' || !entry.name.trim()) errors.push('name must be a non-empty string');
   const sys = entry.system;
   if (!sys || typeof sys !== 'object' || Array.isArray(sys)) errors.push('system must be an object');

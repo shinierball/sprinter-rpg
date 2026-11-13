@@ -9,9 +9,10 @@ import { identityTag } from '../../data/tag-vocabulary.mjs';
 import { ITEM_STATE_TAGS } from '../tag/tag-mechanics.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
 import { sanitizeSpecialty } from './skill-specialty.mjs';
+import { INVENTORY_ITEM_TYPES } from '../document-types.mjs';
 
 const STATE_TAGS = new Set(Object.values(ITEM_STATE_TAGS));
-const GEAR_TYPES = new Set(['gear', 'loot']);
+const GEAR_TYPES = new Set(INVENTORY_ITEM_TYPES);
 
 /** Identity tag -> item name of every world and catalog gear or loot item. */
 function itemNames() {

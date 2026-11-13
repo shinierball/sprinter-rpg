@@ -2,6 +2,7 @@ import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
 import { normalizeTransform } from '../../utils/character/transform-rules.mjs';
 import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeLearnRank, outcomeStatValue, outcomeEnchantments, outcomeEnchantTable, ENCHANT_ITEM_OUTCOME } from '../../utils/loot/outcome-defaults.mjs';
 import { normalizeGrants, toRowArray } from './grant-validation.mjs';
+import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES, WEAPON_CAPABLE_TYPES } from '../../utils/document-types.mjs';
 
 /**
  * An outcome weight as a non-negative integer; strings keep only their digits.
@@ -66,15 +67,7 @@ export const RUNTIME_ONLY_SYSTEM_KEYS = Object.freeze(['modifiedRank']);
 export function normalizeItemSystemData(type, system) {
   if (!system || typeof system !== 'object') return system;
 
-  if (type === 'attack' || type === 'gear') {
-    if (system.damageParts !== undefined) {
-      system.damageParts = toRowArray(system.damageParts);
-    } else if (type === 'attack') {
-      system.damageParts = [];
-    }
-  }
-
-  if ((type === 'attack' || type === 'gear') && system.asTriggers !== undefined) {
+  if (WEAPON_CAPABLE_TYPES.includes(type) && system.asTriggers !== undefined) {
     system.asTriggers = toRowArray(system.asTriggers);
   }
 
@@ -115,11 +108,11 @@ export function normalizeItemSystemData(type, system) {
     system.vehicleModifiers = system.vehicleModifiers !== undefined ? toRowArray(system.vehicleModifiers) : [];
   }
 
-  if (type === 'skill' || type === 'spell') {
+  if (RANKED_ITEM_TYPES.includes(type)) {
     system.baseDamage = normalizeBaseDamage(system.baseDamage);
   }
 
-  if (type === 'skill' || type === 'spell') {
+  if (RANKED_ITEM_TYPES.includes(type)) {
     if (system.rankDamageParts !== undefined) {
       system.rankDamageParts = toRowArray(system.rankDamageParts);
     } else {
@@ -128,7 +121,7 @@ export function normalizeItemSystemData(type, system) {
   }
 
 
-  if (type === 'loot' || type === 'gear') {
+  if (INVENTORY_ITEM_TYPES.includes(type)) {
     if (system.outcomes !== undefined) {
       system.outcomes = toRowArray(system.outcomes);
       system.outcomes.forEach(normalizeOutcome);

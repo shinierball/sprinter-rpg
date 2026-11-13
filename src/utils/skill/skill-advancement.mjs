@@ -2,9 +2,12 @@
  * Skill Advancement rules as pure functions (no Foundry, no I/O). Callers pass plain objects and an
  * already-rolled total; the actor mixin and batch runner own rolling, prompts and writes.
  */
-import { SKILL_SOFT_CAP } from './rank-cap.mjs';
+import { SKILL_SOFT_CAP } from './rank-limits.mjs';
 
 export const MAX_CRAWLER_KILL_LEVELS = 15;
+
+/** Skills a crawler may gain from untrained attempts in one session (Tutorial Floors only). */
+export const UNTRAINED_SKILLS_PER_WINDOW = 1;
 
 const int = (v, fallback = 0) => {
   const n = Math.trunc(Number(v));
@@ -14,6 +17,21 @@ const int = (v, fallback = 0) => {
 /** The d20 total a Skill Advancement Check must reach: the current Rank (Rank 0 needs 0). */
 export function advancementTarget(rank) {
   return Math.max(0, int(rank));
+}
+
+/**
+ * May a crawler gain a Skill from its untrained attempts? One Skill per session on the Tutorial Floors; none from
+ * the unlock floor (Third Floor) down, where untrained use teaches nothing.
+ * @param {object} p
+ * @param {number} p.floor The crawler's effective floor
+ * @param {number} p.unlockFloor The first floor that is not a Tutorial Floor
+ * @param {number} [p.trained] Skills already gained this way in this session
+ * @returns {{allowed: boolean, reason: 'floor'|'window'|null}} `reason` says which limit a Rule Break would exceed
+ */
+export function untrainedTrainingAllowance({ floor, unlockFloor, trained = 0 } = {}) {
+  if (int(floor) >= int(unlockFloor)) return { allowed: false, reason: 'floor' };
+  if (int(trained) >= UNTRAINED_SKILLS_PER_WINDOW) return { allowed: false, reason: 'window' };
+  return { allowed: true, reason: null };
 }
 
 /**
@@ -30,15 +48,16 @@ export function selectBatchSkills(skills, mode) {
 }
 
 /**
- * Outcome of one Skill Advancement Check.
- * @returns {{outcome: 'gain'|'fail'|'capped'|'locked'|'skipped', newRank: number, target: number}}
+ * Outcome of one Skill Advancement Check. `limit` is the skill's use-route limit (null = none); at or past it the outcome is `limited`, ahead of the cap.
+ * @returns {{outcome: 'gain'|'fail'|'capped'|'limited'|'skipped', newRank: number, target: number}}
  */
-export function evaluateAdvancement({ rank, rollTotal, cap = SKILL_SOFT_CAP, canGainRanks = true, passive = false } = {}) {
+export function evaluateAdvancement({ rank, rollTotal, cap = SKILL_SOFT_CAP, limit = null, passive = false } = {}) {
   const current = int(rank);
   const target = advancementTarget(current);
   const result = (outcome, newRank = current) => ({ outcome, newRank, target });
   if (passive) return result('skipped');
-  if (canGainRanks === false) return result('locked');
+  // The skill's use-route limit (`routeLimit(skill, 'use')`): 0 = never, N = up to Rank N
+  if (limit !== null && limit !== undefined && current >= int(limit)) return result('limited');
   if (current >= int(cap, SKILL_SOFT_CAP)) return result('capped');
   // Rank 0 always succeeds, whatever the penalties did to the total.
   if (current <= 0 || Number(rollTotal) >= target) return result('gain', current + 1);
@@ -58,7 +77,7 @@ export function grindLevelProgress({ level, tracker = 0, hours = 0 } = {}) {
 }
 
 /** Lowest Level in a set, how many share it, and whether it is unique. */
-export function lowestLevelStatus(levels) {
+function lowestLevelStatus(levels) {
   const list = (Array.isArray(levels) ? levels : []).map(l => int(l));
   if (!list.length) return { min: null, count: 0, unique: false };
   const min = Math.min(...list);
@@ -75,12 +94,28 @@ export function lowestLevelStatus(levels) {
  * @param {number} p.d2 The rolled d2 (clamped to 1..2)
  * @returns {{eligible: boolean, levels: number}}
  */
-export function grindPartyBonus({ levelerLevel, comparisonLevels, d2 } = {}) {
+function grindPartyBonus({ levelerLevel, comparisonLevels, d2 } = {}) {
   const others = Array.isArray(comparisonLevels) ? comparisonLevels : [];
   if (!others.length) return { eligible: false, levels: 0 };
   const { min } = lowestLevelStatus(others);
   if (!(int(levelerLevel) < min)) return { eligible: false, levels: 0 };
   return { eligible: true, levels: Math.min(2, Math.max(1, int(d2, 1))) };
+}
+
+/**
+ * Which party members get the grinding 1d2 Level bonus: the strictly lowest Level. A tie for lowest ticks
+ * nobody, and a lone member has nobody to be lowest against.
+ * @param {Array<{id: string, level: number}>} members
+ * @returns {Set<string>} ids of the eligible members
+ */
+export function lowestLevelBonusMembers(members) {
+  const list = Array.isArray(members) ? members : [];
+  const eligible = list.filter((m, i) => grindPartyBonus({
+    levelerLevel: m.level,
+    comparisonLevels: list.filter((_, j) => j !== i).map(o => o.level),
+    d2: 1
+  }).eligible);
+  return new Set(eligible.map(m => m.id));
 }
 
 /**

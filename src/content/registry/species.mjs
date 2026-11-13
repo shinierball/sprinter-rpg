@@ -162,6 +162,18 @@ export function getSpecies(reg, id) {
 }
 
 /**
+ * The key two Skill selections share when the resolver counts them as the same Skill: `ref:<ref>` when the entry has a
+ * catalog `ref`, else its lower-cased, trimmed name (or tag). A string is read as a name.
+ * @param {string|{ref?: string, name?: string, tag?: string}|null|undefined} entry
+ * @returns {string} '' when the entry names nothing
+ */
+export function skillSelectionKey(entry) {
+  if (typeof entry === 'string') return entry.toLowerCase().trim();
+  if (entry?.ref) return `ref:${entry.ref}`;
+  return String(entry?.name || entry?.tag || '').toLowerCase().trim();
+}
+
+/**
  * Resolve skill ranks across selected tiers for a species.
  * Handles duplicate detection and preserves non-stacking highest rank rule.
  * @param {object} reg
@@ -181,7 +193,7 @@ export function resolveSkillRanks(reg, speciesId, tierSelections = {}) {
   if (spec.inherentSkill) {
     const inh = spec.inherentSkill;
     const name = inh.name || inh.tag || 'Inherent Skill';
-    const key = inh.ref ? `ref:${inh.ref}` : name.toLowerCase().trim();
+    const key = skillSelectionKey({ ref: inh.ref, name });
     skillRegistry.set(key, {
       name,
       ...(inh.ref ? { ref: inh.ref } : {}),
@@ -227,7 +239,7 @@ export function resolveSkillRanks(reg, speciesId, tierSelections = {}) {
       const ref = (typeof s === 'object' ? s.ref : null) || entry?.ref || null;
       const sName = nameOf(entry) || nameOf(s);
       if (!sName) continue;
-      const key = ref ? `ref:${ref}` : sName.toLowerCase().trim();
+      const key = skillSelectionKey({ ref, name: sName });
       const stat = (typeof s === 'object' && s.stat) ? s.stat : (entry?.stat || 'str');
 
       if (!skillRegistry.has(key)) {

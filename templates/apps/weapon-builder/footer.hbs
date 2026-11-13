@@ -1,0 +1,13 @@
+<footer class="creator-footer flexrow cog-wb-footer">
+  <div class="footer-left">
+    <span class="creation-indicator"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.WeaponBuilder.Footer.Note"}}</span>
+  </div>
+  <div class="footer-right flexrow" style="gap: 8px;">
+    {{#unless isFirstStep}}<button type="button" class="cog-btn" data-action="back"><i class="fa-solid fa-arrow-left"></i> {{localize "COG.WeaponBuilder.Footer.Back"}}</button>{{/unless}}
+    {{#if isLastStep}}
+      <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="createWeapon"><i class="fa-solid fa-check"></i> {{localize "COG.WeaponBuilder.Footer.Create"}}</button>
+    {{else}}
+      <button type="button" class="cog-btn" data-action="next">{{localize "COG.WeaponBuilder.Footer.Next"}} <i class="fa-solid fa-arrow-right"></i></button>
+    {{/if}}
+  </div>
+</footer>

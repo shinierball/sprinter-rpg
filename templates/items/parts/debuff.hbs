@@ -1,33 +1,45 @@
 <section class="cog-item-body cog-item-body-debuff">
 <div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
   <div class="cog-field-group small">
-    <span class="cog-field-label">Severity</span>
-    <select name="system.severity" class="cog-field-input">
-      <option value="Minor" {{#if (eq system.severity "Minor")}}selected{{/if}}>Minor</option>
-      <option value="Major" {{#if (eq system.severity "Major")}}selected{{/if}}>Major</option>
+    <span class="cog-field-label">{{localize "COG.Debuff.Sheet.Severity"}}</span>
+    <select name="system.severity" class="cog-field-input" title="{{localize 'COG.Debuff.Sheet.SeverityHint'}}">
+      {{#each severityOptions as |sOpt|}}<option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>{{/each}}
     </select>
   </div>
   <div class="cog-field-group small">
-    <span class="cog-field-label">Damage Per Round</span>
-    <input class="cog-field-input" type="text" name="system.damagePerRound" value="{{system.damagePerRound}}" placeholder="1d6+F / 1 bar" title="Damage inflicted to bearer at end of each combat round" />
+    <span class="cog-field-label">{{localize "COG.Debuff.Sheet.DamagePerRound"}}</span>
+    <input class="cog-field-input" type="text" name="system.damagePerRound" value="{{system.damagePerRound}}" placeholder="1d6+F / 1 bar" title="{{localize 'COG.Debuff.Sheet.DamagePerRoundHint'}}" />
   </div>
   <div class="cog-field-group small">
-    <span class="cog-field-label">Damage Type</span>
+    <span class="cog-field-label">{{localize "COG.Debuff.Sheet.DamageType"}}</span>
     <select name="system.damageType" class="cog-field-input">
-      <option value="">None / Physical</option>
+      <option value="">{{localize "COG.Debuff.Sheet.DamageTypeNone"}}</option>
       {{#each damageTypes as |dt|}}
         <option value="{{dt}}" {{#if (eq ../system.damageType dt)}}selected{{/if}}>{{dt}}</option>
       {{/each}}
     </select>
   </div>
   <div class="cog-field-group small">
-    <span class="cog-field-label">Duration (text, optional)</span>
-    <input name="system.duration" class="cog-field-input" type="text" value="{{system.duration}}" placeholder="Until the end of combat" />
+    <span class="cog-field-label">{{localize "COG.Debuff.Sheet.DurationText"}}</span>
+    <input name="system.duration" class="cog-field-input" type="text" value="{{system.duration}}" placeholder="Until the end of combat" title="{{localize 'COG.Debuff.Sheet.DurationHint'}}" />
   </div>
 </div>
-<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;" title="What ends this debuff. A rest clears every debuff set to end at that rest or an earlier one.">
+<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;" title="{{localize 'COG.Debuff.Sheet.EndsHint'}}">
   {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=durationEditor}}
 </div>
+<div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
+  <div class="cog-field-group small">
+    <span class="cog-field-label">{{localize "COG.Debuff.Sheet.Repeat"}}</span>
+    <select name="system.repeat.mode" class="cog-field-input" title="{{localize 'COG.Debuff.Sheet.RepeatHint'}}">
+      {{#each repeatModeOptions as |rOpt|}}<option value="{{rOpt.value}}" {{#if rOpt.selected}}selected{{/if}}>{{rOpt.label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">{{localize "COG.Debuff.Sheet.RepeatInto"}}</span>
+    <input class="cog-field-input" type="text" name="system.repeat.into" value="{{system.repeat.into}}" placeholder="long-term-minor-injury" title="{{localize 'COG.Debuff.Sheet.RepeatIntoHint'}}" />
+  </div>
+</div>
+{{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=alsoAppliesPicker}}
 
 <div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap; gap: 14px;">
   <label class="cog-checkbox-label" title="{{localize "COG.Debuff.PausedTooltip"}}">
@@ -44,34 +56,28 @@
 
 {{> "systems/sprinter-rpg/templates/items/parts/transform.hbs"}}
 
-{{!-- LIMB MODIFIERS (ARMS, LEGS, HANDS) --}}
+{{!-- SUPPRESSES: the buffs and skills this debuff switches off while it is in force (a smite) --}}
 <div class="cog-stat-block" style="margin-bottom: 10px;">
-  <div class="cog-banner-header cog-bg-accent-fill" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
-    <span><i class="fa-solid fa-person-walking"></i> LIMB MODIFIERS (ARMS, LEGS, HANDS)</span>
+  <div class="cog-banner-header cog-bg-accent-fill" style="font-size: 11px; padding: 3px 6px;">
+    <span><i class="fa-solid fa-ban"></i> {{localize "COG.Debuff.Suppresses.Title"}}</span>
   </div>
   <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
-    <div class="cog-field-row" style="margin-bottom: 4px; align-items: center; gap: 12px;">
-      <div class="cog-field-group small">
-        <span class="cog-field-label">Hands (+/-)</span>
-        <input class="cog-field-input" type="number" name="system.limbModifiers.hands" value="{{system.limbModifiers.hands}}" placeholder="0" style="font-size: 11px; text-align: center;" />
-      </div>
-      <div class="cog-field-group small">
-        <span class="cog-field-label">Arms (+/-)</span>
-        <input class="cog-field-input" type="number" name="system.limbModifiers.arms" value="{{system.limbModifiers.arms}}" placeholder="0" style="font-size: 11px; text-align: center;" />
-      </div>
-      <div class="cog-field-group small">
-        <span class="cog-field-label">Legs (+/-)</span>
-        <input class="cog-field-input" type="number" name="system.limbModifiers.legs" value="{{system.limbModifiers.legs}}" placeholder="0" style="font-size: 11px; text-align: center;" />
-      </div>
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.Debuff.Suppresses.Buffs"}}</span>
+      {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=suppressBuffsQuery tagOptions=techniqueTagOptions}}
     </div>
-    <div class="cog-text-secondary" style="font-size: 10px; font-style: italic;">
-      Modifies the actor's available limb and wielding hand count while this Debuff/Injury is active (e.g. -1 for amputated arm or hand).
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.Debuff.Suppresses.Skills"}}</span>
+      {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=suppressSkillsQuery tagOptions=techniqueTagOptions}}
     </div>
+    <div class="cog-text-secondary" style="font-size: 10px; font-style: italic;">{{localize "COG.Debuff.Suppresses.Hint"}}</div>
   </div>
 </div>
 
+{{> "systems/sprinter-rpg/templates/items/parts/limb-modifiers.hbs" noteKey="COG.LimbModifiers.DebuffNote"}}
+
 <div class="cog-field-group">
-  <span class="cog-field-label">Description</span>
+  <span class="cog-field-label">{{localize "COG.Debuff.Sheet.Description"}}</span>
   {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
 </div>
 </section>

@@ -61,10 +61,14 @@
     </div>
 
     <!-- Crawler Sheet Direct Application -->
-    {{#if crawlers.length}}
+    {{#if targetActor}}
+      <div class="cog-target-crawler-card">
+        <i class="fa-solid fa-person-running"></i> {{targetActor.appliesTo}}
+      </div>
+    {{else if crawlers.length}}
       <div class="cog-target-crawler-card">
         <label><i class="fa-solid fa-person-running"></i> Apply to World Crawler:</label>
-        <select class="cog-target-crawler-select" name="targetCrawler" data-change-action="setTargetCrawler">
+        <select class="cog-target-crawler-select" data-change-action="setTargetCrawler">
           <option value="">-- Choose Crawler --</option>
           {{#each crawlers}}
             <option value="{{this.id}}" {{#if this.isSelected}}selected{{/if}}>{{this.name}}</option>
@@ -75,6 +79,12 @@
 
     <!-- Action Buttons -->
     <div class="cog-receipt-actions">
+      {{#if targetActor}}
+        <button type="button" class="cog-btn cog-apply-crawler-btn" data-action="applyToCrawler" title="Embed {{builderType}} and apply stat bonuses to crawler">
+          <i class="fa-solid fa-bolt"></i> {{targetActor.applyLabel}}
+        </button>
+      {{/if}}
+
       <button type="button" class="cog-btn cog-save-{{builderType}}-btn" data-action="saveItem" title="Create {{builderType}} item in Foundry Items directory">
         <i class="fa-solid fa-floppy-disk"></i> Save as {{#if (eq builderType 'race')}}Race{{else}}Class{{/if}} Item
       </button>

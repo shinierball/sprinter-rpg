@@ -32,7 +32,7 @@ const stepLabel = (id) => COMBAT_STEP_DEFINITIONS.find(def => def.id === id)?.sh
 export const COMBAT_CLEAN_UP_HOOK = 'sprinter-rpg.combatCleanUp';
 
 /** Order slots of the built-in Clean Up steps; extensions register between or after them (default 500). */
-export const CLEAN_UP_ORDER = Object.freeze({ ROUND_END_EFFECTS: 100, AURA_PULSE: 150, DURATIONS: 200, CLEAR_EVADE: 300, EXTENSION: 500 });
+export const CLEAN_UP_ORDER = Object.freeze({ ROUND_END_EFFECTS: 100, AURA_PULSE: 150, DURATIONS: 200, EXTENSION: 500 });
 
 /** Registered Step 5 Clean Up steps: `{ id, order, seq, run }`. Sorted on read by `order`, then registration. */
 const cleanUpRegistry = [];

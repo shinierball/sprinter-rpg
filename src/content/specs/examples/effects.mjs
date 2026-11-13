@@ -13,7 +13,7 @@ export const EXAMPLE_EFFECT_SPECS = Object.freeze([
   {
     type: 'buff',
     _id: ID['studio-audience-approval'],
-    name: 'Studio Audience Approval',
+    name: 'Applause',
     img: 'icons/svg/sun.svg',
     system: {
       identifier: 'studio-audience-approval',

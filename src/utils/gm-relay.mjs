@@ -224,6 +224,7 @@ function onSocketlibReady() {
   socket = globalThis.socketlib.registerSystem(SYSTEM_ID);
   socket.register(RELAY_FUNCTION, relayHandler);
   socket.register(RELAY_RESULT_FUNCTION, relayResultHandler);
+  socket.register(USER_QUERY_FUNCTION, userQueryHandler);
 }
 
 /**
@@ -234,6 +235,58 @@ export function initGMRelay() {
   if (hooked) return;
   globalThis.Hooks?.once('socketlib.ready', onSocketlibReady);
   hooked = true;
+}
+
+/** socketlib function the GM uses to ask one connected user a question (see `askUser`). */
+const USER_QUERY_FUNCTION = 'userQuery';
+
+const queries = new Map();
+
+/**
+ * Register a question a GM may put to a player's client. `answer(payload)` runs on the asked client and returns
+ * plain data. Only a GM's request is served; the asker's id comes from socketlib's envelope.
+ */
+export function registerUserQuery(type, answer) {
+  if (typeof type !== 'string' || !type || typeof answer !== 'function') throw new Error('A user query needs a type and an answer function.');
+  queries.set(type, answer);
+}
+
+/** socketlib handler for USER_QUERY_FUNCTION (regular function: reads this.socketdata.userId). */
+async function userQueryHandler(type, payload) {
+  const asker = usersList().find(u => u?.id === this?.socketdata?.userId);
+  const answer = queries.get(type);
+  if (!asker?.isGM || !answer) return { ok: false, reason: 'rejected' };
+  try {
+    return { ok: true, result: await answer(payload) };
+  } catch (err) {
+    console.error(`Sprinter RPG | user query "${type}" failed:`, err);
+    return { ok: false, reason: 'error' };
+  }
+}
+
+/**
+ * Ask one connected user a registered question and wait for the answer, never longer than `timeoutMs` (a user who
+ * disconnects mid-question never answers).
+ * @param {string} userId
+ * @param {string} type registered with `registerUserQuery`
+ * @param {object} payload plain data only
+ * @param {{ timeoutMs: number }} opts
+ * @returns {Promise<{ ok: boolean, result?: any, reason?: 'no-socket'|'offline'|'timeout'|'rejected'|'error' }>}
+ */
+export async function askUser(userId, type, payload, { timeoutMs }) {
+  if (!socket) return { ok: false, reason: 'no-socket' };
+  if (!usersList().find(u => u?.id === userId)?.active) return { ok: false, reason: 'offline' };
+  let timer;
+  const timeout = new Promise(resolve => { timer = setTimeout(() => resolve({ ok: false, reason: 'timeout' }), timeoutMs); });
+  try {
+    const reply = await Promise.race([socket.executeAsUser(USER_QUERY_FUNCTION, userId, type, payload), timeout]);
+    return reply && typeof reply.ok === 'boolean' ? reply : { ok: false, reason: 'error' };
+  } catch (err) {
+    console.warn('Sprinter RPG | user query failed:', err);
+    return { ok: false, reason: 'error' };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** Test helper: forget transport state so initGMRelay can be re-run. */

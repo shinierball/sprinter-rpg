@@ -8,8 +8,10 @@ import { appliedBeforeEvade, listEvadesFor, classifyNextEvade } from '../../util
 import { getDamageApplications } from '../damage-applications.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { gateActionBlock, actionBlockApplies } from '../../documents/actor/action-block.mjs';
+import { mobTargetDifficulty } from '../../documents/actor/attack-targets.mjs';
 import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
-import { recordEvadeOnDeclaration } from '../../documents/combat-declarations.mjs';
+import { recordEvadeOnDeclaration, evadeCoveredFor } from '../../documents/combat-declarations.mjs';
 import { COG_ACTION_TYPES } from '../../documents/combat/action-ledger.mjs';
 import { isOutOfRangeOnMessage, rangeText } from '../../utils/attack/attack-range.mjs';
 import { parseMessageContent } from '../chat-relay.mjs';
@@ -82,10 +84,10 @@ const EVADE_INTERRUPT_FREE = Object.freeze({ ...EVADE_INTERRUPT, isFree: true, a
  */
 export async function handleRollEvade(event, button, message) {
   const attackerName = button.dataset?.attackerName || 'Attacker';
-  const targetDC = button.dataset?.targetDc !== undefined && button.dataset?.targetDc !== ''
+  let targetDC = button.dataset?.targetDc !== undefined && button.dataset?.targetDc !== ''
     ? Number(button.dataset.targetDc)
     : (button.dataset?.attackTotal !== undefined && button.dataset?.attackTotal !== '' ? Number(button.dataset.attackTotal) : undefined);
-  const attackTotal = targetDC;
+  let attackTotal = targetDC;
   const floor = Number(button.dataset?.floor) || getCurrentFloor();
   const isArea = button.dataset?.isArea === 'true' || button.dataset?.isArea === true;
 
@@ -104,7 +106,11 @@ export async function handleRollEvade(event, button, message) {
     const attackCard = attackMessageId ? game.messages?.get?.(attackMessageId) ?? null : null;
     // The attack's context (3.18): the clicked button's, else the attack card's own Evade button's (a Taunter's button).
     const rollContext = parseRollContext(button.dataset?.rollContext) ?? attackCardRollContext(attackCard);
-    const disadvantaged = attackCard?.flags?.[SYSTEM_ID]?.mobAdvantage?.mode === 'disadvantage';
+    // The card's net Advantage plus what this crawler's own rows give attackers (Held, Take Down): this crawler's Difficulty.
+    const cardState = attackCard?.flags?.[SYSTEM_ID]?.mobAdvantage;
+    const own = mobTargetDifficulty(cardState, crawler, game.actors?.get?.(attackCard?.flags?.[SYSTEM_ID]?.attackerId) ?? null, rollContext ?? []);
+    if (own) { targetDC = own.dc; attackTotal = own.dc; }
+    const disadvantaged = own ? own.disadvantaged : cardState?.mode === 'disadvantage';
     const prior = attackMessageId ? listEvadesFor(game.messages, { attackMessageId, targetUuid: crawler.uuid }) : [];
     const kind = classifyNextEvade({ disadvantaged, prior });
     // One Evade per attack (3.18): any other roll by the same crawler is a Rule Break (the latest one counts).
@@ -125,10 +131,20 @@ export async function handleRollEvade(event, button, message) {
     const appliedBefore = attackMessageId
       ? appliedBeforeEvade(game.messages, { attackMessageId, evaderUuid: crawler.uuid, getApplications: getDamageApplications })
       : false;
+    // One Evade Action covers the round (9.17): the Check is still rolled, the Action is not charged again.
+    const covered = kind !== 'free' && evadeCoveredFor(crawler, attackMessageId);
+    // A bearer who cannot take Actions asks before rolling; an Evade already covered this round is no new Action.
+    if (!covered && actionBlockApplies(crawler, 'evade')) {
+      const blockGate = await gateActionBlock(crawler, 'evade');
+      if (!blockGate.proceed) return;
+      if (blockGate.ruleBreak) ruleBreak = true;
+    }
     const evadeMessage = await crawler.rollEvade({
       targetDC, attackTotal, attackerName, floor, isArea, attackMessageId, appliedBefore,
       ...(ruleBreak ? { ruleBreak } : {}),
+      actionBlockChecked: true,
       ...(kind === 'free' ? { freeEvade: true } : {}),
+      ...(covered ? { evadeActionSpent: true } : {}),
       ...(rollContext ? { rollContext } : {})
     });
     // On a declared mob attack the Evade spends the crawler's Interrupt Action and lands on the declaration.

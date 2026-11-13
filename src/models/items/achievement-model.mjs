@@ -8,9 +8,9 @@ export class AchievementDataModel extends BaseItemDataModel {
     const fields = globalThis.foundry.data.fields;
     return {
       ...super.defineSchema(),
-      quote: new fields.HTMLField({ initial: '' }),
+      quote: new fields.StringField({ initial: '' }),
       reward: new fields.StringField({ initial: '' }),
-      rewardContents: new fields.HTMLField({ initial: '' }),
+      rewardContents: new fields.StringField({ initial: '' }),
       category: new fields.StringField({ initial: '' }),
       tier: new fields.StringField({ initial: 'bronze' }),
       floor: new fields.StringField({ initial: '1st Floor' }),

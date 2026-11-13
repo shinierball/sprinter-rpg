@@ -38,8 +38,8 @@ export const COG_MERCENARIES = [
         ownerId: "",
         housedSpaceId: "",
         housingStatus: "available",
-        special: "<p>Unshakable Bulwark: Taunts enemies and interposes shield to absorb incoming attacks meant for squishy crawlers.</p>",
-        notes: "<p>A hardened Meadow Lark veteran who survived the early floor collapse. Goran charges directly into monster ambushes with a heavy iron pick and fortified tower shield.</p>",
+        special: "Unshakable Bulwark: Taunts enemies and interposes shield to absorb incoming attacks meant for squishy crawlers.",
+        notes: "A hardened Meadow Lark veteran who survived the early floor collapse. Goran charges directly into monster ambushes with a heavy iron pick and fortified tower shield.",
         floor: "1st Floor"
       },
       gearSlots: {
@@ -60,11 +60,9 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
-          weaponCategory: "Edge",
-          weaponType: "axe_pick",
-          damage: "1d8",
-          damageType: "Piercing",
-          tags: ["kind.gear", "element.piercing", "role.tank"]
+          associatedSkills: ["axe"],
+          baseDamage: { dice: "1d8", damageType: "Piercing" },
+          tags: ["kind.gear", "element.piercing", "role.tank", "weapon.axe", "weaponClass.melee"]
         }
       },
       {
@@ -127,8 +125,8 @@ export const COG_MERCENARIES = [
         ownerId: "",
         housedSpaceId: "",
         housingStatus: "available",
-        special: "<p>Arcane Bombardment: Unloads devastating explosive magic upon clustered monster hordes.</p>",
-        notes: "<p>An eccentric Elven spellcaster who delights in burning dungeon mobs to ashes. Keeps his distance while slinging fire and lightning.</p>",
+        special: "Arcane Bombardment: Unloads devastating explosive magic upon clustered monster hordes.",
+        notes: "An eccentric Elven spellcaster who delights in burning dungeon mobs to ashes. Keeps his distance while slinging fire and lightning.",
         floor: "1st Floor"
       },
       gearSlots: {
@@ -147,11 +145,10 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
+          associatedSkills: ["quarterstaff"],
           wieldMode: "two_handed",
-          weaponCategory: "Bashing",
-          damage: "1d6",
-          damageType: "Bludgeoning",
-          tags: ["kind.gear", "archetype.mage"]
+          baseDamage: { dice: "1d6", damageType: "Bludgeoning" },
+          tags: ["kind.gear", "archetype.mage", "weapon.quarterstaff", "weaponClass.melee"]
         }
       },
       {
@@ -213,8 +210,8 @@ export const COG_MERCENARIES = [
         ownerId: "",
         housedSpaceId: "",
         housingStatus: "available",
-        special: "<p>Radiant Mending: Rapidly restores health bars and purges acid, bleed, and poison debuffs.</p>",
-        notes: "<p>A devoted field medic dedicated to keeping crawler parties alive through grueling dungeon descents.</p>",
+        special: "Radiant Mending: Rapidly restores health bars and purges acid, bleed, and poison debuffs.",
+        notes: "A devoted field medic dedicated to keeping crawler parties alive through grueling dungeon descents.",
         floor: "1st Floor"
       },
       gearSlots: {
@@ -233,10 +230,9 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
-          weaponCategory: "Bashing",
-          damage: "1d8",
-          damageType: "Bludgeoning",
-          tags: ["kind.gear", "element.bludgeoning"]
+          associatedSkills: ["club"],
+          baseDamage: { dice: "1d8", damageType: "Bludgeoning" },
+          tags: ["kind.gear", "element.bludgeoning", "weapon.club", "weaponClass.melee"]
         }
       },
       {
@@ -295,8 +291,8 @@ export const COG_MERCENARIES = [
         ownerId: "",
         housedSpaceId: "",
         housingStatus: "available",
-        special: "<p>Trap Sense & Ambush: Spots hidden floor traps, bypasses locks, and backstabs unsuspecting foes.</p>",
-        notes: "<p>A cunning goblin scout who knows dungeon architecture like the back of his clawed hand.</p>",
+        special: "Trap Sense & Ambush: Spots hidden floor traps, bypasses locks, and backstabs unsuspecting foes.",
+        notes: "A cunning goblin scout who knows dungeon architecture like the back of his clawed hand.",
         floor: "1st Floor"
       },
       gearSlots: {
@@ -315,10 +311,9 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
-          weaponCategory: "Edge",
-          damage: "1d6",
-          damageType: "Piercing",
-          tags: ["kind.gear", "element.piercing", "role.scout"]
+          associatedSkills: ["dagger"],
+          baseDamage: { dice: "1d6", damageType: "Piercing" },
+          tags: ["kind.gear", "element.piercing", "role.scout", "weapon.dagger", "weaponClass.melee"]
         }
       },
       {
@@ -375,8 +370,8 @@ export const COG_MERCENARIES = [
         ownerId: "",
         housedSpaceId: "",
         housingStatus: "available",
-        special: "<p>Blood Frenzy: Gains bonus damage dice when wounded, swinging greataxes with terrifying ferocity.</p>",
-        notes: "<p>A colossal Orc warrior who revels in the chaos of dungeon combat. Does not negotiate; only smashes.</p>",
+        special: "Blood Frenzy: Gains bonus damage dice when wounded, swinging greataxes with terrifying ferocity.",
+        notes: "A colossal Orc warrior who revels in the chaos of dungeon combat. Does not negotiate; only smashes.",
         floor: "1st Floor"
       },
       gearSlots: {
@@ -395,11 +390,10 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
+          associatedSkills: ["axe"],
           wieldMode: "two_handed",
-          weaponCategory: "Edge",
-          damage: "2d8",
-          damageType: "Slashing",
-          tags: ["kind.gear", "element.slashing", "role.dps"]
+          baseDamage: { dice: "2d8", damageType: "Slashing" },
+          tags: ["kind.gear", "element.slashing", "role.dps", "weapon.axe", "weaponClass.melee"]
         }
       },
       {
@@ -448,8 +442,8 @@ export const COG_MERCENARIES = [
         ownerId: "",
         housedSpaceId: "",
         housingStatus: "available",
-        special: "<p>Pinpoint Accuracy: Can shoot weak spots on heavily armored dungeon monsters from extreme range.</p>",
-        notes: "<p>A quiet marksman who never wastes an arrow. Seraphina can pick off ranged mob leaders before they sound alarms.</p>",
+        special: "Pinpoint Accuracy: Can shoot weak spots on heavily armored dungeon monsters from extreme range.",
+        notes: "A quiet marksman who never wastes an arrow. Seraphina can pick off ranged mob leaders before they sound alarms.",
         floor: "1st Floor"
       },
       gearSlots: {
@@ -468,11 +462,10 @@ export const COG_MERCENARIES = [
           slot: "hands",
           equipped: true,
           isWeapon: true,
+          associatedSkills: ["bow"],
           wieldMode: "two_handed",
-          weaponCategory: "Ranged",
-          damage: "1d10",
-          damageType: "Piercing",
-          tags: ["kind.gear", "element.piercing", "role.dps"]
+          baseDamage: { dice: "1d10", damageType: "Piercing" },
+          tags: ["kind.gear", "element.piercing", "role.dps", "weapon.bow", "weaponClass.ranged"]
         }
       },
       {

@@ -155,6 +155,12 @@ export function outcomeEnchantments(out) {
   return (Array.isArray(out?.enchantments) ? out.enchantments : []).filter(plain).map(sanitizeEnchantmentTemplate);
 }
 
+/** Who an outcome row acts on: the Target select of the loot and gear sheets (`templates/items/parts/loot.hbs`, `gear.hbs`). */
+export const OUTCOME_TARGET_TYPES = Object.freeze(['self', 'closest_mob', 'target']);
+
+/** How a used item runs its outcome rows: every one, or one picked by weight (the Execution Mode select of the loot and gear sheets). */
+export const OUTCOME_EXECUTION_MODES = Object.freeze(['all', 'random']);
+
 /** The resource a restore outcome refills (the only pool the executor restores today). */
 export const RESTORE_RESOURCES = Object.freeze([{ value: 'mana', label: 'Mana' }]);
 

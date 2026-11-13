@@ -24,6 +24,7 @@
               </optgroup>
             {{/each}}
           </select>
+          {{> "systems/sprinter-rpg/templates/shared/requirement-badges.hbs" rows=currentRequirements.race}}
         </div>
         <div class="cog-field-group flex-2">
           <span class="cog-field-label">Class / Archetype</span>
@@ -91,7 +92,7 @@
           <span class="cog-field-label">Safe Room / Barracks</span>
           <div style="display: flex; align-items: center; gap: 6px; height: 26px;">
             {{#if housedSpace}}
-              <span class="cog-text-magic" style="font-size: 11px; font-weight: bold;"><i class="fa-solid fa-bed"></i> Housed in {{housedSpace.name}} (Tier {{housedSpace.tier}})</span>
+              <span class="cog-text-magic" style="font-size: 11px; font-weight: bold;"><i class="fa-solid fa-bed"></i> Housed in {{housedSpace.name}} (Rank {{housedSpace.rank}} &middot; {{housedSpace.typeLabel}})</span>
             {{else}}
               <span class="cog-text-secondary" style="font-style: italic; font-size: 11px;"><i class="fa-solid fa-campground"></i> Field Deployed / Unhoused</span>
             {{/if}}

@@ -2,8 +2,9 @@
  * GM-triggered batch Skill Advancement Checks and Level awards, shared by the Session Hub and the Grind app.
  * Nothing here runs automatically. The 2-hour check rolls marked skills at Rank 4 or lower (plus the active
  * session's untrained attempts as Rank 0 checks); the End of floor check rolls marked skills at Rank 5 or
- * higher. Each run posts one chat card and clears only the marks it rolled. Capped and `canGainRanks: false`
- * skills are skipped without a roll or a prompt: their marks clear and the card lists them.
+ * higher. Each run posts one chat card and clears only the marks it rolled. Capped skills are skipped without a roll or a prompt.
+ * A crawler's marked skills whose use route is closed at their Rank are asked about once, as one Rule Break: confirmed they
+ * roll, declined they are skipped like a capped skill. Skipped skills' marks clear and the card lists them.
  */
 import { SYSTEM_ID } from '../constants.mjs';
 import { COGSessionEngine } from '../documents/session/session-engine.mjs';
@@ -12,7 +13,12 @@ import { isPassiveSkill } from '../utils/tag/tag-mechanics.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../utils/tag/tag-behaviour.mjs';
 import { resolveFloorRows } from '../utils/floor/floor-limited-rows.mjs';
 import { getRankCap } from '../utils/skill/rank-cap.mjs';
-import { selectBatchSkills, evaluateAdvancement } from '../utils/skill/skill-advancement.mjs';
+import { ADVANCEMENT_ROUTES, routeLimit } from '../utils/skill/advancement-routes.mjs';
+import { confirmRouteGains } from '../documents/actor/advancement-gates.mjs';
+import { selectBatchSkills, evaluateAdvancement, untrainedTrainingAllowance, UNTRAINED_SKILLS_PER_WINDOW } from '../utils/skill/skill-advancement.mjs';
+import { effectiveFloor, raceClassUnlockFloor } from '../utils/character/race-class-floor.mjs';
+import { registerUserQuery, askUser } from '../utils/gm-relay.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 import { buildAdvancementBatchCard, buildLevelAwardCard } from '../chat/advancement-card.mjs';
 import { getLevelAwardPresets, levelsForPreset } from '../data/level-awards.mjs';
 
@@ -27,7 +33,7 @@ const describe = (actor, item) => ({
   rank: Number(item.system?.rank) || 0,
   checked: Boolean(item.system?.checked),
   passive: isPassiveSkill(item),
-  canGainRanks: item.system?.canGainRanks !== false,
+  limit: routeLimit(item, ADVANCEMENT_ROUTES.use),
   cap: getRankCap(actor, item)
 });
 
@@ -41,6 +47,71 @@ function activeSession() {
 /** The ledger's untrained attempts for a crawler as `[skillIdentifier, count]` rows (keyed by identifier). */
 const untrainedOf = (session, actor) => Object.entries(session?.crawlers?.[actor.id]?.untrainedAttempted ?? {})
   .filter(([ident]) => String(ident).trim());
+
+/** How long the GM's batch waits for the owning player's pick before the GM picks instead (5 minutes). */
+const UNTRAINED_PICK_TIMEOUT_MS = 5 * 60 * 1000;
+
+/** The user-query type the GM sends to the owning player's client. */
+const UNTRAINED_PICK_QUERY = 'untrainedSkillPick';
+
+/**
+ * The one picker dialog, shown on the GM's client or the owning player's: which attempted Skill gains Rank 1.
+ * With no dialog available (headless runs) the first attempt is taken.
+ * @param {string} actorName
+ * @param {Array<{ident: string, name: string}>} attempts
+ * @returns {Promise<string|null|undefined>} the chosen identifier; null for "None"; undefined when closed unanswered
+ */
+async function askUntrainedPick(actorName, attempts) {
+  const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
+  if (typeof DialogV2?.wait !== 'function') return attempts[0]?.ident ?? null;
+  const answer = await DialogV2.wait({
+    window: { title: `${actorName}: untrained Skill` },
+    content: `<p>${escapeAttr(actorName)} attempted these Skills untrained. Pick the one that gains Rank 1; the rest are erased.</p>`,
+    modal: true,
+    buttons: [
+      ...attempts.map(a => ({ action: a.ident, label: a.name, callback: () => a.ident })),
+      { action: 'none', label: 'None', callback: () => 'none' }
+    ],
+    rejectClose: false
+  });
+  if (answer === 'none') return null;
+  return attempts.some(a => a.ident === answer) ? answer : undefined;
+}
+
+// The owning player's client answers the GM's question with the same dialog.
+// Wire answer: an identifier, 'none' for None, or 'closed' (null/undefined do not survive the socket reliably).
+registerUserQuery(UNTRAINED_PICK_QUERY, async ({ actorName, attempts }) => {
+  const choice = await askUntrainedPick(String(actorName ?? ''), Array.isArray(attempts) ? attempts : []);
+  return choice === undefined ? 'closed' : choice ?? 'none';
+});
+
+/** The connected player who owns the crawler (not the GM running the batch), or null. */
+function connectedOwner(actor) {
+  const me = globalThis.game?.user;
+  const users = Array.from(globalThis.game?.users?.values?.() ?? globalThis.game?.users ?? []);
+  return users
+    .filter(u => u && u.active && !u.isGM && u.id !== me?.id && actor.testUserPermission?.(u, 'OWNER'))
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))[0] ?? null;
+}
+
+/**
+ * Which Skill a crawler gains from its untrained attempts (one per session; "none" is allowed). The owning player is
+ * asked first when connected; the GM's own dialog is the fallback when no owner is connected, the owner closes the
+ * dialog, or the owner does not answer within the time limit.
+ * @param {Actor} actor
+ * @param {Array<{ident: string, name: string}>} attempts
+ * @param {{pickTimeoutMs?: number}} [options]
+ * @returns {Promise<string|null>} the chosen identifier, or null for none
+ */
+async function pickUntrainedSkill(actor, attempts, options = {}) {
+  const owner = connectedOwner(actor);
+  if (owner) {
+    const reply = await askUser(owner.id, UNTRAINED_PICK_QUERY, { actorName: actor.name, attempts }, { timeoutMs: options.pickTimeoutMs ?? UNTRAINED_PICK_TIMEOUT_MS });
+    if (reply.ok && reply.result === 'none') return null;
+    if (reply.ok && attempts.some(a => a.ident === reply.result)) return reply.result;
+  }
+  return (await askUntrainedPick(actor.name, attempts)) ?? null;
+}
 
 /**
  * How many checks each batch would roll for these crawlers (the Hub preview).
@@ -59,10 +130,13 @@ export function previewBatch(actors) {
     // skill marked at Rank 0 (it is in the 2-hour count above) or owns it trained (the run just drops the entry).
     const inTwoHour = new Set(twoHour.map(sk => sk.id));
     const ownedByIdentifier = new Map(skillsOf(actor).map(i => [String(i.system?.identifier ?? '').trim(), i]));
-    out.untrained += untrainedOf(session, actor).filter(([ident]) => {
+    // At most one Skill per crawler per session is gained this way, and none from the Third Floor.
+    const open = untrainedOf(session, actor).filter(([ident]) => {
       const existing = ownedByIdentifier.get(String(ident).trim());
       return !existing || ((Number(existing.system?.rank) || 0) === 0 && !inTwoHour.has(existing.id));
     }).length;
+    const floorOpen = untrainedTrainingAllowance({ floor: effectiveFloor(actor), unlockFloor: raceClassUnlockFloor() }).reason !== 'floor';
+    if (open && floorOpen) out.untrained += UNTRAINED_SKILLS_PER_WINDOW;
   }
   return out;
 }
@@ -87,14 +161,16 @@ export async function runBatchAdvancement(actors, mode, options = {}) {
 
     const described = skillsOf(actor).map(i => describe(actor, i));
     const batch = selectBatchSkills(described, mode);
+    // One question per crawler for every marked skill held back by its use limit; the confirmed ones roll below as Rule Breaks
+    const confirmed = await confirmRouteGains(actor, batch.filter(s => s.limit !== null && s.rank >= s.limit && s.rank < s.cap).map(s => s.item), ADVANCEMENT_ROUTES.use, { options });
     // End of floor: settle the once-per-floor rows (which skill gets each) before any roll
     const floor = mode === 'floor'
-      ? await resolveFloorRows(actor, batch.filter(s => s.canGainRanks && s.rank < s.cap).map(s => s.item), options)
+      ? await resolveFloorRows(actor, batch.filter(s => (s.limit === null || s.rank < s.limit || confirmed.has(s.id)) && s.rank < s.cap).map(s => s.item), options)
       : null;
     for (const skill of batch) {
       const item = skill.item;
-      const gate = evaluateAdvancement({ rank: skill.rank, rollTotal: Number.POSITIVE_INFINITY, cap: skill.cap, canGainRanks: skill.canGainRanks });
-      if (gate.outcome === 'capped' || gate.outcome === 'locked') {
+      const gate = evaluateAdvancement({ rank: skill.rank, rollTotal: Number.POSITIVE_INFINITY, cap: skill.cap, limit: confirmed.has(skill.id) ? null : skill.limit });
+      if (gate.outcome === 'capped' || gate.outcome === 'limited') {
         results.push({ ...base, skillId: skill.id, skillName: skill.name, previousRank: skill.rank, newRank: skill.rank, rollTotal: null, target: gate.target, outcome: gate.outcome, ruleBreak: false });
       } else {
         const rollResult = typeof options.rollResult === 'function' ? options.rollResult(item) : options.rollResult;
@@ -104,7 +180,8 @@ export async function runBatchAdvancement(actors, mode, options = {}) {
             ...(floor ? { floorEnd: true, floorRows: floor.rows.get(skill.id) ?? new Set(), floorRuleBreak: floor.ruleBreaks.get(skill.id) === true } : {})
           },
           source: 'batch',
-          options
+          options,
+          routeChecked: confirmed.has(skill.id)
         });
         results.push({
           ...base,
@@ -124,25 +201,32 @@ export async function runBatchAdvancement(actors, mode, options = {}) {
       if (item.system?.checked) await item.update({ 'system.checked': false });
     }
 
+    // Untrained attempts (Rules for Survival, Checks Without Skill Ranks): one Skill per crawler per session on the
+    // Tutorial Floors, picked by the GM; none from the Third Floor. Whatever is left is erased: they cannot be saved.
+    const attempts = [];
     for (const [rawIdent] of untrainedOf(session, actor)) {
       const ident = String(rawIdent).trim();
-      const displayName = session.crawlers[actor.id].untrainedNames?.[rawIdent] || ident;
       const existing = skillsOf(actor).find(i => String(i.system?.identifier ?? '').trim() === ident);
-      if (existing && (Number(existing.system?.rank) || 0) > 0) {
-        // Already trained since the attempt; nothing to roll, the entry just goes away.
-        clearedLedger.push([actor.id, rawIdent]);
-        continue;
+      // Already trained since the attempt: nothing to learn, the entry just goes away.
+      if (!existing || (Number(existing.system?.rank) || 0) === 0) {
+        attempts.push({ ident, name: session.crawlers[actor.id].untrainedNames?.[rawIdent] || existing?.name || ident });
       }
-      // A Rank 0 check always succeeds.
-      if (existing) {
-        const gain = await actor.applyRankGain(existing, { source: 'untrained' });
-        if (gain.gained) results.push({ ...base, skillId: existing.id, skillName: existing.name, previousRank: 0, newRank: gain.newRank, rollTotal: null, target: 0, outcome: 'new-skill', ruleBreak: gain.ruleBreak });
-      } else {
-        const made = await COGSessionEngine.createRankOneSkill(actor, displayName, ident);
-        results.push({ ...base, skillId: null, skillName: made.skillName, previousRank: 0, newRank: 1, rollTotal: null, target: 0, outcome: 'new-skill', ruleBreak: false });
-      }
-      clearedLedger.push([actor.id, rawIdent]);
     }
+    if (attempts.length) {
+      const allowance = untrainedTrainingAllowance({ floor: effectiveFloor(actor), unlockFloor: raceClassUnlockFloor(), trained: 0 });
+      if (allowance.reason === 'floor') {
+        results.push({ ...base, skillId: null, skillName: attempts.map(a => a.name).join(', '), previousRank: 0, newRank: 0, rollTotal: null, target: 0, outcome: 'untrained-none', ruleBreak: false });
+      } else {
+        const picker = typeof options.pickUntrained === 'function' ? options.pickUntrained : pickUntrainedSkill;
+        const choice = await picker(actor, attempts, options);
+        const picked = attempts.find(a => a.ident === choice);
+        if (picked) {
+          const res = await COGSessionEngine.trainUntrainedSkill(actor.id, picked.ident, picked.name, { ...options, sessionId: session.id });
+          if (res.success) results.push({ ...base, skillId: res.skillId ?? null, skillName: res.skillName, previousRank: res.previousRank, newRank: res.newRank, rollTotal: null, target: 0, outcome: 'new-skill', ruleBreak: res.ruleBreak });
+        }
+      }
+    }
+    for (const [rawIdent] of untrainedOf(session, actor)) clearedLedger.push([actor.id, rawIdent]);
   }
 
   if (clearedLedger.length && session) {

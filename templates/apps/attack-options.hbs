@@ -7,6 +7,17 @@
     {{#each hints}}<p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{this}}</p>{{/each}}
   </header>
 
+  {{#if showSkills}}
+  <fieldset class="cog-attack-options-section cog-attack-skill">
+    <legend>{{text.skill}}</legend>
+    <select name="skill" class="cog-field-input" data-default="{{defaultSkill}}">
+      {{#each skills}}<option value="{{identifier}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+    </select>
+    <small class="cog-situation-source">{{text.skillHint}}</small>
+    <p class="cog-rule-hint cog-skill-changed-hint" hidden><i class="fa-solid fa-circle-info"></i> {{text.skillChanged}}</p>
+  </fieldset>
+  {{/if}}
+
   {{#if showEffects}}
   <fieldset class="cog-attack-options-section cog-attack-effects">
     <legend>{{text.damageEffect}}</legend>

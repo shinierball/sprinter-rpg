@@ -31,7 +31,8 @@ const FOAM_FINGER = {
   system: {
     identifier: 'commemorative-foam-finger',
     description: '<p>A novelty hand, one size, number one. It commemorates an event the packaging does not name. It does nothing in a fight except make the wearer easy to find.</p>',
-    slot: 'hands',
+    slot: 'accessory',
+    isWeapon: false,
     tags: [SOUVENIR]
   }
 };
@@ -148,7 +149,7 @@ const achievement = (n, name, identifier, quote, tier, category, reward, favor, 
   _id: id(n),
   name,
   img: ACHIEVEMENT_IMG,
-  system: { identifier, description: `<p>${quote}</p>`, quote: `<p>${quote}</p>`, category, tier, reward, favor, xp, rewardBoxes }
+  system: { identifier, description: `<p>${quote}</p>`, quote: `${quote}`, category, tier, reward, favor, xp, rewardBoxes }
 });
 
 /** A reward row that points at a template box. */
@@ -187,11 +188,11 @@ export const SPECS = Object.freeze([
     img: 'icons/svg/sword.svg',
     system: {
       identifier: 'regulation-prize-baton',
-      description: '<p>Approved for use on contestants and, in emergencies, hosts.</p>',
+      description: '<p>Approved for use on contestants and, in emergencies, hosts. Its damage is its Skill\'s Base Damage (Club Training): 1d6 + Strength Bludgeoning.</p>',
       slot: 'hands',
-      tags: [SOUVENIR],
+      tags: [SOUVENIR, 'weapon.club', 'weaponClass.melee'],
       isWeapon: true,
-      damageParts: [{ dice: '1d4', stat: '', type: 'Bludgeoning', value: 0 }]
+      associatedSkills: ['club']
     }
   },
   {
@@ -201,8 +202,9 @@ export const SPECS = Object.freeze([
     img: 'icons/svg/shield.svg',
     system: {
       identifier: 'contestant-windbreaker',
-      description: "<p>Your name is on the back. Somebody else's name is on the tag.</p>",
+      description: "<p>Your name is on the back. Somebody else's name is on the tag. +1 DR.</p>",
       slot: 'torso',
+      drBonus: 1,
       tags: [SOUVENIR]
     }
   },
@@ -226,7 +228,7 @@ export const SPECS = Object.freeze([
     system: {
       identifier: 'sash-of-sustained-applause',
       description: '<p>A satin sash that adds two points of Strength, plus a tenth more on top. In fixed mode the tenth is worked out once, on the day you put the sash in your pack, and printed on the tag.</p>',
-      slot: 'torso',
+      slot: 'accessory',
       tags: [SOUVENIR],
       grants: [{ kind: 'stat', stat: 'str', value: 2, percent: 10 }]
     }

@@ -12,7 +12,9 @@ import { COGGrindApp } from '../apps/grind-app.mjs';
 import { COGContestTrackerApp } from '../apps/contest-tracker.mjs';
 import { COGTagManager } from '../apps/tag-manager.mjs';
 import { COGMobCreatorApp } from '../apps/mob-creator/mob-creator-app.mjs';
-import { openGlobalItemCreatorDialog } from '../apps/item-creator-dialog.mjs';
+import { COGItemSetupApp } from '../apps/item-setup-app.mjs';
+import { canCreateItems } from '../apps/item-create.mjs';
+import { COGWeaponBuilderApp } from '../apps/weapon-builder/weapon-builder-app.mjs';
 import { isMarkerActor } from '../utils/area/marker.mjs';
 
 const CREATE_BUTTONS = '.create-document, .create-entry, [data-action="createEntry"], [data-action="createDocument"]';
@@ -49,7 +51,7 @@ export function injectItemDirectoryButtons(app, html) {
   for (const createBtn of root.querySelectorAll(CREATE_BUTTONS)) {
     if (createBtn.dataset.cogItemBuilder) continue;
     createBtn.dataset.cogItemBuilder = 'true';
-    onClick(createBtn, () => openGlobalItemCreatorDialog(), { stop: true });
+    onClick(createBtn, () => COGItemSetupApp.open(), { stop: true });
   }
 
   if (root.querySelector('.cog-open-skill-manager-btn')) return;
@@ -76,8 +78,13 @@ export function injectItemDirectoryButtons(app, html) {
   const tagBtn = subButton('cog-open-tag-manager-btn cog-bg-info-tint cog-text-info', 'fa-solid fa-tags', 'Tag Taxonomy');
   onClick(tagBtn, () => COGTagManager.open());
 
+  const weaponLabel = globalThis.game?.i18n?.localize?.('COG.WeaponBuilder.Entry.Directory') ?? 'Advanced weapon';
+  const weaponBtn = subButton('cog-open-weapon-builder-btn cog-bg-header-fill cog-text-on-fill cog-dark', 'fa-solid fa-crosshairs', weaponLabel);
+  onClick(weaponBtn, () => COGWeaponBuilderApp.open());
+
   const subBtnRow = createElement(root, '<div class="cog-sidebar-btn-row"></div>');
   subBtnRow.append(classBtn, raceBtn, tagBtn);
+  if (canCreateItems()) subBtnRow.append(weaponBtn);
 
   const btnGroup = createElement(root, '<div class="cog-item-directory-actions"></div>');
   btnGroup.append(btn, subBtnRow);

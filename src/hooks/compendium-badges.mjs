@@ -8,10 +8,10 @@
  */
 import { sourceBadge, readAuthorship } from '../utils/content-source.mjs';
 import { contentRegistry } from '../content/registry.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const ENTRY = '[data-entry-id], [data-document-id]';
 const CHIP = '.cog-compendium-source-chip';
-const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /** Pack index entry for an id, or null. */
 function indexEntry(collection, id) {
@@ -53,8 +53,8 @@ export function decorateEntry(entry, collection) {
     chip.dataset.cogSource = key;
     chip.dataset.tooltip = badge.tooltip;
     chip.style.setProperty('--cog-fg-dyn', `var(${badge.color})`);
-    chip.innerHTML = `<i class="${esc(badge.icon)}"></i> ${esc(badge.symbol)}`
-      + (badge.authorship ? `<i class="cog-authorship-glyph ${esc(badge.authorship.icon)}" data-authorship="${esc(badge.authorship.id)}"></i>` : '');
+    chip.innerHTML = `<i class="${escapeAttr(badge.icon)}"></i> ${escapeAttr(badge.symbol)}`
+      + (badge.authorship ? `<i class="cog-authorship-glyph ${escapeAttr(badge.authorship.icon)}" data-authorship="${escapeAttr(badge.authorship.id)}"></i>` : '');
     entry.append(chip);
   } catch (err) {
     console.warn('Sprinter RPG | compendium source badge skipped an entry', err);

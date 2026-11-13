@@ -23,8 +23,9 @@ import { findAuraEffects, removeAuraItems } from './aura-relay.mjs';
 import { findHolderToken, deleteAreaGroup } from './area-relay.mjs';
 import { debuffHasConditionRef } from './actor-conditions.mjs';
 import { conditionLabel } from './condition-data.mjs';
+import { EFFECT_ITEM_TYPES } from '../../utils/document-types.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const areaFlags = (region) => region?.flags?.[SYSTEM_ID]?.area ?? null;
 const resolve = (uuid) => (uuid && typeof uuid === 'string' ? globalThis.fromUuidSync?.(uuid) ?? null : null);
 
@@ -81,7 +82,7 @@ async function clearStaleEffects(scene, sourceItemUuid, exceptRegionId = '', { p
   for (const actor of sceneActors(scene)) {
     if (inside.has(actor.uuid || actor.id)) continue;
     if (!findAuraEffects(actor, sourceItemUuid).itemIds.length) continue;
-    if (await removeAuraItems(actor, { uuid: sourceItemUuid }, { types: ['debuff', 'buff'], keepTimed: true })) {
+    if (await removeAuraItems(actor, { uuid: sourceItemUuid }, { types: EFFECT_ITEM_TYPES, keepTimed: true })) {
       actor.prepareData?.();
       removed.push({ actorUuid: actor.uuid, name: actor.name });
     }
@@ -192,13 +193,13 @@ async function postZonePulseCard(reports, round) {
   for (const r of reports) {
     if (r.pulse) rows.push(...pulseRows({ item: { name: r.itemName, system: r.itemSystem }, result: { report: r.pulse } }));
     for (const c of r.conditions) {
-      rows.push(`<div class="cog-bg-danger-tint"><strong>${esc(r.itemName)}</strong> &rarr; ${esc(c.name)}: ${esc(combatText('COG.ZonePulse.Condition', { condition: conditionLabel(c.ref) }))}</div>`);
+      rows.push(`<div class="cog-bg-danger-tint"><strong>${escapeAttr(r.itemName)}</strong> &rarr; ${escapeAttr(c.name)}: ${escapeAttr(combatText('COG.ZonePulse.Condition', { condition: conditionLabel(c.ref) }))}</div>`);
     }
-    if (r.expired) rows.push(`<div class="cog-text-muted">${esc(combatText('COG.ZonePulse.Ended', { zone: r.itemName }))}</div>`);
+    if (r.expired) rows.push(`<div class="cog-text-muted">${escapeAttr(combatText('COG.ZonePulse.Ended', { zone: r.itemName }))}</div>`);
   }
   if (!rows.length || typeof globalThis.ChatMessage?.create !== 'function') return null;
   const content = `<div class="cog-chat-card cog-round-end-card cog-zone-pulse-card">
-    <header class="cog-card-header"><h3><i class="fa-solid fa-biohazard"></i> ${esc(combatText('COG.ZonePulse.Title', { round }))}</h3></header>
+    <header class="cog-card-header"><h3><i class="fa-solid fa-biohazard"></i> ${escapeAttr(combatText('COG.ZonePulse.Title', { round }))}</h3></header>
     <div class="cog-card-body">${rows.join('')}</div>
   </div>`;
   return globalThis.ChatMessage.create({ content, speaker: { alias: 'Combat Tracker' } });

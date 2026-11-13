@@ -2,6 +2,8 @@
  * Rank-break schema fields and unified cumulative resolver for Sprinter RPG.
  */
 
+import { isRankedItem } from '../document-types.mjs';
+
 /**
  * Formats one rank-break entry of a skill/spell for display in a chat card.
  * Falls back to the legacy upgrade text only when the structured break yields nothing.
@@ -318,7 +320,7 @@ export function resolveReachedRankBreaks(itemOrSystem, currentRank) {
  */
 export function rankBreakRollRows(item) {
   const out = { checkModifiers: [], attackModifiers: [] };
-  if (!item || !['skill', 'spell'].includes(item.type) || !item.system?.rankBreaks) return out;
+  if (!item || !isRankedItem(item) || !item.system?.rankBreaks) return out;
   const reached = resolveReachedRankBreaks(item, getItemRank(item));
   if (reached.checkBonus) out.checkModifiers.push({ label: 'Rank Break Check', value: reached.checkBonus });
   if (reached.toHitBonus) out.attackModifiers.push({ label: 'Rank Break To-Hit', value: reached.toHitBonus });

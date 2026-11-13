@@ -1,0 +1,47 @@
+{{!-- Deity block: one row per embedded deity. Buttons have no name, they carry data-action (7.44e) --}}
+<div class="cog-stat-block cog-deity-block">
+  <div class="cog-banner-header cog-bg-warning-fill cog-deity-block-header">
+    <span><i class="fa-solid fa-sun"></i> {{localize 'COG.Deity.Sheet.Block.Title'}}</span>
+    {{#if editable}}
+      <a class="cog-text-on-fill" data-action="addDeity" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Add'}}"><i class="fa-solid fa-plus"></i></a>
+    {{/if}}
+  </div>
+  <div class="cog-block-content cog-deity-block-content">
+    {{#each deityRows as |row|}}
+      <div class="cog-bg-surface cog-deity-row" data-item-id="{{row.id}}">
+        <img class="cog-deity-img cog-bg-icon-box" src="{{row.img}}" alt="" />
+        <div class="cog-deity-main">
+          <span class="cog-deity-name">{{row.name}}</span>
+          {{#if row.title}}<span class="cog-deity-title cog-text-muted">{{row.title}}</span>{{/if}}
+          <span class="cog-deity-badges">
+            {{#each row.badges as |badge|}}<span class="cog-badge cog-deity-badge">{{badge}}</span>{{/each}}
+            {{#if row.tierLabel}}<span class="cog-deity-tier">{{row.tierLabel}}</span>{{/if}}
+          </span>
+          {{#if row.devotionLine}}<span class="cog-deity-devotion cog-text-muted">{{row.devotionLine}}</span>{{/if}}
+        </div>
+        <div class="cog-deity-buttons">
+          {{#if row.canWorship}}<button type="button" data-action="worshipDeity" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Worship'}}"><i class="fa-solid fa-hands-praying"></i></button>{{/if}}
+          {{#if row.canLeave}}<button type="button" data-action="leaveDeity" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Leave'}}"><i class="fa-solid fa-person-walking-arrow-right"></i></button>{{/if}}
+          {{#if row.canEndPatron}}<button type="button" data-action="toggleDeityPatron" class="is-active" data-tooltip="{{localize 'COG.Deity.Sheet.Block.PatronToggle'}}"><i class="fa-solid fa-handshake"></i></button>{{/if}}
+          {{#if row.canPatron}}<button type="button" data-action="toggleDeityPatron" data-tooltip="{{localize 'COG.Deity.Sheet.Block.PatronToggle'}}"><i class="fa-solid fa-handshake"></i></button>{{/if}}
+          {{#if row.canSetTier}}
+            <button type="button" data-action="deityTierDown" {{#unless row.canTierDown}}disabled{{/unless}} data-tooltip="{{localize 'COG.Deity.Sheet.Block.TierDown'}}"><i class="fa-solid fa-angle-down"></i></button>
+            <button type="button" data-action="deityTierUp" {{#unless row.canTierUp}}disabled{{/unless}} data-tooltip="{{localize 'COG.Deity.Sheet.Block.TierUp'}}"><i class="fa-solid fa-angle-up"></i></button>
+          {{/if}}
+          {{!-- devotion buttons --}}
+          {{#if row.canOffer}}<button type="button" data-action="offerDeity" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Offer'}}"><i class="fa-solid fa-coins"></i></button>{{/if}}
+          {{#if row.canOffense}}<button type="button" data-action="deityOffense" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Offense'}}"><i class="fa-solid fa-triangle-exclamation"></i></button>{{/if}}
+          {{#if row.canPenance}}<button type="button" data-action="deityPenance" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Penance'}}"><i class="fa-solid fa-scale-balanced"></i></button>{{/if}}
+          {{!-- gift buttons --}}
+          {{#if row.canBoon}}<button type="button" data-action="deityBoon" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Boon'}}"><i class="fa-solid fa-gift"></i></button>{{/if}}
+          {{#if row.canSmite}}<button type="button" data-action="deitySmite" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Smite'}}"><i class="fa-solid fa-bolt"></i></button>{{/if}}
+          <a class="item-edit" data-action="editItem" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Edit'}}"><i class="fa-solid fa-edit"></i></a>
+          {{#if @root.editable}}<a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="{{localize 'COG.Deity.Sheet.Block.Delete'}}"><i class="fa-solid fa-trash"></i></a>{{/if}}
+        </div>
+      </div>
+    {{else}}
+      <p class="cog-text-muted cog-deity-empty">{{localize 'COG.Deity.Sheet.Block.Empty'}}</p>
+    {{/each}}
+    {{> "systems/sprinter-rpg/templates/actors/parts/patron-row.hbs"}}
+  </div>
+</div>

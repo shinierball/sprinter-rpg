@@ -12,6 +12,8 @@ import { ENGINE_SITUATIONS, identityTag } from '../../data/tag-vocabulary.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { queryReferences } from '../tag/tag-query.mjs';
 import { readCheckRecord, effectiveCheck } from './check-assists.mjs';
+import { WEAPON_CAPABLE_TYPES } from '../document-types.mjs';
+import { escapeAttr, jsonAttr } from '../escape-attr.mjs';
 
 export const AS_TRIGGER_TYPES = Object.freeze(['debuff', 'narrative']);
 /** Read cap: a stored array longer than this is truncated with one console warning. */
@@ -19,7 +21,7 @@ const MAX_AS_TRIGGERS = 8;
 /** Card truncation; the stored text is kept whole. */
 export const AS_TEXT_SHOWN = 120;
 /** Item types that carry `system.asTriggers`. */
-const AS_ITEM_TYPES = Object.freeze(['gear', 'attack']);
+const AS_ITEM_TYPES = WEAPON_CAPABLE_TYPES;
 /** Record kinds whose degree counts (D3): an attack or a spell attack. */
 const AS_RECORD_KINDS = Object.freeze(['attack', 'spell']);
 
@@ -189,8 +191,7 @@ export function asTriggerLines(triggers, { found = null } = {}) {
 export function asTriggersDataAttr(triggers) {
   const list = (Array.isArray(triggers) ? triggers : []).map(sanitizeAsTrigger).filter(Boolean);
   if (!list.length) return '';
-  const json = JSON.stringify(list).replaceAll('&', '&amp;').replaceAll("'", '&#39;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-  return ` data-as-triggers='${json}'`;
+  return ` data-as-triggers='${jsonAttr(list)}'`;
 }
 
 /** The triggers from a card's `data-as-triggers` value (JSON text), sanitised and capped; [] for anything unreadable. */
@@ -219,7 +220,6 @@ export function amazingCardText(key, data = {}) {
   return (CARD_TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
 }
 
-const escapeHtml = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 
 /** The source attack or spell card of a damage roll, from its message id; null when it is not in the log. */
 export function amazingSourceMessage(sourceMessageId) {
@@ -238,9 +238,9 @@ export function amazingPreviewHtml(message, { triggers = [] } = {}) {
   const targets = amazingTargetsOf(message);
   if (!targets.length) return '';
   const floor = floorOf(message) ?? 0;
-  const names = targets.map((t) => escapeHtml(t.name)).join(', ');
-  const lines = asTriggerLines(triggers).map((l) => `<li class="cog-per-target-row">${escapeHtml(l.text)}</li>`).join('');
-  return `<div class="cog-per-target-box cog-amazing-preview"><div class="cog-per-target-title">${escapeHtml(amazingCardText('COG.AmazingSuccess.Card.PreviewTitle', { floor }))}</div>`
+  const names = targets.map((t) => escapeAttr(t.name)).join(', ');
+  const lines = asTriggerLines(triggers).map((l) => `<li class="cog-per-target-row">${escapeAttr(l.text)}</li>`).join('');
+  return `<div class="cog-per-target-box cog-amazing-preview"><div class="cog-per-target-title">${escapeAttr(amazingCardText('COG.AmazingSuccess.Card.PreviewTitle', { floor }))}</div>`
     + `<ul class="cog-per-target-rows"><li class="cog-per-target-row">${names}</li>${lines}</ul></div>`;
 }
 
@@ -254,5 +254,5 @@ export function amazingSubActionHtml(message, floor) {
   const hasAmazing = amazingTargetsOf(message).length > 0;
   const mode = hasAmazing ? 'off' : 'force';
   const label = hasAmazing ? 'ApplyOff' : 'ApplyForce';
-  return `<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-amazing="${mode}" title="${escapeHtml(amazingCardText(`COG.AmazingSuccess.Card.${label}Title`))}">${escapeHtml(amazingCardText(`COG.AmazingSuccess.Card.${label}`, { floor }))}</button>`;
+  return `<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-amazing="${mode}" title="${escapeAttr(amazingCardText(`COG.AmazingSuccess.Card.${label}Title`))}">${escapeAttr(amazingCardText(`COG.AmazingSuccess.Card.${label}`, { floor }))}</button>`;
 }

@@ -1,0 +1,40 @@
+<div class="cog-sm-list-container">
+  {{#if patrons.length}}
+    <table class="cog-sm-table">
+      <tbody>
+        {{#each patrons as |patron|}}
+          <tr class="cog-sm-row {{#if patron.isKnown}}is-added{{/if}}" data-patron-id="{{patron.id}}">
+            <td>
+              <div class="cog-sm-name-cell">
+                <img src="{{patron.img}}" class="cog-sm-icon" />
+                <div class="cog-deity-picker-name">
+                  <span class="cog-sm-name">{{patron.name}}</span>
+                  {{#if patron.title}}<span class="cog-text-muted">{{patron.title}}</span>{{/if}}
+                </div>
+              </div>
+            </td>
+            <td>
+              {{#if patron.isDeity}}<span class="cog-badge">{{localize 'COG.Patron.Picker.Deity'}}</span>{{/if}}
+              {{#if patron.isKnown}}<span class="cog-badge cog-sm-on-sheet-badge">{{localize 'COG.Patron.Picker.Known'}}</span>{{/if}}
+              {{#if patron.noPatronage}}<span class="cog-badge">{{localize 'COG.Patron.Picker.NoPatronage'}}</span>{{/if}}
+              {{#if patron.isOffered}}<span class="cog-badge">{{localize 'COG.Patron.Picker.Offered'}}</span>{{/if}}
+            </td>
+            <td class="cog-deity-picker-actions">
+              {{#if ../isOffer}}
+                <button type="button" data-action="togglePatronOffer" data-patron-id="{{patron.id}}">
+                  <i class="fa-solid {{#if patron.isOffered}}fa-square-check{{else}}fa-square{{/if}}"></i> {{localize 'COG.Patron.Picker.Offer'}}
+                </button>
+              {{else}}
+                <button type="button" data-action="pickPatron" data-patron-id="{{patron.id}}" {{#if patron.isKnown}}disabled{{/if}}>
+                  <i class="fa-solid fa-user-plus"></i> {{localize 'COG.Patron.Picker.Pick'}}
+                </button>
+              {{/if}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="cog-text-muted">{{localize 'COG.Patron.Picker.Empty'}}</p>
+  {{/if}}
+</div>

@@ -12,6 +12,9 @@ import { SYSTEM_ID } from '../../constants.mjs';
 import { matchesTagQuery } from '../tag/tag-query.mjs';
 import { isEffectPaused, keptByWorkingGear } from './gear-suppression.mjs';
 import { transformationBody } from './debuff-force.mjs';
+import { worshipWithholds } from '../deity/worship-state.mjs';
+import { buffTagSet, suppressedByDebuff } from './debuff-suppresses.mjs';
+import { activationClosed } from './activation-window.mjs';
 
 const FLAG = 'dispels';
 
@@ -65,28 +68,30 @@ export function buffKeyOf(actor, buff) {
   return String(buff?.system?.identifier || buff?.identifier || id || '');
 }
 
-function buffTags(buff) {
-  if (buff?.allTags instanceof Set) return buff.allTags;
-  const tags = buff?.system?.tags ?? buff?.tags;
-  return new Set(asArray(tags));
-}
-
 /** A buff of a changed body (D16). `getActiveBuffs()` entries carry no flags, so the owned item is asked too. */
 function bodyBuff(actor, buff) {
   return transformationBody(buff) || transformationBody(actor?.items?.get(buff?.id));
 }
 
 /**
- * True when this Buff does not apply: a dispel in force on the actor suspends it, or the actor is in a zero zone, which
- * pauses every Buff (nothing is deleted; its clock keeps running and it applies again when the zone ends).
+ * True when this Buff does not apply: a dispel in force on the actor suspends it, a lapsed or Shunned deity bond withholds
+ * it (a tier, standing or boon gift of that god, pp. 163, 312), a debuff in force suppresses it (a smite, p. 313), or the actor is in a zero zone, which pauses every Buff
+ * (nothing is deleted; its clock keeps running and it applies again when the zone ends or the bond recovers). An
+ * activated buff whose window is closed does not apply either (it applies again when Use opens the window).
  * @param {object} actor
  * @param {object} buff a buff item, or a `getActiveBuffs()` entry
+ * @param {{ ignoreWindow?: boolean }} [opts] ignoreWindow: ask only about the other reasons (could a Use take effect?)
  * @returns {boolean}
  */
-export function isBuffSuppressed(actor, buff) {
+export function isBuffSuppressed(actor, buff, { ignoreWindow = false } = {}) {
   if (!buff) return false;
   if (isBuffDispelled(actor, buff)) return true;
-  return isEffectPaused(actor) && !keptByWorkingGear(actor, buff) && !bodyBuff(actor, buff);
+  if (bodyBuff(actor, buff)) return false;
+  if (!ignoreWindow && activationClosed(actor?.items?.get(buff.id) ?? buff)) return true;
+  if (worshipWithholds(actor, buff)) return true;
+  const paused = isEffectPaused(actor);
+  if (suppressedByDebuff(actor, buff, { paused })) return true;
+  return paused && !keptByWorkingGear(actor, buff);
 }
 
 /**
@@ -104,7 +109,7 @@ export function isBuffDispelled(actor, buff) {
   for (const entry of entries) {
     if (entry.count > 0 || entry.buffKeys.length) {
       if (key && entry.buffKeys.includes(key)) return true;
-    } else if (matchesTagQuery(buffTags(buff), entry.query)) {
+    } else if (matchesTagQuery(buffTagSet(buff), entry.query)) {
       return true;
     }
   }
@@ -141,7 +146,7 @@ export async function addDispelEntry(actor, spec = {}) {
     const working = typeof actor.getActiveBuffs === 'function' ? actor.getActiveBuffs() : [];
     for (const buff of working) {
       if (entry.buffKeys.length >= count) break;
-      if (!matchesTagQuery(buffTags(buff), query)) continue;
+      if (!matchesTagQuery(buffTagSet(buff), query)) continue;
       const key = buffKeyOf(actor, buff);
       if (key && !entry.buffKeys.includes(key)) entry.buffKeys.push(key);
     }

@@ -71,7 +71,7 @@
               <img class="cog-personal-space-icon" src="{{personalSpace.img}}" width="40" height="40" />
               <div style="flex: 1; min-width: 0;">
                 <div class="cog-text-warning" style="font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{personalSpace.name}}</div>
-                <div class="cog-text-muted" style="font-size: 11px;">Tier {{personalSpace.tier}} {{personalSpace.size}} &bull; Defense: <strong class="cog-text-success">{{personalSpace.defense}}</strong></div>
+                <div class="cog-text-muted" style="font-size: 11px;">Rank {{personalSpace.rank}} &middot; {{personalSpace.typeLabel}} &bull; Defense: <strong class="cog-text-success">{{personalSpace.defense}}</strong></div>
               </div>
             </div>
 
@@ -124,36 +124,7 @@
         </div>
       </div>
 
-      {{!-- DEITY BLOCK --}}
-      <div class="cog-stat-block">
-        <div class="cog-banner-header cog-bg-warning-fill" style="display: flex; justify-content: space-between; align-items: center;">
-          <span><i class="fa-solid fa-sun"></i> DEITY / PATRON</span>
-          <a class="cog-text-on-fill" data-action="createItem" data-type="deity" data-tooltip="Add Deity Item" style="cursor: pointer;"><i class="fa-solid fa-plus"></i></a>
-        </div>
-        <div class="cog-block-content" style="padding: 8px;">
-          {{#each deities as |item|}}
-            <div class="cog-bg-surface" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; padding: 4px; border: 1px solid var(--cog-divider); border-radius: 3px;" data-item-id="{{item.id}}">
-              <span style="font-weight: bold;">{{item.name}}</span>
-              <div>
-                <a class="item-edit" data-action="editItem" data-tooltip="Edit"><i class="fa-solid fa-edit"></i></a>
-                <a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="Delete" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
-              </div>
-            </div>
-          {{/each}}
-          <div class="cog-field-row">
-            <div class="cog-field-group flex-1">
-              <span class="cog-field-label">Granted Boons</span>
-              <input class="cog-field-input" type="text" name="system.details.deityBoons" value="{{system.details.deityBoons}}" placeholder="Divine blessings, passive perks..." />
-            </div>
-          </div>
-          <div class="cog-field-row" style="margin-top: 6px;">
-            <div class="cog-field-group flex-1">
-              <span class="cog-field-label">Offerings &amp; Sins</span>
-              <input class="cog-field-input" type="text" name="system.details.deitySins" value="{{system.details.deitySins}}" placeholder="Required sacrifices, forbidden actions..." />
-            </div>
-          </div>
-        </div>
-      </div>
+      {{> "systems/sprinter-rpg/templates/actors/parts/deity-block.hbs"}}
     </div>
   </div>
 
@@ -184,7 +155,8 @@
               <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
                   <span style="font-weight: bold; font-size: 12px;">{{item.name}}</span>
-                  {{#if item.system.description}}<span class="cog-text" style="font-size: 11px; margin-left: 6px;">— {{item.system.description}}</span>{{/if}}
+                  {{#if item.notInForce}}<span class="cog-race-not-in-force-badge cog-soft-hint" data-tooltip="{{item.notInForceTooltip}}">{{item.notInForceLabel}}</span>{{/if}}
+                  {{#if item.system.description}}<span class="cog-text" style="font-size: 11px; margin-left: 6px;">— {{plainText item.system.description}}</span>{{/if}}
                 </div>
                 <div>
                   <a class="item-edit" data-action="editItem"><i class="fa-solid fa-edit"></i></a>
@@ -211,7 +183,7 @@
               <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
                   <span style="font-weight: bold; font-size: 12px;">{{item.name}}</span>
-                  {{#if item.system.description}}<span class="cog-text" style="font-size: 11px; margin-left: 6px;">— {{item.system.description}}</span>{{/if}}
+                  {{#if item.system.description}}<span class="cog-text" style="font-size: 11px; margin-left: 6px;">— {{plainText item.system.description}}</span>{{/if}}
                 </div>
                 <div>
                   <a class="item-edit" data-action="editItem"><i class="fa-solid fa-edit"></i></a>

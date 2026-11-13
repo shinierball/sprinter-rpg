@@ -40,4 +40,10 @@
     </div>
     {{/each}}
   </div>
+  <div class="cog-trait-card flexcol">
+    <div class="cog-trait-input-wrapper flexcol">
+      <label><small>{{localize "COG.CrawlerCreator.Description.Label"}}</small></label>
+      <textarea class="cog-trait-input" data-input-action="setDescription" data-prop="description" name="creator-description" rows="3" placeholder="{{localize "COG.CrawlerCreator.Description.Placeholder"}}">{{description}}</textarea>
+    </div>
+  </div>
 </section>

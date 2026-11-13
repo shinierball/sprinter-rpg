@@ -1,0 +1,42 @@
+{{!-- OPTIONAL EFFECTS / COMBAT TECHNIQUES DATA-DRIVEN PICKER --}}
+<div class="cog-bg-surface" style="margin-bottom: 8px; border: 1px solid var(--cog-border-muted); border-radius: 3px; padding: 6px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <span class="cog-field-label cog-text-accent" style="font-weight: bold;"><i class="fa-solid fa-burst"></i> {{localize "COG.GearSheet.Techniques.Title"}}</span>
+    <button type="button" class="cog-btn cog-bg-warning-fill cog-text-on-fill" data-action="applyRecommendedEffects" title="{{localize "COG.GearSheet.Techniques.SuggestTip"}}" style="font-size: 10px; padding: 2px 6px; border: 1px solid var(--cog-warning-fill); border-radius: 3px; cursor: pointer;">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.GearSheet.Techniques.Suggest"}}
+    </button>
+  </div>
+
+  {{!-- Selected techniques as removable tags --}}
+  <div class="cog-optional-effects-pills cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; min-height: 24px; padding: 3px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+    {{#if optionalEffectsList.length}}
+      {{#each optionalEffectPills as |ef|}}
+        <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">
+          {{ef.label}}
+          <a class="cog-dark cog-text-gold" data-action="removeOptionalEffect" data-effect="{{ef.id}}" title="{{localize "COG.GearSheet.Techniques.Remove"}}" style="cursor: pointer; font-weight: bold; text-decoration: none;">&times;</a>
+        </span>
+      {{/each}}
+    {{else}}
+      <span class="cog-text-muted" style="font-size: 10px; font-style: italic; align-self: center;">{{localize "COG.GearSheet.Techniques.None"}}</span>
+    {{/if}}
+  </div>
+
+  {{!-- Add Technique Controls --}}
+  <div data-custom-entry style="display: flex; gap: 6px; align-items: center;">
+    <div style="flex: 2;">
+      <select class="cog-field-input" data-change-action="addOptionalEffect" style="font-size: 11px; width: 100%;">
+        <option value="">{{localize "COG.GearSheet.Techniques.Choose"}}</option>
+        {{#each availableTechniques as |tech|}}
+          <option value="{{tech.system.identifier}}">{{tech.name}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <div style="flex: 1;">
+      <input class="cog-field-input" type="text" placeholder="{{localize "COG.GearSheet.Techniques.CustomPlaceholder"}}" style="font-size: 11px; width: 100%;" />
+    </div>
+    <button type="button" class="cog-btn cog-bg-accent-strong-fill cog-text-on-fill" data-action="addCustomOptionalEffect" style="font-size: 11px; padding: 3px 6px; border: 1px solid var(--cog-ink); border-radius: 3px; cursor: pointer;">
+      {{localize "COG.GearSheet.Techniques.AddCustom"}}
+    </button>
+  </div>
+
+</div>

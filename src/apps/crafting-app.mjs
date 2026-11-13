@@ -18,11 +18,12 @@ import { matchesTagQuery } from '../utils/tag/tag-query.mjs';
 import { getItemAllTags } from '../documents/active-tags.mjs';
 import { getCurrentFloor } from '../utils/floor/current-floor.mjs';
 import { getFloorTimer } from '../documents/actor/actor-environment.mjs';
-import { craftModifierResolver, resolveOutputTemplate } from '../documents/actor/actor-crafting.mjs';
+import { craftModifierResolver, craftSpaceInput, resolveOutputTemplate } from '../documents/actor/actor-crafting.mjs';
 import { buildPayload } from '../data/builders/item-payload.mjs';
 import { isBlueprintLootType } from '../models/items/loot-model.mjs';
 import { pickOptions } from '../utils/ui/field-options.mjs';
 import { resolveSpace, spaceMembers, userOwnsActor } from '../documents/actor/personal-space-links.mjs';
+import { groupLinksCrawler } from '../documents/actor/space-group.mjs';
 import { allVehicles } from '../utils/vehicle/vehicle-lookup.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/crafting-app`;
@@ -206,13 +207,13 @@ export class COGCraftingApp extends COGToolApp {
     const items = [...(this.crawler?.items ?? [])];
     const space = this.space;
     const floor = getCurrentFloor();
-    const linked = !!space && asArray(this.spaces).includes(space);
+    const linked = !!space && groupLinksCrawler(space, this.crawler);
     const planInput = {
       blueprint: choice.item,
       target,
       template,
       crawler: { items, skills: items.filter((i) => i.type === 'skill'), floor },
-      space: space ? { items: [...(space.items ?? [])], linked } : null,
+      space: craftSpaceInput(space, linked),
       floor,
       clockHours: getFloorTimer(),
       quantity: this.quantity
@@ -223,7 +224,7 @@ export class COGCraftingApp extends COGToolApp {
     const skills = this.#skillIdsFor(draft).map((id) => items.find((i) => i.id === id) ?? null);
     return planCraft({
       ...planInput,
-      modifiers: { resolve: craftModifierResolver(this.crawler, { skills, spaceDoc: space, linked, target, template }) }
+      modifiers: { resolve: craftModifierResolver(this.crawler, { skills, spaceDoc: space, linked, target, template, blueprint: choice.item }) }
     });
   }
 

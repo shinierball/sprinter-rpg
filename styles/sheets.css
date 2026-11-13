@@ -84,6 +84,15 @@
   width: 100%;
 }
 
+/* A row of equal number boxes that wraps instead of clipping at a narrow sheet width. */
+.cog-field-row.cog-field-row-wrap {
+  flex-wrap: wrap;
+}
+
+.cog-field-row.cog-field-row-wrap > .cog-field-group.flex-1 {
+  min-width: 110px;
+}
+
 .cog-field-group {
   display: flex;
   flex-direction: column;
@@ -179,6 +188,27 @@ textarea::placeholder,
 .cog-field-input,
 .cog-stat-input {
   color: var(--cog-text-strong);
+}
+
+/* The one button-size rule for every system window and chat card. Foundry v14 gives every button `height: var(--button-size)`,
+   so a label that wraps to two lines spilled out of a one-line box and sibling elements painted over it. Here the label
+   wraps, the button grows to fit it (Foundry's own button size is the minimum height), and the buttons of one row stretch to the tallest.
+   Words never break inside: a flex row may shrink a button only to its longest word, never to one letter a line.
+   `:where()` keeps the rule at the specificity of a bare `button`, so a component rule that sets its own `min-height`,
+   `padding` or `line-height` (an icon square) still wins. Component rules never set `height` on a button
+   (tests/structural/button-height.test.mjs). */
+:where(.cog-window, .cog-chat-card) :is(button, a.button) {
+  box-sizing: border-box;
+  height: auto;
+  min-height: var(--button-size, 2rem);
+  line-height: 1.2;
+  white-space: normal;
+}
+
+/* A row of buttons: they stretch to the tallest, so one wrapped label never leaves its neighbours a different height. */
+.cog-window :is(div, nav, span, footer, header, section):has(> button + button),
+.cog-chat-card :is(div, nav, span, footer, header, section):has(> button + button) {
+  align-items: stretch;
 }
 
 /* The one checkbox rule for every system window and chat card. `.cog-window` is added by the shared window mixin
@@ -369,9 +399,12 @@ textarea::placeholder,
 
 .cog-rest-buttons-group {
   display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 4px;
   margin-left: auto;
+  min-width: 0;
 }
 
 .cog-rest-label {
@@ -393,7 +426,6 @@ textarea::placeholder,
   color: var(--cog-on-fill);
   line-height: 16px;
   transition: all 0.15s ease;
-  white-space: nowrap;
   text-shadow: 0 1px 2px color-mix(in srgb, var(--cog-ink) 40%, transparent);
 }
 
@@ -1664,7 +1696,6 @@ select.cog-box-input.cog-size-select,
 
 .cog-roll-story-table-btn {
   flex-shrink: 0;
-  white-space: nowrap;
   font-family: 'Oswald', sans-serif;
   font-size: 10px;
   text-transform: uppercase;
@@ -2036,3 +2067,23 @@ select.cog-box-input.cog-size-select,
   color: var(--cog-text-secondary);
 }
 
+
+/* Requirement badges under a Race or Class select (templates/shared/requirement-badges.hbs) */
+.cog-req-badges { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
+.cog-req-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border: 1px solid var(--cog-border-muted); border-radius: 10px; font-size: 11px; color: var(--cog-text-muted); }
+.cog-req-badge.cog-req-met { border-color: var(--cog-success); background: var(--cog-success-tint); color: var(--cog-success); }
+.cog-req-badge.cog-req-unmet { border-color: var(--cog-danger); background: var(--cog-danger-tint); color: var(--cog-danger); }
+
+/* Gear sheet weapon section and the "What's missing" list */
+.cog-gear-weapon-block { margin-bottom: 8px; padding: 6px; border: 1px solid var(--cog-border-muted); border-radius: 3px; }
+.cog-gear-weapon-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 4px; }
+.cog-gear-weapon-custom { display: flex; gap: 6px; align-items: center; }
+.cog-gear-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 6px; }
+.cog-gear-chip { cursor: pointer; font-size: 11px; padding: 2px 8px; border-radius: 3px; border: 1px solid var(--cog-border-muted); }
+.cog-gear-centered { text-align: center; max-width: 90px; }
+.cog-gear-check { display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer; }
+.cog-gear-bonus-list { margin: 2px 0 4px; padding-left: 18px; }
+.cog-item-findings { margin: 0 0 8px; padding: 6px 8px; border: 1px solid var(--cog-border-muted); border-radius: 3px; }
+.cog-item-findings-list { list-style: none; margin: 0; padding: 0; }
+.cog-item-finding { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.cog-item-finding-text { flex: 1; }

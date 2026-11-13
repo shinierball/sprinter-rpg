@@ -1,17 +1,17 @@
 {{!-- CONTESTED / OPPOSED CHECK CONFIGURATION (COLLAPSIBLE WITH PROGRESSIVE DISCLOSURE) --}}
 <details class="cog-collapsible-block" {{#if hasContestConfigured}}open{{/if}}>
   <summary class="cog-collapsible-summary cog-bg-magic-fill">
-    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-scale-balanced"></i> CONTESTED / OPPOSED CHECK CONFIGURATION</span>
-    <span class="cog-toggle-indicator {{#if hasContestConfigured}}active{{/if}}">{{#if hasContestConfigured}}[CONTEST CONFIGURED]{{else}}[CLICK TO CONFIGURE CONTEST / OPPOSED CHECK]{{/if}}</span>
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-scale-balanced"></i> {{localize "COG.AbilitySheet.Contest.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if hasContestConfigured}}active{{/if}}">{{#if hasContestConfigured}}{{localize "COG.AbilitySheet.Contest.Configured"}}{{else}}{{localize "COG.AbilitySheet.Contest.Configure"}}{{/if}}</span>
   </summary>
   <div class="cog-collapsible-content">
     <div class="cog-field-row" style="margin-bottom: 6px; align-items: center; gap: 8px; flex-wrap: wrap;">
       <label class="cog-text-magic" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
         <input type="checkbox" name="system.contest.hasContest" {{#if system.contest.hasContest}}checked{{/if}} />
-        <span>Enable Contested / Opposed Check</span>
+        <span>{{localize "COG.AbilitySheet.Contest.Enable"}}</span>
       </label>
       <div class="cog-field-group small" style="flex: 1.2;">
-        <span class="cog-field-label">Contest Type</span>
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Contest.Type"}}</span>
         <select class="cog-field-input" name="system.contest.contestType" style="font-size: 11px; font-weight: bold;">
           {{#each contestTypes as |ct|}}
             <option value="{{ct.id}}" {{#if (eq (or ../system.contest.contestType "dc") ct.id)}}selected{{/if}}>{{ct.label}}</option>
@@ -19,7 +19,7 @@
         </select>
       </div>
       <div class="cog-field-group small" style="flex: 1;">
-        <span class="cog-field-label">Target Opposing Stat</span>
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Contest.Stat"}}</span>
         <select class="cog-field-input" name="system.contest.targetStat" style="font-size: 11px; font-weight: bold;">
           {{#each contestStats as |cs|}}
             <option value="{{cs.id}}" {{#if (eq (or ../system.contest.targetStat "dex") cs.id)}}selected{{/if}}>{{cs.label}}</option>
@@ -27,7 +27,7 @@
         </select>
       </div>
       <div class="cog-field-group small" style="flex: 1.2;">
-        <span class="cog-field-label">Target Opposing Skill (Optional)</span>
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Contest.Skill"}}</span>
         <select class="cog-field-input" name="system.contest.targetSkill" style="font-size: 11px;">
           {{#each contestSkillOptions as |opt|}}
             <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
@@ -37,11 +37,11 @@
     </div>
     <div class="cog-field-row" style="margin-bottom: 6px; gap: 8px; flex-wrap: wrap;">
       <div class="cog-field-group small" style="flex: 1;">
-        <span class="cog-field-label">Custom Override DC (0 = 10 + Rank + Stat Mod)</span>
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Contest.CustomDc"}}</span>
         <input class="cog-field-input" type="number" name="system.contest.customDC" value="{{system.contest.customDC}}" placeholder="0" min="0" style="font-size: 11px;" />
       </div>
       <div class="cog-field-group small" style="flex: 1.5;">
-        <span class="cog-field-label">On-Fail Target Debuff</span>
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Contest.FailDebuff"}}</span>
         <select class="cog-field-input" name="system.contest.onFailDebuff" style="font-size: 11px;">
           {{#each contestFailDebuffOptions as |opt|}}
             <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
@@ -51,12 +51,12 @@
     </div>
     <div class="cog-field-row" style="margin-bottom: 4px; gap: 8px;">
       <div class="cog-field-group" style="flex: 1; margin-bottom: 0;">
-        <span class="cog-field-label">Target Failure Consequences / Notes</span>
-        <input class="cog-field-input" type="text" name="system.contest.onFailNotes" value="{{system.contest.onFailNotes}}" placeholder="e.g. Target is restrained and takes 1 bar per round until broken" style="font-size: 11px;" />
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Contest.FailNotes"}}</span>
+        <input class="cog-field-input" type="text" name="system.contest.onFailNotes" value="{{system.contest.onFailNotes}}" placeholder="{{localize "COG.AbilitySheet.Contest.FailPlaceholder"}}" style="font-size: 11px;" />
       </div>
       <div class="cog-field-group" style="flex: 1; margin-bottom: 0;">
-        <span class="cog-field-label">Target Success Consequences / Notes</span>
-        <input class="cog-field-input" type="text" name="system.contest.onSuccessNotes" value="{{system.contest.onSuccessNotes}}" placeholder="e.g. Target resists effect or takes half damage" style="font-size: 11px;" />
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Contest.SuccessNotes"}}</span>
+        <input class="cog-field-input" type="text" name="system.contest.onSuccessNotes" value="{{system.contest.onSuccessNotes}}" placeholder="{{localize "COG.AbilitySheet.Contest.SuccessPlaceholder"}}" style="font-size: 11px;" />
       </div>
     </div>
   </div>

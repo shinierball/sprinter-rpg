@@ -19,7 +19,7 @@ const KEY = 'COG.ItemSummary.SpellSkill';
 defineItemSummaryTemplates({
   [`${KEY}.AtRank`]: 'At Rank {rank}: {text}',
   [`${KEY}.FromRank`]: 'From Rank {rank}: {text}',
-  [`${KEY}.TierCrit`]: 'Critical hits x{n}',
+  [`${KEY}.TierCrit`]: 'Critical Hit: {n}x base dice',
   [`${KEY}.TierBaseDice`]: 'Base dice {mod}',
   [`${KEY}.TierDamageType`]: '{type} damage',
   [`${KEY}.TierIgnoresDr`]: 'Ignores DR',

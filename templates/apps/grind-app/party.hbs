@@ -38,6 +38,9 @@
                 <span class="cog-text-strong" style="font-weight: bold; font-size: 13px;">{{sk.name}}</span>
                 <span class="cog-text-secondary" style="font-size: 11px; margin-left: 4px;">({{sk.stat}})</span>
               </div>
+              {{#if sk.grindClosed}}
+                <span class="cog-badge cog-bg-surface-strong cog-text-strong" style="font-size: 9px; padding: 1px 5px; border-radius: 2px;" title="This skill does not advance by grinding at this Rank. Putting hours in is a Rule Break.">(Rule Break)</span>
+              {{/if}}
               {{#if sk.checked}}
                 <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 5px; border-radius: 2px;" title="Used during play! Eligible for progression.">CHECKED</span>
               {{/if}}

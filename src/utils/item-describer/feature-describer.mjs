@@ -3,7 +3,7 @@
  * sheet, the crawler sheet panel, chat cards and the PDF export.
  *
  * `DESCRIBERS` (wrapped by `describeItem` in `item-describer/`) read only structured fields (`grants`, the `*Modifiers` rows, `senses`,
- * `requires`, `startingItems`, `statCaps`, `movement`, `drBonus`, descriptive tags). Skill and spell names come
+ * `requirements`, `startingItems`, `statCaps`, `movement`, `drBonus`, descriptive tags). Skill and spell names come
  * from the referenced document through `resolveGrantDocument`, never from a row; a distinct row `label`
  * reads "Label: generated text". Text comes from the `COG.Feature.*` templates in `lang/en.json`.
  *
@@ -11,6 +11,7 @@
  * row type adds an entry and nothing else. A field that is absent produces no lines.
  */
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { describeScale, hasScale, scaleInert } from '../roll/scalars.mjs';
 import { getRowKind, kindOf } from '../row-kinds.mjs';
 import { resolveGrantDocument, resolveGrantName } from '../../data/race-class-grants.mjs';
@@ -20,6 +21,7 @@ import {
 } from './modifier-summary.mjs';
 import { str, signed, humanizeId } from './shared.mjs';
 import { PERCENT_STAT_MODES, percentStatMode, statGrantEntries, unenhancedScores } from '../character/stat-percent.mjs';
+import { isEffectItem } from '../document-types.mjs';
 
 /**
  * @typedef {object} FeatureLine
@@ -49,6 +51,7 @@ export const FEATURE_TEMPLATES = Object.freeze({
   'COG.Feature.RankBonusFloor': '{text}, never below {floor}',
   'COG.Feature.RankBonusOwned': '{text}, only if owned',
   'COG.Feature.RankCap': 'Rank cap {value}: {target}',
+  'COG.Feature.RankRaise': '{target}: Rank {floor}, or {value} if already at {floor} or higher',
   'COG.Feature.RankCapChoice': 'Rank cap {value} for {count} chosen skill(s)',
   'COG.Feature.Dr': '{value} DR',
   'COG.Feature.Walk': '{value} ft Walk speed',
@@ -211,7 +214,7 @@ async function describeStatGrants(item) {
   const out = [];
   // Buffs and debuffs are always live; other items follow the world setting. The owner's unenhanced scores give "(+1 now)".
   const entries = statGrantEntries(grants, {
-    mode: item.type === 'buff' || item.type === 'debuff' ? PERCENT_STAT_MODES.LIVE : percentStatMode(),
+    mode: isEffectItem(item) ? PERCENT_STAT_MODES.LIVE : percentStatMode(),
     unenhanced: unenhancedScores(item.parent?.system?.abilities)
   });
   const entryAt = new Map(entries.map((e) => [e.index, e]));
@@ -258,8 +261,8 @@ async function describeSkillGrants(item) {
     const g = grants[i];
     const path = `system.grants.${i}`;
     const rank = Number(g.rank) || 1;
-    if ((g.kind === 'skill' || g.kind === 'spell') && item.type === 'gear' && g.mode !== 'choice') {
-      // Gear works through `value`: it adds to the owned skill or spell. A spell row's `rank` is only the Rank an unowned
+    if ((g.kind === 'skill' || g.kind === 'spell') && (item.type === 'gear' || item.type === 'buff') && g.mode !== 'choice') {
+      // Gear and buffs work through `value`: it adds to the owned skill or spell. A spell row's `rank` is only the Rank an unowned
       // spell is granted at (see gear-grants.mjs).
       const name = await referencedName(g, g.kind);
       const value = Number(g.value) || 0;
@@ -283,6 +286,9 @@ async function describeSkillGrants(item) {
       if (Number(g.floor) > 0) text = t('COG.Feature.RankBonusFloor', { text, floor: Number(g.floor) });
       if (g.onlyIfOwned) text = t('COG.Feature.RankBonusOwned', { text });
       out.push(line('skill', text, path, g, '', target));
+    } else if (g.kind === 'rank_raise') {
+      const target = await targetOf(g);
+      out.push(line('skill', t('COG.Feature.RankRaise', { target, floor: Number(g.floor) || 0, value: signed(Number(g.value) || 0) }), path, g, '', target));
     } else if (g.kind === 'rank_cap') {
       const target = g.mode === 'choice' ? '' : await targetOf(g);
       const text = g.mode === 'choice'
@@ -463,13 +469,27 @@ async function describeSenses(item) {
   return out;
 }
 
-async function describeRequires(item) {
-  const q = item.system?.requires;
+const REQUIREMENT_HELPERS = Object.freeze({
+  name: (catalog, ref) => findCatalogEntry(catalog, ref)?.name || '',
+  tagLabel: (id) => getTagDefinition(id)?.label || id
+});
+
+async function describeRequirements(item) {
   const out = [];
-  if (!q || typeof q !== 'object') return out;
-  if (tagList(q.all).length) out.push(line('mod', t('COG.Feature.RequiresAll', { tags: tagLabels(q.all) }), 'system.requires.all', null));
-  if (tagList(q.any).length) out.push(line('mod', t('COG.Feature.RequiresAny', { tags: tagLabels(q.any) }), 'system.requires.any', null));
-  if (tagList(q.none).length) out.push(line('mod', t('COG.Feature.RequiresNone', { tags: tagLabels(q.none) }), 'system.requires.none', null));
+  rows(item.system?.requirements).forEach((row, i) => {
+    const path = `system.requirements.${i}`;
+    const id = kindOf('requirements', row);
+    if (id === 'tags') {
+      const q = row.query;
+      if (!q || typeof q !== 'object') return;
+      if (tagList(q.all).length) out.push(line('mod', t('COG.Feature.RequiresAll', { tags: tagLabels(q.all) }), `${path}.query.all`, null));
+      if (tagList(q.any).length) out.push(line('mod', t('COG.Feature.RequiresAny', { tags: tagLabels(q.any) }), `${path}.query.any`, null));
+      if (tagList(q.none).length) out.push(line('mod', t('COG.Feature.RequiresNone', { tags: tagLabels(q.none) }), `${path}.query.none`, null));
+      return;
+    }
+    const def = getRowKind('requirements', id);
+    if (def?.summarize) out.push(line('mod', def.summarize(row, REQUIREMENT_HELPERS), path, null));
+  });
   return out;
 }
 
@@ -520,7 +540,7 @@ export const DESCRIBERS = Object.freeze([
   { group: 'other', describe: withLabels(rowArrayDescriber('aiFavorRatings')) },
   { group: 'other', describe: withLabels(describeMovement) },
   { group: 'other', describe: withLabels(describeSenses) },
-  { group: 'other', describe: withLabels(describeRequires) },
+  { group: 'other', describe: withLabels(describeRequirements) },
   { group: 'other', describe: withLabels(describeStartingItems) },
   { group: 'descriptive', describe: withLabels(describeDescriptiveTags) }
 ]);

@@ -12,7 +12,7 @@ import { resolveLootBoxTier } from '../../data/loot-box-tiers.mjs';
 import { BOX_TABLE_AS, sanitizeBoxRow, sanitizeRewardBoxes } from '../../data/loot-box-rows.mjs';
 import { isLootBoxType } from '../../models/items/loot-model.mjs';
 import { itemIdentifier } from '../../utils/identifier.mjs';
-import { BOX_CHOICE_INVENTORY_TYPES, tableRowEntry } from '../../utils/row-kinds.mjs';
+import { tableRowEntry } from '../../utils/row-kinds.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { choiceTextKey, promptChoicePicks } from '../../utils/ui/choice-picker.mjs';
 import { getOrCreateItemFolder } from '../../utils/ui/world-folder.mjs';
@@ -21,6 +21,7 @@ import { rollMagicItem } from '../../documents/item/magic-item-roll.mjs';
 import { grantLootBoxes, REWARD_BOXES_FLAG } from '../../documents/actor/achievement-award.mjs';
 import { getAvailableRollTables } from './catalogs.mjs';
 import { rowIndex, toArray } from './util.mjs';
+import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES } from '../../utils/document-types.mjs';
 
 const TEXT = Object.freeze({
   'COG.RewardBoxes.GrantAgainTitle': 'Already Granted',
@@ -99,7 +100,7 @@ const ROW_FIELD_READERS = Object.freeze({
   // A choice row's candidate type: blank (any inventory item), an inventory type, or skill / spell (a potion / a tome)
   itemType: (v) => {
     const id = String(v ?? '').trim();
-    return id === 'skill' || id === 'spell' || BOX_CHOICE_INVENTORY_TYPES.includes(id) ? id : '';
+    return RANKED_ITEM_TYPES.includes(id) || INVENTORY_ITEM_TYPES.includes(id) ? id : '';
   },
   name: (v) => String(v ?? '').trim(),
   // A table row's rolled rows: as printed (''), skill potions or placeholder items

@@ -9,6 +9,7 @@ import { partitionTicks } from './ticked-subject.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { USE_TAG_PREFIX, splitRoleTag, ROLE_TAG_PREFIXES, ENGINE_SITUATIONS, SAME_SIZE_SITUATION, healthFractionTags } from '../../data/tag-vocabulary.mjs';
 import { collectActorTags } from '../../documents/active-tags.mjs';
+import { escapeAttr, jsonAttr } from '../escape-attr.mjs';
 
 /**
  * The one roll context. `buildRollContext` is the only producer of
@@ -354,9 +355,7 @@ export function resolveDamageContext(actor, options = {}, params = {}) {
 
 /** ` data-roll-context='…'` for a chat card button, escaped for a single-quoted HTML attribute. */
 export function rollContextDataAttr(context) {
-  const json = JSON.stringify(serializeRollContext(context))
-    .replaceAll('&', '&amp;').replaceAll("'", '&#39;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-  return ` data-roll-context='${json}'`;
+  return ` data-roll-context='${jsonAttr(serializeRollContext(context))}'`;
 }
 
 /**
@@ -390,8 +389,6 @@ export function resolveRowAdvantage(found = {}) {
   return { mode, formula, label, reasons, advantages, disadvantages, net };
 }
 
-const escapeHtml = (value) => String(value ?? '')
-  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 /**
  * The ticked toggles in a roll's options (anything else is dropped); null when absent. `options.situations` holds
@@ -466,12 +463,12 @@ async function askRollToggles(actor, context, options, opts) {
 
   const situationRows = offered.map(({ tag, label, source, used }) => {
     const text = label || getTagDefinition(tag)?.label || tag;
-    const from = source && source !== text ? ` <small class="cog-situation-source">from ${escapeHtml(source)}</small>` : '';
+    const from = source && source !== text ? ` <small class="cog-situation-source">from ${escapeAttr(source)}</small>` : '';
     const spent = used ? ' <small class="cog-situation-source">(already used this floor: Rule Break)</small>' : '';
-    return `<label class="cog-situation-toggle"><input type="checkbox" name="situation" value="${escapeHtml(tag)}"> ${escapeHtml(text)}${from}${spent}</label>`;
+    return `<label class="cog-situation-toggle"><input type="checkbox" name="situation" value="${escapeAttr(tag)}"> ${escapeAttr(text)}${from}${spent}</label>`;
   }).join('');
   const calledRows = askCalledPlays
-    ? `<fieldset class="cog-called-play-toggles"><legend>Called Play</legend>${entries.map((e) => `<label class="cog-situation-toggle cog-called-play-toggle"><input type="checkbox" name="calledPlay" value="${escapeHtml(e.id)}" checked> ${escapeHtml(calledPlayLabel(e))}</label>`).join('')}</fieldset>`
+    ? `<fieldset class="cog-called-play-toggles"><legend>Called Play</legend>${entries.map((e) => `<label class="cog-situation-toggle cog-called-play-toggle"><input type="checkbox" name="calledPlay" value="${escapeAttr(e.id)}" checked> ${escapeAttr(calledPlayLabel(e))}</label>`).join('')}</fieldset>`
     : '';
   const cameraRows = askCameras ? cameraFieldsetHtml(armed) : '';
   const ticked = (button, name) => [...(button?.form?.querySelectorAll?.(`input[name="${name}"]`) ?? [])].filter(isChecked).map((el) => el.getAttribute('value'));
@@ -506,9 +503,9 @@ async function askRollToggles(actor, context, options, opts) {
 
 /** The Playing to the Cameras radio group of the roll dialog: None plus each audience; the armed one is checked. */
 function cameraFieldsetHtml(armed) {
-  const radio = (value, label, checked) => `<label class="cog-situation-toggle cog-camera-toggle"><input type="radio" name="cameras" value="${escapeHtml(value)}"${checked ? ' checked' : ''}> ${escapeHtml(label)}</label>`;
+  const radio = (value, label, checked) => `<label class="cog-situation-toggle cog-camera-toggle"><input type="radio" name="cameras" value="${escapeAttr(value)}"${checked ? ' checked' : ''}> ${escapeAttr(label)}</label>`;
   const rows = [radio('', cameraText('COG.Cameras.None'), !armed), ...cameraAudienceList().map(a => radio(a.id, a.label || a.id, a.id === armed))].join('');
-  return `<fieldset class="cog-camera-toggles"><legend>${escapeHtml(cameraText('COG.Cameras.Title'))}</legend>${rows}<small class="cog-situation-source">${escapeHtml(cameraText('COG.Cameras.Hint'))}</small></fieldset>`;
+  return `<fieldset class="cog-camera-toggles"><legend>${escapeAttr(cameraText('COG.Cameras.Title'))}</legend>${rows}<small class="cog-situation-source">${escapeAttr(cameraText('COG.Cameras.Hint'))}</small></fieldset>`;
 }
 
 /**

@@ -61,6 +61,7 @@
 
                     <!-- Health Threshold Indicator (Cheat Sheet: Green / Yellow / Red) -->
                     <div class="cog-combatant-hp-row flexrow">
+                      {{#if turn.zeroHealth}}<span class="{{turn.zeroHealth.cssClass}}" data-tooltip="{{turn.zeroHealth.title}}">{{turn.zeroHealth.label}}</span>{{/if}}
                       <span class="cog-hp-threshold-badge health-{{turn.healthThreshold.status}}" data-tooltip="Health Threshold: {{turn.healthThreshold.label}}">
                         HP: {{turn.hpValue}}/{{turn.hpMax}}
                         <span class="cog-hp-badge-pill">({{turn.healthThreshold.pct}}%)</span>

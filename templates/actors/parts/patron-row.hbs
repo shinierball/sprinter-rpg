@@ -1,0 +1,43 @@
+{{!-- Patron rows (7.45c): one row per patron item and per god with a patronage. Buttons have no name, they carry data-action. Each later area adds its buttons at its own anchor. --}}
+<div class="cog-deity-block-header cog-patron-header">
+  <span><i class="fa-solid fa-handshake"></i> {{localize 'COG.Patron.Block.Title'}}</span>
+  {{#if editable}}
+    <a data-action="addPatron" data-tooltip="{{localize 'COG.Patron.Block.Add'}}"><i class="fa-solid fa-plus"></i></a>
+  {{/if}}
+</div>
+{{#each patronRows as |row|}}
+  <div class="cog-bg-surface cog-deity-row cog-patron-row" data-item-id="{{row.id}}">
+    <img class="cog-deity-img cog-bg-icon-box" src="{{row.img}}" alt="" />
+    <div class="cog-deity-main">
+      <span class="cog-deity-name">{{row.name}}</span>
+      {{#if row.title}}<span class="cog-deity-title cog-text-muted">{{row.title}}</span>{{/if}}
+      <span class="cog-deity-badges">
+        {{#each row.badges as |badge|}}<span class="cog-badge cog-deity-badge">{{badge}}</span>{{/each}}
+      </span>
+      {{#if row.attitudeLabel}}<span class="cog-patron-attitude cog-text-muted">{{row.attitudeLabel}}{{#if row.auditionProgress}} - {{row.auditionProgress}}{{/if}}</span>{{/if}}
+      {{#if row.adviceLine}}<span class="cog-patron-advice cog-text-muted">{{row.adviceLine}}</span>{{/if}}
+    </div>
+    <div class="cog-deity-buttons">
+      {{#if row.canMakePatron}}<button type="button" data-action="makePatron" data-tooltip="{{localize 'COG.Patron.Block.MakePatron'}}"><i class="fa-solid fa-handshake"></i></button>{{/if}}
+      {{#if row.canLeave}}<button type="button" data-action="leavePatron" data-tooltip="{{localize 'COG.Patron.Block.Leave'}}"><i class="fa-solid fa-person-walking-arrow-right"></i></button>{{/if}}
+      {{!-- patron audition --}}
+      {{#if row.canAudition}}<button type="button" data-action="patronAudition" data-tooltip="{{localize 'COG.Patron.Audition.Button.Start'}}"><i class="fa-solid fa-microphone-lines"></i></button>{{/if}}
+      {{#if row.canAuditionCheck}}<button type="button" data-action="patronAuditionCheck" data-tooltip="{{localize 'COG.Patron.Audition.Button.Check'}}"><i class="fa-solid fa-dice-d20"></i></button>{{/if}}
+      {{#if row.canUndoAudition}}<button type="button" data-action="patronAuditionUndo" data-tooltip="{{localize 'COG.Patron.Audition.Button.Undo'}}"><i class="fa-solid fa-rotate-left"></i></button>{{/if}}
+      {{!-- patron gig --}}
+      {{#if row.canPerform}}<button type="button" data-action="patronPerform" data-tooltip="{{localize 'COG.Patron.Gig.Tooltip'}}"><i class="fa-solid fa-masks-theater"></i></button>{{/if}}
+      {{!-- patron mentor --}}
+      {{#if row.canMentor}}<button type="button" data-action="patronMentor" data-tooltip="{{localize 'COG.Patron.Mentor.Tooltip'}}"><i class="fa-solid fa-graduation-cap"></i></button>{{/if}}
+      {{#if row.canQuest}}<button type="button" data-action="patronQuest" data-tooltip="{{localize 'COG.Patron.Quest.Tooltip'}}"><i class="fa-solid fa-scroll"></i></button>{{/if}}
+      {{#if row.canIdeas}}<button type="button" data-action="patronIdeas" data-tooltip="{{localize 'COG.Patron.Ideas.Tooltip'}}"><i class="fa-solid fa-lightbulb"></i></button>{{/if}}
+      {{!-- patron endings --}}
+      {{#if row.canQuit}}<button type="button" data-action="patronQuit" data-tooltip="{{localize 'COG.Patron.Ending.QuitTip'}}"><i class="fa-solid fa-door-open"></i></button>{{/if}}
+      {{#if row.canDied}}<button type="button" data-action="patronDied" data-tooltip="{{localize 'COG.Patron.Ending.DiedTip'}}"><i class="fa-solid fa-skull"></i></button>{{/if}}
+      {{#if row.canEndDeity}}<button type="button" data-action="patronEndDeity" data-tooltip="{{localize 'COG.Patron.Ending.EndDeityTip'}}"><i class="fa-solid fa-ban"></i></button>{{/if}}
+      {{#if row.canEdit}}<a class="item-edit" data-action="editItem" data-tooltip="{{localize 'COG.Patron.Block.Edit'}}"><i class="fa-solid fa-edit"></i></a>{{/if}}
+      {{#if row.canDelete}}<a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="{{localize 'COG.Patron.Block.Delete'}}"><i class="fa-solid fa-trash"></i></a>{{/if}}
+    </div>
+  </div>
+{{else}}
+  <p class="cog-text-muted cog-deity-empty">{{localize 'COG.Patron.Block.Empty'}}</p>
+{{/each}}

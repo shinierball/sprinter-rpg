@@ -4,6 +4,9 @@ import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { popularityTokens } from '../../utils/floor/popularity.mjs';
 import { advanceDungeonTime } from './actor-environment.mjs';
 
+/** World setting: the scene counter. */
+export const SCENE_EPOCH_SETTING = 'sceneEpoch';
+
 /**
  * The dungeon clock.
  *
@@ -24,7 +27,7 @@ export const SCENE_EPOCH_REASONS = Object.freeze({ COMBAT_START: 'combat-start',
 /** @returns {number} the scene epoch (0 when unreadable) */
 export function getSceneEpoch() {
   try {
-    const n = Number(globalThis.game?.settings?.get?.(SYSTEM_ID, 'sceneEpoch'));
+    const n = Number(globalThis.game?.settings?.get?.(SYSTEM_ID, SCENE_EPOCH_SETTING));
     return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
   } catch {
     return 0;
@@ -42,7 +45,7 @@ export async function bumpSceneEpoch(reason = SCENE_EPOCH_REASONS.MANUAL) {
   if (!settings?.set || globalThis.game?.user?.isGM === false) return getSceneEpoch();
   const next = getSceneEpoch() + 1;
   try {
-    await settings.set(SYSTEM_ID, 'sceneEpoch', next);
+    await settings.set(SYSTEM_ID, SCENE_EPOCH_SETTING, next);
   } catch (err) {
     console.warn(`Sprinter RPG | Could not start a new scene (${reason}):`, err);
     return getSceneEpoch();

@@ -13,6 +13,7 @@
 import { exampleId } from '../ids.mjs';
 import { SAMPLE_SKILL_SPECS } from '../../../../data/creation-sample-skills.mjs';
 import { STARTER_WEAPON_LOADOUTS } from '../../../../data/creation-loadouts.mjs';
+import { starterWeaponSkillFields } from '../../../../utils/skill/starter-weapon-skill.mjs';
 
 const GROUP = {
   social: ['haggling', 'small-talk', 'crowd-work', 'stage-presence', 'persuasion', 'deception', 'negotiation', 'heckler-management', 'intimidate', 'read-people'],
@@ -76,9 +77,6 @@ const WEAPON_SKILL_NAME = {
   warhammer: 'Warhammer Training'
 };
 
-/** The `weapon.*` tag of a starter weapon: its loadout id with underscores; the improvised weapon's registered tag has no plural. */
-const weaponTag = (id) => (id === 'improvised weapons' ? 'weapon.improvised' : `weapon.${id.replace(/\s+/g, '_')}`);
-
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const weaponSkills = STARTER_WEAPON_LOADOUTS.map((w, i) => ({
@@ -91,10 +89,8 @@ const weaponSkills = STARTER_WEAPON_LOADOUTS.map((w, i) => ({
     stat: w.toHitStat,
     rank: 0,
     description: `<p>${WEAPON_TEXT[w.skillIdentifier]} Base Damage: ${w.damageDice} + ${cap(w.damageStat)} ${w.damageType}.</p>`,
-    tags: ['skillGroup.weapon', 'skillGroup.combat', 'action.attack', weaponTag(w.id)],
-    isAttack: true,
-    hasDamage: true,
-    baseDamage: { dice: w.damageDice, stat: w.damageStat, damageType: w.damageType }
+    // The loadout's `tags` are the weapon's type (`weapon.*`, `weaponClass.*`); its Skill carries the same.
+    ...starterWeaponSkillFields(w, ['skillGroup.weapon', ...w.tags])
   }
 }));
 
@@ -112,8 +108,8 @@ const natural = (n, name, identifier, stat, dice, damageType, tags, text) => ({
 });
 
 const naturalSkills = [
-  natural(63, 'Knuckle Sandwich', 'unarmed-combat', 'str', '1d3', 'Bludgeoning', ['weaponClass.unarmed'],
-    'Fists, elbows and an unscripted sense of timing. Base Damage: 1d3 + Str Bludgeoning.'),
+  natural(63, 'Knuckle Sandwich', 'unarmed-combat', 'str', '1d3', 'Bludgeoning', ['weaponClass.unarmed', 'rule.no-damage-effects'],
+    'Fists, elbows and an unscripted sense of timing. Takes no Damage Effects. Base Damage: 1d3 + Str Bludgeoning.'),
   natural(64, 'Claw Swipe', 'slice-attack', 'dex', '1d6', 'Slashing', ['weaponClass.natural', 'skillGroup.animal'],
     'Four sharp reasons to keep your distance. Base Damage: 1d6 + Dex Slashing.'),
   natural(65, 'Chomp', 'chomp', 'str', '1d4', 'Piercing', ['weaponClass.natural'],
@@ -130,6 +126,7 @@ export const BACKSTAGE_BRAWLING = Object.freeze({
     identifier: 'backstage-brawling', rank: 0, stat: 'dex', isAttack: true, hasDamage: true,
     baseDamage: { dice: '1d2', stat: 'str', damageType: 'Bludgeoning' },
     tags: ['kind.skill', 'action.attack', 'element.bludgeoning', 'stat.dex', 'skillGroup.combat', 'weaponClass.unarmed', 'weaponGroup.hand_to_hand'],
+    description: '<p>Unarmed fighting learned between takes, where nobody was filming. Base Damage: 1d2 + Strength Bludgeoning.</p>',
     notes: 'Unarmed fighting learned between takes, where nobody was filming.'
   }
 });
@@ -144,6 +141,7 @@ export const MIC_DROP = Object.freeze({
     appliesToQuery: { all: [], any: ['id.skill.backstage-brawling'], none: [] },
     techniqueConfig: { isDamageEffect: true, damageBonus: '1d4', description: 'Deal +1d4 base damage.' },
     tags: ['kind.skill', 'kind.technique', 'action.passive', 'stat.str', 'weaponGroup.hand_to_hand'],
+    description: '<p>A Damage Effect for Backstage Brawling: the punch lands, the room goes quiet. Deals +1d4 base damage.</p>',
     notes: 'A Damage Effect for Backstage Brawling: the punch lands, the room goes quiet.'
   }
 });

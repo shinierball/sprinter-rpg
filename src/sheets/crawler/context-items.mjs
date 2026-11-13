@@ -8,12 +8,17 @@ import { prepareAttackDisplay } from './attack-display.mjs';
 import { classifyBuff } from '../../utils/effects/buff-classify.mjs';
 import { isBuffSuppressed } from '../../utils/effects/dispel.mjs';
 import { canSwitchDebuff } from '../../documents/actor/debuff-switch.mjs';
+import { itemDisplayName } from '../../utils/tag/display-name.mjs';
+import { raceInForce } from '../../utils/character/overlay-state.mjs';
 import { afflictionView } from './context-transformation.mjs';
+import { activationView } from './activation-view.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
 import { isActivatableGear } from '../../utils/ui/hotlist.mjs';
 import { describeItem, summaryText, summaryTooltip, emptyLine, linesInGroups } from '../../utils/item-describer/index.mjs';
+import { htmlSnippet } from '../../utils/ui/html-snippet.mjs';
 import { sourceBadge } from '../../utils/content-source.mjs';
 import { decorateOfflineGear, offlineReadouts } from './gear-offline-display.mjs';
+import { isRaceOrClass } from '../../utils/document-types.mjs';
 
 /** Sort by the manual `sort` key, then by name. */
 export const sortItems = (a, b) => (a.sort || 0) - (b.sort || 0) || a.name.localeCompare(b.name);
@@ -76,15 +81,29 @@ export function prepareItemLists(context, actor) {
       }
       case 'skill': context.skills.push(item); break;
       case 'spell': item.sourceBadge = sourceBadge(item); context.spells.push(item); break;
-      case 'race': context.races.push(item); break;
+      case 'race': {
+        // The race an overlay has set aside is listed but marked (7.1: the form race is the one in force)
+        item.notInForce = !raceInForce(actor.items, item);
+        item.notInForceLabel = item.notInForce ? globalThis.game?.i18n?.localize?.('COG.Transform.NotInForceBadge') : '';
+        item.notInForceTooltip = item.notInForce ? globalThis.game?.i18n?.localize?.('COG.Transform.NotInForceTooltip') : '';
+        context.races.push(item);
+        break;
+      }
       case 'class': context.classes.push(item); break;
       case 'deity': context.deities.push(item); break;
       case 'sponsor': context.sponsors.push(item); break;
-      case 'loot': context.loot.push(item); break;
+      case 'loot': {
+        // The input is plain text: the notes, else the rich-text description read as text (never its `<p>` markup).
+        item.lootNotes = item.system?.notes || htmlSnippet(item.system?.description);
+        context.loot.push(item);
+        break;
+      }
       case 'buff': {
         item.kindLabel = classifyBuff(item.system || {}).join(' / ');
         // A dispel in force suspends the Buff: the tab keeps the row but marks it [SUSPENDED] (3.40 j)
-        item.isSuspended = isBuffSuppressed(actor, item);
+        // A closed activation window is not a dispel: the row shows [READY] or [COOLDOWN n] for it instead
+        item.isSuspended = isBuffSuppressed(actor, item, { ignoreWindow: true });
+        item.activation = activationView(actor, item);
         item.sourceBadge = sourceBadge(item);
         context.buffs.push(item);
         break;
@@ -92,6 +111,7 @@ export function prepareItemLists(context, actor) {
       case 'debuff': {
         const sev = (item.system?.severity || 'Minor').toLowerCase();
         item.severityClass = sev === 'major' ? 'is-major' : 'is-minor';
+        item.displayName = itemDisplayName(item);
         item.canSwitch = canSwitchDebuff(actor.items?.get(item.id) ?? item);
         // An affliction's stage and controls (7.1g); null for an ordinary debuff
         item.transform = afflictionView(actor, item);
@@ -147,7 +167,7 @@ export async function prepareItemSummaries(context, actor) {
   const seen = new Set();
   await Promise.all(rows.filter(item => !seen.has(item) && seen.add(item)).map(async (item) => {
     const lines = await describeItem(item, { actor });
-    if (item.type === 'race' || item.type === 'class') item.featureLines = lines;
+    if (isRaceOrClass(item)) item.featureLines = lines;
     if (!TOOLTIP_TYPES.has(item.type)) return;
     item.summaryTip = summaryTooltip(lines);
     // The short gear badge text (equipped-slot tooltips, inventory row): what the item changes on its owner

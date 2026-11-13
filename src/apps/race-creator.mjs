@@ -57,8 +57,6 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
       heritage: sanitizeHeritageId(options.heritage),
       size: sanitizeSizeId(options.size ?? DEFAULT_SIZE)
     });
-
-    this.targetActorId = options.targetActorId || null;
   }
 
   // =========================================================================
@@ -86,6 +84,7 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
       this.spec.stats = { ...granted.stats };
       this.setDRBonus(granted.drBonus);
       this.loadGrantRows(canonicalRace);
+      this.loadRequirements(canonicalRace);
       for (const sk of granted.skills) {
         this.addSkill({ name: sk.name, rank: sk.rank });
       }
@@ -178,17 +177,6 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
     const heritagePerk = getHeritage(this.spec.heritage)?.perk;
     const heritagePerks = heritagePerk ? [{ ...heritagePerk, points: 0, cost: 0 }] : [];
 
-    // Crawlers in world for direct application
-    const crawlers = globalThis.game?.actors
-      ? Array.from(globalThis.game.actors.values())
-          .filter(a => a.type === 'crawler')
-          .map(a => ({
-            id: a.id,
-            name: a.name,
-            isSelected: a.id === this.targetActorId
-          }))
-      : [];
-
     // Presets: registered races, plus registered point-build presets
     const presets = [...pointBuildPresets('race').map(p => ({ id: p.id, name: p.name })), ...offeredEntries('races').map(r => ({
       id: r._id,
@@ -242,7 +230,6 @@ export class COGRaceCreatorApp extends COGBasePointBuilderApp {
       customCost: ledger.customCost,
       detrimentExtraPoints: ledger.detrimentExtraPoints,
       rawDetrimentPoints: ledger.rawDetrimentPoints,
-      crawlers,
       presets,
       searchQuery: this.searchQuery,
       activeTierFilter: this.activeTierFilter

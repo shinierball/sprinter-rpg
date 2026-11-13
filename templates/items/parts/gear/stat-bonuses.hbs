@@ -1,0 +1,10 @@
+{{!-- STAT BONUSES (system.grants rows of kind stat: flat and percent, equipped only) --}}
+<details class="cog-collapsible-block" {{#if statGrantRows.length}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-dumbbell"></i> {{localize "COG.GearSheet.StatBonuses.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if statGrantRows.length}}active{{/if}}">{{#if statGrantRows.length}}{{localize "COG.GearSheet.StatBonuses.Count" count=statGrantRows.length}}{{else}}{{localize "COG.GearSheet.StatBonuses.Add"}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content" style="padding: 0;">
+    {{> "systems/sprinter-rpg/templates/items/parts/stat-grant-rows.hbs"}}
+  </div>
+</details>

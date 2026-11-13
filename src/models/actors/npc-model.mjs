@@ -16,8 +16,8 @@ export class NPCDataModel extends BaseActorDataModel {
       details: new fields.SchemaField({
         level: new fields.NumberField({ initial: 1, integer: true, min: 1 }),
         xpValue: new fields.NumberField({ initial: 0, integer: true }),
-        notes: new fields.HTMLField({ initial: '' }),
-        special: new fields.HTMLField({ initial: '' }),
+        notes: new fields.StringField({ initial: '' }),
+        special: new fields.StringField({ initial: '' }),
         housedSpaceId: new fields.StringField({ initial: '' }),
         ...BaseActorDataModel.defineCharacterDetailsFields()
       }),

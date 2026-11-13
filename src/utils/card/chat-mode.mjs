@@ -3,8 +3,10 @@
  * message mode (the core setting), so a GM on "GM Roll" does not post public cast and use cards for their monsters.
  */
 
+import { GM_ACTOR_TYPES } from '../document-types.mjs';
+
 /** Actor types whose cards follow the sender's message mode. */
-const MODE_FOLLOWING_TYPES = new Set(['mob', 'npc']);
+const MODE_FOLLOWING_TYPES = new Set(GM_ACTOR_TYPES);
 
 /**
  * The options argument for `ChatMessage.create(data, options)` for a card posted for `actor`.

@@ -106,6 +106,8 @@
               </optgroup>
             {{/each}}
           </select>
+          {{> "systems/sprinter-rpg/templates/shared/requirement-badges.hbs" rows=currentRequirements.race}}
+          {{#if raceNotInForce}}<span class="cog-rule-hint cog-race-not-in-force"><i class="fa-solid fa-masks-theater"></i> {{raceNotInForce}}</span>{{/if}}
           {{#if raceClassHint}}<span class="cog-rule-hint cog-race-class-hint"><i class="fa-solid fa-circle-info"></i> {{raceClassHint}}</span>{{/if}}
         </div>
         {{> "systems/sprinter-rpg/templates/actors/parts/sex-select.hbs"}}
@@ -155,6 +157,7 @@
               </optgroup>
             {{/each}}
           </select>
+          {{> "systems/sprinter-rpg/templates/shared/requirement-badges.hbs" rows=currentRequirements.class}}
         </div>
         <div class="cog-field-group">
           <span class="cog-field-label">Floor</span>
@@ -169,20 +172,11 @@
     </div>
   </header>
 
-  {{!-- ACTOR TAGS: identity tags for the owner and GM; everything else GM-only (E8.8) --}}
-  {{#if showActorTags}}
-  <section class="cog-actor-tags-section">
-    <h3 class="cog-text-strong" style="margin: 0 0 4px; font-family: 'Oswald', sans-serif; font-size: 13px; text-transform: uppercase;">
-      <i class="fa-solid fa-tags cog-text-accent"></i> {{localize 'COG.Tags.ActorHeading'}}
-    </h3>
-    {{> "systems/sprinter-rpg/templates/shared/tag-pills.hbs"}}
-  </section>
-  {{/if}}
-
   {{!-- HEALTH BAR --}}
   <div class="cog-health-section">
     <div class="cog-hp-numeric-row">
       <span class="cog-field-label" style="margin-right: 6px;">Health</span>
+      {{#if zeroHealth}}<span class="{{zeroHealth.cssClass}}" data-tooltip="{{zeroHealth.title}}">{{zeroHealth.label}}</span>{{/if}}
       <div class="cog-hp-input-group">
         <input class="cog-hp-input" name="system.attributes.hp.value" type="number" value="{{system.attributes.hp.value}}" title="Current HP" />
         <span class="cog-hp-slash">/</span>
@@ -446,8 +440,8 @@
           <div class="cog-banner-header">MOVEMENT</div>
           <div class="cog-formula-row cog-centered-row">
             <div class="cog-formula-item">
-              <input class="cog-box-input medium" name="system.attributes.speed.move" type="number" value="{{system.attributes.speed.move}}" placeholder="20" />
-              <span class="cog-stat-sublabel">Move (ft)</span>
+              <input class="cog-box-input medium" name="system.attributes.speed.move" type="number" value="{{storedMove}}" placeholder="20" />
+              <span class="cog-stat-sublabel">Move (ft){{#if moveNow}} <strong title="{{moveNow.title}}">now {{moveNow.rated}}</strong>{{/if}}</span>
             </div>
             <div class="cog-formula-item">
               <input class="cog-box-input medium" name="system.attributes.speed.step" type="number" value="{{system.attributes.speed.step}}" placeholder="10" />
@@ -578,9 +572,9 @@
             <div class="cog-debuff-chips-container cog-bg-danger-tint" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 6px; border: 1px solid var(--cog-danger); border-radius: 3px; margin-bottom: 4px;">
               {{#each debuffs as |deb|}}
                 <div class="cog-debuff-chip {{deb.severityClass}} {{#if (eq deb.severityClass 'is-major')}}cog-bg-accent-fill{{else}}cog-bg-warning-fill{{/if}} cog-text-on-fill" data-item-id="{{deb.id}}" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 3px; font-size: 10px;" title="{{deb.name}}{{#if deb.system.duration}} • {{deb.system.duration}}{{/if}}">
-                  <span class="item-edit" data-action="editItem"{{#if deb.summaryTip}} data-tooltip="{{deb.summaryTip}}"{{/if}} style="cursor: pointer; font-weight: bold;">{{deb.name}}</span>
+                  <span class="item-edit" data-action="editItem"{{#if deb.summaryTip}} data-tooltip="{{deb.summaryTip}}"{{/if}} style="cursor: pointer; font-weight: bold;">{{deb.displayName}}</span>
                   {{#if deb.summary}}<span style="opacity: 0.85; font-size: 9px;">({{deb.summary}})</span>{{/if}}
-                  <a class="item-delete cog-text-strong" data-action="deleteItem" data-tooltip="Remove {{deb.name}}" style="cursor: pointer; margin-left: 2px;"><i class="fa-solid fa-xmark"></i></a>
+                  <a class="item-delete cog-text-strong" data-action="deleteItem" data-tooltip="Remove {{deb.displayName}}" style="cursor: pointer; margin-left: 2px;"><i class="fa-solid fa-xmark"></i></a>
                 </div>
               {{/each}}
             </div>
@@ -737,7 +731,7 @@
         <div class="cog-technique-strip-list">
           {{#each combatTechniques as |tech|}}
             <button type="button" class="cog-technique-pill" data-action="editItem" data-item-id="{{tech.id}}"
-              data-tooltip="{{tech.name}}: {{tech.summary}}{{#if tech.notes}} — {{tech.notes}}{{/if}}{{#if tech.appliesTo}} ({{tech.appliesTo}}){{/if}}">
+              data-tooltip-text="{{tech.name}}: {{tech.summary}}{{#if tech.notes}} — {{tech.notes}}{{/if}}{{#if tech.appliesTo}} ({{tech.appliesTo}}){{/if}}">
               <i class="fa-solid {{tech.icon}}"></i>
               <span class="cog-tech-name">{{tech.name}}</span>
               {{#if tech.untrained}}<span class="cog-badge cog-badge-untrained">{{localize "COG.AttackOptions.Untrained"}}</span>{{else}}<span class="cog-badge cog-bg-success-fill cog-text-on-fill">{{tech.rankText}}</span>{{/if}}
@@ -830,7 +824,7 @@
               {{/if}}
             </td>
             <td>
-              <span style="font-size: 11px;">{{#if spell.system.range}}{{spell.system.range}} &bull; {{/if}}{{spell.system.description}}</span>
+              <span style="font-size: 11px;">{{#if spell.system.range}}{{spell.system.range}} &bull; {{/if}}{{plainText spell.system.description}}</span>
             </td>
             <td style="text-align: center; white-space: nowrap;">
               <button type="button" class="cog-attack-roll-btn roll-spell" data-action="rollSpell" data-tooltip="Cast {{spell.name}}" style="font-size: 10px; padding: 2px 6px;">
@@ -877,7 +871,7 @@
               <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.quantity" value="{{item.system.quantity}}" style="width: 44px;" />
             </td>
             <td>
-              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{#if item.system.notes}}{{item.system.notes}}{{else}}{{item.system.description}}{{/if}}" placeholder="Loot notes..." />
+              <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{item.lootNotes}}" placeholder="Loot notes..." />
             </td>
             <td>
               {{#unless item.system.used}}
@@ -930,5 +924,15 @@
   {{!-- HOTLIST (BOTTOM OF MAIN CHARACTER SHEET) --}}
   {{> "systems/sprinter-rpg/templates/actors/parts/hotlist.hbs"}}
   {{/unless}}
+
+  {{!-- ACTOR TAGS (BOTTOM OF PAGE 1): a power-user editor; identity tags for the owner and GM, everything else GM-only (E8.8) --}}
+  {{#if showActorTags}}
+  <section class="cog-actor-tags-section" style="margin-top: 14px;">
+    <h3 class="cog-text-strong" style="margin: 0 0 4px; font-family: 'Oswald', sans-serif; font-size: 13px; text-transform: uppercase;">
+      <i class="fa-solid fa-tags cog-text-accent"></i> {{localize 'COG.Tags.ActorHeading'}}
+    </h3>
+    {{> "systems/sprinter-rpg/templates/shared/tag-pills.hbs"}}
+  </section>
+  {{/if}}
 </div>
 </section>

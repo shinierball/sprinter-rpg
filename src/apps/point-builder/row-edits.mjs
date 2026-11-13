@@ -7,7 +7,7 @@
 import { BP_PER_RANK } from '../../data/rules/point-buy-budget.mjs';
 import { COG_BENEFIT_TIERS, COG_DETRIMENT_TIERS } from '../../data/rules/point-build-tiers.mjs';
 import { getAvailableBuffs, getAvailableDebuffs, getAvailableSpells, getCompendiumSkills } from '../../sheets/item/catalogs.mjs';
-import { EDITABLE_KEYS, PerkRowsHost, SpecGrantRowsHost, specRowFromGrant } from '../perk-rows-host.mjs';
+import { EDITABLE_KEYS, PerkRowsHost, SpecGrantRowsHost, SpecRequirementsHost, specRowFromGrant } from '../perk-rows-host.mjs';
 import { applyHostForm } from '../../sheets/item/row-host.mjs';
 import { POINT_BUY_FORM, POINT_BUY_FIELD_PARSERS, POINT_BUY_ROW_FIELDS, LEDGER_FIELDS } from './form.mjs';
 
@@ -54,6 +54,7 @@ export async function setRowField(app, key, index, fieldName, raw) {
  * index. Its writes land in the perk's `rows` in the spec; an empty list removes the key.
  */
 export function perkRowsHost(app, list, index) {
+  if (list === POINT_BUY_FORM.perkRows.requirementsList) return app.specRequirementsHost();
   if (POINT_BUY_FORM.perkRows.grantLists.includes(list)) return app.specGrantRowsHost(list);
   const perk = POINT_BUY_FORM.perkRows.lists.includes(list) ? app.spec[list]?.[index] : null;
   if (!perk) return null;
@@ -77,6 +78,31 @@ export function specGrantRowsHost(app, list) {
   });
 }
 
+/** The rows host of `spec.requirements`: its writes replace the spec rows in place. */
+export function specRequirementsHost(app) {
+  return new SpecRequirementsHost(app.spec.builderType, app.spec.requirements, {
+    save: (rows) => { app.spec.requirements = rows; }
+  });
+}
+
+/**
+ * The Requirements accordion's summary: the viewer's open state is kept on the app (per spec or per perk, never in the
+ * spec), and the element is toggled in place so a re-render keeps it as left.
+ * @param {object} app the creator app
+ * @param {{ closest: Function }} target the summary
+ */
+export function toggleRequirements(app, target) {
+  const form = target.closest?.('[data-perk-list]');
+  if (!form) return;
+  const { requirementsList, lists } = POINT_BUY_FORM.perkRows;
+  const listName = form.dataset.perkList;
+  const owner = listName === requirementsList ? app.spec : (lists.includes(listName) ? app.spec[listName]?.[Number(form.dataset.perkIndex)] : null);
+  if (!owner) return;
+  const open = !app.requirementsOpen.has(owner);
+  if (open) app.requirementsOpen.add(owner); else app.requirementsOpen.delete(owner);
+  target.closest('details')?.toggleAttribute?.('open', open);
+}
+
 export async function savePerkRowsForm(app, form) {
   const { prefix } = POINT_BUY_FORM.perkRows;
   const list = form.dataset.perkList;
@@ -85,7 +111,8 @@ export async function savePerkRowsForm(app, form) {
   if (!host) return;
   const data = new foundry.applications.ux.FormDataExtended(form).object;
   const listData = foundry.utils.expandObject(data)[prefix]?.[list];
-  const submitted = (POINT_BUY_FORM.perkRows.grantLists.includes(list) ? listData : listData?.[index]) ?? {};
+  const { grantLists, requirementsList } = POINT_BUY_FORM.perkRows;
+  const submitted = (grantLists.includes(list) || list === requirementsList ? listData : listData?.[index]) ?? {};
   await applyHostForm(host, submitted, EDITABLE_KEYS);
   await app.render({ parts: ['builder', 'receipt'] });
 }

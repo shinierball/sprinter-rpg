@@ -15,12 +15,16 @@ import { planRaceClassKind, raceClassView, prefetchKindDocuments } from '../../d
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { transformText } from '../../utils/character/transform-text.mjs';
 import { carrySourceStamp, landItems } from '../../utils/content-source.mjs';
 import { calculateItemHandsRequired } from '../../utils/gear/wielding.mjs';
 import {
   isAffliction, afflictionStage, transformState, formAt, formEntries, overlayOf as overlayOfItems, transformationOfItem, heldByCure
 } from '../../utils/character/transform-rules.mjs';
 import { reveal } from '../pending-secrets.mjs';
+import { syncTokenVision } from './actor-vision.mjs';
+import { isEffectItem } from '../../utils/document-types.mjs';
+import { clearFlag } from '../../utils/flags.mjs';
 
 const FLAG = 'transformation';
 const PERMANENT = Object.freeze({ type: 'permanent', value: 0, scaleBy: null, endsWithCombat: false, remainingRounds: 0, expiresAt: null });
@@ -38,6 +42,16 @@ async function whileTransforming(actor, fn) {
       const left = (working.get(id) ?? 1) - 1;
       if (left > 0) working.set(id, left); else working.delete(id);
     }
+    // The item hooks sync vision while the affliction is still pending, so a form's senses count only from here
+    if (!isTransforming(actor)) await syncVision(actor);
+  }
+}
+
+async function syncVision(actor) {
+  try {
+    await syncTokenVision(actor);
+  } catch (err) {
+    console.warn('Sprinter RPG | Could not sync token vision after a transformation:', err);
   }
 }
 
@@ -109,7 +123,7 @@ const formLabel = (affliction, index, def) => formAt(affliction, index)?.label |
 function planForm(actor, affliction, def, selections, lookup) {
   const view = raceClassView(actor);
   // The original race's traits would hide a form trait with the same identifier; the form brings its own.
-  view.items = view.items.filter((i) => !(['buff', 'debuff'].includes(i.type) && i.flags?.[SYSTEM_ID]?.grantedBy === 'race'));
+  view.items = view.items.filter((i) => !(isEffectItem(i) && i.flags?.[SYSTEM_ID]?.grantedBy === 'race'));
   const plan = planRaceClassKind(view, 'race', def, selections, { lookup, worldFloor: getCurrentFloor(), startingItems: false });
   const owner = idOf(affliction);
   const creates = plan.itemCreates.map((data) => {
@@ -162,7 +176,7 @@ function resolveEffect(ref) {
   let def = debuff ?? buff;
   let type = debuff ? 'debuff' : 'buff';
   if (!def) {
-    const world = [...(globalThis.game?.items ?? [])].find((i) => ['buff', 'debuff'].includes(i.type)
+    const world = [...(globalThis.game?.items ?? [])].find((i) => isEffectItem(i)
       && (i.id === ref || i.uuid === ref || i.system?.identifier === ref));
     if (world) { def = world.toObject ? world.toObject() : world; type = world.type; }
   }
@@ -229,7 +243,10 @@ export async function changeVictim(actor, affliction, options = {}) {
   return whileTransforming(actor, async () => {
     // 1-2. Confirm; a second overlay needs a Rule Break and reverts the first
     const target = raceChange ? formLabel(affliction, 0, COGRaceClassApplier.findRace(forms[0].race, { actor })) : affliction.name;
-    if (!(await confirmPlain(`Change ${actor.name} into ${target} now?`, options))) return false;
+    const question = raceChange
+      ? transformText('COG.Transform.ConfirmChangeInto', { actor: actor.name, form: target })
+      : transformText('COG.Transform.ConfirmChangeBy', { actor: actor.name, affliction: affliction.name });
+    if (!(await confirmPlain(question, options))) return false;
     const other = raceChange ? overlayOf(actor) : null;
     if (other && idOf(other) !== idOf(affliction)) {
       const gate = await confirmRuleBreak({
@@ -410,6 +427,12 @@ function transformationOwner(actor, item) {
   return affliction && isAffliction(affliction) ? affliction : null;
 }
 
+/** Whether a form race is laid over the victim (an affliction with no form, or back in the original body, has none). */
+function formInForce(actor, affliction) {
+  const state = transformState(affliction);
+  return Boolean(formAt(affliction, state.formIndex) || actor.items.get(state.formItemId));
+}
+
 /** What the body is called in a Rule Break question: the form's label, the form race's name, or the affliction's. */
 function changedLabel(actor, affliction) {
   const state = transformState(affliction);
@@ -430,7 +453,9 @@ export async function confirmHeldRevert(actor, affliction, options = {}) {
   if (!heldByCure(affliction, { floor: getCurrentFloor() })) return { proceed: true, ruleBreak: false };
   const gate = await confirmRuleBreak({
     title: 'Transformation',
-    message: `${actor.name} has already changed into ${changedLabel(actor, affliction)}. Revert anyway as a Rule Break?`,
+    message: formInForce(actor, affliction)
+      ? transformText('COG.Transform.HeldRevertInto', { actor: actor.name, form: changedLabel(actor, affliction) })
+      : transformText('COG.Transform.HeldRevertBy', { actor: actor.name, affliction: affliction.name }),
     options
   });
   return { proceed: gate.confirmed, ruleBreak: gate.confirmed, refusal: gate.refusal, reason: gate.reason };
@@ -484,6 +509,32 @@ export async function confirmTransformDelete(actor, item, options = {}) {
   }
   if (gate.refusal === 'policy' && gate.reason) globalThis.ui?.notifications?.warn?.(gate.reason);
   return false;
+}
+
+/**
+ * The debuff sheet's edits that undo a changed affliction's body: "Not a transformation" and deleting the form row in
+ * force. They take the same gate as a cure (D9): a closed window asks the Rule Break, and a confirmed edit reverts the
+ * change first (the form race and what it made go, the original race's traits come back) so nothing stays paused under
+ * what is then an ordinary debuff or a pending affliction. A pending affliction is edited freely. Returns whether to
+ * go ahead with the edit; a refusal changes nothing.
+ * @param {Actor|null} actor the carrier of the affliction (null for a world item)
+ * @param {Item} affliction
+ * @param {object} [options] as {@link confirmHeldRevert}, plus `keep`: `'plain'` (the debuff stops being an affliction,
+ *   its change state is cleared) or `'pending'` (it stays one, landed and unchanged)
+ * @returns {Promise<boolean>}
+ */
+export async function confirmAfflictionEdit(actor, affliction, { keep = 'pending', ...options } = {}) {
+  if (!actor || afflictionStage(affliction) !== 'changed') return true;
+  const gate = await confirmHeldRevert(actor, affliction, options);
+  if (!gate.proceed) {
+    if (gate.refusal === 'policy' && gate.reason) globalThis.ui?.notifications?.warn?.(gate.reason);
+    return false;
+  }
+  const { landedAt, landedFloor } = transformState(affliction);
+  await revertTransformation(actor, affliction, { ruleBreak: gate.ruleBreak, deleteAffliction: false });
+  if (keep === 'plain') await clearFlag(affliction, FLAG);
+  else await writeState(affliction, { stage: 'pending', landedAt, landedFloor });
+  return true;
 }
 
 /** Reveal a held secret and fire its change in one step (a plain debuff just lands). Returns the created debuff. */

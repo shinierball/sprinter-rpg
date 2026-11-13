@@ -6,7 +6,7 @@ import { BP_PER_RANK, DEFAULT_RANK_BONUS_COST } from '../../data/rules/point-buy
 import { COG_BENEFIT_TIERS, COG_DETRIMENT_TIERS } from '../../data/rules/point-build-tiers.mjs';
 import { identifierOptions, pickedBadge } from '../../utils/ui/identifier-options.mjs';
 import { getAvailableBuffs, getAvailableDebuffs, getAvailableSpells, getCompendiumSkills } from '../../sheets/item/catalogs.mjs';
-import { buildPerkMechanics, buildSpecGrantViews } from '../perk-rows-host.mjs';
+import { buildPerkMechanics, buildSpecGrantViews, buildSpecRequirements } from '../perk-rows-host.mjs';
 import { statPoolCounts, rankBonusCounts } from '../../data/builders/point-buy-payload.mjs';
 
 /** A rank select's options, 1 to 5, at 2 BP per rank (a stored rank outside that range stays selectable). */
@@ -79,6 +79,7 @@ export async function pointBuyRowViews(app) {
   const poolViews = buildSpecGrantViews('statPools', app.spec.statPools, statPoolCounts, catalogs);
   const bonusViews = buildSpecGrantViews('rankBonuses', app.spec.rankBonuses, rankBonusCounts, catalogs);
   return {
+    requirementRows: buildSpecRequirements(app.spec.builderType, app.spec, app.requirementsOpen.has(app.spec)),
     statPoolRows: app.spec.statPools.map((row, index) => ({
       index, grant: poolViews[index], unfilled: poolViews[index].incomplete, cost: statPoolCounts(row) ? Number(row.value) : 0
     })),
@@ -96,13 +97,13 @@ export async function pointBuyRowViews(app) {
     debuffRows: app.spec.debuffs.map(effect(debuffCatalog, (tier) => detrimentTierOptions(tier))),
     customBenefitRows: app.spec.customBenefits.map((row, index) => ({
       ...row,
-      mechanics: buildPerkMechanics(app.spec.builderType, 'customBenefits', index, row, app.perkRowsOpen.has(row), catalogs),
+      mechanics: buildPerkMechanics(app.spec.builderType, 'customBenefits', index, row, app.perkRowsOpen.has(row), catalogs, app.requirementsOpen.has(row)),
       unfilled: unfilled(row),
       costOptions: withStoredValue(benefitTierOptions(row.cost, { by: 'cost' }), row.cost)
     })),
     customDetrimentRows: app.spec.customDetriments.map((row, index) => ({
       ...row,
-      mechanics: buildPerkMechanics(app.spec.builderType, 'customDetriments', index, row, app.perkRowsOpen.has(row), catalogs),
+      mechanics: buildPerkMechanics(app.spec.builderType, 'customDetriments', index, row, app.perkRowsOpen.has(row), catalogs, app.requirementsOpen.has(row)),
       unfilled: unfilled(row),
       costOptions: withStoredValue(detrimentTierOptions(row.extraPoints, { by: 'cost' }), row.extraPoints)
     }))

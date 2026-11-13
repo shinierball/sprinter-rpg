@@ -19,6 +19,7 @@ import { auraRank, computeAuraTempBars } from './aura-effects.mjs';
 import { clearAllyAuraEffects } from './aura-relay.mjs';
 import { withOneNoGmWarning } from '../../utils/gm-relay.mjs';
 import { deleteAuraRegionsEverywhere } from './area-relay.mjs';
+import { zeroHealthOutcome, ZERO_HEALTH } from './dying.mjs';
 import {
   auraRadius, blankAuraState,
   syncAuraMembership, enterAuraCaster, enterAuraAllies, fallbackAuraAllies
@@ -37,7 +38,7 @@ import {
  * @returns {Promise<{ avoided: boolean, roll: Roll, dc: number, success: boolean }|null>}
  */
 export async function checkFatalDebuffProtection(actor, debuff, damageVal, options = {}) {
-  if (actor.type !== 'crawler' && actor.type !== 'mercenary') return null;
+  if (zeroHealthOutcome(actor) !== ZERO_HEALTH.DYING) return null;
 
   let currentFloor = options.floor;
   if (currentFloor === undefined || currentFloor === null) {
@@ -72,7 +73,9 @@ export async function checkFatalDebuffProtection(actor, debuff, damageVal, optio
     type: 'stat',
     name: `CON Check vs Fatal ${debuff?.name || 'Debuff'}`,
     isUntrained: false,
-    dc
+    dc,
+    // An automatic check, not an Action.
+    spendsAction: false
   }).catch(() => {});
 
   if (success) {
@@ -414,6 +417,19 @@ export async function deactivateAura(actor, spellItem, options = {}) {
 }
 
 /**
+ * Whether a stored resistance or immunity covers an incoming damage type. Two known element types match only when they are
+ * the same element (Fire does not cover Brimstone, nor Brimstone cover Fire); otherwise the loose name match for free-text types.
+ * @param {string} target lowercased incoming type or element tag
+ * @param {string} listed lowercased stored entry
+ */
+function sameDamageType(target, listed) {
+  const a = normalizeElementTag(target);
+  const b = normalizeElementTag(listed);
+  if (a && b) return a === b;
+  return target === listed || target.includes(listed) || listed.includes(target);
+}
+
+/**
  * Check if actor has resistance to a specific damage type
  * @param {string} damageType
  * @returns {boolean}
@@ -422,10 +438,7 @@ export function hasResistance(actor, damageType) {
   if (!damageType) return false;
   const list = actor.system?.attributes?.resistances || [];
   const target = damageType.toLowerCase().trim();
-  return list.some(r => {
-    const rLower = r.toLowerCase().trim();
-    return target === rLower || target.includes(rLower) || rLower.includes(target);
-  });
+  return list.some(r => sameDamageType(target, r.toLowerCase().trim()));
 }
 
 /**
@@ -437,17 +450,15 @@ export function hasImmunity(actor, damageType) {
   if (!damageType) return false;
   const list = actor.system?.attributes?.immunities || [];
   const target = damageType.toLowerCase().trim();
-  return list.some(i => {
-    const iLower = i.toLowerCase().trim();
-    return target === iLower || target.includes(iLower) || iLower.includes(target);
-  });
+  return list.some(i => sameDamageType(target, i.toLowerCase().trim()));
 }
 
 /**
  * Get damage reduction for an incoming damage type: the actor's derived resistances/immunities plus every
  * conditional `defenseModifiers` row that matches the `defense` context (the defender's `self.*` tags, the
  * attacker's `attacker.*` tags and the incoming attack's own tags).
- * Returns { percent, flat, dr, rounding: 'up'|'down', isResistant, isImmune, vulnerable, suppressDr, sources }.
+ * Returns { percent, flat, dr, rounding: 'up'|'down', isResistant, isImmune, vulnerable, suppressDr, hbFactor, hbSource, sources }.
+ * `hbFactor` (1 when no row) is the largest `healthBarScale` factor: damage reaching the Health Bar is divided by it.
  * `sources` ({ kind, label }[]) names what applied, for the chat breakdown only: every matching `defenseModifiers`
  * row, plus `{ kind: 'resistance', label: 'Resistant' }` / `{ kind: 'immunity', label: 'Immune' }` for a derived one.
  * `dr` is conditional flat damage resistance, on top of `attributes.dr.total`. `vulnerable`: a matching
@@ -471,7 +482,7 @@ export function getDamageReduction(actor, damageType, context) {
   const sources = [];
   const acc = {
     percent: 0, flat: 0, dr: 0, rounding: 'up', isResistant: actor.hasResistance(damageType) || (elementTag && actor.hasResistance(elementTag)),
-    immune: null, vulnerable: false, suppressDr: false
+    immune: null, vulnerable: false, suppressDr: false, hbFactor: 1, hbSource: ''
   };
   if (acc.isResistant) {
     acc.percent += 0.5;
@@ -513,6 +524,8 @@ export function getDamageReduction(actor, damageType, context) {
     isImmune: false,
     vulnerable: acc.vulnerable,
     suppressDr: acc.suppressDr,
+    hbFactor: acc.hbFactor,
+    hbSource: acc.hbSource,
     sources
   };
 }

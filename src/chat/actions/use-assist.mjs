@@ -17,12 +17,13 @@ import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { readCheckRecord, getAssistSpec, CHECK_RECORD_FLAG, MAX_RECORD_ASSISTS } from '../../utils/roll/check-assists.mjs';
 import { rollAssistDice } from '../../utils/roll/assist-roll.mjs';
 import { isFreeInterruptItem } from '../../utils/tag/tag-mechanics.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
 import { canModifyMessage } from '../damage-applications.mjs';
 import { messageAuthorId } from '../chat-relay.mjs';
 import { assistText } from '../render/check-assists.mjs';
 import { findCombatant } from '../../documents/combat/combatants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 /** Relay action for check-card amends; `payload.op` names the write (`apply`; B3 adds `resolve`). */
 const ASSIST_APPLY_RELAY = 'checkAssist';
@@ -193,7 +194,7 @@ async function postAssistCard({ assister, skill, roll, formula, lines, checkMess
   const title = assistText('CardTitle', { skill: skill.name, amount: roll.total, name: rollerName });
   const linesHtml = lines.length ? `<div class="cog-assist-card-lines">${escapeAttr(lines.join(', '))}</div>` : '';
   const ruleBreakHtml = ruleBreak ? ruleBreakBadgeHtml() : '';
-  const rollHtml = typeof roll.render === 'function' ? await roll.render() : '';
+  const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
   const content = `
     <div class="cog-chat-card cog-assist-card">
       <div class="cog-assist-card-title"><i class="fa-solid fa-handshake-angle"></i> ${escapeAttr(title)} ${ruleBreakHtml}</div>
@@ -201,23 +202,20 @@ async function postAssistCard({ assister, skill, roll, formula, lines, checkMess
       ${rollHtml}
     </div>
   `;
-  return roll.toMessage({
+  return roll.toMessage(withFlags({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor: assister }) ?? { alias: assister.name },
     flavor: `<strong>${escapeAttr(assister.name)}</strong>: ${escapeAttr(skill.name)} (${escapeAttr(formula)})`,
-    content,
-    flags: {
-      [SYSTEM_ID]: {
-        isAssistRoll: true,
-        source: 'interrupt',
-        checkMessageId,
-        assisterUuid: assister.uuid,
-        itemId: skill.id,
-        skillName: skill.name,
-        formula,
-        ruleBreak
-      }
-    }
-  });
+    content
+  }, {
+    isAssistRoll: true,
+    source: 'interrupt',
+    checkMessageId,
+    assisterUuid: assister.uuid,
+    itemId: skill.id,
+    skillName: skill.name,
+    formula,
+    ruleBreak
+  }));
 }
 
 /**

@@ -70,8 +70,8 @@ export class COGMercenarySheet extends COGCrawlerSheet {
         context.housedSpace = {
           id: spaceActor.id,
           name: spaceActor.name,
-          tier: spaceActor.system?.tier || 1,
-          size: spaceActor.system?.size || 'Single Room'
+          rank: spaceActor.system?.rank,
+          typeLabel: spaceActor.system?.typeLabel
         };
       }
     }
@@ -86,8 +86,9 @@ export class COGMercenarySheet extends COGCrawlerSheet {
     }));
 
     // Race selection context
-    const raceContext = COGRaceClassApplier.getRaceClassContext(actor);
+    const raceContext = COGRaceClassApplier.getRaceClassContext(actor, { requirements: true });
     context.raceOptions = raceContext.raceOptions || [];
+    context.currentRequirements = raceContext.currentRequirements;
     context.hasCustomRace = raceContext.hasCustomRace || false;
     context.currentRaceLabel = raceContext.currentRaceLabel || '';
 

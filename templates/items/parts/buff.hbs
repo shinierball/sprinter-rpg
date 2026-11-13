@@ -1,62 +1,75 @@
 <section class="cog-item-body cog-item-body-buff">
 {{#if showBuffAuraNote}}
 <div class="cog-buff-aura-note cog-bg-warning-tint cog-text-warning" style="margin-bottom: 8px; padding: 6px 8px; border-left: 3px solid var(--cog-warning); font-size: 11px;">
-  <i class="fa-solid fa-circle-info"></i> Buffs cannot emit an aura. Make the aura a spell or skill and list this buff in its area's Granted Buffs.
+  <i class="fa-solid fa-circle-info"></i> {{localize "COG.Buff.Sheet.AuraNote"}}
 </div>
 {{/if}}
 <div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
   <div class="cog-field-group small">
-    <span class="cog-field-label">Healing Per Round</span>
-    <input class="cog-field-input" type="text" name="system.healingPerRound" value="{{system.healingPerRound}}" placeholder="1d4 / 1 bar" title="Health restored to bearer at end of each combat round" />
+    <span class="cog-field-label">{{localize "COG.Buff.Sheet.HealingPerRound"}}</span>
+    <input class="cog-field-input" type="text" name="system.healingPerRound" value="{{system.healingPerRound}}" placeholder="1d4 / 1 bar" title="{{localize 'COG.Buff.Sheet.HealingPerRoundHint'}}" />
   </div>
   <div class="cog-field-group small">
-    <span class="cog-field-label">Damage Type</span>
-    <select name="system.damageType" class="cog-field-input">
-      <option value="">All / None</option>
+    <span class="cog-field-label">{{localize "COG.Buff.Sheet.DamageType"}}</span>
+    <select name="system.damageType" class="cog-field-input" title="{{localize 'COG.Buff.Sheet.DamageTypeHint'}}">
+      <option value="">{{localize "COG.Buff.Sheet.DamageTypeAny"}}</option>
       {{#each damageTypes as |dt|}}
         <option value="{{dt}}" {{#if (eq ../system.damageType dt)}}selected{{/if}}>{{dt}}</option>
       {{/each}}
     </select>
   </div>
   <div class="cog-field-group small">
-    <span class="cog-field-label">Duration (text, optional)</span>
-    <input name="system.duration" class="cog-field-input" type="text" value="{{system.duration}}" placeholder="1 Hour" />
+    <span class="cog-field-label">{{localize "COG.Buff.Sheet.DurationText"}}</span>
+    <input name="system.duration" class="cog-field-input" type="text" value="{{system.duration}}" placeholder="1 Hour" title="{{localize 'COG.Buff.Sheet.DurationHint'}}" />
   </div>
 </div>
 <div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
   {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=durationEditor}}
 </div>
 
-{{> "systems/sprinter-rpg/templates/items/parts/stat-grant-rows.hbs"}}
-
-{{!-- LIMB MODIFIERS (ARMS, LEGS, HANDS) --}}
-<div class="cog-stat-block" style="margin-bottom: 10px;">
-  <div class="cog-banner-header cog-bg-info-fill" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
-    <span><i class="fa-solid fa-person-walking"></i> LIMB MODIFIERS (ARMS, LEGS, HANDS)</span>
+{{!-- ACTIVATION: rows apply only inside a window that Use opens (once per day, for 10 minutes, for one use, ...) --}}
+<div class="cog-stat-block cog-activation-editor" style="margin-bottom: 10px;">
+  <div class="cog-banner-header cog-bg-info-fill" style="font-size: 11px; padding: 3px 6px;">
+    <span><i class="fa-solid fa-hourglass-start"></i> {{localize "COG.Activation.Sheet.Heading"}}</span>
   </div>
+  {{> "systems/sprinter-rpg/templates/shared/content-hint.hbs" key="COG.Activation.Sheet.HeadingHint"}}
   <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
-    <div class="cog-field-row" style="margin-bottom: 4px; align-items: center; gap: 12px;">
-      <div class="cog-field-group small">
-        <span class="cog-field-label">Hands (+/-)</span>
-        <input class="cog-field-input" type="number" name="system.limbModifiers.hands" value="{{system.limbModifiers.hands}}" placeholder="0" style="font-size: 11px; text-align: center;" />
+    <div class="cog-field-row" style="margin-bottom: 4px; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
+      <div class="cog-field-group small" style="text-align: center;">
+        <span class="cog-field-label" title="{{localize 'COG.Activation.Sheet.EnabledHint'}}">{{localize "COG.Activation.Sheet.Enabled"}}</span>
+        <label style="display: flex; align-items: center; justify-content: center; height: 24px; cursor: pointer;">
+          <input class="cog-checkbox-lg" type="checkbox" name="system.activation.enabled" {{#if activationView.enabled}}checked{{/if}} />
+        </label>
       </div>
       <div class="cog-field-group small">
-        <span class="cog-field-label">Arms (+/-)</span>
-        <input class="cog-field-input" type="number" name="system.limbModifiers.arms" value="{{system.limbModifiers.arms}}" placeholder="0" style="font-size: 11px; text-align: center;" />
+        <span class="cog-field-label">{{localize "COG.Activation.Sheet.WindowAmount"}}</span>
+        <input class="cog-field-input" type="number" min="0" step="any" name="{{activationView.value.name}}" value="{{activationView.value.amount}}" style="font-size: 11px;" />
       </div>
-      <div class="cog-field-group small">
-        <span class="cog-field-label">Legs (+/-)</span>
-        <input class="cog-field-input" type="number" name="system.limbModifiers.legs" value="{{system.limbModifiers.legs}}" placeholder="0" style="font-size: 11px; text-align: center;" />
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.Activation.Sheet.WindowUnit"}}</span>
+        <select class="cog-field-input" name="{{activationView.unit.name}}" style="font-size: 11px;">
+          {{#each activationView.unit.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+        </select>
       </div>
     </div>
-    <div class="cog-text-secondary" style="font-size: 10px; font-style: italic;">
-      Modifies the actor's available limb and wielding hand count while this Buff is active or assigned to an External Buff slot.
+    {{#if activationView.showQuery}}
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.Activation.Sheet.WindowQuery"}}</span>
+      {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=activationView.query tagOptions=techniqueTagOptions}}
     </div>
+    {{/if}}
+    {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=activationView.cooldown}}
+    <div class="cog-text-secondary" style="font-size: 10px; font-style: italic;">{{localize "COG.Activation.Sheet.Note"}}</div>
   </div>
 </div>
 
+{{> "systems/sprinter-rpg/templates/items/parts/stat-grant-rows.hbs"}}
+{{> "systems/sprinter-rpg/templates/items/parts/grant-rows.hbs" grants=buffGrantRows}}
+
+{{> "systems/sprinter-rpg/templates/items/parts/limb-modifiers.hbs" noteKey="COG.LimbModifiers.BuffNote"}}
+
 <div class="cog-field-group">
-  <span class="cog-field-label">Description</span>
+  <span class="cog-field-label">{{localize "COG.Buff.Sheet.Description"}}</span>
   {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
 </div>
 </section>

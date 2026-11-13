@@ -6,9 +6,10 @@
  */
 import { recommendedWeaponSkillIdentifiers, recommendedOptionalEffects } from './weapon-recommendations.mjs';
 import { getCompendiumSkills } from './catalogs.mjs';
-import { schemaFieldAt, toStringList } from './util.mjs';
+import { schemaFieldAt, swapWithNeighbour } from './util.mjs';
+import { toStringList } from '../../utils/first-scalar.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
-import { DEFAULT_DAMAGE_TYPES } from '../../utils/ui/field-options.mjs';
+import { configuredDamageTypes } from '../../utils/ui/field-options.mjs';
 
 /** `system` path of each pill list, by the name used in its actions. */
 export const LIST_FIELDS = Object.freeze({
@@ -42,7 +43,7 @@ async function removeFromList(item, path, value) {
 }
 
 /** The damage types a typed damage-type entry is matched against (registry, else the defaults). */
-const damageTypes = () => toStringList(globalThis.CONFIG?.COG?.damageTypes ?? DEFAULT_DAMAGE_TYPES);
+const damageTypes = configuredDamageTypes;
 
 /** A typed damage type in the registry's spelling ("fire" -> "Fire"); an unregistered type is kept as typed. */
 const damageTypeValue = (raw) => {
@@ -64,6 +65,7 @@ const effectRefValue = (raw) => {
 export const PICK_LISTS = Object.freeze({
   persistentBuffs: Object.freeze({ path: 'persistentBuffs', custom: slugifyIdentifier }),
   persistentDebuffs: Object.freeze({ path: 'persistentDebuffs', custom: slugifyIdentifier }),
+  alsoApplies: Object.freeze({ path: 'alsoApplies', custom: slugifyIdentifier }),
   onHitDebuffs: Object.freeze({ path: 'onHit.debuffs', custom: effectRefValue }),
   evadeFailDebuffs: Object.freeze({ path: 'onHit.evadeFail.debuffs', custom: effectRefValue }),
   slotLossDebuffs: Object.freeze({ path: 'onHit.slotLoss.debuffs', custom: effectRefValue }),
@@ -77,7 +79,15 @@ export const PICK_LISTS = Object.freeze({
   areaPulseConditions: Object.freeze({ path: 'area.pulseConditions', custom: effectRefValue }),
   // A list inside a row of `system.grants` (a stat pool's stats, a choice row's options): the control sits in an element
   // carrying `data-grant-path` and `data-grant-index`, and the whole `grants` array is written back.
-  grantOptions: Object.freeze({ array: 'grants', rowField: 'options', custom: slugifyIdentifier })
+  grantOptions: Object.freeze({ array: 'grants', rowField: 'options', custom: slugifyIdentifier }),
+  // The same inside a row of `system.requirements` (the references a requirement accepts).
+  requirementOptions: Object.freeze({ array: 'requirements', rowField: 'options', custom: slugifyIdentifier }),
+  // A deity's rivals and signature skills and spells: identifiers.
+  deityRivals: Object.freeze({ path: 'rivals', custom: slugifyIdentifier }),
+  deitySignatureSkills: Object.freeze({ path: 'signature.skills', custom: slugifyIdentifier }),
+  // A patron's performance Skills and its additional Skills and Spells: identifiers.
+  patronPerformanceSkills: Object.freeze({ path: 'performanceSkills', custom: slugifyIdentifier }),
+  patronSkills: Object.freeze({ path: 'skills', custom: slugifyIdentifier })
 });
 
 /** The `PICK_LISTS` entry a control names, or null when the key is unknown or the item has no such field. */
@@ -177,8 +187,19 @@ function listActions(name, path, removeKey) {
   };
 }
 
+/** Swap one entry of a list field with its neighbour (`up` or `down`); out of range does nothing. */
+async function moveInList(item, path, index, direction) {
+  const list = swapWithNeighbour(readList(item, path), index, direction);
+  if (list) await item.update({ [`system.${path}`]: list });
+}
+
 export const LIST_ACTIONS = {
   ...PICK_LIST_ACTIONS,
+  /** The up and down controls of the Associated Weapon Skills order (the first Skill is the default). */
+  async moveAssociatedSkill(event, target) {
+    if (!this.isEditable) return;
+    await moveInList(this.item, LIST_FIELDS.associatedSkills, Number(target.dataset.index), target.dataset.direction);
+  },
   ...listActions('associatedSkill', LIST_FIELDS.associatedSkills, 'skill'),
   ...listActions('optionalEffect', LIST_FIELDS.optionalEffects, 'effect'),
   ...listActions('cleanseDebuff', LIST_FIELDS.cleanseDebuffs, 'debuff'),

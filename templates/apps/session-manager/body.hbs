@@ -238,6 +238,18 @@
         </button>
       </div>
 
+      {{#if standingStrip}}
+        <div class="cog-standing-difficulty">
+          <strong>{{standingStrip.title}}</strong>
+          <select data-change-action="setStandingDifficulty">
+            {{#each standingStrip.options}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+          </select>
+          {{#if standingStrip.showNumber}}<input type="number" step="1" min="0" value="{{standingStrip.value}}" aria-label="{{standingStrip.numberLabel}}" data-change-action="setStandingDifficulty" />{{/if}}
+          {{#if standingStrip.line}}<span class="cog-standing-line">{{standingStrip.line}}</span>{{/if}}
+          {{#if standingStrip.active}}<button type="button" data-action="clearStandingDifficulty">{{standingStrip.clearLabel}}</button>{{/if}}
+        </div>
+      {{/if}}
+
       {{!-- Table --}}
       <div class="cog-ledger-table-wrap">
         <table class="cog-ledger-table">
@@ -292,6 +304,13 @@
                   </td>
                   <td class="cog-cell-dc">
                     <input data-change-action="setEntryDC" type="number" class="cog-ledger-dc-input" data-entry-id="{{this.id}}" value="{{this.targetDC}}" placeholder="DC" />
+                    {{#if this.difficultyButtons.length}}
+                      <div class="cog-ledger-difficulty">
+                        {{#each this.difficultyButtons}}
+                          <button type="button" data-action="setEntryDifficulty" data-mode="{{this.mode}}" data-entry-id="{{../id}}" class="{{#if this.selected}}is-default{{/if}}">{{this.label}}</button>
+                        {{/each}}
+                      </div>
+                    {{/if}}
                   </td>
                   <td class="cog-cell-outcome">
                     <select data-change-action="setEntryOutcome" class="cog-ledger-outcome-select {{this.outcomeClass}}" data-entry-id="{{this.id}}">

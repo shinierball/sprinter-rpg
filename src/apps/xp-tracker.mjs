@@ -11,14 +11,7 @@ import { COG_ACTION_TYPES } from '../documents/combat/action-ledger.mjs';
 import { getRequiredXPForLevel } from '../documents/actor.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
-
-const DEFAULT_XP_WEIGHTS = {
-  damageDealt: 35,
-  damageTaken: 25,
-  defensive: 15,
-  tactical: 15,
-  buff: 10
-};
+import { XP_CONFIG_SETTING, DEFAULT_XP_WEIGHTS } from '../utils/combat/xp-config.mjs';
 
 export class COGExperienceTracker {
   /**
@@ -27,7 +20,7 @@ export class COGExperienceTracker {
    */
   static getXPConfig() {
     try {
-      const saved = globalThis.game?.settings?.get?.(SYSTEM_ID, 'xpConfig');
+      const saved = globalThis.game?.settings?.get?.(SYSTEM_ID, XP_CONFIG_SETTING);
       if (saved && typeof saved === 'object') {
         return { ...DEFAULT_XP_WEIGHTS, ...saved };
       }
@@ -45,7 +38,7 @@ export class COGExperienceTracker {
   static async saveXPConfig(config) {
     const updated = { ...DEFAULT_XP_WEIGHTS, ...config };
     if (globalThis.game?.settings?.set && (!globalThis.game?.user || globalThis.game.user.isGM !== false)) {
-      await globalThis.game.settings.set(SYSTEM_ID, 'xpConfig', updated);
+      await globalThis.game.settings.set(SYSTEM_ID, XP_CONFIG_SETTING, updated);
     }
     return updated;
   }

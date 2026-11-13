@@ -217,6 +217,7 @@ export function planImport({ loaded, recognition, canon }) {
           entry.verified = r.verified.length;
           entry.unverified = r.unverified.length;
           entry.unverifiedPaths = r.unverified;
+          entry.checks = r.checks;
           entry.itemNames = r.itemNames.length;
           entry.itemsKept = r.itemsKept.length;
           entry.chosen = { page: resolution.hit.page, j: resolution.hit.j };

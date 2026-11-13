@@ -4,8 +4,8 @@
  */
 import { SYSTEM_ID } from '../constants.mjs';
 import { combatText } from '../utils/combat/combat-round-text.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /**
  * @param {{ name: string, flags: object }[]} regions the created regions (core first)
@@ -21,10 +21,10 @@ export function buildAreaPlacedCard(regions, { item, scene } = {}) {
   else if (area.remainingRounds > 0) line = combatText('COG.ZonePulse.PlacedRounds', { rounds: area.remainingRounds });
   else line = combatText('COG.ZonePulse.PlacedUntilDismissed');
   return `<div class="cog-chat-card cog-area-placed-card">
-    <header class="cog-card-header"><h3><i class="fa-solid fa-bullseye"></i> ${esc(combatText('COG.ZonePulse.Placed', { name: core.name }))}</h3></header>
+    <header class="cog-card-header"><h3><i class="fa-solid fa-bullseye"></i> ${escapeAttr(combatText('COG.ZonePulse.Placed', { name: core.name }))}</h3></header>
     <div class="cog-card-body">
-      <div class="cog-text-muted">${esc(line)}</div>
-      <button type="button" class="cog-btn cog-dismiss-aura-btn" data-action="crawlerDismissArea" data-group-id="${esc(area.groupId)}" data-scene-uuid="${esc(scene?.uuid ?? core.parent?.uuid ?? '')}" data-actor-uuid="${esc(item?.parent?.uuid ?? area.casterUuid ?? '')}">${esc(combatText('COG.ZonePulse.Dismiss'))}</button>
+      <div class="cog-text-muted">${escapeAttr(line)}</div>
+      <button type="button" class="cog-btn cog-dismiss-aura-btn" data-action="crawlerDismissArea" data-group-id="${escapeAttr(area.groupId)}" data-scene-uuid="${escapeAttr(scene?.uuid ?? core.parent?.uuid ?? '')}" data-actor-uuid="${escapeAttr(item?.parent?.uuid ?? area.casterUuid ?? '')}">${escapeAttr(combatText('COG.ZonePulse.Dismiss'))}</button>
     </div>
   </div>`;
 }

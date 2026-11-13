@@ -1,7 +1,7 @@
 /**
  * Item and actor drops onto the crawler sheet.
  *
- * Items: race/class apply, deity sets the patron, drops onto a hotlist or external buff slot
+ * Items: race/class apply, a deity is learned of and a patron added as a prospect, drops onto a hotlist or external buff slot
  * assign the slot, owned items re-sort, spells are unique per actor (rank raised instead),
  * loot stacks by entry, everything else is created with its source recorded in system flags. "The same entry" is
  * the same compendium source or `system.identifier` (`isSameOwnedEntry`); names never match.
@@ -10,6 +10,8 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { isSameOwnedEntry } from '../../utils/character/owned-entry.mjs';
 import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
+import { addKnownDeity } from '../../documents/actor/worship.mjs';
+import { addPatronProspect } from '../../documents/actor/patronage.mjs';
 
 /** Drop target attribute values (`data-drop-target`) and the actor field each slot writes. */
 const SLOT_DROP_TARGETS = Object.freeze({
@@ -89,8 +91,15 @@ export async function dropItem(sheet, event, item) {
     await actor.applyClass(item, { interactive });
     return item;
   }
+  if (item.type === 'patron' && !isOwnedBy(item, actor)) {
+    await addPatronProspect(actor, item);
+    return item;
+  }
   if (item.type === 'deity') {
-    await actor.update({ 'system.details.deity': item.name });
+    if (!isOwnedBy(item, actor)) {
+      await addKnownDeity(actor, item, { via: globalThis.game?.user?.isGM ? 'gm' : 'seen' });
+      return item;
+    }
   }
 
   const slot = dropSlot(event);

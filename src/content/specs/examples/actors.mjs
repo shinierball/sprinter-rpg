@@ -42,6 +42,7 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
     floor: 'Floor 1',
     stats: { str: 3, dex: 4, con: 5, int: 2, cha: 6 },
     starterMode: 'weapon',
+    description: 'The first crawler on the roster and the one every other example answers to. Reliable in a fight, thorough with paperwork, and still waiting for someone to explain the Floor 1 schedule.',
     pastTrauma: 'The pilot episode. It tested well with everyone except the contestant.',
     looseEnds: 'Still under contract for a second season nobody has confirmed.',
     regrets: 'Reading the waiver afterwards.'
@@ -52,11 +53,11 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
     name: 'The Green Room',
     img: 'icons/svg/house.svg',
     owner: { crawlerUuid: exampleActorUuid('contestant-zero'), crawlerName: 'Contestant Zero' },
-    spaceType: 'space.safe_room',
+    rank: 1,
     quests: [],
     outsideFeed: [],
     amenities: 'Snacks you cannot eat, a couch you cannot sit on.',
-    notes: '<p>Snacks you cannot eat, a couch you cannot sit on. The Rehearsal Room upgrade is installed, so you can train here.</p>',
+    notes: 'Snacks you cannot eat, a couch you cannot sit on. The Rehearsal Room upgrade is installed, so you can train here.',
     items: [REHEARSAL_ROOM]
   },
   {
@@ -143,7 +144,7 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
         ownerId: A['contestant-zero'],
         isMount: true,
         riderId: A['contestant-zero'],
-        notes: '<p>Rideable, unflappable, and it spits on cue.</p>'
+        notes: 'Rideable, unflappable, and it spits on cue.'
       }
     }
   },
@@ -161,7 +162,7 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
         { uuid: exampleActorUuid('off-brand-bodyguard'), role: 'gunner' }
       ],
       attributes: { move: 40, size: 'large', occupancy: 4 },
-      details: { notes: '<p>It could be yours. It is, now. Please return it.</p>' }
+      details: { notes: 'It could be yours. It is, now. Please return it. Large, Move 40 ft, seats 4.' }
     }
   },
   {
@@ -183,7 +184,7 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
         employerIds: [A['contestant-zero']],
         housedSpaceId: A['green-room'],
         housingStatus: 'housed',
-        notes: '<p>Looks like the famous one from a distance. Fights like the famous one, also from a distance.</p>'
+        notes: 'Looks like the famous one from a distance. Fights like the famous one, also from a distance.'
       }
     }
   },
@@ -194,7 +195,7 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
     img: 'icons/svg/mystery-man.svg',
     system: {
       abilities: stats(4, 5, 5, 8, 14),
-      details: { level: 4, notes: '<p>Still waiting for the final question.</p>' }
+      details: { level: 4, notes: 'Still waiting for the final question.' }
     }
   }
 ]);

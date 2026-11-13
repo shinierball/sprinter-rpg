@@ -5,19 +5,15 @@
  * The bundled content provider registers them; nothing in the engine reads one by id (3.13 descriptive contract).
  */
 export const COG_PERK_TAGS = Object.freeze([
-  {"id":"access.club.all_memberships","label":"Access: All Membership Clubs","namespace":"access","description":"Gets into every club that sells memberships, whether or not you hold one.","descriptive":true},
-  {"id":"access.club.outlaws","label":"Access: Outlaws' Club","namespace":"access","description":"Access to the outlaws' club. Membership and its privileges are adjudicated by the GM.","descriptive":true},
   {"id":"access.club.spell_library","label":"Access: Spell Library Club","namespace":"access","description":"Membership in the spell library club for all Spells.","descriptive":true},
   {"id":"access.club.spell_library.favored_bard","label":"Access: Spell Library (Bard)","namespace":"access","description":"Access to the spell library club for \"Favored: Bard\" Spells only.","descriptive":true},
   {"id":"access.club.spell_library.favored_cleric","label":"Access: Spell Library (Cleric)","namespace":"access","description":"Access to the spell library club for \"Favored: Cleric\" Spells only.","descriptive":true},
   {"id":"access.club.spell_library.favored_druid","label":"Access: Spell Library (Druid)","namespace":"access","description":"Access to the spell library club for \"Favored: Druid\" Spells only.","descriptive":true},
   {"id":"access.club.spell_library.favored_paladin","label":"Access: Spell Library (Paladin)","namespace":"access","description":"Access to the spell library club for \"Favored: Paladin\" Spells only.","descriptive":true},
-  {"id":"access.club.champions","label":"Access: Champions' Club","namespace":"access","description":"Access to the champions' club. Membership and its privileges are adjudicated by the GM.","descriptive":true},
   {"id":"access.workshop.demolition","label":"Access: Demolition Workshops","namespace":"access","description":"Free access to all Demolition Workshops.","descriptive":true},
   {"id":"access.cog.impersonation","label":"Access by Impersonation","namespace":"access","description":"Free entry to organizations and producers while impersonating another crawler or a celebrity of the show; only those tied to whoever you are currently posing as.","descriptive":true},
   {"id":"access.agency.employment","label":"Access: Employment Agency","namespace":"access","description":"Access to the Employment Agency.","descriptive":true},
   {"id":"access.guild.weapon_training","label":"Access: Weapon Training Guild","namespace":"access","description":"Can access any weapon training Guild.","descriptive":true},
-  {"id":"access.patron","label":"Patron","namespace":"access","description":"The crawler may gain access to a Patron (or must choose one); the GM adjudicates the choice and its benefits.","descriptive":true},
   {"id":"access.saferoom.free_room","label":"Free Room at Saferooms","namespace":"access","description":"Free room at all saferooms.","descriptive":true},
   {"id":"rule.coin_interest","label":"Coin Interest","namespace":"rule","description":"Every coin you hold earns interest when you go down to the next floor (the item description gives the rate).","descriptive":true},
   {"id":"rule.cog.acid_touch","label":"Acid Touch","namespace":"rule","description":"","descriptive":true},

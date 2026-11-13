@@ -1,4 +1,5 @@
-import { collectGearSkillBonuses, gearGrantKey } from '../../models/actors/actor-derivation.mjs';
+import { collectGearSkillBonuses, collectRankRaiseGrants, gearGrantKey, raiseRowsFor, raisedRank } from '../../models/actors/actor-derivation.mjs';
+import { rankGrantSources } from '../../utils/skill/rank-grant-sources.mjs';
 
 /**
  * An actor's modified rank for a spell: the owned spell with that identifier, else the rank equipped gear grants it
@@ -13,8 +14,9 @@ export function getSpellRank(actor, ref) {
   const spell = actor.items.find(i => i.type === 'spell' && i.system?.identifier === identifier);
   if (spell) return Number(spell.system?.modifiedRank ?? spell.system?.rank) || 1;
   const equippedGear = actor.items.filter(i => i.type === 'gear' && i.system?.equipped);
-  const granted = collectGearSkillBonuses(equippedGear).get(gearGrantKey('spell', identifier));
-  if (granted) return granted.rank || 1;
+  const sources = rankGrantSources(actor, equippedGear);
+  const granted = collectGearSkillBonuses(sources).get(gearGrantKey('spell', identifier));
+  if (granted) return raisedRank(granted.rank || 1, raiseRowsFor({ system: { identifier } }, collectRankRaiseGrants({ sources })));
   for (const item of equippedGear) {
     const rawOutcomes = item.system?.outcomes;
     const outcomes = Array.isArray(rawOutcomes) ? rawOutcomes : (rawOutcomes && typeof rawOutcomes === 'object' ? Object.values(rawOutcomes) : []);

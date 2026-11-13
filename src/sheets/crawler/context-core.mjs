@@ -7,6 +7,7 @@ import { actorTagEditVerdict, isDerivedActorTag } from '../../utils/tag/actor-ta
 import { collectActorTags } from '../../documents/active-tags.mjs';
 import { sexSelectView } from '../../utils/tag/sex.mjs';
 import { camerasOffered, cameraArmView } from '../../utils/roll/cameras.mjs';
+import { creatureMoveOf } from '../../documents/actor/actor-move.mjs';
 import { mobDifficultyShift, MOB_QUALITIES } from '../../documents/actor/attack-targets.mjs';
 import { COGActor } from '../../documents/actor.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
@@ -14,7 +15,9 @@ import { getHpPerBar } from '../../documents/combat-metrics.mjs';
 import { DEFAULT_SIZE, getSizeInfo, sizeOptions } from '../../data/sizes.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { BOSS_TIERS, bossActionBudget } from '../../data/mob-creation-rules.mjs';
+import { overlayOf, effectiveRace, storedAttributes } from '../../utils/character/overlay-state.mjs';
 import { isRaceClassLocked, raceClassText, raceClassUnlockFloor } from '../../utils/character/race-class-floor.mjs';
+import { isRaceOrClass } from '../../utils/document-types.mjs';
 
 const FLOOR_OPTIONS = [
   'Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6',
@@ -105,12 +108,22 @@ function prepareMobReadouts(context, system, actor) {
   context.mobSurprise = shiftedReadout(system?.attributes?.effectiveSurpriseDC, mobDifficultyShift(actor, MOB_QUALITIES.surprise));
 }
 
-/** `{ dc, shift, shifted, title }` for one mob Difficulty: the stat-block number, its shift and the reasons. */
+/** The Move readout beside the stored Move: `{ rated, title }` when the Move rows change it, else null. */
+function moveNowReadout(actor) {
+  const { full, rated, sources } = creatureMoveOf(actor);
+  return rated === full ? null : { rated, title: sources.join('; ') };
+}
+
+/** `{ dc, shift, flat, shifted, title }` for one mob Difficulty: the stat-block number, its shift, its flat Check rows and the reasons. */
 function shiftedReadout(statBlockDC, shiftState) {
   const base = Number(statBlockDC) || 0;
   const shift = Number(shiftState?.shift) || 0;
-  const signed = shift > 0 ? `+${shift}` : `\u2212${Math.abs(shift)}`;
-  return { dc: base + shift, base, shift, shifted: shift !== 0, title: shift !== 0 ? `${signed}: ${shiftState.label}` : '' };
+  const flat = Number(shiftState?.flat) || 0;
+  const signed = (n) => (n > 0 ? `+${n}` : `\u2212${Math.abs(n)}`);
+  const parts = [];
+  if (shift !== 0) parts.push(`${signed(shift)}: ${shiftState.label}`);
+  if (flat !== 0) parts.push(`${signed(flat)}: ${game.i18n?.localize?.('COG.MobAttack.FlatLabel') ?? 'Check modifiers'}`);
+  return { dc: base + shift + flat, base, shift, flat, shifted: shift !== 0 || flat !== 0, title: parts.join('; ') };
 }
 
 /**
@@ -134,16 +147,20 @@ function prepareRaceClassHints(context, actor) {
   if (!context.isCrawler) return;
   const species = actorSpecies(actor);
   if (species) context.speciesLabel = raceClassText('COG.RaceClass.SpeciesLabel', { species: species.label || species.id });
-  const hasRaceOrClass = Boolean(actor.items?.some(i => i.type === 'race' || i.type === 'class'));
+  const hasRaceOrClass = Boolean(actor.items?.some(isRaceOrClass));
   if (isRaceClassLocked(actor) && !hasRaceOrClass) {
     context.raceClassHint = raceClassText('COG.RaceClass.UnlockHint', { floor: raceClassUnlockFloor() });
   }
 }
 
-/**
- * @param {object} context
- * @param {Actor} actor
- */
+/** The Race select's hint while a form race is laid over the crawler: the original race is not in force; '' otherwise. */
+function raceNotInForceHint(actor) {
+  if (!overlayOf(actor.items)) return '';
+  const form = effectiveRace(actor.items);
+  if (!form) return '';
+  return globalThis.game?.i18n?.format?.('COG.Transform.RaceNotInForce', { form: form.name }) ?? '';
+}
+
 /**
  * The page 1 tag pill editor (E8.8): the actor's explicit tags, removable only where the user may edit them, plus the
  * derived tags read-only. Players with no editable namespace get no add row.
@@ -170,7 +187,7 @@ export function prepareCoreContext(context, actor) {
   context.isMob = actor.type === 'mob';
   context.isCrawler = actor.type === 'crawler';
   context.isPet = actor.type === 'pet';
-  context.isVehicle = actor.type === 'mount_vehicle' || actor.type === 'vehicle';
+  context.isVehicle = actor.type === 'mount_vehicle';
   context.isNPC = actor.type === 'npc';
   context.currentFloor = COGActor.getCurrentFloor();
   context.floorTimer = COGActor.getFloorTimer();
@@ -192,14 +209,19 @@ export function prepareCoreContext(context, actor) {
   }
 
   context.currentSizeInfo = getSizeInfo(system.attributes?.size ?? DEFAULT_SIZE);
-  context.sizeOptions = sizeOptions(system.attributes?.size ?? DEFAULT_SIZE);
+  // The size select and the Move input are saved with the sheet, so they show the stored values; while a form is laid
+  // over the crawler the form's are only in `currentSizeInfo` and the "now" readout (7.1k)
+  const stored = storedAttributes(actor);
+  context.sizeOptions = sizeOptions(stored.size ?? system.attributes?.size ?? DEFAULT_SIZE);
+  context.storedMove = stored.speed?.move ?? system.attributes?.speed?.move;
 
   context.cameraArm = camerasOffered(actor) ? cameraArmView(actor) : null;
   context.floorOptions = optionsWithCustom(FLOOR_OPTIONS, String(system?.details?.floor || '').trim());
   prepareMobReadouts(context, system, actor);
+  context.moveNow = moveNowReadout(actor);
   context.mobCreatureTypes = optionsWithCustom(MOB_CREATURE_TYPES, String(system?.details?.creatureType || '').trim());
 
-  const rc = COGRaceClassApplier.getRaceClassContext(actor);
+  const rc = COGRaceClassApplier.getRaceClassContext(actor, { requirements: true });
   context.raceOptions = rc.raceOptions;
   context.classOptions = rc.classOptions;
   context.hasCustomRace = rc.hasCustomRace;
@@ -208,7 +230,9 @@ export function prepareCoreContext(context, actor) {
   context.currentClass = rc.currentClass;
   context.currentRaceLabel = rc.currentRaceLabel;
   context.currentClassLabel = rc.currentClassLabel;
+  context.currentRequirements = rc.currentRequirements;
   prepareRaceClassHints(context, actor);
+  context.raceNotInForce = raceNotInForceHint(actor);
   prepareTagEditor(context, actor);
   context.sexSelect = sexSelectView(actor, collectActorTags(actor));
 }

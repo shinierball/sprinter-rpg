@@ -20,8 +20,10 @@ import { getSizeInfo, sanitizeSizeId } from '../../data/sizes.mjs';
 import { enchantmentFactor, getEnchantmentCategory } from '../../data/rules/crafting-rules.mjs';
 import { upgradeKindsOf } from '../../data/rules/vehicle-rules.mjs';
 import { VEHICLE_TAGS } from '../../data/tag-vocabulary.mjs';
-import { CHECK_TAGS, CRAFT_TAGS, ITEM_STATE_TAGS, MATERIAL_UNSALVAGEABLE_TAG, isJunkItem } from '../tag/tag-mechanics.mjs';
+import { CHECK_TAGS, CRAFT_TAGS, ITEM_STATE_TAGS, MATERIAL_UNSALVAGEABLE_TAG } from '../tag/tag-mechanics.mjs';
 import { firstScalar } from '../first-scalar.mjs';
+import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { queryParts, isEmptyQuery, matchMaterials, planJunkSpend } from './craft-materials.mjs';
 
 /** The highest table tier. */
 export const MAX_TABLE_TIER = 10;
@@ -101,23 +103,6 @@ const round6 = (n) => Math.round(n * 1e6) / 1e6;
 const text = (v) => (typeof v === 'string' ? v.trim() : '');
 const asArray = (v) => (Array.isArray(v) ? v : []);
 const idOf = (item) => String(item?.id ?? item?._id ?? '');
-const qtyOf = (item) => Math.max(0, Math.floor(num(item?.system?.quantity, 1)));
-
-/** A tag query in any accepted form as `{ all, any, none }` arrays of trimmed tag ids. */
-function queryParts(query) {
-  const clean = (list) => asArray(list).filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim());
-  if (!query) return { all: [], any: [], none: [] };
-  if (typeof query === 'string') return { all: clean([query]), any: [], none: [] };
-  if (Array.isArray(query)) return { all: clean(query), any: [], none: [] };
-  if (typeof query === 'object') return { all: clean(query.all), any: clean(query.any), none: clean(query.none) };
-  return { all: [], any: [], none: [] };
-}
-
-/** Whether a tag query names nothing. */
-function isEmptyQuery(query) {
-  const q = queryParts(query);
-  return !q.all.length && !q.any.length && !q.none.length;
-}
 
 const itemTags = (item) => getItemAllTags(item);
 
@@ -404,11 +389,13 @@ function salvageTier(outcome, margin) {
  * all, a Failure (3-9) half rounded down, a Major Failure none; a Critical Failure reads its margin as those three. A
  * success keeps nothing (the materials were used). A line that is not salvageable (`salvageable: false`, `unsalvageable: true`
  * or the `material.unsalvageable` tag) keeps nothing.
- * @param {{ outcome: string, margin?: number, materials: Array<object> }} params lines carry `needed` (or `quantity`)
+ * `steps` (a `salvage` craft row) moves the tier that many places toward all: none, half, all.
+ * @param {{ outcome: string, margin?: number, materials: Array<object>, steps?: number }} params lines carry `needed` (or `quantity`)
  * @returns {Array<{ index: number, label: string, identifier: string, needed: number, kept: number, consumed: number }>}
  */
-export function evaluateSalvage({ outcome, margin = 0, materials } = {}) {
-  const tier = salvageTier(outcome, num(margin));
+export function evaluateSalvage({ outcome, margin = 0, materials, steps = 0 } = {}) {
+  const order = ['none', 'half', 'all'];
+  const tier = order[Math.min(order.length - 1, order.indexOf(salvageTier(outcome, num(margin))) + Math.max(0, Math.floor(num(steps))))];
   return asArray(materials).map((line, index) => {
     const needed = Math.max(0, Math.floor(num(line?.needed ?? line?.quantity)));
     const never = line?.salvageable === false || line?.unsalvageable === true
@@ -513,98 +500,6 @@ export function sharesProperty(itemSystem, template, { ignoreAs = false } = {}) 
   return null;
 }
 
-// ---------------------------------------------------------------------------
-// Misc. Junk and materials
-// ---------------------------------------------------------------------------
-
-/**
- * Misc. Junk points: the summed quantity of items tagged `material.misc_junk`.
- * @param {Array<object>} items
- * @returns {number}
- */
-export function junkPoints(items) {
-  return asArray(items).filter(isJunkItem).reduce((sum, item) => sum + qtyOf(item), 0);
-}
-
-/** Spend group of a junk item: plain used junk 0, other junk 1, junk that remembers what it was (restorable) 2. */
-function junkGroup(item) {
-  const from = item?.system?.usedFrom;
-  if (from && (text(from.identifier) || text(from.name) || text(from.spellIdentifier))) return 2;
-  return item?.system?.used === true ? 0 : 1;
-}
-
-/**
- * Which junk stacks to take `n` points from: plain used junk first, then other junk, restorable junk last; the smallest stack
- * first within each group. Short of `n`, the plan takes what there is and `missing` is the rest.
- * @param {Array<object>} items
- * @param {number} n
- * @param {{ reserved?: Map<string, number> }} [options] units already promised to material lines (item id to units); not counted
- * @returns {{ plan: Array<{ itemId: string, name: string, quantity: number }>, missing: number }}
- */
-export function planJunkSpend(items, n, { reserved = new Map() } = {}) {
-  let left = Math.max(0, Math.floor(num(n)));
-  const free = (i) => qtyOf(i) - (reserved.get(idOf(i)) ?? 0);
-  const stacks = asArray(items).filter((i) => isJunkItem(i) && free(i) > 0)
-    .map((item, order) => ({ item, order, group: junkGroup(item), qty: free(item) }))
-    .sort((a, b) => a.group - b.group || a.qty - b.qty || a.order - b.order);
-  const plan = [];
-  for (const { item, qty } of stacks) {
-    if (left <= 0) break;
-    const take = Math.min(qty, left);
-    plan.push({ itemId: idOf(item), name: String(item.name ?? ''), quantity: take });
-    left -= take;
-  }
-  return { plan, missing: left };
-}
-
-/**
- * Match a blueprint's material lines to item stacks. A line selects loot by `system.identifier`, else by its tag `query`; it
- * needs `quantity x quantityFactor` units, taken stack by stack in the order given (callers list the crawler's items before
- * the space's). `options.reserved` (a Map of item id to units already promised) is read and updated, so lines and steps do
- * not take the same unit twice; `options.sourceOf(item)` labels each stack's origin.
- * @param {Array<object>} items
- * @param {Array<object>} lines `{ label, identifier, query, quantity, salvageable }`
- * @param {number} [quantityFactor=1]
- * @param {{ reserved?: Map<string, number>, sourceOf?: (item: object) => string }} [options]
- * @returns {Array<{ index: number, label: string, identifier: string, query: object|null, needed: number, found: number, missing: number, salvageable: boolean, stacks: Array<{ itemId: string, name: string, quantity: number, source: string }> }>}
- */
-export function matchMaterials(items, lines, quantityFactor = 1, { reserved = new Map(), sourceOf = () => '' } = {}) {
-  const pool = asArray(items).filter((i) => i && (!i.type || i.type === 'loot'));
-  const factor = Math.max(1, Math.floor(num(quantityFactor, 1)));
-  return asArray(lines).map((line, index) => {
-    const needed = Math.max(0, Math.floor(num(line?.quantity, 1))) * factor;
-    const identifier = text(line?.identifier);
-    const hasQuery = !isEmptyQuery(line?.query);
-    const stacks = [];
-    let got = 0;
-    let unsalvageable = false;
-    if (identifier || hasQuery) {
-      for (const item of pool) {
-        if (got >= needed) break;
-        const matches = identifier ? text(item.system?.identifier) === identifier : matchesTagQuery(itemTags(item), line.query);
-        if (!matches) continue;
-        const free = qtyOf(item) - (reserved.get(idOf(item)) ?? 0);
-        if (free <= 0) continue;
-        const take = Math.min(free, needed - got);
-        reserved.set(idOf(item), (reserved.get(idOf(item)) ?? 0) + take);
-        stacks.push({ itemId: idOf(item), name: String(item.name ?? ''), quantity: take, source: sourceOf(item) });
-        if (asArray(item.system?.tags).includes(MATERIAL_UNSALVAGEABLE_TAG)) unsalvageable = true;
-        got += take;
-      }
-    }
-    return {
-      index,
-      label: String(line?.label ?? ''),
-      identifier,
-      query: line?.query ?? null,
-      needed,
-      found: got,
-      missing: needed - got,
-      salvageable: line?.salvageable !== false && !unsalvageable,
-      stacks
-    };
-  });
-}
 
 // ---------------------------------------------------------------------------
 // The plan
@@ -692,9 +587,10 @@ export function planCraft(input = {}) {
   const batchMultiplier = num(mods.batchMultiplier, 1);
   /** Per step: how its hours follow from the multipliers (the plan fills `hours` in again once they are resolved). */
   const hoursOf = new Map();
-  const batchable = bp.batchable === true;
-  const extraUnits = batchable ? quantity - 1 : 0;
-  const unitHours = batchable ? 1 : quantity;
+  // A step batches when the blueprint is a batch recipe or a `batchAny` row applies to it
+  const batches = (m) => bp.batchable === true || m?.batchAny === true;
+  const unitHoursOf = (m) => (batches(m) ? 1 : quantity);
+  const extraUnitsOf = (m) => (batches(m) ? quantity - 1 : 0);
 
   const crawlerItems = asArray(crawler.items);
   const spaceItems = inSpace ? asArray(space.items) : [];
@@ -703,7 +599,7 @@ export function planCraft(input = {}) {
   for (const i of spaceItems) sourceByItem.set(i, 'space');
   const pool = [...crawlerItems, ...spaceItems];
   const reserved = new Map();
-  const matchLines = (lines) => matchMaterials(pool, lines, quantity, { reserved, sourceOf: (i) => sourceByItem.get(i) ?? '' });
+  const sourceOf = (i) => sourceByItem.get(i) ?? '';
 
   const templates = asArray(bp.enchantments);
   const steps = [];
@@ -722,13 +618,13 @@ export function planCraft(input = {}) {
       dc: mundaneDifficulty({ floor, dc: bp.dc }),
       category: '',
       bonusLevel: 0,
-      hours: round6(stepHours({ size: bp.size, timeMultiplier }) * unitHours),
-      materials: matchLines(bp.materials),
-      junk: (sizeJunk(bp.size) + nonNeg(bp.junk)) * quantity,
+      hours: round6(stepHours({ size: bp.size, timeMultiplier }) * unitHoursOf({})),
+      materialLines: asArray(bp.materials),
+      junkBase: (sizeJunk(bp.size) + nonNeg(bp.junk)) * quantity,
       skillQuery: blueprintSkills,
       tables: bp.tables ?? null
     };
-    hoursOf.set(base, (m) => round6(stepHours({ size: bp.size, timeMultiplier: m.timeMultiplier }) * unitHours));
+    hoursOf.set(base, (m) => round6(stepHours({ size: bp.size, timeMultiplier: m.timeMultiplier }) * unitHoursOf(m)));
     steps.push(base);
   }
 
@@ -737,7 +633,7 @@ export function planCraft(input = {}) {
     const levels = group.reduce((s, t) => s + nonNeg(t.bonusLevel), 0);
     const factorOf = (t) => enchantmentFactor(t.category);
     const top = group.reduce((a, t) => (factorOf(t) > factorOf(a) ? t : a), first);
-    const hoursFor = (m) => round6(group.reduce((s, t) => s + stepHours({ bonusLevel: t.bonusLevel, extraUnits, timeMultiplier: m.timeMultiplier, batchMultiplier: m.batchMultiplier }), 0) * unitHours);
+    const hoursFor = (m) => round6(group.reduce((s, t) => s + stepHours({ bonusLevel: t.bonusLevel, extraUnits: extraUnitsOf(m), timeMultiplier: m.timeMultiplier, batchMultiplier: m.batchMultiplier }), 0) * unitHoursOf(m));
     const step = {
       kind: 'enchant',
       mode,
@@ -748,8 +644,8 @@ export function planCraft(input = {}) {
       category: getEnchantmentCategory(top.category).id,
       bonusLevel: levels,
       hours: hoursFor({ timeMultiplier, batchMultiplier }),
-      materials: matchLines(group.flatMap((t) => asArray(t.materials))),
-      junk: 0,
+      materialLines: group.flatMap((t) => asArray(t.materials)),
+      junkBase: 0,
       skillQuery: queryOr(first.skills, blueprintSkills),
       tables: queryOr(first.tables, bp.tables)
     };
@@ -763,7 +659,7 @@ export function planCraft(input = {}) {
     step.skillOptions = skillOptions(crawler.skills, step.skillQuery);
     const needsTable = step.kind === 'enchant' || !isEmptyQuery(step.tables);
     step.tableBonus = inSpace
-      ? effectiveTableBonus(space.items, step.tables, floor)
+      ? effectiveTableBonus(space.furniture ?? space.items, step.tables, floor)
       : { tier: 0, used: [], missing: needsTable ? queryParts(step.tables).all : [] };
     step.needsTable = needsTable;
 
@@ -783,9 +679,16 @@ export function planCraft(input = {}) {
       bonusValue: num(found.bonusValue, 0),
       timeMultiplier: timeMultiplier * num(found.timeMultiplier, 1),
       batchMultiplier: batchMultiplier * num(found.batchMultiplier, 1),
+      materialMultiplier: Math.max(0, num(found.materialMultiplier, 1)),
+      batchAny: found.batchAny === true,
+      unlocked: found.unlocked === true,
+      salvageSteps: Math.max(0, Math.floor(num(found.salvageSteps, 0))),
       maxBonus: hasFixedCap ? Number(fixedCap) : (foundCap !== null && foundCap !== undefined && Number.isFinite(Number(foundCap)) ? Number(foundCap) : null)
     };
     step.hours = hoursOf.get(step)(step.modifiers);
+    // Materials are matched once the step's modifiers are known (a `materials` row scales every line and the junk, rounded up)
+    step.materials = matchMaterials(pool, step.materialLines, quantity, { reserved, sourceOf, lineMultiplier: step.modifiers.materialMultiplier });
+    step.junk = Math.ceil(step.junkBase * step.modifiers.materialMultiplier - 1e-9);
   });
 
   const totalHours = round6(steps.reduce((s, st) => s + st.hours, 0));
@@ -840,7 +743,10 @@ export function planCraft(input = {}) {
     const { missing } = planJunkSpend(pool, junkNeeded, { reserved });
     if (missing > 0) warn('missingJunk', { missing, needed: junkNeeded });
   }
-  if (quantity > 1 && !batchable) warn('notBatchable');
+  if (quantity > 1 && steps.some((s) => !batches(s.modifiers))) warn('notBatchable');
+  // A blueprint tagged crafting.recipe.<id> is locked until an unlockRecipes row applies to one of its steps
+  const recipeTags = [...itemTags(input.blueprint ?? {})].filter((t) => t.startsWith(CRAFT_TAGS.recipePrefix));
+  if (recipeTags.length && !steps.some((s) => s.modifiers.unlocked)) warn('recipeLocked', { list: recipeTags.map((t) => getTagDefinition(t)?.label || t).join(', ') });
 
   const overCap = enchantSteps.filter((s) => s.modifiers.maxBonus !== null && s.bonusLevel > s.modifiers.maxBonus);
   if (overCap.length) {

@@ -4,7 +4,7 @@
  * standard stat array [2, 3, 4, 5, 6], species rules, and floor starting options.
  */
 
-import { COG_STANDARD_ARRAY, validateStatArray, generateRandomCrawler } from '../data/rules/crawler-creation-rules.mjs';
+import { COG_STANDARD_ARRAY, STAGE_SKILL_PICKS, validateStatArray, generateRandomCrawler } from '../data/rules/crawler-creation-rules.mjs';
 import {
   STARTER_RANK, STARTER_POTION_COUNT, loadoutOptions, loadoutLabel, findLoadout, defaultLoadout, resolveLoadoutId, getStarterWeaponDefinition,
   starterUnarmedPayloads
@@ -81,6 +81,8 @@ function creatorSpec(options = {}) {
     pastTrauma: options.pastTrauma || '',
     looseEnds: options.looseEnds || '',
     regrets: options.regrets || '',
+    // The crawler's description (the sheet's Notes field)
+    description: options.description || '',
 
     // Starter combat loadout (Level 1)
     starterMode: options.starterMode || 'weapon', // 'weapon' | 'spell' | 'unarmed'
@@ -128,6 +130,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
       setStarterUnarmed: COGCrawlerCreatorApp.#onSetStarterUnarmed,
       pickTrait: COGCrawlerCreatorApp.#onPickTrait,
       setTrait: COGCrawlerCreatorApp.#onSetTrait,
+      setDescription: COGCrawlerCreatorApp.#onSetDescription,
       rollTrait: COGCrawlerCreatorApp.#onRollTrait,
       rollAllTraits: COGCrawlerCreatorApp.#onRollAllTraits,
       randomize: COGCrawlerCreatorApp.#onRandomize,
@@ -234,12 +237,12 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     const noBackgrounds = [];
     for (const i of [1, 2, 3, 4]) {
       const key = `tier${i}`;
-      if (this.spec.tierSelections[key]?.skills?.length === 2) continue;
+      if (this.spec.tierSelections[key]?.skills?.length === STAGE_SKILL_PICKS) continue;
       incomplete.push(i);
       if (!(matrix[key] || []).length) noBackgrounds.push(i);
     }
     if (incomplete.length) {
-      reasons.push(`Every stage needs exactly 2 skills (incomplete: stage ${incomplete.join(', ')}).`);
+      reasons.push(`Every stage needs exactly ${STAGE_SKILL_PICKS} skills (incomplete: stage ${incomplete.join(', ')}).`);
       if (noBackgrounds.length) reasons.push(`This species has no backgrounds for stage ${noBackgrounds.join(', ')}.`);
     }
     return reasons;
@@ -306,7 +309,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
         activeBackground: activeBg.name,
         skills,
         selectedCount: currentSel.skills.length,
-        isValid: currentSel.skills.length === 2
+        isValid: currentSel.skills.length === STAGE_SKILL_PICKS
       });
     }
 
@@ -444,6 +447,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
       pastTrauma: this.spec.pastTrauma,
       looseEnds: this.spec.looseEnds,
       regrets: this.spec.regrets,
+      description: this.spec.description,
       hasBackgroundTables,
       // Decision 323: on the cog theme an empty stage points at the Sourcery import that fills it
       sourceryImportHint: contentRegistry.getPrimaryThemeId() === 'cog',
@@ -544,9 +548,9 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     const currentSkills = this.spec.tierSelections[tierKey]?.skills || [];
 
     if (target.checked) {
-      if (currentSkills.length >= 2) {
+      if (currentSkills.length >= STAGE_SKILL_PICKS) {
         target.checked = false;
-        ui.notifications?.warn(`You may only pick 2 skills for this stage.`);
+        ui.notifications?.warn(`You may only pick ${STAGE_SKILL_PICKS} skills for this stage.`);
         return;
       }
       if (!currentSkills.includes(skillName)) currentSkills.push(skillName);
@@ -591,6 +595,11 @@ export class COGCrawlerCreatorApp extends COGToolApp {
   static #onSetTrait(event, target) {
     const trait = target.dataset.trait;
     if (TRAITS.includes(trait)) this.spec[trait] = target.value;
+  }
+
+  /** The crawler's description free text; DOM-only. */
+  static #onSetDescription(event, target) {
+    this.spec.description = target.value;
   }
 
   static async #onRollTrait(event, target) {
@@ -668,6 +677,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     this.spec.pastTrauma = '';
     this.spec.looseEnds = '';
     this.spec.regrets = '';
+    this.spec.description = '';
     this._initializeDefaultSelections();
     this.controller.reset();
     await this.render();
@@ -709,7 +719,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
   }
 
   static async #onRollAll() {
-    await this.controller.rollRemaining();
+    await this.controller.fillRemaining();
     return this.render();
   }
 
@@ -769,10 +779,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     // The imported Skills reach CONFIG.COG when a refresh that `ready` does not wait for ends; the build reads them.
     await whenSourceryCatalogsSettled();
     const staged = this.staged;
-    if (staged) {
-      await this.controller.prepare();
-      await this.controller.rollRemaining();
-    }
+    if (staged && !(await this.controller.finishRolls())) return null;
     // One prompt lists every rule the draft breaks; creation is never blocked by rules (CONTRIBUTING rule 2).
     const inductionReasons = this._ruleBreakReasons();
     const floorBreaks = staged ? this.controller.pendingRuleBreaks() : [];

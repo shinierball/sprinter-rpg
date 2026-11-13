@@ -7,6 +7,7 @@ import { SYSTEM_ID } from '../constants.mjs';
 import { transformationOfItem } from '../utils/character/transform-rules.mjs';
 import { DEFAULT_SIZE } from './sizes.mjs';
 import { addAbilityDeltas, revertDrAndMovementBonuses } from './race-class-bonuses.mjs';
+import { RACE_CLASS_TYPES, isEffectItem } from '../utils/document-types.mjs';
 
 /**
  * The embedded skill or spell an applied-grant record points at: by the item id the applier stored, else by the
@@ -27,7 +28,7 @@ function findAppliedItem(actor, type, record) {
  * adds ranks, so either one's mark means the item goes when its last rank does.
  */
 function grantedByRaceOrClass(item) {
-  return ['race', 'class'].includes(item?.getFlag?.(SYSTEM_ID, 'grantedBy'));
+  return RACE_CLASS_TYPES.includes(item?.getFlag?.(SYSTEM_ID, 'grantedBy'));
 }
 
 /** True for an item a transformation made (a form race, its traits, a created skill, an added effect): the applier leaves it alone. */
@@ -77,7 +78,7 @@ export async function removeAppliedRace(actor) {
   const condIdsToDelete = [];
   if (actor.items) {
     for (const item of actor.items) {
-      if (['buff', 'debuff'].includes(item.type) && item.getFlag?.(SYSTEM_ID, 'grantedBy') === 'race' && !isTransformationItem(item)) {
+      if (isEffectItem(item) && item.getFlag?.(SYSTEM_ID, 'grantedBy') === 'race' && !isTransformationItem(item)) {
         if (!condIdsToDelete.includes(item.id)) condIdsToDelete.push(item.id);
       }
     }
@@ -191,7 +192,7 @@ export async function removeAppliedClass(actor) {
   const condIdsToDelete = [];
   if (actor.items) {
     for (const item of actor.items) {
-      if (['buff', 'debuff'].includes(item.type) && item.getFlag?.(SYSTEM_ID, 'grantedBy') === 'class') {
+      if (isEffectItem(item) && item.getFlag?.(SYSTEM_ID, 'grantedBy') === 'class') {
         if (!condIdsToDelete.includes(item.id)) condIdsToDelete.push(item.id);
       }
     }

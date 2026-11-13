@@ -15,7 +15,7 @@ export const EXAMPLE_IDENTITY_SPECS = Object.freeze([
     _id: ID['static-gremlin'],
     name: 'Static Gremlin',
     img: 'icons/svg/lightning.svg',
-    description: 'Born in the interference between channels. Small, airborne, and unwelcome near electronics.',
+    description: 'Born in the interference between channels. Small, airborne, and unwelcome near electronics. The short circuit that follows it adds 1d4 Electric damage against elementals.',
     size: 'small',
     drBonus: 1,
     stats: { dex: 2, int: 1, str: -1 },
@@ -99,8 +99,9 @@ export const EXAMPLE_IDENTITY_SPECS = Object.freeze([
     img: 'icons/svg/eye.svg',
     system: {
       identifier: 'the-showrunner',
-      description: '<p>Never seen, always credited. Every Hype Man answers to the Showrunner.</p>',
-      boons: '<p>Notes for the next episode, delivered at the worst possible moment.</p>',
+      title: 'God of the Season Finale',
+      description: '<p>Never seen, always credited. Every Hype Man answers to the Showrunner. Notes for the next episode arrive at the worst possible moment.</p>',
+      offering: { required: true, text: 'A signed release form, left on an empty chair' },
       tags: ['kind.deity']
     }
   },
@@ -111,8 +112,8 @@ export const EXAMPLE_IDENTITY_SPECS = Object.freeze([
     img: 'icons/svg/coins.svg',
     system: {
       identifier: 'snackfront-megacorp',
-      description: '<p>A sponsor. It sponsors.</p>',
-      gifts: '<p>One case of a beverage that is technically a snack.</p>'
+      description: '<p>A sponsor. It sponsors. Holding it marks you as sponsored, which anything that asks for a sponsor can read, and it gives no bonuses of its own. Its gift is the case of beverage below.</p>',
+      gifts: 'One case of a beverage that is technically a snack.'
     }
   },
   {
@@ -123,11 +124,11 @@ export const EXAMPLE_IDENTITY_SPECS = Object.freeze([
     system: {
       identifier: 'participation-trophy',
       description: '<p>For showing up. The laminate is the real prize.</p>',
-      quote: '<p>Thank you for your participation. Your participation has been noted.</p>',
+      quote: 'Thank you for your participation. Your participation has been noted.',
       category: 'Attendance',
       tier: 'bronze',
       reward: 'A laminated certificate',
-      rewardContents: '<p>One certificate, laminated. Water resistant. Not fire resistant.</p>',
+      rewardContents: 'One certificate, laminated. Water resistant. Not fire resistant.',
       favor: 1,
       xp: 10
     }

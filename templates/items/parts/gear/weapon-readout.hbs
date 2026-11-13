@@ -1,0 +1,21 @@
+{{!-- What the weapon rolls at Rank 0, 5 and 10. Context: `readout`, `readoutEmpty` from weaponReadoutContext (src/sheets/item/context-weapon.mjs), `weapon.damage`. Shared by the gear sheet and the weapon builder's damage step. --}}
+<div class="cog-bg-surface cog-gear-weapon-block cog-wb-readout" data-readout>
+  <span class="cog-field-label"><i class="fa-solid fa-dice-d20"></i> {{localize "COG.WeaponBuilder.Readout.Title"}}</span>
+  {{#if readoutEmpty}}
+    <p class="cog-text-muted">{{localize "COG.WeaponBuilder.Readout.NoSkill"}}</p>
+  {{else}}
+    <table class="cog-wb-readout-table">
+      {{#each readout as |line|}}
+        <tr data-rank="{{line.rank}}">
+          <th>{{line.label}}</th>
+          <td>{{line.text}}</td>
+          <td class="cog-text-muted">{{#if line.untrained}}{{localize "COG.WeaponBuilder.Readout.Untrained"}}{{/if}}</td>
+        </tr>
+      {{/each}}
+    </table>
+    {{#if weapon.damage.hasBonus}}
+      <p class="cog-rule-hint" data-readout-bonus><i class="fa-solid fa-circle-info"></i> {{localize "COG.WeaponBuilder.Readout.Bonus"}}
+        {{#each weapon.damage.bonus as |row|}}{{#unless @first}}; {{/unless}}{{row.text}}{{/each}}</p>
+    {{/if}}
+  {{/if}}
+</div>

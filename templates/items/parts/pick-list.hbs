@@ -6,6 +6,7 @@
 --}}
 <div class="cog-field-group cog-pick-list">
   <span class="cog-field-label">{{#if picker.icon}}<i class="fa-solid {{picker.icon}}"></i> {{/if}}{{picker.label}}</span>
+  {{#if picker.hint}}<p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{picker.hint}}</p>{{/if}}
   <div class="cog-pick-chips cog-bg-surface-alt">
     {{#each picker.chips as |chip|}}
       <span class="cog-badge cog-pick-chip cog-pick-chip-{{chip.list}}{{#if chip.unknown}} cog-pick-chip-unknown{{/if}}" data-tooltip="{{chip.value}}">

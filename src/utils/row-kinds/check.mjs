@@ -6,6 +6,7 @@ import { registerCoreKind } from './registry.mjs';
 registerCoreKind('checkModifiers', {
   id: 'bonus',
   label: 'COG.Rows.Kind.Roll.bonus.Label',
+  hint: 'COG.Rows.Kind.Roll.bonus.Hint',
   fields: ['value', 'dice', 'stat'],
   scaled: { value: 'whole' },
   apply: {
@@ -30,6 +31,7 @@ registerCoreKind('checkModifiers', {
 registerCoreKind('checkModifiers', {
   id: 'advantage',
   label: 'COG.Rows.Kind.Roll.advantage.Label',
+  hint: 'COG.Rows.Kind.Roll.advantage.Hint',
   fields: ['advantage'],
   apply: {
     // acc: { advantages, disadvantages }

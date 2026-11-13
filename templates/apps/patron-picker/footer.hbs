@@ -1,0 +1,9 @@
+<footer class="cog-patron-picker-footer">
+  {{#if isOffer}}
+    <div class="cog-sm-controls">
+      <button type="button" data-action="sendPatronOffer" {{#if sendDisabled}}disabled{{/if}}>
+        <i class="fa-solid fa-paper-plane"></i> {{localize 'COG.Patron.Offer.Send'}} ({{offeredCount}})
+      </button>
+    </div>
+  {{/if}}
+</footer>

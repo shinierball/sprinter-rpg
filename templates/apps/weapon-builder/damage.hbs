@@ -1,0 +1,6 @@
+{{!-- Page 4: the damage override, bonus damage rows, crit and DR, and what the weapon rolls at Rank 0, 5 and 10. --}}
+<section class="cog-wb-page" data-page="damage" {{#unless (eq page "damage")}}hidden{{/unless}}>
+  {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-damage.hbs"}}
+  {{#if damageBlock}}{{> "systems/sprinter-rpg/templates/items/parts/modifier-rows.hbs" block=damageBlock tagOptions=rowEditors.tagOptions}}{{/if}}
+  {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-readout.hbs"}}
+</section>

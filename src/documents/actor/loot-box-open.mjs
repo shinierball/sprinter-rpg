@@ -38,7 +38,7 @@ import { promptChoicePicks } from '../../utils/ui/choice-picker.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
 import { seededIds } from '../../utils/stable-id.mjs';
-import { getRowKind, kindOf, BOX_CHOICE_INVENTORY_TYPES } from '../../utils/row-kinds.mjs';
+import { getRowKind, kindOf } from '../../utils/row-kinds.mjs';
 import { findCrawlerScene, isInSafeRoom } from '../../utils/floor/safe-room.mjs';
 import {
   DEFAULT_LOOT_BOX_RANK, DEFAULT_LOOT_BOX_TIER, lootBoxTierDef, lootBoxTierRegistry
@@ -57,6 +57,8 @@ import { followTableRef, rollMagicItem } from '../item/magic-item-roll.mjs';
 import { spendConsumableUnit } from './used-items.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
 import { landItems } from '../../utils/content-source.mjs';
+import { RANKED_ITEM_TYPES, isInventoryItem } from '../../utils/document-types.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 /** The one GM relay action of an open. */
 export const RELAY_ACTION_LOOT_BOX_OPEN = 'lootBoxOpen';
@@ -216,7 +218,7 @@ async function resolvePrizeDocument(ref, type = '') {
   const identifier = typeof ref?.identifier === 'string' ? ref.identifier.trim() : '';
   if (!uuid && !identifier) return null;
   let doc = await resolveGrantDocument({ uuid, identifier }, type || undefined);
-  if (!doc && identifier && type !== 'spell' && type !== 'skill') {
+  if (!doc && identifier && !RANKED_ITEM_TYPES.includes(type)) {
     const entry = findCatalogEntry('items', identifier);
     if (entry && (!type || entry.type === type)) doc = entry;
   }
@@ -300,7 +302,7 @@ export function choiceCandidates(spec = {}) {
   const out = [];
   for (const entry of startingChoiceCandidates({ query: spec?.query ?? null, itemType })) {
     if (!entry?.uuid) continue;
-    if (!itemType && !BOX_CHOICE_INVENTORY_TYPES.includes(entry.type)) continue;
+    if (!itemType && !isInventoryItem(entry)) continue;
     if (entry.document?.flags?.[SYSTEM_ID]?.lootBoxPreroll) continue;
     const key = entry.identifier || entry.uuid;
     if (seen.has(key)) continue;
@@ -482,16 +484,13 @@ async function postCards(actor, result, user) {
   const view = lootBoxRevealView(result);
   const speaker = ChatMessageClass.getSpeaker?.({ actor }) ?? {};
   const author = user?.id && !user.isGM ? { author: user.id } : {};
-  const flags = {
-    [SYSTEM_ID]: {
-      [LOOT_BOX_OPEN_FLAG]: {
-        actorUuid: result.actorUuid, actorName: result.actorName, reveals: result.reveals,
-        ruleBreak: result.ruleBreak, gold: result.gold, openedAt: result.openedAt
-      },
-      ...(result.ruleBreak ? { ruleBreak: true } : {})
-    }
-  };
-  const card = await ChatMessageClass.create({ speaker, content: lootBoxCardHtml(view), flags, ...author });
+  const card = await ChatMessageClass.create(withFlags({ speaker, content: lootBoxCardHtml(view), ...author }, {
+    [LOOT_BOX_OPEN_FLAG]: {
+      actorUuid: result.actorUuid, actorName: result.actorName, reveals: result.reveals,
+      ruleBreak: result.ruleBreak, gold: result.gold, openedAt: result.openedAt
+    },
+    ...(result.ruleBreak ? { ruleBreak: true } : {})
+  }));
   const note = lootBoxGmNoteHtml(result.reveals, result.warnings);
   if (note) {
     const whisper = ChatMessageClass.getWhisperRecipients?.('GM')?.map((u) => u.id) ?? [];

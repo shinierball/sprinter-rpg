@@ -4,6 +4,7 @@
  */
 import { getRequiredGrindingHours } from '../../data/rules/grinding-rules.mjs';
 import { rowItemId } from './dom.mjs';
+import { patronGrindOptions } from '../../documents/actor/patron-benefits.mjs';
 
 const skillIdOf = (target) => target.dataset.skillId || rowItemId(target);
 
@@ -42,7 +43,8 @@ export const grindActions = {
   async advanceSkill(event, target) {
     if (!this.isEditable) return;
     const skillId = skillIdOf(target);
-    if (skillId) await this.actor.attemptSkillAdvancement(skillId);
+    const skill = skillId ? this.actor.items.get(skillId) : null;
+    if (skill) await this.actor.attemptSkillAdvancement(skillId, await patronGrindOptions(this.actor, skill));
   },
 
   /** The ad hoc single-skill Skill Advancement Check. An unmarked skill asks for a Rule Break first. */

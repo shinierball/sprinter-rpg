@@ -30,8 +30,7 @@
       </div>
 
       <div class="cog-form-group">
-        <label>Prerequisites</label>
-        <input type="text" name="prerequisites" data-change-action="setField" data-field="prerequisites" data-prop="prerequisites" value="{{prerequisites}}" placeholder="e.g. Popularity 3+, Boom! Achievement">
+        {{> "systems/sprinter-rpg/templates/apps/point-builder/spec-requirements.hbs" rr=requirementRows}}
       </div>
 
       <div class="cog-form-group cog-span-2">

@@ -13,6 +13,8 @@ import { CHECK_TAGS, WIELD_TAGS, VEHICLE_TAGS, isTechniqueSkill } from '../tag/t
 import { driverPenalty } from '../../data/rules/vehicle-rules.mjs';
 import { drivingLabel, itemOwnedByVehicle } from '../vehicle/vehicle-combat.mjs';
 import { ROW_ARRAYS, getRowKind, kindOf, rowKindOf, warnRowKindOnce, applyRowKind } from '../row-kinds.mjs';
+import { actingRank } from '../skill/rank-source.mjs';
+import { isRankedItem } from '../document-types.mjs';
 
 /**
  * Pure, synchronous evaluation engine for conditional damage, attack, check, and defense modifiers.
@@ -87,22 +89,16 @@ function rowsOf(source, key) {
   return Array.isArray(rows) ? rows : [];
 }
 
-/** Sources whose Rank gates their rows' `minRank` / `maxRank`: skills and spells (E5.1). */
-const isRanked = (source) => source.type === 'skill' || source.type === 'spell';
-
 /** The Rank a ranked source is judged at: the higher of its modified and base Rank. */
 function rankOf(source) {
-  return Math.max(
-    Number(source.system?.modifiedRank ?? source.modifiedRank ?? source.system?.rank ?? 0),
-    Number(source.system?.rank ?? 0)
-  );
+  return actingRank(source);
 }
 
 /** A skill's or spell's rows only apply once it reaches the row's `minRank`; other sources ignore it. */
 function meetsMinRank(origin, row) {
   // A tag source is judged on its carrier (E4.0 R13).
   const source = origin.carrier ?? origin;
-  if (!isRanked(source)) return true;
+  if (!isRankedItem(source)) return true;
   return rankOf(source) >= (Number(row.minRank) || 0);
 }
 
@@ -168,7 +164,9 @@ function meetsMaxRank(source, row, ctxItem) {
   const own = carrier.type === 'spell' || (carrier.type === 'skill' && isTechniqueSkill(carrier));
   const skill = own ? carrier : (ctxItem?.type === 'skill' ? ctxItem : (carrier.type === 'skill' ? carrier : null));
   if (!skill) return true;
-  return (own ? rankOf(skill) : (Number(skill.system?.rank ?? skill.rank) || 0)) <= Number(max);
+  // A row on the roll's skill is judged at the stored Rank, held back by a Rank past the soft cap that is not yet active
+  const stored = Number(skill.system?.rank ?? skill.rank) || 0;
+  return (own ? rankOf(skill) : Math.min(stored, actingRank(skill))) <= Number(max);
 }
 
 /**
@@ -684,6 +682,22 @@ export function collectDefenseModifiers(actor, context, { perHit = false } = {})
   }
 
   return { rows };
+}
+
+/**
+ * The Advantage and Disadvantage reasons the target's `attackerAdvantage` rows give whoever attacks it.
+ * @param {object} target - the one attacked
+ * @param {object} defenseContext - `buildRollContext({ actor: target, phase: 'defense', tags: actionTagsOf(attackContext), other: attacker, otherRole: 'attacker' })`
+ * @returns {{ advantages: Array<string>, disadvantages: Array<string> }}
+ */
+export function collectIncomingAdvantage(target, defenseContext) {
+  const acc = { advantages: [], disadvantages: [] };
+  for (const { source, row } of evaluateRows(target, 'defenseModifiers', defenseContext)) {
+    const def = getRowKind('defenseModifiers', kindOf('defenseModifiers', row));
+    if (!def?.apply?.incoming) continue;
+    applyRowKind('defenseModifiers', def, 'incoming', acc, row, { actor: target, source, context: defenseContext, label: row.label || source.name || 'Attacked' });
+  }
+  return acc;
 }
 
 /**

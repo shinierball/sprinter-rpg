@@ -472,3 +472,38 @@ export function renderInterceptionHtml(interception, { interrupterUuid = '', int
     </div>
   `;
 }
+
+const BADGE_STYLE = 'padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;';
+
+/**
+ * The chat card an interrupt posts, in or out of combat. An item's `notes` is typed text, so the description is escaped here.
+ * @param {{ interrupt: object, actorName: string, targetName?: string, isFree: boolean, spentLabel: string, interceptionHtml?: string }} p
+ * `spentLabel` is the badge text of a paid interrupt (e.g. `SPENT 1 ACTION`).
+ * @returns {string}
+ */
+export function interruptCardHtml({ interrupt, actorName, targetName = '', isFree, spentLabel, interceptionHtml = '' }) {
+  const targetText = targetName ? ` vs <strong>${targetName}</strong>` : '';
+  const costBadge = isFree
+    ? `<span class="cog-bg-success-fill cog-text-on-fill" style="${BADGE_STYLE}">FREE INTERRUPT (0 ACTIONS)</span>`
+    : `<span class="cog-bg-warning-fill cog-text-on-fill" style="${BADGE_STYLE}">${spentLabel}</span>`;
+  return `
+      <div class="cog-chat-card cog-interrupt-card cog-bg-surface-alt" style="font-family: var(--font-primary, sans-serif); border: 2px solid var(--cog-warning); border-radius: 4px; padding: 8px 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid var(--cog-warning); padding-bottom: 4px; margin-bottom: 6px;">
+          <div class="cog-text-gold" style="font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-bolt cog-text-warning"></i> INTERRUPT: ${interrupt.name.toUpperCase()}
+          </div>
+          ${costBadge}
+        </div>
+        <div class="cog-text" style="font-size: 11px; margin-bottom: 4px;">
+          <strong>${actorName}</strong> triggered an out-of-turn Interrupt${targetText}!
+        </div>
+        <div class="cog-text-secondary cog-bg-surface" style="font-size: 11px; border: 1px solid var(--cog-warning-border); border-radius: 3px; padding: 5px 7px; margin-top: 4px;">
+          <div class="cog-text-muted" style="font-size: 10px; text-transform: uppercase; margin-bottom: 2px;">
+            <i class="fa-solid fa-crosshairs"></i> Trigger: <strong>${interrupt.triggerLabel || 'Reactive Trigger'}</strong>
+          </div>
+          ${escapeAttr(interrupt.description)}
+        </div>
+        ${interceptionHtml}
+      </div>
+    `;
+}

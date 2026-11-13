@@ -1,0 +1,40 @@
+{{!--
+  The requirements of a race or class: a collapsed accordion with one `grant-row.hbs` card per row, a delete link, an Add
+  chip per registered kind, and the free-text prerequisites below the rows. Parameter: rr = context.requirementRows
+  (buildRequirementRowsContext, src/sheets/item/context-requirements.mjs). The host names the actions (rr.addAction,
+  rr.removeAction, rr.toggleAction) and the row table (rr.table); the input names come from the context.
+  A half-filled row shows a chip; nothing here blocks an edit (CONTRIBUTING rule 2).
+--}}
+<details class="cog-collapsible-block cog-requirements" data-array="requirements" {{#if rr.open}}open{{/if}}>
+  <summary class="cog-collapsible-summary" data-action="{{rr.toggleAction}}">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.Rows.Requirement.Title"}} ({{rr.count}})</span>
+    <span class="cog-toggle-indicator {{#if rr.count}}active{{/if}}">{{#if rr.summaryLine}}[{{rr.summaryLine}}]{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content cog-modifier-block">
+    <div class="cog-modifier-body">
+      {{#each rr.rows as |g|}}
+        <div class="cog-modifier-card" data-modifier-index="{{g.index}}">
+          {{> "systems/sprinter-rpg/templates/items/parts/grant-row.hbs" g=g}}
+          <span class="cog-modifier-controls">
+            <a class="cog-modifier-delete" data-action="{{../rr.removeAction}}" data-row-table="{{../rr.table}}" data-index="{{g.index}}" data-tooltip="{{localize 'COG.Rows.Control.Delete'}}"><i class="fa-solid fa-trash"></i></a>
+          </span>
+        </div>
+      {{else}}
+        <p class="cog-field-label">{{localize "COG.Rows.Requirement.Empty"}}</p>
+      {{/each}}
+      <div class="cog-modifier-addbar">
+        <span class="cog-field-label">{{localize "COG.Rows.AddRow"}}</span>
+        {{#each rr.addBar as |b|}}
+          <a class="cog-modifier-add-chip" data-action="{{../rr.addAction}}" data-row-table="{{../rr.table}}" data-kind-key="{{b.kindKey}}" data-tooltip="{{localize b.hintKey}}"><i class="fa-solid fa-plus"></i> {{localize b.labelKey}}</a>
+        {{/each}}
+      </div>
+    </div>
+    {{#if rr.prerequisites}}
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.Rows.Requirement.Prerequisites"}}</span>
+        <textarea class="cog-field-input" name="{{rr.prerequisites.name}}" {{#if rr.prerequisites.changeAction}}data-change-action="{{rr.prerequisites.changeAction}}" data-field="{{rr.prerequisites.field}}" data-prop="{{rr.prerequisites.field}}"{{/if}} rows="2">{{rr.prerequisites.value}}</textarea>
+        <span class="cog-field-label">{{localize "COG.Rows.Requirement.PrerequisitesHint"}}</span>
+      </div>
+    {{/if}}
+  </div>
+</details>

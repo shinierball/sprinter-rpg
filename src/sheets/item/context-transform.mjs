@@ -9,12 +9,15 @@ import { worldRaces } from '../../data/race-class-plan.mjs';
 import { offeredEntries } from '../../utils/content-source.mjs';
 import { TRANSFORM_CUES, CURE_WINDOWS, normalizeTransform, isFormRace } from '../../utils/character/transform-rules.mjs';
 import { buildPickList, identifierEntries } from './context-pick-list.mjs';
+import { storedTransform } from './util.mjs';
 
 const loc = (key) => globalThis.game?.i18n?.localize?.(key) ?? key;
 
 /** `{ value, label, selected }` options from a registry of `{ label }` defs, with a blank first option. */
 function registryOptions(registry, selected, blankLabel) {
   const options = Object.entries(registry).map(([value, def]) => ({ value, label: def?.label ?? value, selected: value === selected }));
+  // A stored id the registry does not list keeps its option (a save submits the select, so it must not be replaced)
+  if (selected && !Object.hasOwn(registry, selected)) options.push({ value: selected, label: selected, selected: true });
   if (blankLabel !== undefined) options.unshift({ value: '', label: blankLabel, selected: selected === '' });
   return options;
 }
@@ -64,7 +67,8 @@ export function buildTransformContext(context, item) {
   }
   const groups = formRaceGroups();
   // The rows as stored, blank ones included: a new row has no race yet, and its input names carry the stored index
-  const rows = Array.isArray(item.system.transform.forms) ? item.system.transform.forms : [];
+  const stored = storedTransform(item);
+  const rows = Array.isArray(stored?.forms) ? stored.forms : [];
   const text = (value) => (typeof value === 'string' ? value : '');
   const entries = [...identifierEntries(context.availableBuffs), ...identifierEntries(context.availableDebuffs)]
     .filter((e, i, all) => all.findIndex((o) => o.value.toLowerCase() === e.value.toLowerCase()) === i)

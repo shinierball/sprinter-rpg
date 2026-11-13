@@ -4,8 +4,7 @@
  * `effectiveTableTier`), and can be raised by paying `upgradeCostGold` or by spending a coupon. Both ways ask a Rule Break
  * where the rules are exceeded (not enough gold, already tier 10). Having no coupon is not a rule: nothing changes.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { effectiveTableTier, MAX_TABLE_TIER } from '../../utils/crafting/crafting-engine.mjs';
 import { CRAFT_TAGS } from '../../utils/tag/tag-mechanics.mjs';
@@ -13,7 +12,8 @@ import { getItemAllTags } from '../active-tags.mjs';
 import { spendConsumableUnit } from './used-items.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { canWriteSpace, crawlerDoc, crawlerRef, resolveSpace, spaceLinksCrawler, userOwnsActor } from './personal-space-links.mjs';
+import { canWriteSpace, crawlerDoc, crawlerRef, resolveSpace, userOwnsActor } from './personal-space-links.mjs';
+import { groupLinksCrawler } from './space-group.mjs';
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
@@ -35,6 +35,9 @@ export function stampTableOnCreate(item, floor = getCurrentFloor()) {
 /** Whether an item is an enabled crafting table. */
 export const isCraftingTable = (item) => item?.type === 'space_upgrade' && item.system?.craftingTable?.enabled === true;
 
+/** Whether an item is an enabled studio (it serves one table type, takes no table space). */
+export const isStudio = (item) => item?.type === 'space_upgrade' && item.system?.studio?.enabled === true;
+
 // ---------------------------------------------------------------------------
 // The tier write. The space's owner and the GM write the table directly; an occupant's player asks the GM through the relay.
 // ---------------------------------------------------------------------------
@@ -53,12 +56,12 @@ registerRelayAction(RELAY_ACTION_CRAFT_TABLE_TIER, {
   authorize: (payload, requester) => {
     if (!requester || !TIER_FIELDS.includes(payload?.field)) return false;
     const { space, payer, table } = relayTarget(payload);
-    if (payer?.type !== 'crawler' || !isCraftingTable(table) || !spaceLinksCrawler(space, payer)) return false;
+    if (payer?.type !== 'crawler' || !isCraftingTable(table) || !groupLinksCrawler(space, payer)) return false;
     return requester.isGM === true || userOwnsActor(payer, requester);
   },
   apply: async (payload) => {
     const { space, payer, table } = relayTarget(payload);
-    if (payer?.type !== 'crawler' || !isCraftingTable(table) || !spaceLinksCrawler(space, payer)) return { ok: false, reason: 'invalid' };
+    if (payer?.type !== 'crawler' || !isCraftingTable(table) || !groupLinksCrawler(space, payer)) return { ok: false, reason: 'invalid' };
     await table.update({ [`system.craftingTable.${payload.field}`]: num(table.system.craftingTable[payload.field]) + 1 });
     if (payload.ruleBreak === true) await markRuleBreak(table);
     return { ok: true };
@@ -79,11 +82,6 @@ async function writeTableTier(table, payer, field, ruleBreak) {
     { direct: false }
   );
   if (!reply.ok) throw new Error(`The GM could not add the tier (${reply.reason ?? 'refused'}).`);
-}
-
-/** Record on the table that a Rule Break was confirmed for it. */
-async function markRuleBreak(table) {
-  if (typeof table.setFlag === 'function') await table.setFlag(SYSTEM_ID, 'ruleBreak', true);
 }
 
 /** Pass the caller's `ruleBreak` and `interactive` options on to one confirm. */
@@ -183,7 +181,8 @@ export async function applyTableCoupon(table, payer, options = {}) {
   }
 
   // Spend the unit first: a failed spend throws before any tier is written.
-  await spendConsumableUnit(coupon, payer, { quantity: Math.max(1, num(coupon.system?.quantity)) });
+  // A coupon is paper: spending it leaves nothing behind
+  await spendConsumableUnit(coupon, payer, { quantity: Math.max(1, num(coupon.system?.quantity)), leaveForm: false });
   await writeTableTier(table, payer, 'couponTiers', ruleBreak);
   return { ok: true, ruleBreak, tier: effectiveTableTier(table.system.craftingTable, floor) };
 }

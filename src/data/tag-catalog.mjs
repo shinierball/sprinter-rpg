@@ -1,41 +1,68 @@
 import { COG_OUTCOME_CONFIG } from '../documents/session/roll-outcomes.mjs';
 import {
-  AIMING_CONDITION, CONTEST_TAGS, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS, SAME_SIZE_SITUATION, VEHICLE_TAGS
+  AIMING_CONDITION, CONTEST_TAGS, ENGINE_SITUATIONS, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS, SAME_SIZE_SITUATION, VEHICLE_TAGS,
+  PATRON_ACCESS_TAGS, PATRON_TAGS, WORSHIP_TAGS, WORSHIP_TIER_TAG_PREFIX
 } from './tag-vocabulary.mjs';
+
+/** Label and text of each access a would-be patron may hold, by tag id (`PATRON_ACCESS_TAGS`, core rulebook p. 315). */
+const PATRON_ACCESS_DEFINITIONS = Object.freeze({
+  'access.club.champions': { label: 'Access: Champions\' Club', description: 'Access to the champions\' club.' },
+  'access.club.outlaws': { label: 'Access: Outlaws\' Club', description: 'Access to the outlaws\' club.' },
+  'access.club.all_memberships': { label: 'Access: All Membership Clubs', description: 'Gets into every club that sells memberships, whether or not you hold one.' },
+  'access.guild.outreach': { label: 'Access: Guild Outreach Centre', description: 'Belongs to, or can use, a guild with outreach centres.' },
+  'access.agency.outreach_pr': { label: 'Access: Outreach PR Agent', description: 'Has a crawler outreach PR agent.' }
+});
+
+/** Spell schools (3.58 D6b), id suffix and label. Descriptive: the GM adjudicates, no mechanic reads them. */
+const SPELL_SCHOOLS = Object.freeze([
+  ['healing', 'Healing'], ['mind_control', 'Mind Control'], ['buff', 'Buff'], ['debuff', 'Debuff'], ['entangle', 'Entangle'],
+  ['illusion', 'Illusion'], ['shield', 'Shield'], ['detection', 'Detection'], ['protection', 'Protection'], ['teleportation', 'Teleportation'],
+  ['reanimation', 'Reanimation'], ['force_field', 'Force Field'], ['illumination', 'Illumination'], ['detonation', 'Detonation'],
+  ['utility', 'Utility'], ['defense', 'Defense']
+]);
+
+/** One school tag; the description's "a"/"an" follows the first letter of the school's name. */
+function schoolTag([suffix, label]) {
+  const name = label.toLowerCase();
+  const article = 'aeiou'.includes(name[0]) ? 'An' : 'A';
+  return { id: `school.${suffix}`, label, namespace: 'school', description: `${article} ${name} spell. A label for the table; the system does not apply it.`, descriptive: true };
+}
 
 /**
  * The built-in tag definitions. Data only; lookups and registration live in `tag-definitions.mjs`.
  */
-
 export const COG_TAGS = [
   // --- Kinds ---
-  { id: 'kind.spell', label: 'Spell', namespace: 'kind' },
-  { id: 'kind.skill', label: 'Skill', namespace: 'kind' },
-  { id: 'kind.attack', label: 'Attack', namespace: 'kind' },
-  { id: 'kind.weapon', label: 'Weapon', namespace: 'kind' },
-  { id: 'kind.armor', label: 'Armor', namespace: 'kind' },
-  { id: 'kind.gear', label: 'Gear', namespace: 'kind' },
-  { id: 'kind.loot', label: 'Loot', namespace: 'kind' },
-  { id: 'kind.class', label: 'Class', namespace: 'kind' },
-  { id: 'kind.race', label: 'Race', namespace: 'kind' },
-  { id: 'kind.deity', label: 'Deity', namespace: 'kind' },
-  { id: 'kind.buff', label: 'Buff', namespace: 'kind' },
-  { id: 'kind.debuff', label: 'Debuff', namespace: 'kind' },
-  { id: 'kind.achievement', label: 'Achievement', namespace: 'kind' },
-  { id: 'kind.pet', label: 'Pet Companion', namespace: 'kind' },
-  { id: 'kind.vehicle', label: 'Vehicle', namespace: 'kind' },
-  { id: 'kind.mount', label: 'Mount', namespace: 'kind' },
-  { id: 'kind.personal_space', label: 'Personal Space', namespace: 'kind' },
-  { id: 'kind.upgrade', label: 'Space Upgrade', namespace: 'kind' },
-  { id: 'kind.technique', label: 'Combat Technique', namespace: 'kind' },
-  { id: 'kind.core', label: 'Core Action', namespace: 'kind', flags: ['no-ranks'] },
+  { id: 'kind.spell', label: 'Spell', namespace: 'kind', description: 'Derived on every spell item from its type, so a tag query can name spells.' },
+  { id: 'kind.skill', label: 'Skill', namespace: 'kind', description: 'Derived on every Skill item from its type, so a tag query can name Skills.' },
+  { id: 'kind.attack', label: 'Attack', namespace: 'kind', description: 'Derived on every attack item from its type. An attack item is a strike with its own damage, kept apart from Skills and gear.' },
+  { id: 'kind.weapon', label: 'Weapon', namespace: 'kind', description: 'Derived on gear that is a weapon: its isWeapon flag is set, or its gear category is weapon.' },
+  { id: 'kind.armor', label: 'Armor', namespace: 'kind', description: 'Armour gear. Nothing derives it: it is stored on the armour, and a crafting blueprint can name it as a target.' },
+  { id: 'kind.gear', label: 'Gear', namespace: 'kind', description: 'Derived on every gear item from its type, so a tag query can name gear.' },
+  { id: 'kind.loot', label: 'Loot', namespace: 'kind', description: 'Derived on every loot item from its type. Its usage tags (usage.*) say whether it is used up.' },
+  { id: 'kind.class', label: 'Class', namespace: 'kind', description: 'Derived on every class item from its type, so a tag query can name a class.' },
+  { id: 'kind.race', label: 'Race', namespace: 'kind', description: 'Derived on every race item from its type, so a tag query can name a race.' },
+  { id: 'kind.deity', label: 'Deity', namespace: 'kind', description: 'Derived on every deity item from its type, so a tag query can name a deity.' },
+  { id: 'kind.buff', label: 'Buff', namespace: 'kind', description: 'Derived on every buff item from its type, so a tag query can name buffs.' },
+  { id: 'kind.debuff', label: 'Debuff', namespace: 'kind', description: 'Derived on every debuff item from its type, so a tag query can name debuffs.' },
+  { id: 'kind.achievement', label: 'Achievement', namespace: 'kind', description: 'Derived on every achievement item from its type, so a tag query can name achievements.' },
+  { id: 'kind.pet', label: 'Pet Companion', namespace: 'kind', description: 'Derived on every pet actor from its type, so a tag query can name Pet Companions.' },
+  { id: 'kind.vehicle', label: 'Vehicle', namespace: 'kind', description: 'Names a vehicle. Nothing derives it and no reader uses it yet: a vehicle is the mount or vehicle actor (kind.mount_vehicle).' },
+  { id: 'kind.mount', label: 'Mount', namespace: 'kind', description: 'Names a mount. Nothing derives it from a type: it is stored by hand on a companion that is a mount.' },
+  { id: 'kind.personal_space', label: 'Personal Space', namespace: 'kind', description: 'Derived on every Personal Space actor from its type. Its space type tag is derived with it.' },
+  { id: 'kind.patron', label: 'Patron', namespace: 'kind', description: 'Derived on every patron item from its type, so a tag query can name patrons. A patron never adds tags or rows to the crawler that holds it.' },
+  { id: 'kind.sponsor', label: 'Sponsor', namespace: 'kind', description: 'Derived on every sponsor item from its type, so a tag query can name sponsors. A sponsor held by a crawler is an identity carrier: it adds this tag and no bonuses.' },
+  { id: 'kind.space_upgrade', label: 'Space Upgrade (item type)', namespace: 'kind', description: 'Derived on every Personal Space upgrade item from its type, beside kind.upgrade.' },
+  { id: 'kind.upgrade', label: 'Space Upgrade', namespace: 'kind', description: 'Derived on a Personal Space upgrade item. Its upgrade type tag is derived with it.' },
+  { id: 'kind.technique', label: 'Combat Technique', namespace: 'kind', description: 'Derived on a Skill that is a Combat Technique (it modifies attacks). A technique is never the Skill an attack is matched to.' },
+  { id: 'kind.core', label: 'Core Action', namespace: 'kind', description: 'A core action that every crawler has (Intervene, Call a Play). It has no Ranks and is stored on the Skill, not derived.', flags: ['no-ranks'] },
   // Derived from the actor type (`collectActorTags`, documents/active-tags.mjs); registered so tag pickers can offer them.
-  { id: 'kind.crawler', label: 'Crawler', namespace: 'kind' },
-  { id: 'kind.mob', label: 'Mob', namespace: 'kind' },
-  { id: 'kind.npc', label: 'NPC / Creature', namespace: 'kind' },
-  { id: 'kind.mercenary', label: 'Mercenary', namespace: 'kind' },
-  { id: 'kind.mount_vehicle', label: 'Mount / Vehicle', namespace: 'kind' },
-  { id: 'kind.marker', label: 'Light Marker', namespace: 'kind' },
+  { id: 'kind.crawler', label: 'Crawler', namespace: 'kind', description: 'Derived on every crawler actor from its type, so a tag query can name crawlers.' },
+  { id: 'kind.mob', label: 'Mob', namespace: 'kind', description: 'Derived on every mob actor from its type, so a tag query can name mobs.' },
+  { id: 'kind.npc', label: 'NPC / Creature', namespace: 'kind', description: 'Derived on every NPC or creature actor from its type, so a tag query can name NPCs.' },
+  { id: 'kind.mercenary', label: 'Mercenary', namespace: 'kind', description: 'Derived on every mercenary actor from its type, so a tag query can name mercenaries.' },
+  { id: 'kind.mount_vehicle', label: 'Mount / Vehicle', namespace: 'kind', description: 'Derived on every mount or vehicle actor from its type.' },
+  { id: 'kind.marker', label: 'Light Marker', namespace: 'kind', description: 'Derived on every light marker actor from its type.' },
 
   // --- Spaces & Safe Rooms ---
   { id: 'space.single_room', label: 'Single-Room Safe Room', namespace: 'space' },
@@ -44,6 +71,7 @@ export const COG_TAGS = [
   { id: 'space.suite', label: 'Penthouse Sponsor Suite', namespace: 'space' },
   { id: 'space.guild_hall', label: 'Guild Safe House', namespace: 'space' },
   { id: 'space.safe_room', label: 'Certified Safe Room', namespace: 'space' },
+  { id: 'space.coupon.rank', label: 'Personal Space Coupon', namespace: 'space', description: 'Loot spent for one Rank Up of a personal space.' },
   { id: 'scene.safe_room', label: 'Safe Room Scene', namespace: 'scene', description: 'A scene where crawlers open loot boxes without a Rule Break. Set by the Safe Room checkbox in Scene Config.' },
 
   // --- Space Upgrades ---
@@ -53,7 +81,8 @@ export const COG_TAGS = [
   { id: 'upgrade.comms', label: 'Outside World Broadcast & Comms', namespace: 'upgrade' },
   { id: 'upgrade.defense', label: 'Security & Blast Doors', namespace: 'upgrade' },
   { id: 'upgrade.stash_expansion', label: 'Stash & Vault Storage Expansion', namespace: 'upgrade' },
-  { id: 'upgrade.crafting_table', label: 'Crafting Station Hardpoint', namespace: 'upgrade' },
+  { id: 'upgrade.crafting_table', label: 'Crafting Table', namespace: 'upgrade' },
+  { id: 'upgrade.studio', label: 'Studio', namespace: 'upgrade', description: 'An upgrade bought for one table type (system.studio.tableTypeTag): its crafting rows apply to a craft that uses a table of that type. It takes no table space and wants a space of rank 2 or more.' },
 
   // --- Companions & Assets ---
   // Derived from a race's heritage (D8, never stored); descriptive: a class may require one, nothing else reads it.
@@ -83,27 +112,21 @@ export const COG_TAGS = [
   { id: 'role.dps', label: 'Damage Dealer', namespace: 'role', description: 'A mercenary whose job is dealing damage.', descriptive: true },
 
   // Spell schools (3.58 D6b): the labels spells carried in `damageType` and the old spell type. Descriptive: the GM adjudicates, no mechanic reads them.
-  { id: 'school.healing', label: 'Healing', namespace: 'school', description: 'A healing spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.mind_control', label: 'Mind Control', namespace: 'school', description: 'A mind control spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.buff', label: 'Buff', namespace: 'school', description: 'A buff spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.debuff', label: 'Debuff', namespace: 'school', description: 'A debuff spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.entangle', label: 'Entangle', namespace: 'school', description: 'A entangle spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.illusion', label: 'Illusion', namespace: 'school', description: 'A illusion spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.shield', label: 'Shield', namespace: 'school', description: 'A shield spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.detection', label: 'Detection', namespace: 'school', description: 'A detection spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.protection', label: 'Protection', namespace: 'school', description: 'A protection spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.teleportation', label: 'Teleportation', namespace: 'school', description: 'A teleportation spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.reanimation', label: 'Reanimation', namespace: 'school', description: 'A reanimation spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.force_field', label: 'Force Field', namespace: 'school', description: 'A force field spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.illumination', label: 'Illumination', namespace: 'school', description: 'A illumination spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.detonation', label: 'Detonation', namespace: 'school', description: 'A detonation spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.utility', label: 'Utility', namespace: 'school', description: 'A utility spell. A label for the table; the system does not apply it.', descriptive: true },
-  { id: 'school.defense', label: 'Defense', namespace: 'school', description: 'A defense spell. A label for the table; the system does not apply it.', descriptive: true },
+  ...SPELL_SCHOOLS.map(schoolTag),
 
   // Descriptive point-build tags (3.6a R2): the core benefits and detriments carry them; no engine reader. The bundled provider restyles them.
+  // --- Worship (derived from a deity bond; carried by boons and smites) ---
+  { id: WORSHIP_TAGS.active, label: 'Worshipping', namespace: 'worship', description: 'Derived on an actor that worships a deity.' },
+  { id: `${WORSHIP_TIER_TAG_PREFIX}1`, label: 'Worship Tier: Acolyte', namespace: 'worship', description: 'Derived on an actor that worships at the Acolyte tier.' },
+  { id: `${WORSHIP_TIER_TAG_PREFIX}2`, label: 'Worship Tier: Devotee', namespace: 'worship', description: 'Derived on an actor that worships at the Devotee tier.' },
+  { id: `${WORSHIP_TIER_TAG_PREFIX}3`, label: 'Worship Tier: Zealot', namespace: 'worship', description: 'Derived on an actor that worships at the Zealot tier.' },
+  { id: WORSHIP_TAGS.boon, label: 'Divine Boon', namespace: 'worship', description: 'Marks a buff as a boon from a deity.' },
+  { id: WORSHIP_TAGS.smite, label: 'Divine Smite', namespace: 'worship', description: 'Marks a debuff as a smite from a deity.' },
+  { id: WORSHIP_TAGS.benefit, label: 'Worship Benefit', namespace: 'worship', description: 'Marks a buff as a benefit of worship (a tier gift or the signature gift); a deity\'s debuff can suppress it.' },
+  { id: WORSHIP_TAGS.divine, label: 'Divine Debuff', namespace: 'worship', qualifiesName: true, description: 'Marks a debuff a deity lays on a worshipper who missed offerings.' },
+  { id: WORSHIP_TAGS.fallen, label: 'Fallen Worshipper', namespace: 'worship', description: 'Marks a debuff laid on a worshipper who missed too many offerings.' },
   { id: 'access.saferoom.free_room', label: 'Free Safe Room Lodging', namespace: 'access', description: 'Gets a private room in any safe room without paying for it.', descriptive: true },
   { id: 'access.guild.weapon_training', label: 'Guild Access: Weapon Training', namespace: 'access', description: 'May use any guild that teaches weapon skills, on every floor.', descriptive: true },
-  { id: 'access.patron', label: 'Patron or Sponsor', namespace: 'access', description: 'Backed by a patron or sponsor who sends messages, gifts or small sponsorships; the GM picks who it is and rules on what they provide.', descriptive: true },
   { id: 'rule.store_discount', label: 'Trade Perk', namespace: 'rule', description: 'Pays less at shops, earns more when selling, or collects extra bank interest (the item description says which, and how much).', descriptive: true },
   { id: 'rule.kill_bounty', label: 'Kill Bounty', namespace: 'rule', description: 'A mob slain in the way the item names drops bonus gold equal to the Floor Number (the item description names the way).', descriptive: true },
   { id: 'rule.flight_limited', label: 'Limited Flight', namespace: 'rule', description: 'Flies only within a limit per scene, such as time, distance or gliding (the item description says which). The Fly speed is a structured value; the GM enforces the limit.', descriptive: true },
@@ -215,6 +238,7 @@ export const COG_TAGS = [
   { id: 'element.bludgeoning', label: 'Bludgeoning', namespace: 'element' },
   { id: 'element.piercing', label: 'Piercing', namespace: 'element' },
   { id: 'element.slashing', label: 'Slashing', namespace: 'element' },
+  { id: 'element.brimstone', label: 'Brimstone', namespace: 'element' },
 
   // --- Area / Shapes ---
   { id: 'shape.aoe', label: 'Area of Effect', namespace: 'shape', flags: ['area'] },
@@ -243,7 +267,10 @@ export const COG_TAGS = [
   { id: 'duration.rounds', label: 'Combat Rounds', namespace: 'duration' },
   { id: 'duration.minutes', label: 'Minutes', namespace: 'duration' },
   { id: 'duration.hours', label: 'Hours', namespace: 'duration' },
+  { id: 'duration.next_check', label: 'Until the next Check', namespace: 'duration' },
+  { id: 'duration.next_action', label: 'Until the next Action', namespace: 'duration' },
   { id: 'duration.combat', label: 'Until End of Combat', namespace: 'duration' },
+  { id: 'duration.until_healed', label: 'Until healed', namespace: 'duration' },
   { id: 'duration.permanent', label: 'Permanent / Sustained', namespace: 'duration' },
   { id: 'duration.short_rest', label: 'Until a short rest', namespace: 'duration' },
   { id: 'duration.long_rest', label: 'Until a long rest', namespace: 'duration' },
@@ -298,18 +325,16 @@ export const COG_TAGS = [
   { id: 'condition.stiff_legs', label: 'Stiff Legs', namespace: 'condition' },
   { id: 'condition.sore_as_shit', label: 'Sore as Shit', namespace: 'condition' },
   { id: 'condition.muted', label: 'Muted', namespace: 'condition' },
-  { id: 'condition.bleeding', label: 'Bleeding', namespace: 'condition' },
-  { id: 'condition.frozen', label: 'Frozen', namespace: 'condition' },
-  { id: 'condition.crippled', label: 'Crippled', namespace: 'condition' },
   { id: 'condition.minor_injury', label: 'Minor Injury', namespace: 'condition' },
   { id: 'condition.major_injury', label: 'Major Injury', namespace: 'condition' },
   { id: 'condition.blinded', label: 'Blinded', namespace: 'condition' },
   { id: 'condition.blood_trail', label: 'Blood Trail', namespace: 'condition' },
   { id: 'condition.drowning', label: 'Drowning', namespace: 'condition' },
-  { id: 'condition.dying', label: 'Dying', namespace: 'condition' },
+  { id: 'condition.dying', label: 'Dying', namespace: 'condition', flags: ['no-actions'] },
+  { id: 'condition.dead', label: 'Dead', namespace: 'condition', flags: ['no-actions'] },
   { id: 'condition.enraged', label: 'Enraged', namespace: 'condition' },
   { id: 'condition.fatigued', label: 'Fatigued', namespace: 'condition' },
-  { id: 'condition.paralyzed', label: 'Paralyzed', namespace: 'condition' },
+  { id: 'condition.paralyzed', label: 'Paralyzed', namespace: 'condition', flags: ['no-actions'] },
   { id: 'condition.sepsis', label: 'Sepsis', namespace: 'condition' },
   { id: 'condition.shit_faced', label: 'Shit-Faced', namespace: 'condition' },
   { id: 'condition.staggered', label: 'Staggered', namespace: 'condition' },
@@ -318,50 +343,51 @@ export const COG_TAGS = [
   { id: 'condition.charmed', label: 'Charmed', namespace: 'condition' },
   { id: 'condition.asleep', label: 'Asleep', namespace: 'condition' },
   { id: 'condition.fear', label: 'Fear', namespace: 'condition' },
+  { id: 'condition.possession', label: 'Possession', namespace: 'condition', description: 'A possession effect (a spirit taking hold of the target); rows test it on the defender\'s check.' },
   { id: 'injury.minor', label: 'Minor Injury', namespace: 'injury' },
   { id: 'injury.major', label: 'Major Injury', namespace: 'injury' },
   { id: 'injury.long_term', label: 'Long-Term Injury', namespace: 'injury' },
 
   // --- Weapon Types ---
-  { id: 'weapon.axe', label: 'Axe', namespace: 'weapon' },
-  { id: 'weapon.bow', label: 'Bow', namespace: 'weapon' },
-  { id: 'weapon.club', label: 'Club', namespace: 'weapon' },
-  { id: 'weapon.crossbow', label: 'Crossbow', namespace: 'weapon' },
-  { id: 'weapon.dagger', label: 'Dagger', namespace: 'weapon' },
-  { id: 'weapon.handgun', label: 'Handgun', namespace: 'weapon' },
-  { id: 'weapon.herding_weapon', label: 'Herding Weapon', namespace: 'weapon' },
-  { id: 'weapon.herding_tools', label: 'Herding Tools', namespace: 'weapon' },
-  { id: 'weapon.improvised', label: 'Improvised Weapon', namespace: 'weapon' },
-  { id: 'weapon.javelin', label: 'Javelin', namespace: 'weapon' },
-  { id: 'weapon.lance', label: 'Lance', namespace: 'weapon' },
-  { id: 'weapon.longsword', label: 'Longsword', namespace: 'weapon' },
-  { id: 'weapon.polearm', label: 'Polearm', namespace: 'weapon' },
-  { id: 'weapon.quarterstaff', label: 'Quarterstaff', namespace: 'weapon' },
-  { id: 'weapon.rapier', label: 'Rapier', namespace: 'weapon' },
-  { id: 'weapon.shotgun', label: 'Shotgun', namespace: 'weapon' },
-  { id: 'weapon.shuriken', label: 'Shuriken', namespace: 'weapon' },
-  { id: 'weapon.slingshot', label: 'Slingshot', namespace: 'weapon' },
-  { id: 'weapon.warhammer', label: 'Warhammer', namespace: 'weapon' },
+  { id: 'weapon.axe', label: 'Axe', namespace: 'weapon', description: 'Axe weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.bow', label: 'Bow', namespace: 'weapon', description: 'Bow weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.club', label: 'Club', namespace: 'weapon', description: 'Club weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.crossbow', label: 'Crossbow', namespace: 'weapon', description: 'Crossbow weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.dagger', label: 'Dagger', namespace: 'weapon', description: 'Dagger weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.handgun', label: 'Handgun', namespace: 'weapon', description: 'Handgun weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.herding_weapon', label: 'Herding Weapon', namespace: 'weapon', description: 'Herding Weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.herding_tools', label: 'Herding Tools', namespace: 'weapon', description: 'Herding Tools type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.improvised', label: 'Improvised Weapon', namespace: 'weapon', description: 'Improvised Weapon type: whatever is to hand. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.javelin', label: 'Javelin', namespace: 'weapon', description: 'Javelin weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.lance', label: 'Lance', namespace: 'weapon', description: 'Lance weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.longsword', label: 'Longsword', namespace: 'weapon', description: 'Longsword weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.polearm', label: 'Polearm', namespace: 'weapon', description: 'Polearm weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.quarterstaff', label: 'Quarterstaff', namespace: 'weapon', description: 'Quarterstaff weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.rapier', label: 'Rapier', namespace: 'weapon', description: 'Rapier weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.shotgun', label: 'Shotgun', namespace: 'weapon', description: 'Shotgun weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.shuriken', label: 'Shuriken', namespace: 'weapon', description: 'Shuriken weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.slingshot', label: 'Slingshot', namespace: 'weapon', description: 'Slingshot weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
+  { id: 'weapon.warhammer', label: 'Warhammer', namespace: 'weapon', description: 'Warhammer weapon type. A weapon of this type and the Skill that uses it share the tag, which is how the system finds that Skill for the weapon.' },
 
   // --- Weapon Categories ---
-  { id: 'weaponClass.melee', label: 'Melee Weapon', namespace: 'weaponClass' },
-  { id: 'weaponClass.ranged', label: 'Ranged Weapon', namespace: 'weaponClass' },
-  { id: 'weaponClass.natural', label: 'Natural Attack', namespace: 'weaponClass', flags: ['no-hands'] },
-  { id: 'weaponClass.unarmed', label: 'Unarmed Attack', namespace: 'weaponClass', flags: ['no-hands'] },
+  { id: 'weaponClass.melee', label: 'Melee Weapon', namespace: 'weaponClass', description: 'Melee weapon category: a weapon held and used in close combat. A race or class choice that asks for a melee weapon reads this tag.' },
+  { id: 'weaponClass.ranged', label: 'Ranged Weapon', namespace: 'weaponClass', description: 'Ranged weapon category. Aiming reads this tag (with weaponGroup.ranged), so a ranged attack counts for Aiming.' },
+  { id: 'weaponClass.natural', label: 'Natural Attack', namespace: 'weaponClass', description: 'Natural attack category: a bite, claw or other body attack. It occupies no hand, so it takes no wield mode (the no-hands flag).', flags: ['no-hands'] },
+  { id: 'weaponClass.unarmed', label: 'Unarmed Attack', namespace: 'weaponClass', description: 'Unarmed attack category: a strike with no weapon in hand. It occupies no hand, and a Skill carrying it is listed as an unarmed attack.', flags: ['no-hands'] },
 
   // --- Weapon Properties ---
   { id: 'weaponProp.reach', label: 'Reach', namespace: 'weaponProp', description: 'Descriptive: the weapon has reach; the GM checks it when a rule asks for a Reach weapon.', descriptive: true },
   { id: 'weaponProp.thrown', label: 'Thrown', namespace: 'weaponProp', description: 'Descriptive: the weapon can be thrown; the GM rules on throwing.', descriptive: true },
 
   // --- Weapon Groups ---
-  { id: 'weaponGroup.power', label: 'Power Weapons', namespace: 'weaponGroup' },
-  { id: 'weaponGroup.edge', label: 'Edge', namespace: 'weaponGroup' },
-  { id: 'weaponGroup.bashing', label: 'Bashing', namespace: 'weaponGroup' },
-  { id: 'weaponGroup.reach', label: 'Reach', namespace: 'weaponGroup' },
-  { id: 'weaponGroup.ranged', label: 'Ranged', namespace: 'weaponGroup' },
-  { id: 'weaponGroup.hand_to_hand', label: 'Hand to Hand', namespace: 'weaponGroup' },
-  { id: 'weaponGroup.utility', label: 'Utility', namespace: 'weaponGroup' },
-  { id: 'weaponGroup.exotic', label: 'Exotic', namespace: 'weaponGroup' },
+  { id: 'weaponGroup.power', label: 'Power Weapons', namespace: 'weaponGroup', description: 'Power Weapons group: a weapon and a Skill that share it match each other, and a Skill shows the group as its label.' },
+  { id: 'weaponGroup.edge', label: 'Edge', namespace: 'weaponGroup', description: 'Edge group: a weapon and a Skill that share it match each other, and a Skill shows the group as its label. The Edge race and class choices ask for it.' },
+  { id: 'weaponGroup.bashing', label: 'Bashing', namespace: 'weaponGroup', description: 'Bashing group: a weapon and a Skill that share it match each other, and a Skill shows the group as its label.' },
+  { id: 'weaponGroup.reach', label: 'Reach', namespace: 'weaponGroup', description: 'Reach group: a weapon and a Skill that share it match each other, and a Skill shows the group as its label. The Reach race and class choices ask for it.' },
+  { id: 'weaponGroup.ranged', label: 'Ranged', namespace: 'weaponGroup', description: 'Ranged group: a weapon and a Skill that share it match each other, and a Skill shows the group as its label. Aiming also reads it, as it reads weaponClass.ranged.' },
+  { id: 'weaponGroup.hand_to_hand', label: 'Hand to Hand', namespace: 'weaponGroup', description: 'Hand to Hand group: a weapon and a Skill that share it match each other, and a Skill shows the group as its label.' },
+  { id: 'weaponGroup.utility', label: 'Utility', namespace: 'weaponGroup', description: 'Utility group: a weapon and a Skill that share it match each other, and a Skill shows the group as its label.' },
+  { id: 'weaponGroup.exotic', label: 'Exotic', namespace: 'weaponGroup', description: 'Exotic group: a weapon and a Skill that share it match each other, and a Skill shows the group as its label.' },
 
   // --- Wielding ---
   { id: 'wield.one_handed', label: 'One-Handed', namespace: 'wield' },
@@ -401,6 +427,7 @@ export const COG_TAGS = [
     .map(([key, id]) => ({ id, label: COG_OUTCOME_CONFIG[key].label, namespace: 'outcome' })),
 
   // --- Situations (roll-dialog toggles) ---
+  { id: ENGINE_SITUATIONS.intercepting, label: 'Catching a hit', namespace: 'situation', engine: true, description: 'Set on the defence of a hit the actor took for an ally (Catcher).' },
   { id: 'situation.aiming', label: 'Aiming', namespace: 'situation', flags: ['maneuver'] },
   { id: 'situation.used_tactics', label: 'Used Tactics this combat', namespace: 'situation' },
   // Set by buildRollContext when the roll's actor and its other party are the same size; tickable when no target stands behind the roll (permissive)
@@ -457,6 +484,9 @@ export const COG_TAGS = [
 
   // --- Engine Rule Overrides ---
   { id: 'rule.no-damage-effects', label: 'Cannot Take Damage Effects', namespace: 'rule', flags: ['no-damage-effects'] },
+  { id: 'rule.no-actions', label: 'Cannot Take Actions', namespace: 'rule', flags: ['no-actions'], description: 'The bearer cannot take Actions; an Action asks a Rule Break first.' },
+  { id: 'rule.forfeit-action', label: 'Forfeits the Next Action', namespace: 'rule', flags: ['forfeits-action'], description: 'The bearer loses the next Action; a slot is recorded and the debuff ends. Acting first asks a Rule Break.' },
+  { id: 'rule.no-healing', label: 'Cannot Be Healed', namespace: 'rule', flags: ['no-healing'], description: 'The bearer cannot be healed; a heal asks a Rule Break first.' },
   { id: 'rule.requires-weapon', label: 'Requires Equipped Weapon', namespace: 'rule', flags: ['requires-weapon'] },
   { id: 'rule.no-standalone-attack', label: 'No Standalone Attack', namespace: 'rule', flags: ['no-standalone-attack'] },
   { id: 'rule.mind-control', label: 'Mind Control', namespace: 'rule', description: 'Descriptive: the GM adjudicates control of the target.', descriptive: true },
@@ -525,6 +555,11 @@ export const COG_TAGS = [
   { id: 'trigger.on_ally_attack', label: 'When Ally Targeted', namespace: 'trigger' },
   { id: 'trigger.on_ally_check', label: 'Ally Check', namespace: 'trigger' },
   { id: 'trigger.before_ally_action', label: 'Before Ally Acts', namespace: 'trigger' },
+
+  // --- Bard patronage (core rulebook pp. 145-146, 315) ---
+  { id: PATRON_TAGS.eligible, label: 'Patron Eligible', namespace: 'access', engine: true, description: 'May acquire a Bard patron (pp. 145, 315).' },
+  { id: PATRON_TAGS.required, label: 'Patron Required', namespace: 'rule', engine: true, description: 'Must have a Bard patron, chosen from the GM\'s offer when the class is taken (pp. 146, 315).' },
+  ...PATRON_ACCESS_TAGS.map((id) => ({ id, ...PATRON_ACCESS_DEFINITIONS[id], namespace: 'access', engine: true })),
 
   // --- Interrupt Effects (what an interrupt does to the attack that triggered it) ---
   { id: 'interrupt.redirect_attack', label: 'Redirect Attack to Self', namespace: 'interrupt' },

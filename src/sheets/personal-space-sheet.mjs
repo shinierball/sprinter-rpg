@@ -1,16 +1,27 @@
-import { getSpaceTypeInfo } from '../data/rules/personal-space-rules.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { COGStashApp } from '../apps/stash-app.mjs';
 import { COGCraftingApp } from '../apps/crafting-app.mjs';
 import { COGGrindApp } from '../apps/grind-app.mjs';
 import { resolveTrainingRoomConfig, trainingAllowsSkill, trainingWindowLabel } from '../documents/actor/actor-spaces.mjs';
+import { ADVANCEMENT_ROUTES, routeAllowsGain } from '../utils/skill/advancement-routes.mjs';
 import { currentTimeContext } from '../documents/actor/dungeon-time.mjs';
-import { SYSTEM_PATH, SYSTEM_ID } from '../constants.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { unopenedBoxUnits } from '../documents/actor/loot-box-open.mjs';
-import { removeCrawlerFromSpace, spaceMembers, userOwnsActor, worldCrawlers } from '../documents/actor/personal-space-links.mjs';
+import { removeCrawlerFromSpace, resolveSpace, spaceMembers, userOwnsActor, worldCrawlers, worldSpaces } from '../documents/actor/personal-space-links.mjs';
+import { joinedLinks, spaceGroup } from '../documents/actor/space-group.mjs';
+import { applyTableCoupon, buyTableTier, isCraftingTable, isStudio, tableCoupons } from '../documents/actor/crafting-tables.mjs';
+import { tableTierParts } from '../utils/item-describer/blocks-crafting.mjs';
+import { getCurrentFloor } from '../utils/floor/current-floor.mjs';
+import { tablePayer } from './item/actions-blueprint.mjs';
+import { detachSpaces, joinProblemLabel, joinSpace, mayDetachSpaces, mayJoinSpace } from '../documents/actor/space-join.mjs';
+import { sameParty } from '../utils/combat/party.mjs';
+import { roomOf, confirmRoomFor, stampTableRuleBreaks, confirmStudioFor, stampStudioRuleBreaks } from '../documents/actor/space-room.mjs';
+import { couponPriceFor, spaceRules } from '../data/rules/space-rank-rules.mjs';
+import { buySpaceUpgrade, buyTable, rankUpSpace, spaceCoupons, spacePayers, tableTypeOptions } from '../documents/actor/space-purchases.mjs';
 import { COGActorSheetV2 } from './base/actor-sheet-v2.mjs';
 import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
+import { isRuleBreak, ruleBreakReasonOf } from '../utils/rule-break.mjs';
 
 /**
  * Dedicated Sheet Controller for Personal Spaces in Sprinter RPG.
@@ -27,7 +38,19 @@ import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
 const PARTIAL = `${SYSTEM_PATH}/templates/actors/personal-space`;
 const tabPart = (id) => ({ template: `${PARTIAL}/${id}.hbs`, scrollable: [''] });
 
+/** The "Paid by" value that means a free GM grant. */
+const GM_GRANT = 'gm';
+
+/** The purchase controls a member of the space uses even on a view-only sheet (the purchase itself checks the payer). */
+const MEMBER_ACTIONS = ['rankUp', 'buyTable', 'buyUpgrade', 'joinSpace', 'detachSpace', 'buyGroupTableTier', 'applyGroupTableCoupon'];
+
+/** An item description as HTML for a list row (descriptions are HTML fields). */
+const enrichDescription = (item) => globalThis.foundry.applications.ux.TextEditor.implementation.enrichHTML(item.system?.description ?? '', { relativeTo: item, secrets: item.isOwner });
+
 export class COGPersonalSpaceSheet extends COGActorSheetV2 {
+  /** The "Paid by" choice: a crawler uuid or GM_GRANT; '' until chosen (the first payer then pays). */
+  #payerUuid = '';
+
   static DEFAULT_OPTIONS = {
     classes: ['personal-space'],
     position: { width: 820, height: 840 },
@@ -38,7 +61,12 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
       restInSpace: COGPersonalSpaceSheet.#onRestInSpace,
       launchGrind: COGPersonalSpaceSheet.#onLaunchGrind,
       trainSkill: COGPersonalSpaceSheet.#onTrainSkill,
-      installUpgrade: COGPersonalSpaceSheet.#onInstallUpgrade,
+      buyUpgrade: COGPersonalSpaceSheet.#onBuyUpgrade,
+      rankUp: COGPersonalSpaceSheet.#onRankUp,
+      buyTable: COGPersonalSpaceSheet.#onBuyTable,
+      setPayer: COGPersonalSpaceSheet.#onSetPayer,
+      buyGroupTableTier: COGPersonalSpaceSheet.#onBuyGroupTableTier,
+      applyGroupTableCoupon: COGPersonalSpaceSheet.#onApplyGroupTableCoupon,
       uninstallUpgrade: COGPersonalSpaceSheet.#onUninstallUpgrade,
       toggleQuest: COGPersonalSpaceSheet.#onToggleQuest,
       addQuest: COGPersonalSpaceSheet.#onAddQuest,
@@ -51,7 +79,9 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
       addOccupant: COGPersonalSpaceSheet.#onAddOccupant,
       removeOccupant: COGPersonalSpaceSheet.#onRemoveOccupant,
       leaveSpace: COGPersonalSpaceSheet.#onLeaveSpace,
-      openLootBoxes: COGPersonalSpaceSheet.#onOpenLootBoxes
+      openLootBoxes: COGPersonalSpaceSheet.#onOpenLootBoxes,
+      joinSpace: COGPersonalSpaceSheet.#onJoinSpace,
+      detachSpace: COGPersonalSpaceSheet.#onDetachSpace
     }
   };
 
@@ -124,18 +154,13 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
       .map(c => ({ uuid: c.uuid, name: c.name, units: unopenedBoxUnits(c) }))
       .filter(c => c.units > 0);
     context.availableOccupants = this.isEditable ? this.#availableOccupants(members) : [];
-    const flags = actor.flags?.[SYSTEM_ID] ?? {};
-    context.ruleBreak = flags.ruleBreak === true;
-    context.ruleBreakReason = flags.ruleBreakReason || 'Acquired as a Rule Break';
+    context.ruleBreak = isRuleBreak(actor);
+    context.ruleBreakReason = ruleBreakReasonOf(actor) || 'Acquired as a Rule Break';
 
     // Space type & capacity info
-    const typeInfo = getSpaceTypeInfo(sys.spaceType);
-    context.typeInfo = typeInfo;
-    context.spaceTypes = Object.values(contentRegistry.getSpaceTypes()).map(t => ({
-      value: t.id,
-      label: t.label,
-      selected: sys.spaceType === t.id
-    }));
+    context.typeInfo = sys.typeInfo;
+    // The rank is the GM's to edit; a player ranks up by Rank Up
+    context.isGM = Boolean(user?.isGM);
 
     // Categorized stashed items
     const allItems = Array.from(actor.items);
@@ -161,20 +186,35 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
       color: capPct >= 100 ? 'var(--cog-danger)' : (capPct >= 80 ? 'var(--cog-warning)' : 'var(--cog-success)')
     };
 
+    // Table room of the space's group (negative `left` = over room, shown red)
+    const tables = roomOf(this.actor);
+    context.tableRoom = { used: tables.used, spaces: tables.spaces, over: tables.left < 0, grouped: tables.members.length > 1 };
+    const i18n = globalThis.game?.i18n;
+    const groupData = { rank: tables.rank, count: tables.members.length };
+    context.group = {
+      grouped: tables.members.length > 1,
+      ...groupData,
+      label: i18n?.has?.('COG.SpaceRoom.GroupLine') && typeof i18n.format === 'function' ? i18n.format('COG.SpaceRoom.GroupLine', groupData) : `Group rank ${groupData.rank}, ${groupData.count} spaces`
+    };
+    context.joining = this.#joiningContext(tables.members);
+
     // Upgrades: installed vs available
-    const installedList = allItems
+    const installedList = await Promise.all(allItems
       .filter(i => i.type === 'space_upgrade' && i.system?.purchased !== false)
-      .map(i => ({
+      .map(async i => ({
         id: i.system.identifier || i.id,
         name: i.name,
-        description: i.system.description ?? '',
+        descriptionHtml: await enrichDescription(i),
         tier: i.system.tier,
         isCraftingTable: i.system?.craftingTable?.enabled === true
-      }));
+      })));
     const installedIds = new Set(installedList.map(u => u.id));
 
     context.installedUpgrades = installedList;
-    context.availableUpgrades = contentRegistry.getSpaceUpgrades().filter(u => !installedIds.has(u.id));
+    context.purchase = this.#purchaseContext();
+    context.groupUpgrades = await this.#groupUpgradesContext(tables.members, context.purchase.canPurchase);
+    context.availableUpgrades = contentRegistry.getSpaceUpgrades().filter(u => !installedIds.has(u.id))
+      .map(u => ({ ...u, buyLabel: this.#buyLabel(u.cost) }));
 
     // Quests & Terminal
     context.quests = Array.isArray(sys.quests) ? sys.quests : [];
@@ -230,7 +270,7 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     const trainee = spaceMembers(actor).occupants.find(c => userOwnsActor(c, user));
     const traineeSkills = trainee
       ? Array.from(trainee.items ?? []).filter(i => i.type === 'skill').map(i => {
-        const allowed = trainingAllowsSkill(room, i);
+        const allowed = trainingAllowsSkill(room, i) && routeAllowsGain(i, ADVANCEMENT_ROUTES.training);
         const rank = Number(i.system?.rank) || 0;
         return { id: i.id, name: i.name, rank, allowed, label: `${i.name} (Rank ${rank})${allowed ? '' : ' (Rule Break)'}` };
       })
@@ -257,6 +297,123 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     return context;
   }
 
+  /** The payer for a purchase: the chosen crawler, or null for a GM grant. `undefined` when this user has none to pay with. */
+  #payer() {
+    const user = globalThis.game?.user;
+    const payers = spacePayers(this.actor, user);
+    if (user?.isGM && this.#payerUuid === GM_GRANT) return null;
+    const chosen = payers.find(c => c.uuid === this.#payerUuid) ?? payers[0];
+    if (chosen) return chosen;
+    if (user?.isGM) return null;
+    globalThis.ui?.notifications?.warn?.(globalThis.game?.i18n?.localize?.('COG.SpacePurchase.NoPayer') ?? 'No crawler to pay with.');
+    return undefined;
+  }
+
+  /**
+   * The tables and studios of the other spaces in this space's group: shown read-only, each table with
+   * Craft here and the tier buttons, so a member who cannot open the other space still reaches them.
+   * @param {Actor[]} members the group's spaces
+   * @param {boolean} canPurchase whether this user has a payer (only then are the coupons counted)
+   */
+  async #groupUpgradesContext(members, canPurchase) {
+    const i18n = globalThis.game?.i18n;
+    const t = (key, data) => (i18n?.has?.(key) && typeof i18n.format === 'function' ? i18n.format(key, data) : key);
+    const others = members.filter(m => m !== this.actor && m.uuid !== this.actor.uuid);
+    const floor = getCurrentFloor();
+    const rows = [];
+    for (const space of others) {
+      for (const item of space.items ?? []) {
+        if (item.system?.purchased === false || !(isCraftingTable(item) || isStudio(item))) continue;
+        const table = isCraftingTable(item);
+        const payer = table && canPurchase ? this.#tierPayer(item, { quiet: true }) : null;
+        const ct = item.system.craftingTable ?? {};
+        rows.push({
+          spaceUuid: space.uuid,
+          itemId: item.id,
+          name: item.name,
+          fromLabel: t('COG.SpaceRoom.FromSpace', { space: space.name }),
+          descriptionHtml: await enrichDescription(item),
+          isCraftingTable: table,
+          tierBadge: table ? t('COG.CraftSheet.Table.TierBadge', { tier: tableTierParts(ct, floor).tier }) : '',
+          buyTierLabel: table ? t('COG.CraftSheet.Table.Buy', { cost: Math.max(0, Math.floor(Number(ct.upgradeCostGold) || 0)).toLocaleString() }) : '',
+          coupons: payer ? tableCoupons(payer).length : 0
+        });
+      }
+    }
+    for (const row of rows) row.couponLabel = row.coupons ? t('COG.CraftSheet.Table.Coupon', { count: row.coupons }) : '';
+    return rows;
+  }
+
+  /** A table of the group from a row's `data-space-uuid` and `data-item-id`; null when it is not in this space's group. */
+  #groupTable(target) {
+    const space = resolveSpace(target?.dataset?.spaceUuid);
+    if (!space || !spaceGroup(this.actor).members.some(m => m === space || m.uuid === space.uuid)) return null;
+    const table = space.items?.get(target.dataset.itemId);
+    return isCraftingTable(table) ? table : null;
+  }
+
+  /** Who pays for a tier of a group table: the Paid by crawler; with the GM grant chosen, the table's own space owner (tiers are never free). */
+  #tierPayer(table, { quiet = false } = {}) {
+    const user = globalThis.game?.user;
+    if (user?.isGM && this.#payerUuid === GM_GRANT) return tablePayer(table);
+    const chosen = spacePayers(this.actor, user).find(c => c.uuid === this.#payerUuid) ?? spacePayers(this.actor, user)[0];
+    if (chosen) return chosen;
+    if (user?.isGM) return tablePayer(table);
+    if (!quiet) globalThis.ui?.notifications?.warn?.(globalThis.game?.i18n?.localize?.('COG.SpacePurchase.NoPayer') ?? 'No crawler to pay with.');
+    return null;
+  }
+
+  /** Buy one tier for a table of a joined space, paid by the Paid by crawler (written through the relay when this user cannot write that space). */
+  static async #onBuyGroupTableTier(event, target) {
+    const table = this.#groupTable(target);
+    const payer = table && this.#tierPayer(table);
+    if (!payer) return;
+    this.#reportPurchase(await buyTableTier(table, payer));
+    return this.render();
+  }
+
+  /** Spend one of the Paid by crawler's table coupons on a table of a joined space. */
+  static async #onApplyGroupTableCoupon(event, target) {
+    const table = this.#groupTable(target);
+    const payer = table && this.#tierPayer(table);
+    if (!payer) return;
+    this.#reportPurchase(await applyTableCoupon(table, payer));
+    return this.render();
+  }
+
+  /** A catalog Buy button's text. */
+  #buyLabel(cost) {
+    const i18n = globalThis.game?.i18n;
+    const price = Number(cost || 0).toLocaleString();
+    return i18n?.has?.('COG.SpacePurchase.Buy') && typeof i18n.format === 'function' ? i18n.format('COG.SpacePurchase.Buy', { price }) : `Buy (${price} gold)`;
+  }
+
+  /** The Upgrades tab's purchase controls: who pays, the Rank Up with its coupons, the table types and the catalog prices. */
+  #purchaseContext() {
+    const user = globalThis.game?.user;
+    const i18n = globalThis.game?.i18n;
+    const t = (key, data) => (i18n?.has?.(key) && typeof i18n.format === 'function' ? i18n.format(key, data) : key);
+    const payer = this.#payer();
+    const payers = spacePayers(this.actor, user).map(c => ({ uuid: c.uuid, name: c.name, selected: payer === c }));
+    if (user?.isGM) payers.push({ uuid: GM_GRANT, name: t('COG.SpacePurchase.GMGrant'), selected: payer === null });
+    const rules = spaceRules();
+    const target = (Number(this.actor.system.rank) || 1) + 1;
+    const price = couponPriceFor(target, rules).toLocaleString();
+    const coupons = payer ? spaceCoupons(payer).map(c => ({ id: c.id, name: c.name })) : [];
+    return {
+      canPurchase: payer !== undefined,
+      payers,
+      rankUp: {
+        label: t('COG.SpacePurchase.RankUp', { rank: target, price }),
+        coupons,
+        hasCoupons: coupons.length > 0,
+        payGoldLabel: t('COG.SpacePurchase.PayGold', { price })
+      },
+      tableTypes: tableTypeOptions(),
+      buyTableLabel: t('COG.SpacePurchase.BuyTableButton', { price: rules.newTablePrice.toLocaleString() })
+    };
+  }
+
   /**
    * Crawlers the owner can add: those the user can see, every user's assigned character (the player list
    * already shows those names), and crawlers in the space owner's party (non-empty `details.party` match),
@@ -268,13 +425,34 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     const users = globalThis.game?.users;
     const userList = Array.from(users?.values() ?? []);
     const characters = new Set(userList.map(u => u?.character?.uuid).filter(Boolean));
-    const partyOf = a => String(a?.system?.details?.party ?? '').trim();
-    const ownerParty = partyOf(members.owner);
     return worldCrawlers()
       .filter(c => !taken.has(c.uuid)
-        && (characters.has(c.uuid) || this.#canSee(c, user) || (ownerParty !== '' && partyOf(c) === ownerParty)))
+        && (characters.has(c.uuid) || this.#canSee(c, user) || sameParty(c, members.owner)))
       .map(c => ({ uuid: c.uuid, name: c.name }))
       .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /**
+   * The Settings tab's joined spaces: the spaces linked to this one in either direction (each with Detach when this user may),
+   * and the spaces this one could join (each with any rule the join would break), with the connector price.
+   */
+  #joiningContext(members) {
+    const actor = this.actor;
+    const user = globalThis.game?.user;
+    const mine = new Set(joinedLinks(actor));
+    const linked = worldSpaces().filter(s => s !== actor && (mine.has(s.uuid) || joinedLinks(s).includes(actor.uuid)));
+    const inGroup = new Set(members.map(m => m.uuid));
+    const price = Number(spaceRules().connectorPrice).toLocaleString();
+    const i18n = globalThis.game?.i18n;
+    return {
+      linked: linked.map(s => ({ uuid: s.uuid, name: s.name, rank: s.system?.rank, canDetach: mayDetachSpaces(actor, s, user) })),
+      canJoin: mayJoinSpace(actor, user),
+      options: worldSpaces()
+        .filter(s => s !== actor && !inGroup.has(s.uuid) && this.#canSee(s, user))
+        .map(s => ({ uuid: s.uuid, name: s.name, note: joinProblemLabel(actor, s) }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      priceLabel: i18n?.has?.('COG.SpaceJoin.Connector') && typeof i18n.format === 'function' ? i18n.format('COG.SpaceJoin.Connector', { price }) : `Connector ${price} gold`
+    };
   }
 
   #canSee(actor, user) {
@@ -313,9 +491,15 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     await super._onRender(context, options);
     // Anyone with a crawler in the space leaves, uses the stash and rests from here, even with view-only access.
     const mine = spaceMembers(this.actor).occupants.some(c => userOwnsActor(c, globalThis.game?.user));
-    const always = mine ? ['leaveSpace', 'openStash', 'openCraftingApp', 'withdrawItem', 'restInSpace', 'openLootBoxes'] : ['leaveSpace'];
+    const always = mine ? ['leaveSpace', 'openStash', 'openCraftingApp', 'withdrawItem', 'restInSpace', 'openLootBoxes', ...MEMBER_ACTIONS] : ['leaveSpace'];
     for (const action of always) {
       for (const button of this.element?.querySelectorAll?.(`[data-action="${action}"]`) ?? []) button.disabled = false;
+    }
+    // The purchase controls: who pays, the coupon choice and the table type work from a view-only sheet too.
+    if (mine) {
+      for (const selector of ['[data-change-action="setPayer"]', '.cog-rank-coupon', '.cog-table-type']) {
+        for (const control of this.element?.querySelectorAll?.(selector) ?? []) control.disabled = false;
+      }
     }
   }
 
@@ -369,10 +553,71 @@ export class COGPersonalSpaceSheet extends COGActorSheetV2 {
     await crawler.trainSkillInPersonalSpace(skillId, { space: this.actor });
   }
 
-  static async #onInstallUpgrade(event, target) {
-    if (!this.isEditable) return;
+  /**
+   * A drop that would take more table spaces than the space has asks a Rule Break; declined, nothing lands.
+   * @override
+   */
+  async _onDropItemCreate(itemData, event) {
+    const list = [itemData].flat().filter(Boolean);
+    const room = await confirmRoomFor(this.actor, list);
+    if (!room.ok) return [];
+    const studio = await confirmStudioFor(this.actor, list);
+    if (!studio.ok) return [];
+    if (room.ruleBreak) stampTableRuleBreaks(list);
+    if (studio.ruleBreak) stampStudioRuleBreaks(list);
+    return super._onDropItemCreate(list, event);
+  }
+
+  /** Report why a purchase did not go through; a Cancel needs no message. */
+  #reportPurchase(result) {
+    const note = { notGM: 'Only the GM may grant a purchase.', payer: 'That crawler cannot pay for this space.', noCoupon: 'That coupon is not available.' }[result?.reason];
+    if (note) globalThis.ui?.notifications?.warn?.(note);
+  }
+
+  /** Run one purchase for the chosen payer and show the sheet again. */
+  async #purchase(buy) {
+    const payer = this.#payer();
+    if (payer === undefined) return;
+    const result = await buy(payer);
+    this.#reportPurchase(result);
+    return this.render();
+  }
+
+  static async #onBuyUpgrade(event, target) {
     const id = target.dataset.upgradeId;
-    if (id) await this.actor.system.installUpgrade(id);
+    if (id) await this.#purchase(payer => buySpaceUpgrade(this.actor, id, payer));
+  }
+
+  /** Rank Up with the coupon picked next to the button (none picked pays gold). */
+  static async #onRankUp() {
+    await this.#purchase(payer => {
+      const couponId = this.element?.querySelector('select.cog-rank-coupon')?.value;
+      const coupon = couponId ? spaceCoupons(payer).find(c => c.id === couponId) : null;
+      return rankUpSpace(this.actor, payer, { coupon });
+    });
+  }
+
+  static async #onBuyTable() {
+    const tag = this.element?.querySelector('select.cog-table-type')?.value;
+    if (tag) await this.#purchase(payer => buyTable(this.actor, tag, payer));
+  }
+
+  /** Join this space to the one picked in the Settings tab, paid by the chosen payer. */
+  static async #onJoinSpace() {
+    const target = resolveSpace(this.element?.querySelector('select.cog-join-target')?.value);
+    if (target) await this.#purchase(payer => joinSpace(this.actor, target, payer));
+  }
+
+  static async #onDetachSpace(event, target) {
+    const other = resolveSpace(target.dataset.spaceUuid);
+    if (!other) return;
+    await detachSpaces(this.actor, other);
+    return this.render();
+  }
+
+  static async #onSetPayer(event, target) {
+    this.#payerUuid = String(target?.value ?? '');
+    return this.render();
   }
 
   static async #onUninstallUpgrade(event, target) {

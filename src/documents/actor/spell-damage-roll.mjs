@@ -17,6 +17,7 @@ import {
 import { attackOptionsLineHtml } from '../../utils/attack/attack-options-line.mjs';
 import { collectDamageModifiers, multiplierFor } from '../../utils/roll/damage-modifiers.mjs';
 import { damageCardDataAttrs, ignoreEvadeButtonHtml } from '../../utils/damage/damage-parts.mjs';
+import { critDiceParts, cardShownParts, critDiceTotal, critDiceNoteHtml, critSubButtonHtml } from '../../utils/damage/crit-dice.mjs';
 import { resolveRollParts, targetRowsDataAttr, perTargetBoxHtml } from '../../utils/damage/per-target-damage.mjs';
 import { collectOnHitEffects, hasOnHitDebuff, onHitCardAttrs } from '../../utils/attack/on-hit.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
@@ -24,6 +25,11 @@ import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.m
 import { isTechniqueApplicable } from './actor-techniques.mjs';
 import { getItemInflictedConditions } from './inflicted-conditions.mjs';
 import { getSpellDamageData } from './actor-spells.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { jsonAttr } from '../../utils/escape-attr.mjs';
+
+/** A formula that is only dice (`2d6`): the spell fallback part counts as base dice then. */
+const PLAIN_DICE = /^\d+d\d+$/i;
 
 /** True when this is a crawler spell hit card whose roll applied the spell's conditions (`conditionsApplied`, 3.47-1c). */
 function spellHitAppliedConditions(message) {
@@ -87,7 +93,23 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
   const assistParts = sourceDamageBonusParts(options.sourceMessageId, parts[0]?.type || primaryType);
   if (parts.length > 0) parts.push(...assistParts);
 
-  let evaluatedParts = [];
+  // Dynamic critical multiplier from the spell's fields and resolved rank breaks: how many times a Critical Hit rolls the base dice
+  const resolvedBreaks = resolveReachedRankBreaks(spellItem, rank);
+  let critMultiplier = configuredCritMultiplier(sys.critMultiplier) || DEFAULT_CRIT_MULTIPLIER;
+  if (resolvedBreaks.critMultiplier > 1) {
+    critMultiplier = resolvedBreaks.critMultiplier;
+  }
+  if (critMultiplier === DEFAULT_CRIT_MULTIPLIER) {
+    if (configuredCritMultiplier(sys.critMultiplierR15) && rank >= 15) {
+      critMultiplier = configuredCritMultiplier(sys.critMultiplierR15);
+    } else if (configuredCritMultiplier(sys.critMultiplierR5) && rank >= 5) {
+      critMultiplier = configuredCritMultiplier(sys.critMultiplierR5);
+    }
+  }
+  // A Critical Hit rolls the base dice again (p. 79): the extra dice are parts of their own, counted only by a crit apply.
+  parts.push(...critDiceParts(parts, critMultiplier));
+
+  let allParts = [];
   const typedDamage = {};
 
   if (parts.length > 0) {
@@ -117,7 +139,7 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
       const mult = multiplierFor(dmod.multipliers, part.type);
       const finalPartDamage = Math.max(0, Math.floor(baseRollTotal * mult));
 
-      evaluatedParts.push({
+      allParts.push({
         ...part,
         formula,
         baseTotal: baseRollTotal,
@@ -126,8 +148,8 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
       });
     }
     // The card shows the roll subject's amounts; the other targets' rows are worked out per target.
-    evaluatedParts = resolveRollParts(evaluatedParts, dmod.targetRows, rollContext.tags);
-    for (const p of evaluatedParts) typedDamage[p.type] = (typedDamage[p.type] || 0) + p.finalDamage;
+    allParts = resolveRollParts(allParts, dmod.targetRows, rollContext.tags);
+    for (const p of cardShownParts(allParts, rollContext.isCrit)) typedDamage[p.type] = (typedDamage[p.type] || 0) + p.finalDamage;
   } else if (dmgData.hasDamage || !hasOnHitDebuff(sys)) {
     // Fallback if no parts returned (a rider-only spell has none: its card carries zero damage and the riders)
     const fallbackFormula = dmgData.hasDamage && dmgData.formula ? dmgData.formula : (normalizeBaseDamage(sys.baseDamage).dice || '1d6');
@@ -136,21 +158,31 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
     const mult = multiplierFor(dmod.multipliers, pType);
     const finalDmg = Math.max(0, Math.floor(r.total * mult));
     typedDamage[pType] = finalDmg;
-    evaluatedParts.push({
+    const fallbackPart = {
       type: pType,
       formula: fallbackFormula,
       baseTotal: r.total,
       finalDamage: finalDmg,
       multiplier: mult,
-      source: `${spellItem.name} (Base)`
-    });
+      source: `${spellItem.name} (Base)`,
+      ...(PLAIN_DICE.test(fallbackFormula) ? { baseDice: true, dice: fallbackFormula } : {})
+    };
+    allParts.push(fallbackPart);
+    // A Critical Hit's extra dice, rolled here like the base (the fallback part has no stat or value of its own)
+    for (const cp of critDiceParts([fallbackPart], critMultiplier)) {
+      const cr = await new Roll(cp.dice).evaluate();
+      allParts.push({ ...cp, formula: cp.dice, baseTotal: cr.total, finalDamage: Math.max(0, Math.floor(cr.total * mult)), multiplier: mult });
+    }
+    if (rollContext.isCrit) typedDamage[pType] += critDiceTotal(allParts);
     for (const ap of assistParts) {
       const finalDmg = Math.max(0, Math.floor(ap.value * multiplierFor(dmod.multipliers, ap.type)));
       typedDamage[ap.type] = (typedDamage[ap.type] || 0) + finalDmg;
-      evaluatedParts.push({ ...ap, formula: String(ap.value), baseTotal: ap.value, finalDamage: finalDmg, multiplier: multiplierFor(dmod.multipliers, ap.type) });
+      allParts.push({ ...ap, formula: String(ap.value), baseTotal: ap.value, finalDamage: finalDmg, multiplier: multiplierFor(dmod.multipliers, ap.type) });
     }
   }
 
+  const evaluatedParts = cardShownParts(allParts, rollContext.isCrit);
+  const critTotal = critDiceTotal(allParts);
   const totalRawDamage = Object.values(typedDamage).reduce((acc, v) => acc + v, 0);
   const globalMult = dmod.multipliers.all;
   const hasMult = globalMult !== 1 || evaluatedParts.some(p => p.multiplier !== 1);
@@ -184,19 +216,7 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
   }
   const effectsStr = effectsList.join(' | ');
 
-  // Dynamic critical multiplier and armor piercing from resolved rank breaks
-  const resolvedBreaks = resolveReachedRankBreaks(spellItem, rank);
-  let critMultiplier = configuredCritMultiplier(sys.critMultiplier) || DEFAULT_CRIT_MULTIPLIER;
-  if (resolvedBreaks.critMultiplier > 1) {
-    critMultiplier = resolvedBreaks.critMultiplier;
-  }
-  if (critMultiplier === DEFAULT_CRIT_MULTIPLIER) {
-    if (configuredCritMultiplier(sys.critMultiplierR15) && rank >= 15) {
-      critMultiplier = configuredCritMultiplier(sys.critMultiplierR15);
-    } else if (configuredCritMultiplier(sys.critMultiplierR5) && rank >= 5) {
-      critMultiplier = configuredCritMultiplier(sys.critMultiplierR5);
-    }
-  }
+  // Armor piercing from the resolved rank breaks
 
   // Check for Armor Piercing / Ignore DR
   const spellTags = spellItem.allTags || getItemAllTags(spellItem);
@@ -252,10 +272,10 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
       data-item-id="${spellItem.id}"
       data-item-name="${escapeAttr(spellItem.name)}"
       data-damage-value="${totalRawDamage}"
-      data-typed-damage='${JSON.stringify(typedDamage)}'${damageCardDataAttrs(evaluatedParts, rollContextDataAttr({ ...rollContext, appliedRowKeys: dmod.appliedKeys }), critDebuffs, targetRowsDataAttr(dmod.targetRows), sourceId)}
+      data-typed-damage='${jsonAttr(typedDamage)}'${damageCardDataAttrs(allParts, rollContextDataAttr({ ...rollContext, appliedRowKeys: dmod.appliedKeys }), critDebuffs, targetRowsDataAttr(dmod.targetRows), sourceId)}
       data-attack-type="spell"
       data-is-armor-piercing="${isArmorPiercing}"
-      data-condition-tags='${JSON.stringify(normalConditionTags)}'${onHitCardAttrs(collectOnHitEffects({ sources: [{ item: spellItem, rank }] }))}
+      data-condition-tags='${jsonAttr(normalConditionTags)}'${onHitCardAttrs(collectOnHitEffects({ sources: [{ item: spellItem, rank }] }))}
       data-is-burst="${Boolean(sys.area?.hasArea || sys.delivery === 'burst')}"
       data-radius="${sys.area?.radius || 5}"
       data-target-filter="${sys.area?.targetFilter || 'enemies'}">
@@ -272,21 +292,20 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
       <div class="cog-typed-breakdown cog-bg-surface-alt" style="border: 1px solid var(--cog-divider); border-radius: 4px; padding: 4px 6px; margin-bottom: 8px;">
         ${partPills}
       </div>
+      ${critDiceNoteHtml(allParts, isCrit)}
       ${perTargetBoxHtml(dmod.targetRows, evaluatedParts)}
       ${amazingPreviewHtml(amazingMessage)}
       ${effectsStr ? `<div class="cog-damage-effects"><em>${effectsStr}</em></div>` : ''}
       <div class="cog-damage-actions">
-        <button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="${isCrit ? critMultiplier : 1}" data-crit="${Boolean(isCrit)}" ${isArmorPiercing ? 'data-ignore-dr="true"' : ''} title="Apply ${isCrit ? 'critical ' : ''}damage to targeted token(s)${isArmorPiercing ? ' (Armor-Piercing: Ignores DR)' : ', deducting their DR'}">
-          <i class="fa-solid fa-crosshairs"></i> ${isCrit ? `Apply Critical Hit (${critMultiplier}x)` : 'Apply to Target(s)'} ${isArmorPiercing ? '(Ignores DR)' : ''}
+        <button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-crit="${Boolean(isCrit)}" ${isArmorPiercing ? 'data-ignore-dr="true"' : ''} title="Apply ${isCrit ? 'critical ' : ''}damage to targeted token(s)${isArmorPiercing ? ' (Armor-Piercing: Ignores DR)' : ', deducting their DR'}">
+          <i class="fa-solid fa-crosshairs"></i> ${isCrit ? 'Apply Critical Hit' : 'Apply to Target(s)'} ${isArmorPiercing ? '(Ignores DR)' : ''}
         </button>
         <div class="cog-damage-sub-actions">
           <button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="0.5" title="Apply half damage">Half</button>
           <button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-ignore-dr="true" title="Apply ignoring DR">Ignore DR</button>
           ${amazingSubActionHtml(amazingMessage, getCurrentFloor())}
-          ${ignoreEvadeButtonHtml({ sourceId, attackerType: actor.type, multiplier: isCrit ? critMultiplier : 1, isCrit: Boolean(isCrit), armorPiercing: isArmorPiercing })}
-          ${isCrit
-  ? '<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-crit="false" title="Apply as a normal hit (no critical multiplier or critical debuffs)">Apply as normal hit</button>'
-  : `<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="${critMultiplier}" data-crit="true" title="Apply as a Critical Hit (${critMultiplier}x and critical debuffs)">Critical Hit (${critMultiplier}x)</button>`}
+          ${ignoreEvadeButtonHtml({ sourceId, attackerType: actor.type, multiplier: 1, isCrit: Boolean(isCrit), armorPiercing: isArmorPiercing })}
+          ${critSubButtonHtml(Boolean(isCrit), critTotal)}
         </div>
         ${debuffButtonHtml}
       </div>
@@ -299,31 +318,28 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
 
   const mainRoll = await new Roll(`${totalRawDamage}`).evaluate();
 
-  return mainRoll.toMessage({
+  return mainRoll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor: flavorText,
-    content: cardContent,
-    flags: {
-      [SYSTEM_ID]: {
-        isDamageRoll: true,
-        attackerId: actor.id,
-        itemId: spellItem.id,
-        itemName: spellItem.name,
-        attackType: 'spell',
-        ...(ruleBreak ? { ruleBreak: true } : {}),
-        attackChoices: attackChoicesFlag,
-        damageType: dmgData.damageType || '',
-        rawDamage: totalRawDamage,
-        typedDamage,
-        parts: evaluatedParts,
-        critMultiplier,
-        ...(sourceId ? { sourceMessageId: sourceId } : {}),
-        conditionTags,
-        debuffs: conditionTags.map(tag => {
-          const def = getTagDefinition(tag);
-          return def?.label || tag.replace(/^condition\./, '');
-        })
-      }
-    }
-  });
+    content: cardContent
+  }, {
+    isDamageRoll: true,
+    attackerId: actor.id,
+    itemId: spellItem.id,
+    itemName: spellItem.name,
+    attackType: 'spell',
+    ...(ruleBreak ? { ruleBreak: true } : {}),
+    attackChoices: attackChoicesFlag,
+    damageType: dmgData.damageType || '',
+    rawDamage: totalRawDamage,
+    typedDamage,
+    parts: evaluatedParts,
+    critMultiplier,
+    ...(sourceId ? { sourceMessageId: sourceId } : {}),
+    conditionTags,
+    debuffs: conditionTags.map(tag => {
+      const def = getTagDefinition(tag);
+      return def?.label || tag.replace(/^condition\./, '');
+    })
+  }));
 }

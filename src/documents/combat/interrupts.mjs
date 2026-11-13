@@ -3,11 +3,12 @@
  * of the combatant's Actions unless it is free, posts a card, and may move a declared mob attack onto the interrupter.
  */
 
-import { SYSTEM_ID } from '../../constants.mjs';
-import { resolveInterception, renderInterceptionHtml, findActorToken } from '../../utils/combat/interrupts.mjs';
+import { resolveInterception, renderInterceptionHtml, interruptCardHtml, findActorToken } from '../../utils/combat/interrupts.mjs';
 import { recordInterceptionOnDeclaration } from '../combat-declarations.mjs';
 import { findCombatant } from './combatants.mjs';
-import { COG_ACTION_TYPES } from './action-ledger.mjs';
+import { spendActivationUses } from '../actor/buff-activation.mjs';
+import { COG_ACTION_TYPES, hasEvadeAction } from './action-ledger.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 /**
  * Record the Action an interrupt costs (nothing for a free one). Shared by `triggerInterrupt` and the assist
@@ -107,7 +108,8 @@ export async function triggerInterrupt(combat, combatantOrId, interruptOrId, opt
     }
   }
 
-  const isFree = Boolean(interrupt.isFree || interrupt.actionCost === 0);
+  // One Evade Action covers the round (9.17): a covered crawler pressing Evade again pays nothing.
+  const isFree = Boolean(interrupt.isFree || interrupt.actionCost === 0 || (interrupt.id === 'evade' && hasEvadeAction(combat, c, targetRound)));
 
   // If not free, record action slot
   let updatedActions = actions;
@@ -119,12 +121,8 @@ export async function triggerInterrupt(combat, combatantOrId, interruptOrId, opt
     }
   }
 
-  // If Evade, set active stance flag
-  if (interrupt.id === 'evade') {
-    if (typeof actor.setFlag === 'function') {
-      await actor.setFlag(SYSTEM_ID, 'isEvading', true);
-    }
-  }
+  // An interrupt that is one of the actor's items counts as a use of it for an open activation window.
+  if (interrupt.item) await spendActivationUses(actor, [interrupt.item]);
 
   // What the interrupt does to the attack that triggered it (redirect / intercept)
   const interception = resolveInterception({ interrupter: actor, interrupt, attackContext: options.attackContext });
@@ -137,48 +135,24 @@ export async function triggerInterrupt(combat, combatantOrId, interruptOrId, opt
 
   // Post Interrupt Chat Message
   if (globalThis.ChatMessage?.create) {
-    const targetText = options.targetName ? ` vs <strong>${options.targetName}</strong>` : '';
-    const costBadge = isFree
-      ? `<span class="cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">FREE INTERRUPT (0 ACTIONS)</span>`
-      : `<span class="cog-bg-warning-fill cog-text-on-fill" style="padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">SPENT 1 ACTION (${updatedActions.spent}/${updatedActions.max})</span>`;
-
-    const content = `
-      <div class="cog-chat-card cog-interrupt-card cog-bg-surface-alt" style="font-family: var(--font-primary, sans-serif); border: 2px solid var(--cog-warning); border-radius: 4px; padding: 8px 10px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid var(--cog-warning); padding-bottom: 4px; margin-bottom: 6px;">
-          <div class="cog-text-gold" style="font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-bolt cog-text-warning"></i> INTERRUPT: ${interrupt.name.toUpperCase()}
-          </div>
-          ${costBadge}
-        </div>
-        <div class="cog-text" style="font-size: 11px; margin-bottom: 4px;">
-          <strong>${c.name}</strong> triggered an out-of-turn Interrupt${targetText}!
-        </div>
-        <div class="cog-text-secondary cog-bg-surface" style="font-size: 11px; border: 1px solid var(--cog-warning-border); border-radius: 3px; padding: 5px 7px; margin-top: 4px;">
-          <div class="cog-text-muted" style="font-size: 10px; text-transform: uppercase; margin-bottom: 2px;">
-            <i class="fa-solid fa-crosshairs"></i> Trigger: <strong>${interrupt.triggerLabel || 'Reactive Trigger'}</strong>
-          </div>
-          ${interrupt.description || ''}
-        </div>
-        ${interceptionHtml}
-      </div>
-    `;
-
-    await globalThis.ChatMessage.create({
-      speaker: globalThis.ChatMessage.getSpeaker?.({ actor }) || { alias: c.name },
-      content,
-      flags: {
-        [SYSTEM_ID]: {
-          isInterrupt: true,
-          interruptId: interrupt.id,
-          isFree,
-          combatantId: c.id,
-          actorId: actor.id,
-          round: targetRound,
-          ...(options.ruleBreak === true ? { ruleBreak: true } : {}),
-          ...(interception ? { interception } : {})
-        }
-      }
+    const content = interruptCardHtml({
+      interrupt, actorName: c.name, targetName: options.targetName, isFree,
+      spentLabel: `SPENT 1 ACTION (${updatedActions.spent}/${updatedActions.max})`, interceptionHtml
     });
+
+    await globalThis.ChatMessage.create(withFlags({
+      speaker: globalThis.ChatMessage.getSpeaker?.({ actor }) || { alias: c.name },
+      content
+    }, {
+      isInterrupt: true,
+      interruptId: interrupt.id,
+      isFree,
+      combatantId: c.id,
+      actorId: actor.id,
+      round: targetRound,
+      ...(options.ruleBreak === true ? { ruleBreak: true } : {}),
+      ...(interception ? { interception } : {})
+    }));
   }
 
   return {

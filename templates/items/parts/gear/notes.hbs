@@ -1,0 +1,8 @@
+<div class="cog-field-group">
+  <span class="cog-field-label">{{localize "COG.GearSheet.Notes.Notes"}}</span>
+  <textarea class="cog-field-input" name="system.notes" style="height: 80px;">{{system.notes}}</textarea>
+</div>
+<div class="cog-field-group" style="margin-top: 8px;">
+  <span class="cog-field-label">{{localize "COG.GearSheet.Notes.Description"}}</span>
+  {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
+</div>

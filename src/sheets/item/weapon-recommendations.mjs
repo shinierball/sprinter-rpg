@@ -1,7 +1,7 @@
 /**
  * Authoring-time suggestions for a weapon's "Apply recommended skills / techniques" buttons.
- * Everything is matched on tags and identifiers: a weapon names its own tags (`weapon.*`, `weaponGroup.*`,
- * the latter derived from its weaponCategory), a catalog skill carries `skillGroup.weapon`, `weapon.*` and
+ * Everything is matched on tags and identifiers: a weapon names its own tags (`weapon.*`, `weaponGroup.*`),
+ * a catalog skill carries `skillGroup.weapon`, `weapon.*` and
  * a stored `weaponGroup.*`. Names are never read. Weapon groups are not skills: each weapon entry is its own skill.
  */
 import { getItemAllTags } from '../../documents/active-tags.mjs';

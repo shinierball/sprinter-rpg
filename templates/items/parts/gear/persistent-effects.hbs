@@ -1,0 +1,12 @@
+{{!-- PERSISTENT BUFFS & DEBUFFS ON THE WIELDER (EQUIPPED); resistances and immunities are Defense rows (3.38) --}}
+<details class="cog-collapsible-block" {{#if persistentEffectsPicker.hasValues}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-shield-halved"></i> {{localize "COG.GearSheet.Persistent.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if persistentEffectsPicker.hasValues}}active{{/if}}">{{#if persistentEffectsPicker.hasValues}}{{localize "COG.GearSheet.Persistent.Active"}}{{else}}{{localize "COG.GearSheet.Persistent.Configure"}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=persistentEffectsPicker}}
+    <p class="cog-pick-hint cog-text-muted"><i class="fa-solid fa-circle-info"></i> {{localize "COG.GearSheet.Persistent.Hint"}}</p>
+  </div>
+</details>
+

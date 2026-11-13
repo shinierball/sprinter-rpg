@@ -5,10 +5,11 @@ import { getCOGStatModifier } from '../../documents/actor/actor-constants.mjs';
 import { calculateItemHandsRequired } from '../../utils/gear/wielding.mjs';
 import { collectActorTags } from '../../documents/active-tags.mjs';
 import {
-  collectGearBonuses, statBonuses, collectBuffBonuses, collectStaticDefense, collectDebuffEffects, resolvePersistentDebuffs, collectTagBonusGrants,
+  collectGearBonuses, statBonuses, collectBuffBonuses, collectStaticDefense, collectDebuffEffects, resolvePersistentDebuffs, collectTagBonusGrants, collectRankRaiseGrants,
   collectGearSkillBonuses, gearGrantKey, animalSkillsLockedFor, deriveSkillRanks, deriveSpellRanks, isUnsetScore, resolveBaseScore, mergeFloored
 } from './actor-derivation.mjs';
 import { debuffInForce } from '../../utils/effects/debuff-force.mjs';
+import { suppressionQueries } from '../../utils/effects/debuff-suppresses.mjs';
 import { flooredScore } from '../../utils/character/transform-rules.mjs';
 import { getActiveModifierSources } from '../../utils/roll/damage-modifiers.mjs';
 import { gearOfflineState, workingGear, offlineGear } from '../../utils/effects/gear-suppression.mjs';
@@ -16,7 +17,9 @@ import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { collectSenses } from '../../utils/character/senses.mjs';
 import { resolveStatSubstitution } from '../../utils/roll/narrow-modifiers.mjs';
 import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
+import { highRankActive } from '../../utils/skill/rank-limits.mjs';
 import { overlayContext, applyOverlayToAttributes } from './transform-overlay.mjs';
+import { isRankedItem } from '../../utils/document-types.mjs';
 
 /**
  * Base TypeDataModel for Sprinter RPG Actor types.
@@ -150,12 +153,10 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
         pct: new fields.NumberField({ initial: 0, integer: true })
       }),
       popularity: new fields.NumberField({ initial: 0, integer: true }),
-      pastTrauma: new fields.HTMLField({ initial: '' }),
-      looseEnds: new fields.HTMLField({ initial: '' }),
-      regrets: new fields.HTMLField({ initial: '' }),
-      // Free-text placeholders until deities and sponsors are designed
-      deityBoons: new fields.StringField({ initial: '' }),
-      deitySins: new fields.StringField({ initial: '' }),
+      pastTrauma: new fields.StringField({ initial: '' }),
+      looseEnds: new fields.StringField({ initial: '' }),
+      regrets: new fields.StringField({ initial: '' }),
+      // Free-text placeholders until sponsors are designed
       sponsor1: new fields.StringField({ initial: '' }),
       sponsor2: new fields.StringField({ initial: '' }),
       sponsor3: new fields.StringField({ initial: '' })
@@ -482,15 +483,16 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
   prepareDerivedItemRanks({ items = [], equippedGear = [], rankGear = equippedGear, activeBuffs = [] } = {}) {
     // The form race's fixed skill and spell rows read like gear rows (a skill the engine created for it carries its rank already)
     const formGear = this.overlayCtx?.skillGear ? [this.overlayCtx.skillGear] : [];
-    const gearSkillBonuses = collectGearSkillBonuses([...rankGear, ...formGear]);
+    const gearSkillBonuses = collectGearSkillBonuses([...rankGear, ...formGear, ...activeBuffs]);
     for (const item of items) {
-      if (!formGear.length || !transformationOfItem(item) || !['skill', 'spell'].includes(item.type)) continue;
+      if (!formGear.length || !transformationOfItem(item) || !isRankedItem(item)) continue;
       const id = item.system?.identifier;
       if (id) gearSkillBonuses.delete(gearGrantKey(item.type, id));
     }
     const tagGrants = collectTagBonusGrants({ equippedGear: rankGear, activeBuffs, items });
-    const opts = { abilities: this.abilities, gearSkillBonuses, tagGrants };
-    deriveSkillRanks(items.filter(i => i.type === 'skill'), { ...opts, animalSkillsLocked: animalSkillsLockedFor(this.tagSet, items) });
+    const rankRaises = collectRankRaiseGrants({ sources: [...rankGear, ...activeBuffs], items });
+    const opts = { abilities: this.abilities, gearSkillBonuses, tagGrants, rankRaises };
+    deriveSkillRanks(items.filter(i => i.type === 'skill'), { ...opts, animalSkillsLocked: animalSkillsLockedFor(this.tagSet, items), skillSuppressions: suppressionQueries(items, 'skills', { paused: this.gearOffline.active }), highRankActive: highRankActive(this.actor) });
     deriveSpellRanks(items.filter(i => i.type === 'spell'), opts);
   }
 }

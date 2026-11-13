@@ -17,7 +17,7 @@ import { resolveActor } from '../documents/actor.mjs';
 import { syncActorOwnership } from '../documents/actor/ownership-relay.mjs';
 import { userOwnsActor } from '../documents/actor/personal-space-links.mjs';
 import { SYSTEM_PATH, SYSTEM_ID } from '../constants.mjs';
-import { confirmRuleBreak } from '../utils/rule-break.mjs';
+import { confirmRuleBreak, markContractRuleBreak } from '../utils/rule-break.mjs';
 import { sourceBadge, isContentOff } from '../utils/content-source.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../utils/rule-break-visibility.mjs';
 import { registerRelayAction, requestRelay } from '../utils/gm-relay.mjs';
@@ -190,7 +190,7 @@ export async function signContract(merc, crawler, request, { ruleBreak = false }
     const stamp = paid.short || ruleBreak === true;
     try {
       await merc.update(terms.updates);
-      if (stamp) await merc.setFlag?.(SYSTEM_ID, 'contractRuleBreak', true);
+      if (stamp) await markContractRuleBreak(merc);
     } catch (err) {
       await runKeyed(`merc-gold:${crawler.uuid}`, async () => {
         await crawler.update({ 'system.currency.gold': (Number(crawler.system?.currency?.gold) || 0) + Math.min(terms.totalCost, paid.gold) });
@@ -348,8 +348,8 @@ export class COGMercenaryGuildApp extends COGToolApp {
       return {
         id: s.id,
         name: s.name,
-        tier: s.system?.tier || 1,
-        size: s.system?.size || 'Single Room',
+        rank: s.system?.rank,
+        typeLabel: s.system?.typeLabel,
         capacity: mercCap,
         housedCount: housedTotal,
         discountPct: Number(s.system?.effectiveMercenaryDiscountPct ?? s.system?.mercenaryDiscountPct) || 0,
@@ -573,7 +573,7 @@ export class COGMercenaryGuildApp extends COGToolApp {
     await mercActor.update({
       'system.details.contractDays': curDays + extendDays
     });
-    if (contractRuleBreak) await mercActor.setFlag?.(SYSTEM_ID, 'contractRuleBreak', true);
+    if (contractRuleBreak) await markContractRuleBreak(mercActor);
 
     await this._postContractChatMessage({
       action: 'extended',
@@ -757,7 +757,7 @@ export class COGMercenaryGuildApp extends COGToolApp {
 
     const data = { content, speaker: { alias: 'Mercenary Guild Registrar' } };
     await globalThis.ChatMessage.create(ruleBreak === true
-      ? ruleBreakMessageData({ ...data, flags: { [SYSTEM_ID]: { ruleBreak: true } } })
+      ? ruleBreakMessageData(data)
       : data);
   }
 

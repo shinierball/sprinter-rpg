@@ -15,12 +15,11 @@ import { contestMoveOptions } from '../documents/actor/vehicle-contest.mjs';
 import { contestKindInfo } from '../data/rules/contest-rules.mjs';
 import { isGmAuthored } from './chat-relay.mjs';
 import { ruleBreakBadgeHtml } from '../utils/rule-break-visibility.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 export const CONTEST_FLAG = 'contestState';
 export const CONTEST_ACTIONS = Object.freeze({ roll: 'crawlerContestRoll', drop: 'crawlerContestDrop', propose: 'crawlerContestPropose' });
 
-const esc = (value) => String(value ?? '')
-  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 const text = (raw) => {
   let val = raw ?? '';
@@ -71,8 +70,8 @@ function resultCell(result) {
   if (!result) return '<span class="cog-contest-pending">&mdash;</span>';
   const badge = result.ruleBreak ? ` ${ruleBreakBadgeHtml()}` : '';
   const src = result.source === 'roll' ? '' : ` <em>(${result.source === 'fixed' ? 'fixed' : 'GM'})</em>`;
-  const note = result.note ? `<div class="cog-contest-note">${esc(result.note)}</div>` : '';
-  return `<strong>${esc(result.total)}</strong>${src}${badge}${note}`;
+  const note = result.note ? `<div class="cog-contest-note">${escapeAttr(result.note)}</div>` : '';
+  return `<strong>${escapeAttr(result.total)}</strong>${src}${badge}${note}`;
 }
 
 function rowStatus(state, p, standing) {
@@ -105,40 +104,40 @@ export function buildContestCardHtml(wrapper, { resolve } = {}) {
       const canRoll = leg.status === 'open' && p.mode === 'roll' && !out && p.actorUuid && resolve?.(p.actorUuid)?.type !== 'mob';
       const move = contestMoveOf(p, leg, resolve, contestMoveOptions);
       const roll = canRoll
-        ? `<button type="button" class="cog-contest-roll" data-action="${CONTEST_ACTIONS.roll}" data-leg-id="${esc(leg.id)}" data-participant-id="${esc(p.id)}" data-actor-uuid="${esc(p.actorUuid)}">${result ? 'Reroll' : 'Roll'} (Move Rate ${signed(moveRateMod(move.move))})</button>`
+        ? `<button type="button" class="cog-contest-roll" data-action="${CONTEST_ACTIONS.roll}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">${result ? 'Reroll' : 'Roll'} (Move Rate ${signed(moveRateMod(move.move))})</button>`
         : '';
       const drop = leg.status === 'open' && !p.out && p.mode === 'roll' && p.actorUuid
-        ? `<button type="button" class="cog-contest-drop" data-action="${CONTEST_ACTIONS.drop}" data-leg-id="${esc(leg.id)}" data-participant-id="${esc(p.id)}" data-actor-uuid="${esc(p.actorUuid)}">Drop out</button>`
+        ? `<button type="button" class="cog-contest-drop" data-action="${CONTEST_ACTIONS.drop}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">Drop out</button>`
         : '';
       const propose = drop
-        ? `<button type="button" class="cog-contest-propose" data-action="${CONTEST_ACTIONS.propose}" data-leg-id="${esc(leg.id)}" data-participant-id="${esc(p.id)}" data-actor-uuid="${esc(p.actorUuid)}">Propose skill</button>`
+        ? `<button type="button" class="cog-contest-propose" data-action="${CONTEST_ACTIONS.propose}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">Propose skill</button>`
         : '';
       const assigned = participantLegSkill(p, leg);
-      const overrideTag = assigned.overridden ? ` <span class="cog-contest-override">[${esc(assigned.skill)}]</span>` : '';
-      return `<tr class="cog-contest-row${out ? ' cog-contest-out' : ''}" data-participant-id="${esc(p.id)}">
-        <td>${esc(p.name)} <span class="cog-contest-role">${esc(p.role)}${p.mode === 'fixed' ? ', fixed' : ''}</span>${overrideTag}</td>
+      const overrideTag = assigned.overridden ? ` <span class="cog-contest-override">[${escapeAttr(assigned.skill)}]</span>` : '';
+      return `<tr class="cog-contest-row${out ? ' cog-contest-out' : ''}" data-participant-id="${escapeAttr(p.id)}">
+        <td>${escapeAttr(p.name)} <span class="cog-contest-role">${escapeAttr(p.role)}${p.mode === 'fixed' ? ', fixed' : ''}</span>${overrideTag}</td>
         <td>${resultCell(result)}</td>
         <td>${roll}${propose}${drop}</td>
       </tr>`;
     }).join('');
-    return `<div class="cog-contest-leg" data-leg-id="${esc(leg.id)}" data-leg-status="${esc(leg.status)}">
-      <div class="cog-contest-leg-head"><strong>${esc(leg.label)}</strong> <span class="cog-contest-check">${esc(legCheckLabel(leg))}</span> <span class="cog-contest-leg-status">[${esc(leg.status)}]</span></div>
+    return `<div class="cog-contest-leg" data-leg-id="${escapeAttr(leg.id)}" data-leg-status="${escapeAttr(leg.status)}">
+      <div class="cog-contest-leg-head"><strong>${escapeAttr(leg.label)}</strong> <span class="cog-contest-check">${escapeAttr(legCheckLabel(leg))}</span> <span class="cog-contest-leg-status">[${escapeAttr(leg.status)}]</span></div>
       <table class="cog-contest-table"><tbody>${rows}</tbody></table>
     </div>`;
   }).join('');
 
-  const summaryRows = state.participants.map((p) => `<li>${esc(p.name)}: ${esc(rowStatus(state, p, standing))}</li>`).join('');
+  const summaryRows = state.participants.map((p) => `<li>${escapeAttr(p.name)}: ${escapeAttr(rowStatus(state, p, standing))}</li>`).join('');
   let outcome = '';
   if (state.kind === 'race' && standing.winners.length) {
     const names = standing.winners.map((id) => state.participants.find((p) => p.id === id)?.name ?? id).join(', ');
-    outcome = `<div class="cog-contest-outcome">${standing.complete ? 'Winner' : 'Leading'}: ${esc(names)}${standing.tied ? ' (tie)' : ''}</div>`;
+    outcome = `<div class="cog-contest-outcome">${standing.complete ? 'Winner' : 'Leading'}: ${escapeAttr(names)}${standing.tied ? ' (tie)' : ''}</div>`;
   } else if (state.kind === 'chase' && standing.finished) {
     const names = standing.order.map((id) => state.participants.find((p) => p.id === id)?.name ?? id);
-    outcome = `<div class="cog-contest-outcome">${names.length ? `Caught the quarry: ${esc(names.join(', '))}` : 'The quarry escaped.'}</div>`;
+    outcome = `<div class="cog-contest-outcome">${names.length ? `Caught the quarry: ${escapeAttr(names.join(', '))}` : 'The quarry escaped.'}</div>`;
   }
 
-  return `<div class="cog-chat-card cog-contest-card" data-contest-id="${esc(w.id)}" data-contest-kind="${esc(state.kind)}" data-contest-status="${esc(state.status)}">
-    <div class="cog-contest-title"><i class="fa-solid fa-flag-checkered"></i> ${esc(kind.label)} <span class="cog-contest-status">[${esc(state.status)}]</span> <span class="cog-contest-floor">Floor ${esc(state.floor)}</span>${anyBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</div>
+  return `<div class="cog-chat-card cog-contest-card" data-contest-id="${escapeAttr(w.id)}" data-contest-kind="${escapeAttr(state.kind)}" data-contest-status="${escapeAttr(state.status)}">
+    <div class="cog-contest-title"><i class="fa-solid fa-flag-checkered"></i> ${escapeAttr(kind.label)} <span class="cog-contest-status">[${escapeAttr(state.status)}]</span> <span class="cog-contest-floor">Floor ${escapeAttr(state.floor)}</span>${anyBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</div>
     ${legsHtml}
     <ul class="cog-contest-summary">${summaryRows}</ul>
     ${outcome}

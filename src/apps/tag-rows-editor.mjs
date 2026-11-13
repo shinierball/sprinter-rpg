@@ -13,7 +13,7 @@
  * Registry definitions are never edited. GM only. Problems are shown as warnings and never block a save.
  */
 import { SYSTEM_ID } from '../constants.mjs';
-import { TAG_MAP, getCustomTags, getTagDefinition } from '../data/tag-definitions.mjs';
+import { TAG_MAP, getCustomTags, getTagDefinition, CUSTOM_TAGS_SETTING } from '../data/tag-definitions.mjs';
 import { damageModifiersField, defenseModifiersField, rollModifiersField } from '../models/fields/modifier-fields.mjs';
 import { buildRowEditorContext } from '../sheets/item/context-rows.mjs';
 import { applyHostForm, renameRowPaths, retargetRow, tagPickerOptions } from '../sheets/item/row-host.mjs';
@@ -22,7 +22,7 @@ import { TAG_ACTIONS } from '../sheets/item/actions-tags.mjs';
 import { ARRAY_UI } from '../sheets/item/row-fields.mjs';
 import { describeRow } from '../utils/item-describer/feature-describer.mjs';
 import { scaleSpecErrors } from '../utils/roll/scalars.mjs';
-import { RULE_FLAG_DEFS, TAG_ROW_ARRAYS, getTagBehaviour, getTagOverrides, tagBehaviourErrors } from '../utils/tag/tag-behaviour.mjs';
+import { RULE_FLAG_DEFS, TAG_ROW_ARRAYS, getTagBehaviour, getTagOverrides, tagBehaviourErrors, TAG_OVERRIDES_SETTING } from '../utils/tag/tag-behaviour.mjs';
 
 /** The input-name root of a tag's rows in the Tag Manager form. */
 export const TAG_ROWS_ROOT = 'rows';
@@ -149,14 +149,14 @@ export async function saveTagBehaviour(tagId, patch) {
         }
         return updated;
       });
-      await settings.set(SYSTEM_ID, 'customTags', next);
+      await settings.set(SYSTEM_ID, CUSTOM_TAGS_SETTING, next);
     } else {
       const overrides = { ...getTagOverrides() };
       const entry = { ...(isPlain(overrides[tagId]) ? overrides[tagId] : {}) };
       if (patch.rows !== undefined) entry.rows = withoutEmpty(patch.rows);
       if (patch.flags !== undefined) entry.flags = [...patch.flags];
       overrides[tagId] = entry;
-      await settings.set(SYSTEM_ID, 'tagOverrides', overrides);
+      await settings.set(SYSTEM_ID, TAG_OVERRIDES_SETTING, overrides);
     }
   } catch (err) {
     console.warn('Sprinter RPG | Could not save tag behaviour', err);
@@ -174,7 +174,7 @@ export async function resetTagOverride(tagId) {
   const overrides = { ...getTagOverrides() };
   if (!Object.hasOwn(overrides, tagId)) return false;
   delete overrides[tagId];
-  await globalThis.game.settings.set(SYSTEM_ID, 'tagOverrides', overrides);
+  await globalThis.game.settings.set(SYSTEM_ID, TAG_OVERRIDES_SETTING, overrides);
   return true;
 }
 

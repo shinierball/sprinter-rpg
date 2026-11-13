@@ -1,0 +1,70 @@
+{{!-- Healing and cleansing block shared by the skill and spell sheets. Hash: barsPlaceholder. --}}
+<details class="cog-collapsible-block" {{#if hasHealingConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary cog-bg-success-fill">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-heart-pulse"></i> {{localize "COG.AbilitySheet.Healing.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if hasHealingConfigured}}active{{/if}}">{{#if hasHealingConfigured}}{{localize "COG.AbilitySheet.Healing.Configured"}}{{else}}{{localize "COG.AbilitySheet.Healing.Configure"}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row" style="margin-bottom: 6px; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <label class="cog-text-success" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
+        <input type="checkbox" name="system.healing.hasHealing" {{#if system.healing.hasHealing}}checked{{/if}} />
+        <span>{{localize "COG.AbilitySheet.Healing.Heals"}}</span>
+      </label>
+      <div class="cog-field-group small" style="flex: 1;">
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Healing.Bars"}}</span>
+        <input class="cog-field-input" type="text" name="system.healing.barsFormula" value="{{system.healing.barsFormula}}" placeholder="{{barsPlaceholder}}" style="font-size: 11px; font-weight: bold;" />
+        <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.AbilitySheet.Healing.BarsHint"}}</p>
+      </div>
+      <div class="cog-field-group small" style="flex: 1;">
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Healing.Who"}}</span>
+        <select class="cog-field-input" name="system.healing.targetFilter" style="font-size: 11px;">
+          <option value="allies" {{#if (eq system.healing.targetFilter "allies")}}selected{{/if}}>{{localize "COG.AbilitySheet.Healing.Allies"}}</option>
+          <option value="self" {{#if (eq system.healing.targetFilter "self")}}selected{{/if}}>{{localize "COG.AbilitySheet.Healing.Self"}}</option>
+          <option value="all" {{#if (eq system.healing.targetFilter "all")}}selected{{/if}}>{{localize "COG.AbilitySheet.Healing.Any"}}</option>
+        </select>
+      </div>
+      <label class="cog-text-info" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
+        <input type="checkbox" name="system.healing.isHoT" {{#if system.healing.isHoT}}checked{{/if}} />
+        <span>{{localize "COG.AbilitySheet.Healing.Hot"}}</span>
+      </label>
+      <div class="cog-field-group small" style="width: 80px;">
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.Healing.HotRounds"}}</span>
+        <input class="cog-field-input" type="number" name="system.healing.hotRounds" value="{{#if system.healing.hotRounds}}{{system.healing.hotRounds}}{{else}}3{{/if}}" min="1" style="font-size: 11px;" />
+      </div>
+    </div>
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.AbilitySheet.Healing.HotHint"}}</p>
+    <div class="cog-field-row" style="margin-bottom: 0;">
+      <div class="cog-field-group" style="flex: 1;">
+        <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> {{localize "COG.AbilitySheet.Healing.Cleanse"}}</span>
+        <div class="cog-cleanse-debuffs-pills cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; min-height: 24px; padding: 3px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+          {{#if cleanseDebuffsList.length}}
+            {{#each cleanseDebuffPills as |deb|}}
+              <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">
+                {{deb.label}}
+                <a class="cog-dark cog-text-gold" data-action="removeCleanseDebuff" data-debuff="{{deb.ref}}" title="{{localize "COG.AbilitySheet.Healing.RemoveDebuff"}}" style="cursor: pointer; font-weight: bold; text-decoration: none;">&times;</a>
+              </span>
+            {{/each}}
+          {{else}}
+            <span class="cog-text-muted" style="font-size: 10px; font-style: italic; align-self: center;">{{localize "COG.AbilitySheet.Healing.CleanseEmpty"}}</span>
+          {{/if}}
+        </div>
+        <div data-custom-entry style="display: flex; gap: 6px; align-items: center;">
+          <div style="flex: 2;">
+            <select class="cog-field-input" data-change-action="addCleanseDebuff" style="font-size: 11px; width: 100%;">
+              <option value="">{{localize "COG.AbilitySheet.Healing.SelectDebuff"}}</option>
+              {{#each availableDebuffs as |d|}}
+                <option value="{{d.system.identifier}}">{{d.name}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <input class="cog-field-input" type="text" placeholder="{{localize "COG.AbilitySheet.Healing.CustomDebuff"}}" style="font-size: 11px; width: 100%;" />
+          </div>
+          <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="addCustomCleanseDebuff" style="font-size: 11px; padding: 3px 6px; border: 1px solid var(--cog-success-fill); border-radius: 3px; cursor: pointer;">
+            {{localize "COG.AbilitySheet.Healing.Add"}}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</details>

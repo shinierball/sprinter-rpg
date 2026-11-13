@@ -6,8 +6,8 @@
 import { getCurrentFloor } from './actor-environment.mjs';
 import { getCOGStatModifier } from './actor-constants.mjs';
 import { OFFER_ROLES } from '../../utils/tag/tag-mechanics.mjs';
-import { collectRollAdvantage } from '../../utils/roll/damage-modifiers.mjs';
-import { buildRollContext, resolveRowAdvantage, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
+import { collectRollAdvantage, collectCheckModifiers, collectToHitModifiers, collectIncomingAdvantage } from '../../utils/roll/damage-modifiers.mjs';
+import { buildRollContext, resolveRowAdvantage, rollContextDataAttr, actionTagsOf } from '../../utils/roll/roll-context.mjs';
 import { classifyAttackOutcome, collectInterruptOffers, interruptEffectsText } from '../../utils/combat/interrupts.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
@@ -35,16 +35,17 @@ const MOB_ADVANTAGE_SHIFT = 5;
  * context, so a row means on a mob what it means on a crawler: Action in the attack's `toHit` context, Evade in the
  * context of an Evade roll (`check.evade`, `stat.dex`, the attacker as `attacker.*`), Surprise in `check.surprise` +
  * `stat.int`. Manual `options.advantage` / `options.disadvantage` count as one reason each. Mobs never roll, so the
- * net becomes +5 / 0 / -5 on the Difficulty. Non-mobs: no shift, unless the caller says `fixed: true` (3.45: a racing
+ * net becomes +5 / 0 / -5 on the Difficulty. The flat total of the mob's matching `bonus` rows joins it as `flat` (9.16b): a
+ * penalty lowers the number the crawler meets, a bonus raises it, and dice on a row are ignored. Non-mobs: no shift, unless the caller says `fixed: true` (3.45: a racing
  * or chasing contest gives NPCs a fixed result too, and the book's Debuff rule says "Mobs or NPCs").
  * The `check` quality (3.45) is judged in the caller's `context` (the leg's check context); without one, no shift.
  * @param {object} actor
  * @param {'action'|'evade'|'surprise'|'check'} quality
  * @param {{ item?: object|null, context?: object|null, attacker?: object|null, options?: object|null, fixed?: boolean }} [opts]
- * @returns {{ quality: string, mode: string, shift: number, reasons: string[], label: string|null }}
+ * @returns {{ quality: string, mode: string, net: number, shift: number, flat: number, reasons: string[], label: string|null }}
  */
 export function mobDifficultyShift(actor, quality, { item = null, context = null, attacker = null, options = null, fixed = false } = {}) {
-  const none = { quality, mode: 'normal', shift: 0, reasons: [], label: null };
+  const none = { quality, mode: 'normal', net: 0, shift: 0, flat: 0, reasons: [], label: null };
   if ((actor?.type !== 'mob' && fixed !== true) || !Object.values(MOB_QUALITIES).includes(quality)) return none;
   let ctx;
   let isAttack = false;
@@ -67,7 +68,39 @@ export function mobDifficultyShift(actor, quality, { item = null, context = null
   if (options?.advantage === true) advantages.push('Advantage (Manual Selection)');
   if (options?.disadvantage === true) disadvantages.push('Disadvantage (Manual Selection)');
   const net = resolveRowAdvantage({ advantages, disadvantages });
-  return { quality, mode: net.mode, shift: Math.sign(net.net) * MOB_ADVANTAGE_SHIFT, reasons: net.reasons, label: net.label };
+  const rows = isAttack ? collectToHitModifiers(actor, ctx) : collectCheckModifiers(actor, ctx);
+  const flat = Number(rows.flatBonus) || 0;
+  return { quality, mode: net.mode, net: net.net, shift: Math.sign(net.net) * MOB_ADVANTAGE_SHIFT, flat, reasons: net.reasons, label: net.label };
+}
+
+/**
+ * The Advantage and Disadvantage reasons a target's `attackerAdvantage` rows (Held, Take Down) give whoever attacks it.
+ * The one place the defense context of an incoming attack is built: the crawler's roll and the mob's Difficulty read it.
+ * @param {object|null} attacker
+ * @param {object|null} target
+ * @param {object|Iterable<string>} [attack] the attack's RollContext, or its action tags
+ * @returns {{ advantages: string[], disadvantages: string[] }}
+ */
+export function incomingAdvantageOf(attacker, target, attack = []) {
+  if (!target) return { advantages: [], disadvantages: [] };
+  const context = buildRollContext({ actor: target, phase: 'defense', tags: [...actionTagsOf(attack)], other: attacker ?? null, otherRole: 'attacker' });
+  return collectIncomingAdvantage(target, context);
+}
+
+/**
+ * The Difficulty one target's Evade must meet for a mob's attack: the card's own net Advantage plus the Advantage the
+ * target's rows give attackers, each net step moving it by 5 (book p. 60). Mobs do not roll, so the net moves the number.
+ * @param {{ net?: number, base?: number, floor?: number, flat?: number }|null} card the `mobAdvantage` flag of the attack card
+ * @param {object} target
+ * @param {object|null} attacker
+ * @param {object|Iterable<string>} [attack] the attack's RollContext, or its action tags
+ * @returns {{ dc: number, net: number, disadvantaged: boolean }|null} null for a card posted without the fields
+ */
+export function mobTargetDifficulty(card, target, attacker, attack = []) {
+  if (!card || !Number.isFinite(card.net)) return null;
+  const found = incomingAdvantageOf(attacker, target, attack);
+  const net = card.net + found.advantages.length - found.disadvantages.length;
+  return { dc: (Number(card.base) || 0) + (Number(card.floor) || 0) + Math.sign(net) * MOB_ADVANTAGE_SHIFT + (Number(card.flat) || 0), net, disadvantaged: net < 0 };
 }
 
 /** `hitDifficulty` as a whole number, or null when it is unset or not numeric (CONTRIBUTING §4). */
@@ -107,7 +140,9 @@ export function getEvadeTargetDC(actor, floor = null, { attacker = null, shift =
         : (10 + dexMod);
       dc = base + currentFloor;
     }
-    return shift ? dc + mobDifficultyShift(actor, MOB_QUALITIES.evade, { attacker }).shift + aboard : dc;
+    if (!shift) return dc;
+    const s = mobDifficultyShift(actor, MOB_QUALITIES.evade, { attacker });
+    return dc + s.shift + s.flat + aboard;
   }
   const currentFloor = floor !== null ? (parseInt(floor, 10) || 1) : getCurrentFloor();
   const dexMod = actor.system.abilities?.dex?.mod ?? 0;
@@ -121,14 +156,14 @@ export function getEvadeTargetDC(actor, floor = null, { attacker = null, shift =
  * @param {object} attackItem
  * @param {number|null} [floor=null] defaults to the current Floor
  * @param {{ context?: object|null, options?: object|null }} [opts] the attack's own roll context and manual options
- * @returns {{ dc: number, base: number, floor: number, shift: number, mode: string, reasons: string[], label: string|null }}
+ * @returns {{ dc: number, base: number, floor: number, net: number, shift: number, flat: number, mode: string, reasons: string[], label: string|null }}
  */
 export function getAttackDifficultyState(actor, attackItem, floor = null, { context = null, options = null } = {}) {
   const currentFloor = floor !== null && floor !== undefined ? (parseInt(floor, 10) || 1) : getCurrentFloor();
   const hit = hitDifficultyOf(attackItem);
   const base = hit ?? getEvadeTargetDC(actor, currentFloor, { shift: false }) - currentFloor;
   const s = mobDifficultyShift(actor, MOB_QUALITIES.action, { item: attackItem, context, options });
-  return { dc: base + currentFloor + s.shift, base, floor: currentFloor, shift: s.shift, mode: s.mode, reasons: s.reasons, label: s.label };
+  return { dc: base + currentFloor + s.shift + s.flat, base, floor: currentFloor, net: s.net, shift: s.shift, flat: s.flat, mode: s.mode, reasons: s.reasons, label: s.label };
 }
 
 /**
@@ -165,6 +200,8 @@ export function attackTargetEntries(actor, options = {}) {
  * @param {object} [options={}]
  * @param {Array<object>} [options.toHitRows] per-target to-hit rows with their dice rolled (per-target-to-hit.mjs)
  * @param {object} [options.toHitContext] the attack's RollContext those rows are judged against per target
+ * @param {object} [options.mobDifficulty] a mob attack's `getAttackDifficultyState` result: each target's Difficulty is
+ *   then its own (`mobTargetDifficulty`), and `options.attackContext` is the attack's context for the target's rows
  * @returns {{ targetResults: Array<object>, targetResultsHtml: string, currentFloor: number }}
  */
 export function resolveAttackTargets(actor, roll, options = {}) {
@@ -184,6 +221,7 @@ export function resolveAttackTargets(actor, roll, options = {}) {
         : getAttackDifficulty(actor, options.sourceItem ?? null, currentFloor))
     : null;
 
+  const attackTags = isMobAttacker && options.mobDifficulty ? actionTagsOf(options.attackContext ?? buildRollContext({ actor, phase: 'toHit', item: options.sourceItem ?? null, check: 'attack', other: null })) : [];
   const outOfRangeRows = Array.isArray(options.outOfRange) ? options.outOfRange : [];
   const headOn = isHeadOn(options.toHitContext);
   const targetResults = entries.map(({ actor: target, token }) => {
@@ -208,12 +246,13 @@ export function resolveAttackTargets(actor, roll, options = {}) {
     if (isMobAttacker) {
       // 545: a mob's attack on a vehicle hits unless the driver chooses to evade with a Driving check.
       const driver = target.type === 'mount_vehicle' ? driverOf(target) : null;
+      const own = options.mobDifficulty ? mobTargetDifficulty(options.mobDifficulty, target, actor, attackTags) : null;
       return {
         actor: target,
         actorId: target.id,
         actorName: target.name,
         tokenId: token?.id ?? token?.document?.id ?? null,
-        targetDC: mobEvadeDC,
+        targetDC: own?.dc ?? mobEvadeDC,
         isHit: true,
         diff: 0,
         outcome: 'Auto-Hit',

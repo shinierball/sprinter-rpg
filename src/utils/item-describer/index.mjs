@@ -18,13 +18,15 @@ import { BLOCKS as GEAR_LOOT_BLOCKS } from './blocks-gear-loot.mjs';
 import { BLOCKS as EFFECT_BLOCKS } from './blocks-effects.mjs';
 import { BLOCKS as IDENTITY_BLOCKS } from './blocks-identity.mjs';
 import { BLOCKS as CRAFTING_BLOCKS } from './blocks-crafting.mjs';
+import { isRaceOrClass, isWeaponCapable } from '../document-types.mjs';
+import { escapeAttr } from '../escape-attr.mjs';
 
 export { ITEM_SUMMARY_BADGES, ITEM_SUMMARY_KINDS, ITEM_SUMMARY_GROUPS, itemSummaryTemplates, defineItemSummaryTemplates } from './shared.mjs';
 
 /** Block ids for the wrapped `DESCRIBERS`, in the same order as that list. */
 const WRAPPED_IDS = Object.freeze([
   'grants-stat', 'stat-caps', 'grants-skill', 'defense', 'rows-damage', 'rows-attack', 'rows-check', 'rows-craft', 'rows-vehicle', 'rows-mana',
-  'rows-recovery', 'rows-substitution', 'rows-popularity', 'rows-ai-favor', 'movement', 'senses', 'requires',
+  'rows-recovery', 'rows-substitution', 'rows-popularity', 'rows-ai-favor', 'movement', 'senses', 'requirements',
   'starting-items', 'descriptive-tags'
 ]);
 
@@ -33,7 +35,7 @@ const wrapped = DESCRIBERS.map((d, i) => ({ id: WRAPPED_IDS[i], group: d.group, 
 const attackBlock = {
   id: 'attack-mechanics',
   group: 'effect',
-  applies: (item) => item?.type === 'attack' || item?.type === 'gear',
+  applies: isWeaponCapable,
   describe: (item) => describeAttackLines(item)
 };
 
@@ -48,7 +50,7 @@ defineItemSummaryTemplates({
 const grantedEffectsBlock = {
   id: 'granted-effects',
   group: 'other',
-  applies: (item) => item?.type === 'race' || item?.type === 'class',
+  applies: isRaceOrClass,
   async describe(item) {
     const entries = Array.isArray(item?.system?.grantedEffects) ? item.system.grantedEffects : [];
     const lines = [];
@@ -118,7 +120,6 @@ export function summaryText(lines) {
   return lines.map((l) => (typeof l?.text === 'string' ? l.text.trim() : '')).filter(Boolean).join(' • ');
 }
 
-const escapeHtml = (v) => v.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 /**
  * The lines as the HTML of a Foundry tooltip (`data-tooltip`, which Foundry sets as HTML): one escaped line per row,
@@ -126,7 +127,7 @@ const escapeHtml = (v) => v.replaceAll('&', '&amp;').replaceAll('<', '&lt;').rep
  */
 export function summaryTooltip(lines) {
   if (!Array.isArray(lines)) return '';
-  return lines.map((l) => (typeof l?.text === 'string' ? l.text.trim() : '')).filter(Boolean).map(escapeHtml).join('<br>');
+  return lines.map((l) => (typeof l?.text === 'string' ? l.text.trim() : '')).filter(Boolean).map(escapeAttr).join('<br>');
 }
 
 /** The muted line shown for an item with no structured effects (plan D6). Built from the empty result, never from text. */

@@ -3,7 +3,7 @@
  */
 
 import { DEFAULT_RANK_BONUS_COST } from '../../data/rules/point-buy-budget.mjs';
-import { SPEC_GRANT_LISTS } from '../perk-rows-host.mjs';
+import { SPEC_GRANT_LISTS, SPEC_REQUIREMENTS_LIST } from '../perk-rows-host.mjs';
 
 const nonNegative = (raw) => Math.max(0, Number(raw) || 0);
 
@@ -67,7 +67,9 @@ export const POINT_BUY_FORM = Object.freeze({
   perkRows: Object.freeze({
     lists: Object.freeze(['customBenefits', 'customDetriments']),
     grantLists: Object.freeze(Object.keys(SPEC_GRANT_LISTS)),
-    open: 'togglePerkRows', scope: '.cog-perk-rows-form, .cog-spec-grants-form', prefix: 'perkRows'
+    // The requirement rows (`spec.requirements`): one rows form with no perk index, like the grant lists.
+    requirementsList: SPEC_REQUIREMENTS_LIST,
+    open: 'togglePerkRows', scope: '.cog-perk-rows-form, .cog-spec-grants-form, .cog-spec-requirements-form', prefix: 'perkRows'
   })
 });
 

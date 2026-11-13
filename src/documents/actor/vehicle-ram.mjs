@@ -19,9 +19,10 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
 import { vehicleKindTag, ramDice, ramCollision, explosionFormula } from '../../data/rules/vehicle-rules.mjs';
 import { getAttackDifficulty, evadeButtonHtml } from './attack-targets.mjs';
-import { wholeFeet, notify, str, say, esc, speakerOf, gmWhisper, messageById, cardFlag, cardKey, requestVehicleDrive } from './vehicle-drive-common.mjs';
+import { wholeFeet, notify, str, say, speakerOf, gmWhisper, messageById, cardFlag, cardKey, requestVehicleDrive } from './vehicle-drive-common.mjs';
 import { rollVehicleCheck } from './vehicle-checks.mjs';
 import { vehicleCardInfo } from './vehicle-after-roll.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** Chat-card flags of a ram and of the explosion. */
 export const RAM_FLAGS = Object.freeze({
@@ -254,7 +255,7 @@ export async function applyCollision(vehicle, payload) {
     : say('COG.VehicleRam.CollisionSummary', '{name} takes half the ram damage and slows to {speed} ft.', { name: vehicle.name ?? '', speed: next });
   await globalThis.ChatMessage.create({
     speaker: speakerOf(vehicle),
-    content: `<div class="cog-chat-card cog-vehicle-collision"><strong>${esc(head)}</strong><ul>${lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>`
+    content: `<div class="cog-chat-card cog-vehicle-collision"><strong>${escapeAttr(head)}</strong><ul>${lines.map((l) => `<li>${escapeAttr(l)}</li>`).join('')}</ul></div>`
   });
   return { ok: true, result: { collision, lines } };
 }
@@ -268,7 +269,7 @@ export async function applyCollision(vehicle, payload) {
  * @returns {Promise<ChatMessage|undefined>}
  */
 export async function postExplosionPrompt(vehicle) {
-  const content = `<div class="cog-chat-card cog-vehicle-explosion-prompt"><strong>${esc(say('COG.VehicleExplosion.AtZero', '{name} is at 0%.', { name: vehicle.name ?? '' }))}</strong>`
+  const content = `<div class="cog-chat-card cog-vehicle-explosion-prompt"><strong>${escapeAttr(say('COG.VehicleExplosion.AtZero', '{name} is at 0%.', { name: vehicle.name ?? '' }))}</strong>`
     + `<div>${vehicleButtonHtml(say('COG.VehicleExplosion.Explode', 'Explode'), 'crawlerVehicleExplode', { 'vehicle-uuid': vehicle.uuid })}`
     + ` ${vehicleButtonHtml(say('COG.VehicleExplosion.NotNow', 'Not this time'), 'crawlerVehicleExplodeDismiss', {})}</div></div>`;
   return globalThis.ChatMessage.create({

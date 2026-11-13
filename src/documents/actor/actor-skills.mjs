@@ -1,19 +1,15 @@
 import { COGCombatMetrics, getHpPerBar } from '../combat-metrics.mjs';
 import { getRequiredGrindingHours, getAdvancementTarget, getEnduranceDC, getSafeGrindingThreshold } from '../../data/rules/grinding-rules.mjs';
-import { getTagDefinition } from '../../data/tag-definitions.mjs';
-import { getCOGStatModifier } from './actor-constants.mjs';
 import { getCurrentFloor, getFloorTimer, decrementFloorTimer } from './actor-environment.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { carrySourceStamp, findOffReference, landItems } from '../../utils/content-source.mjs';
-import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { rollGrindComplication } from '../../content/grind-complications.mjs';
 import { getStatCaps } from '../../utils/character/stat-caps.mjs';
-import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
 import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
-import { collectCheckToHit } from '../../utils/attack/per-target-to-hit.mjs';
-import { collectGearSkillBonuses, gearGrantKey } from '../../models/actors/actor-derivation.mjs';
-import { buildRollContext, extendContext, resolveSituations } from '../../utils/roll/roll-context.mjs';
+import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
+import { buildRollContext, extendContext } from '../../utils/roll/roll-context.mjs';
 import { extractD20Result } from '../session/roll-outcomes.mjs';
 import { restCooldownUpdates } from './cooldown-gate.mjs';
 import { getRecoveryMultiplier, resolveRecoverySituations, scaleRecovery } from '../../utils/roll/narrow-modifiers.mjs';
@@ -25,9 +21,11 @@ import {
   dismissSkillAura, gateSkillUse, skillRankParts, earlySkillMessage, prepareSkillCheck,
   rollSkillCheckDice, skillUseParts, postSkillCheckMessage
 } from './skill-roll.mjs';
-import { applyFatiguedDebuff } from './actor-conditions.mjs';
+import { applyCondition } from './actor-conditions.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
 import { runGrindAdvancement, postAdvancementCard, creditGrindLevelHours } from './actor-advancement.mjs';
+import { settleHealed } from './healing.mjs';
+import { confirmMagicGain, confirmGrindAllocation } from './advancement-gates.mjs';
 
 /**
  * One Unopposed Fatigue Check (an Endurance check for a grinding hour past the safe limit). The skill is the one the
@@ -105,171 +103,9 @@ export async function rollSkill(actor, skillItem, options = {}) {
 
   const check = await prepareSkillCheck(actor, skillItem, options, { rank, rangeGate: gates.rangeGate });
   // Every check, trained or not, runs the same stages; an untrained one at net Disadvantage only changes the dice and flavor (3.54)
-  const { roll, flavorText } = await rollSkillCheckDice(actor, skillItem, options, { check, rank });
+  const { roll, flavorText, rollId } = await rollSkillCheckDice(actor, skillItem, options, { check, rank });
   const parts = await skillUseParts(actor, skillItem, options, { check, rank, auraData, roll });
-  return postSkillCheckMessage(actor, skillItem, options, { check, gates, roll, flavorText, parts });
-}
-
-/**
- * Roll a defensive response to a contested check or opposed check
- * @param {object} params
- * @returns {Promise<ChatMessage>}
- */
-export async function rollContestResponse(actor, params = {}) {
-  const {
-    initiatorId = '',
-    initiatorName = 'Initiator',
-    itemName = 'Ability',
-    contestType = 'dc',
-    targetStat = 'dex',
-    targetSkill = '',
-    dc = 10,
-    initiatorTotal = 10,
-    onFailDebuff = '',
-    conditionTag = '',
-    sourceRank = 0,
-    durationRounds = 0,
-    onFailNotes = '',
-    onSuccessNotes = '',
-    options = {}
-  } = params;
-
-  const statKey = (targetStat || 'dex').toLowerCase().trim();
-  let statMod = Number(actor.system?.abilities?.[statKey]?.mod);
-  if (Number.isNaN(statMod) || statMod === undefined) {
-    const statVal = Number(actor.system?.abilities?.[statKey]?.value ?? 10);
-    statMod = getCOGStatModifier(statVal);
-  }
-  statMod = Math.max(0, statMod);
-  const statName = statKey.toUpperCase();
-
-  // Check if defender has the requested opposing skill
-  let skillRank = 0;
-  let usingSkill = false;
-  let matchedSkill = null;
-  if (targetSkill && typeof targetSkill === 'string') {
-    // `contest.targetSkill` is a skill identifier; the defender's owned skill with it is used.
-    matchedSkill = getSkillByIdentifier(actor, decodeURIComponent(targetSkill));
-    if (matchedSkill) {
-      usingSkill = true;
-      skillRank = Number(matchedSkill.modifiedRank ?? matchedSkill.system?.modifiedRank ?? matchedSkill.system?.rank) || 0;
-      const skillStat = (matchedSkill.system?.stat || statKey).toLowerCase().trim();
-      let skillStatMod = Number(actor.system?.abilities?.[skillStat]?.mod);
-      if (!Number.isNaN(skillStatMod) && skillStatMod !== undefined) {
-        statMod = Math.max(0, skillStatMod);
-      }
-    }
-  }
-
-  const isOpposed = contestType === 'opposed';
-  const targetThreshold = Number(params.targetDC ?? (isOpposed ? Number(initiatorTotal) : Number(dc))) || 10;
-
-  // Roll evaluation: if using skill, 1d20 + rank + statMod; otherwise 1d20 + statMod
-  const totalBonus = usingSkill ? (skillRank + statMod) : statMod;
-  // Like rollSkill: the initiator is the check's subject, so `subject.*` conditions and target-side scales judge against them.
-  const initiator = params.initiator ?? (initiatorId ? game?.actors?.get?.(initiatorId) : null) ?? null;
-  const targetActors = initiator ? [initiator] : [];
-  const baseContext = buildRollContext({
-    actor: actor, phase: 'check', item: matchedSkill, check: usingSkill ? 'skill' : 'stat', stat: statKey, other: initiator ?? undefined
-  });
-  const situations = await resolveSituations(actor, baseContext, options, { isAttack: false });
-  const situationContext = extendContext(baseContext, { situations });
-  const advState = getRollAdvantageState(actor, { rollType: usingSkill ? 'skill' : 'stat', stat: statKey, item: matchedSkill, rollContext: situationContext, options });
-  const rollContext = extendContext(situationContext, { disadvantaged: advState.mode === 'disadvantage' });
-  const { mods: checkMods } = collectCheckToHit(actor, rollContext, { keys: ['checkModifiers'], targetActors });
-  const extraDice = checkMods.diceParts.length > 0 ? ` + ${checkMods.diceParts.join(' + ')}` : '';
-  const rollBonus = totalBonus + checkMods.flatBonus;
-  const formula = `${advState.formula || '1d20'} + ${rollBonus}${extraDice}`;
-  const roll = await new Roll(formula, { rank: skillRank, mod: statMod }).evaluate();
-  const modDesc = checkMods.breakdown.length > 0 ? ` [${checkMods.breakdown.join(', ')}]` : '';
-
-  const isSuccess = roll.total >= targetThreshold;
-  const diff = roll.total - targetThreshold;
-
-  const outcomeBadge = isSuccess
-    ? `<span class="cog-contest-result-badge cog-bg-success-fill cog-text-on-fill">SUCCESS (${roll.total} vs ${targetThreshold})</span>`
-    : `<span class="cog-contest-result-badge cog-bg-accent-fill cog-text-on-fill">FAILED (${roll.total} vs ${targetThreshold})</span>`;
-
-  const rollHtml = typeof roll.render === 'function' ? await roll.render() : '';
-
-  const cleanFailNotes = onFailNotes ? decodeURIComponent(onFailNotes) : '';
-  const cleanSuccessNotes = onSuccessNotes ? decodeURIComponent(onSuccessNotes) : '';
-  const debuffToInflict = params.conditionTag || conditionTag || onFailDebuff || params.onFailDebuff || '';
-  const cleanDebuff = debuffToInflict ? decodeURIComponent(debuffToInflict) : '';
-  const cleanInitiatorName = decodeURIComponent(initiatorName || 'Initiator');
-  const cleanItemName = decodeURIComponent(itemName || 'Ability');
-
-  // The initiator's reached rank breaks' duration bonus, resolved when the contest was rolled (getContestData).
-  const conditionRounds = Math.max(0, Math.floor(Number(durationRounds) || 0));
-  let debuffButtonHtml = '';
-  if (!isSuccess && cleanDebuff) {
-    if (typeof actor.applyCondition === 'function') {
-      await actor.applyCondition(cleanDebuff, { source: cleanItemName, durationRounds: conditionRounds });
-    }
-    const tagDef = getTagDefinition(cleanDebuff);
-    const tagLabel = tagDef?.label || cleanDebuff;
-    debuffButtonHtml = `
-      <div style="margin-top: 6px;">
-        <div class="cog-text-accent" style="font-size: 11px; font-weight: bold; margin-bottom: 3px;">
-          <i class="fa-solid fa-skull"></i> Inflicted [${tagLabel}] on ${actor.name}${conditionRounds > 0 ? ` for ${conditionRounds} rounds` : ''}!
-        </div>
-        <button type="button" class="cog-apply-condition-btn cog-apply-debuff-btn cog-bg-accent-fill cog-text-on-fill" data-action="crawlerApplyCondition" data-condition-tag="${cleanDebuff}" data-debuff-name="${tagLabel}" data-target-uuid="${actor.uuid}" data-duration-rounds="${conditionRounds}" style="width: 100%; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
-          <i class="fa-solid fa-skull"></i> Re-Apply [${tagLabel}] to ${actor.name}
-        </button>
-      </div>
-    `;
-  }
-
-  // What the fumble debuff does: the debuff is applied above, so it has happened.
-  const effectSummaryHtml = cleanDebuff && !isSuccess
-    ? await cardSummary(null, OMIT_ALL, { actor: actor, effects: [{ kind: 'debuffs', ref: cleanDebuff }] })
-    : '';
-  const cardContent = `
-    <div class="cog-chat-card cog-contest-result-card cog-bg-surface" style="font-family: var(--font-primary, sans-serif); border: 2px solid ${isSuccess ? 'var(--cog-success)' : 'var(--cog-accent)'}; border-radius: 4px; padding: 8px;">
-      <div class="cog-contest-result-header">
-        <div class="cog-contest-result-title">
-          <strong class="cog-text" style="font-size: 13px;">${actor.name}</strong>
-          <div class="cog-text-muted" style="font-size: 11px;">
-            Contest Response vs <strong>${cleanInitiatorName}</strong>'s <em>${cleanItemName}</em>
-          </div>
-        </div>
-        <div>${outcomeBadge}</div>
-      </div>
-      <div class="cog-text-secondary" style="font-size: 11px; margin-bottom: 6px;">
-        Rolled: <strong>${usingSkill ? `${matchedSkill.name} (${statName})` : `${statName} Check`}</strong> (${formula}${modDesc} = <strong>${roll.total}</strong>) vs Target <strong>${targetThreshold}</strong> (Diff: <strong>${diff >= 0 ? `+${diff}` : diff}</strong>)
-      </div>
-      ${rollHtml}
-      ${!isSuccess && cleanFailNotes ? `<div class="cog-text-accent cog-bg-warning-tint" style="margin-top: 4px; font-size: 11px; padding: 4px 6px; border-radius: 3px;"><strong>Consequence:</strong> ${cleanFailNotes}</div>` : ''}
-      ${isSuccess && cleanSuccessNotes ? `<div class="cog-text-success cog-bg-success-tint" style="margin-top: 4px; font-size: 11px; padding: 4px 6px; border-radius: 3px;"><strong>Success:</strong> ${cleanSuccessNotes}</div>` : ''}
-      ${debuffButtonHtml}
-      ${effectSummaryHtml}
-    </div>
-  `;
-
-  const msg = await roll.toMessage({
-    speaker: ChatMessage.getSpeaker({ actor: actor }),
-    flavor: `<strong>${actor.name}</strong>: ${usingSkill ? matchedSkill.name : statName} Contest Roll vs ${cleanInitiatorName}`,
-    content: cardContent,
-    flags: {
-      [SYSTEM_ID]: {
-        isContestRoll: true,
-        isContestSuccess: isSuccess,
-        defenderId: actor.id,
-        initiatorId,
-        targetThreshold,
-        rollTotal: roll.total,
-        diff,
-        sourceRank: Number(sourceRank) || 0,
-        conditionRounds
-      }
-    }
-  });
-
-  if (msg) {
-    msg.isSuccess = isSuccess;
-    msg.success = isSuccess;
-  }
-  return msg;
+  return postSkillCheckMessage(actor, skillItem, options, { check, gates, roll, flavorText, parts, rollId });
 }
 
 /**
@@ -278,9 +114,10 @@ export async function rollContestResponse(actor, params = {}) {
  * @param {string|Item} ref a skill identifier, or a skill item (its identifier is used)
  * @param {number} [delta=1]
  * @param {{label?: string}} [options]
+ * A gain that passes the skill's magic limit asks one Rule Break first; declined, nothing changes (`declined: true`, `newRank` unchanged).
  * @returns {Promise<object|null>}
  */
-export async function increaseSkillRank(actor, ref, delta = 1, { label = '' } = {}) {
+export async function increaseSkillRank(actor, ref, delta = 1, { label = '', options = {} } = {}) {
   const identifier = typeof ref === 'string' ? ref.trim() : String(ref?.system?.identifier ?? '').trim();
   if (!identifier) return null;
   const existing = getSkillByIdentifier(actor, identifier);
@@ -288,8 +125,10 @@ export async function increaseSkillRank(actor, ref, delta = 1, { label = '' } = 
   if (existing) {
     const oldRank = Number(existing.system?.rank) || 1;
     const newRank = oldRank + delta;
+    const gate = await confirmMagicGain(actor, existing, newRank, options);
+    if (!gate.ok) return { skill: existing, oldRank, previousRank: oldRank, newRank: oldRank, isNew: false, declined: true };
     await existing.update({ 'system.rank': newRank });
-    return { skill: existing, oldRank, previousRank: oldRank, newRank, isNew: false };
+    return { skill: existing, oldRank, previousRank: oldRank, newRank, isNew: false, ruleBreak: gate.ruleBreak };
   }
 
   // A skill the catalog lacks because its theme is off still resolves as a reference, and lands as a poop.
@@ -355,7 +194,7 @@ export async function increaseUnenhancedStat(actor, stat, delta = 1, options = {
     [`system.abilities.${s}.unenhanced`]: newUnenhanced,
     [`system.abilities.${s}.value`]: newVal
   });
-  if (ruleBreak) await actor.setFlag?.(SYSTEM_ID, 'ruleBreak', true);
+  if (ruleBreak) await markRuleBreak(actor);
   return { stat: s, ruleBreak, oldUnenhanced: curUnenhanced, newUnenhanced, oldValue: curVal, newValue: newVal };
 }
 
@@ -478,6 +317,7 @@ export async function rest(actor, restType = 'long', options = {}) {
     'system.attributes.hp.pct': hpPct,
     'system.attributes.mana.value': newMana
   });
+  await settleHealed(actor, { before: currentHP, after: newHP });
 
   // The rest resets the cooldowns that end at a rest of this level or below; the 1-hour rest resets none (3.12c)
   const isHourRest = ['1hour', '1h', 'hour'].includes(normType);
@@ -562,7 +402,7 @@ export async function restSafeRoom(actor, options = {}) {
  * @param {number} hours
  * @returns {Promise<object>}
  */
-export async function allocateGrindHours(actor, skillId, hours) {
+export async function allocateGrindHours(actor, skillId, hours, options = {}) {
   const delta = parseInt(hours, 10) || 0;
   if (delta === 0) return null;
   const skill = actor.items?.get(skillId);
@@ -581,20 +421,16 @@ export async function allocateGrindHours(actor, skillId, hours) {
   }
 
   if (actualDelta === 0) return { currentBank, currentInvested };
+  if (!(await confirmGrindAllocation(actor, skill, actualDelta, options)).ok) return { currentBank, currentInvested, declined: true };
 
   const newBank = Math.max(0, currentBank - actualDelta);
   const newInvested = Math.max(0, currentInvested + actualDelta);
 
-  if (actor.system?.details) {
-    actor.system.details.bankedGrindHours = newBank;
-  } else if (actor.system) {
-    actor.system.bankedGrindHours = newBank;
-  }
+  if (actor.system?.details) actor.system.details.bankedGrindHours = newBank;
+  else if (actor.system) actor.system.bankedGrindHours = newBank;
   await actor.update({ 'system.details.bankedGrindHours': newBank });
 
-  if (skill.system) {
-    skill.system.investedHours = newInvested;
-  }
+  if (skill.system) skill.system.investedHours = newInvested;
   await skill.update({ 'system.investedHours': newInvested });
 
   return {
@@ -668,6 +504,7 @@ export async function attemptSkillAdvancement(actor, skillId, options = {}) {
       target: skillAdvancement.target,
       rollTotal: skillAdvancement.roll,
       formula: skillAdvancement.formula,
+      rollMode: skillAdvancement.rollMode,
       outcome: skillAdvancement.outcome,
       ruleBreak: skillAdvancement.ruleBreak
     });
@@ -688,8 +525,8 @@ export function getSkillByIdentifier(actor, identifier) {
 }
 
 /**
- * An actor's modified rank for a skill: the owned skill with that identifier, else the bonus equipped gear grants
- * it (0 when neither). Names are never matched.
+ * An actor's modified rank for a skill: the owned skill with that identifier, else the Rank equipped gear and active
+ * buffs grant it (0 when neither). Names are never matched.
  * @param {string|Item} ref a skill identifier, or a skill item (its identifier is used)
  * @returns {number}
  */
@@ -698,8 +535,7 @@ export function getSkillRank(actor, ref) {
   if (!identifier) return 0;
   const skill = getSkillByIdentifier(actor, identifier);
   if (skill) return Number(skill.system?.modifiedRank ?? skill.system?.rank) || 0;
-  const equippedGear = actor.items ? actor.items.filter(i => i.type === 'gear' && i.system?.equipped) : [];
-  return collectGearSkillBonuses(equippedGear).get(gearGrantKey('skill', identifier))?.bonus ?? 0;
+  return skillStandIn(actor, identifier)?.modifiedRank ?? 0;
 }
 
 /**
@@ -774,7 +610,7 @@ export async function executePartyGrindSession(partyActors, options = {}) {
 
         if (!passed) {
           fatigueGained++;
-          await applyFatiguedDebuff(crawler);
+          await applyCondition(crawler, 'fatigued');
         }
 
         enduranceChecks.push({

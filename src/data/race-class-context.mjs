@@ -8,24 +8,42 @@ import { ARCHETYPE_TO_TAG } from './tag-vocabulary.mjs';
 import { companionHeritageId, heritageGroups, heritageLabel, sanitizeHeritageId } from './rules/heritages.mjs';
 import { isFormRace } from '../utils/character/transform-rules.mjs';
 import { worldRaces as worldRaceItems } from './race-class-plan.mjs';
+import { checkRequirements, requirementSubject } from '../utils/character/requirements.mjs';
 
 /**
  * Generates precomputed select options for Race and Class dropdowns.
  *
+ * With `requirements`, each option is judged against the actor (or actor view) it is given: an option with unmet
+ * requirements gets `unmet: n` and a "(n unmet)" label suffix, stays where it is and stays selectable (rule 2), and
+ * `currentRequirements` holds the picked option's judged rows for the badge list under the select.
+ *
  * @param {Actor} actor
+ * @param {{ requirements?: boolean }} [options]
  * @returns {object} { raceOptions, classOptions, hasCustomRace, hasCustomClass, currentRace, currentClass,
- *   currentRaceLabel, currentClassLabel } (option values and current* are references; *Label are names)
+ *   currentRaceLabel, currentClassLabel, currentRequirements: { race, class } } (option values and current* are
+ *   references; *Label are names; `currentRequirements` rows are `checkRequirements` rows, empty unless `requirements`)
  */
-export function getRaceClassContext(applier, actor) {
+export function getRaceClassContext(applier, actor, { requirements = false } = {}) {
   // `details.race` / `details.class` hold a reference (the item identifier) or, for an uncataloged
   // write-in, the text itself. A race or class item embedded directly (dropped, imported, scripted)
   // never wrote the detail, so its own reference stands in; otherwise the Core selects read "None" beside real items.
   const embeddedRef = (type) => String(actor?.items?.find((i) => i.type === type)?.system?.identifier ?? '');
   const currentRace = String(actor?.system?.details?.race || '').trim() || embeddedRef('race');
   const currentClass = String(actor?.system?.details?.class || '').trim() || embeddedRef('class');
+  // One reader set for every option of this render; the picked option's rows are kept for the badge list.
+  const readers = requirements ? requirementSubject(actor) : null;
+  const currentRequirements = { race: [], class: [] };
+  const judged = (kind, def, opt, label) => {
+    if (!readers) return { ...opt, label };
+    const { rows } = checkRequirements(actor, { ...def, type: kind }, readers);
+    if (opt.selected) currentRequirements[kind] = rows;
+    const count = rows.filter((r) => r.status === 'unmet').length;
+    if (!count) return { ...opt, label };
+    return { ...opt, label: `${label} (${count} unmet)`, unmet: count };
+  };
   const option = (def, label = def.name) => {
     const value = applier.definitionRef(def);
-    return { value, label, selected: Boolean(value) && value === currentRace };
+    return judged('race', def, { value, selected: Boolean(value) && value === currentRace }, label);
   };
 
   // 1. Race Options: one group per registered heritage; a `companion.pet` race joins the companion group
@@ -74,7 +92,7 @@ export function getRaceClassContext(applier, actor) {
   const classCatalog = offeredEntries('classes');
   const classOption = (def, label = def.name) => {
     const value = applier.definitionRef(def);
-    return { value, label, selected: Boolean(value) && value === currentClass };
+    return judged('class', def, { value, selected: Boolean(value) && value === currentClass }, label);
   };
   for (const c of classCatalog) {
     const opt = classOption(c);
@@ -118,6 +136,7 @@ export function getRaceClassContext(applier, actor) {
     currentRace,
     currentClass,
     currentRaceLabel: applier.definitionLabel('race', currentRace, { actor }),
-    currentClassLabel: applier.definitionLabel('class', currentClass, { actor })
+    currentClassLabel: applier.definitionLabel('class', currentClass, { actor }),
+    currentRequirements
   };
 }

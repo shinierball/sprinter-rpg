@@ -1,0 +1,61 @@
+{{!-- Damage that grows with Rank, shared by the skill and spell sheets. --}}
+<details class="cog-collapsible-block" {{#if hasRankDamagePartsConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-bolt"></i> {{localize "COG.AbilitySheet.RankDamage.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if hasRankDamagePartsConfigured}}active{{/if}}">{{#if hasRankDamagePartsConfigured}}{{localize "COG.AbilitySheet.RankDamage.Configured" count=system.rankDamageParts.length}}{{else}}{{localize "COG.AbilitySheet.RankDamage.Configure"}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.AbilitySheet.RankDamage.Hint"}}</p>
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 6px;">
+      <a class="cog-text-info" data-action="addRow" data-row-table="rankDamagePart" style="font-size: 11px; cursor: pointer; font-weight: bold;">
+        <i class="fa-solid fa-plus"></i> {{localize "COG.AbilitySheet.RankDamage.Add"}}
+      </a>
+    </div>
+    {{#if system.rankDamageParts.length}}
+      <table class="cog-table" style="margin: 0; font-size: 11px;">
+        <thead>
+          <tr>
+            <th style="width: 22%;">{{localize "COG.AbilitySheet.RankDamage.Label"}}</th>
+            <th style="width: 22%;">{{localize "COG.AbilitySheet.RankDamage.DamageType"}}</th>
+            <th style="width: 16%;">{{localize "COG.AbilitySheet.RankDamage.FixedBonus"}}</th>
+            <th style="width: 20%;">{{localize "COG.AbilitySheet.RankDamage.Dice"}}</th>
+            <th style="width: 15%;">{{localize "COG.AbilitySheet.RankDamage.MinRank"}}</th>
+            <th style="width: 5%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each system.rankDamageParts as |mod idx|}}
+            <tr>
+              <td>
+                <input class="cog-field-input" type="text" name="system.rankDamageParts.{{idx}}.label" value="{{mod.label}}" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td>
+                <select class="cog-field-input" name="system.rankDamageParts.{{idx}}.type" style="font-size: 11px;">
+                  {{#each ../damageTypes as |dt|}}
+                    <option value="{{dt}}" {{#if (eq mod.type dt)}}selected{{/if}}>{{dt}}</option>
+                  {{/each}}
+                </select>
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.rankDamageParts.{{idx}}.value" value="{{mod.value}}" placeholder="2" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td>
+                <input class="cog-field-input" type="text" name="system.rankDamageParts.{{idx}}.dice" value="{{mod.dice}}" placeholder="1d4" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.rankDamageParts.{{idx}}.minRank" value="{{mod.minRank}}" placeholder="0" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td style="text-align: center;">
+                <a class="cog-text-accent" data-action="deleteRow" data-row-table="rankDamagePart" data-index="{{idx}}" data-tooltip="{{localize "COG.AbilitySheet.RankDamage.Delete"}}" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="cog-text" style="text-align: center; font-style: italic; font-size: 11px; padding: 6px;">
+        {{localize "COG.AbilitySheet.RankDamage.Empty"}}
+      </div>
+    {{/if}}
+  </div>
+</details>

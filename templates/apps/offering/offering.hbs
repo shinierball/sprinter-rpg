@@ -1,0 +1,25 @@
+{{!-- The Offering dialog. Controls are data-action / data-input-action / data-field; nothing here is a form input with a name. --}}
+<div class="cog-offering cog-bg-window cog-text-strong">
+  {{#if text}}<p class="cog-offering-text">{{text}}</p>{{/if}}
+  {{#unless required}}<p class="cog-text-muted">{{localize 'COG.Deity.Offering.NotRequired'}}</p>{{/unless}}
+  <div class="cog-field-row">
+    <div class="cog-field-group small">
+      <span class="cog-field-label">{{localize 'COG.Deity.Offering.Gold'}}</span>
+      <span class="cog-offering-gold">{{gold}} / {{held}}</span>
+    </div>
+    {{#if item}}<span class="cog-text-muted">{{item}}</span>{{/if}}
+  </div>
+  <div class="cog-field-row">
+    <div class="cog-field-group small">
+      <span class="cog-field-label">{{localize 'COG.Deity.Offering.Looted'}}</span>
+      <input class="cog-field-input" type="number" min="0" step="1" value="{{looted}}" data-field="looted" data-input-action="offeringLooted" />
+    </div>
+    <div class="cog-field-group small">
+      <span class="cog-field-label">{{localize 'COG.Deity.Offering.Tithe'}}{{#if multiplier}} (x{{multiplier}}){{/if}}</span>
+      <input class="cog-field-input" type="number" min="0" step="1" value="{{tithe}}" data-field="tithe" />
+    </div>
+  </div>
+  <div class="cog-offering-confirm">
+    <button type="button" data-action="confirmOffering"><i class="fa-solid fa-coins"></i> {{localize 'COG.Deity.Offering.Confirm'}}</button>
+  </div>
+</div>

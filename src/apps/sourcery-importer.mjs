@@ -25,6 +25,7 @@ import { syncImportedItems, importedItemDocuments } from '../sourcery/sync-exist
 import { SOURCERY_CATALOG_SETTING, applySourceryCatalog, readStoredCatalog } from '../content/sourcery-content-provider.mjs';
 import { COG_THEME_ID } from '../content/default-content-provider.mjs';
 import { contentRegistry } from '../content/registry.mjs';
+import { PRIMARY_THEME_SETTING, DISABLED_THEMES_SETTING } from '../content/registry/themes.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/sourcery-importer`;
 const KIND_LABELS = { skill: 'Skills', spell: 'Spells', race: 'Races', class: 'Classes', mob: 'Mobs', gear: 'Items', buff: 'Buffs', debuff: 'Debuffs', achievement: 'Achievements', space: 'Space upgrades', table: 'Tables' };
@@ -109,7 +110,7 @@ function defaultServices() {
       content: "<p>Make Rulebook Content the primary theme?</p><p>The primary theme supplies the crawler creator's species, backgrounds and story tables. The world reloads.</p>"
     }) ?? false,
     async setTheme(id) {
-      await globalThis.game.settings.set(SYSTEM_ID, 'primaryTheme', id);
+      await globalThis.game.settings.set(SYSTEM_ID, PRIMARY_THEME_SETTING, id);
       await globalThis.foundry?.applications?.settings?.SettingsConfig?.reloadConfirm?.({ world: true });
     },
     isThemeOff: (id) => contentRegistry.isThemeOff(id),
@@ -119,7 +120,7 @@ function defaultServices() {
     }) ?? false,
     async turnOnTheme(id) {
       const off = contentRegistry.getDisabledThemeIds().filter((t) => t !== id);
-      await globalThis.game.settings.set(SYSTEM_ID, 'disabledThemes', off);
+      await globalThis.game.settings.set(SYSTEM_ID, DISABLED_THEMES_SETTING, off);
       await this.setTheme(id);
     },
     // Foundry's helper also works on a plain-http server, where `navigator.clipboard` does not exist.

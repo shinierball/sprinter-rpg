@@ -5,6 +5,7 @@
  * the engine never reads the prose. Re-exported from `rapid-text-parser.mjs` (the authoring parser).
  */
 import { COG_TAGS } from '../data/tag-catalog.mjs';
+import { WORSHIP_TAGS } from '../data/tag-vocabulary.mjs';
 import { catalogEntries } from '../content/catalog-lookup.mjs';
 
 /**
@@ -14,15 +15,25 @@ import { catalogEntries } from '../content/catalog-lookup.mjs';
  * @returns {{ name: string, identifier: string }[]}
  */
 function catalogDebuffRefs() {
-  const debuffs = [];
-  for (const entry of catalogEntries('debuffs')) {
-    if (typeof entry?.name === 'string' && entry.name.trim()) debuffs.push({ name: entry.name.trim(), identifier: String(entry.system?.identifier ?? '').trim() });
-  }
+  const debuffs = upgradeTextDebuffs(catalogEntries('debuffs')).filter(d => d.name.trim()).map(d => ({ name: d.name.trim(), identifier: d.identifier.trim() }));
   const byName = new Map(debuffs.map(d => [d.name.toLowerCase(), d]));
   const refs = COG_TAGS.filter(tag => tag.namespace === 'condition' && tag.label)
     .map(tag => byName.get(tag.label.toLowerCase()) ?? { name: tag.label, identifier: tag.id });
   const seen = new Set();
   return [...refs, ...debuffs].filter(ref => !seen.has(ref.name.toLowerCase()) && seen.add(ref.name.toLowerCase()));
+}
+
+/**
+ * The debuffs whose names the upgrade-text parse looks for, as `{ name, identifier }`, from debuff documents or specs. A Divine
+ * Debuff (`worship.divine`, p. 313) is a god's punishment, never a Skill's or Spell's effect, and its printed names are everyday
+ * words (`Skill`, `Cooldown`) that any upgrade text holds: it is left out.
+ * @param {object[]} [debuffs]
+ * @returns {{ name: string, identifier: string }[]}
+ */
+export function upgradeTextDebuffs(debuffs = []) {
+  const divine = d => Array.isArray(d?.system?.tags) && d.system.tags.includes(WORSHIP_TAGS.divine);
+  return (Array.isArray(debuffs) ? debuffs : []).filter(d => !divine(d))
+    .map(d => ({ name: typeof d?.name === 'string' ? d.name : '', identifier: String(d?.system?.identifier ?? '') }));
 }
 
 /** A known debuff as `{ name, ref }`: a string is a name (a match stores it as given); an object's match stores its identifier. */

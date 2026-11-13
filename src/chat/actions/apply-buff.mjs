@@ -7,8 +7,8 @@ import { resolveTargetActors } from './targets.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
 import { buffCardText } from '../../utils/card/buff-card-text.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { carrySourceStamp, landItems, isContentOff } from '../../utils/content-source.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 function parseApplyBuff(button) {
   return {
@@ -79,10 +79,7 @@ export function hasBuffAlready(actor, buffIdentifier) {
 /** A chat line recording that a second copy was taken as a Rule Break. */
 async function postDuplicateRuleBreak(actorName, buffName) {
   const content = `<p>${ruleBreakBadgeHtml()} ${buffCardText('COG.BuffCard.RuleBreakLine', { actor: actorName, buff: buffName })}</p>`;
-  await globalThis.ChatMessage?.create?.(ruleBreakMessageData({
-    content,
-    flags: { [SYSTEM_ID]: { ruleBreak: true, buffRuleBreak: true } }
-  }));
+  await globalThis.ChatMessage?.create?.(ruleBreakMessageData(withFlags({ content }, { buffRuleBreak: true })));
 }
 
 /**

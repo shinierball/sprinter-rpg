@@ -15,7 +15,6 @@ import { sanitizeContest, contestMoveOf, moveRateMod, fixedResult, participantLe
 import { CONTEST_TAGS } from '../data/tag-vocabulary.mjs';
 import { findCatalogEntry } from '../content/catalog-lookup.mjs';
 import { buildRollContext } from '../utils/roll/roll-context.mjs';
-import { collectCheckModifiers } from '../utils/roll/damage-modifiers.mjs';
 import { mobDifficultyShift, MOB_QUALITIES } from '../documents/actor/attack-targets.mjs';
 import { contestMoveOptions } from '../documents/actor/vehicle-contest.mjs';
 import { CONTEST_FLAG, readContest, sanitizeContestWrapper, buildContestCardHtml } from './contest-card.mjs';
@@ -169,8 +168,7 @@ export function computeFixedResult(state, participant, leg, resolve = resolveAct
   const context = buildRollContext({
     actor, phase: 'check', check: skill ? 'skill' : 'stat', stat, tags: [CONTEST_TAGS[state.kind]]
   });
-  const shift = mobDifficultyShift(actor, MOB_QUALITIES.check, { context, fixed: true }).shift;
-  const flat = collectCheckModifiers(actor, context).flatBonus || 0;
+  const { shift, flat } = mobDifficultyShift(actor, MOB_QUALITIES.check, { context, fixed: true });
   const result = fixedResult({ statMod, floor: state.floor, moveMod: moveRateMod(move.move), adjust: shift + flat });
   const labels = { base: 'base', stat: stat.toUpperCase(), floor: 'Floor', move: 'Move Rate', adjust: 'adjust' };
   const text = result.parts

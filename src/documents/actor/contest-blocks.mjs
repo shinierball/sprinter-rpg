@@ -95,7 +95,7 @@ export function renderAttackContestBlock(actor, attackItem, targetResults = [], 
   const shifted = Number(shift) || 0;
   const contestData = shifted !== 0 && Number.isFinite(Number(baseData.dc)) ? { ...baseData, dc: Number(baseData.dc) + shifted } : baseData;
   const shiftNote = shifted !== 0 && contestData !== baseData
-    ? ` ${mobAttackText('COG.MobAttack.SaveShift', { sign: shifted > 0 ? '+' : '\u2212', n: Math.abs(shifted), label: label ?? '' })}.`
+    ? ` ${mobAttackText('COG.MobAttack.SaveShift', { sign: shifted > 0 ? '+' : '\u2212', n: Math.abs(shifted), label: label ?? mobAttackText('COG.MobAttack.FlatLabel') })}.`
     : '';
   const actors = targetResults.map(tr => tr.actor).filter(Boolean);
   if (actors.length > 0 && actors.every(a => a.type === 'mob')) {

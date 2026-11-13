@@ -14,6 +14,21 @@ export const COG_RACES = [
       "heritage": "earth",
       "size": "medium",
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "skillRank",
+          "value": 5,
+          "query": {
+            "all": [
+              "kind.skill"
+            ],
+            "any": [
+              "stat.str",
+              "stat.dex"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 2,
       "movement": {
@@ -165,6 +180,12 @@ export const COG_RACES = [
       "heritage": "earth",
       "size": "small",
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "identifier": "cat"
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -439,11 +460,11 @@ export const COG_RACES = [
           "damageType": "Holy"
         }
       ],
-      "requires": {
-        "none": [
-          "kind.deity"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "noWorship"
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {
@@ -1534,6 +1555,18 @@ export const COG_RACES = [
       "heritage": "earth",
       "size": "medium",
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "skillRank",
+          "value": 5,
+          "query": {
+            "all": [
+              "kind.skill",
+              "weaponGroup.edge"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -1905,6 +1938,13 @@ export const COG_RACES = [
       "heritage": "earth",
       "size": "large",
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "skillRank",
+          "identifier": "dccskl0000000021",
+          "value": 5
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -2156,6 +2196,12 @@ export const COG_RACES = [
       "heritage": "alien",
       "size": "medium",
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "popularity",
+          "value": 3
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -2359,6 +2405,16 @@ export const COG_RACES = [
       "heritage": "alien",
       "size": "medium",
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "skillRank",
+          "options": [
+            "jumping",
+            "light-on-your-feet"
+          ],
+          "value": 5
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -2464,6 +2520,23 @@ export const COG_RACES = [
       "heritage": "alien",
       "size": "medium",
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "skillRank",
+          "identifier": "explosives-handling",
+          "value": 5
+        },
+        {
+          "kind": "skillRank",
+          "value": 5,
+          "query": {
+            "all": [
+              "kind.skill",
+              "skillGroup.trap"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {

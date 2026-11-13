@@ -1,0 +1,8 @@
+{{!-- The weapon builder's pages (src/data/builders/weapon-spec.mjs WEAPON_BUILDER_STEPS). Nothing here has a `name`. --}}
+<nav class="sheet-tabs tabs creator-nav flexrow cog-wb-nav" data-group="primary">
+  {{#each steps as |step|}}
+    <a class="item tab-btn {{#if step.active}}active{{/if}}" data-action="setStep" data-step="{{step.id}}" data-tooltip="{{step.hint}}">
+      <i class="fa-solid {{step.icon}}"></i> {{step.label}}
+    </a>
+  {{/each}}
+</nav>

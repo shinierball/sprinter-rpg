@@ -40,14 +40,17 @@ export const ledgerRecordMixin = {
    * @param {string} [params.type='skill'] - 'skill', 'untrained_skill', 'spell', 'attack', 'stat', 'manual'
    * @param {string} [params.name='Action']
    * @param {string} [params.skillIdentifier] The skill's `system.identifier` (an untrained attempt is looked up by it)
+   * @param {string} [params.rollId] Links the entry to its chat card's check record
    * @param {boolean} [params.isUntrained=false]
    * @param {number|null} [params.targetDC=null]
    * @param {string|null} [params.explicitOutcome=null]
    * @param {string} [params.notes='']
    * @param {string|null} [params.sessionId=null]
+   * @param {boolean} [params.spendsAction=true] read by the engine wrapper (`session-relay.mjs`): false for a roll that costs
+   *   no Action, which then ends the roller's `next_check` debuffs but not their `next_action` ones
    * @returns {Promise<object|null>}
    */
-  async recordRoll({ actor, roll, type = 'skill', name = 'Action', skillIdentifier = '', isUntrained = false, targetDC = null, explicitOutcome = null, notes = '', sessionId = null } = {}) {
+  async recordRoll({ actor, roll, type = 'skill', name = 'Action', skillIdentifier = '', isUntrained = false, targetDC = null, explicitOutcome = null, notes = '', sessionId = null, rollId = '' } = {}) {
     if (!actor) return null;
 
     let sessions = this.getAllSessions();
@@ -103,6 +106,7 @@ export const ledgerRecordMixin = {
       type,
       name: cleanName,
       skillIdentifier: ledgerSkillId,
+      rollId: typeof rollId === 'string' ? rollId : '',
       isUntrained: Boolean(isUntrained || type === 'untrained_skill'),
       rollFormula: String(roll?.formula || total),
       d20Result: d20,

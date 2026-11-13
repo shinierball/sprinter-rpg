@@ -34,8 +34,8 @@ export class MercenaryDataModel extends BaseActorDataModel {
         ownerId: new fields.StringField({ initial: '' }),
         housedSpaceId: new fields.StringField({ initial: '' }),
         housingStatus: new fields.StringField({ initial: 'available' }), // 'available', 'field', 'barracks', 'dismissed'
-        special: new fields.HTMLField({ initial: '' }),
-        notes: new fields.HTMLField({ initial: '' }),
+        special: new fields.StringField({ initial: '' }),
+        notes: new fields.StringField({ initial: '' }),
         floor: new fields.StringField({ initial: '1st Floor' })
       }),
       gearSlots: BaseActorDataModel.defineGearSlotsField(),

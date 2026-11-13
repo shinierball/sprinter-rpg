@@ -1,0 +1,14 @@
+{{!-- Page 2: the Skills the weapon attacks with (the sheet's weapon-skills partial), each with the Base Damage it rolls. --}}
+<section class="cog-wb-page" data-page="skills" {{#unless (eq page "skills")}}hidden{{/unless}}>
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.WeaponBuilder.Skills.Intro"}}</p>
+  {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-skills.hbs"}}
+  <div class="cog-wb-skill-rows" data-skill-rows>
+    {{#each skillRows as |row|}}
+      <div class="cog-wb-skill-row {{#unless row.inWorld}}cog-param-warning{{/unless}}" data-skill="{{row.identifier}}">
+        <strong>{{row.name}}</strong>
+        <span class="cog-text-muted">{{row.note}}</span>
+      </div>
+    {{/each}}
+  </div>
+  {{#if hasMissingSkill}}<p class="cog-param-warning"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.WeaponBuilder.Skills.MakeFirst"}}</p>{{/if}}
+</section>

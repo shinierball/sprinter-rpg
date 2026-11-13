@@ -12,6 +12,7 @@ import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { resolveGrantName } from '../../data/race-class-grants.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 import { slugifyIdentifier, debuffIdentifier } from '../identifier.mjs';
+import { itemDisplayName } from '../tag/display-name.mjs';
 import { tempBarBaseSlots } from '../damage/temp-bars.mjs';
 
 /** @typedef {import('../feature-describer.mjs').FeatureLine} FeatureLine */
@@ -140,7 +141,8 @@ export function conditionName(kind, ref, ctx) {
   const type = kind === 'debuffs' ? 'debuff' : 'buff';
   const items = ctx?.actor && typeof ctx.actor === 'object' ? ctx.actor.items : null;
   const owned = items ? Array.from(items).find((i) => i?.type === type && i.system?.identifier === identifier) : null;
-  return owned?.name || findCatalogEntry(kind, identifier)?.name || (kind === 'debuffs' ? conditionRefName(raw) : humanizeId(raw));
+  const found = owned || findCatalogEntry(kind, identifier);
+  return (found?.name ? itemDisplayName(found) : '') || (kind === 'debuffs' ? conditionRefName(raw) : humanizeId(raw));
 }
 
 /** Name of a skill or spell reference: the resolved document's name, else the identifier made readable. */

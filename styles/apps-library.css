@@ -138,7 +138,6 @@
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 6px;

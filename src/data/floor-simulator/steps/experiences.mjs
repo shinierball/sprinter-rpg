@@ -132,6 +132,9 @@ function resolvePick(step, state, row, pick) {
       return { docKind: docKindOf(option.docKind), identifier, name: '' };
     }
     if (option.kind === 'custom') {
+      // A write-in names a catalog Skill or Spell by identifier; a homebrew name is the fallback
+      const identifier = cleanText(pick.identifier);
+      if (identifier) return { docKind: docKindOf(pick.docKind), identifier, name: '' };
       return { docKind: docKindOf(pick.docKind), identifier: '', name: cleanText(pick.name) || cleanText(option.label), custom: true };
     }
     state.warn(step.id, `Option kind ${option.kind} is not an experience pick; the pick was skipped.`);

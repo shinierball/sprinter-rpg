@@ -13,6 +13,7 @@ import { getUsedForm, usedFormsInOrder } from '../../data/rules/used-forms.mjs';
 import { resolveUsedFormId } from '../../documents/actor/used-items.mjs';
 import { isLootBoxType } from '../../models/items/loot-model.mjs';
 import { emitsLight } from '../../documents/actor/light-source.mjs';
+import { isInventoryItem } from '../../utils/document-types.mjs';
 
 /** A lang key's text, or `fallback` when Foundry's catalogue is not loaded or lacks it. */
 function text(key, fallback) {
@@ -145,7 +146,7 @@ export function buildTimingContext(context, item) {
   if (hasField(item, 'cooldown')) context.cooldownEditor = timingEditorView({ path: 'system.cooldown', spec: sys.cooldown, use: 'cooldown', item, tagOptions });
   if (hasField(item, 'durationConfig')) context.durationEditor = timingEditorView({ path: 'system.durationConfig', spec: sys.durationConfig, use: 'duration', item, tagOptions });
   buildRankBreakTimingViews(context, item);
-  if (item?.type === 'loot' || item?.type === 'gear') {
+  if (isInventoryItem(item)) {
     // How the item is used up (3.76): read from its usage tag, with a warning when it stores several.
     const kind = itemUsage(item);
     const conflict = hasConflictingUsageTags(item);

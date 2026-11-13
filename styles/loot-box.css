@@ -579,7 +579,6 @@
   width: auto;
   padding: 0 8px;
   gap: 6px;
-  white-space: nowrap;
   font-family: 'Oswald', sans-serif;
   text-transform: uppercase;
 }
@@ -587,7 +586,8 @@
 /* 7.17a: a player hid the crawler HUD (hotlist bar, actions, effects panel, both clocks) for this browser.
    The overlays keep rendering, so collapse state and drag position survive. 7.17b zero zone darkens players the same way. */
 body.cog-hud-hidden .cog-hideable-hud,
-body.cog-zero-zone-dark .cog-hideable-hud {
+body.cog-zero-zone-dark .cog-hideable-hud,
+body.cog-dying-dark .cog-hideable-hud {
   display: none !important;
 }
 
@@ -663,6 +663,10 @@ body.cog-zero-zone-dark .cog-hideable-hud {
 
 /* Gear that is not responding (offline): the row reads muted, like a suspended Buff. */
 .cog-gear-offline { opacity: 0.6; }
+/* The [OFFLINE] badge on gear. The row's 0.6 opacity dims the badge too, so it takes the strongest text colour (at least
+   4.5:1 after the dimming in both themes); on the red equipped-slot chip it takes the on-fill white (5.4:1). */
+.cog-badge-undone.cog-badge-offline { color: var(--cog-text-strong); }
+.cog-bg-accent-fill .cog-badge-undone.cog-badge-offline { color: var(--cog-on-fill); }
 
 /* 7.16f hiding AI-written content: a compendium entry the setting hides, the count line, and the creator's empty-list note */
 .cog-authorship-hidden {

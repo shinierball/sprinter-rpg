@@ -1,10 +1,10 @@
 {{!-- Structured Base Damage (dice, stat, damage type), shared by the skill and spell sheets. Options come from buildBaseDamageContext. --}}
 <div class="cog-field-group">
-  <span class="cog-field-label">Base Damage Dice</span>
+  <span class="cog-field-label">{{localize "COG.AbilitySheet.BaseDamage.Dice"}}</span>
   <input class="cog-field-input" type="text" name="system.baseDamage.dice" value="{{system.baseDamage.dice}}" placeholder="e.g. 1d8" />
 </div>
 <div class="cog-field-group">
-  <span class="cog-field-label">Base Damage Stat</span>
+  <span class="cog-field-label">{{localize "COG.AbilitySheet.BaseDamage.Stat"}}</span>
   <select name="system.baseDamage.stat" class="cog-field-input">
     {{#each baseDamageStatOptions}}
       <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
@@ -12,7 +12,7 @@
   </select>
 </div>
 <div class="cog-field-group">
-  <span class="cog-field-label">Base Damage Type</span>
+  <span class="cog-field-label">{{localize "COG.AbilitySheet.BaseDamage.Type"}}</span>
   <select name="system.baseDamage.damageType" class="cog-field-input">
     {{#each baseDamageTypeOptions}}
       <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>

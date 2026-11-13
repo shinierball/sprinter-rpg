@@ -89,6 +89,7 @@ export const ENGINE_PAGES = [
       <tr><td><code>vehicleModifiers</code></td><td>A vehicle's Move: feet added or a multiplier, from its upgrades and buffs and its driver's skill Ranks</td><td>self</td></tr>
       <tr><td><code>boxContents</code></td><td>The prizes in a loot box (not a modifier row): no condition or scale</td><td>self</td></tr>
       <tr><td><code>magicProperties</code></td><td>The properties of a generated magic item, read from a rolled table row (not a modifier row, not stored on items)</td><td>self</td></tr>
+      <tr><td><code>requirements</code></td><td>What a race or class needs before a crawler takes it (not a modifier row): rows joined with AND; an unmet row asks a Rule Break</td><td>self</td></tr>
       <tr><td><code>manaCostModifiers</code>, <code>recoveryModifiers</code></td><td>Spell MP cost, rest recovery</td><td>self</td></tr>
       <tr><td><code>popularityTriggers</code>, <code>aiFavorRatings</code>, <code>statSubstitutions</code></td><td>Popularity, AI Favor, using one stat for another</td><td>self, subject</td></tr>
     </tbody>
@@ -128,7 +129,7 @@ export const ENGINE_PAGES = [
   </ul>
 
   <div class="cog-journal-callout cog-journal-callout-info">
-    <strong>Situations.</strong> The engine sets <code>situation.in_combat</code>, <code>situation.disadvantaged</code>, <code>situation.critical_hit</code>, <code>situation.amazing_success</code>, <code>situation.damage_effect</code>, <code>situation.specialty</code> (the item you make, or your target, carries the rolling skill's chosen specialty) and <code>situation.same_size</code> itself; rolls in a race or chase also carry <code>contest.race</code> or <code>contest.chase</code>. Any other situation a row mentions (such as <code>situation.aiming</code>) appears as a toggle in the roll dialog. Press <strong>+ New situation</strong> in a condition editor to invent one for your table.
+    <strong>Situations.</strong> The engine sets <code>situation.in_combat</code>, <code>situation.disadvantaged</code>, <code>situation.critical_hit</code>, <code>situation.amazing_success</code>, <code>situation.damage_effect</code>, <code>situation.specialty</code> (the item you make, or your target, carries the rolling skill's chosen specialty) <code>situation.same_size</code> and (on a defence row) <code>situation.intercepting</code>, a hit the holder caught for an ally, itself; rolls in a race or chase also carry <code>contest.race</code> or <code>contest.chase</code>. Any other situation a row mentions (such as <code>situation.aiming</code>) appears as a toggle in the roll dialog. Press <strong>+ New situation</strong> in a condition editor to invent one for your table.
   </div>
 
   <h3>Once per Floor</h3>
@@ -176,6 +177,7 @@ scaled = number &times; (base + per &times; n), kept between min and max
       <tr><td><code>stat</code> / <code>statValue</code></td><td>Your modifier / score for a chosen stat</td><td></td></tr>
       <tr><td><code>count</code></td><td>Creatures or items matching a tag query</td><td>Party, allies, enemies, owned items, targets hit at once (per target)</td></tr>
       <tr><td><code>move</code></td><td>Your Move in feet (per 0.1 = &ldquo;per 10 ft&rdquo;)</td><td></td></tr>
+      <tr><td><code>worshipTier</code></td><td>Your Tier of Devotion (1-3); 0 for a god you do not worship</td><td>The god of this gift, or the highest god you worship</td></tr>
     </tbody>
   </table>
   <div class="cog-journal-callout cog-journal-callout-alert">
@@ -194,18 +196,141 @@ scaled = number &times; (base + per &times; n), kept between min and max
         get content() { return `
 <div class="cog-journal-page">
   <h2>What a Row Can Do (Kinds)</h2>
+  <p>
+    Each kind is one thing a row does in play; the sentence beside it says what the kind's hint in the row editor says. Kinds are grouped by the array the row sits in (page 8).
+  </p>
+
+  <h3>Damage (<code>damageModifiers</code>)</h3>
   <table class="cog-journal-table">
-    <thead><tr><th>Array</th><th>Kinds</th></tr></thead>
+    <thead><tr><th>Kind</th><th>In play</th></tr></thead>
     <tbody>
-      <tr><td>Damage</td><td><code>add</code> (flat, dice, stat or a Rank die), <code>multiply</code> (the whole damage; &times;0 is a real zero), <code>suppress_stat</code></td></tr>
-      <tr><td>Defense</td><td><code>resistance</code>, <code>immunity</code>, <code>vulnerability</code>, <code>tempHp</code>, <code>reduction</code> (% and/or flat), <code>dr</code>, <code>evade</code>, <code>suppress_dr</code>, <code>evadeOutcome</code> (what a successful Evade does against an area), <code>reflect</code></td></tr>
-      <tr><td>Attack / Check</td><td><code>bonus</code>, <code>advantage</code> (one reason; reasons net out), <code>assist</code> (the dice an assist skill rolls), <code>waive</code> (an engine roll penalty does not apply); Check also <code>reroll</code> and <code>degreeShift</code> (offered after the roll)</td></tr>
-      <tr><td>Vehicle</td><td><code>moveAdd</code> (feet added to a vehicle's Move), <code>moveMultiply</code> (Move multiplier)</td></tr>
-      <tr><td>Craft</td><td><code>maxBonus</code> (the highest bonus level crafted), <code>time</code> (hours multiplier), <code>batchTime</code> (batch minutes multiplier), <code>rebuild</code> (a Repair may rebuild a destroyed item), <code>tableTier</code> (table tier multiplier), <code>bonusValue</code> (extra bonus value on enchantments)</td></tr>
-      <tr><td>Box contents</td><td><code>item</code> (an item), <code>spell</code> (a Tome of the spell), <code>gold</code> (a number or dice formula), <code>table</code> (rolls a table), <code>magicItem</code> (a generated magic item), <code>choice</code> (the opener picks one thing that matches a tag query)</td></tr>
-      <tr><td>Magic item properties</td><td><code>stat</code> (a Stat bonus), <code>skill</code> (Skill Ranks), <code>passiveSkill</code> (a passive skill at the floor's number), <code>spell</code> (a spell, 2 hours of cooldown per Rank), <code>dr</code> (+1 DR), <code>resistance</code> (a listed damage type), <code>buff</code> and <code>restore</code> (recorded for the GM to finish)</td></tr>
+      <tr><td><code>add</code></td><td>Each matching hit deals more: dice, a flat amount, a stat, or a Rank die. A weapon's own <code>add</code> rows are its Bonus damage (page 3).</td></tr>
+      <tr><td><code>multiply</code></td><td>Each matching hit's damage is multiplied, for one damage type or all of it; &times;0 is a real zero.</td></tr>
+      <tr><td><code>suppress_stat</code></td><td>The matching hits add no stat bonus to their damage, for one damage type or all of it.</td></tr>
     </tbody>
   </table>
+
+  <h3>Defense (<code>defenseModifiers</code>)</h3>
+  <table class="cog-journal-table">
+    <thead><tr><th>Kind</th><th>In play</th></tr></thead>
+    <tbody>
+      <tr><td><code>resistance</code></td><td>Each matching hit is halved, for one damage type or all of it.</td></tr>
+      <tr><td><code>immunity</code></td><td>The holder takes no damage of the matching type, or of any type when none is named.</td></tr>
+      <tr><td><code>vulnerability</code></td><td>The holder takes double damage from each matching hit, for one damage type or all of it.</td></tr>
+      <tr><td><code>tempHp</code></td><td>The holder has extra Temp HP while the row's condition matches.</td></tr>
+      <tr><td><code>reduction</code></td><td>Each matching hit is cut by a percentage, a flat amount, or both.</td></tr>
+      <tr><td><code>dr</code></td><td>Damage Resist: each matching hit loses up to this much damage before it lands.</td></tr>
+      <tr><td><code>evade</code></td><td>The holder's Evade is higher while the row's condition matches.</td></tr>
+      <tr><td><code>suppress_dr</code></td><td>Damage Resist does not apply to the matching hits, for one damage type or all of it.</td></tr>
+      <tr><td><code>effectImmunity</code></td><td>A Debuff, or a contested Skill or Spell, that the row's condition matches does not land on the holder.</td></tr>
+      <tr><td><code>evadeOutcome</code></td><td>Sets what a successful Evade does against an area attack.</td></tr>
+      <tr><td><code>attackerAdvantage</code></td><td>Whoever attacks the holder has Advantage (or Disadvantage) while the row's condition matches: a held or prone target.</td></tr>
+      <tr><td><code>reflect</code></td><td>When one blow costs the holder at least this many Health Bar slots, the holder may make the attacker lose slots.</td></tr>
+      <tr><td><code>healthBarScale</code></td><td>Each Health Bar slot holds that many times its HP: damage reaching the bar is divided by it.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Attack and check (<code>attackModifiers</code>, <code>checkModifiers</code>)</h3>
+  <table class="cog-journal-table">
+    <thead><tr><th>Kind</th><th>In play</th></tr></thead>
+    <tbody>
+      <tr><td><code>bonus</code></td><td>Each matching roll gets a flat value, dice or the stat's modifier added.</td></tr>
+      <tr><td><code>advantage</code></td><td>Each matching roll gets one reason for Advantage or Disadvantage; reasons net out.</td></tr>
+      <tr><td><code>assist</code></td><td>Changes the dice an assist skill (Call a Play, Intervene) rolls. Ordinary checks are never touched.</td></tr>
+      <tr><td><code>reroll</code></td><td>After the check is rolled, its roller may roll it again and keep the new result. On an item, the item's cooldown gates each use.</td></tr>
+      <tr><td><code>degreeShift</code></td><td>After the check is rolled, its roller may move the result's degree by Value steps; a Fail never shifts past Near Miss into a success. On an item, the item's cooldown gates each use.</td></tr>
+      <tr><td><code>waive</code></td><td>The roll penalty the option names does not apply to the matching rolls.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Mana cost, recovery, popularity, AI Favor, stat substitution</h3>
+  <table class="cog-journal-table">
+    <thead><tr><th>Array: kind</th><th>In play</th></tr></thead>
+    <tbody>
+      <tr><td><code>manaCostModifiers</code>: <code>add</code></td><td>A matching spell costs more (or less) Mana. Adds apply first, then multiplies, and the cost rounds up.</td></tr>
+      <tr><td><code>manaCostModifiers</code>: <code>multiply</code></td><td>A matching spell's Mana cost is multiplied after the adds, and rounds up.</td></tr>
+      <tr><td><code>recoveryModifiers</code></td><td>A matching rest restores more or less Mana or HP: the row multiplies the resource it names.</td></tr>
+      <tr><td><code>popularityTriggers</code></td><td>The named event (a natural 20 or 1 on a roll, or a kill) awards or takes Popularity. A once-per limit asks for a Rule Break before the award.</td></tr>
+      <tr><td><code>aiFavorRatings</code></td><td>A matching weapon, weapon Skill or attack has this AI Favor rating. The highest matching rating applies; ratings do not stack.</td></tr>
+      <tr><td><code>statSubstitutions</code></td><td>A roll uses another stat in place of its own, for the scope the row names. The matching row with the best modifier applies.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Vehicle (<code>vehicleModifiers</code>)</h3>
+  <table class="cog-journal-table">
+    <thead><tr><th>Kind</th><th>In play</th></tr></thead>
+    <tbody>
+      <tr><td><code>moveAdd</code></td><td>The vehicle's Move gains this many feet. Rows add together, then the multipliers apply.</td></tr>
+      <tr><td><code>moveMultiply</code></td><td>The vehicle's Move is multiplied after the additions (1.5 adds half again). Matching rows multiply.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Craft (<code>craftModifiers</code>)</h3>
+  <table class="cog-journal-table">
+    <thead><tr><th>Kind</th><th>In play</th></tr></thead>
+    <tbody>
+      <tr><td><code>maxBonus</code></td><td>The highest bonus level this crafter can enchant at; above it the craft asks a Rule Break. The highest matching row wins; with none there is no limit.</td></tr>
+      <tr><td><code>time</code></td><td>The hours a craft takes are multiplied (0.5 halves them). Matching rows multiply.</td></tr>
+      <tr><td><code>batchTime</code></td><td>The minutes each extra unit adds to a batch are multiplied. Matching rows multiply.</td></tr>
+      <tr><td><code>rebuild</code></td><td>A Repair check may rebuild a destroyed item without a Rule Break.</td></tr>
+      <tr><td><code>tableTier</code></td><td>The crafting table's tier is multiplied for the matching checks; 0 means tables give no bonus.</td></tr>
+      <tr><td><code>bonusValue</code></td><td>An enchantment writes numbers this much higher, with no extra Difficulty or time.</td></tr>
+      <tr><td><code>materials</code></td><td>Every material line and the Misc. Junk a craft needs are multiplied, rounded up (0 asks for none). Matching rows multiply.</td></tr>
+      <tr><td><code>batchAny</code></td><td>A blueprint that is not a batch recipe can be made in a batch.</td></tr>
+      <tr><td><code>unlockRecipes</code></td><td>A blueprint locked behind a recipe tag can be crafted; an empty condition unlocks every recipe.</td></tr>
+      <tr><td><code>salvage</code></td><td>A failed step returns more materials, each tier moving the result one step better. A Critical Failure still breaks the item.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Box contents (<code>boxContents</code>)</h3>
+  <table class="cog-journal-table">
+    <thead><tr><th>Kind</th><th>In play</th></tr></thead>
+    <tbody>
+      <tr><td><code>item</code></td><td>Opening the box gives this item (gear, loot, a consumable or a skill potion).</td></tr>
+      <tr><td><code>spell</code></td><td>Opening the box gives a Tome of this spell, read later to learn it at the listed Rank.</td></tr>
+      <tr><td><code>gold</code></td><td>Opening the box adds gold: a whole number or a dice formula.</td></tr>
+      <tr><td><code>table</code></td><td>Opening the box rolls the table and gives what it rolls, once or several times.</td></tr>
+      <tr><td><code>magicItem</code></td><td>Opening the box generates a fresh magic item; a blank tier uses the box's own.</td></tr>
+      <tr><td><code>choice</code></td><td>The opener picks one thing matching the tags: an item, a Tome of a spell, or a potion for a skill.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Magic item properties (<code>magicProperties</code>)</h3>
+  <table class="cog-journal-table">
+    <thead><tr><th>Kind</th><th>In play</th></tr></thead>
+    <tbody>
+      <tr><td><code>stat</code></td><td>The item adds to one Stat, sized by the box tier.</td></tr>
+      <tr><td><code>skill</code></td><td>The item adds Ranks to a skill the crawler owns, sized by the box tier.</td></tr>
+      <tr><td><code>passiveSkill</code></td><td>The item grants a passive skill at the current floor's number.</td></tr>
+      <tr><td><code>spell</code></td><td>The item grants a spell at a Rank sized by the box tier, with 2 hours of cooldown per Rank.</td></tr>
+      <tr><td><code>dr</code></td><td>The item adds 1 Damage Reduction.</td></tr>
+      <tr><td><code>resistance</code></td><td>The item gives Resistance to one of the listed damage types; with no list, the GM picks.</td></tr>
+      <tr><td><code>buff</code></td><td>A benefit the GM decides, recorded on the item for the GM to finish.</td></tr>
+      <tr><td><code>restore</code></td><td>A restoring effect the GM decides, recorded on the item for the GM to finish.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Requirements (<code>requirements</code>)</h3>
+  <table class="cog-journal-table">
+    <thead><tr><th>Kind</th><th>In play</th></tr></thead>
+    <tbody>
+      <tr><td><code>stat</code></td><td>A Stat must be at least this high; only the unenhanced score counts.</td></tr>
+      <tr><td><code>skillRank</code></td><td>A Skill must be at this Rank or higher: a named Skill, one of a list, or any Skill matching tags.</td></tr>
+      <tr><td><code>popularity</code></td><td>The crawler's Popularity must be at least this.</td></tr>
+      <tr><td><code>floor</code></td><td>The crawler must be on at least this Floor.</td></tr>
+      <tr><td><code>race</code></td><td>The crawler must already have this Race, one of a list, or a Race matching tags.</td></tr>
+      <tr><td><code>class</code></td><td>The crawler must already have this Class, one of a list, or a Class matching tags.</td></tr>
+      <tr><td><code>achievement</code></td><td>The crawler must own this achievement, or one of a list.</td></tr>
+      <tr><td><code>tags</code></td><td>The crawler's tags, with this race or class applied, must match: needs all, needs one of, cannot have.</td></tr>
+      <tr><td><code>note</code></td><td>A condition the system cannot judge. It shows as GM decides and is never unmet.</td></tr>
+      <tr><td><code>worship</code></td><td>The crawler must worship a deity: a named one, one of a list, one matching tags, or any, at a minimum tier.</td></tr>
+      <tr><td><code>noWorship</code></td><td>The crawler must worship no deity.</td></tr>
+      <tr><td><code>patron</code></td><td>The crawler must have this patron, a patron item or a god: named, one of a list, matching tags, or any.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    An unmet requirement asks a Rule Break; it never blocks.
+  </p>
   <p>
     Unconditional resistance, immunity and DR rows, and every temp HP and Evade row, are folded into the sheet's derived numbers. Conditional defense rows are checked on each hit.
   </p>

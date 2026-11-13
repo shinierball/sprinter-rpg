@@ -1,0 +1,60 @@
+{{!--
+  Patron item sheet part. Every `name="system.*"` path appears once (Principle 5). The two skill pick lists and the
+  actor link have no `name`: they are action delegates (`data-action`), handled in src/sheets/item/actions-lists.mjs and
+  item-sheet.mjs. An Actor dropped on the sheet becomes the linked person (item-sheet.mjs `_onDropActor`).
+--}}
+<section class="cog-item-body cog-item-body-patron">
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Title"}}</span>
+    <input class="cog-field-input" type="text" name="system.title" value="{{system.title}}" />
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Availability"}}</span>
+    <input class="cog-field-input" type="text" name="system.availability" value="{{system.availability}}" />
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Patron.Sheet.AvailabilityHint"}}</p>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Specialty"}}</span>
+    <input class="cog-field-input" type="text" name="system.specialty" value="{{system.specialty}}" />
+  </div>
+  {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=patronPerformanceSkills}}
+  {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=patronSkills}}
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Venues"}}</span>
+    <input class="cog-field-input" type="text" name="system.venues" value="{{system.venues}}" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Messaging"}}</span>
+    <select class="cog-field-input" name="system.messaging">
+      {{#each patronMessagingOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+    </select>
+    <span class="cog-text-muted">{{patronMessagingHint}}</span>
+  </div>
+  <div class="cog-field-group cog-patron-actor">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Actor"}}</span>
+    {{#if patronActor.uuid}}
+      <span class="cog-patron-actor-line{{#if patronActor.broken}} cog-text-warning{{/if}}" data-tooltip="{{patronActor.uuid}}">
+        {{patronActor.label}}
+      </span>
+      <a data-action="clearPatronActor" aria-label="{{localize "COG.Patron.Sheet.ActorClear"}}"><i class="fa-solid fa-xmark"></i> {{localize "COG.Patron.Sheet.ActorClear"}}</a>
+    {{else}}
+      <span class="cog-pick-empty cog-text-muted">{{localize "COG.Patron.Sheet.ActorDrop"}}</span>
+    {{/if}}
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Quests"}}</span>
+    <textarea class="cog-field-input" name="system.quests" rows="3">{{system.quests}}</textarea>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Favours"}}</span>
+    <textarea class="cog-field-input" name="system.favours" rows="3">{{system.favours}}</textarea>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Rewards"}}</span>
+    <textarea class="cog-field-input" name="system.rewards" rows="3">{{system.rewards}}</textarea>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Patron.Sheet.Description"}}</span>
+    {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
+  </div>
+</section>

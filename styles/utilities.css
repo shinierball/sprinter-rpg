@@ -622,7 +622,6 @@
 }
 .cog-query-add-btn {
   flex: 0 0 auto;
-  white-space: nowrap;
   padding: 2px 6px;
   border: 1px solid var(--cog-ink);
   border-radius: 3px;

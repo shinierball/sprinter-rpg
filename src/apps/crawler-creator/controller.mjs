@@ -9,7 +9,9 @@
  * the same skill when an earlier edit adds or removes items, and the final build gets exactly the ids the draft names.
  *
  * Stops (the rail and Back/Next walk them in order): `induction`, `<floor>.<stepId>` for each step of each arrival,
- * `raceClass` after the first arrival, and `review`. A Floor 1 or 2 start has only `induction`.
+ * `raceClass` just before the first arrival's `stats` step (so the Race and Class badges are judged before the Stat points
+ * are spent, and the points a requirement needs are held back for it), and `review`. A Floor 1 or 2 start has only `induction`.
+ * The compile order is unchanged: Stats resolve before Race and Class are applied, as the book says.
  */
 import { offeredEntries } from '../../utils/content-source.mjs';
 import { buildPayload } from '../../data/builders/item-payload.mjs';
@@ -22,17 +24,20 @@ import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { prefetchKindDocuments } from '../../data/race-class-plan.mjs';
 import { parseFloorNumber } from '../../utils/floor/floor-number.mjs';
 import { contentIds } from '../../utils/stable-id.mjs';
-import { foundryRng, rngIndex } from '../../utils/rng.mjs';
+import { foundryRng } from '../../utils/rng.mjs';
 import { isFormRace } from '../../utils/character/transform-rules.mjs';
+import { planStatHolds } from '../../utils/character/requirement-holds.mjs';
+import { raceClassBase, statNeedRows, pickMeetable } from './race-class-requirements.mjs';
 import { ArrivalDraft, PREVIEW_RNG, foundryRoller, getDraftPath, setDraftPath } from './arrival-draft.mjs';
+import { RACE_CLASS_TYPES } from '../../utils/document-types.mjs';
 
 export const INDUCTION_STOP = 'induction';
 export const RACE_CLASS_STOP = 'raceClass';
 export const REVIEW_STOP = 'review';
-const KINDS = ['race', 'class'];
+const KINDS = RACE_CLASS_TYPES;
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const emptyRaceClass = () => ({ race: '', class: '', selections: { race: {}, class: {} } });
+const emptyRaceClass = () => ({ race: '', class: '', selections: { race: {}, class: {} }, holdLimits: {} });
 
 /** A per-draft seed: Foundry's `randomID` in the app, a counter-free fallback elsewhere. */
 function randomSeed() {
@@ -145,7 +150,8 @@ export class CrawlerCreatorController {
       this.tables = (await this.deps.loadTables(keys)) ?? {};
       this._tablesKey = tablesKey;
     }
-    const lookupKey = JSON.stringify(this.raceClass);
+    const { holdLimits, ...answers } = this.raceClass;
+    const lookupKey = JSON.stringify(answers);
     if (lookupKey !== this._lookupKey) {
       const lookups = [];
       for (const kind of KINDS) {
@@ -227,7 +233,7 @@ export class CrawlerCreatorController {
   draftFor(floor) {
     if (!this.drafts.has(floor)) {
       const deps = Object.fromEntries(['plan', 'simulate', 'rng', 'roller'].filter(k => this.deps[k]).map(k => [k, this.deps[k]]));
-      this.drafts.set(floor, new ArrivalDraft(deps));
+      this.drafts.set(floor, new ArrivalDraft({ ...deps, takeBackHold: (stat, limit) => this.takeBackHold(stat, limit) }));
     }
     return this.drafts.get(floor);
   }
@@ -245,7 +251,7 @@ export class CrawlerCreatorController {
       if (this.active !== INDUCTION_STOP) this.active = INDUCTION_STOP;
       return null;
     }
-    const key = JSON.stringify([this.spec, this.floorStartSpec(), this._tablesKey, this._lookupKey]);
+    const key = this._cacheKey();
     if (key === this._key && this._compiled) return this._compiled;
     let compiled = this.build();
     let started = false;
@@ -256,7 +262,9 @@ export class CrawlerCreatorController {
       if (!draft.draft) started = true;
       draft.rebase(getFloorArrival(floor), snap, this.contextFor(floor));
     }
-    if (started) {
+    // A hold is linear in its Stat, so the pass after the first one moves nothing; the bound is a guard
+    for (let pass = 0; started || (pass < 3 && this._syncHolds(compiled)); pass++) {
+      started = false;
       compiled = this.build();
       for (const floor of this.run) {
         const snap = compiled.snapshots[floor];
@@ -265,8 +273,53 @@ export class CrawlerCreatorController {
     }
     if (!this.stops().includes(this.active)) this.active = INDUCTION_STOP;
     this._compiled = compiled;
-    this._key = JSON.stringify([this.spec, this.floorStartSpec(), this._tablesKey, this._lookupKey]);
+    this._key = this._cacheKey();
     return compiled;
+  }
+
+  _cacheKey() {
+    return JSON.stringify([this.spec, this.floorStartSpec(), this._tablesKey, this._lookupKey, this.raceClass.holdLimits]);
+  }
+
+  /** The first arrival's stats step and its draft, or null (no arrival, or no Stat points to hold from). */
+  _statsStep() {
+    const draft = this.drafts.get(this.run[0]);
+    const step = draft?.draft ? draft.plan?.steps.find(s => s.kind === 'stats' && !s.skipped) : null;
+    return step ? { draft, step } : null;
+  }
+
+  /** The Stat points the pool has left: its size less the player's own and the held ones (0 without a stats step). */
+  _statSpare() {
+    const at = this._statsStep();
+    if (!at) return 0;
+    const own = Object.values(at.draft.draft.steps[at.step.id]?.allocation ?? {}).reduce((sum, n) => sum + (Number(n) || 0), 0);
+    return Math.max(0, (Number(at.step.pool) || 0) - own - at.draft.heldTotal(at.step.id));
+  }
+
+  /**
+   * Hold the Stat points the picked Race and Class need on the first arrival's stats step (`planStatHolds`); true when
+   * the holds changed and the run must be compiled again.
+   */
+  _syncHolds(compiled) {
+    const at = this._statsStep();
+    if (!at) return false;
+    const { draft, step } = at;
+    const plans = compiled?.raceClass ?? null;
+    const needs = statNeedRows(plans, draft.heldFor(step.id));
+    const own = Object.values(draft.draft.steps[step.id]?.allocation ?? {}).reduce((sum, n) => sum + (Number(n) || 0), 0);
+    const { holds } = planStatHolds(needs, { pool: step.pool, allocated: own, limits: this.raceClass.holdLimits });
+    return draft.setStatHolds(step.id, holds, { race: plans?.race?.def?.name ?? '', class: plans?.class?.def?.name ?? '' });
+  }
+
+  /** The Stat points held for the picked Race and Class, by Stat (`{ points, for, names }`); empty without a stats step. */
+  heldStats() {
+    const at = this._statsStep();
+    return at ? at.draft.heldFor(at.step.id) : {};
+  }
+
+  /** The player took a held point back: that Stat holds at most `limit` points until a new Race or Class is picked. */
+  takeBackHold(stat, limit) {
+    this.raceClass.holdLimits = { ...this.raceClass.holdLimits, [stat]: Math.max(0, limit) };
   }
 
   /** The last build (refreshing first when something changed). */
@@ -287,8 +340,14 @@ export class CrawlerCreatorController {
     if (!this.staged) return [INDUCTION_STOP];
     const out = [INDUCTION_STOP];
     this.run.forEach((floor, index) => {
-      for (const step of this.stepsFor(floor)) out.push(`${floor}.${step.id}`);
-      if (index === 0) out.push(RACE_CLASS_STOP);
+      const steps = this.stepsFor(floor);
+      // Race and Class come before the first arrival's Stats (after its last step when it has none)
+      const at = index === 0 ? steps.findIndex(s => s.kind === 'stats') : -1;
+      steps.forEach((step, i) => {
+        if (i === at) out.push(RACE_CLASS_STOP);
+        out.push(`${floor}.${step.id}`);
+      });
+      if (index === 0 && at < 0) out.push(RACE_CLASS_STOP);
     });
     out.push(REVIEW_STOP);
     return out;
@@ -320,7 +379,46 @@ export class CrawlerCreatorController {
   get canNext() {
     const stops = this.stops();
     const at = stops.indexOf(this.active);
-    return at >= 0 && at < stops.length - 1;
+    return at >= 0 && at < stops.length - 1 && !this.blockingChoices(this.active).length;
+  }
+
+  /**
+   * The picks that stop Next (on the stop `stop`) or Finish (no stop: the whole run): an unfinished form is not a rule
+   * being exceeded, so no Rule Break is offered for it.
+   * @param {string} [stop]
+   */
+  blockingChoices(stop) {
+    const m = stop ? /^(\d+)\.(.+)$/.exec(stop) : null;
+    if (stop && !m) return [];
+    const floors = m ? [Number(m[1])] : this.run;
+    return floors.flatMap(floor => (this.drafts.get(floor)?.openChoices() ?? [])
+      .filter(c => c.blocking && (!m || c.step === m[2])).map(c => ({ ...c, floor })));
+  }
+
+  /** The line naming an open choice (the footer shows it, and create refuses with it). */
+  static blockedText(choice) {
+    return globalThis.game?.i18n?.format?.('COG.CrawlerCreator.Footer.Blocked', { floor: choice.floor, slot: choice.path.split('.').at(-1) }) ?? '';
+  }
+
+  /**
+   * What create does before it builds: a choice still open stops it (an unfinished form is not a rule being exceeded, so
+   * no Rule Break is offered; the open choice is named instead), else the open dice are rolled.
+   * @returns {Promise<boolean>} false when create must not go on
+   */
+  async finishRolls() {
+    await this.prepare();
+    const open = this.blockingChoices();
+    if (open.length) {
+      globalThis.ui?.notifications?.warn(CrawlerCreatorController.blockedText(open[0]));
+      return false;
+    }
+    await this.rollRemaining();
+    return true;
+  }
+
+  /** Picks still open across the run (dice excluded). */
+  openChoiceCount() {
+    return this.run.reduce((n, floor) => n + (this.drafts.get(floor)?.openChoices().length ?? 0), 0);
   }
 
   next() {
@@ -348,6 +446,7 @@ export class CrawlerCreatorController {
       if (text === this.raceClass[rel]) return;
       this.raceClass[rel] = text;
       this.raceClass.selections[rel] = {};
+      this.raceClass.holdLimits = {};
       return;
     }
     if (!rel.startsWith('selections.')) return;
@@ -420,14 +519,53 @@ export class CrawlerCreatorController {
     return out;
   }
 
-  /** A random race (crawler heritages only, never a companion pet race) and a random class from the catalog. */
-  randomRaceClass() {
+  /**
+   * A random race (crawler heritages only, never a companion pet race) and a random class from the catalog. An option whose
+   * requirements are met, or whose unmet Stat rows the pool can still cover, is preferred; when none is, any option may
+   * come up and the Rule Break is left for Finish. The Class is judged on the crawler with the Race taken.
+   * @param {{ race?: string, class?: string }} [known] answers to keep (not picked again)
+   */
+  randomRaceClass(known = {}) {
     const rng = this.deps.rng;
+    const spare = this._statSpare();
+    const base = raceClassBase(this._compiled);
     const races = offeredEntries('races').filter(r => !COGRaceClassApplier.isPetRace(r) && !isFormRace(r));
-    const classes = offeredEntries('classes');
-    const race = races[rngIndex(rng, races.length)];
-    const klass = classes[rngIndex(rng, classes.length)];
-    return { race: race ? COGRaceClassApplier.definitionRef(race) : '', class: klass ? COGRaceClassApplier.definitionRef(klass) : '' };
+    const race = known.race ? null : pickMeetable(races, 'race', base, spare, rng);
+    const raceRef = known.race || (race ? COGRaceClassApplier.definitionRef(race) : '');
+    const afterRace = raceClassBase(this._compiled, raceRef);
+    const klass = known.class ? null : pickMeetable(offeredEntries('classes'), 'class', afterRace, spare, rng);
+    return { race: raceRef, class: known.class || (klass ? COGRaceClassApplier.definitionRef(klass) : '') };
+  }
+
+  /**
+   * Roll Everything Remaining: answer everything not yet completed, in every step to the end, and roll every open die.
+   * What the player already chose stays. An empty Race or Class is filled at random first (the arrivals build on them).
+   */
+  async fillRemaining() {
+    if (!this.staged) return 0;
+    await this.prepare();
+    const random = this.randomRaceClass(this.raceClass);
+    for (const kind of KINDS) if (!this.raceClass[kind] && random[kind]) this.setRaceClass(kind, random[kind]);
+    await this.prepare();
+    return this._autoFillRun();
+  }
+
+  /**
+   * Every arrival answers its own choices and rolls its dice, in run order. Random Stat points on a Stat a requirement holds
+   * points for lower that hold (the Stat is already higher), which frees points; another round spends them.
+   */
+  async _autoFillRun() {
+    let rolled = 0;
+    for (let round = 0; round < 4; round++) {
+      for (const floor of this.run) {
+        this.refresh();
+        const draft = this.drafts.get(floor);
+        if (draft?.draft) rolled += await draft.autoFill();
+      }
+      await this.prepare();
+      if (!this.run.some(floor => this.drafts.get(floor)?.openChoices().some(c => c.kind === 'stats'))) break;
+    }
+    return rolled;
   }
 
   /**
@@ -437,15 +575,15 @@ export class CrawlerCreatorController {
   async randomize() {
     this.drafts = new Map();
     this.confirmedRuleBreaks = [];
-    this.raceClass = { ...emptyRaceClass(), ...this.randomRaceClass() };
+    this.raceClass = emptyRaceClass();
     if (!this.staged) return this.refresh();
+    // Compile the blank draft first: the picks are judged on the crawler as the Stat points find it
     await this.prepare();
-    for (const floor of this.run) {
-      this.refresh();
-      const draft = this.drafts.get(floor);
-      if (draft?.draft) await draft.autoFill();
-    }
-    return this.prepare();
+    const random = this.randomRaceClass();
+    for (const kind of KINDS) if (random[kind]) this.setRaceClass(kind, random[kind]);
+    await this.prepare();
+    await this._autoFillRun();
+    return this.compiled();
   }
 
   // ---------------------------------------------------------------- Rule Breaks

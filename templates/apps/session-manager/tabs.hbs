@@ -2,11 +2,11 @@
   <button data-action="setTab" type="button" class="cog-tab-nav-btn {{#if (eq activeTab 'party')}}active{{/if}}" data-tab="party">
     <i class="fa-solid fa-id-card-clip"></i> Party Overview
   </button>
-  <button data-action="setTab" type="button" class="cog-tab-nav-btn {{#if (eq activeTab 'ledger')}}active{{/if}}" data-tab="ledger">
-    <i class="fa-solid fa-dice-d20"></i> Activity & Roll Ledger ({{ledger.length}})
+  <button data-action="setTab" type="button" class="cog-tab-nav-btn {{#if (eq activeTab 'ledger')}}active{{/if}}" data-tab="ledger" title="Activity &amp; Roll Ledger ({{ledger.length}})">
+    <i class="fa-solid fa-dice-d20"></i> Roll Ledger ({{ledger.length}})
   </button>
-  <button data-action="setTab" type="button" class="cog-tab-nav-btn {{#if (eq activeTab 'wrapup')}}active{{/if}}" data-tab="wrapup">
-    <i class="fa-solid fa-graduation-cap"></i> End-of-Session Progression
+  <button data-action="setTab" type="button" class="cog-tab-nav-btn {{#if (eq activeTab 'wrapup')}}active{{/if}}" data-tab="wrapup" title="End-of-Session Progression">
+    <i class="fa-solid fa-graduation-cap"></i> Progression
   </button>
   <button data-action="setTab" type="button" class="cog-tab-nav-btn {{#if (eq activeTab 'archive')}}active{{/if}}" data-tab="archive">
     <i class="fa-solid fa-box-archive"></i> Session History ({{sessions.length}})

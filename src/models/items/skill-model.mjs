@@ -22,7 +22,12 @@ export class SkillDataModel extends BaseItemDataModel {
       checkNote: new fields.StringField({ initial: '' }),
       // The crawler's chosen specialty: one tag id (an item's identity tag or an item type). Read by roll-context as `situation.specialty`.
       specialty: new fields.StringField({ initial: '' }),
-      canGainRanks: new fields.BooleanField({ initial: true }),
+      // Per-route Rank limits (an advancement route id from CONFIG.COG.advancementRoutes, no `choices` so a module can add one):
+      // `maxRank` is the highest Rank that route brings the skill to (0 = never); a missing route has no limit. Read through routeLimit().
+      rankLimits: new fields.ArrayField(new fields.SchemaField({
+        route: new fields.StringField({ blank: false, initial: 'use' }),
+        maxRank: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null })
+      }), { initial: [] }),
       rankSource: new fields.StringField({ initial: 'own', choices: ['own', 'floor'] }),
       isAttack: new fields.BooleanField({ initial: false }),
       hasDamage: new fields.BooleanField({ initial: false }),
@@ -32,7 +37,7 @@ export class SkillDataModel extends BaseItemDataModel {
       rangeFeet: new fields.NumberField({ min: 0, initial: 0 }),
       // Structured Base Damage: dice 'NdM' only, the damage stat ('none' = no stat), and the damage type.
       baseDamage: baseDamageField(fields),
-      notes: new fields.HTMLField({ initial: '' }),
+      notes: new fields.StringField({ initial: '' }),
       description: new fields.HTMLField({ initial: '' }),
       upgrades: new fields.StringField({ initial: '' }),
       damageModifiers: damageModifiersField(fields),

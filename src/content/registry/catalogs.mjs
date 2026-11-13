@@ -13,6 +13,21 @@ import { mergeAcrossThemes, readSettingData } from './themes.mjs';
 /** Catalog kinds a provider can register through `registerCatalog(kind, entries)`. */
 export const CATALOG_KINDS = Object.freeze(['skills', 'spells', 'items', 'races', 'classes', 'mobs', 'pets', 'mercenaries', 'buffs', 'debuffs', 'achievements', 'pointBuild', 'creationLoadouts', 'grindComplications']);
 
+/** Item types that have a catalog of their own; every other item type goes to `items`. */
+export const ITEM_TYPE_CATALOGS = Object.freeze({
+  skill: 'skills', spell: 'spells', buff: 'buffs', debuff: 'debuffs', race: 'races', class: 'classes', achievement: 'achievements'
+});
+
+/**
+ * The catalog kind that holds Item documents of a type (a gear, loot, deity, patron, sponsor, attack or space upgrade
+ * document sits in `items`). The one statement of this rule.
+ * @param {string} type an Item type
+ * @returns {string}
+ */
+export function catalogKindOfItemType(type) {
+  return Object.hasOwn(ITEM_TYPE_CATALOGS, type) ? ITEM_TYPE_CATALOGS[type] : 'items';
+}
+
 /** Catalog kinds that are setting data, not documents: read from one theme (the primary's, else the next that has any). */
 export const SETTING_DATA_KINDS = Object.freeze(new Set(['pointBuild', 'creationLoadouts', 'grindComplications']));
 

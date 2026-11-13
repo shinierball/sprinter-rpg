@@ -11,9 +11,9 @@
  */
 import { COGSkillManager } from '../../apps/skill-manager.mjs';
 import { ROW_ARRAYS } from '../../utils/row-kinds.mjs';
-import { hasSystemField, rowIndex, toArray } from './util.mjs';
+import { hasSystemField, rowIndex, swapWithNeighbour, toArray } from './util.mjs';
 import { addGearGrant } from './gear-grants.mjs';
-import { blankGrantRow } from './grant-row-fields.mjs';
+import { startGrantRow } from './grant-row-fields.mjs';
 
 /**
  * @typedef {object} RowKind
@@ -25,10 +25,6 @@ import { blankGrantRow } from './grant-row-fields.mjs';
 
 /** @type {Record<string, RowKind>} */
 export const ROW_TABLES = {
-  damagePart: {
-    field: 'damageParts',
-    blank: () => ({ dice: '1d6', stat: 'str', type: 'Slashing', value: 0 })
-  },
   /** Skill and spell self-scaling damage parts (extra typed dice or flat damage from a minimum rank). */
   rankDamagePart: {
     field: 'rankDamageParts',
@@ -46,7 +42,7 @@ export const ROW_TABLES = {
   /** A race or class `grants` row of any kind (the grant row editor's Add chips; `data-kind-key` is a `GRANT_ROW_FIELDS` key). */
   identityGrant: {
     field: 'grants',
-    blank: (item, target) => blankGrantRow(target?.dataset?.kindKey)
+    blank: (item, target) => startGrantRow(target?.dataset?.kindKey, { draft: item?.holdsDraft === true })
   },
   /** A race or class `startingItems` entry (a fixed gear entry with no identifier yet: it shows the incomplete chip). */
   startingItem: {
@@ -65,8 +61,13 @@ function tableOf(target, item) {
   if (Object.hasOwn(ROW_ARRAYS, key) && hasSystemField(item, key)) {
     const { kindField, default: kind } = ROW_ARRAYS[key];
     // `clean` fills every other field with its schema initial: a partial row written by `update` would stay partial.
+    // An Add chip's `data-kind-key` names the kind of the new row (the requirement rows' chips); else the array's default.
     const element = item.system.constructor.schema.fields[key].element;
-    return { field: key, modifier: true, blank: () => element.clean(kindField ? { [kindField]: kind } : {}) };
+    return {
+      field: key,
+      modifier: true,
+      blank: (host, control) => element.clean(kindField ? { [kindField]: control?.dataset?.kindKey || kind } : {})
+    };
   }
   throw new Error(`Item sheet: unknown row table "${key}"`);
 }
@@ -80,13 +81,28 @@ export const ROW_ACTIONS = {
     await this.render();
   },
 
+  /**
+   * The Requirements accordion's summary: the viewer's open state lives on the sheet (never on the document) and the
+   * element is toggled in place, so an update's re-render keeps it as left.
+   */
+  toggleRequirements(event, target) {
+    event.preventDefault?.();
+    this._requirementsOpen = !this._requirementsOpen;
+    target.closest('details')?.toggleAttribute?.('open', this._requirementsOpen);
+  },
+
   async addRow(event, target) {
     if (!this.isEditable) return;
     const table = tableOf(target, this.item);
     if (!table.blank) return;
     const rows = readRows(this.item, table);
     rows.push(table.blank(this.item, target));
-    await this.item.update({ [`system.${table.field}`]: rows });
+    try {
+      await this.item.update({ [`system.${table.field}`]: rows });
+    } catch (error) {
+      // The schema refused the new row (a grant with no target): tell the author why instead of doing nothing.
+      ui.notifications?.warn(game.i18n.format('COG.Rows.Grant.AddRejected', { reason: error?.message ?? String(error) }));
+    }
   },
 
   async deleteRow(event, target) {
@@ -105,11 +121,8 @@ export const ROW_ACTIONS = {
     const table = tableOf(target, this.item);
     if (!table.modifier) return;
     const rows = readRows(this.item, table);
-    const idx = rowIndex(target);
-    const to = idx + (target.dataset.direction === 'up' ? -1 : target.dataset.direction === 'down' ? 1 : 0);
-    if (idx < 0 || idx >= rows.length || to < 0 || to >= rows.length || to === idx) return;
-    [rows[idx], rows[to]] = [rows[to], rows[idx]];
-    await this.item.update({ [`system.${table.field}`]: rows });
+    const swapped = swapWithNeighbour(rows, rowIndex(target), target.dataset.direction);
+    if (swapped) await this.item.update({ [`system.${table.field}`]: swapped });
   },
 
   /** Insert a deep copy of a modifier row right after it. */

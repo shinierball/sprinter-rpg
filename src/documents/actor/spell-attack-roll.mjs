@@ -4,10 +4,11 @@ import {
   applySpellConditions, spellSkipsCaster, spellConditionActionsHtml, spellConditionSummary, relayPendingSpellConditions
 } from './spell-card-parts.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
+import { confirmFellowWorshipperAttack } from './worship-obligations.mjs';
 import { isAreaAttack } from '../../utils/area/area-attack.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { buildCheckRecord, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
+import { newRollId } from '../../utils/roll/check-difficulty.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { isAmazingOutcome } from '../../utils/roll/amazing-success.mjs';
 import { gateAttackRange, allOutOfRange } from '../../utils/attack/attack-range.mjs';
@@ -22,6 +23,7 @@ import {
 } from '../../utils/attack/attack-options.mjs';
 import { attackOptionsLineHtml } from '../../utils/attack/attack-options-line.mjs';
 import { gateItemCooldown } from './cooldown-gate.mjs';
+import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from './action-block.mjs';
 import { collectAttackToHit, rollTargetToHitDice } from '../../utils/attack/per-target-to-hit.mjs';
 import { isAreaTagSet } from '../../utils/tag/tag-mechanics.mjs';
 import { hasOnHitDebuff } from '../../utils/attack/on-hit.mjs';
@@ -34,6 +36,7 @@ import { attackTargetEntries, getAttackDifficultyState, resolveAttackTargets, ev
 import { getContestData, renderContestChallengeBlock } from './contest-blocks.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
 import { getSpellDamageData } from './actor-spells.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 /**
  * Roll Spell Attack / To-Hit. The attack answers a cast of the spell (3.47): `castLinkFor` finds it, and an attack
@@ -51,6 +54,10 @@ import { getSpellDamageData } from './actor-spells.mjs';
 export async function rollSpellAttack(actor, spellItem, options = {}) {
   const sys = spellItem.system || {};
   const castLink = castLinkFor(actor, spellItem, options);
+  // A bearer who cannot take Actions asks first, before any pop-up or roll.
+  const actionBlockGate = actionBlockApplies(actor, 'cast', options) ? await gateActionBlock(actor, 'cast', { options }) : ACTION_BLOCK_CLEAR;
+  if (!actionBlockGate.proceed) return null;
+  if (!(await confirmFellowWorshipperAttack(actor, attackTargetEntries(actor, options).map((e) => e.actor), options)).proceed) return null;
 
   if (actor.type === 'mob') {
     // Mobs never roll (3.22-11): the same declared choices, cooldown gates and Rule Break prompt as a mob weapon attack.
@@ -80,7 +87,7 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     await commitPick(actor, spellItem, mobResolved);
     for (const gate of effectGates) await gate.commit();
     const mobCooldownFlags = { ...Object.assign({}, ...effectGates.map(g => g.flags)), ...mobRange.flags };
-    const mobRuleBreak = Boolean(mobCheck.ruleBreak || mobCooldownFlags.ruleBreak || mobFloorRuleBreak.flags.ruleBreak);
+    const mobRuleBreak = Boolean(mobCheck.ruleBreak || actionBlockGate.ruleBreak ||mobCooldownFlags.ruleBreak || mobFloorRuleBreak.flags.ruleBreak);
     const mobChoicesFlag = choicesFlag(mobChoices, mobModel, { ruleBreak: mobRuleBreak, reasons: mobReasons });
     const mobOptionsLineHtml = await attackOptionsLineHtml(mobChoicesFlag);
 
@@ -99,6 +106,8 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
       isArea,
       targetDC: evadeDC,
       isAutoHit: true,
+      mobDifficulty: diff,
+      attackContext: mobSituationContext,
       outOfRange: mobRange.outOfRange
     });
     const evadeBtnHtml = evadeButtonHtml(actor, roll, currentFloor, { isArea, targetDC: evadeDC, item: spellItem, freeEvade: diff.mode === 'disadvantage' });
@@ -120,7 +129,7 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
       `;
     }
 
-    const autoHitBannerHtml = mobDeclarationBannerHtml({ variant: 'spell', evadeDC, floor: currentFloor, isArea, base: diff.base, shift: diff.shift, label: diff.label });
+    const autoHitBannerHtml = mobDeclarationBannerHtml({ variant: 'spell', evadeDC, floor: currentFloor, isArea, base: diff.base, shift: diff.shift, flat: diff.flat, label: diff.label });
     const controlsHtml = mobDeclarationControlsHtml({ isArea, targetCount: targetResults.length, inCombat: Boolean(activeCombatFor(actor)) });
 
     const contestData = getContestData(actor, spellItem, options);
@@ -136,36 +145,34 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
       isUntrained: false
     }).catch(() => {});
 
-    const message = await roll.toMessage({
+    const message = await roll.toMessage(withFlags({
       speaker: ChatMessage.getSpeaker({ actor }),
       flavor: flavorText,
-      content,
-      flags: {
-        [SYSTEM_ID]: {
-          isAttackRoll: true,
-          isSpellAttack: true,
-          isAutoHit: true,
-          ...mobCooldownFlags,
-          ...mobFloorRuleBreak.flags,
-          ...(mobRuleBreak ? { ruleBreak: true } : {}),
-          attackChoices: mobChoicesFlag,
-          ...(castLink.castMessageId ? { castMessageId: castLink.castMessageId } : {}),
-          attackerId: actor.id,
-          attackerType: actor.type,
-          attackTotal: evadeDC,
-          targetDC: evadeDC,
-          effectiveEvadeDC: evadeDC,
-          mobAdvantage: mobAdvantageFlag(diff),
-          isArea,
-          currentFloor,
-          contest: contestData || null,
-          aiFavorBonus: getAiFavorRating(actor, spellItem).value,
-          attackItemId: spellItem.id ?? null,
-          attackItemUuid: spellItem.uuid ?? null,
-          ...mobDeclarationFlags(actor, spellItem, targetResults)
-        }
-      }
-    });
+      content
+    }, {
+      isAttackRoll: true,
+      isSpellAttack: true,
+      isAutoHit: true,
+      ...mobCooldownFlags,
+      ...mobFloorRuleBreak.flags,
+      ...actionBlockGate.flags,
+      ...(mobRuleBreak ? { ruleBreak: true } : {}),
+      attackChoices: mobChoicesFlag,
+      ...(castLink.castMessageId ? { castMessageId: castLink.castMessageId } : {}),
+      attackerId: actor.id,
+      attackerType: actor.type,
+      attackTotal: evadeDC,
+      targetDC: evadeDC,
+      effectiveEvadeDC: evadeDC,
+      mobAdvantage: mobAdvantageFlag(diff),
+      isArea,
+      currentFloor,
+      contest: contestData || null,
+      aiFavorBonus: getAiFavorRating(actor, spellItem).value,
+      attackItemId: spellItem.id ?? null,
+      attackItemUuid: spellItem.uuid ?? null,
+      ...mobDeclarationFlags(actor, spellItem, targetResults)
+    }));
     // Step 1 of the combat round: in combat the card is a declaration the crawlers answer in Step 2 (3.18).
     await declareMobAttack(actor, message);
     return message;
@@ -256,12 +263,14 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (Spell Attack / To Hit: 1d20 + Rank ${rank} + ${statKey.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${toHitBreakStr} vs Target Evade)`;
   }
 
+  const rollId = newRollId();
   COGSessionEngine.recordRoll({
     actor,
     roll,
     type: 'spell',
     name: `${spellItem.name} (Attack)`,
-    isUntrained: false
+    isUntrained: false,
+    rollId
   }).catch(() => {});
   actor.awardPopularityForRoll(roll, { context: rollContext, options }).catch(() => {});
 
@@ -341,54 +350,55 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     unassisted: { total: roll.total, d20: extractD20Result(roll), firstTarget: targetResults[0] ? { dc: targetResults[0].targetDC, bonus: targetResults[0].toHitBonus ?? 0 } : null },
     hasDamage: Boolean(dmgData?.hasDamage)
   });
-  const message = await roll.toMessage({
+  const message = await roll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor: `${flavorText}${camera.noteHtml}`,
-    content,
-    flags: {
-      [SYSTEM_ID]: {
-        isAttackRoll: true,
-        isSpellAttack: true,
-        ...camera.flags,
-        ...(isArea ? { isArea: true } : {}),
-        ...floorRuleBreak.flags,
-        ...effectCooldownFlags,
-        ...rangeGate.flags,
-        ...(choiceRuleBreak.ruleBreak || effectCooldownFlags.ruleBreak || rangeGate.ruleBreak ? { ruleBreak: true } : {}),
-        attackChoices: attackChoicesFlag,
-        ...(castLink.castMessageId ? { castMessageId: castLink.castMessageId } : {}),
-        ...(conditionsApplied ? { conditionsApplied, conditionTargetUuids } : {}),
-        attackerId: actor.id,
-        attackerType: actor.type,
-        attackTotal: roll.total,
-        [CHECK_RECORD_FLAG]: buildCheckRecord({
-          kind: 'spell',
-          roller: actor,
-          rollerTokenId: rollerTokenIdOf(actor),
-          roll,
-          combat: combatRefFor(actor),
-          tags: [...rollContext.tags],
-          targets: targetResults.map(tr => ({ actorId: tr.actorId, actorUuid: tr.actor?.uuid, name: tr.actorName, dc: tr.targetDC, bonus: tr.toHitBonus ?? 0 })),
-          hasDamage: Boolean(dmgData?.hasDamage),
-          assists
-        }),
-        currentFloor,
-        contest: contestData || null,
-        aiFavorBonus: getAiFavorRating(actor, spellItem).value,
-        attackItemId: spellItem.id ?? null,
-        attackItemUuid: spellItem.uuid ?? null,
-        targetResults: targetResults.map(tr => ({
-          actorId: tr.actorId,
-          actorName: tr.actorName,
-          targetDC: tr.targetDC,
-          isHit: tr.isHit,
-          diff: tr.diff,
-          toHitBonus: tr.toHitBonus ?? 0,
-          outcome: tr.outcome
-        }))
-      }
-    }
-  });
+    content
+  }, {
+    isAttackRoll: true,
+    isSpellAttack: true,
+    ...camera.flags,
+    ...(isArea ? { isArea: true } : {}),
+    ...floorRuleBreak.flags,
+    ...actionBlockGate.flags,
+    ...effectCooldownFlags,
+    ...rangeGate.flags,
+    ...(choiceRuleBreak.ruleBreak || actionBlockGate.ruleBreak ||effectCooldownFlags.ruleBreak || rangeGate.ruleBreak ? { ruleBreak: true } : {}),
+    attackChoices: attackChoicesFlag,
+    ...(castLink.castMessageId ? { castMessageId: castLink.castMessageId } : {}),
+    ...(conditionsApplied ? { conditionsApplied, conditionTargetUuids } : {}),
+    attackerId: actor.id,
+    attackerType: actor.type,
+    attackTotal: roll.total,
+    [CHECK_RECORD_FLAG]: buildCheckRecord({
+      kind: 'spell',
+      roller: actor,
+      rollerTokenId: rollerTokenIdOf(actor),
+      roll,
+      combat: combatRefFor(actor),
+      tags: [...rollContext.tags],
+      targets: targetResults.map(tr => ({ actorId: tr.actorId, actorUuid: tr.actor?.uuid, name: tr.actorName, dc: tr.targetDC, bonus: tr.toHitBonus ?? 0 })),
+      hasDamage: Boolean(dmgData?.hasDamage),
+      assists,
+      rollId,
+      stat: statKey,
+      floor: currentFloor
+    }),
+    currentFloor,
+    contest: contestData || null,
+    aiFavorBonus: getAiFavorRating(actor, spellItem).value,
+    attackItemId: spellItem.id ?? null,
+    attackItemUuid: spellItem.uuid ?? null,
+    targetResults: targetResults.map(tr => ({
+      actorId: tr.actorId,
+      actorName: tr.actorName,
+      targetDC: tr.targetDC,
+      isHit: tr.isHit,
+      diff: tr.diff,
+      toHitBonus: tr.toHitBonus ?? 0,
+      outcome: tr.outcome
+    }))
+  }));
   await relayPendingSpellConditions(message, spellItem, pendingConditions, appliedActors, 'conditionsApplied.targets');
   await consumeCalledPlays(actor, message, assists);
   await consumeArmedCamera(actor);

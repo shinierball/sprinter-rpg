@@ -16,7 +16,7 @@ import { MOB_BOSS_TAG } from '../../data/tag-vocabulary.mjs';
  * - Tag-driven boss hierarchy (mob.boss, mob.tier.<id>, mob.unique)
  * - Rulebook stat budgets and spending calculations
  * - Integer evadeBase and surpriseBase scaling dynamically with current floor (+F)
- * - Floor Damage Resistance (R2: dr.total = armor + buffs + items + floor)
+ * - Floor Damage Resistance (R2: dr.total = armor + buffs + items + floor, never below 0)
  * - Independent, unlinked scene tokens (actorLink = false)
  */
 export class MobDataModel extends BaseActorDataModel {
@@ -79,10 +79,10 @@ export class MobDataModel extends BaseActorDataModel {
         designFloor: new fields.NumberField({ initial: 1, integer: true, min: 1 }),
         creatureType: new fields.StringField({ initial: 'Animal' }),
         floor: new fields.StringField({ initial: '' }),
-        description: new fields.HTMLField({ initial: '' }),
-        aiDescription: new fields.HTMLField({ initial: '' }),
-        notes: new fields.HTMLField({ initial: '' }),
-        special: new fields.HTMLField({ initial: '' })
+        description: new fields.StringField({ initial: '' }),
+        aiDescription: new fields.StringField({ initial: '' }),
+        notes: new fields.StringField({ initial: '' }),
+        special: new fields.StringField({ initial: '' })
       })
     };
   }
@@ -190,6 +190,6 @@ export class MobDataModel extends BaseActorDataModel {
                    (Number(this.attributes.dr.buffs) || 0) +
                    (Number(this.attributes.dr.items) || 0);
     this.attributes.dr.floor = F;
-    this.attributes.dr.total = baseDr + F;
+    this.attributes.dr.total = Math.max(0, baseDr + F);
   }
 }

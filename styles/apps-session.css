@@ -93,16 +93,6 @@
   transition: all 0.15s ease;
 }
 
-/* Foundry's button rule fixes `height: var(--button-size)`, so a label that wraps to two lines overflows
-   the background. Keep that size as a minimum and let the button grow with its content. */
-.cog-btn,
-button[class*="cog-bg-"] {
-  height: auto;
-  min-height: var(--button-size, 2rem);
-  line-height: 1.2;
-  box-sizing: border-box;
-}
-
 .cog-btn-primary {
   background: var(--cog-accent-fill);
   color: var(--cog-on-fill);
@@ -627,6 +617,23 @@ button[class*="cog-bg-"] {
   font-size: 11px;
   text-align: center;
 }
+
+.cog-ledger-difficulty { display: flex; gap: 2px; margin-top: 2px; justify-content: center; }
+.cog-ledger-difficulty button {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-strong);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 9px;
+  cursor: pointer;
+}
+.cog-ledger-difficulty button.is-default { border-color: var(--cog-accent); }
+
+.cog-standing-difficulty { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-family: 'Oswald', sans-serif; font-size: 12px; }
+.cog-standing-difficulty input[type="number"] { width: 56px; }
+.cog-standing-line { color: var(--cog-text-strong); }
 
 .cog-ledger-outcome-select {
   padding: 3px 6px;
@@ -1719,7 +1726,6 @@ button[class*="cog-bg-"] {
   gap: 5px;
   box-shadow: 0 1px 3px color-mix(in srgb, var(--cog-ink) 20%, transparent);
   line-height: normal;
-  white-space: nowrap;
   transition: all 0.15s ease;
 }
 
@@ -1900,6 +1906,99 @@ button[class*="cog-bg-"] {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Deity block on the crawler's Story tab */
+.cog-deity-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cog-deity-block-content {
+  padding: 8px;
+}
+
+.cog-deity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 4px;
+  border: 1px solid var(--cog-divider);
+  border-radius: 3px;
+}
+
+.cog-deity-img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border: 1px solid var(--cog-divider);
+  border-radius: 3px;
+}
+
+.cog-deity-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.cog-deity-name {
+  font-weight: bold;
+}
+
+.cog-deity-title {
+  font-size: 11px;
+}
+
+.cog-deity-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.cog-deity-badge {
+  border: 1px solid var(--cog-border-muted);
+}
+
+.cog-deity-tier {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.cog-deity-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-deity-buttons button.is-active {
+  outline: 2px solid var(--cog-header-fill);
+}
+
+.cog-deity-picker-name {
+  display: flex;
+  flex-direction: column;
+}
+
+.cog-deity-picker-clear {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+}
+
+/* Patron rows share the deity block's row styles */
+.cog-patron-header {
+  margin-top: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--cog-divider);
+}
+
+.cog-patron-attitude,
+.cog-patron-advice {
+  font-size: 11px;
 }
 
 /* ---------------- CRAWLER ACHIEVEMENTS & TROPHY ROOM ---------------- */

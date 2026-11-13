@@ -65,10 +65,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -103,14 +103,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "On an Evade Major Fail or worse, the target also takes a -1 penalty to Evade.",
           "ignoreDR": false,
           "onHit": {
@@ -143,14 +140,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -175,14 +169,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -201,14 +192,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Acid",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Acid"
+          },
           "effects": "On an Evade Major Fail or worse, the target also takes 1d6+F Acid at the end of each round.",
           "ignoreDR": false,
           "onHit": {
@@ -246,14 +234,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d10",
-              "stat": "int",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d10",
+            "stat": "int",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -275,14 +260,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -420,10 +402,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 10,
@@ -457,14 +439,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "On an Evade Major Fail or worse, the crawler also receives the Saucy Debuff: Take 1d6+F Acid at the end of each round until combat ends.",
           "ignoreDR": false,
           "onHit": {
@@ -586,10 +565,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -621,14 +600,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -647,14 +623,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -778,10 +751,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -813,14 +786,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "int",
-              "type": "Force",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "int",
+            "damageType": "Force"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -856,14 +826,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0000011",
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "int",
-              "type": "Fire",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "int",
+            "damageType": "Fire"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -886,14 +853,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "int",
-              "type": "Fire",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "int",
+            "damageType": "Fire"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -918,14 +882,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -1118,10 +1079,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -1153,14 +1114,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "con",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "con",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -1179,14 +1137,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "con",
-              "type": "Fire",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "con",
+            "damageType": "Fire"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -1205,14 +1160,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Healing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Healing"
+          },
           "effects": "None to hit. Restores 1d6 Health Bar slots to a single target within 10 feet.",
           "ignoreDR": false,
           "tags": [
@@ -1386,10 +1338,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 10,
@@ -1424,14 +1376,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Necrotic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Necrotic"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -1463,14 +1412,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Healing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Healing"
+          },
           "effects": "Action. Constant Hunger: Devours any food seen or an already deceased entity to heal 1d4 Health Bar slots.",
           "ignoreDR": false,
           "tags": [
@@ -1592,10 +1538,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -1609,8 +1555,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 5,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Humanoid",
         "description": "",
         "aiDescription": "",
@@ -1627,14 +1573,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -1653,14 +1596,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -1784,10 +1724,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 15,
@@ -1801,8 +1741,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 5,
-        "designFloor": 1,
-        "floor": "Floor 1 / Tutorial",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Ooze",
         "description": "",
         "aiDescription": "",
@@ -1820,14 +1760,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0000019",
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "dex",
-              "type": "Acid",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "dex",
+            "damageType": "Acid"
+          },
           "effects": "Take 1d6+F Acid at the end of each round until combat ends.",
           "ignoreDR": false,
           "onHit": {
@@ -1856,14 +1793,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -1985,10 +1919,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -2002,8 +1936,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 5,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Humanoid",
         "description": "",
         "aiDescription": "",
@@ -2020,14 +1954,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -2046,14 +1977,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -2181,10 +2109,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -2198,8 +2126,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 10,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Humanoid",
         "description": "",
         "aiDescription": "",
@@ -2219,14 +2147,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d12",
-              "stat": "int",
-              "type": "Fire",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d12",
+            "stat": "int",
+            "damageType": "Fire"
+          },
           "effects": "Rolled with Disadvantage: Difficulty to Evade reduced by 5, crawlers get free Evade Check.",
           "ignoreDR": false,
           "tags": [
@@ -2252,14 +2177,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "int",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "int",
+            "damageType": "Sonic"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -2294,14 +2216,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -2330,14 +2249,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -2530,10 +2446,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -2565,14 +2481,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "dex",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "dex",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -2601,14 +2514,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "+1 damage when mounted.",
           "ignoreDR": false,
           "onHit": {
@@ -2742,10 +2652,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -2777,14 +2687,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "The Debuff deals 1d6+F Poison damage at the end of each round until combat ends.",
           "ignoreDR": false,
           "onHit": {
@@ -2813,14 +2720,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "+1d6 damage if charged 20ft straight line.",
           "ignoreDR": false,
           "onHit": {
@@ -2955,10 +2859,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 25,
@@ -2990,14 +2894,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "On an Evade Major Fail or worse, the crawler is pushed 15ft.",
           "ignoreDR": false,
           "tags": [
@@ -3016,14 +2917,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -3042,14 +2940,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d10",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d10",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -3183,10 +3078,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -3219,14 +3114,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0000033",
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -3245,14 +3137,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -3281,14 +3170,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -3307,14 +3193,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -3439,10 +3322,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -3474,14 +3357,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -3500,14 +3380,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "dex",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "dex",
+            "damageType": "Bludgeoning"
+          },
           "effects": "When this hits, the impact kills the diving creature.",
           "ignoreDR": false,
           "onHit": {
@@ -3641,10 +3518,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -3680,14 +3557,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0000039",
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d8",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d8",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -3716,14 +3590,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "int",
-              "type": "Electric",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "int",
+            "damageType": "Electric"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -3857,10 +3728,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 5,
@@ -3892,14 +3763,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -4011,10 +3879,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 10,
@@ -4046,14 +3914,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -4165,10 +4030,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 0,
+          "armor": -2,
           "items": 0,
           "buffs": 0,
-          "total": 0
+          "total": -2
         },
         "speed": {
           "move": 20,
@@ -4200,14 +4065,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "int",
-              "type": "Acid",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "int",
+            "damageType": "Acid"
+          },
           "effects": "The Debuff deals 1d6+F Acid at the end of each round until combat ends.",
           "ignoreDR": false,
           "onHit": {
@@ -4236,14 +4098,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -4368,10 +4227,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 25,
@@ -4403,14 +4262,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d2",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d2",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -4429,14 +4285,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -4455,14 +4308,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "con",
-              "type": "Poison",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "con",
+            "damageType": "Poison"
+          },
           "effects": "Diseased deals 1d6+F Poison at the end of each round.",
           "ignoreDR": false,
           "onHit": {
@@ -4602,10 +4452,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 45,
@@ -4637,14 +4487,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "int",
-              "type": "Force",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "int",
+            "damageType": "Force"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -4663,14 +4510,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "cha",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "cha",
+            "damageType": "Sonic"
+          },
           "effects": "This attack cannot be Evaded; each crawler instead avoids it with a free CHA Stat Check.",
           "ignoreDR": false,
           "tags": [
@@ -4845,10 +4689,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -4880,14 +4724,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "cha",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "cha",
+            "damageType": "Sonic"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -5011,10 +4852,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -5046,14 +4887,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -5165,10 +5003,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -5200,14 +5038,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Fire",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Fire"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -5328,10 +5163,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -5365,14 +5200,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -5400,14 +5232,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d10",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d10",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -5533,10 +5362,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -5572,14 +5401,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0002601",
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "int",
-              "type": "Fire",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "int",
+            "damageType": "Fire"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -5603,14 +5429,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -5732,10 +5555,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -5767,14 +5590,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "con",
-              "type": "Poison",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "con",
+            "damageType": "Poison"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -5802,14 +5622,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -5921,10 +5738,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 5,
@@ -5958,14 +5775,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d12",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d12",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -5993,14 +5807,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "0",
-              "stat": "int",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "0",
+            "stat": "int",
+            "damageType": "Psychic"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -6033,14 +5844,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d10",
-              "stat": "int",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d10",
+            "stat": "int",
+            "damageType": "Psychic"
+          },
           "effects": "The Debuff also lowers Int Mod by 1.",
           "ignoreDR": false,
           "onHit": {
@@ -6184,10 +5992,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -6201,8 +6009,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 4,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Humanoid",
         "description": "",
         "aiDescription": "",
@@ -6219,14 +6027,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -6338,10 +6143,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 3,
+          "armor": 2,
           "items": 0,
           "buffs": 0,
-          "total": 3
+          "total": 2
         },
         "speed": {
           "move": 20,
@@ -6373,14 +6178,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -6491,10 +6293,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -6508,8 +6310,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 6,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Humanoid",
         "description": "",
         "aiDescription": "",
@@ -6526,14 +6328,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -6551,14 +6350,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "The Held Debuff lasts until the end of the round.",
           "ignoreDR": false,
           "onHit": {
@@ -6682,10 +6478,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -6699,8 +6495,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 5,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Humanoid",
         "description": "",
         "aiDescription": "",
@@ -6717,14 +6513,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "dex",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "dex",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -6753,14 +6546,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0003202",
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -6871,10 +6661,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -6906,14 +6696,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -6931,14 +6718,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "dex",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "dex",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -7060,10 +6844,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 4,
+          "armor": 2,
           "items": 0,
           "buffs": 0,
-          "total": 4
+          "total": 2
         },
         "speed": {
           "move": 0,
@@ -7097,14 +6881,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d10",
-              "stat": "int",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d10",
+            "stat": "int",
+            "damageType": "Bludgeoning"
+          },
           "effects": "On Evade Major Fail or worse, crawler is pushed 15ft.",
           "ignoreDR": false,
           "tags": [
@@ -7122,14 +6903,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "int",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "int",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -7155,14 +6933,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0003403",
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d10",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d10",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -7180,14 +6955,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -7210,14 +6982,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "int",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "int",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -7334,10 +7103,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -7369,14 +7138,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -7394,14 +7160,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -7419,14 +7182,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "con",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "con",
-              "type": "Ice",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "con",
+            "damageType": "Ice"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -7547,10 +7307,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -7582,14 +7342,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -7617,14 +7374,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -7743,10 +7497,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -7778,14 +7532,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "int",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "int",
+            "damageType": "Psychic"
+          },
           "effects": "Wakes Fatigued.",
           "ignoreDR": false,
           "onHit": {
@@ -7929,10 +7680,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -7964,14 +7715,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Fire",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Fire"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -8071,10 +7819,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 25,
@@ -8106,14 +7854,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -8142,14 +7887,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0003902",
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "dex",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "dex",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -8270,10 +8012,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -8305,14 +8047,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": true,
           "onHit": {
@@ -8434,10 +8173,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 10,
@@ -8469,14 +8208,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -8504,14 +8240,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -8632,10 +8365,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -8667,14 +8400,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "+1d4 while pineapple attached.",
           "ignoreDR": false,
           "tags": [
@@ -8786,10 +8516,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -8821,14 +8551,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "dex",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "dex",
+            "damageType": "Bludgeoning"
+          },
           "effects": "Unstable Bombs table.",
           "ignoreDR": false,
           "tags": [
@@ -8852,14 +8579,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -9000,10 +8724,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -9035,14 +8759,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -9060,14 +8781,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "dex",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "dex",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -9188,10 +8906,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -9223,14 +8941,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "int",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "int",
+            "damageType": "Psychic"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -9261,14 +8976,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Piercing"
+          },
           "effects": "Uses a cursed bone dagger.",
           "ignoreDR": false,
           "tags": [
@@ -9428,10 +9140,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -9465,14 +9177,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "cha",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "cha",
+            "damageType": "Psychic"
+          },
           "effects": "Requires drumsticks.",
           "ignoreDR": false,
           "onHit": {
@@ -9500,14 +9209,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "cha",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "cha",
+            "damageType": "Sonic"
+          },
           "effects": "Requires drumsticks.",
           "ignoreDR": false,
           "onHit": {
@@ -9541,14 +9247,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0004603",
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Bludgeoning"
+          },
           "effects": "Requires drumsticks.",
           "ignoreDR": false,
           "onHit": {
@@ -9682,10 +9385,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -9699,8 +9402,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 2,
-        "designFloor": 2,
-        "floor": "Floor 2",
+        "designFloor": 1,
+        "floor": "Floor 1",
         "creatureType": "Beastly",
         "description": "",
         "aiDescription": "",
@@ -9717,14 +9420,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -9752,14 +9452,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "Leaper ability.",
           "ignoreDR": false,
           "tags": [
@@ -9870,10 +9567,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -9887,8 +9584,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 7,
-        "designFloor": 2,
-        "floor": "Floor 2",
+        "designFloor": 1,
+        "floor": "Floor 1",
         "creatureType": "Humanoid",
         "description": "",
         "aiDescription": "",
@@ -9908,14 +9605,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -9933,14 +9627,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "Free 20ft move during attack.",
           "ignoreDR": false,
           "tags": [
@@ -9963,14 +9654,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -10105,10 +9793,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -10140,14 +9828,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "int",
-              "type": "Necrotic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "int",
+            "damageType": "Necrotic"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -10268,10 +9953,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 3,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 3
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -10306,14 +9991,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d10",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d10",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -10332,14 +10014,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0005002",
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "On Evade Major Fail or worse, crawler is pushed back 10ft.",
           "ignoreDR": false,
           "tags": [
@@ -10450,10 +10129,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 3,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 3
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -10485,14 +10164,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -10510,14 +10186,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -10535,14 +10208,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "cha",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "cha",
+            "damageType": "Sonic"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -10658,10 +10328,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 3,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 3
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -10693,14 +10363,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d12",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d12",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "Mounted only.",
           "ignoreDR": false,
           "tags": [
@@ -10718,14 +10385,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "dex",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "dex",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -10836,10 +10500,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 3,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 3
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -10873,14 +10537,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -10910,14 +10571,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "Auto-hits Held foes.",
           "ignoreDR": false,
           "tags": [
@@ -10934,14 +10592,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -10959,14 +10614,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "con",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d6",
-              "stat": "con",
-              "type": "Poison",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d6",
+            "stat": "con",
+            "damageType": "Poison"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -10994,14 +10646,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "0",
-              "stat": "cha",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "0",
+            "stat": "cha",
+            "damageType": "Psychic"
+          },
           "effects": "Free Cha Stat Check; on Fail, spends next Action attacking an ally.",
           "ignoreDR": false,
           "tags": [
@@ -11162,10 +10811,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 25,
@@ -11197,14 +10846,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -11222,14 +10868,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -11350,10 +10993,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 10,
@@ -11385,14 +11028,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -11410,14 +11050,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "int",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "int",
+            "damageType": "Sonic"
+          },
           "effects": "Hits reduce Time to Floor Collapse by 1d2 hours.",
           "ignoreDR": false,
           "tags": [
@@ -11533,10 +11170,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -11550,8 +11187,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 11,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Unique Humanoid",
         "description": "",
         "aiDescription": "",
@@ -11569,14 +11206,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0005601",
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d4",
-              "stat": "dex",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d4",
+            "stat": "dex",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -11605,14 +11239,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0003202",
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -11724,10 +11355,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 0,
@@ -11760,14 +11391,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0005701",
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d12",
-              "stat": "int",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d12",
+            "stat": "int",
+            "damageType": "Psychic"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -11785,14 +11413,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "0",
-              "stat": "int",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "0",
+            "stat": "int",
+            "damageType": "Psychic"
+          },
           "effects": "The Debuff deals 1d6+F Psychic per round and is stackable.",
           "ignoreDR": false,
           "onHit": {
@@ -11822,14 +11447,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "int",
-              "type": "Acid",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "int",
+            "damageType": "Acid"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -11999,10 +11621,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -12034,14 +11656,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -12060,14 +11679,11 @@ export const COG_MOBS = [
           "identifier": "dccatkmob0005802",
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "dex",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "dex",
+            "damageType": "Psychic"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -12188,10 +11804,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -12225,14 +11841,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d10",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d10",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -12250,14 +11863,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -12275,14 +11885,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "Cars suddenly materialize and speed along a straight path.",
           "ignoreDR": false,
           "tags": [
@@ -12411,10 +12018,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -12446,14 +12053,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "str",
-              "type": "Fire",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "str",
+            "damageType": "Fire"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -12488,14 +12092,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -12617,10 +12218,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -12634,8 +12235,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 23,
-        "designFloor": 2,
-        "floor": "Floor 2",
+        "designFloor": 1,
+        "floor": "Floor 1",
         "creatureType": "Undead",
         "description": "",
         "aiDescription": "",
@@ -12654,14 +12255,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d10",
-              "stat": "str",
-              "type": "Necrotic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d10",
+            "stat": "str",
+            "damageType": "Necrotic"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -12689,14 +12287,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d12",
-              "stat": "str",
-              "type": "Necrotic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d12",
+            "stat": "str",
+            "damageType": "Necrotic"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -12714,14 +12309,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "0",
-              "stat": "int",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "0",
+            "stat": "int",
+            "damageType": "Psychic"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -12894,10 +12486,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 13,
+          "armor": 11,
           "items": 0,
           "buffs": 0,
-          "total": 13
+          "total": 11
         },
         "speed": {
           "move": 60,
@@ -12929,14 +12521,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "5d8",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "5d8",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -12954,14 +12543,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "0",
-              "stat": "cha",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "0",
+            "stat": "cha",
+            "damageType": "Sonic"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -13084,10 +12670,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -13121,14 +12707,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -13156,14 +12739,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d10",
-              "stat": "dex",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d10",
+            "stat": "dex",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -13191,14 +12771,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -13225,14 +12802,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d10",
-              "stat": "int",
-              "type": "Electric",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d10",
+            "stat": "int",
+            "damageType": "Electric"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -13405,10 +12979,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -13443,14 +13017,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "The Debuff deals 1d6+F Poison per round.",
           "ignoreDR": false,
           "onHit": {
@@ -13478,14 +13049,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "dex",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "dex",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -13503,14 +13071,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "cha",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "cha",
+            "damageType": "Sonic"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -13631,10 +13196,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 0,
+          "armor": -1,
           "items": 0,
           "buffs": 0,
-          "total": 0
+          "total": -1
         },
         "speed": {
           "move": 20,
@@ -13666,14 +13231,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -13782,10 +13344,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -13817,14 +13379,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "con",
-              "type": "Force",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "con",
+            "damageType": "Force"
+          },
           "effects": "Line of Sight range.",
           "ignoreDR": false,
           "tags": [
@@ -13841,14 +13400,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Poison",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Poison"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -13994,10 +13550,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -14029,14 +13585,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "con",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "con",
-              "type": "Acid",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "con",
+            "damageType": "Acid"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -14069,14 +13622,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Slashing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Slashing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -14187,10 +13737,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -14222,14 +13772,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "0",
-              "stat": "dex",
-              "type": "Physical",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "0",
+            "stat": "dex",
+            "damageType": "Physical"
+          },
           "effects": "On Evade Fail, attaches to crawler.",
           "ignoreDR": false,
           "tags": [
@@ -14246,14 +13793,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "con",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "con",
+            "damageType": "Bludgeoning"
+          },
           "effects": "Usable only while attached.",
           "ignoreDR": false,
           "onHit": {
@@ -14361,10 +13905,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 30,
@@ -14396,14 +13940,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -14421,14 +13962,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -14550,10 +14088,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 20,
@@ -14585,14 +14123,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -14610,14 +14145,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "con",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "con",
-              "type": "Poison",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "con",
+            "damageType": "Poison"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -14726,10 +14258,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 1
         },
         "speed": {
           "move": 30,
@@ -14761,14 +14293,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -14877,10 +14406,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 10,
@@ -14894,8 +14423,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 7,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Organic Machinery",
         "description": "",
         "aiDescription": "",
@@ -14912,14 +14441,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "0",
-              "stat": "dex",
-              "type": "Physical",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "0",
+            "stat": "dex",
+            "damageType": "Physical"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -15038,10 +14564,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 10,
@@ -15055,8 +14581,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 6,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Zombie",
         "description": "",
         "aiDescription": "",
@@ -15073,14 +14599,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Acid",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Acid"
+          },
           "effects": "The Dissolving Debuff deals 1d6+F Acid per round.",
           "ignoreDR": false,
           "onHit": {
@@ -15109,14 +14632,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -15237,10 +14757,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -15272,14 +14792,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -15307,14 +14824,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "con",
-              "type": "Sonic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "con",
+            "damageType": "Sonic"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -15431,10 +14945,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -15448,8 +14962,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 6,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Unique Humanoid",
         "description": "",
         "aiDescription": "",
@@ -15466,14 +14980,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -15491,14 +15002,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -15610,10 +15118,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -15627,8 +15135,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 7,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Unique Humanoid",
         "description": "",
         "aiDescription": "",
@@ -15645,14 +15153,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -15670,14 +15175,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -15789,10 +15291,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -15806,8 +15308,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 7,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Humanoid, Winged Fairy",
         "description": "",
         "aiDescription": "",
@@ -15824,14 +15326,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -15849,14 +15348,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -15967,10 +15463,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 3,
+          "armor": 1,
           "items": 0,
           "buffs": 0,
-          "total": 3
+          "total": 1
         },
         "speed": {
           "move": 10,
@@ -15984,8 +15480,8 @@ export const COG_MOBS = [
       },
       "details": {
         "level": 14,
-        "designFloor": 1,
-        "floor": "Floor 1",
+        "designFloor": 2,
+        "floor": "Floor 2",
         "creatureType": "Cybernetic Humanoid",
         "description": "",
         "aiDescription": "",
@@ -16005,14 +15501,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "3d6",
-              "stat": "int",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "3d6",
+            "stat": "int",
+            "damageType": "Psychic"
+          },
           "effects": "Cha Stat Check to avoid (no Evade) or live out past traumas on screens.",
           "ignoreDR": false,
           "tags": [
@@ -16030,14 +15523,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "dex",
-              "type": "Electric",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "dex",
+            "damageType": "Electric"
+          },
           "effects": "Disadvantage to Evade.",
           "ignoreDR": false,
           "onHit": {
@@ -16157,10 +15647,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -16192,14 +15682,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "cha",
-              "type": "Poison",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "cha",
+            "damageType": "Poison"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -16233,14 +15720,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "cha",
-              "type": "Force",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "cha",
+            "damageType": "Force"
+          },
           "effects": "On Evade Major Fail, crawler is pushed back 10ft.",
           "ignoreDR": false,
           "tags": [
@@ -16263,14 +15747,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "cha",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "cha",
-              "type": "Psychic",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "cha",
+            "damageType": "Psychic"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -16395,10 +15876,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 2,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 2
+          "total": 0
         },
         "speed": {
           "move": 20,
@@ -16430,14 +15911,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d8",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d8",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [
@@ -16455,14 +15933,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "con",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "con",
-              "type": "Poison",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "con",
+            "damageType": "Poison"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -16584,10 +16059,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": -1,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": -1
         },
         "speed": {
           "move": 30,
@@ -16619,14 +16094,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "dex",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "dex",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -16735,10 +16207,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": -1,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": -1
         },
         "speed": {
           "move": 25,
@@ -16770,14 +16242,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -16805,14 +16274,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -16981,10 +16447,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 1,
+          "armor": 0,
           "items": 0,
           "buffs": 0,
-          "total": 1
+          "total": 0
         },
         "speed": {
           "move": 15,
@@ -17016,14 +16482,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d6",
-              "stat": "str",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d6",
+            "stat": "str",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "onHit": {
@@ -17051,14 +16514,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "str",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "str",
-              "type": "Bludgeoning",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "str",
+            "damageType": "Bludgeoning"
+          },
           "effects": "The hit crawler is also pulled closer (broken on Creeper death).",
           "ignoreDR": false,
           "onHit": {
@@ -17176,10 +16636,10 @@ export const COG_MOBS = [
           "total": 0
         },
         "dr": {
-          "armor": 3,
+          "armor": 2,
           "items": 0,
           "buffs": 0,
-          "total": 3
+          "total": 2
         },
         "speed": {
           "move": 20,
@@ -17211,14 +16671,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "int",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "2d4",
-              "stat": "int",
-              "type": "Force",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "2d4",
+            "stat": "int",
+            "damageType": "Force"
+          },
           "effects": "Line of Sight range.",
           "ignoreDR": false,
           "tags": [
@@ -17235,14 +16692,11 @@ export const COG_MOBS = [
         "system": {
           "toHitStat": "dex",
           "toHitRank": 0,
-          "damageParts": [
-            {
-              "dice": "1d4",
-              "stat": "dex",
-              "type": "Piercing",
-              "value": 0
-            }
-          ],
+          "baseDamage": {
+            "dice": "1d4",
+            "stat": "dex",
+            "damageType": "Piercing"
+          },
           "effects": "",
           "ignoreDR": false,
           "tags": [

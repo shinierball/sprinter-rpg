@@ -1,29 +1,18 @@
-{{!-- Rank-break fields shared by the spell and skill sheets. Params: key (rank5..rank20), data (the stored break), view (precomputed options), withDamageType, withBaseDiceCountMod. --}}
+{{!-- Rank-break fields shared by the spell and skill sheets. Params: key (rank5..rank20), data (the stored break), view (precomputed options), withBaseDiceCountMod, checkBonusKey (lang key). --}}
 <div class="cog-rank-break-extras" style="border-top: 1px dashed var(--cog-border-muted); margin-top: 4px; padding-top: 4px;">
   <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; flex-wrap: wrap;">
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">Base Dice Multiplier</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.BaseDiceMultiplier"}}</span>
       <input class="cog-field-input" type="number" min="1" name="system.rankBreaks.{{key}}.baseDiceMultiplier" value="{{view.baseDiceMultiplier}}" style="font-size: 11px;" />
     </div>
     {{#if withBaseDiceCountMod}}
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">Base Dice Count Mod</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.BaseDiceCountMod"}}</span>
       <input class="cog-field-input" type="text" name="system.rankBreaks.{{key}}.baseDiceCountMod" value="{{data.baseDiceCountMod}}" placeholder="e.g. +1" style="font-size: 11px;" />
     </div>
     {{/if}}
-    {{#if withDamageType}}
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">Damage Type</span>
-      <select class="cog-field-input" name="system.rankBreaks.{{key}}.damageType" style="font-size: 11px;">
-        <option value="">-- Skill damage type --</option>
-        {{#each view.damageTypeOptions}}
-          <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-        {{/each}}
-      </select>
-    </div>
-    {{/if}}
-    <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">Debuff Timing</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.DebuffTiming"}}</span>
       <select class="cog-field-input" name="system.rankBreaks.{{key}}.debuffOn" style="font-size: 11px;">
         {{#each view.debuffOnOptions}}
           <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
@@ -42,37 +31,37 @@
   {{/each}}
   <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; flex-wrap: wrap;">
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">Check bonus (all rolls of this {{#if withDamageType}}skill{{else}}spell{{/if}}, including attacks)</span>
+      <span class="cog-field-label">{{localize checkBonusKey}}</span>
       <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.checkBonus" value="{{data.checkBonus}}" placeholder="0" style="font-size: 11px;" />
     </div>
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">To-hit bonus (attacks only)</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.ToHit"}}</span>
       <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.toHitBonus" value="{{data.toHitBonus}}" placeholder="0" style="font-size: 11px;" />
     </div>
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">+ Range (ft)</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.Range"}}</span>
       <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.rangeBonus" value="{{data.rangeBonus}}" placeholder="0" style="font-size: 11px;" />
     </div>
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">+ Duration (rounds)</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.Duration"}}</span>
       <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.durationBonus" value="{{data.durationBonus}}" placeholder="0" style="font-size: 11px;" />
     </div>
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label" title="Extra Health Bar slots the On Hit lifesteal heals (needs a lifesteal amount in the On Hit block)">+ Life Drain heal (slots)</span>
+      <span class="cog-field-label" title="{{localize "COG.AbilitySheet.RankBreakExtras.LifeDrainTitle"}}">{{localize "COG.AbilitySheet.RankBreakExtras.LifeDrain"}}</span>
       <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.onHit.healBonus" value="{{data.onHit.healBonus}}" placeholder="0" style="font-size: 11px;" />
     </div>
   </div>
   <div class="cog-field-row" style="margin-bottom: 0; gap: 6px; flex-wrap: wrap;">
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">+ Line Length (ft)</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.LineLength"}}</span>
       <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.area.lineLengthBonus" value="{{data.area.lineLengthBonus}}" placeholder="0" style="font-size: 11px;" />
     </div>
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">+ Line Width (ft)</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.LineWidth"}}</span>
       <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.area.lineWidthBonus" value="{{data.area.lineWidthBonus}}" placeholder="0" style="font-size: 11px;" />
     </div>
     <div class="cog-field-group" style="flex: 1;">
-      <span class="cog-field-label">+ Splash (ft)</span>
+      <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreakExtras.Splash"}}</span>
       <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.area.splashBonus" value="{{data.area.splashBonus}}" placeholder="0" style="font-size: 11px;" />
     </div>
   </div>

@@ -37,9 +37,21 @@ import { SPECS as lootBoxesTables } from './tables/loot-boxes.mjs';
 import { SPECS as vehiclesItems } from './items/vehicles.mjs';
 import { SPECS as vehiclesActors } from './actors/vehicles.mjs';
 import { SPECS as offlineModeItems } from './items/offline-mode.mjs';
+import { SPECS as finalCreditsItems } from './items/final-credits.mjs';
 import { SPECS as floorStartsActors } from './actors/floor-starts.mjs';
 import { SPECS as contractClausesItems } from './items/contract-clauses.mjs';
 import { SPECS as contractClausesMobs } from './mobs/contract-clauses.mjs';
+import { SPECS as greenRoomActors } from './actors/green-room.mjs';
+import { SPECS as greenRoomItems } from './items/green-room.mjs';
+import { SPECS as weaponWorkshopItems } from './items/weapon-workshop.mjs';
+import { SPECS as finePrintItems } from './items/fine-print.mjs';
+import { SPECS as networkNotesItems } from './items/network-notes.mjs';
+import { SPECS as openPlanItems } from './items/open-plan.mjs';
+import { SPECS as openPlanActors } from './actors/open-plan.mjs';
+import { SPECS as primeTimePantheonItems } from './items/prime-time-pantheon.mjs';
+import { SPECS as primeTimePantheonMobs } from './mobs/prime-time-pantheon.mjs';
+import { SPECS as technicalDifficultiesItems } from './items/technical-difficulties.mjs';
+import { SPECS as technicalDifficultiesMobs } from './mobs/technical-difficulties.mjs';
 import { SPECS as racingMobs } from './mobs/racing-and-chasing.mjs';
 import { SPECS as racingTables } from './tables/racing-and-chasing.mjs';
 
@@ -70,9 +82,21 @@ const RELEASE_FILES = Object.freeze([
   { set: 'vehicles', kind: 'items', specs: vehiclesItems },
   { set: 'vehicles', kind: 'actors', specs: vehiclesActors },
   { set: 'offline-mode', kind: 'items', specs: offlineModeItems },
+  { set: 'final-credits', kind: 'items', specs: finalCreditsItems },
   { set: 'floor-starts', kind: 'actors', specs: floorStartsActors },
   { set: 'contract-clauses', kind: 'items', specs: contractClausesItems },
-  { set: 'contract-clauses', kind: 'mobs', specs: contractClausesMobs }
+  { set: 'contract-clauses', kind: 'mobs', specs: contractClausesMobs },
+  { set: 'fine-print', kind: 'items', specs: finePrintItems },
+  { set: 'network-notes', kind: 'items', specs: networkNotesItems },
+  { set: 'open-plan', kind: 'items', specs: openPlanItems },
+  { set: 'open-plan', kind: 'actors', specs: openPlanActors },
+  { set: 'prime-time-pantheon', kind: 'items', specs: primeTimePantheonItems },
+  { set: 'prime-time-pantheon', kind: 'mobs', specs: primeTimePantheonMobs },
+  { set: 'green-room', kind: 'items', specs: greenRoomItems },
+  { set: 'green-room', kind: 'actors', specs: greenRoomActors },
+  { set: 'weapon-workshop', kind: 'items', specs: weaponWorkshopItems },
+  { set: 'technical-difficulties', kind: 'items', specs: technicalDifficultiesItems },
+  { set: 'technical-difficulties', kind: 'mobs', specs: technicalDifficultiesMobs }
 ]);
 
 /** Kind order inside a set's `specs`: referenced documents come first. `mobs` are Actors (the examples-actors pack). */

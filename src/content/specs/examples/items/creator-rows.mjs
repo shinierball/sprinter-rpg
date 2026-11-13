@@ -31,7 +31,7 @@ export const SPECS = Object.freeze([
     _id: exampleId('cr', 'i', 1),
     name: 'Laugh Track Phantom',
     img: 'icons/svg/aura.svg',
-    description: 'Recorded in 1974. Still laughing.',
+    description: 'Recorded in 1974. Still laughing. +2 Charisma, -1 Strength, and 1 stat point to spend on Charisma or Intelligence; -1 Rank in Strength, never below 1; Constitution caps at 14. Walk speed -5 ft, Climb speed 10 ft, Darkvision, and double vision range. Resists Sonic damage. It cannot worship a deity. It starts with Studio Audience Approval and Canned Enthusiasm, and with the Dated Material debuff.',
     size: 'medium',
     stats: { cha: 2, str: -1 },
     buffs: [
@@ -63,7 +63,7 @@ export const SPECS = Object.freeze([
           row('senses', { darkvisionUnlimited: true, rangeMultiplier: 2 }),
           row('movement', { climb: 10, walkDelta: -5 }),
           row('statCaps', { con: 14 }),
-          row('requires', { none: ['kind.deity'] })
+          row('requirements', { kind: 'noWorship' })
         ]
       }
     ]
@@ -73,7 +73,7 @@ export const SPECS = Object.freeze([
     _id: exampleId('cr', 'i', 2),
     name: 'Seat Filler',
     img: 'icons/svg/chest.svg',
-    description: 'You are paid to be here. You are not paid enough to leave.',
+    description: 'You are paid to be here. You are not paid enough to leave. +1 Constitution and +1 Charisma, and +1 Rank in a Knowledge Skill you already have. The Bard archetype, and the Stage Fright debuff from the first take.',
     archetypes: ['archetype.bard'],
     isEarthClass: false,
     stats: { con: 1, cha: 1 },

@@ -8,6 +8,7 @@
  */
 import { resolveAreaShape, getTagDefinition } from '../../data/tag-definitions.mjs';
 import { formatTiming, normalizeTiming } from '../time/timing.mjs';
+import { isWeaponCapable } from '../document-types.mjs';
 
 const TEXT = Object.freeze({
   'COG.AttackMechanics.ToHit': '{n}+F to hit',
@@ -159,7 +160,7 @@ export function describeAttackMechanics(system, opts = {}) {
 export function attackEffectsText(item, opts = {}) {
   const sys = item?.system && typeof item.system === 'object' ? item.system : (item ?? {});
   const prose = String(sys.effects || sys.notes || '');
-  if (item?.type && !['attack', 'gear'].includes(item.type)) return prose;
+  if (item?.type && !isWeaponCapable(item)) return prose;
   const line = describeAttackMechanics(item?.type === 'gear' ? { onHit: sys.onHit } : sys, opts).text;
   return [line, prose].filter(Boolean).join(' ');
 }

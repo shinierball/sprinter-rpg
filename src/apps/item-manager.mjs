@@ -13,6 +13,9 @@ import { isScratchLootType, lootTypeLabel } from '../models/items/loot-model.mjs
 import { cooldownBadge } from '../utils/time/cooldown-badge.mjs';
 import { currentTimeContext } from '../documents/actor/dungeon-time.mjs';
 import { GEAR_SLOTS } from '../utils/gear/gear-slots.mjs';
+import { ITEM_CATEGORIES, itemCategoryOf } from '../utils/gear/item-category.mjs';
+import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
+import { INVENTORY_ITEM_TYPES } from '../utils/document-types.mjs';
 
 
 const TPL = `${SYSTEM_PATH}/templates/apps/item-manager`;
@@ -25,19 +28,9 @@ export const ITEM_MANAGER_INDEX_FIELDS = Object.freeze([
   'type', 'img', 'system.value', 'system.quantity', 'system.slot', 'system.lootType',
   'system.equipped', 'system.isWeapon', 'system.drBonus',
   'system.damageModifiers', 'system.defenseModifiers', 'system.attackModifiers', 'system.checkModifiers',
-  'system.damageParts', 'system.charges', 'system.outcomes', 'system.notes', 'system.description',
+  'system.baseDamage', 'system.charges', 'system.outcomes', 'system.notes', 'system.description',
   'system.cooldown', 'system.rankBreaks', 'system.spellName', 'system.spellIdentifier', 'system.identifier', SOURCE_INDEX_FIELD
 ]);
-
-/** Plain text of an HTML description for a one-line card snippet. */
-export function htmlSnippet(html) {
-  const raw = String(html ?? '');
-  if (!raw) return '';
-  if (typeof DOMParser !== 'undefined') {
-    return (new DOMParser().parseFromString(raw, 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim();
-  }
-  return raw.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-}
 
 export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
   static CATALOG = {
@@ -108,7 +101,8 @@ export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
       const type = item.type || 'gear';
       const slot = String(sys.slot || 'torso').toLowerCase().trim();
       const lootType = String(sys.lootType || 'consumable').toLowerCase().trim();
-      const isWeapon = Boolean(sys.isWeapon || slot === 'hands' || (sys.damageParts && sys.damageParts.length > 0));
+      const category = itemCategoryOf(item);
+      const isWeapon = category === 'weapons';
       const goldVal = Number(sys.value) || 0;
       const displayValue = canSeeValue ? `${goldVal} GP` : '???';
 
@@ -149,6 +143,7 @@ export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
         slot,
         lootType,
         isWeapon,
+        category,
         goldVal,
         displayValue,
         canSeeValue,
@@ -157,46 +152,22 @@ export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
         badgeLabel,
         badgeColor,
         mechanicsSummary: summaries[index],
-        descriptionSnippet: htmlSnippet(sys.notes || sys.description || '')
+        descriptionSnippet: sys.notes || htmlSnippet(sys.description)
       };
     });
 
-    // Compute category counts
-    const counts = {
-      all: decoratedItems.length,
-      gear: decoratedItems.filter(i => i.type === 'gear').length,
-      weapons: decoratedItems.filter(i => i.type === 'gear' && i.isWeapon).length,
-      armor: decoratedItems.filter(i => i.type === 'gear' && !i.isWeapon && i.slot !== 'accessory').length,
-      accessories: decoratedItems.filter(i => i.type === 'gear' && i.slot === 'accessory').length,
-      loot: decoratedItems.filter(i => i.type === 'loot').length,
-      consumables: decoratedItems.filter(i => i.type === 'loot' && (i.lootType === 'consumable' || i.lootType === 'potion')).length,
-      scrolls: decoratedItems.filter(i => i.type === 'loot' && i.lootType === 'scroll').length,
-      wands: decoratedItems.filter(i => i.type === 'loot' && i.lootType === 'wand').length,
-      lottery: decoratedItems.filter(i => i.type === 'loot' && isScratchLootType(i.lootType)).length
-    };
-
-    // Filter by category
-    let filtered = decoratedItems;
-    const cat = this.activeCategory;
-    if (cat === 'gear') {
-      filtered = filtered.filter(i => i.type === 'gear');
-    } else if (cat === 'weapons') {
-      filtered = filtered.filter(i => i.type === 'gear' && i.isWeapon);
-    } else if (cat === 'armor') {
-      filtered = filtered.filter(i => i.type === 'gear' && !i.isWeapon && i.slot !== 'accessory');
-    } else if (cat === 'accessories') {
-      filtered = filtered.filter(i => i.type === 'gear' && i.slot === 'accessory');
-    } else if (cat === 'loot') {
-      filtered = filtered.filter(i => i.type === 'loot');
-    } else if (cat === 'consumables') {
-      filtered = filtered.filter(i => i.type === 'loot' && (i.lootType === 'consumable' || i.lootType === 'potion'));
-    } else if (cat === 'scrolls') {
-      filtered = filtered.filter(i => i.type === 'loot' && i.lootType === 'scroll');
-    } else if (cat === 'wands') {
-      filtered = filtered.filter(i => i.type === 'loot' && i.lootType === 'wand');
-    } else if (cat === 'lottery') {
-      filtered = filtered.filter(i => i.type === 'loot' && isScratchLootType(i.lootType));
+    // Category counts and the active category's filter, from the shared classifier
+    const counts = { all: decoratedItems.length, gear: 0, loot: 0 };
+    for (const { id } of ITEM_CATEGORIES) counts[id] = 0;
+    for (const i of decoratedItems) {
+      if (i.type in counts) counts[i.type] += 1;
+      if (i.category) counts[i.category] += 1;
     }
+
+    const cat = this.activeCategory;
+    let filtered = decoratedItems;
+    if (INVENTORY_ITEM_TYPES.includes(cat)) filtered = filtered.filter(i => i.type === cat);
+    else if (cat !== 'all') filtered = filtered.filter(i => i.category === cat);
 
     // Filter by specific gear slot if selected
     if (this.activeSlot !== 'all') {

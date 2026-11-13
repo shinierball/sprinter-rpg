@@ -1,0 +1,35 @@
+{{!-- The item setup window (7.56): page 1 picks the kind, page 2 asks that kind's essentials (src/data/item-setup/kinds/); each field renders through item-setup/field.hbs.
+     Nothing here has a `name`: every control is a data-action / data-change-action handled by COGItemSetupApp, and its values are read from `data-field` on Create. --}}
+<div class="cog-item-setup" style="font-family: 'Oswald', sans-serif; padding: 6px;">
+  {{#if isPicker}}
+    <p class="cog-text-secondary">{{localize "COG.ItemSetup.Pick.Intro"}}</p>
+    <div class="cog-item-setup-kinds" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      {{#each kinds as |kind|}}
+        <button type="button" class="cog-btn cog-btn-secondary" data-action="pickKind" data-kind="{{kind.id}}" data-tooltip="{{kind.hint}}" style="text-align: left; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid {{kind.icon}}"></i> {{kind.label}}
+        </button>
+      {{/each}}
+      {{#if canBuild}}
+      <button type="button" class="cog-btn cog-btn-secondary" data-action="openWeaponBuilder" data-tooltip="{{weaponBuilderHint}}" style="text-align: left; grid-column: span 2; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-crosshairs"></i> {{weaponBuilderLabel}}
+      </button>
+      {{/if}}
+    </div>
+  {{else}}
+    <h3 class="cog-item-setup-title"><i class="fa-solid {{kindIcon}}"></i> {{kindLabel}}</h3>
+    <p class="cog-text-secondary">{{kindHint}}</p>
+
+    {{#each fields as |field|}}
+      {{> "systems/sprinter-rpg/templates/apps/item-setup/field.hbs" field}}
+    {{/each}}
+
+    {{#if isWeapon}}
+      {{#if canBuild}}<p class="cog-item-setup-builder-link"><a data-action="openWeaponBuilder" data-tooltip="{{weaponBuilderLinkHint}}"><i class="fa-solid fa-sliders"></i> {{weaponBuilderLink}}</a></p>{{/if}}
+    {{/if}}
+
+    <footer style="display: flex; gap: 6px; margin-top: 8px;">
+      <button type="button" class="cog-btn cog-btn-secondary" data-action="back"><i class="fa-solid fa-arrow-left"></i> {{localize "COG.ItemSetup.Back"}}</button>
+      <button type="button" class="cog-btn cog-btn-primary" data-action="createItem"><i class="fa-solid fa-check"></i> {{localize "COG.ItemSetup.Create"}}</button>
+    </footer>
+  {{/if}}
+</div>

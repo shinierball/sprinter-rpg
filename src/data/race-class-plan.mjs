@@ -21,12 +21,16 @@ import {
 import { stampCompendiumLink } from './compendium-sync.mjs';
 import { STARTING_ITEMS_FLAG, planStartingItemsSync, startingEntriesOf, recordFor } from './starting-items.mjs';
 import { detectStatPools, evaluateStatPool, defaultPoolAllocation } from '../utils/character/stat-pool.mjs';
-import { raceClassFloorBreak } from '../utils/character/race-class-floor.mjs';
-import { evaluateRequires } from '../utils/character/requires.mjs';
+import { raceClassFloorBreak, isRaceClassLocked } from '../utils/character/race-class-floor.mjs';
+import { checkRequirements } from '../utils/character/requirements.mjs';
 import { isSameOwnedEntry } from '../utils/character/owned-entry.mjs';
 import { setPath } from '../utils/set-path.mjs';
+import { PRE_RACE_CLASS_RANK_LIMIT } from '../utils/skill/rank-limits.mjs';
+import { RACE_CLASS_TYPES } from '../utils/document-types.mjs';
+import { isRuleBreak, withRuleBreak } from '../utils/rule-break.mjs';
+import { withFlags } from '../utils/flags.mjs';
 
-const KINDS = ['race', 'class'];
+const KINDS = RACE_CLASS_TYPES;
 
 /** Rule Break keys of a kind's gates (the creator joins them into its one prompt). */
 export const raceClassBreakKey = (kind, gate, grantIndex) => `raceClass:${kind}:${gate}${grantIndex === undefined ? '' : `:${grantIndex}`}`;
@@ -207,7 +211,7 @@ function grantItemData(kind, itemType, row, resolvedDoc) {
 /** The creation data of the embedded race or class item, carrying the chosen skills and spells. */
 function kindItemData(kind, { def, grantDef, bonuses, resolved, ruleBreak }) {
   const profile = RACE_CLASS_KINDS[kind];
-  return stampCompendiumLink({
+  const marked = withFlags({
     name: def.name,
     type: profile.itemType,
     img: def.img || profile.defaultImg,
@@ -216,9 +220,9 @@ function kindItemData(kind, { def, grantDef, bonuses, resolved, ruleBreak }) {
       ...profile.itemSystem(bonuses),
       chosenSkills: resolved.chosenSkills || [],
       chosenSpells: resolved.chosenSpells || []
-    },
-    flags: { [SYSTEM_ID]: { [profile.markerFlag]: true, ...(ruleBreak ? { ruleBreak: true } : {}) } }
-  }, def);
+    }
+  }, { [profile.markerFlag]: true });
+  return stampCompendiumLink(ruleBreak ? withRuleBreak(marked) : marked, def);
 }
 
 // ---------------------------------------------------------------------------
@@ -254,7 +258,7 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
   // 1. Gates, listed and never asked
   const floor = raceClassFloorBreak(view, kind, def, { worldFloor: ctx.worldFloor ?? 0 });
   if (floor.needed) gate(raceClassBreakKey(kind, 'floor'), floor.reason);
-  const requirement = evaluateRequires(view, { ...def, type: kind });
+  const requirement = checkRequirements(view, { ...def, type: kind });
   if (!requirement.met) gate(raceClassBreakKey(kind, 'requires'), `${def?.name || 'This option'} has unmet requirements: ${requirement.unmet.join('; ')}.`);
 
   // 2-4. Choices, pools, the fixed-row definition
@@ -285,6 +289,20 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
   const itemCreates = [];
   const itemUpdates = [];
   const applied = { skill: [], spell: [] };
+  // Race and Class are chosen under a Skill Rank limit of 10: a skill gain stops there and the rest is wasted, unless
+  // the limit's Rule Break is confirmed. A rank already past the limit (an earlier Rule Break) is kept, not cut.
+  const selecting = isRaceClassLocked(view, ctx.worldFloor ?? 0);
+  const rankLimited = selecting && !confirmedKeys.has(raceClassBreakKey(kind, 'rankLimit'));
+  const wasted = [];
+  const overLimit = [];
+  const limitRank = (name, current, total) => {
+    if (!selecting || total <= PRE_RACE_CLASS_RANK_LIMIT) return total;
+    overLimit.push(name);
+    if (!rankLimited) return total;
+    const kept = Math.max(current, PRE_RACE_CLASS_RANK_LIMIT);
+    wasted.push({ name, wasted: total - kept });
+    return kept;
+  };
   for (const { row, itemType } of rows) {
     const resolvedDoc = lookup(row, itemType);
     const data = grantItemData(kind, itemType, row, resolvedDoc);
@@ -292,7 +310,7 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
     const existing = work.items.find(i => i.type === itemType && isSameOwnedEntry(i, data));
     if (existing) {
       const curRank = Number(existing.system?.rank) || 0;
-      const rank = curRank + row.rank;
+      const rank = itemType === 'skill' ? limitRank(existing.name, curRank, curRank + row.rank) : curRank + row.rank;
       existing.system = { ...existing.system, rank };
       const planned = itemCreates.find(c => c._id === existing._id);
       if (planned) planned.system.rank = rank;
@@ -303,11 +321,14 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
       applied[itemType].push({ id: existing._id, name: existing.name, rank: row.rank, preExistingRank: curRank, [profile.createdKey]: false, isChoice: Boolean(row.choiceId), ...(identifier ? { identifier } : {}) });
       continue;
     }
+    if (itemType === 'skill') data.system.rank = limitRank(data.name, 0, Number(data.system.rank) || 0);
     data._id = ids(data);
     itemCreates.push(data);
     work.items.push(cloneData(data));
     applied[itemType].push({ id: data._id, name: data.name, rank: row.rank, preExistingRank: 0, [profile.createdKey]: true, isChoice: Boolean(row.choiceId), ...(identifier ? { identifier } : {}) });
   }
+
+  if (overLimit.length) gate(raceClassBreakKey(kind, 'rankLimit'), `${overLimit.join(', ')}: Skill Rank is limited to ${PRE_RACE_CLASS_RANK_LIMIT} during Race and Class selection.`);
 
   // 7. Granted effects the actor lacks
   const effects = grantDef.system?.grantedEffects;
@@ -332,7 +353,7 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
   const kindPrefix = `raceClass:${kind}:`;
   const confirmed = [...confirmedKeys].filter(key => key.startsWith(kindPrefix));
   const stampKeys = confirmed.filter(key => key !== raceClassBreakKey(kind, 'startingItemsAgain'));
-  const ruleBreak = stampKeys.length > 0 || def.flags?.[SYSTEM_ID]?.ruleBreak === true;
+  const ruleBreak = stampKeys.length > 0 || isRuleBreak(def);
   const kindItem = kindItemData(kind, { def, grantDef, bonuses, resolved, ruleBreak });
   kindItem._id = ids(kindItem);
   itemCreates.push(kindItem);
@@ -368,8 +389,8 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
     startingForm.accepted = chosen.map(i => i.index);
     if (chosen.length) {
       for (const item of chosen) {
-        const data = { ...item.data, _id: ids(item.data) };
-        if (givenAgain) data.flags[SYSTEM_ID].ruleBreak = true;
+        const created = { ...item.data, _id: ids(item.data) };
+        const data = givenAgain ? withRuleBreak(created) : created;
         itemCreates.push(data);
       }
       flagUpdates[STARTING_ITEMS_FLAG] = { ...records, [startPlan.sourceKey]: recordFor({ items: chosen }, givenAgain, previous) };
@@ -389,9 +410,11 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
     itemUpdates,
     flagUpdates,
     form: { choices: choiceForm, pools: poolForm, startingItems: startingForm },
+    requirements: requirement.rows,
     choicesNeeded,
     ruleBreaks: { pending, confirmed },
-    warnings
+    warnings,
+    wastedRanks: wasted
   };
 }
 
@@ -402,7 +425,8 @@ function writeInPlan(kind, text) {
     actorUpdate: { [`system.details.${RACE_CLASS_KINDS[kind].detailsKey}`]: text },
     itemCreates: [], itemUpdates: [], flagUpdates: {},
     form: { choices: [], pools: [], startingItems: { items: [], pending: [], skipped: [], accepted: [] } },
-    choicesNeeded: [], ruleBreaks: { pending: [], confirmed: [] }, warnings: []
+    requirements: [],
+    choicesNeeded: [], ruleBreaks: { pending: [], confirmed: [] }, warnings: [], wastedRanks: []
   };
 }
 

@@ -23,6 +23,7 @@ Module authors: [engine-extension.md](engine-extension.md) registers new scalars
 | `statSubstitutions` | (none) | `self`, `subject` | no |
 | `boxContents` | `kind` | `self` | yes (loot box prizes, not a modifier row; see below) |
 | `magicProperties` | `property` | `self` | yes (magic item generator properties, not a modifier row; see below) |
+| `requirements` | `kind` | `self` | yes (what a race or class needs, not a modifier row; see below) |
 
 `attackModifiers` apply to attack rolls only; `checkModifiers` apply to every roll of a skill, attacks included, so a to-hit total is the check rows plus the attack rows. The two arrays share one kind table: a kind registered on one is available on both. The source of truth is `ROW_ARRAYS` in `src/utils/row-kinds.mjs`.
 
@@ -65,7 +66,7 @@ The roles an array sees are listed in section 1; the editor only offers those. W
 
 **Situations** are unprefixed tags in the `situation.` namespace:
 
-- The engine sets seven itself: `situation.in_combat`, `situation.disadvantaged` (the net roll is Disadvantage), `situation.critical_hit`, `situation.amazing_success` (not on a Critical Hit), `situation.damage_effect` (the attack uses a Damage Effect), `situation.specialty` (the item you make, or your target, carries the rolling skill's chosen specialty) and `situation.same_size` (attacker and target the same size; a roll may also tick it by hand). A roll inside a racing or chasing contest also carries `contest.race` or `contest.chase`.
+- The engine sets eight itself: `situation.in_combat`, `situation.disadvantaged` (the net roll is Disadvantage), `situation.critical_hit`, `situation.amazing_success` (not on a Critical Hit), `situation.damage_effect` (the attack uses a Damage Effect), `situation.specialty` (the item you make, or your target, carries the rolling skill's chosen specialty) and `situation.same_size` (attacker and target the same size; a roll may also tick it by hand) and `situation.intercepting` (a defence row only: the holder caught the hit for an ally). A roll inside a racing or chasing contest also carries `contest.race` or `contest.chase`.
 - Any other situation a row mentions is offered in the roll dialog as a toggle (e.g. `situation.aiming`). A situation flagged `maneuver` is listed under Maneuvers in the Attack Options pop-up.
 - "+ New situation" in any condition editor creates a world situation tag on the spot.
 
@@ -95,28 +96,37 @@ The kind decides what a row does. Built-ins (labels as in the editor):
 | defense | `dr` | value | Damage Resistance; reduces every type |
 | defense | `evade` | value | Evade bonus |
 | defense | `suppress_dr` | damageType | |
+| defense | `effectImmunity` | none (the row's condition names the effect) | A Debuff or contested Skill or Spell the condition matches does not land; an empty condition is immune to nothing |
 | defense | `evadeOutcome` | option (`full`, `half`, `none`) | What a successful Evade does against an area attack |
 | defense | `reflect` | value, flat | When one blow costs the holder at least `value` Health Bar slots, the attacker may lose `flat` slots |
+| defense | `attackerAdvantage` | option (`advantage`, `disadvantage`) | Whoever attacks the holder rolls with Advantage (or Disadvantage); a mob attacker's Difficulty on the holder moves 5 per net step. Debuffs that leave their bearer open to attack carry it |
+| defense | `healthBarScale` | value (default 2) | Each Health Bar slot holds `value` times its HP: damage reaching the bar is divided by it, rounded down; the highest factor wins |
 | attack / check | `bonus` | value, dice, stat | |
 | attack / check | `advantage` | advantage | One Advantage or Disadvantage reason; reasons net out (more Advantage → 2d20kh, more Disadvantage → 2d20kl, equal → 1d20) |
 | check | `assist` | dice, option (`replace`, `add`) | Changes the dice an assist skill rolls; never touches ordinary checks |
 | check | `reroll` | none | After the roll the roller may roll the check again and keep the new result; the source item's cooldown gates each use (3.44) |
 | check | `degreeShift` | value, option (`failOnly`, `any`) | After the roll the roller may move the result's degree `value` steps (default 1); a Fail never shifts past Near Miss into a success |
 | attack / check | `waive` | option (a `rollPenalties` id; `driver` is built in) | The named engine roll penalty does not apply to the rolls the row matches |
-| vehicle | `moveAdd` | value | Adds feet to a vehicle's Move; read by `vehicleMoveOf` from the vehicle's installed gear and active buffs and from its driver's skills |
-| vehicle | `moveMultiply` | multiplier | Multiplies a vehicle's Move after the additions; matching rows multiply |
+| vehicle | `moveAdd` | value | Adds feet to a Move. A vehicle's is read by `vehicleMoveOf` from its installed gear and active buffs and its driver's skills; a creature's by `creatureMoveOf` from its debuffs in force, buffs, gear and skills |
+| vehicle | `moveMultiply` | multiplier | Multiplies a Move after the additions; matching rows multiply, so two halving debuffs leave a quarter. A creature's stored Move is never changed; the sheet shows the Move now beside it |
 | craft | `maxBonus` | value | The highest enchantment bonus level the holder crafts; the highest matching row wins, no matching row is no limit, and a craft above it asks a Rule Break |
 | craft | `time` | multiplier | Multiplies the hours of a craft; matching rows multiply |
 | craft | `batchTime` | multiplier | Multiplies the minutes a batch adds for each extra unit; matching rows multiply |
 | craft | `rebuild` | none | A Repair check can rebuild a destroyed item without a Rule Break; condition it on `item.destroyed` |
 | craft | `tableTier` | multiplier | Multiplies the crafting table's tier for the step; matching rows multiply, `0` means tables give no bonus (the step still needs a table and a space) |
 | craft | `bonusValue` | value | Adds to every number an enchantment writes (grants `stat`/`skill`/`rank_bonus` `value`, and each row kind's `scaled: 'whole'` field), with no extra Difficulty or time; matching rows add |
+| craft | `materials` | multiplier | Multiplies each material line and the Misc. Junk of a step, rounded up; matching rows multiply, `0` means none |
+| craft | `batchAny` | none | Any blueprint may be batched at the step, even one not marked batchable |
+| craft | `unlockRecipes` | none | Crafts a blueprint tagged `crafting.recipe.<id>`; the row's condition names the recipes it unlocks, and a locked recipe with no such row asks a Rule Break |
+| craft | `salvage` | value | A failed step salvages `value` tiers better; matching rows add |
 
 `craftModifiers` rows sit on skills, worn gear and the space upgrades of a personal space (a crafting table, or an attachment tagged `crafting.attachment.<id>`). Their conditions read the craft check's tags (`check.crafting`, `crafting.mode.*`, the table type, the output's tags). A skill's rows apply only when that skill rolls the step, unless `scope: 'owner'`.
 
 `boxContents` is not a modifier array: it is the list of prizes in a loot box (`system.box.contents[]` on a loot item whose `lootType` is `box`), so it has no condition, scope or scale, and no editor of the modifier family. Its kinds are `item` (an item by uuid or identifier), `spell` (a Tome of the spell), `gold` (a number or a dice formula), `table` (rolls a RollTable) `magicItem` (a generated magic item) and `choice` (the opener picks one candidate of a tag `query`, of an `itemType`: an item, a Tome for a spell, a potion for a skill); a module adds a kind with `registerRowKind('boxContents', def)` and an `apply.boxOpen` handler (and `apply.boxChoose` when the opener must pick first). The kinds are descriptors until the open engine reads them.
 
 `magicProperties` is not a modifier array either: each "row" is the `magic` option (`{ kind: 'magic', property, damageTypes? }`) of a rolled property table row, read by the magic item generator (`src/utils/crafting/magic-item.mjs`) and never stored on a document. Its kinds are `stat`, `skill`, `passiveSkill`, `spell`, `dr`, `resistance`, `buff` and `restore`. A kind's `apply.magicItem(option, ctx)` returns `{ template, line }` (an enchantment template and the reveal's one-liner) or `null`, which records the row's own words as a pending ledger entry for the GM to finish; `buff` and `restore` always do. A module adds a kind with `registerRowKind('magicProperties', def)`.
+
+`requirements` is not a modifier array either: it is what a Race or Class needs before a crawler takes it (`system.requirements[]`), so it has no condition, scope or scale and no editor of the modifier family. Rows are joined with AND; inside a row, `options` and `query` mean any one. Its kinds are `stat` (a Stat's unenhanced score is at least `value`; gear and buffs never count), `skillRank` (an owned Skill, one of a list, or any Skill matching a tag query is at least Rank `value`), `popularity`, `floor`, `race` and `class` (a reference, a list or a tag query on the held one), `achievement` (an owned achievement), `tags` (the actor's tags with the candidate applied match a tag query: needs, needs one of, cannot have) `note` (a condition the system cannot judge: the GM decides, never unmet), `worship` (a worshipped god, any, named, one of a list or matching a tag query, at tier at least `value`: 2 is Devotee, 3 is Zealot), `noWorship` (the crawler worships no god) and `patron` (a god, any or named, is the crawler's patron). Starting or leaving worship asks a Rule Break when it would break a race or class row of these kinds. A kind's `apply.require(row, ctx)` is pure and reads only `ctx.subject`; it returns `{ status: 'met'|'unmet'|'unchecked', have?, need?, shortfall? }`. An unmet row asks a Rule Break and never blocks. A module adds a kind with `registerRowKind('requirements', def)` and `apply.require`.
 
 Mana cost (`add`, `multiply`), recovery, popularity, AI Favor and stat-substitution rows each have one fixed shape.
 
@@ -151,6 +161,7 @@ scaled = number × (base + per × n), then clamped to [min, max]
 | `statValue` | the owner's score for a chosen stat | |
 | `count` | creatures or items matching a `where` query | `party` (default), `allies`, `enemies`, `items`, `targets` (at apply: targets hit at once) |
 | `move` | the owner's Move in feet (`per: 0.1` = per 10 ft) | |
+| `worshipTier` | the Tier of Devotion (1-3) of a worshipped god; 0 when the god is not worshipped | `source` (default: the god whose gift carries the row), `highest` (the highest god worshipped) |
 
 - **Party includes the owner.** `count` with scope `party` counts every actor sharing `details.party` with the owner, the owner too. There is no "party minus me" scope yet; if the owner matches `where`, they are counted.
 - `where` is matched against what each actor **is** (identity tags, `condition.*`, health fraction), unprefixed: write `creature.female`, not `subject.creature.female`.
@@ -171,7 +182,7 @@ A new moment ("when a template is placed", "at the start of my turn") is engine 
 
 A tag may carry `rows` and `flags`. Its rows behave as rows on whatever carries the tag (equipped gear, an active buff, an owned skill, the actor) and are owner-wide. Its flags are yes/no gates the engine reads with `hasRuleFlag(subject, flag)`; code never matches a `rule.*` id, so a renamed or replaced tag keeps the rule.
 
-The 16 core flags (`RULE_FLAGS`, `src/utils/tag/tag-behaviour.mjs`): `no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`, `mounted-only`, `works-in-zero-zone`.
+The 19 core flags (`RULE_FLAGS`, `src/utils/tag/tag-behaviour.mjs`): `no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`, `mounted-only`, `works-in-zero-zone`, `no-actions` (acting is a Rule Break confirm; Dying and Dead carry it), `no-healing` (healing the bearer is a Rule Break confirm), `forfeits-action` (the next Action is lost: a "Forfeited" slot is recorded and the debuff ends).
 
 Example: `rule.aiming-offset` carries rows conditioned on `situation.aiming` and a ranged attack: Disadvantage, a to-hit bonus of the carrier's Rank (scalar `rank`), and `1d4` damage at Ranks 1, 5, 10 and 15 (four `add` rows with `minRank`). A skill that carries the tag gets the whole behaviour with no code.
 
@@ -218,4 +229,4 @@ If the caster were also tagged `creature.female`, the party count would be 3 and
 | Resist fire from bosses only | armour | `resistance`, fire, `all: ['attacker.mob.boss']` |
 | Advantage while not Fatigued | buff | `advantage`, `none: ['self.condition.fatigued']` |
 
-Tags often used in conditions: `weaponGroup.*` (from `weaponCategory`), `wield.one_handed` / `wield.two_handed` (from the wield mode for that roll), `weaponClass.*` (`melee`, `ranged`, `natural`, `unarmed`), `element.*`, `shape.*`, `kind.*`, `id.<type>.<identifier>`.
+Tags often used in conditions: `weaponGroup.*` (typed on the weapon or its Skill; never derived), `wield.one_handed` / `wield.two_handed` (from the wield mode for that roll), `weaponClass.*` (`melee`, `ranged`, `natural`, `unarmed`), `element.*`, `shape.*`, `kind.*`, `id.<type>.<identifier>`.

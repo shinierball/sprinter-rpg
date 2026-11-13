@@ -1,11 +1,11 @@
 import { conditionTagId, debuffIdentifier } from '../utils/identifier.mjs';
-import { getDamageParts } from '../utils/damage/damage-parts.mjs';
 import { isWeaponGear, getWieldMode } from '../utils/gear/wield-mode.mjs';
 import { hasOnHitDebuff, hasOnHitEffect, hasLifesteal, hasDispel } from '../utils/attack/on-hit.mjs';
 import { heritageTag, sanitizeHeritageId } from './rules/heritages.mjs';
-import { ARCHETYPE_TO_TAG, STAT_TO_TAG, WEAPON_CATEGORY_TAGS, damageTypeToElement, identityTag } from './tag-vocabulary.mjs';
+import { ARCHETYPE_TO_TAG, STAT_TO_TAG, damageTypeToElement, identityTag } from './tag-vocabulary.mjs';
 import { getTagDefinition, resolveAreaShape } from './tag-definitions.mjs';
 import { getReachedRankBreaks } from '../utils/skill/rank-breaks.mjs';
+import { RANKED_ITEM_TYPES } from '../utils/document-types.mjs';
 
 /**
  * Runtime tags derived from an item's structured fields (never persisted). `documents/active-tags.mjs` adds them to
@@ -19,12 +19,12 @@ import { getReachedRankBreaks } from '../utils/skill/rank-breaks.mjs';
  * bundled spec. Also covers what `getReachedRankBreaks`, `getWieldMode`, `isWeaponGear` and the on-hit helpers read.
  */
 export const DERIVED_TAG_FIELDS = Object.freeze([
-  'system.identifier', 'system.stat', 'system.toHitStat', 'system.damageType', 'system.baseDamage', 'system.damageParts',
+  'system.identifier', 'system.stat', 'system.toHitStat', 'system.damageType', 'system.baseDamage',
   'system.isAttack', 'system.category', 'system.checkType', 'system.isTechnique',
   'system.techniqueConfig', 'system.rank', 'system.modifiedRank', 'system.totalRank', 'system.rankBreaks',
   'system.healing', 'system.ignoreDR', 'system.isArmorPiercing', 'system.critMultiplier', 'system.critMultiplierR5',
   'system.critMultiplierR15', 'system.onHit', 'system.fumbleDebuff', 'system.contest', 'system.isWeapon',
-  'system.weaponCategory', 'system.weaponType', 'system.slot', 'system.wieldMode', 'system.wieldedOneHanded',
+  'system.slot', 'system.wieldMode', 'system.wieldedOneHanded',
   'system.tags', 'system.archetypes', 'system.area', 'system.delivery', 'system.durationConfig', 'system.tempBars',
   'system.light', 'system.outcomes', 'system.grants', 'system.spaceType', 'system.isSpaceUpgrade', 'system.upgradeType', 'system.heritage'
 ]);
@@ -83,14 +83,10 @@ export function computeDerivedTags(item) {
 
   // Element / Damage type -> element
   // A skill's or spell's damage type lives in its structured Base Damage; other items carry it at the top level.
-  const itemDamageType = sys.damageType || (type === 'skill' || type === 'spell' ? sys.baseDamage?.damageType : '');
+  // A weapon's own Base Damage override (gear, attack) names the element the same way.
+  const itemDamageType = sys.damageType || sys.baseDamage?.damageType;
   if (itemDamageType) {
     const el = damageTypeToElement(itemDamageType);
-    if (el) derived.add(el);
-  }
-  for (const part of getDamageParts(sys)) {
-    if (!part.type) continue;
-    const el = damageTypeToElement(part.type);
     if (el) derived.add(el);
   }
 
@@ -102,7 +98,7 @@ export function computeDerivedTags(item) {
   // Skill and spell role from the exact select values (never from text): Check Type id `passive` is a passive item, id
   // `attack` an attack, and the technique flags a technique. A skill's weapon group and discipline are stored
   // `weaponGroup.*` and `skillGroup.*` tags, not derived. A spell's interrupt role is its stored `action.interrupt` tag.
-  if (type === 'skill' || type === 'spell') {
+  if (RANKED_ITEM_TYPES.includes(type)) {
     const checkKind = String(sys.checkType ?? '').toLowerCase().trim();
     if (checkKind === 'passive') derived.add('action.passive');
     if (checkKind === 'attack') derived.add('action.attack');
@@ -207,12 +203,6 @@ export function computeDerivedTags(item) {
     derived.add('kind.weapon');
   }
 
-  // Weapon group tags from a gear item's weaponCategory
-  if (typeof sys.weaponCategory === 'string') {
-    const wgTag = WEAPON_CATEGORY_TAGS[sys.weaponCategory.toLowerCase().trim()];
-    if (wgTag) derived.add(wgTag);
-  }
-
   // Wield tags for weapons
   if (isWeaponGear(item) || type === 'attack') {
     const mode = getWieldMode(sys, { itemType: type, handless: anyTagHasFlag([...(Array.isArray(sys.tags) ? sys.tags : []), ...derived], 'no-hands') });
@@ -277,7 +267,7 @@ export function computeDerivedTags(item) {
   // Duration
   if (sys.durationConfig?.type) {
     const durType = lc(sys.durationConfig.type);
-    if (['instant', 'rounds', 'minutes', 'hours', 'combat', 'permanent', 'short_rest', 'long_rest', 'full_day_rest'].includes(durType)) {
+    if (['instant', 'rounds', 'minutes', 'hours', 'combat', 'until_healed', 'permanent', 'next_check', 'next_action', 'short_rest', 'long_rest', 'full_day_rest'].includes(durType)) {
       derived.add(`duration.${durType}`);
     }
   }

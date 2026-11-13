@@ -17,6 +17,9 @@ import { addGearGrant, isGearBonusGrant } from '../sheets/item/gear-grants.mjs';
 const SKILLS_FOLDER_KEY = 'skills';
 const TPL = `${SYSTEM_PATH}/templates/apps/skill-manager`;
 
+/** The picker mode that chooses a Skill a weapon attacks with (`options.mode`): the gear sheet's "Add a Skill" and the weapon builder. */
+export const ATTACK_SKILL_MODE = 'attackSkill';
+
 /**
  * Index fields the skill list reads: the row and its search (stat, group tags, notes, checkNote), the "Select for item"
  * button and the added-to-item mark (identifier), and the data a skill copies when added. A pack index returns only what is
@@ -74,6 +77,8 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
     super(options);
     this.item = options.item || null;
     this.onSelect = options.onSelect || null;
+    /** 'attackSkill': picking a Skill a weapon attacks with (no bonus box, nothing marked granted); else a gear bonus Skill. */
+    this.mode = options.mode === ATTACK_SKILL_MODE ? ATTACK_SKILL_MODE : null;
     this.activeCategory = options.activeCategory || 'all';
     this.activeStat = 'all';
     /** @type {Set<string>} skill names ticked for "Add Selected"; survives list re-renders */
@@ -96,10 +101,8 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
   /** @override */
   decorateRow(row) {
     const system = { stat: 'str', checkType: 'stat', notes: '', ...row.system };
-    const gearSkillIds = new Set(
-      (Array.isArray(this.item?.system?.grants) ? this.item.system.grants : [])
-        .filter(g => isGearBonusGrant(g) && g.kind === 'skill').map(g => g.identifier)
-    );
+    const granted = this.mode === ATTACK_SKILL_MODE ? [] : (Array.isArray(this.item?.system?.grants) ? this.item.system.grants : []);
+    const gearSkillIds = new Set(granted.filter(g => isGearBonusGrant(g) && g.kind === 'skill').map(g => g.identifier));
     const skill = { ...row, system };
     return {
       ...skill,
@@ -160,6 +163,8 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
       activeStat: this.activeStat,
       isPicker: Boolean(this.actor || this.item || this.onSelect),
       isItemPicker: Boolean(this.item),
+      isAttackSkillPicker: this.mode === ATTACK_SKILL_MODE,
+      attackSkillBanner: globalThis.game?.i18n?.format?.('COG.SkillManager.AttackPicker.Banner', { item: this.item?.name ?? '' }),
       item: this.item
     });
   }
@@ -264,6 +269,13 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
     const identifier = String(target.dataset.identifier ?? '').trim();
     const label = String(target.dataset.name ?? '').trim();
     if (!identifier) return;
+    if (this.mode === ATTACK_SKILL_MODE) {
+      const added = await this.onSelect?.({ identifier, label });
+      if (!added) return;
+      ui.notifications?.info(globalThis.game?.i18n?.format?.('COG.SkillManager.AttackPicker.Added', { skill: label || identifier }) ?? label);
+      this.close();
+      return;
+    }
     const value = Number(this.element.querySelector('#cog-sm-gear-bonus')?.value) || 1;
     const row = this.onSelect
       ? await this.onSelect({ identifier, label, value })

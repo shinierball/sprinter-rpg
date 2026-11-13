@@ -281,11 +281,11 @@ export const COG_POINT_BUILD_BENEFITS = [
   },
   {
     id: 'mod_patron_benefit',
-    name: 'Patron or Sponsor Backing',
+    name: 'Patron Backing',
     tier: 'moderate',
     cost: 2,
     category: 'Utility',
-    description: 'A patron or sponsor takes an interest in you and sends messages, gifts, or the odd small sponsorship. The GM decides who they are and what arrives.',
+    description: 'A patron takes an interest in you and sends messages, gifts, or the odd small favour. The GM decides who they are and what arrives.',
     rows: [
       { path: 'system.tags', row: 'access.patron' }
     ]
@@ -789,7 +789,7 @@ export const COG_POINT_BUILD_DETRIMENTS = [
     extraPoints: 1,
     description: 'You must follow a deity, and neglecting your devotions invites whatever divine displeasure the GM decides.',
     rows: [
-      { path: 'system.requires', row: { all: ['kind.deity'] } }
+      { path: 'system.requirements', row: { kind: 'worship' } }
     ]
   },
   {
@@ -799,7 +799,7 @@ export const COG_POINT_BUILD_DETRIMENTS = [
     extraPoints: 1,
     description: 'No god will have you: you cannot follow a deity or receive divine blessings.',
     rows: [
-      { path: 'system.requires', row: { none: ['kind.deity'] } }
+      { path: 'system.requirements', row: { kind: 'noWorship' } }
     ]
   },
   {

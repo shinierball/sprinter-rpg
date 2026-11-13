@@ -10,6 +10,11 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { isAuthorshipHidden } from './authorship.mjs';
 
+/** World setting: the id of the primary content theme. */
+export const PRIMARY_THEME_SETTING = 'primaryTheme';
+/** World setting: the ids of the content themes turned off. */
+export const DISABLED_THEMES_SETTING = 'disabledThemes';
+
 /**
  * Fresh theme state with the built-in `shiny` content theme and the `world` stamp theme.
  * @param {object} reg
@@ -126,7 +131,7 @@ export function getThemes(reg) {
 export function getPrimaryThemeId(reg) {
   let id = reg._primaryThemeId || 'shiny';
   try {
-    const val = globalThis.game?.settings?.get?.(SYSTEM_ID, 'primaryTheme');
+    const val = globalThis.game?.settings?.get?.(SYSTEM_ID, PRIMARY_THEME_SETTING);
     if (val && typeof val === 'string') id = val;
   } catch (_e) {
     // World setting not yet registered or unavailable
@@ -162,7 +167,7 @@ export function getPrimaryTheme(reg) {
 export function getDisabledThemeIds(reg) {
   let raw = null;
   try {
-    const val = globalThis.game?.settings?.get?.(SYSTEM_ID, 'disabledThemes');
+    const val = globalThis.game?.settings?.get?.(SYSTEM_ID, DISABLED_THEMES_SETTING);
     const list = val instanceof Set ? [...val] : val;
     if (Array.isArray(list) && list.length) raw = list;
   } catch (_e) {

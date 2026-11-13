@@ -6,7 +6,7 @@ import { COGTagManager } from '../../apps/tag-manager.mjs';
 import { RANK_BREAK_THRESHOLDS, roleTag } from '../../data/tag-vocabulary.mjs';
 import { getTagDefinition, registerCustomTag } from '../../data/tag-definitions.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
-import { rankBreakFillPatch } from '../../apps/rank-break-parser.mjs';
+import { rankBreakFillPatch, upgradeTextDebuffs } from '../../apps/rank-break-parser.mjs';
 import { getAvailableDebuffs } from './catalogs.mjs';
 import { normalizeTagList } from '../../utils/tag/tag-query.mjs';
 import { composeQueryTag } from './context-query.mjs';
@@ -35,7 +35,11 @@ async function writeBucket(item, path, bucket, ids) {
     field = field?.fields?.[segments[i]];
     if (field?.element) arrayDepth = i;
   }
-  if (arrayDepth < 0) return item.update({ [`${path}.${bucket}`]: ids });
+  if (arrayDepth < 0) {
+    // An optional query (an activation window's) is null until first edited: write it whole
+    if (foundry.utils.getProperty(item, path) == null) return item.update({ [path]: { [bucket]: ids } });
+    return item.update({ [`${path}.${bucket}`]: ids });
+  }
   const arrayPath = segments.slice(0, arrayDepth + 1).join('.');
   const rest = segments.slice(arrayDepth + 1).join('.');
   const rows = foundry.utils.deepClone(foundry.utils.getProperty(item, arrayPath) ?? []);
@@ -132,7 +136,7 @@ export const TAG_ACTIONS = {
   async parseRankBreaks(event, target) {
     if (!this.isEditable) return;
     const debuffs = await getAvailableDebuffs();
-    const patch = rankBreakFillPatch(this.item.system.rankBreaks, this.item.system.upgrades, debuffs.map((d) => ({ name: d.name, identifier: d.system?.identifier ?? '' })));
+    const patch = rankBreakFillPatch(this.item.system.rankBreaks, this.item.system.upgrades, upgradeTextDebuffs(debuffs));
     let filled = 0;
     for (const [name, value] of Object.entries(patch)) {
       const input = this.element.querySelector(`[name="${name}"]`);

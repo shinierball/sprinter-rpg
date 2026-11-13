@@ -12,6 +12,8 @@ import { CHECK_TAGS, OUTCOME_TAGS, isOutcomeTag, getTagsOf, getInterruptTriggers
 import { matchesTagQuery, matchesTagQueryIgnoring } from '../tag/tag-query.mjs';
 import { COG_ROLL_OUTCOMES, evaluateRollOutcome, extractD20Result } from '../../documents/session/roll-outcomes.mjs';
 import { maxOfDiceFormula } from './dice-max.mjs';
+import { sanitizePatronCheckRef } from '../patron/patron-check-ref.mjs';
+import { DIFFICULTY_MODES } from '../../data/rules/difficulty-rules.mjs';
 
 export const CHECK_RECORD_FLAG = 'check';
 const CHECK_RECORD_VERSION = 1;
@@ -99,6 +101,26 @@ function sanitizeEvade(raw) {
   };
 }
 
+/** How the card's Difficulty was reached (the GM's set or a standing stamp), or null when none was recorded. */
+function sanitizeDifficulty(raw) {
+  if (!isPlain(raw) || !DIFFICULTY_MODES.includes(raw.mode)) return null;
+  const value = numOrNull(raw.value);
+  if (value === null) return null;
+  return {
+    mode: raw.mode,
+    value: Math.max(0, value),
+    floor: Math.max(0, num(raw.floor)),
+    foeUuid: str(raw.foeUuid),
+    foeName: str(raw.foeName),
+    stat: str(raw.stat),
+    mod: num(raw.mod),
+    shift: num(raw.shift),
+    standing: raw.standing === true,
+    by: str(raw.by),
+    at: num(raw.at)
+  };
+}
+
 /** The contest reference a leg roll carries ({ messageId, legId, participantId }), or null (3.45). */
 function sanitizeContestRefRecord(raw) {
   if (!isPlain(raw)) return null;
@@ -144,12 +166,17 @@ function sanitizeRecord(raw) {
     total,
     d20: numOrNull(raw.d20),
     dc: numOrNull(raw.dc),
+    rollId: str(raw.rollId),
+    stat: str(raw.stat),
+    floor: numOrNull(raw.floor),
+    difficulty: sanitizeDifficulty(raw.difficulty),
     targets: (Array.isArray(raw.targets) ? raw.targets : []).map(sanitizeTarget).filter(Boolean),
     hasDamage: raw.hasDamage === true,
     evade: sanitizeEvade(raw.evade),
     assists: sanitizeAssists(raw.assists),
     contest: sanitizeContestRefRecord(raw.contest),
-    vehicle: sanitizeVehicleRefRecord(raw.vehicle)
+    vehicle: sanitizeVehicleRefRecord(raw.vehicle),
+    patron: sanitizePatronCheckRef(raw.patron)
   };
 }
 
@@ -172,8 +199,13 @@ function sanitizeRecord(raw) {
  * @param {object[]} [p.assists]
  * @param {{ messageId?: string, legId?: string, participantId?: string }|null} [p.contest] the race or chase leg this check was rolled for (3.45)
  * @param {{ vehicleUuid?: string, kind?: string, dc?: number|null, skill?: string, stat?: string, advantage?: boolean, rerollOf?: string, rerollKey?: string }|null} [p.vehicle] the vehicle this check was rolled for (3.44d)
+ * @param {{ kind?: string, itemId?: string, skill?: string, rank?: number, dc?: number|null }|null} [p.patron] the patron item this check was rolled for, an audition or a gig (pp. 315-316)
+ * @param {string} [p.rollId] links the ledger entry to this card
+ * @param {string} [p.stat] the Stat rolled (`str` ...), '' when none
+ * @param {number|null} [p.floor] the Floor when the check was rolled
+ * @param {object|null} [p.difficulty] how `dc` was reached (see `sanitizeDifficulty`)
  */
-export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, combat = null, tags = [], targets = [], dc = null, hasDamage = false, evade = null, assists = [], contest = null, vehicle = null } = {}) {
+export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, combat = null, tags = [], targets = [], dc = null, hasDamage = false, evade = null, assists = [], contest = null, vehicle = null, patron = null, rollId = '', stat = '', floor = null, difficulty = null } = {}) {
   const record = {
     v: CHECK_RECORD_VERSION,
     kind: RECORD_KINDS.includes(kind) ? kind : 'skill',
@@ -185,12 +217,17 @@ export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, com
     total: num(roll?.total),
     d20: extractD20Result(roll),
     dc: numOrNull(dc),
+    rollId: str(rollId),
+    stat: str(stat),
+    floor: numOrNull(floor),
+    difficulty: sanitizeDifficulty(difficulty),
     targets: (Array.isArray(targets) ? targets : []).map(sanitizeTarget).filter(Boolean),
     hasDamage: hasDamage === true,
     evade: evade ? sanitizeEvade(evade) : null,
     assists: {},
     contest: sanitizeContestRefRecord(contest),
-    vehicle: sanitizeVehicleRefRecord(vehicle)
+    vehicle: sanitizeVehicleRefRecord(vehicle),
+    patron: sanitizePatronCheckRef(patron)
   };
   for (const entry of sanitizeAssists(assists)) record.assists[entry.id] = entry;
   return record;

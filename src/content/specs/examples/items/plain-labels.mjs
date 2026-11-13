@@ -37,7 +37,7 @@ export const SPECS = Object.freeze([
       {
         name: 'Press Credentials',
         cost: 1,
-        rows: [row('requires', { all: ['heritage.alien'] })]
+        rows: [row('requirements', { kind: 'tags', query: { all: ['heritage.alien'] } })]
       }
     ]
   },
@@ -56,7 +56,7 @@ export const SPECS = Object.freeze([
       // Dice and type only: the stat is None, so the spell adds no ability modifier. The flat row joins at Rank 5.
       baseDamage: { dice: '1d4', stat: 'none', damageType: 'Sonic' },
       rankDamageParts: [{ value: 2, type: 'Sonic', minRank: 5, label: 'Encore' }],
-      description: '<p>Thirty seconds of clapping aimed at one target, steady and perfectly courteous. It hurts anyway, and it hurts more once someone in the back row starts whistling.</p>'
+      description: '<p>Thirty seconds of clapping aimed at one target, steady and perfectly courteous. It deals 1d4 Sonic damage. It hurts anyway, and it hurts more once someone in the back row starts whistling.</p>'
     }
   },
   {
@@ -85,11 +85,12 @@ export const SPECS = Object.freeze([
       identifier: 'boom-mic-fencing',
       stat: 'dex',
       rank: 1,
-      description: '<p>Attacks with a long pole use this skill. The pole is not yours to keep; without one in hand you have nothing to fence with.</p>',
+      description: '<p>Attacks with a long pole use this skill. The pole is not yours to keep; without one in hand you have nothing to fence with. Base Damage: 1d6 + Dexterity Bludgeoning.</p>',
       // The weapon group is a stored tag (there is no Skill Type select), beside the weapon it matches.
       tags: ['skillGroup.weapon', 'skillGroup.combat', 'weaponGroup.reach', 'weapon.polearm', 'action.attack', 'rule.requires-weapon'],
       isAttack: true,
-      hasDamage: true
+      hasDamage: true,
+      baseDamage: { dice: '1d6', stat: 'dex', damageType: 'Bludgeoning' }
     }
   },
   {
@@ -148,7 +149,7 @@ export const SPECS = Object.freeze([
     img: 'icons/svg/explosion.svg',
     system: {
       identifier: 'novelty-firecracker',
-      description: '<p>Labelled "for celebratory use". It goes off at the nearest mob and adds your Charisma, because the crowd loves a showman.</p>',
+      description: '<p>Labelled "for celebratory use". It goes off at the nearest mob for 1d4 Fire damage plus your Charisma, because the crowd loves a showman.</p>',
       lootType: 'consumable',
       quantity: 1,
       executionMode: 'all',

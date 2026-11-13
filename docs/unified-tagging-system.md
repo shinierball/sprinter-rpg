@@ -24,7 +24,8 @@ Tags follow the lowercase dot-separated notation: `<namespace>.<identifier>`.
 | `element` | Damage types and schools | `element.fire`, `element.acid`, `element.bludgeoning`, `element.force` |
 | `archetype` | Class archetypes | `archetype.mage`, `archetype.fighter`, `archetype.rogue`, `archetype.cleric` |
 | `favored` | Spell favored archetype | `favored.mage`, `favored.fighter`, `favored.cleric`, `favored.druid` |
-| `weapon` | Weapon type | `weapon.sword`, `weapon.dagger`, `weapon.bow`, `weapon.unarmed` |
+| `weapon` | Weapon type (typed on a weapon and its Skill) | `weapon.longsword`, `weapon.dagger`, `weapon.bow`, `weapon.rapier` |
+| `weaponGroup` | Optional weapon group (typed, never derived) | `weaponGroup.edge`, `weaponGroup.bashing`, `weaponGroup.reach` |
 | `weaponClass` | Category | `weaponClass.melee`, `weaponClass.ranged`, `weaponClass.unarmed` |
 | `weaponProp` | Handling properties | `weaponProp.reach`, `weaponProp.thrown`, `weaponProp.versatile` |
 | `skillGroup` | Skill disciplines | `skillGroup.combat`, `skillGroup.magic`, `skillGroup.survival`, `skillGroup.crafting` |
@@ -120,10 +121,9 @@ When opening `COGTagManager` from an item sheet (via the Tag Manager button in t
 - The custom tag creation form includes an "Apply to item" option to immediately assign newly registered custom tags to the item.
 
 ### Weapon Attack Synthesis & Associated Skills
-- All built-in weapon skills (`Bow`, `Shotgun`, `Axe`, `Rapier`, etc.) carry the `rule.requires-weapon` tag.
-- `actor.getSynthesizedAttacks()` checks for `rule.requires-weapon` or `weapon.*` tags on skills: weapon skills requiring an equipped weapon are **never** synthesized as standalone attacks if no corresponding weapon is equipped. Standalone synthesized attacks are reserved strictly for unarmed/natural attacks (`weaponClass.unarmed`, `weaponClass.natural`, `Pugilism`, `Bite`, etc.).
-- When attacking with a weapon with multiple associated skills (e.g. `['Aiming', 'Shotgun']`), `actor._resolveWeaponSkills()` uses tags to distinguish the primary combat weapon skill (`Shotgun`) from auxiliary passive skills (`Aiming`).
-- In `actor.getAttackDamageParts()`, weapon item damage parts (e.g., 1d6 Fire) are **additive** to skill-based base damage (e.g., 3d10 Piercing), auxiliary passive bonuses (e.g., 3d4 Aiming bonus), and rank damage dice.
+- A weapon Skill carries a `weapon.*` type tag (or `rule.requires-weapon`). `getSynthesizedAttacks()` never lists such a Skill as a standalone attack: it attacks only through an equipped weapon that uses it. Standalone attacks are for Skills with a no-hands tag (`weaponClass.unarmed`, `weaponClass.natural`) or no weapon type.
+- A weapon lists its Skills in order (`system.associatedSkills`). `actor._resolveWeaponSkills()` offers the listed Skills, then owned Skills that share a `weapon.*` or `weaponGroup.*` tag but are not listed; the first listed Skill the attacker is trained in is the default, and the Attack Options window lets the attacker pick another. Passive Skills (Aiming) are never the weapon's Skill; their rule-tag rows apply on their own.
+- `actor.getAttackDamageParts()` rolls the chosen Skill's Base Damage once, with the weapon's `baseDamage` replacing only the sub-fields it fills, grown by the Skill's rank breaks. The weapon's own `add` rows are bonus damage on top (they do not grow with Rank). Nothing on the weapon copies the Skill's dice. The in-game Tag System journal, page 3, works this through on the Weapon Workshop examples.
 
 
 

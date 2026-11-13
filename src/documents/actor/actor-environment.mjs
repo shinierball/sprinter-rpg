@@ -1,10 +1,15 @@
 import { SYSTEM_ID } from '../../constants.mjs';
-import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
+import { getCurrentFloor, CURRENT_FLOOR_SETTING } from '../../utils/floor/current-floor.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { openApplications } from '../../compat.mjs';
 import { parseFloorNumber, floorLabel } from '../../utils/floor/floor-number.mjs';
 import { SECONDS_PER_HOUR } from '../../utils/time/timing.mjs';
+
+/** World setting: how many crawlers are left alive. */
+export const CRAWLER_COUNT_SETTING = 'crawlerCount';
+/** World setting: the time left on the floor. */
+export const FLOOR_TIMER_SETTING = 'floorTimer';
 
 export const RELAY_ACTION_DECREMENT_FLOOR_TIMER = 'decrementFloorTimer';
 
@@ -93,14 +98,14 @@ export async function setCurrentFloor(floor) {
     return getCurrentFloor();
   }
   try {
-    await globalThis.game.settings.set(SYSTEM_ID, 'currentFloor', val);
+    await globalThis.game.settings.set(SYSTEM_ID, CURRENT_FLOOR_SETTING, val);
   } catch (_) {}
   return val;
 }
 
 export function getFloorTimer() {
   try {
-    const val = globalThis.game?.settings?.get?.(SYSTEM_ID, 'floorTimer');
+    const val = globalThis.game?.settings?.get?.(SYSTEM_ID, FLOOR_TIMER_SETTING);
     const parsed = parseFloat(val);
     return Number.isFinite(parsed) ? parsed : 100;
   } catch (_) {
@@ -117,7 +122,7 @@ export async function setFloorTimer(hours) {
     return getFloorTimer();
   }
   try {
-    await globalThis.game.settings.set(SYSTEM_ID, 'floorTimer', val);
+    await globalThis.game.settings.set(SYSTEM_ID, FLOOR_TIMER_SETTING, val);
   } catch (_) {}
   return val;
 }
@@ -160,6 +165,17 @@ export async function decrementFloorTimer(hours, opts = {}) {
  * `onChange` handler of the currentFloor, floorTimer and crawlerCount settings,
  * so every client refreshes whenever any of them changes.
  */
+/**
+ * The current floor changed: crawlers derive their acting Skill Ranks from it (a Rank past 15 acts from the Sixth Floor),
+ * so they are prepared again before the open windows draw.
+ */
+export function onCurrentFloorChange() {
+  for (const actor of globalThis.game?.actors ?? []) {
+    if (actor?.type === 'crawler') actor.reset?.();
+  }
+  refreshEnvironmentDisplays();
+}
+
 export function refreshEnvironmentDisplays() {
   for (const app of openApplications()) {
     if (typeof app.render === 'function') app.render(false);
@@ -173,7 +189,7 @@ export function refreshEnvironmentDisplays() {
 
 export function getCrawlerCount() {
   try {
-    const val = globalThis.game?.settings?.get?.(SYSTEM_ID, 'crawlerCount');
+    const val = globalThis.game?.settings?.get?.(SYSTEM_ID, CRAWLER_COUNT_SETTING);
     const parsed = parseInt(String(val).replace(/,/g, ''), 10);
     return Number.isFinite(parsed) ? parsed : 1000000;
   } catch (_) {
@@ -191,7 +207,7 @@ export async function setCrawlerCount(count) {
     return getCrawlerCount();
   }
   try {
-    await globalThis.game.settings.set(SYSTEM_ID, 'crawlerCount', val);
+    await globalThis.game.settings.set(SYSTEM_ID, CRAWLER_COUNT_SETTING, val);
   } catch (_) {}
   return val;
 }

@@ -10,7 +10,8 @@ import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { sourceBadge } from '../utils/content-source.mjs';
 import {
-  findOffContent, summarizeFound, replaceWithPoop, deleteWholeDocuments, restoreAll, offThemeList, offContentList, typeCountsText, postCleanupSummary
+  findOffContent, summarizeFound, replaceWithPoop, deleteWholeDocuments, restoreAll, offThemeList, offContentList, typeCountsText, postCleanupSummary,
+  THEME_CLEANUP_SEEN_SETTING
 } from '../content/theme-cleanup.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/theme-cleanup`;
@@ -135,7 +136,7 @@ export class COGThemeCleanupApp extends COGToolApp {
 
   /** The off list is recorded so the prompt at ready does not ask again about it. */
   async markSeen() {
-    await globalThis.game.settings.set(SYSTEM_ID, 'themeCleanupSeen', offContentList(this.registry));
+    await globalThis.game.settings.set(SYSTEM_ID, THEME_CLEANUP_SEEN_SETTING, offContentList(this.registry));
   }
 
   /** The ticked items and whole documents, from the last scan. */

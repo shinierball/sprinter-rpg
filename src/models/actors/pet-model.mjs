@@ -22,7 +22,7 @@ export class PetDataModel extends BaseActorDataModel {
         level: new fields.NumberField({ initial: 1, integer: true, min: 1 }),
         race: new fields.StringField({ initial: '' }),
         class: new fields.StringField({ initial: '' }),
-        special: new fields.HTMLField({ initial: '' }),
+        special: new fields.StringField({ initial: '' }),
         attack1: new fields.StringField({ initial: '' }),
         attack2: new fields.StringField({ initial: '' }),
         bankedGrindHours: new fields.NumberField({ initial: 0, integer: true, min: 0 }),
@@ -30,7 +30,7 @@ export class PetDataModel extends BaseActorDataModel {
         riderId: new fields.StringField({ initial: '' }),
         isMount: new fields.BooleanField({ initial: false }),
         creatureType: new fields.StringField({ initial: 'Beast' }),
-        notes: new fields.HTMLField({ initial: '' }),
+        notes: new fields.StringField({ initial: '' }),
         floor: new fields.StringField({ initial: '1st Floor' })
       }),
       gearSlots: new fields.SchemaField({

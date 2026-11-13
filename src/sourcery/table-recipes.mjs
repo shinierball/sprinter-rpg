@@ -32,7 +32,7 @@
  *       name; `item`: 0-9, the document's position in a comma list cell; `stat`: str|dex|con|int|cha|none, that item's printed stat)
  *       { col, kind: 'table', id } another recipe of the same book by recipe id (`t-<book>-<number>`)
  */
-import { isLayoutHint } from './tables.mjs';
+import { isLayoutHint } from './table-slicer.mjs';
 import { firstScalar } from '../utils/first-scalar.mjs';
 
 const REC_ID = /^t-[a-z0-9]{1,24}-\d{1,4}$/;

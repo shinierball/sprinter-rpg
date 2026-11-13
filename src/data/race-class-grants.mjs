@@ -11,8 +11,10 @@ import { contentRegistry } from '../content/registry.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { normalizeBaseDamage } from '../utils/damage/base-damage.mjs';
 import { normalizeTiming } from '../utils/time/timing.mjs';
+import { cleanRankLimits } from '../utils/skill/advancement-routes.mjs';
 import { isSameOwnedEntry } from '../utils/character/owned-entry.mjs';
 import { landItems } from '../utils/content-source.mjs';
+import { isEffectItem } from '../utils/document-types.mjs';
 
 /** The cooldown a merged skill row carries: the row's own when it has one, else the catalog skill's, else none. */
 const pickCooldown = (own, fallback) => (normalizeTiming(own).unit ? own : (normalizeTiming(fallback).unit ? fallback : { value: 0, unit: '' }));
@@ -183,7 +185,7 @@ export const GRANT_SYSTEM = {
     checkType: s.checkType || resolvedSys.checkType || 'stat',
     checkNote: s.checkNote ?? resolvedSys.checkNote ?? '',
     baseDamage: normalizeBaseDamage(s.baseDamage?.dice ? s.baseDamage : resolvedSys.baseDamage),
-    canGainRanks: s.canGainRanks !== undefined ? s.canGainRanks : (resolvedSys.canGainRanks ?? true),
+    rankLimits: cleanRankLimits(s.rankLimits !== undefined ? s.rankLimits : resolvedSys.rankLimits),
     cooldown: pickCooldown(s.cooldown, resolvedSys.cooldown),
     notes: s.notes || resolvedSys.notes || '',
     upgrades: s.upgrades || resolvedSys.upgrades || ''
@@ -284,7 +286,7 @@ function createGroups(plan) {
   return [
     pick(d => d.type === 'skill' && !startingOf(d)),
     pick(d => d.type === 'spell' && !startingOf(d)),
-    pick(d => (d.type === 'buff' || d.type === 'debuff') && !startingOf(d)),
+    pick(d => isEffectItem(d) && !startingOf(d)),
     pick(d => d.type === RACE_CLASS_KINDS[plan.kind].itemType && !startingOf(d)),
     pick(startingOf)
   ].filter(group => group.length > 0);
@@ -300,7 +302,7 @@ function createGroups(plan) {
  * @param {object} plan a plan from `planRaceClassKind`
  * @returns {Promise<void>}
  */
-export async function writeKindPlan(actor, plan, { allowOffTheme = false } = {}) {
+export async function writeKindPlan(actor, plan, { allowOffTheme = false, createOptions = {} } = {}) {
   const profile = RACE_CLASS_KINDS[plan.kind];
   for (const update of plan.itemUpdates || []) {
     const item = actor.items?.get(update._id);
@@ -313,7 +315,7 @@ export async function writeKindPlan(actor, plan, { allowOffTheme = false } = {})
       // What the grants name from a turned-off theme arrives as Celestial AI Poop (it keeps the planned id); the race or
       // class item itself is the player's explicit pick, and a restore passes `allowOffTheme`.
       const lands = allowOffTheme || group.some(d => d.type === profile.itemType) ? group : landItems(group);
-      const returned = Array.from(await actor.createEmbeddedDocuments('Item', lands, { keepId: true }) ?? []);
+      const returned = Array.from(await actor.createEmbeddedDocuments('Item', lands, { keepId: true, ...createOptions }) ?? []);
       const planned = new Set(group.map(d => d._id));
       const strays = returned.filter(doc => !planned.has(doc?.id));
       for (const data of group) {

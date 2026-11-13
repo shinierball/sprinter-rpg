@@ -8,12 +8,13 @@
 import { saveArchivedCombat } from './combat/archive.mjs';
 import { COGSessionEngine } from './session/session-engine.mjs';
 import { awardAchievement } from './actor/achievement-award.mjs';
+import { isDying, untickDying } from './actor/dying.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import {
   isApplicationId, findDamageUndoRecord, markDamageUndoRecord, computeUndoUpdates, claimUndo, releaseUndo
 } from '../utils/damage/damage-undo.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
-import { combatantOfActor } from './combat-declarations.mjs';
+import { combatantOfActor } from './combat/combatants.mjs';
 import { removeDispelsByApplication } from '../utils/effects/dispel.mjs';
 import { resolveHpPerBar } from '../utils/damage/hp-per-bar.mjs';
 
@@ -618,6 +619,11 @@ export class COGCombatMetrics {
       const { updates, hpRestored, tempRestored, tempBarsSkipped } = computeUndoUpdates(record, target);
       if (Object.keys(updates).length) {
         await target.update(updates, { cogDamageHandled: true, cogDamageUndo: true });
+      }
+      // A hit that cost a round of the countdown gives it back while the target is still Dying (D15)
+      if (record.dyingTicked && isDying(target)) {
+        await untickDying(target);
+        result.dyingRestored = true;
       }
       result.hpRestored = hpRestored;
       result.tempRestored = tempRestored;

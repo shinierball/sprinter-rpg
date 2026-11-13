@@ -18,6 +18,7 @@ import { userOwnsActor } from './personal-space-links.mjs';
 import { MARKER_TYPE } from '../../utils/area/marker.mjs';
 import { registerPayloadDelegate, buildPayload } from '../../data/builders/item-payload.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
+import { baseActorOf } from './token-base-actor.mjs';
 
 export const RELAY_ACTION_CREATE_LIGHT_MARKER = 'createLightMarker';
 
@@ -30,7 +31,7 @@ function levels() {
 
 /** The world actor a marker is keyed by (unwraps synthetic token actors, so every token of a mob shares one marker). */
 function sourceDoc(actor) {
-  return actor?.baseActor ?? actor ?? null;
+  return baseActorOf(actor);
 }
 
 /** Disposition the marker's prototype token starts with: the source's own (friendly when it names none). */

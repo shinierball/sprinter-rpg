@@ -11,7 +11,7 @@
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { sameSideCombatants } from '../../utils/combat/interrupts.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { getAssistSpec, calledPlayDestination, rollerTokenIdOf } from '../../utils/roll/check-assists.mjs';
 import { rollAssistDice } from '../../utils/roll/assist-roll.mjs';
 import { CHECK_TAGS, isOutcomeTag, isFreeInterruptItem } from '../../utils/tag/tag-mechanics.mjs';
@@ -21,6 +21,7 @@ import { isNoGmReason, getActiveGM } from '../../utils/gm-relay.mjs';
 import { getCalledPlays } from '../combat/called-plays.mjs';
 import { assistText } from '../../chat/render/check-assists.mjs';
 import { attackTargetEntries } from './attack-targets.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 const CHECK_TAG_VALUES = new Set(Object.values(CHECK_TAGS));
 const notify = (level, text) => globalThis.ui?.notifications?.[level]?.(text);
@@ -163,7 +164,7 @@ async function postCallCard({ actor, skill, roll, formula, lines, allyName, comb
   const note = allyName ? '' : `<div class="cog-assist-card-lines">${escapeAttr(assistText('CalledPlayByHand'))}</div>`;
   const linesHtml = lines.length ? `<div class="cog-assist-card-lines">${escapeAttr(lines.join(', '))}</div>` : '';
   const ruleBreakHtml = ruleBreak ? ruleBreakBadgeHtml() : '';
-  const rollHtml = typeof roll.render === 'function' ? await roll.render() : '';
+  const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
   const content = `
     <div class="cog-chat-card cog-assist-card cog-called-play-card">
       <div class="cog-assist-card-title"><i class="fa-solid fa-bullhorn"></i> ${escapeAttr(title)} ${ruleBreakHtml}</div>
@@ -172,25 +173,22 @@ async function postCallCard({ actor, skill, roll, formula, lines, allyName, comb
     </div>
   `;
   const spec = getAssistSpec(skill);
-  return roll.toMessage({
+  return roll.toMessage(withFlags({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }) ?? { alias: actor.name },
     flavor: `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)} (${escapeAttr(formula)})`,
-    content,
-    flags: {
-      [SYSTEM_ID]: {
-        isCalledPlay: true,
-        combatId: combat?.id ?? null,
-        round: combat ? Number(combat.round) || 0 : null,
-        allyCombatantId: allyCombatantId ?? null,
-        fromUuid: actor.uuid,
-        itemId: skill.id,
-        skillName: skill.name,
-        formula,
-        when: spec.when,
-        ruleBreak
-      }
-    }
-  });
+    content
+  }, {
+    isCalledPlay: true,
+    combatId: combat?.id ?? null,
+    round: combat ? Number(combat.round) || 0 : null,
+    allyCombatantId: allyCombatantId ?? null,
+    fromUuid: actor.uuid,
+    itemId: skill.id,
+    skillName: skill.name,
+    formula,
+    when: spec.when,
+    ruleBreak
+  }));
 }
 
 /**
@@ -209,7 +207,7 @@ export async function postSheetAssistRoll(actor, skill, spec, options = {}) {
     return null;
   }
   const note = spec.moment === 'check' ? `<div class="cog-assist-card-lines">${escapeAttr(assistText('SheetNote'))}</div>` : '';
-  const rollHtml = typeof rolled.roll.render === 'function' ? await rolled.roll.render() : '';
+  const rollHtml = typeof rolled.roll.render === 'function' ? trustedHtml(await rolled.roll.render()) : '';
   const content = `
     <div class="cog-chat-card cog-assist-card">
       <div class="cog-assist-card-title"><i class="fa-solid fa-handshake-angle"></i> ${escapeAttr(skill.name)} +${escapeAttr(rolled.roll.total)}</div>

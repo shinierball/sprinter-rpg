@@ -16,7 +16,7 @@
  *    `{ gen }` parts writes the generators' text from the spec's own numbers (`options.generators` may override a
  *    generator by id) and fills only when a book part has text, so the stand-in stays otherwise.
  *  - `options.check` (the entry's `check`, `{}` for an entry with none: target path -> `textCheck` of the reviewed text): each
- *    path the book filled is `verified` when its hydrated text hashes to the recipe's hash, else `unverified` (the text is
+ *    path the book filled is `verified` when the book's text before rendering (`checkOf`) hashes to the recipe's hash, else `unverified` (the text is
  *    still imported, flagged, and never falls back to public wording). The result lists both; the flag lists the unverified
  *    paths. Left out, nothing is checked.
  *  - The result records `flags['sprinter-rpg'].sourcery = { resolved, source }` (rule 4), plus `redacted` and the
@@ -25,7 +25,8 @@
  */
 import { fieldMapFor, fieldClass, askedPaths, FIELD_CLASS } from './field-maps.mjs';
 import { isSourceKey, readTargetPath } from './anchors.mjs';
-import { displayName, paragraphsHtml, plainText } from './text.mjs';
+import { displayName, paragraphsHtml, stripControls, titleCaseHeading } from './text.mjs';
+import { schemaFieldKind } from './schema-kind.mjs';
 import { isRedacted, generatedPaths, emptiedPaths } from './redacted.mjs';
 import { GENERATORS } from './generators.mjs';
 import { textCheck } from './hash.mjs';
@@ -57,7 +58,26 @@ function sourceValue(block, from, casing, nameEdits) {
   return typeof v === 'string' ? v : '';
 }
 
-const render = (text, as) => (as === 'html' ? paragraphsHtml(text) : plainText(text));
+/**
+ * Render by the target's schema kind (7.74c): an `HTMLField` gets escaped paragraphs; a `StringField` gets the book's
+ * characters as they are (every card and sheet escapes a plain field itself, and enricher syntax stays live as typed
+ * text does). A target outside a schema follows the map's `as`. `heading`: a heading line, title-cased when the book
+ * sets it in capitals (as a name is).
+ */
+function render(text, as, spec, path) {
+  const kind = schemaFieldKind(spec, path);
+  if (kind === 'html' || (kind === null && as === 'html')) return paragraphsHtml(text);
+  return sourceText(text, as);
+}
+
+/** The book's text as the field's source, before any rendering (heading casing and control characters only). */
+const sourceText = (text, as) => stripControls(as === 'heading' ? titleCaseHeading(text) : text);
+
+/**
+ * The verification hash of a filled field: `textCheck` of the book's text before rendering, so how a field is rendered
+ * (plain, or as paragraphs for an `HTMLField`) never touches it. The one function the importer and the stamp share.
+ */
+const checkOf = text => textCheck(stripControls(text));
 
 /**
  * Hydrate and report.
@@ -74,6 +94,7 @@ export function hydrateWithReport(spec, block, options = {}) {
   const generated = new Set(generatedPaths(out));
   const map = fieldMapFor(kind);
   const filled = [];
+  const checks = {};
   const emptiedNow = [];
   const itemNames = [];
   const itemsKept = [];
@@ -104,10 +125,10 @@ export function hydrateWithReport(spec, block, options = {}) {
           if (typeof value === 'string' && value.trim()) pieces.push(value.trim());
         } else if (!(part.ifNoPath && locate(out, part.ifNoPath)) && lends(part.from)) {
           const value = sourceValue(block, part.from, casing, nameEdits);
-          if (value.trim()) { bookText = true; pieces.push(`${part.label ?? ''}${plainText(value)}`); }
+          if (value.trim()) { bookText = true; pieces.push(`${part.label ?? ''}${stripControls(value)}`); }
         }
       }
-      if (bookText) { loc.parent[loc.key] = pieces.join(m.join.sep); filled.push(m.path); } else skipped.push({ path: m.path, reason: 'no source text' });
+      if (bookText) { const joined = pieces.join(m.join.sep); loc.parent[loc.key] = joined; checks[m.path] = checkOf(joined); filled.push(m.path); } else skipped.push({ path: m.path, reason: 'no source text' });
       continue;
     }
     const from = override[m.path] ?? m.from;
@@ -123,7 +144,8 @@ export function hydrateWithReport(spec, block, options = {}) {
       } else skipped.push({ path: m.path, reason: 'no source text' });
       continue;
     }
-    loc.parent[loc.key] = render(text, m.as);
+    loc.parent[loc.key] = render(text, m.as, out, m.path);
+    checks[m.path] = checkOf(sourceText(text, m.as));
     filled.push(m.path);
   }
 
@@ -134,7 +156,7 @@ export function hydrateWithReport(spec, block, options = {}) {
     for (const [id, r] of Object.entries(block.items)) {
       const item = embedded.find(i => i && typeof i === 'object' && i._id === id);
       if (!item) continue;
-      const name = r.name ? plainText(r.name) : '';
+      const name = r.name ? stripControls(r.name) : '';
       if (name) { item.name = name; itemNames.push(id); continue; }
       item.flags = item.flags && typeof item.flags === 'object' ? item.flags : {};
       item.flags[FLAG_SCOPE] = { ...(item.flags[FLAG_SCOPE] ?? {}), sourcery: { kept: r.missed ? 'missed' : 'unprinted' } };
@@ -147,7 +169,7 @@ export function hydrateWithReport(spec, block, options = {}) {
     const loc = readTargetPath(path) && locate(out, path);
     if (!loc || !isEmpty(loc.parent[loc.key])) continue;
     const text = fn(out);
-    if (typeof text === 'string' && text) { loc.parent[loc.key] = text; filled.push(path); }
+    if (typeof text === 'string' && text) { loc.parent[loc.key] = text; checks[path] = checkOf(text); filled.push(path); }
   }
 
   out.flags = out.flags && typeof out.flags === 'object' ? out.flags : {};
@@ -159,9 +181,7 @@ export function hydrateWithReport(spec, block, options = {}) {
   const verified = [];
   const unverified = [];
   for (const path of filled) {
-    const loc = locate(out, path);
-    const text = loc && typeof loc.parent[loc.key] === 'string' ? loc.parent[loc.key] : '';
-    if (check) (Object.hasOwn(check, path) && check[path] === textCheck(text) ? verified : unverified).push(path);
+    if (check) (Object.hasOwn(check, path) && check[path] === checks[path] ? verified : unverified).push(path);
   }
   const stillEmptied = [...new Set([...emptiedPaths(out), ...emptiedNow])].filter(p => !filled.includes(p));
   // A document whose entry does not provide its name keeps the public one: flagged, so the sheet can say so.
@@ -173,7 +193,7 @@ export function hydrateWithReport(spec, block, options = {}) {
     ...(unverified.length ? { unverified } : {}),
     ...(nameKept ? { nameKept: true } : {})
   };
-  return { spec: out, filled, emptiedNow, itemNames, itemsKept, skipped, verified, unverified };
+  return { spec: out, filled, emptiedNow, itemNames, itemsKept, skipped, verified, unverified, checks };
 }
 
 /** `hydrate(redactedSpec, block, options) -> spec`. */

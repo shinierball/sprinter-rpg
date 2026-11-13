@@ -1,0 +1,7 @@
+{{!-- Page 6: what is missing (checkItem) and what the weapon does. Create is in the footer. --}}
+<section class="cog-wb-page" data-page="review" {{#unless (eq page "review")}}hidden{{/unless}}>
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.WeaponBuilder.Review.Intro"}}</p>
+  {{#unless hasFindings}}<p class="cog-text-success"><i class="fa-solid fa-circle-check"></i> {{localize "COG.WeaponBuilder.Review.Clean"}}</p>{{/unless}}
+  {{> "systems/sprinter-rpg/templates/items/parts/findings.hbs"}}
+  {{> "systems/sprinter-rpg/templates/items/parts/summary.hbs"}}
+</section>

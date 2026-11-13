@@ -1,0 +1,48 @@
+{{#if brokenState}}
+<div class="cog-field-row" style="margin-bottom: 8px; align-items: center;">
+  <span class="cog-badge cog-bg-danger-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 6px; border-radius: 2px;">{{brokenLabel}}</span>
+  {{#if canRepair}}
+  <button type="button" class="cog-btn cog-bg-warning-fill cog-text-on-fill" data-action="repairItem" data-tooltip="{{localize "COG.Repair.Tooltip"}}" style="margin-left: 8px; font-size: 11px; padding: 3px 8px; border-radius: 3px; cursor: pointer;"><i class="fa-solid fa-screwdriver-wrench"></i> {{localize "COG.Repair.Button"}}</button>
+  {{/if}}
+</div>
+{{/if}}
+<div class="cog-field-row" style="margin-bottom: 8px; align-items: center;">
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.GearSheet.Basics.Slot"}}</span>
+    <select name="system.slot" class="cog-field-input">
+      {{#each gearSlotOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="cog-field-group small" style="text-align: center;">
+    <span class="cog-field-label">{{localize "COG.GearSheet.Basics.Equipped"}}</span>
+    <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;">
+      <input type="checkbox" name="system.equipped" {{#if system.equipped}}checked{{/if}} class="cog-checkbox-lg" />
+    </label>
+  </div>
+  <div class="cog-field-group small" style="text-align: center;">
+    <span class="cog-field-label">{{localize "COG.GearSheet.Basics.IsWeapon"}}</span>
+    <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;">
+      <input type="checkbox" name="system.isWeapon" {{#if isWeaponChecked}}checked{{/if}} class="cog-checkbox-lg" />
+    </label>
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">{{localize "COG.GearSheet.Basics.DamageResist"}}</span>
+    <input class="cog-field-input" type="number" name="system.drBonus" value="{{system.drBonus}}" placeholder="0" title="{{localize "COG.GearSheet.Basics.DrTip"}}" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label">{{localize "COG.GearSheet.Basics.Quantity"}}</span>
+    <input class="cog-field-input" type="number" name="system.quantity" value="{{system.quantity}}" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label"><i class="fa-solid fa-coins cog-text-gold"></i> {{localize "COG.GearSheet.Basics.GoldValue"}}</span>
+    {{#if isGM}}
+      <input class="cog-field-input cog-bd-warning-fill" type="number" name="system.value" value="{{system.value}}" min="0" placeholder="0" title="{{localize "COG.GearSheet.Basics.GoldGmTip"}}" style="font-weight: bold;" />
+    {{else}}
+      {{#if canSeeItemValue}}
+        <input class="cog-field-input cog-bg-surface-alt cog-text" type="number" value="{{system.value}}" disabled readonly title="{{localize "COG.GearSheet.Basics.GoldInspectedTip"}}" style="cursor: not-allowed;" />
+      {{else}}
+        <input class="cog-field-input cog-bg-surface-muted cog-text-muted" type="text" value="???" disabled readonly title="{{localize "COG.GearSheet.Basics.GoldHiddenTip"}}" style="text-align: center; font-style: italic; cursor: not-allowed;" />
+      {{/if}}
+    {{/if}}
+  </div>
+</div>

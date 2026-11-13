@@ -1,0 +1,16 @@
+
+{{#if availableBuffs.length}}
+  <datalist id="cog-available-buffs-list-{{item.id}}">
+    {{#each availableBuffs as |b|}}
+      <option value="{{b.system.identifier}}">{{b.name}}</option>
+    {{/each}}
+  </datalist>
+{{/if}}
+
+{{#if availableDebuffs.length}}
+  <datalist id="cog-available-debuffs-list-{{item.id}}">
+    {{#each availableDebuffs as |d|}}
+      <option value="{{d.system.identifier}}">{{d.name}}</option>
+    {{/each}}
+  </datalist>
+{{/if}}

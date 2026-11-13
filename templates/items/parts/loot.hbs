@@ -1,11 +1,11 @@
 <section class="cog-item-body cog-item-body-loot">
 <div class="cog-field-row" style="margin-bottom: 8px;">
   <div class="cog-field-group small">
-    <span class="cog-field-label">Quantity (Uses)</span>
+    <span class="cog-field-label" title="{{localize 'COG.Loot.Sheet.QuantityHint'}}">{{localize "COG.Loot.Sheet.Quantity"}}</span>
     <input class="cog-field-input" type="number" name="system.quantity" value="{{system.quantity}}" min="0" />
   </div>
   <div class="cog-field-group small">
-    <span class="cog-field-label"><i class="fa-solid fa-coins cog-text-gold"></i> Gold Value</span>
+    <span class="cog-field-label"><i class="fa-solid fa-coins cog-text-gold"></i> {{localize "COG.Loot.Sheet.GoldValue"}}</span>
     {{#if isGM}}
       <input class="cog-field-input cog-bd-warning-fill" type="number" name="system.value" value="{{system.value}}" min="0" placeholder="0" title="Game Master: Gold Value is editable" style="font-weight: bold;" />
     {{else}}
@@ -20,32 +20,22 @@
     {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=cooldownEditor}}
   </div>
   <div class="cog-field-group">
-    <span class="cog-field-label">Loot Type</span>
+    <span class="cog-field-label">{{localize "COG.Loot.Sheet.LootType"}}</span>
     <select class="cog-field-input" name="system.lootType">
-      <option value="consumable" {{#if (eq system.lootType "consumable")}}selected{{/if}}>Consumable</option>
-      <option value="scratch_ticket" {{#if (eq system.lootType "scratch_ticket")}}selected{{/if}}>Scratch-off Ticket / Lottery</option>
-      <option value="wand" {{#if (eq system.lootType "wand")}}selected{{/if}}>Wand / Charged</option>
-      <option value="scroll" {{#if (eq system.lootType "scroll")}}selected{{/if}}>Scroll (Spell Single-Use)</option>
-      <option value="treasure" {{#if (eq system.lootType "treasure")}}selected{{/if}}>Treasure / Valuables</option>
-      <option value="crafting" {{#if (eq system.lootType "crafting")}}selected{{/if}}>Crafting Material</option>
-      <option value="quest" {{#if (eq system.lootType "quest")}}selected{{/if}}>Quest Item</option>
-      <option value="blueprint" {{#if (eq system.lootType "blueprint")}}selected{{/if}}>Crafting Blueprint</option>
-      <option value="box" {{#if (eq system.lootType "box")}}selected{{/if}}>{{localize "COG.LootType.box"}}</option>
+      {{#each lootTypeOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
     </select>
   </div>
   {{#if (or (eq system.lootType "consumable") (eq system.lootType "wand"))}}
     <div class="cog-field-group">
-      <span class="cog-field-label">Execution Mode</span>
+      <span class="cog-field-label" title="{{localize 'COG.Loot.Sheet.ModeHint'}}">{{localize "COG.Loot.Sheet.Mode"}}</span>
       <select class="cog-field-input" name="system.executionMode">
-        <option value="" {{#unless system.executionMode}}selected{{/unless}}>Default (All Effects)</option>
-        <option value="all" {{#if (eq system.executionMode "all")}}selected{{/if}}>All Effects (Guaranteed Combo)</option>
-        <option value="random" {{#if (eq system.executionMode "random")}}selected{{/if}}>Weighted Random Outcome</option>
+        {{#each executionModeOptions as |mOpt|}}<option value="{{mOpt.value}}" {{#if mOpt.selected}}selected{{/if}}>{{mOpt.label}}</option>{{/each}}
       </select>
     </div>
   {{/if}}
   {{#if (or (eq system.lootType "wand") (eq system.lootType "consumable"))}}
     <div class="cog-field-group small">
-      <span class="cog-field-label">Charges</span>
+      <span class="cog-field-label" title="{{localize 'COG.Loot.Sheet.ChargesHint'}}">{{localize "COG.Loot.Sheet.Charges"}}</span>
       <div style="display: flex; gap: 4px; align-items: center;">
         <input class="cog-field-input" type="number" name="system.charges.value" value="{{system.charges.value}}" min="0" style="text-align: center; width: 45px;" />
         <span>/</span>
@@ -67,13 +57,23 @@
 {{#if (or (eq system.lootType "scroll") (eq system.lootType "wand"))}}
 <div class="cog-stat-block cog-bg-info-tint" style="margin-top: 8px; margin-bottom: 8px; border: 1px solid var(--cog-info); padding: 6px 8px;">
   <div style="display: flex; align-items: center; gap: 8px;">
-    <span class="cog-text-info" style="font-weight: bold; font-size: 12px;"><i class="fa-solid fa-scroll"></i> Inscribed Spell:</span>
+    <span class="cog-text-info" style="font-weight: bold; font-size: 12px;"><i class="fa-solid fa-scroll"></i> {{localize "COG.Loot.Sheet.InscribedSpell"}}</span>
     <select class="cog-field-input" data-change-action="selectScrollSpell" style="flex: 1; font-size: 11px;">
-      <option value="">-- Choose Spell to Inscribe --</option>
+      <option value="">{{localize "COG.Loot.Sheet.ChooseSpell"}}</option>
       {{#each spellIdentifierOptions as |sp|}}
         <option value="{{sp.value}}" {{#if sp.selected}}selected{{/if}}>{{sp.label}}</option>
       {{/each}}
     </select>
+  </div>
+</div>
+{{/if}}
+
+{{#if (eq system.lootType "scroll")}}
+<div class="cog-field-row" style="margin-bottom: 8px;">
+  <div class="cog-field-group">
+    <span class="cog-field-label"><i class="fa-solid fa-hands-praying"></i> {{localize "COG.Loot.Sheet.Deity"}}</span>
+    <input class="cog-field-input" type="text" name="system.deity" value="{{system.deity}}" placeholder="{{localize "COG.Loot.Sheet.DeityPlaceholder"}}" title="{{localize 'COG.Loot.Sheet.DeityHint'}}" />
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Loot.Sheet.DeityHint"}}</p>
   </div>
 </div>
 {{/if}}
@@ -83,13 +83,13 @@
 <div class="cog-stat-block cog-bg-surface-alt" style="margin-top: 10px; margin-bottom: 10px; border: 1px solid var(--cog-gold);">
   <div class="cog-banner-header cog-bg-grad-magic-gold cog-text-on-fill" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px;">
     <span style="font-size: 13px; font-weight: bold; text-transform: uppercase;">
-      <i class="fa-solid fa-ticket"></i> Scratch-off Outcomes / Random Table
+      <i class="fa-solid fa-ticket" title="{{localize 'COG.Loot.Sheet.LotteryHint'}}"></i> {{localize "COG.Loot.Sheet.Lottery"}}
       {{#if system.outcomes.length}}
-        <span class="cog-badge cog-bg-surface-muted" style="font-size: 10px; margin-left: 6px;">Total weight {{outcomesTotalWeight}}</span>
+        <span class="cog-badge cog-bg-surface-muted" style="font-size: 10px; margin-left: 6px;">{{localize "COG.Loot.Sheet.Outcome.WeightOf" total=outcomesTotalWeight}}</span>
       {{/if}}
     </span>
     <a class="cog-text-on-fill" data-action="addLootOutcome" style="cursor: pointer; font-size: 11px; text-decoration: none;">
-      <i class="fa-solid fa-plus"></i> Add Outcome
+      <i class="fa-solid fa-plus"></i> {{localize "COG.Loot.Sheet.AddPrize"}}
     </a>
   </div>
   <div style="padding: 8px;">
@@ -97,28 +97,28 @@
       <div class="cog-weight-info cog-text-secondary" style="border: 1px solid var(--cog-panel-border); padding: 6px 10px; border-radius: 3px; margin-bottom: 8px; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
         <span>
           <i class="fa-solid fa-circle-info"></i>
-          Total weight {{outcomesTotalWeight}}. Weights are relative: an outcome's chance is its weight divided by the total.
+          {{localize "COG.Loot.Sheet.TotalWeight" total=outcomesTotalWeight}}
         </span>
         <a data-action="rebalanceOutcomeWeights" style="text-decoration: underline; cursor: pointer; font-size: 11px; font-weight: bold;">
-          <i class="fa-solid fa-scale-balanced"></i> Even out weights
+          <i class="fa-solid fa-scale-balanced"></i> {{localize "COG.Loot.Sheet.EvenOut"}}
         </a>
       </div>
       <table class="cog-table" style="width: 100%; font-size: 12px; margin-bottom: 0;">
         <thead>
           <tr class="cog-bg-surface-muted">
-            <th style="width: 25%;">Outcome Name</th>
-            <th style="width: 12%;">Weight (of {{outcomesTotalWeight}})</th>
-            <th style="width: 15%;">Type</th>
-            <th style="width: 16%;">Target</th>
-            <th style="width: 24%;">Details / Selection</th>
-            <th style="width: 8%; text-align: center;">Act</th>
+            <th style="width: 25%;">{{localize "COG.Loot.Sheet.Outcome.Name"}}</th>
+            <th style="width: 12%;">{{localize "COG.Loot.Sheet.Outcome.WeightOf" total=outcomesTotalWeight}}</th>
+            <th style="width: 15%;">{{localize "COG.Loot.Sheet.Outcome.Does"}}</th>
+            <th style="width: 16%;">{{localize "COG.Loot.Sheet.Outcome.Who"}}</th>
+            <th style="width: 24%;">{{localize "COG.Loot.Sheet.Outcome.Amount"}}</th>
+            <th style="width: 8%; text-align: center;"></th>
           </tr>
         </thead>
         <tbody>
           {{#each system.outcomes as |out idx|}}
             <tr style="border-bottom: 1px solid var(--cog-divider);">
               <td>
-                <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.name" value="{{out.name}}" placeholder="Outcome Name" style="width: 100%; font-size: 11px;" />
+                <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.name" value="{{out.name}}" placeholder="{{localize "COG.Loot.Sheet.Outcome.Name"}}" style="width: 100%; font-size: 11px;" />
               </td>
               <td>
                 <input class="cog-field-input" data-input-action="sanitizeWeight" type="number" name="system.outcomes.{{idx}}.weight" value="{{out.weight}}" min="0" max="100" data-index="{{idx}}" style="width: 100%; font-size: 11px;" />
@@ -130,23 +130,21 @@
               </td>
               <td>
                 <select class="cog-field-input" name="system.outcomes.{{idx}}.targetType" style="width: 100%; font-size: 11px;">
-                  <option value="closest_mob" {{#if out.targetIs.closest_mob}}selected{{/if}}>Closest Mob</option>
-                  <option value="self" {{#if out.targetIs.self}}selected{{/if}}>Self</option>
-                  <option value="target" {{#if out.targetIs.target}}selected{{/if}}>Targeted Token</option>
+                  {{#each out.targetOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
                 </select>
               </td>
               <td>
                 {{#if (eq out.type "heal")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
-                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="Bars" style="width: 50px; font-size: 11px;" />
-                    <span style="font-size: 10px;">Bars</span>
+                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="{{localize "COG.Loot.Sheet.Outcome.Bars"}}" style="width: 50px; font-size: 11px;" />
+                    <span style="font-size: 10px;">{{localize "COG.Loot.Sheet.Outcome.Bars"}}</span>
                   </div>
                 {{else if (eq out.type "heal_over_time")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
-                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="Bars" style="width: 40px; font-size: 11px;" />
-                    <span style="font-size: 10px;">b/rnd</span>
+                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="{{localize "COG.Loot.Sheet.Outcome.Bars"}}" style="width: 40px; font-size: 11px;" />
+                    <span style="font-size: 10px;">{{localize "COG.Loot.Sheet.Outcome.BarsPerRound"}}</span>
                     <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rounds" value="{{out.rounds}}" placeholder="3" style="width: 40px; font-size: 11px;" />
-                    <span style="font-size: 10px;">rnds</span>
+                    <span style="font-size: 10px;">{{localize "COG.Loot.Sheet.Outcome.Rounds"}}</span>
                   </div>
                 {{else if (eq out.type "restore_resource")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
@@ -154,16 +152,16 @@
                       {{#each out.resourceOptions as |rOpt|}}<option value="{{rOpt.value}}" {{#if rOpt.selected}}selected{{/if}}>{{rOpt.label}}</option>{{/each}}
                     </select>
                     <select class="cog-field-input" name="system.outcomes.{{idx}}.mode" style="width: 35%; font-size: 11px;">
-                      <option value="full" {{#if out.restoreFull}}selected{{/if}}>Full</option>
-                      <option value="amount" {{#unless out.restoreFull}}selected{{/unless}}>Amount</option>
+                      <option value="full" {{#if out.restoreFull}}selected{{/if}}>{{localize "COG.Loot.Sheet.Outcome.Full"}}</option>
+                      <option value="amount" {{#unless out.restoreFull}}selected{{/unless}}>{{localize "COG.Loot.Sheet.Outcome.AmountMode"}}</option>
                     </select>
                     <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.amount" value="{{out.amount}}" placeholder="10" style="width: 35%; font-size: 11px;" />
                   </div>
                 {{else if (eq out.type "mend_injury")}}
                   <select class="cog-field-input" name="system.outcomes.{{idx}}.injurySeverity" style="width: 100%; font-size: 11px;">
-                    <option value="minor" {{#if (eq out.injurySeverity "minor")}}selected{{/if}}>Minor Injury</option>
-                    <option value="major" {{#if (eq out.injurySeverity "major")}}selected{{/if}}>Major Injury</option>
-                    <option value="all" {{#if (eq out.injurySeverity "all")}}selected{{/if}}>All Injuries</option>
+                    <option value="minor" {{#if (eq out.injurySeverity "minor")}}selected{{/if}}>{{localize "COG.Loot.Sheet.Outcome.InjuryMinor"}}</option>
+                    <option value="major" {{#if (eq out.injurySeverity "major")}}selected{{/if}}>{{localize "COG.Loot.Sheet.Outcome.InjuryMajor"}}</option>
+                    <option value="all" {{#if (eq out.injurySeverity "all")}}selected{{/if}}>{{localize "COG.Loot.Sheet.Outcome.InjuryAll"}}</option>
                   </select>
                 {{else if (eq out.type "cure_debuff")}}
                   {{> "systems/sprinter-rpg/templates/items/parts/outcome-cure-filter.hbs" out=out idx=idx}}
@@ -179,7 +177,7 @@
                 {{else if (eq out.type "learn_spell")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
                     <select class="cog-field-input" name="system.outcomes.{{idx}}.spellIdentifier" style="width: 70%; font-size: 11px;">
-                      <option value="">-- Choose Spell --</option>
+                      <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseSpell"}}</option>
                       {{#each out.spellOptions as |sOpt|}}
                         <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
                       {{/each}}
@@ -197,21 +195,21 @@
                   </div>
                 {{else if (eq out.type "buff")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeBuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.buffIdentifier" style="width: 100%; font-size: 11px;">
-                    <option value="">-- Choose Existing Buff --</option>
+                    <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseBuff"}}</option>
                     {{#each out.buffOptions as |bOpt|}}
                       <option value="{{bOpt.value}}" {{#if bOpt.selected}}selected{{/if}}>{{bOpt.label}}</option>
                     {{/each}}
                   </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.buffBadge}}
                 {{else if (eq out.type "debuff")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeDebuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.debuffIdentifier" style="width: 100%; font-size: 11px;">
-                    <option value="">-- Choose Existing Debuff --</option>
+                    <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseDebuff"}}</option>
                     {{#each out.debuffOptions as |dOpt|}}
                       <option value="{{dOpt.value}}" {{#if dOpt.selected}}selected{{/if}}>{{dOpt.label}}</option>
                     {{/each}}
                   </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.debuffBadge}}
                 {{else if (eq out.type "roll_table")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" name="system.outcomes.{{idx}}.tableUuid" style="width: 100%; font-size: 11px;">
-                    <option value="">-- Choose Roll Table --</option>
+                    <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseTable"}}</option>
                     {{#each out.tableOptions as |tOpt|}}
                       <option value="{{tOpt.uuid}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.name}}</option>
                     {{/each}}
@@ -244,7 +242,7 @@
             </tr>
             <tr>
               <td colspan="6" style="padding-bottom: 6px; padding-top: 2px;">
-                <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="Flavor & rules description..." style="width: 100%; font-size: 11px;" />
+                <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="{{localize "COG.Loot.Sheet.Outcome.DescriptionPlaceholder"}}" style="width: 100%; font-size: 11px;" />
               </td>
             </tr>
             {{#if out.isEnchantItem}}
@@ -270,7 +268,7 @@
       </table>
     {{else}}
       <div class="cog-text" style="text-align: center; font-size: 12px; padding: 6px;">
-        No random outcomes configured. Click <strong>Add Outcome</strong> above to add ticket outcomes.
+        {{localize "COG.Loot.Sheet.NoPrizes"}}
       </div>
     {{/if}}
   </div>
@@ -282,15 +280,15 @@
 <div class="cog-stat-block cog-bg-surface" style="margin-top: 10px; margin-bottom: 10px; border: 1px solid var(--cog-success);">
   <div class="cog-banner-header cog-bg-grad-success-info cog-text-on-fill" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px;">
     <span style="font-size: 13px; font-weight: bold; text-transform: uppercase;">
-      <i class="fa-solid fa-flask-vial"></i> Effects & Outcomes Builder
+      <i class="fa-solid fa-flask-vial"></i> {{localize "COG.Loot.Sheet.Builder"}}
       {{#if (eq system.executionMode "random")}}
-        <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="font-size: 10px; margin-left: 6px;">WEIGHTED RANDOM (total {{outcomesTotalWeight}})</span>
+        <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="font-size: 10px; margin-left: 6px;">{{localize "COG.Loot.Sheet.ModeRandom" total=outcomesTotalWeight}}</span>
       {{else}}
-        <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 10px; margin-left: 6px;">GUARANTEED COMBO (ALL RESOLVE)</span>
+        <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 10px; margin-left: 6px;">{{localize "COG.Loot.Sheet.ModeAll"}}</span>
       {{/if}}
     </span>
     <a class="cog-text-on-fill" data-action="addLootOutcome" style="cursor: pointer; font-size: 11px; text-decoration: none;">
-      <i class="fa-solid fa-plus"></i> Add Effect
+      <i class="fa-solid fa-plus"></i> {{localize "COG.Loot.Sheet.AddEffect"}}
     </a>
   </div>
   <div style="padding: 8px;">
@@ -299,31 +297,31 @@
         <div class="cog-weight-info cog-text-secondary" style="border: 1px solid var(--cog-panel-border); padding: 6px 10px; border-radius: 3px; margin-bottom: 8px; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
         <span>
           <i class="fa-solid fa-circle-info"></i>
-          Total weight {{outcomesTotalWeight}}. Weights are relative: an outcome's chance is its weight divided by the total.
+          {{localize "COG.Loot.Sheet.TotalWeight" total=outcomesTotalWeight}}
         </span>
         <a data-action="rebalanceOutcomeWeights" style="text-decoration: underline; cursor: pointer; font-size: 11px; font-weight: bold;">
-          <i class="fa-solid fa-scale-balanced"></i> Even out weights
+          <i class="fa-solid fa-scale-balanced"></i> {{localize "COG.Loot.Sheet.EvenOut"}}
         </a>
       </div>
       {{/if}}
       <table class="cog-table" style="width: 100%; font-size: 12px; margin-bottom: 0;">
         <thead>
           <tr class="cog-bg-surface-muted">
-            <th style="width: 25%;">Effect / Outcome Name</th>
+            <th style="width: 25%;">{{localize "COG.Loot.Sheet.Outcome.Name"}}</th>
             {{#if (eq system.executionMode "random")}}
-              <th style="width: 12%;">Weight</th>
+              <th style="width: 12%;">{{localize "COG.Loot.Sheet.Outcome.Weight"}}</th>
             {{/if}}
-            <th style="width: 18%;">Effect Type</th>
-            <th style="width: 16%;">Target</th>
-            <th style="width: 25%;">Details / Values</th>
-            <th style="width: 8%; text-align: center;">Act</th>
+            <th style="width: 18%;">{{localize "COG.Loot.Sheet.Outcome.Does"}}</th>
+            <th style="width: 16%;">{{localize "COG.Loot.Sheet.Outcome.Who"}}</th>
+            <th style="width: 25%;">{{localize "COG.Loot.Sheet.Outcome.Amount"}}</th>
+            <th style="width: 8%; text-align: center;"></th>
           </tr>
         </thead>
         <tbody>
           {{#each system.outcomes as |out idx|}}
             <tr style="border-bottom: 1px solid var(--cog-divider);">
               <td>
-                <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.name" value="{{out.name}}" placeholder="Effect Name" style="width: 100%; font-size: 11px;" />
+                <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.name" value="{{out.name}}" placeholder="{{localize "COG.Loot.Sheet.Outcome.Name"}}" style="width: 100%; font-size: 11px;" />
               </td>
               {{#if (eq ../system.executionMode "random")}}
                 <td>
@@ -337,23 +335,21 @@
               </td>
               <td>
                 <select class="cog-field-input" name="system.outcomes.{{idx}}.targetType" style="width: 100%; font-size: 11px;">
-                  <option value="self" {{#if out.targetSelf}}selected{{/if}}>Self</option>
-                  <option value="closest_mob" {{#if out.targetIs.closest_mob}}selected{{/if}}>Closest Mob</option>
-                  <option value="target" {{#if out.targetIs.target}}selected{{/if}}>Targeted Token</option>
+                  {{#each out.targetOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
                 </select>
               </td>
               <td>
                 {{#if (eq out.type "heal")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
-                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="Bars" style="width: 50px; font-size: 11px;" />
-                    <span style="font-size: 10px;">Bars</span>
+                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="{{localize "COG.Loot.Sheet.Outcome.Bars"}}" style="width: 50px; font-size: 11px;" />
+                    <span style="font-size: 10px;">{{localize "COG.Loot.Sheet.Outcome.Bars"}}</span>
                   </div>
                 {{else if (eq out.type "heal_over_time")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
-                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="Bars" style="width: 40px; font-size: 11px;" />
-                    <span style="font-size: 10px;">b/rnd</span>
+                    <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="{{localize "COG.Loot.Sheet.Outcome.Bars"}}" style="width: 40px; font-size: 11px;" />
+                    <span style="font-size: 10px;">{{localize "COG.Loot.Sheet.Outcome.BarsPerRound"}}</span>
                     <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rounds" value="{{out.rounds}}" placeholder="3" style="width: 40px; font-size: 11px;" />
-                    <span style="font-size: 10px;">rnds</span>
+                    <span style="font-size: 10px;">{{localize "COG.Loot.Sheet.Outcome.Rounds"}}</span>
                   </div>
                 {{else if (eq out.type "restore_resource")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
@@ -361,16 +357,16 @@
                       {{#each out.resourceOptions as |rOpt|}}<option value="{{rOpt.value}}" {{#if rOpt.selected}}selected{{/if}}>{{rOpt.label}}</option>{{/each}}
                     </select>
                     <select class="cog-field-input" name="system.outcomes.{{idx}}.mode" style="width: 35%; font-size: 11px;">
-                      <option value="full" {{#if out.restoreFull}}selected{{/if}}>Full</option>
-                      <option value="amount" {{#unless out.restoreFull}}selected{{/unless}}>Amount</option>
+                      <option value="full" {{#if out.restoreFull}}selected{{/if}}>{{localize "COG.Loot.Sheet.Outcome.Full"}}</option>
+                      <option value="amount" {{#unless out.restoreFull}}selected{{/unless}}>{{localize "COG.Loot.Sheet.Outcome.AmountMode"}}</option>
                     </select>
                     <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.amount" value="{{out.amount}}" placeholder="10" style="width: 35%; font-size: 11px;" />
                   </div>
                 {{else if (eq out.type "mend_injury")}}
                   <select class="cog-field-input" name="system.outcomes.{{idx}}.injurySeverity" style="width: 100%; font-size: 11px;">
-                    <option value="minor" {{#if (eq out.injurySeverity "minor")}}selected{{/if}}>Minor Injury</option>
-                    <option value="major" {{#if (eq out.injurySeverity "major")}}selected{{/if}}>Major Injury</option>
-                    <option value="all" {{#if (eq out.injurySeverity "all")}}selected{{/if}}>All Injuries</option>
+                    <option value="minor" {{#if (eq out.injurySeverity "minor")}}selected{{/if}}>{{localize "COG.Loot.Sheet.Outcome.InjuryMinor"}}</option>
+                    <option value="major" {{#if (eq out.injurySeverity "major")}}selected{{/if}}>{{localize "COG.Loot.Sheet.Outcome.InjuryMajor"}}</option>
+                    <option value="all" {{#if (eq out.injurySeverity "all")}}selected{{/if}}>{{localize "COG.Loot.Sheet.Outcome.InjuryAll"}}</option>
                   </select>
                 {{else if (eq out.type "cure_debuff")}}
                   {{> "systems/sprinter-rpg/templates/items/parts/outcome-cure-filter.hbs" out=out idx=idx}}
@@ -386,7 +382,7 @@
                 {{else if (eq out.type "learn_spell")}}
                   <div style="display: flex; gap: 4px; align-items: center;">
                     <select class="cog-field-input" name="system.outcomes.{{idx}}.spellIdentifier" style="width: 70%; font-size: 11px;">
-                      <option value="">-- Choose Spell --</option>
+                      <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseSpell"}}</option>
                       {{#each out.spellOptions as |sOpt|}}
                         <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
                       {{/each}}
@@ -404,21 +400,21 @@
                   </div>
                 {{else if (eq out.type "buff")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeBuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.buffIdentifier" style="width: 100%; font-size: 11px;">
-                    <option value="">-- Choose Existing Buff --</option>
+                    <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseBuff"}}</option>
                     {{#each out.buffOptions as |bOpt|}}
                       <option value="{{bOpt.value}}" {{#if bOpt.selected}}selected{{/if}}>{{bOpt.label}}</option>
                     {{/each}}
                   </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.buffBadge}}
                 {{else if (eq out.type "debuff")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeDebuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.debuffIdentifier" style="width: 100%; font-size: 11px;">
-                    <option value="">-- Choose Existing Debuff --</option>
+                    <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseDebuff"}}</option>
                     {{#each out.debuffOptions as |dOpt|}}
                       <option value="{{dOpt.value}}" {{#if dOpt.selected}}selected{{/if}}>{{dOpt.label}}</option>
                     {{/each}}
                   </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.debuffBadge}}
                 {{else if (eq out.type "spell")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeSpell" data-index="{{idx}}" name="system.outcomes.{{idx}}.spellIdentifier" style="width: 100%; font-size: 11px;">
-                    <option value="">-- Choose Spell --</option>
+                    <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseSpell"}}</option>
                     {{#each out.spellOptions as |sOpt|}}
                       <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
                     {{/each}}
@@ -426,7 +422,7 @@
 {{> "systems/sprinter-rpg/templates/items/parts/outcome-spell-damage.hbs" out=out idx=idx}}
                 {{else if (eq out.type "roll_table")}}
                   <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" name="system.outcomes.{{idx}}.tableUuid" style="width: 100%; font-size: 11px;">
-                    <option value="">-- Choose Roll Table --</option>
+                    <option value="">{{localize "COG.Loot.Sheet.Outcome.ChooseTable"}}</option>
                     {{#each out.tableOptions as |tOpt|}}
                       <option value="{{tOpt.uuid}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.name}}</option>
                     {{/each}}
@@ -454,7 +450,7 @@
             </tr>
             <tr>
               <td colspan="{{#if (eq ../system.executionMode "random")}}6{{else}}5{{/if}}" style="padding-bottom: 6px; padding-top: 2px;">
-                <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="Flavor & rules description..." style="width: 100%; font-size: 11px;" />
+                <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="{{localize "COG.Loot.Sheet.Outcome.DescriptionPlaceholder"}}" style="width: 100%; font-size: 11px;" />
               </td>
             </tr>
             {{#if out.isEnchantItem}}
@@ -480,7 +476,7 @@
       </table>
     {{else}}
       <div class="cog-text" style="text-align: center; font-size: 12px; padding: 6px;">
-        No effects configured. Click <strong>Add Effect</strong> above to attach multi-effect outcomes to this item.
+        {{localize "COG.Loot.Sheet.NoEffects"}}
       </div>
     {{/if}}
   </div>
@@ -490,11 +486,11 @@
 {{> "systems/sprinter-rpg/templates/items/parts/enchantment-ledger.hbs"}}
 
 <div class="cog-field-group">
-  <span class="cog-field-label">Notes</span>
+  <span class="cog-field-label">{{localize "COG.Loot.Sheet.Notes"}}</span>
   <textarea class="cog-field-input" name="system.notes" style="height: 70px;">{{system.notes}}</textarea>
 </div>
 <div class="cog-field-group" style="margin-top: 8px;">
-  <span class="cog-field-label">Description</span>
+  <span class="cog-field-label">{{localize "COG.Loot.Sheet.Description"}}</span>
   {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
 </div>
 

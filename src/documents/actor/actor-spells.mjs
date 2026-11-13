@@ -48,7 +48,6 @@ export function getSpellDamageData(actor, spellItem, options = {}) {
   let extraSpellRankDice = 0;
   const rankBreakExtraDice = [];
   const rankBreakBuffs = [];
-  const rankBreakNotes = [];
   const processedSpellTiers = new Set();
 
   if (diceMatch) {
@@ -84,10 +83,7 @@ export function getSpellDamageData(actor, spellItem, options = {}) {
           damageType = b.data.damageType;
           tierHandled = true;
         }
-        if (b.data.notes) {
-          rankBreakNotes.push(`${b.label}: ${b.data.notes}`);
-          tierHandled = true;
-        }
+        if (b.data.notes) tierHandled = true;
         if (tierHandled) processedSpellTiers.add(b.key);
       }
     }
@@ -236,6 +232,7 @@ export function getSpellDamageParts(actor, spellItem, options = {}) {
       stat: statKey,
       statMod,
       value: 0,
+      baseDice: true,
       source: `${spellItem.name} (Base)`
     });
   }
@@ -258,6 +255,7 @@ export function getSpellDamageParts(actor, spellItem, options = {}) {
               stat: '',
               statMod: 0,
               value: 0,
+              baseDice: breakType === primaryType,
               source: `${spellItem.name} (${b.label})`
             });
             processedTiers.add(b.key);
@@ -276,7 +274,6 @@ export function getSpellDamageParts(actor, spellItem, options = {}) {
   if (rankDie.dice || rankDie.value) {
     parts.push({
       id: `spell-rank-die-${spellItem.id || 'part'}`,
-      excludeFromCrit: true, // Table 37: the Rank damage die is not doubled on a Critical Hit
       type: primaryType,
       dice: rankDie.dice || '',
       stat: '',

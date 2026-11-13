@@ -1,5 +1,6 @@
 /**
- * GM-only world bootstrap: background tables, journal, world macros, player permissions, mob token disposition.
+ * GM-only world bootstrap: background tables, journal, world macros, player permissions, mob token disposition, and
+ * the first scene of an empty world.
  * The system's own compendiums are compiled at build time (`npm run build:packs`); nothing here writes to them.
  */
 import { COG_MACROS } from '../data/macros.mjs';
@@ -59,6 +60,48 @@ export async function runGMWorldSetup() {
 
   // 3. Mobs must stay Hostile even when the world's default token configuration says Friendly
   await ensureMobTokenDisposition();
+
+  // 4. A world with no scenes starts on Earth: Surface
+  await ensureDefaultScene();
+}
+
+/**
+ * The scene an empty world starts on: Foundry's bundled ruins backdrop (`ui/backgrounds/setup.webp`), sized to the
+ * image so it is not stretched. The grid is the system default (system.json `grid`).
+ */
+const DEFAULT_SCENE = Object.freeze({
+  name: 'Earth: Surface',
+  background: 'ui/backgrounds/setup.webp',
+  width: 3840,
+  height: 1920
+});
+
+/**
+ * Create and activate the Earth: Surface scene when the world has no scenes at all. A world that has any scene, even
+ * after the GM deleted this one, is left alone.
+ * @returns {Promise<object|null>} the created scene, or null when nothing was created
+ */
+async function ensureDefaultScene() {
+  const scenes = globalThis.game?.scenes;
+  if (!scenes || (scenes.size ?? scenes.length ?? 0) > 0) return null;
+  const SceneDocClass = CONFIG.Scene?.documentClass
+    ?? globalThis.foundry?.documents?.Scene
+    ?? globalThis.Scene;
+  if (typeof SceneDocClass?.create !== 'function') return null;
+  const { name, background, width, height } = DEFAULT_SCENE;
+  try {
+    return await SceneDocClass.create({
+      name,
+      width,
+      height,
+      active: true,
+      navigation: true,
+      levels: [{ name, background: { src: background } }]
+    });
+  } catch (err) {
+    console.warn(`Sprinter RPG | Could not create the "${name}" scene:`, err);
+    return null;
+  }
 }
 
 /**

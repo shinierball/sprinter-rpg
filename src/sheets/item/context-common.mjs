@@ -6,14 +6,15 @@ import { recommendedWeaponSkillIdentifiers, recommendedOptionalEffects } from '.
 import { getItemAllTags } from '../../documents/active-tags.mjs';
 import { getCustomTags } from '../../data/tag-definitions.mjs';
 import { COG_TAGS } from '../../data/tag-catalog.mjs';
-import { TAG_NAMESPACES, normalizeElementTag } from '../../data/tag-vocabulary.mjs';
+import { normalizeElementTag } from '../../data/tag-vocabulary.mjs';
 import { isAuraItem, isInterruptItem, getInterruptRange, getInterruptTriggers } from '../../utils/tag/tag-mechanics.mjs';
 import {
   ABILITIES, DEFAULT_DAMAGE_TYPES, ARCHETYPES,
-  WEAPON_CATEGORIES, WEAPON_TYPES, FLOORS, PROFICIENCY_MODES, WIELD_MODES, TARGET_FILTERS,
+  FLOORS, WIELD_MODES, TARGET_FILTERS,
   CONTEST_STATS, CONTEST_TYPES, INTERRUPT_RANGE_FROM, choiceOptions, pickOptions
 } from '../../utils/ui/field-options.mjs';
-import { hasSystemField, toStringList } from './util.mjs';
+import { hasSystemField } from './util.mjs';
+import { toStringList } from '../../utils/first-scalar.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
 import { PERCENT_STAT_MODES, percentStatMode } from '../../utils/character/stat-percent.mjs';
 import { toRowArray } from '../../models/items/grant-validation.mjs';
@@ -22,9 +23,12 @@ import { sizeOptions } from '../../data/sizes.mjs';
 import { heritageOptions } from '../../data/rules/heritages.mjs';
 import { buildTagPills } from '../base/tag-editor.mjs';
 import { buildQueryView } from './context-query.mjs';
+import { tagPickerOptions } from './row-host.mjs';
+import { kindGrantRows } from './context-identity-rows.mjs';
 import { listAreaShapes, resolveAreaGeometry, resolveAreaShapeId, areaReach } from '../../utils/area/area-geometry.mjs';
 import { identifierLabel, identifierOptions } from '../../utils/ui/identifier-options.mjs';
 import { buildPickList, identifierEntries, plainEntries } from './context-pick-list.mjs';
+import { isEffectItem } from '../../utils/document-types.mjs';
 
 /** Buckets of a technique's `appliesToQuery`. */
 const APPLIES_QUERY_BUCKETS = Object.freeze(['all', 'any', 'none']);
@@ -175,21 +179,14 @@ export function buildCommonContext(context, item, catalogs) {
   context.areaShapeView = buildAreaShapeView(sys.area, item);
 
   // Select options (CONTRIBUTING §5)
-  context.weaponCategories = WEAPON_CATEGORIES;
-  context.weaponCategoryOptions = pickOptions(WEAPON_CATEGORIES, sys.weaponCategory, { blankLabel: '-- None / Generic --' });
   context.wieldModeOptions = pickOptions(WIELD_MODES, sys.wieldMode);
-  context.proficiencyModeOptions = pickOptions(PROFICIENCY_MODES, sys.proficiencyMode);
   context.periodicDamageTypeOptions = pickOptions(context.damageTypes, sys.area?.periodicDamageType, { blankLabel: '-- Damage Type --' });
-  context.proficiencyModes = PROFICIENCY_MODES;
-  context.wieldModes = WIELD_MODES;
   context.targetFilterOptions = TARGET_FILTERS;
   context.archetypeOptions = ARCHETYPES;
-  context.weaponTypes = WEAPON_TYPES;
   // `system.duration` stays human text (E4.5 S19); the cooldown and duration editors come from context-timing.mjs.
   context.checkTypeOptions = checkTypeOptions(sys.checkType);
   context.archetypeTagOptions = archetypeTagOptions(sys.archetypes);
   context.damageTypeOptions = choiceOptions(context.damageTypes, sys.damageType || '');
-  context.weaponTypeOptions = choiceOptions(WEAPON_TYPES, sys.weaponType || '');
   context.sizeOptions = sizeOptions(sys.size, { blankLabel: 'COG.Size.noChange' });
   context.heritageOptions = heritageOptions(sys.heritage);
   context.floorOptions = choiceOptions(FLOORS, sys.floor || '');
@@ -197,34 +194,35 @@ export function buildCommonContext(context, item, catalogs) {
   // Buff / debuff stat effects are `grants[kind: stat]` rows: the table edits them in place by their index in `grants`.
   // Percent is always live on buffs and debuffs, so only an owned item of another type, in fixed mode, shows the Locked column.
   context.statGrantRows = statGrantRows(sys.grants, {
-    showLocked: item.type !== 'buff' && item.type !== 'debuff' && Boolean(item.actor) && percentStatMode() === PERCENT_STAT_MODES.FIXED
+    showLocked: !isEffectItem(item) && Boolean(item.actor) && percentStatMode() === PERCENT_STAT_MODES.FIXED
   });
   context.statGrantShowLocked = context.statGrantRows.some((r) => r.showLocked);
   // The Minimum column (7.1g): a buff's or debuff's stat row can stop the score falling below a floor
-  context.statGrantShowMinimum = item.type === 'buff' || item.type === 'debuff';
+  context.statGrantShowMinimum = isEffectItem(item);
   context.statGrantIsPenalty =item.type === 'debuff';
 
   // Pill editors
   context.associatedSkillsList = toStringList(sys.associatedSkills);
   context.associatedSkillsString = context.associatedSkillsList.join(', ');
   // Pills show the skill's name for a stored identifier (or id / id.skill.<identifier>); unresolved values show raw.
-  context.associatedSkillsPills = context.associatedSkillsList.map((value) => ({ value, label: skillLabelFor(value, catalogs.skills) }));
+  context.associatedSkillsPills = context.associatedSkillsList.map((value, index, all) => ({
+    value, label: skillLabelFor(value, catalogs.skills), index, isFirst: index === 0, isLast: index === all.length - 1
+  }));
   context.optionalEffectsList = toStringList(sys.optionalEffects);
   context.optionalEffectsString = context.optionalEffectsList.join(', ');
 
   // Technique restriction query ({ all, none } tag IDs) and the tag picker grouped by namespace.
   context.appliesToQuery = buildQueryView(sys.appliesToQuery, 'system.appliesToQuery', APPLIES_QUERY_BUCKETS);
-  const tagGroups = new Map();
-  for (const tag of [...COG_TAGS, ...getCustomTags()]) {
-    if (!tag?.id) continue;
-    const ns = tag.namespace || 'custom';
-    if (!tagGroups.has(ns)) tagGroups.set(ns, { namespace: ns, label: TAG_NAMESPACES[ns]?.label || ns, tags: [] });
-    tagGroups.get(ns).tags.push({ id: tag.id, label: tag.label || tag.id });
-  }
-  context.techniqueTagOptions = [...tagGroups.values()];
+  context.techniqueTagOptions = tagPickerOptions();
 
   // Catalogs
   const { skills, buffs, debuffs, spells, tables } = catalogs;
+  // A buff's skill and rank-raise rows (the other kinds of `grants`) go through the shared grant row editor.
+  if (item.type === 'buff') {
+    context.buffGrantRows = kindGrantRows(sys.grants, item, {
+      kinds: BUFF_GRANT_KINDS, addKeys: BUFF_GRANT_ADD_KEYS, fieldsByKey: BUFF_GRANT_FIELDS, tagOptions: context.techniqueTagOptions, skills, spells
+    });
+  }
   context.availableSkills = skills;
   context.availableTechniques = skills.filter((s) =>
     s.system?.isTechnique === true
@@ -358,13 +356,11 @@ const DEBUFF_ON_OPTIONS = [
 
 /**
  * Per-milestone view of the rank-break fields that need precomputed options or defaults (CONTRIBUTING §5):
- * `context.rankBreakViews.<rankKey>`. `withDamageType` adds the damage type choices (skills only: the spell sheet
- * already has its own damage type input per milestone).
+ * `context.rankBreakViews.<rankKey>`.
  * @param {object} context render context (mutated)
  * @param {Record<string, number>} thresholds RANK_BREAK_THRESHOLDS
- * @param {{ withDamageType?: boolean }} [opts]
  */
-export function buildRankBreakViews(context, thresholds, { withDamageType = false } = {}) {
+export function buildRankBreakViews(context, thresholds) {
   const rbs = context.system.rankBreaks || {};
   const damageTypes = context.damageTypes || [...DEFAULT_DAMAGE_TYPES];
   context.rankBreakViews = Object.fromEntries(Object.keys(thresholds).map((key) => {
@@ -373,7 +369,7 @@ export function buildRankBreakViews(context, thresholds, { withDamageType = fals
     return [key, {
       baseDiceMultiplier: Number(rb.baseDiceMultiplier) > 1 ? Number(rb.baseDiceMultiplier) : 1,
       debuffOnOptions: DEBUFF_ON_OPTIONS.map((o) => ({ ...o, selected: o.value === debuffOn })),
-      damageTypeOptions: withDamageType ? choiceOptions(damageTypes, rb.damageType || '') : [],
+      damageTypeOptions: choiceOptions(damageTypes, rb.damageType || ''),
       showLight: context.isLightItem === true,
       lightModeOptions: lightModeOptions(rb.light?.mode, { withUnchanged: true })
     }];
@@ -402,6 +398,12 @@ export function statGrantRows(grants, { showLocked = false } = {}) {
     }];
   });
 }
+
+/** The grant kinds a buff's grant editor shows beside the stat table, and the Add chips it offers. */
+const BUFF_GRANT_KINDS = Object.freeze(['skill', 'rank_raise']);
+const BUFF_GRANT_ADD_KEYS = Object.freeze(['skill:fixed', 'rank_raise:fixed']);
+/** A buff's skill row grants access and a `value` bonus (what the actor derivation reads), not a granted `rank`. */
+const BUFF_GRANT_FIELDS = Object.freeze({ 'skill:fixed': Object.freeze(['identifier', 'value', 'label']) });
 
 const loc = (key) => globalThis.game?.i18n?.localize?.(key) ?? key;
 

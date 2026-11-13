@@ -1,10 +1,10 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
 import { tagQueryField } from '../fields/tag-fields.mjs';
-import { craftModifiersField } from '../fields/modifier-fields.mjs';
+import { craftModifiersField, rollModifiersField } from '../fields/modifier-fields.mjs';
 
 /**
  * DataModel for space_upgrade items embedded on personal_space actors.
- * Defines upgrade bonuses, training room mechanics, and crafting station hardpoints.
+ * Defines upgrade bonuses, training room mechanics, crafting tables and studios.
  */
 export class SpaceUpgradeDataModel extends BaseItemDataModel {
   /** @override */
@@ -46,6 +46,13 @@ export class SpaceUpgradeDataModel extends BaseItemDataModel {
       }),
       // Crafting limits and speed-ups the upgrade gives (a table or an attachment; 3.15 S7)
       craftModifiers: craftModifiersField(fields),
+      // Check rows (a bonus, Advantage) that join the crafting check of a step that uses this studio's table type
+      checkModifiers: rollModifiersField(fields),
+      // A studio serves one table type (a `crafting.table.<type>` tag); it takes no table space
+      studio: new fields.SchemaField({
+        enabled: new fields.BooleanField({ initial: false }),
+        tableTypeTag: new fields.StringField({ initial: '' })
+      }),
       craftingTable: new fields.SchemaField({
         enabled: new fields.BooleanField({ initial: false }),
         tableTypeTag: new fields.StringField({ initial: '' }),

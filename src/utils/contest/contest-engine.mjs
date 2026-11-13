@@ -73,8 +73,9 @@ export function fixedResult({ statMod = 0, floor = 0, moveMod = 0, adjust = 0 } 
  * stays Foundry-free. With a vehicle the vehicle's Move is used. Otherwise the leg's `moveMode` speed is read, falling
  * back to `speed.move` when it is missing or zero. `baseMove` is always the participant's own `speed.move` (tie-breaks).
  * `options.vehicleMove(vehicle)` (3.44i, G11) gives the Move a vehicle races at; it is injected so this stays Foundry-free.
- * Without it the vehicle's stored `speed.move` is read, as before.
- * @param {{ vehicleMove?: (vehicle: object) => number }} [options]
+ * Without it the vehicle's stored `speed.move` is read, as before. `options.actorMove(actor)` likewise gives a creature's
+ * own Move now (its Move rows folded in); it feeds `baseMove` and the walking `move`.
+ * @param {{ vehicleMove?: (vehicle: object) => number, actorMove?: (actor: object) => number }} [options]
  * @returns {{ move: number, baseMove: number, source: 'vehicle'|'actor'|'swim'|'climb'|'fly'|'none' }}
  */
 export function contestMoveOf(participant, leg, resolve, options = {}) {
@@ -84,7 +85,11 @@ export function contestMoveOf(participant, leg, resolve, options = {}) {
   };
   const own = lookup(participant?.actorUuid);
   const speed = own?.system?.attributes?.speed;
-  const baseMove = Math.max(0, finite(speed?.move));
+  let ownMove = finite(speed?.move);
+  if (own && typeof options?.actorMove === 'function') {
+    try { ownMove = finite(options.actorMove(own), ownMove); } catch { /* keep the stored Move */ }
+  }
+  const baseMove = Math.max(0, ownMove);
   const vehicle = lookup(participant?.vehicleUuid);
   if (vehicle) {
     let vMove = finite(vehicle.system?.attributes?.speed?.move, finite(vehicle.system?.attributes?.move, 0));

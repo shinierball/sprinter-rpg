@@ -17,15 +17,13 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     img: 'icons/weapons/hammers/hammer-double-bronze.webp',
     system: {
       identifier: 'regulation-novelty-mallet',
-      description: '<p>An oversized foam-core mallet with a lead weight the safety officer was not told about. 1d8 + Strength Bludgeoning, x3 on a Critical Hit. Built for two hands; swung with one, you have Disadvantage. Always uses Novelty Mallet Handling. The audience loves a mallet: a hit with it earns AI Favor rating 1. From Rank 3 in Novelty Mallet Handling, a hit leaves the target with Stage Fright.</p>',
+      description: '<p>An oversized foam-core mallet with a lead weight the safety officer was not told about. Its damage is its Skill\'s Base Damage, 1d8 + Strength Bludgeoning, x3 on a Critical Hit. Built for two hands; swung with one, you have Disadvantage. Always uses Novelty Mallet Handling. The audience loves a mallet: a hit with it earns AI Favor rating 1. From Rank 3 in Novelty Mallet Handling, a hit leaves the target with Stage Fright.</p>',
       isWeapon: true,
       slot: 'hands',
       tags: ['weapon.warhammer', 'weaponGroup.bashing'],
-      damageParts: [{ dice: '1d8', stat: 'str', type: 'Bludgeoning', value: 0 }],
+      associatedSkills: ['novelty-mallet-handling'],
       critMultiplier: 3,
       wieldMode: 'two_handed_disadv_1h',
-      proficiencyMode: 'manual',
-      selectedSkill: 'novelty-mallet-handling',
       aiFavorRatings: [{ value: 1, label: 'The audience loves a mallet' }],
       onHit: { debuffs: ['stage-fright'], debuffMinRank: 3 }
     }
@@ -37,11 +35,11 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     img: 'icons/skills/ranged/cannon-barrel-firing-orange.webp',
     system: {
       identifier: 't-shirt-cannon',
-      description: '<p>Fires promotional shirts at lethal velocity. Sizes run small. 1d6 + Dexterity Bludgeoning, two hands. It was designed to be fired while running away: +2 to hit when you would otherwise be at Disadvantage.</p>',
+      description: '<p>Fires promotional shirts at lethal velocity. Sizes run small. Its damage is its Skill\'s Base Damage (Improvised Weapons Training): 1d4 + Strength Bludgeoning. Two hands. It was designed to be fired while running away: +2 to hit when you would otherwise be at Disadvantage.</p>',
       isWeapon: true,
       slot: 'hands',
-      tags: ['weaponClass.ranged', 'weaponGroup.ranged'],
-      damageParts: [{ dice: '1d6', stat: 'dex', type: 'Bludgeoning', value: 0 }],
+      tags: ['weapon.improvised', 'weaponClass.ranged', 'weaponGroup.ranged'],
+      associatedSkills: ['improvised-weapons'],
       wieldMode: 'two_handed',
       attackModifiers: [{ kind: 'bonus', label: 'Fire while fleeing', value: 2, condition: q(['situation.disadvantaged']) }]
     }
@@ -53,7 +51,7 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     img: 'icons/svg/statue.svg',
     system: {
       identifier: 'breakaway-sequin-vest',
-      description: '<p>Tear-away for the quick change, reinforced for the quick stabbing. +2 DR and Resistance to Piercing. Beasts tear at the sequins and get a mouthful (+2 DR against beasts), every hit loses 1 damage to the padding, and the sequin scales turn a quarter of any Slashing damage (rounded down).</p>',
+      description: '<p>Tear-away for the quick change, reinforced for the quick stabbing. +2 DR and Resistance to Piercing. Beasts tear at the sequins and get a mouthful (+2 DR against beasts), every hit loses 1 damage to the padding, and the sequin scales turn 25% of any Slashing damage (rounded down).</p>',
       slot: 'torso',
       drBonus: 2,
       defenseModifiers: [
@@ -72,7 +70,7 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     system: {
       identifier: 'lucky-contestant-lanyard',
       description: '<p>Lets you backstage. The backstage is mostly danger. While worn: Studio Audience Approval never wears off, Stage Fright never quite goes away, you regain 1 Health Bar each round, +1 Charisma, +1 Rank in Hostile Interview, 5 temporary Health, and +1 to Evade checks in combat.</p>',
-      slot: 'neck',
+      slot: 'accessory',
       persistentBuffs: ['studio-audience-approval'],
       persistentDebuffs: ['stage-fright'],
       healing: { hasHealing: true, barsPerRound: 1 },
@@ -88,8 +86,9 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     img: 'icons/svg/dice-target.svg',
     system: {
       identifier: 'mystery-box-remote',
-      description: '<p>Press the button. Something happens. Legal has reviewed the somethings. Three charges; one random outcome per press, then the remote needs an hour.</p>',
-      slot: 'hands',
+      description: '<p>Press the button. Something happens. Legal has reviewed the somethings. Three charges; one random outcome per press, then the remote needs an hour. The Electrified Buzzer outcome, half of the presses, deals 2d6 Electric damage.</p>',
+      slot: 'accessory',
+      isWeapon: false,
       hasActivatedAbility: true,
       executionMode: 'random',
       charges: { value: 3, max: 3 },
@@ -109,7 +108,7 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     system: {
       identifier: 'branded-earpiece',
       description: '<p>The producer whispers a spell into your ear every few hours: while worn you know Confetti Cannon at Rank 1, and once cast it needs 2 hours per Rank before the producer will whisper it again.</p>',
-      slot: 'head',
+      slot: 'accessory',
       grants: [{ kind: 'spell', identifier: 'confetti-cannon', rank: 1, cooldown: { value: 2, unit: 'hours', scaleBy: { source: 'rank' } }, label: 'Confetti Cannon' }]
     }
   },
@@ -121,7 +120,7 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     system: {
       identifier: 'cue-light-headset',
       description: '<p>A headset with a little red light. When it glows, the show is watching: the Cue Light tag gives +2 to hit, and nobody can step in front of your attacks.</p>',
-      slot: 'head',
+      slot: 'accessory',
       tags: [EXAMPLE_CUE_LIGHT_TAG.id]
     }
   },
@@ -132,8 +131,8 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     img: 'icons/svg/aura.svg',
     system: {
       identifier: 'warding-lantern',
-      description: '<p>A brass lantern with a hand-lettered sign: DO NOT TOUCH THE LENS. The lens touches everyone nearby.</p>',
-      notes: '<p>While carried, allies within 10 ft gain +1 Evade and the wielder shields them with Temp Bars.</p>',
+      description: '<p>A brass lantern with a hand-lettered sign: DO NOT TOUCH THE LENS. The lens touches everyone nearby. While you carry it: allies within 10 feet gain +1 to Evade, and you shield them with temporary Health Bars of 2 HP each, as many as your Constitution.</p>',
+      notes: 'While carried, allies within 10 ft gain +1 Evade and the wielder shields them with Temp Bars.',
       slot: 'hands',
       isWeapon: false,
       quantity: 1,
@@ -160,8 +159,8 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     img: 'icons/svg/mage-shield.svg',
     system: {
       identifier: 'mirror-sequin-cape',
-      description: '<p>Every sequin is a tiny mirror. Damage Reflection 3:1 against melee: if one blow costs you at least 3 Health Bar slots, you may make the attacker lose 1 Health Bar slot. Your player chooses; it costs no Action. Project-authored example.</p>',
-      slot: 'back',
+      description: '<p>Every sequin is a tiny mirror. Damage Reflection 3:1 against melee: if one blow costs you at least 3 Health Bar slots, you may make the attacker lose 1 Health Bar slot. The reflected loss is 1 slot and your player chooses whether to use it; it costs no Action, and it does not work against ranged attacks.</p>',
+      slot: 'accessory',
       defenseModifiers: [
         { kind: 'reflect', label: 'Damage Reflection 3:1 vs. melee', value: 3, flat: 1, condition: q(['kind.attack'], [], ['weaponClass.ranged']) }
       ]

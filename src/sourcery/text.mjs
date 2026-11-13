@@ -4,7 +4,8 @@
  * Pure.
  */
 
-const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+import { escapeAttr } from '../utils/escape-attr.mjs';
+
 const isLetter = ch => /\p{L}/u.test(ch);
 const isUpper = ch => ch === ch.toUpperCase() && ch !== ch.toLowerCase();
 
@@ -28,7 +29,7 @@ export function neutraliseEnrichers(text) {
 
 /** Full HTML escape of an extracted string (enricher syntax neutralised). */
 export function escapeHtml(text) {
-  return neutraliseEnrichers(stripControls(text).replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]));
+  return neutraliseEnrichers(escapeAttr(stripControls(text)));
 }
 
 /**

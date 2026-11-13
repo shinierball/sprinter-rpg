@@ -10,6 +10,10 @@ import { resolveScalar, scaledNumber, describeScale } from '../roll/scalars.mjs'
  *   `{ value: 2, unit: 'hours', scaleBy: { source: 'rank' } }`.
  */
 
+/** Duration unit ids ended by a roll: the bearer's next Check, or the next Action they take (`condition-expiry.mjs`). */
+export const NEXT_CHECK_UNIT = 'next_check';
+export const NEXT_ACTION_UNIT = 'next_action';
+
 /** A round is 10 seconds (a combat round, or 10 seconds outside combat). */
 export const SECONDS_PER_ROUND = 10;
 export const SECONDS_PER_HOUR = 3600;
@@ -82,6 +86,9 @@ for (const def of [
   { id: 'full_day_rest', label: "full day's rest", kind: 'rest', level: 3, use: BOTH },
   { id: 'instant', label: 'Instantaneous', kind: 'state', use: ['duration'] },
   { id: 'combat', label: 'Until the end of combat', kind: 'state', use: ['duration'] },
+  { id: 'next_check', label: 'Until the next Check', kind: 'state', use: ['duration'] },
+  { id: 'next_action', label: 'Until the next Action', kind: 'state', use: ['duration'] },
+  { id: 'until_healed', label: 'Until healed', kind: 'state', use: ['duration'] },
   { id: 'permanent', label: 'Until removed', kind: 'state', use: ['duration'] }
 ]) registerTimeUnit(def);
 

@@ -118,6 +118,22 @@ export async function markDamageUndoKillAwarded(actor, applicationId) {
   return true;
 }
 
+/**
+ * Mark one record lethal (a Dying victim's death credited the hit that took the last slot) and store the kill context
+ * and, once paid, the trophy kind. Only the keys given are written. Returns false if the record is absent.
+ */
+export async function markDamageUndoLethal(actor, applicationId, { killContext, killTrophy } = {}) {
+  const records = getDamageUndoRecords(actor);
+  const rec = records.find(r => r.applicationId === applicationId);
+  if (!rec) return false;
+  const patch = { lethal: true };
+  if (killContext !== undefined) patch.killContext = killContext;
+  if (killTrophy !== undefined) patch.killTrophy = killTrophy;
+  const next = records.map(r => (r === rec ? { ...r, ...patch } : r));
+  await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, next);
+  return true;
+}
+
 /** Store inflictedItemIds on one record and setFlag. Returns false if the record is absent. */
 export async function setDamageUndoInflictedItems(actor, applicationId, inflictedItemIds) {
   const records = getDamageUndoRecords(actor);

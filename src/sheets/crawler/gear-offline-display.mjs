@@ -4,6 +4,8 @@
  */
 import { DEFAULT_GEAR_CONTRIBUTIONS, gearOfflineState, isGearSuppressed } from '../../utils/effects/gear-suppression.mjs';
 
+import { contributesKind } from './gear-contributions.mjs';
+
 /** English fallback when no i18n catalogue is loaded (headless tests); keys live in `lang/en.json`. */
 const TEXT = Object.freeze({
   'COG.GearOffline.Badge': 'OFFLINE',
@@ -22,10 +24,10 @@ function text(key, data = {}) {
 
 const signed = (n) => `${n > 0 ? '+' : ''}${n}`;
 
-/** Does this worn item have any contribution that is off in the zone? */
+/** Does this worn item give any kind of contribution that is off in the zone? */
 function isGearOffline(actor, item) {
   const kinds = Object.keys(globalThis.CONFIG?.COG?.gearContributions ?? DEFAULT_GEAR_CONTRIBUTIONS);
-  return kinds.some(kind => isGearSuppressed(actor, item, kind));
+  return kinds.some(kind => isGearSuppressed(actor, item, kind) && contributesKind(actor, item, kind));
 }
 
 /** The tooltip for an offline item: the player text, plus the zone label for the GM. */

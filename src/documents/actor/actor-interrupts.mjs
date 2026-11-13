@@ -1,5 +1,5 @@
-import { SYSTEM_ID } from '../../constants.mjs';
-import { resolveInterception, renderInterceptionHtml, findActorToken } from '../../utils/combat/interrupts.mjs';
+import { htmlSnippet } from '../../utils/ui/html-snippet.mjs';
+import { resolveInterception, renderInterceptionHtml, interruptCardHtml, findActorToken } from '../../utils/combat/interrupts.mjs';
 import { CORE_INTERRUPTS } from '../../data/core-interrupts.mjs';
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { computeManaCost } from '../../utils/roll/narrow-modifiers.mjs';
@@ -7,6 +7,7 @@ import {
   isInterruptItem, isFreeInterruptItem, getFreeInterruptRankBreak, getTagsOf, getInterruptTriggersFromTags, getInterceptModeFromTags, getInterruptRange, getInterruptEffects, TOUCH_REACH_FEET, NOT_VS_AREA_TAG, INTERRUPT_RANGE_FROM
 } from '../../utils/tag/tag-mechanics.mjs';
 import { recordInterceptionOnDeclaration } from '../combat-declarations.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 const INTERRUPT_ITEM_TYPES = ['spell', 'skill', 'gear', 'attack'];
 
@@ -124,7 +125,7 @@ export function getAvailableInterrupts(actor, options = {}) {
       costDesc,
       manaCost,
       ...interruptInfo,
-      description: freeNote || sys.notes || sys.description || '',
+      description: freeNote || sys.notes || htmlSnippet(sys.description),
       canUse,
       reasonCannotUse
     });
@@ -201,13 +202,6 @@ export async function triggerInterrupt(actor, interruptOrId, options = {}) {
 
   const isFree = Boolean(interrupt.isFree || interrupt.actionCost === 0);
 
-  // Evade stance flag
-  if (interrupt.id === 'evade') {
-    if (typeof actor.setFlag === 'function') {
-      await actor.setFlag(SYSTEM_ID, 'isEvading', true);
-    }
-  }
-
   // What the interrupt does to the attack that triggered it (redirect / intercept)
   const interception = resolveInterception({ interrupter: actor, interrupt, attackContext: options.attackContext });
   const interceptionHtml = renderInterceptionHtml(interception, {
@@ -220,46 +214,21 @@ export async function triggerInterrupt(actor, interruptOrId, options = {}) {
   // Post Interrupt Chat Message
   let message = null;
   if (globalThis.ChatMessage?.create) {
-    const targetText = options.targetName ? ` vs <strong>${options.targetName}</strong>` : '';
-    const costBadge = isFree
-      ? `<span class="cog-bg-success-fill cog-text-on-fill" style="padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">FREE INTERRUPT (0 ACTIONS)</span>`
-      : `<span class="cog-bg-warning-fill cog-text-on-fill" style="padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">SPENT 1 ACTION</span>`;
-
-    const content = `
-      <div class="cog-chat-card cog-interrupt-card cog-bg-surface-alt" style="font-family: var(--font-primary, sans-serif); border: 2px solid var(--cog-warning); border-radius: 4px; padding: 8px 10px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid var(--cog-warning); padding-bottom: 4px; margin-bottom: 6px;">
-          <div class="cog-text-gold" style="font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-bolt cog-text-warning"></i> INTERRUPT: ${interrupt.name.toUpperCase()}
-          </div>
-          ${costBadge}
-        </div>
-        <div class="cog-text" style="font-size: 11px; margin-bottom: 4px;">
-          <strong>${actor.name}</strong> triggered an out-of-turn Interrupt${targetText}!
-        </div>
-        <div class="cog-text-secondary cog-bg-surface" style="font-size: 11px; border: 1px solid var(--cog-warning-border); border-radius: 3px; padding: 5px 7px; margin-top: 4px;">
-          <div class="cog-text-muted" style="font-size: 10px; text-transform: uppercase; margin-bottom: 2px;">
-            <i class="fa-solid fa-crosshairs"></i> Trigger: <strong>${interrupt.triggerLabel || 'Reactive Trigger'}</strong>
-          </div>
-          ${interrupt.description || ''}
-        </div>
-        ${interceptionHtml}
-      </div>
-    `;
-
-    message = await globalThis.ChatMessage.create({
-      speaker: globalThis.ChatMessage.getSpeaker?.({ actor }) || { alias: actor.name },
-      content,
-      flags: {
-        [SYSTEM_ID]: {
-          isInterrupt: true,
-          interruptId: interrupt.id,
-          isFree,
-          actorId: actor.id,
-          ...(options.ruleBreak === true ? { ruleBreak: true } : {}),
-          ...(interception ? { interception } : {})
-        }
-      }
+    const content = interruptCardHtml({
+      interrupt, actorName: actor.name, targetName: options.targetName, isFree, spentLabel: 'SPENT 1 ACTION', interceptionHtml
     });
+
+    message = await globalThis.ChatMessage.create(withFlags({
+      speaker: globalThis.ChatMessage.getSpeaker?.({ actor }) || { alias: actor.name },
+      content
+    }, {
+      isInterrupt: true,
+      interruptId: interrupt.id,
+      isFree,
+      actorId: actor.id,
+      ...(options.ruleBreak === true ? { ruleBreak: true } : {}),
+      ...(interception ? { interception } : {})
+    }));
   }
 
   return {

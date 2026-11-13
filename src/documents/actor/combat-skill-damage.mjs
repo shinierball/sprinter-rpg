@@ -10,6 +10,7 @@ import { normalizeBaseDamage, baseDamageDice, baseDamageStat } from '../../utils
 import { getItemAllTags } from '../active-tags.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { PRIMARY_ATTACK_TAGS } from '../../utils/tag/tag-mechanics.mjs';
+import { actingRank } from '../../utils/skill/rank-source.mjs';
 
 /**
  * Parse and calculate skill attack damage formula and metadata based on the Sprinter RPG rules.
@@ -26,9 +27,8 @@ export function getSkillDamageData(actor, skillItem, options = {}) {
   const skillName = skillItem?.name || 'Skill';
   const rank = options.rank !== undefined
     ? Number(options.rank)
-    : Math.max(Number(skillItem?.modifiedRank) || 0, Number(sys.modifiedRank) || 0, Number(skillItem?.effectiveRank) || 0, Number(sys.rank) || 0);
+    : actingRank(skillItem);
 
-  const rawNotes = sys.notes || '';
   // Base Damage is structured data ({ dice, stat, damageType }); notes are for humans and are never parsed here.
   const baseDamage = normalizeBaseDamage(sys.baseDamage);
   const diceMatch = baseDamageDice(baseDamage);
@@ -73,8 +73,7 @@ export function getSkillDamageData(actor, skillItem, options = {}) {
       statMod: actor.system?.abilities?.[statKey]?.mod ?? 0,
       damageType: '',
       formula: '',
-      formulaWithStat: '',
-      rawNotes
+      formulaWithStat: ''
     };
   }
 
@@ -91,7 +90,6 @@ export function getSkillDamageData(actor, skillItem, options = {}) {
   const rankBreakExtraDamageDice = [];
   const targetDebuffsFromBreaks = [];
   const rankBreakBuffs = [];
-  const rankBreakNotes = [];
   const processedSkillTiers = new Set();
 
   const resolvedSkillBreaks = resolveReachedRankBreaks(skillItem, rank);
@@ -126,9 +124,6 @@ export function getSkillDamageData(actor, skillItem, options = {}) {
         if (b.data.buffsResistances) {
           rankBreakBuffs.push(`${b.label}: ${b.data.buffsResistances}`);
           tierHandled = true;
-        }
-        if (b.data.notes) {
-          rankBreakNotes.push(`${b.label}: ${b.data.notes}`);
         }
         if (tierHandled) processedSkillTiers.add(b.key);
       }
@@ -222,6 +217,7 @@ export function getSkillDamageData(actor, skillItem, options = {}) {
         id: `effect-bonus-${extraDamageParts.length}`,
         type: effectData.damageType || damageType,
         dice: configBonus,
+        baseDice: true,
         source: effectData.name
       });
     }
@@ -338,8 +334,6 @@ export function getSkillDamageData(actor, skillItem, options = {}) {
     formula,
     formulaWithStat,
     targetDebuffs: targetDebuffsFromBreaks,
-    rankBreakBuffs,
-    rankBreakNotes,
-    rawNotes
+    rankBreakBuffs
   };
 }

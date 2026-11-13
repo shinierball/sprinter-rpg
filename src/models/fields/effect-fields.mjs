@@ -91,16 +91,7 @@ export function transformField(fields) {
 }
 
 /**
- * One damage part, shared by attacks and gear weapons: { dice, stat, type, value }.
- * See src/utils/damage/damage-parts.mjs. A type of '' means Physical at runtime.
- * @param {object} fields foundry.data.fields
- */
-export function damagePartField(fields) {
-  return new fields.SchemaField(damagePartFields(fields));
-}
-
-/**
- * Fresh field instances for one damage part. Foundry fields belong to one parent schema,
+ * Fresh field instances for one rank damage part ({ dice, stat, type, value }). Foundry fields belong to one parent schema,
  * so build new instances for every schema rather than spreading another schema's `.fields`.
  * @param {object} fields foundry.data.fields
  */

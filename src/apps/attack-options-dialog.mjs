@@ -58,6 +58,9 @@ export function buildDialogContext(model, prefilled) {
     readsText: o.reads ? t('ReadsAs', { text: o.reads }) : ''
   });
   const isDamage = model.mode === 'damage';
+  // The weapon's Skills in list order; the remembered (else the default) one is selected. Shown from two up.
+  const skillPick = choices.skill || model.defaultSkill || '';
+  const skills = (model.skills ?? []).map(s => ({ identifier: s.identifier, label: s.label, selected: s.identifier === skillPick }));
   // Playing to the Cameras (E6.10): None plus each audience; the pre-filled (armed) one is checked.
   const cameraPick = typeof choices.cameras === 'string' ? choices.cameras : '';
   const cameras = [
@@ -65,6 +68,9 @@ export function buildDialogContext(model, prefilled) {
     ...(model.cameras ?? []).map(a => ({ id: a.id, label: a.label, checked: a.id === cameraPick }))
   ];
   return {
+    showSkills: skills.length > 1,
+    defaultSkill: String(model.defaultSkill ?? ''),
+    skills,
     showCameras: (model.cameras ?? []).length > 0,
     cameras,
     attackName: model.attackName,
@@ -85,6 +91,7 @@ export function buildDialogContext(model, prefilled) {
       mark: t('Mark'), markAttack: t('MarkAttack'), markEffect: t('MarkEffect'),
       none: t('None'), noneDesc: t('NoneDesc'), aiFavor: t('AiFavor', { n: model.aiFavorIfNone }),
       untrained: t('Untrained'), addAnother: t('AddAnother'), variantNormal: t('VariantNormal'), used: t('Used'),
+      skill: attackText('COG.Attack.Skill.Label'), skillHint: attackText('COG.Attack.Skill.Hint'), skillChanged: attackText('COG.Attack.Skill.Changed'),
       skipHint: t('SkipHint'), cameras: cameraText('COG.Cameras.Title'), camerasHint: cameraText('COG.Cameras.Hint')
     }
   };
@@ -110,8 +117,17 @@ export function readDialogChoices(form, model) {
     situations: tickedValues(form, 'situation'),
     calledPlays: tickedValues(form, 'calledPlay').filter(id => pending.has(id)),
     markTarget: tickedValues(form, 'markTarget')[0] === 'attack' ? 'attack' : 'effect',
-    cameras: (model.cameras ?? []).length > 0 ? (tickedValues(form, 'cameras')[0] ?? '') : null
+    cameras: (model.cameras ?? []).length > 0 ? (tickedValues(form, 'cameras')[0] ?? '') : null,
+    skill: readSkillChoice(form, model)
   };
+}
+
+/** The Skill select's value; the default Skill reads as '' so the pick keeps following the default. */
+function readSkillChoice(form, model) {
+  if ((model.skills ?? []).length < 2) return '';
+  const select = form?.querySelector?.('select[name="skill"]');
+  const value = String(select?.value ?? '').trim();
+  return !value || value === model.defaultSkill ? '' : value;
 }
 
 /**
@@ -121,7 +137,15 @@ export function readDialogChoices(form, model) {
 function wireDialog(root) {
   if (!root?.querySelectorAll) return;
   const inputs = () => [...root.querySelectorAll('input[name="damageEffect"]')];
+  // The window is one model built for the default Skill; picking another shows a hint that its Damage Effects may differ
+  const skillSelect = root.querySelector('select[name="skill"]');
+  const skillHint = root.querySelector('.cog-skill-changed-hint');
+  const syncSkill = () => {
+    if (skillSelect && skillHint) skillHint.hidden = String(skillSelect.value ?? '') === String(skillSelect.dataset?.default ?? '');
+  };
+  skillSelect?.addEventListener('change', syncSkill);
   const sync = () => {
+    syncSkill();
     const picked = inputs().filter(isChecked).map(el => el.value).filter(v => v && v !== 'none');
     for (const group of root.querySelectorAll('[data-variants-for]')) group.hidden = !picked.includes(group.dataset.variantsFor);
     const mark = root.querySelector('.cog-damage-effect-mark');

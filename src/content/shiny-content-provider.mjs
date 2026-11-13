@@ -19,6 +19,7 @@
  */
 import { SYSTEM_ID } from '../constants.mjs';
 import { contentRegistry } from './registry.mjs';
+import { catalogKindOfItemType, ITEM_TYPE_CATALOGS } from './registry/catalogs.mjs';
 import { getPackSpecs } from './specs/index.mjs';
 import { EXAMPLE_SET_META } from './specs/examples/sets.mjs';
 import { exampleTagDefinitions } from './specs/examples/refs.mjs';
@@ -30,21 +31,13 @@ import { compilePackSpecs } from '../data/builders/item-payload.mjs';
 // Registers the race and class delegates, which compile the Base Set's classes and races (the point-buy compiler is pure).
 import '../data/builders/point-buy-payload.mjs';
 import { SAMPLE_CRAWLER_SPECIES, SAMPLE_BACKGROUND_TABLES } from '../data/creation-samples.mjs';
-import { SETTING_AUTHORSHIP } from './specs/authorship.mjs';
+import { SETTING_AUTHORSHIP, AUTHORSHIP_LEDGER, authorshipFor } from './specs/authorship.mjs';
 
 export const SHINY_THEME_ID = 'shiny';
 export const SHINY_PROVIDER = 'sprinter-rpg-shiny';
 
-/** Item types that have a catalog of their own; every other item type goes to `items`. */
-const SHINY_ITEM_KINDS = Object.freeze({
-  skill: 'skills', spell: 'spells', buff: 'buffs', debuff: 'debuffs', race: 'races', class: 'classes', achievement: 'achievements'
-});
-
 /** Actor types that join a catalog; every other actor type stays compendium-only. */
 const SHINY_ACTOR_KINDS = Object.freeze({ mob: 'mobs', pet: 'pets', mercenary: 'mercenaries' });
-
-/** The catalog kind an example Item document of this type joins. */
-const shinyItemKind = (type) => SHINY_ITEM_KINDS[type] ?? 'items';
 
 const ITEMS_PACK = `${SYSTEM_ID}.examples-items`;
 const ACTORS_PACK = `${SYSTEM_ID}.examples-actors`;
@@ -73,7 +66,7 @@ export function compiledShinyCatalogs() {
   const out = {};
   const push = (kind, doc) => (out[kind] ??= []).push(doc);
   const itemEntry = getPackSpecs('examples-items');
-  if (itemEntry) for (const doc of compilePackSpecs(itemEntry, { warnings: [], dataModel: false })) push(shinyItemKind(doc.type), doc);
+  if (itemEntry) for (const doc of compilePackSpecs(itemEntry, { warnings: [], dataModel: false })) push(catalogKindOfItemType(doc.type), doc);
   const actorEntry = getPackSpecs('examples-actors');
   if (actorEntry) {
     const specs = actorEntry.specs.filter(spec => SHINY_ACTOR_KINDS[spec?.type]);
@@ -85,15 +78,16 @@ export function compiledShinyCatalogs() {
 /**
  * Register the shiny catalogs, packs, setting data, references and tags.
  * @param {import('./registry.mjs').COGContentRegistry} [registry=contentRegistry]
+ * @param {Record<string, { authorship: string }>} [ledger=AUTHORSHIP_LEDGER] names a setting kind as `setting:<kind>` (7.16h)
  */
-export function registerShinyContent(registry = contentRegistry) {
+export function registerShinyContent(registry = contentRegistry, ledger = AUTHORSHIP_LEDGER) {
   if (!registry) return;
   registerShinyTags(registry);
   for (const set of EXAMPLE_SET_META) registry.registerSourceSet(SHINY_THEME_ID, set.id, { label: set.label, symbol: set.symbol, release: set.release ?? 'Unreleased' });
   const opts = { theme: SHINY_THEME_ID, priority: 0, provider: SHINY_PROVIDER };
   const catalogs = compiledShinyCatalogs();
 
-  for (const kind of [...Object.values(SHINY_ITEM_KINDS), 'items']) {
+  for (const kind of [...Object.values(ITEM_TYPE_CATALOGS), 'items']) {
     registry.registerCatalog(kind, catalogs[kind] ?? [], { ...opts, origin: ITEMS_PACK });
   }
   for (const kind of Object.values(SHINY_ACTOR_KINDS)) {
@@ -119,10 +113,10 @@ export function registerShinyContent(registry = contentRegistry) {
 
   // Setting data (creator content): the sample species with its matrices, the sample story tables, the example loadouts
   // and the example grinding table. The grinding table is registered as the same object, so the reader still knows it.
-  registry.registerSpecies(SAMPLE_CRAWLER_SPECIES.id, structuredClone(SAMPLE_CRAWLER_SPECIES), { ...opts, authorship: SETTING_AUTHORSHIP.species });
-  registry.registerBackgroundTables(structuredClone(SAMPLE_BACKGROUND_TABLES), { ...opts, authorship: SETTING_AUTHORSHIP.backgroundTables });
-  registry.registerCatalog('creationLoadouts', EXAMPLE_CREATION_LOADOUTS.map(entry => ({ ...structuredClone(entry), baseline: true })), { ...opts, authorship: SETTING_AUTHORSHIP.creationLoadouts });
-  registry.registerCatalog('grindComplications', [EXAMPLE_GRIND_COMPLICATION_TABLE], { ...opts, authorship: SETTING_AUTHORSHIP.grindComplications });
+  registry.registerSpecies(SAMPLE_CRAWLER_SPECIES.id, structuredClone(SAMPLE_CRAWLER_SPECIES), { ...opts, authorship: authorshipFor('setting:species', SETTING_AUTHORSHIP.species, ledger) });
+  registry.registerBackgroundTables(structuredClone(SAMPLE_BACKGROUND_TABLES), { ...opts, authorship: authorshipFor('setting:backgroundTables', SETTING_AUTHORSHIP.backgroundTables, ledger) });
+  registry.registerCatalog('creationLoadouts', EXAMPLE_CREATION_LOADOUTS.map(entry => ({ ...structuredClone(entry), baseline: true })), { ...opts, authorship: authorshipFor('setting:creationLoadouts', SETTING_AUTHORSHIP.creationLoadouts, ledger) });
+  registry.registerCatalog('grindComplications', [EXAMPLE_GRIND_COMPLICATION_TABLE], { ...opts, authorship: authorshipFor('setting:grindComplications', SETTING_AUTHORSHIP.grindComplications, ledger) });
 }
 
 /** Listen to `sprinter-rpg.registerContent` and register the shiny content. Called once at load by cog.mjs. */

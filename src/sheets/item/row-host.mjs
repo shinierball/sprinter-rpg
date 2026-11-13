@@ -7,22 +7,24 @@
  * `id` and an async `update(changes)`. The editor's input names start `system.<key>.`; a window renames them with
  * {@link renameRowPaths} so they are unique there, and maps a control's `data-path` back with {@link retargetRow}.
  */
-import { COG_TAGS } from '../../data/tag-catalog.mjs';
 import { TAG_NAMESPACES } from '../../data/tag-vocabulary.mjs';
-import { getCustomTags } from '../../data/tag-definitions.mjs';
+import { tagCatalog } from '../../utils/tag/tag-list.mjs';
 import { processItemFormData } from './form-data.mjs';
 
 const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const clone = (value) => foundry.utils.deepClone(value);
 
-/** The registered tags grouped by namespace for the condition editor's picker. */
+/**
+ * The registered tags grouped by namespace for the tag pickers (the condition editor, the item sheets' tag lists). Each
+ * tag carries its description when it has one, so a picker can show it as a tooltip.
+ * @returns {Array<{ namespace: string, label: string, tags: Array<{ id: string, label: string, description?: string }> }>}
+ */
 export function tagPickerOptions() {
   const groups = new Map();
-  for (const tag of [...COG_TAGS, ...getCustomTags()]) {
-    if (!tag?.id) continue;
-    const ns = tag.namespace || 'custom';
+  for (const tag of tagCatalog()) {
+    const ns = tag.namespace;
     if (!groups.has(ns)) groups.set(ns, { namespace: ns, label: TAG_NAMESPACES[ns]?.label || ns, tags: [] });
-    groups.get(ns).tags.push({ id: tag.id, label: tag.label || tag.id });
+    groups.get(ns).tags.push({ id: tag.id, label: tag.label, ...(tag.description ? { description: tag.description } : {}) });
   }
   return [...groups.values()];
 }

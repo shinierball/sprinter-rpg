@@ -1,5 +1,515 @@
 {
   "COG": {
+    "WeaponBuilder": {
+      "Title": "Advanced Weapon Builder",
+      "Step": {
+        "basics": { "Label": "Basics", "Hint": "Name, picture, description and tags." },
+        "skills": { "Label": "Skills", "Hint": "The Skills the weapon attacks with, in order." },
+        "type": { "Label": "Type and hands", "Hint": "What kind of weapon it is and how many hands it takes." },
+        "damage": { "Label": "Damage", "Hint": "A different base damage, bonus damage, crit, and what it rolls at each Rank." },
+        "extras": { "Label": "Extras", "Hint": "On-hit effects, to-hit rows, the to-hit stat." },
+        "review": { "Label": "Review", "Hint": "What is missing, then create." }
+      },
+      "Basics": {
+        "Intro": "Name the weapon and say what it is. Nothing is created until the last page.",
+        "Name": "Name",
+        "NamePlaceholder": "New Weapon",
+        "Image": "Choose a picture",
+        "Description": "Description"
+      },
+      "Skills": {
+        "Intro": "The Skills this weapon attacks with. The first is the default. The weapon's Base Damage is its Skill's.",
+        "MakeFirst": "A listed Skill is not in this world. Make that Skill first, or pick another."
+      },
+      "Readout": {
+        "Title": "What it rolls",
+        "Rank": "Rank {rank}",
+        "Untrained": "Untrained: rolled with Disadvantage",
+        "NoSkill": "No Skill is listed and no different damage is set, so there is nothing to roll yet.",
+        "Bonus": "Bonus damage is added on top and does not grow with Rank:"
+      },
+      "Review": {
+        "Intro": "This is everything the weapon will be made with. Nothing blocks you: anything broken is asked about again when you create.",
+        "Clean": "Nothing is missing."
+      },
+      "Footer": {
+        "Note": "Creates one new weapon",
+        "Back": "Back",
+        "Next": "Next",
+        "Create": "Create weapon"
+      },
+      "Entry": {
+        "Link": "Open the advanced builder",
+        "LinkHint": "Every weapon field, what it rolls at Rank 0, 5 and 10, and a review. Your answers come with you.",
+        "Tile": { "Label": "Weapon, advanced", "Hint": "A weapon with bonus damage, on-hit effects and a review." },
+        "Directory": "Advanced weapon"
+      }
+    },
+    "SkillManager": {
+      "AttackPicker": {
+        "Banner": "PICKING A SKILL TO ATTACK WITH: {item}",
+        "Added": "Added {skill} to the Skills this weapon attacks with."
+      }
+    },
+    "ItemSetup": {
+      "Title": "Create New Item",
+      "Pick": {
+        "Intro": "What are you making?"
+      },
+      "Back": "Back",
+      "Create": "Create",
+      "Kind": {
+        "weapon": {
+          "Label": "Weapon",
+          "Hint": "Something you attack with. It rolls the damage of the Skill it is used with.",
+          "skills": {
+            "Label": "Skills it is used with",
+            "Hint": "Whoever has the first Skill they are trained in uses it. Anyone with none of these attacks at Disadvantage.",
+            "Empty": "No Skill yet. Pick one below.",
+            "Choose": "Add a Skill...",
+            "NoDamage": "no Base Damage",
+            "NotInWorld": "not in this world",
+            "Default": "Used first",
+            "MoveUp": "Move up",
+            "MoveDown": "Move down",
+            "Remove": "Remove"
+          },
+          "hands": {
+            "Label": "Hands",
+            "Options": {
+              "one_handed": "One-handed",
+              "two_handed": "Two-handed"
+            }
+          },
+          "types": {
+            "Label": "Weapon type",
+            "Hint": "Skills and techniques that match by weapon type use these.",
+            "FromSkill": "Filled in from the first Skill. Pick chips to choose your own."
+          },
+          "differentDamage": {
+            "Label": "This weapon deals different damage than its Skill",
+            "Hint": "A box you fill replaces the Skill's; a blank box keeps the Skill's.",
+            "Dice": "Dice",
+            "Stat": "Stat",
+            "StatOwn": "The Skill's",
+            "StatNone": "None",
+            "Type": "Damage type",
+            "TypeOwn": "The Skill's"
+          }
+        },
+        "attack": {
+          "Label": "Attack",
+          "Hint": "A way this crawler attacks. It rolls the damage of the Skill it is used with.",
+          "skills": {
+            "Label": "Skills it is used with",
+            "Hint": "Whoever has the first Skill they are trained in uses it. Anyone with none of these attacks at Disadvantage.",
+            "Empty": "No Skill yet. Pick one below.",
+            "Choose": "Add a Skill...",
+            "NoDamage": "no Base Damage",
+            "NotInWorld": "not in this world",
+            "Default": "Used first",
+            "MoveUp": "Move up",
+            "MoveDown": "Move down",
+            "Remove": "Remove"
+          },
+          "hands": {
+            "Label": "Hands",
+            "Options": {
+              "one_handed": "One-handed",
+              "two_handed": "Two-handed"
+            }
+          },
+          "differentDamage": {
+            "Label": "This attack deals different damage than its Skill",
+            "Hint": "A box you fill replaces the Skill's; a blank box keeps the Skill's.",
+            "Dice": "Dice",
+            "Stat": "Stat",
+            "StatOwn": "The Skill's",
+            "StatNone": "None",
+            "Type": "Damage type",
+            "TypeOwn": "The Skill's"
+          }
+        },
+        "gear": {
+          "Label": "Gear or Armor",
+          "Hint": "Something worn or carried, with Damage Resistance and perks.",
+          "slot": {
+            "Label": "Where it is worn"
+          },
+          "dr": {
+            "Label": "Damage Resistance"
+          }
+        },
+        "spell": {
+          "Label": "Spell",
+          "Hint": "A spell a crawler can learn and cast.",
+          "role": {
+            "Label": "What does this spell do?",
+            "Hint": "This decides how it works and what else is asked.",
+            "Options": {
+              "attack": "Attacks a target and deals damage",
+              "heal": "Restores Health Bars",
+              "other": "Something else, with no attack roll",
+              "passive": "Is always on (never cast)"
+            }
+          },
+          "manaCost": {
+            "Label": "Mana cost"
+          },
+          "stat": {
+            "Label": "Stat it casts with"
+          },
+          "baseDamage": {
+            "Label": "Base Damage",
+            "Hint": "What a hit rolls.",
+            "Dice": "Dice",
+            "Stat": "Stat",
+            "StatOwn": "The spell's stat",
+            "StatNone": "None",
+            "Type": "Damage type"
+          },
+          "healBars": {
+            "Label": "Health Bars restored",
+            "Hint": "A number, or a formula such as 1 + int.",
+            "Placeholder": "1"
+          }
+        },
+        "skill": {
+          "Label": "Skill",
+          "Hint": "Something a crawler trains and rolls.",
+          "role": {
+            "Label": "What does this Skill do?",
+            "Hint": "This decides how the Skill rolls and what else is asked.",
+            "Options": {
+              "weapon": "Attacks with a weapon it is used with",
+              "attack": "Attacks without a weapon (a punch, a bite, a power)",
+              "check": "Is rolled as a check",
+              "passive": "Is always on (never rolled)",
+              "technique": "Adds an effect to another attack"
+            }
+          },
+          "stat": {
+            "Label": "Stat it rolls with"
+          },
+          "checkType": {
+            "Label": "How it is rolled",
+            "Hint": "Against a difficulty, against someone else's roll, or with a tool."
+          },
+          "baseDamage": {
+            "Label": "Base Damage",
+            "Hint": "What a hit rolls. A weapon listing this Skill rolls it too.",
+            "Dice": "Dice",
+            "Stat": "Stat",
+            "StatOwn": "The Skill's stat",
+            "StatNone": "None",
+            "Type": "Damage type"
+          },
+          "types": {
+            "Label": "Weapon type",
+            "Hint": "Weapons of this type can use this Skill, and the setup page for a weapon fills its type from it."
+          },
+          "groups": {
+            "Label": "Skill group",
+            "Hint": "Groups that race and class choices and Skill pickers filter by."
+          },
+          "appliesTo": {
+            "Label": "Used with attacks that have",
+            "Hint": "Pick weapon types or groups. The technique is offered when an attack's weapon or Skill matches one."
+          },
+          "extraDice": {
+            "Label": "Extra damage it adds",
+            "Hint": "Dice added to the attack it is used with. Leave blank for none.",
+            "Placeholder": "1d4"
+          }
+        },
+        "class": {
+          "Label": "Class",
+          "Hint": "Opens the Class Studio."
+        },
+        "race": {
+          "Label": "Race",
+          "Hint": "Opens the Race Studio."
+        },
+        "deity": {
+          "Label": "Deity",
+          "Hint": "A god crawlers can worship.",
+          "title": {
+            "Label": "God of",
+            "Hint": "Shown with the name.",
+            "Placeholder": "God of Reruns"
+          },
+          "signatureStat": {
+            "Label": "Signature Stat",
+            "Hint": "A Zealot of this god gains points in this Stat."
+          },
+          "offeringRequired": {
+            "Label": "Asks for an offering each day",
+            "Hint": "Off: worshippers never lapse for a missed offering."
+          },
+          "offeringGold": {
+            "Label": "Gold each offering",
+            "Hint": "Before any tithe."
+          }
+        },
+        "patron": {
+          "Label": "Patron",
+          "Hint": "A patron who sponsors crawlers.",
+          "performanceSkills": {
+            "Label": "Performance Skill",
+            "Hint": "The Skill a Bard's performance is measured against. Pick one or more.",
+            "Empty": "No Skill yet. Pick one below.",
+            "Choose": "Add a Skill...",
+            "MoveUp": "Move up",
+            "MoveDown": "Move down",
+            "Remove": "Remove"
+          },
+          "skills": {
+            "Label": "Skills and spells it mentors",
+            "Hint": "Optional. A Bard it sponsors can be taught these.",
+            "Empty": "None yet. Pick one below.",
+            "Choose": "Add a Skill...",
+            "MoveUp": "Move up",
+            "MoveDown": "Move down",
+            "Remove": "Remove"
+          }
+        },
+        "buff": {
+          "Label": "Buff",
+          "Hint": "A lasting benefit placed on a crawler.",
+          "duration": {
+            "Label": "How long it lasts"
+          },
+          "effect": {
+            "Label": "What it does",
+            "Hint": "One effect to start with. Add more on the sheet.",
+            "Options": {
+              "stat": "Raises a stat",
+              "dr": "Adds Damage Resistance",
+              "toHit": "Adds to attack rolls",
+              "damage": "Adds damage dice to attacks",
+              "none": "Nothing yet"
+            }
+          },
+          "effectStat": {
+            "Label": "Stat"
+          },
+          "amount": {
+            "Label": "By how much"
+          },
+          "dice": {
+            "Label": "Dice",
+            "Placeholder": "1d6"
+          }
+        },
+        "debuff": {
+          "Label": "Debuff",
+          "Hint": "A lasting condition placed on a crawler.",
+          "severity": {
+            "Label": "How bad",
+            "Options": {
+              "Minor": "Minor",
+              "Major": "Major"
+            }
+          },
+          "duration": {
+            "Label": "What ends it"
+          },
+          "effect": {
+            "Label": "What it does",
+            "Hint": "One effect to start with. A debuff with none is still a condition other things can check for.",
+            "Options": {
+              "statPenalty": "Lowers a stat",
+              "toHit": "Takes from attack rolls",
+              "perRound": "Deals damage each round",
+              "none": "Nothing yet"
+            }
+          },
+          "effectStat": {
+            "Label": "Stat"
+          },
+          "amount": {
+            "Label": "By how much",
+            "Hint": "Type a positive number; it is taken away."
+          },
+          "dice": {
+            "Label": "Damage each round",
+            "Placeholder": "1d4"
+          },
+          "damageType": {
+            "Label": "Damage type"
+          }
+        },
+        "loot": {
+          "Label": "Consumable, Item or Loot",
+          "Hint": "Something found, used up or sold.",
+          "lootType": {
+            "Label": "What kind of item"
+          },
+          "use": {
+            "Label": "What using it does",
+            "Options": {
+              "heal": "Restores Health Bars",
+              "buff": "Gives a buff",
+              "spell": "Casts a spell",
+              "none": "Nothing yet"
+            }
+          },
+          "healBars": {
+            "Label": "Health Bars"
+          },
+          "buff": {
+            "Label": "Buff it gives",
+            "Blank": "Choose a buff"
+          },
+          "spell": {
+            "Label": "Spell it casts",
+            "Blank": "Choose a spell"
+          },
+          "inscribed": {
+            "Label": "Spell it holds",
+            "Blank": "Choose a spell"
+          },
+          "charges": {
+            "Label": "Charges"
+          },
+          "boxTier": {
+            "Label": "Box tier"
+          }
+        },
+        "achievement": {
+          "Label": "Achievement",
+          "Hint": "A trophy the GM awards, with the boxes and favor it pays out.",
+          "tier": {
+            "Label": "Trophy tier"
+          },
+          "earnedBy": {
+            "Label": "How it is earned",
+            "Hint": "Shown on the trophy and the announcement."
+          },
+          "rewardBox": {
+            "Label": "Reward box",
+            "Hint": "Starts at the trophy's own tier until you pick a box.",
+            "None": "No box"
+          }
+        },
+        "sponsor": {
+          "Label": "Sponsor",
+          "Hint": "A company or patron backing a crawler; its tags apply to the crawler who holds it.",
+          "gifts": {
+            "Label": "What the sponsor gives",
+            "Hint": "Text only. Its tags, set on the sheet, apply to the crawler who holds it."
+          }
+        },
+        "space_upgrade": {
+          "Label": "Space upgrade",
+          "Hint": "A room or fixture for a personal space: a bonus, a training room or a crafting table.",
+          "kind": {
+            "Label": "What it is",
+            "Options": {
+              "bonus": "Gives the space a bonus",
+              "training": "A training room",
+              "table": "A crafting table",
+              "studio": "A studio that serves one kind of crafting table"
+            }
+          },
+          "bonus": {
+            "Label": "Which bonus"
+          },
+          "amount": {
+            "Label": "By how much"
+          },
+          "tableType": {
+            "Label": "Which crafting table"
+          }
+        }
+      },
+      "Field": {
+        "Name": "Name",
+        "NamePlaceholder": "Leave blank for a default name",
+        "None": "None"
+      },
+      "Follow": {
+        "UseFirst": "Use the first Skill's"
+      },
+      "NoPermission": "You do not have permission to create Items.",
+      "CreateAnyway": {
+        "Title": "Create anyway?",
+        "Intro": "This item is not finished and will not work as it should:",
+        "Yes": "Create anyway",
+        "No": "Keep editing"
+      }
+    },
+    "ItemCheck": {
+      "weaponItem": {
+        "no-skill": "No Skill is listed. Anyone using this weapon attacks untrained, at Disadvantage.",
+        "skill-not-in-world": "None of the listed Skills ({skills}) exist in this world, so every attacker is untrained.",
+        "skill-unresolved": "The Skill \"{skill}\" does not exist in this world. It is skipped when choosing a Skill.",
+        "skill-not-attack": "The Skill \"{skill}\" is not an attack Skill, so it cannot be used to attack with this weapon.",
+        "no-damage": "The Skill \"{skill}\" has no Base Damage and the weapon does not set its own, so this weapon deals no damage with it.",
+        "no-type": "No weapon type is set, so Skills and techniques that match by weapon type will not match this weapon.",
+        "type-mismatch": "The weapon type ({types}) shares nothing with its Skills' types ({skillTypes}).",
+        "bonus-repeats-base": "A bonus damage row adds {dice} again; the Skill \"{skill}\" already rolls {dice} as its Base Damage.",
+        "to-hit-rank-hides-untrained": "Rank {rank} is used when no listed Skill applies, so an attacker without the Skill is not shown the untrained Disadvantage."
+      },
+      "gear": {
+        "armour-no-dr": "This armour gives no Damage Resistance.",
+        "bonus-dice-non-weapon": "This gear is not a weapon, but it adds {dice} to every attack its wearer makes."
+      },
+      "row": {
+        "grant-incomplete": "A grant row is incomplete: {detail}.",
+        "incomplete": "A modifier row will not apply: {detail}.",
+        "reference-unresolved": "A {kind} reference \"{ref}\" does not exist in this world."
+      },
+      "buff": {
+        "no-rows": "This buff changes nothing: it has no stat grant, defense, damage, attack, check or other effect."
+      },
+      "debuff": {
+        "no-condition": "This debuff has no identifier, so it has no condition to apply."
+      },
+      "deityItem": {
+        "no-signature-stat": "No signature Stat: a Zealot of this god gains no Stat points from it."
+      },
+      "patronItem": {
+        "no-performance-skill": "No performance Skill: a Bard is never measured against this patron's performance.",
+        "skill-unresolved": "The Skill \"{skill}\" does not exist in this world."
+      },
+      "achievementItem": {
+        "no-reward": "Awarding this gives only the trophy: no box, favor or XP."
+      },
+      "spaceUpgradeItem": {
+        "does-nothing": "This upgrade does nothing yet: no bonus, training room, crafting table or studio.",
+        "no-table-type": "This crafting table names no table type, so no recipe can use it."
+      },
+      "techniqueItem": {
+        "no-applies-to": "This technique applies to no attack: its \"applies to\" query names no tag."
+      },
+      "weaponSkill": {
+        "no-base": "This weapon Skill has no Base Damage, so every weapon listing it deals none.",
+        "base-not-dice": "This weapon Skill's Base Damage is not plain dice (like 1d8), so it rolls no damage.",
+        "no-type": "This weapon Skill has no weapon type tag, so weapons cannot match it by type."
+      },
+      "attackSpell": {
+        "no-damage": "This spell rolls an attack but has no Base Damage, healing or on-hit effect.",
+        "damage-not-dice": "This spell's Base Damage is not plain dice (like 2d6), so it rolls no damage."
+      },
+      "attackSkill": {
+        "no-damage": "This Skill attacks but has no Base Damage, healing or on-hit effect.",
+        "damage-not-dice": "This Skill's Base Damage is not plain dice (like 1d6), so it rolls no damage."
+      },
+      "consumable": {
+        "no-outcome": "Using this does nothing: it has no outcome and casts no spell.",
+        "reference-unresolved": "A {kind} reference \"{ref}\" in its outcomes does not exist in this world."
+      },
+      "wand": {
+        "no-charges": "This wand has no charges, so each use spends one from its quantity instead."
+      },
+      "tag": {
+        "unknown": "The tag \"{tag}\" is not registered, so nothing matches it."
+      },
+      "description": {
+        "empty": "No description."
+      }
+    },
     "Title": "Sprinter RPG",
     "GearOffline": {
       "Badge": "OFFLINE",
@@ -9,6 +519,69 @@
       "AmountTip": "{amount} not responding"
     },
     "Skill": {
+      "HighRankBadge": "Rank 16+ from the Sixth Floor",
+      "HighRankTip": "Rank {rank} is kept, and acts as 15 until the crawler reaches Floor {floor}.",
+      "Sheet": {
+        "Rank": "Rank",
+        "RankHint": "The Rank this Skill is trained to.",
+        "ExtraRanks": "Extra Ranks",
+        "ExtraRanksHint": "Ranks added by hand on top of the trained Rank.",
+        "GearRanks": "Ranks from gear",
+        "GearRanksHint": "Worked out from equipped gear.",
+        "RankUsed": "Rank used",
+        "RankUsedHint": "Rank plus Extra Ranks plus Ranks from gear: what rolls use.",
+        "Stat": "Stat it rolls with",
+        "CheckType": "How it is rolled",
+        "CheckTypeHint": "Attack: rolls to hit and the target evades. Passive: never rolled, always on.",
+        "Delivery": "How it reaches the target",
+        "Range": "Range (feet)",
+        "RankSource": "Rank comes from",
+        "RankSourceHint": "Its own Rank, or the number of the current Floor.",
+        "CheckNote": "Book wording (text only)",
+        "CheckNoteHint": "Shown to people; no rule reads it.",
+        "Advancement": "How it gains Ranks",
+        "AdvancementHint": "Blank: no limit. A number: only up to that Rank. 0: never. Ranks from gear are never limited.",
+        "MagicOnly": "Magic only",
+        "MagicOnlyHint": "Use, Grinding and Training 0; only magic raises this Skill.",
+        "UpToRank": "{label} up to Rank",
+        "NoLimit": "no limit",
+        "UnregisteredLine": "{route} (route not registered) up to Rank {rank}",
+        "UnregisteredHint": "No module registers this route right now, so the limit does nothing; it is kept in case the module comes back.",
+        "RemoveLimit": "Remove this limit",
+        "IsAttack": "Weapons can attack with it",
+        "IsAttackHint": "Weapons and attack items list attack Skills; a weapon listing a Skill without this tick warns.",
+        "DealsDamage": "Deals damage",
+        "DealsDamageHint": "Used by the item summary; the Base Damage is what rolls.",
+        "TechniqueTitle": "Technique, fumble and critical hits",
+        "TechniqueConfigured": "[CONFIGURED]",
+        "TechniqueIdle": "[CLICK TO CONFIGURE]",
+        "IsTechnique": "This is a technique",
+        "IsTechniqueHint": "A technique adds its effect to another attack instead of rolling on its own.",
+        "DamageEffect": "Offered as a Damage Effect when attacking",
+        "AppliesTo": "Used with attacks that have",
+        "AppliesToHint": "An attack matches when its tags, or its Skill's, match.",
+        "BaseDiceCountMod": "Change to the number of base dice",
+        "BaseDiceCountModHint": "+1 adds a die; * @rank multiplies by Rank.",
+        "BaseDiceCountModExample": "e.g. +1 or * @rank",
+        "FlatDamage": "Flat damage added",
+        "FlatDamageExample": "e.g. + @rank",
+        "TechniqueDescription": "Technique description (text only)",
+        "TechniqueDescriptionHint": "Shown in the Choose Damage Effect dialog; no rule reads it.",
+        "DamageBonus": "Extra damage dice",
+        "DamageBonusExample": "e.g. +2d4 or 1d8",
+        "BonusDamageType": "Extra damage type",
+        "SameAsAttack": "Same as the attack",
+        "OnUseDebuff": "Debuff on the target",
+        "None": "None",
+        "ArmorPierce": "Ignores Damage Resistance",
+        "ArmorPierceHint": "The target's Damage Resistance does not reduce this damage.",
+        "Fumble": "Debuff on yourself on a fumble",
+        "Crit5": "Critical hit multiplier from Rank 5",
+        "Crit15": "Critical hit multiplier from Rank 15",
+        "CritHint": "Each rank break below can raise it further.",
+        "Notes": "Upgrade notes (text only)",
+        "Description": "Description"
+      },
       "Specialty": {
         "Label": "Specialty",
         "Hint": "Your crawler's pick. Rows marked 'your specialty' apply when the item you make, or your target, carries this tag.",
@@ -18,6 +591,44 @@
         "Custom": "Other tag",
         "ChangeTitle": "Change Specialty",
         "Change": "{skill} already specialises in {old}. Change it as a Rule Break?"
+      }
+    },
+    "Spell": {
+      "Sheet": {
+        "ManaCost": "Mana cost",
+        "Range": "Range (text)",
+        "RangeHint": "Shown on the card.",
+        "RangePlaceholder": "30 feet",
+        "Delivery": "How it reaches the target",
+        "Duration": "Duration (text)",
+        "DurationHint": "Shown on the card; the timed duration below is what ends the effect.",
+        "DurationPlaceholder": "Instantaneous",
+        "AiFavor": "AI favor",
+        "CheckType": "How it is cast",
+        "CheckTypeHint": "Attack: rolls to hit and the target evades. None: no roll. Passive: always on.",
+        "Stat": "Stat it casts with",
+        "OwnStat": "Spell stat",
+        "ArmorPierce": "Ignores Damage Resistance",
+        "ArmorPierceTip": "Check if this spell penetrates armor and ignores Damage Resistance (DR).",
+        "FavoredBy": "Favored by",
+        "FavoredHint": "A caster whose archetype is not listed here pays extra Mana to cast it.",
+        "FavoredNone": "None / Universal",
+        "FavoredRemove": "Remove",
+        "FavoredAdd": "Add",
+        "Limitations": "Limitations (text only)",
+        "LimitationsHint": "A limit the engine applies is a row (for example a Disadvantage row).",
+        "LimitationsPlaceholder": "None",
+        "Description": "Description",
+        "Fumble": "Fumble",
+        "FumbleConfigured": "[CONDITIONS CONFIGURED]",
+        "FumbleOpen": "[CLICK TO CONFIGURE DEBUFF TRIGGERS]",
+        "FumbleDebuff": "Debuff on yourself on a fumble",
+        "FumbleNone": "-- None --",
+        "Riders": "Optional riders (comma separated)",
+        "RidersHint": "Offered when casting.",
+        "RidersPlaceholder": "Overcharge, Concentrated Beam, Wide Dispersion",
+        "Cast": "Cast",
+        "RollDamage": "Roll damage"
       }
     },
     "CheckType": {
@@ -219,6 +830,7 @@
       "overSkillCap": "That is above bonus {cap}, the most this skill can craft.",
       "clockShort": "This takes {hours} hours and {left} are left on the floor.",
       "noSteps": "This blueprint has no size and no enchantments, so there is nothing to roll for.",
+      "recipeLocked": "{list} marks a locked recipe, and nothing here unlocks it.",
       "hazard": "This item has 3 or more enchantments: applying another rolls 1d10, and 5 or less breaks it for good."
     },
     "Enchanting": {
@@ -306,7 +918,7 @@
         "Enchantment": "[ENCHANTMENT]"
       },
       "Ledger": {
-        "Title": "ENCHANTMENTS",
+        "Title": "Enchantments",
         "Badge": "[{count} ENCHANTED]",
         "Name": "Enchantment",
         "Category": "Category",
@@ -420,6 +1032,59 @@
       "DestroyedTitle": "Destroyed Item",
       "DestroyedMessage": "{name} is destroyed. Rebuilding it needs Repair at a high Rank. Try anyway as a Rule Break?"
     },
+    "SpaceRoom": {
+      "Message": "{space} has {used} of {spaces} table spaces taken. Add {names} anyway as a Rule Break?",
+      "StudioRank": "{space} is rank {rank}; a studio needs rank {min} or more.",
+      "StudioDuplicate": "{space} already has a studio for {type}.",
+      "StudioAsk": "Add {names} anyway as a Rule Break?",
+      "Tables": "Tables",
+      "Group": "group",
+      "GroupLine": "Group rank {rank}, {count} spaces",
+      "GroupUpgrades": "From joined spaces",
+      "FromSpace": "In {space}"
+    },
+    "SpaceJoin": {
+      "Title": "Joined spaces",
+      "None": "This space has not joined another space.",
+      "Detach": "Detach",
+      "Join": "Join",
+      "JoinTo": "Join another space",
+      "Connector": "Connector ({price} gold)",
+      "Hint": "A joined group shares tables, studios and training rooms. Each space keeps its own stash, defence, housing and occupants.",
+      "NotParty": "{owner} is not in {other}'s party.",
+      "NotOccupant": "{owner} is not an occupant of {space}.",
+      "JoinAsk": "Join {space} to {target} anyway as a Rule Break?",
+      "JoinAnyway": "Join anyway as a Rule Break?",
+      "PastBook": "Rank {rank} is past the ranks in the book (they stop at {max}).",
+      "Grouped": "{space} is already joined to {target}.",
+      "NotOwner": "Only the owner of {space} or the GM can join it to another space.",
+      "NotOwnerDetach": "Only the owner of either space or the GM can detach them."
+    },
+    "SpacePurchase": {
+      "PaidBy": "Paid by",
+      "GMGrant": "GM grant (free)",
+      "RankUp": "Rank Up to {rank} ({price} gold)",
+      "RankUpCoupon": "Rank Up to {rank} with a coupon",
+      "PayGold": "Pay {price} gold",
+      "SpendCoupon": "Spend {name}",
+      "BuyTable": "Buy a Table",
+      "BuyTableButton": "Buy ({price} gold)",
+      "Buy": "Buy ({price} gold)",
+      "NoPayer": "You do not own a crawler in this space to pay with."
+    },
+    "SpacePrices": {
+      "Title": "Personal Space Prices",
+      "Hint": "Gold prices for personal space purchases. A rank with its own price below uses it; every other Rank Up costs the default.",
+      "CouponPrice": "Rank Up price (default)",
+      "ByRank": "Price by target rank",
+      "Rank": "Rank",
+      "Price": "Price (gold)",
+      "AddRow": "Add a rank price",
+      "RemoveRow": "Remove this rank price",
+      "ConnectorPrice": "Join connector price",
+      "NewTablePrice": "New table price",
+      "Save": "Save prices"
+    },
     "CraftApp": {
       "Title": "Crafting",
       "OpenerHint": "Open the crafting window: blueprints, tables and materials",
@@ -494,7 +1159,7 @@
         "ApplyForceTitle": "Apply as an Amazing Success to every clicked target (Floor bonus and the weapon's AS effect)"
       },
       "Editor": {
-        "Title": "AMAZING SUCCESS (AS) TRIGGER",
+        "Title": "Amazing Success effect",
         "Hint": "The book gives a weapon one AS effect. Extra damage is a damage row conditioned on Amazing Success; a debuff or a narrative effect goes here.",
         "OverLimit": "This weapon has more than the one Amazing Success trigger the book allows (Rule Break).",
         "Type": { "debuff": "Debuff", "narrative": "Narrative" },
@@ -513,6 +1178,23 @@
         "RuleBreakReason": "Only one Amazing Success trigger is allowed per weapon. This weapon has {count}."
       }
     },
+    "Effects": {
+      "Immune": {
+        "Title": "Immune",
+        "Message": "{actor} is immune to {effect} ({sources}). Apply anyway as a Rule Break?",
+        "Card": "Immune ({sources})",
+        "CardNote": "{actor} is immune to {item}'s effect."
+      },
+      "RepeatRuling": {
+        "Title": "Another injury",
+        "Message": "{actor} already has {existing}, and {incoming} would land again. The rulebook does not say what happens. What does?",
+        "None": "Nothing more",
+        "Beside": "Add {incoming}",
+        "Cancel": "Cancel",
+        "Asking": "Asking the GM what happens to {actor}...",
+        "NotAsked": "The GM could not be asked about {actor}. Nothing was applied."
+      }
+    },
     "Ability": {
       "Str": "Strength",
       "Int": "Intelligence",
@@ -524,6 +1206,346 @@
       "ConShort": "CON",
       "DexShort": "DEX",
       "ChaShort": "CHA"
+    },
+    "GearSheet": {
+      "Basics": {
+        "Slot": "Slot",
+        "Equipped": "Equipped",
+        "IsWeapon": "Is Weapon",
+        "DamageResist": "Damage Resist (DR)",
+        "Quantity": "Quantity",
+        "DrTip": "DR bonus or penalty (+/-)",
+        "GoldGmTip": "Game Master: Gold Value is editable",
+        "GoldInspectedTip": "Player: Inspected value (Editable by GM only)",
+        "GoldHiddenTip": "Requires Determine Value Rank 15 to inspect gold value (Editable by GM only)",
+        "GoldValue": "Gold Value"
+      },
+      "StatBonuses": {
+        "Title": "Stat bonuses while equipped",
+        "Count": "[{count} STAT BONUSES]",
+        "Add": "[CLICK TO ADD STAT BONUSES]"
+      },
+      "Grants": {
+        "Active": "[EQUIPPED: ACTIVE]",
+        "Inactive": "[UNEQUIPPED: EQUIP TO ACTIVATE]",
+        "Kind": "Kind",
+        "SkillSpell": "Skill / Spell",
+        "RankBonus": "Rank Bonus",
+        "GrantRank": "Grant Rank",
+        "InactiveTip": "Equip this gear on the actor to activate skill and spell bonuses",
+        "GrantRankTip": "Rank an unowned spell is granted at",
+        "Delete": "Delete",
+        "Title": "Skills and spells this item gives its wearer",
+        "Count": "[{count} GIVEN]",
+        "Add": "[CLICK TO ADD A SKILL OR SPELL]",
+        "NotAttackSkill": "These are Skills and spells the wearer gets while this is equipped. They are not the Skill used to attack with this weapon; that is set under Weapon."
+      },
+      "Ability": {
+        "Title": "Ability used from the item",
+        "Enable": "Enable Activated Ability / On-Use",
+        "CastSpell": "Cast Spell",
+        "None": "-- None --",
+        "ExecutionMode": "Execution Mode",
+        "Charges": "Charges (Pool)",
+        "AddEffect": "Add Effect",
+        "EffectName": "Effect Name",
+        "Weight": "Weight",
+        "Type": "Type",
+        "Target": "Target",
+        "Details": "Details / Values",
+        "Act": "Act",
+        "Bars": "Bars",
+        "BarsPerRound": "b/rnd",
+        "Rounds": "rnds",
+        "Full": "Full",
+        "Amount": "Amount",
+        "MinorInjury": "Minor Injury",
+        "MajorInjury": "Major Injury",
+        "AllInjuries": "All Injuries",
+        "ChooseSpell": "-- Choose Spell --",
+        "ChooseBuff": "-- Choose Existing Buff --",
+        "ChooseDebuff": "-- Choose Existing Debuff --",
+        "ChooseTable": "-- Choose Roll Table --",
+        "ChooseType": "-- Type --",
+        "RankPlaceholder": "Rank 1",
+        "DicePlaceholder": "NdM",
+        "DescriptionPlaceholder": "Flavor & rules description...",
+        "Configured": "[ACTIVE ABILITY CONFIGURED]",
+        "Configure": "[CLICK TO CONFIGURE ON-USE ABILITY]",
+        "EnabledHint": "Activated ability enabled. Click Add Effect to attach on-use effects to this piece of gear.",
+        "DisabledHint": "On-use activated abilities disabled. Check \"Enable Activated Ability\" above to attach effects, charges, or cooldowns."
+      },
+      "Persistent": {
+        "Title": "Buffs and debuffs while equipped",
+        "Active": "[ACTIVE CONDITIONS]",
+        "Configure": "[CLICK TO CONFIGURE PERSISTENT BUFFS/DEBUFFS]",
+        "Hint": "Resistances and immunities while equipped: add a Resistance or Immunity Defense row under Modifiers."
+      },
+      "Healing": {
+        "Title": "Healing and cleansing each round",
+        "Enable": "Enable Healing",
+        "BarsPerRound": "Health Bars / Round",
+        "Cleanse": "Cleanse Debuffs Each Round (Comma-Separated)",
+        "CleansePlaceholder": "e.g. Bleeding, Burned",
+        "Configured": "[HEALING CONFIGURED]",
+        "Configure": "[CLICK TO CONFIGURE HEALING/CLEANSING]"
+      },
+      "Notes": {
+        "Notes": "Notes",
+        "Description": "Description"
+      },
+      "Weapon": {
+        "Title": "Weapon"
+      },
+      "Skills": {
+        "Title": "Skill used to attack",
+        "Add": "Add a Skill",
+        "Suggest": "Suggest Skills",
+        "SuggestTip": "Fill the list with the standard Skills for this weapon's type",
+        "Untrained": "Anyone without this Skill attacks at Disadvantage.",
+        "CustomPlaceholder": "Or a Skill identifier...",
+        "AddCustom": "+ Add",
+        "Unresolved": "This world has no Skill by this name, so attackers are untrained.",
+        "Remove": "Remove Skill",
+        "Empty": "No Skill listed yet. Add one from the Skill library; with none, anyone using this weapon attacks at Disadvantage."
+      },
+      "Type": {
+        "Title": "Weapon type",
+        "GroupTitle": "Weapon group",
+        "UseSkill": "Use the Skill's",
+        "UseSkillTip": "Add the weapon type and group of the Skill used to attack",
+        "None": "No weapon type is set. Pick one, or use the Skill's."
+      },
+      "Hands": {
+        "Title": "Hands",
+        "OneHanded": "Wielded one-handed (disadvantage)"
+      },
+      "Damage": {
+        "Title": "Damage",
+        "SkillLine": "{skill} rolls {damage}.",
+        "NoBase": "no Base Damage",
+        "NoSkill": "No Skill is listed, so there is no base damage to roll.",
+        "MobLacksSkill": "This mob does not have {skill}, so it rolls no base damage from it.",
+        "Rolls": "This weapon rolls {damage}.",
+        "Different": "Different base damage",
+        "Overridden": "[OVERRIDDEN]",
+        "UsesSkill": "[USES THE SKILL'S BASE DAMAGE]",
+        "DifferentHint": "A weapon rolls its Skill's Base Damage. Fill a box here only to change it; a blank box keeps the Skill's.",
+        "Bonus": "Bonus damage",
+        "BonusNone": "None.",
+        "BonusAdd": "Add bonus damage",
+        "BonusHint": "Bonus damage is added on top of the base damage; it does not grow with Rank. Edit the rows under Modifiers.",
+        "Crit": "Crit Multiplier",
+        "CritTip": "Critical Hit multiplier for the base dice (1 means the default, 2x; the GM may change it)",
+        "IgnoreDR": "Ignores Damage Resistance",
+        "IgnoreDRTip": "Check if this weapon penetrates armor and ignores Damage Resistance (DR)"
+      },
+      "ToHit": {
+        "Stat": "To-hit stat",
+        "Rank": "Rank when no Skill applies",
+        "RankHint": "Used when no Skill is listed for this weapon. Leave at 0 to attack untrained."
+      },
+      "Techniques": {
+        "Title": "Optional Effects / Combat Techniques",
+        "SuggestTip": "Auto-populate recommended techniques for this weapon",
+        "Suggest": "Auto-Suggest Techniques",
+        "Remove": "Remove technique",
+        "None": "No optional effects or techniques associated.",
+        "Choose": "+ Select Existing Technique/Effect...",
+        "CustomPlaceholder": "Or technique identifier...",
+        "AddCustom": "+ Add"
+      }
+    },
+    "AbilitySheet": {
+      "Healing": {
+        "Title": "Healing and cleansing",
+        "Configured": "[HEALING CONFIGURED]",
+        "Configure": "[CLICK TO CONFIGURE HEALING / CLEANSING]",
+        "Heals": "Heals",
+        "Bars": "Health Bars restored",
+        "BarsHint": "A number, or a formula such as 1 + con.",
+        "Who": "Who it heals",
+        "Allies": "Allies",
+        "Self": "Self Only",
+        "Any": "Any Target",
+        "Hot": "Heals over several rounds",
+        "HotRounds": "Rounds of healing",
+        "HotHint": "The bars are restored once per round for the rounds set here.",
+        "Cleanse": "Debuffs it removes",
+        "CleanseEmpty": "No debuffs selected to cleanse. Select from the dropdown below or enter a custom debuff.",
+        "RemoveDebuff": "Remove debuff",
+        "SelectDebuff": "+ Select Debuff to Cleanse...",
+        "CustomDebuff": "Or custom debuff...",
+        "Add": "+ Add"
+      },
+      "RankBreaks": {
+        "Title": "What changes at higher Ranks",
+        "Configured": "[RANK BREAKS CONFIGURED]",
+        "Configure": "[CLICK TO CONFIGURE MILESTONE BREAKS]",
+        "Hint": "Each reached break adds to the ones before it. Write the increment from the previous break, not the new total.",
+        "Parse": "Parse upgrade text into rank breaks",
+        "ParseTitle": "Fill the empty rank-break fields below from the Rank 5/10/15 upgrade text. Review the result, then save.",
+        "Milestone": "Milestone Break",
+        "Rank": "Rank:",
+        "DamageDice": "Extra base damage dice",
+        "DamageDiceHint": "Added to the Base Damage from this Rank on. Dice of the same size merge (1d8 and 1d8 roll as 2d8).",
+        "DamageType": "Damage Type",
+        "SkillDamageType": "-- Skill damage type --",
+        "SpellDamageType": "-- Spell damage type --",
+        "RankDamageDice": "Extra Rank damage dice",
+        "DiceSource": "Rank dice use the Rank of",
+        "DiceSourceHint": "The attacking Skill, or this item's own Rank.",
+        "Crit": "Critical hit multiplier",
+        "CritTitle": "Critical Hit Multiplier (e.g. 2x, 4x, 8x)",
+        "CardNote": "Card note (text only)",
+        "CardNoteHint": "Shown on the roll card; no rule reads it.",
+        "OnHitDebuff": "Debuff on a hit",
+        "None": "-- None --",
+        "RadiusBonus": "+ Radius Bonus (ft)",
+        "TempHp": "Health per temporary bar",
+        "TempBars": "+ Temp Bars Granted",
+        "HealingBars": "+ Healing Bars",
+        "CleanseDebuff": "Cleanse Debuff",
+        "ArmorPiercing": "Armor Piercing",
+        "ContestDc": "+ Contest DC Bonus",
+        "FailDebuff": "Debuff when the target fails the contest",
+        "KeepBase": "-- Keep Base --",
+        "Notes": "Other changes (text only)",
+        "SkillNotesPlaceholder": "e.g. Critical hits deal 4x damage, throw range doubled...",
+        "SpellNotesPlaceholder": "e.g. Doubles radius, allows higher mana spend...",
+        "Tags": "Tags from this Rank",
+        "TagsHint": "Tags the item has once it reaches this Rank.",
+        "TagsPlaceholder": "Pick tags in the Tag Manager, then list them here, separated by commas",
+        "InterruptRange": "Interrupt Range Bonus (ft)",
+        "InterruptDr": "Interrupt DR vs. the Triggering Attack (+N)",
+        "InterruptIgnore": "Interrupt ignores debuffs attached to the attack",
+        "SkillCheckBonus": "Check bonus (all rolls of this skill, including attacks)",
+        "SpellCheckBonus": "Check bonus (all rolls of this spell, including attacks)"
+      },
+      "RankBreakExtras": {
+        "BaseDiceMultiplier": "Base Dice Multiplier",
+        "BaseDiceCountMod": "Change to the number of base dice",
+        "DebuffTiming": "Debuff Timing",
+        "ToHit": "To-hit bonus (attacks only)",
+        "Range": "+ Range (ft)",
+        "Duration": "+ Duration (rounds)",
+        "LifeDrain": "+ Life Drain heal (slots)",
+        "LifeDrainTitle": "Extra Health Bar slots the On Hit lifesteal heals (needs a lifesteal amount in the On Hit block)",
+        "LineLength": "+ Line Length (ft)",
+        "LineWidth": "+ Line Width (ft)",
+        "Splash": "+ Splash (ft)"
+      },
+      "RankDamage": {
+        "Title": "Damage that grows with Rank",
+        "Configured": "[RANK DAMAGE PARTS ({count})]",
+        "Configure": "[CLICK TO ADD RANK DAMAGE PARTS]",
+        "Hint": "Each row adds its dice or bonus once the Rank reaches Min Rank.",
+        "Add": "Add Rank Damage Part",
+        "Label": "Label",
+        "DamageType": "Damage Type",
+        "FixedBonus": "Fixed Bonus",
+        "Dice": "Dice (Optional)",
+        "MinRank": "Min Rank",
+        "Delete": "Delete",
+        "Empty": "No attack damage bonuses. Click \"Add Rank Damage Part\" above to add scaling or typed damage to attacks."
+      },
+      "OnHit": {
+        "Title": "On hit (target)",
+        "Configured": "[ON-HIT CONFIGURED]",
+        "Configure": "[CLICK TO CONFIGURE ON-HIT EFFECTS]",
+        "MinRank": "Min Rank to Inflict",
+        "LifeDrain": "Life Drain: heal the attacker (Health Bar slots)",
+        "LifeDrainMinSlots": "Only if the target loses at least (slots)",
+        "LifeDrainMinRank": "Min Rank for Life Drain",
+        "Dispel": "Dispel: suspend the target's Buffs until the combat ends",
+        "DispelsOnHit": "Dispels on hit",
+        "DispelCount": "Buffs suspended (0 = every matching Buff)",
+        "DispelMinRank": "Min Rank to Dispel",
+        "DispelTags": "Dispel only Buffs with these tags (empty = every Buff)"
+      },
+      "Contest": {
+        "Title": "Contested check",
+        "Configured": "[CONTEST CONFIGURED]",
+        "Configure": "[CLICK TO CONFIGURE CONTEST / OPPOSED CHECK]",
+        "Enable": "Enable Contested / Opposed Check",
+        "Type": "Contest Type",
+        "Stat": "Target Opposing Stat",
+        "Skill": "Target Opposing Skill (Optional)",
+        "CustomDc": "Custom Override DC (0 = 10 + Rank + Stat Mod)",
+        "FailDebuff": "On-Fail Target Debuff",
+        "FailNotes": "Target Failure Consequences / Notes",
+        "SuccessNotes": "Target Success Consequences / Notes",
+        "FailPlaceholder": "e.g. Target is restrained and takes 1 bar per round until broken",
+        "SuccessPlaceholder": "e.g. Target resists effect or takes half damage"
+      },
+      "BaseDamage": {
+        "Dice": "Base Damage Dice",
+        "Stat": "Base Damage Stat",
+        "Type": "Base Damage Type"
+      },
+      "AreaShape": {
+        "Shape": "Shape",
+        "Radius": "Base Radius (ft)",
+        "Length": "Length (ft)",
+        "Width": "Width (ft)",
+        "Splash": "Splash (ft)",
+        "Absorb": "Damage type its temporary Health Bars absorb"
+      },
+      "Interrupt": {
+        "Title": "Interrupt",
+        "Range": "Interrupt Range (ft, 0 = touch)",
+        "Unlimited": "Unlimited range",
+        "From": "Measured From",
+        "Dr": "DR vs. the triggering attack (+N)",
+        "IgnoreDebuffs": "Ignore debuffs attached to it",
+        "Triggers": "Triggers:"
+      }
+    },
+    "AuraSheet": {
+      "AbilityTitle": "Aura and area",
+      "GearTitle": "Aura",
+      "AbilityEmits": "Has an aura or area",
+      "GearEmits": "Has an aura or area",
+      "AbilityConfigure": "[CLICK TO CONFIGURE AURA OR AREA]",
+      "GearConfigure": "[CLICK TO CONFIGURE GEAR AURA]",
+      "Hint": "An area around the user or a placed spot that helps allies or harms enemies inside it.",
+      "Configured": "[AURA CONFIGURED]",
+      "TargetFilter": "Affects",
+      "Allies": "Allies Only",
+      "Enemies": "Enemies Only",
+      "Both": "Both (Allies & Enemies)",
+      "Protection": "Temporary Health Bars for allies",
+      "EnableBars": "Gives allies temporary Health Bars",
+      "SlotsFormula": "How many bars",
+      "NotSet": "Not set (1 Bar)",
+      "ConMod": "CON Mod",
+      "ChaMod": "CHA Mod",
+      "IntMod": "INT Mod",
+      "StrMod": "STR Mod",
+      "DexMod": "DEX Mod",
+      "Fixed1": "Fixed 1 Bar",
+      "Fixed2": "Fixed 2 Bars",
+      "HpPerBar": "Health per bar",
+      "Combat": "Bonuses inside the area",
+      "Evade": "Evade Bonus",
+      "Attack": "Attack Bonus",
+      "Damage": "Damage Bonus",
+      "Healing": "Aura Healing & Cleansing",
+      "HealingBars": "Healing Bars",
+      "Hot": "Heals over several rounds",
+      "HotRounds": "Rounds of healing",
+      "Hazard": "Harm to enemies inside the area",
+      "EnablePeriodic": "Enable Periodic Aura Damage",
+      "TickFormula": "Damage each round",
+      "Element": "Damage type",
+      "TickPlaceholder": "e.g. 1d6"
+    },
+    "ItemFindings": {
+      "Title": "What's missing",
+      "Fix": {
+        "addTags": "Add the suggested tags",
+        "pickAttackSkill": "Choose an attack Skill"
+      }
     },
     "Item": {
       "OutcomeDamageNoRoll": "Rolls no damage: enter dice as NdM",
@@ -579,7 +1601,63 @@
       "scratch": "Lottery ticket",
       "blueprint": "Blueprint",
       "box": "Loot box",
-      "consumable": "Consumable"
+      "consumable": "Consumable",
+      "treasure": "Treasure",
+      "crafting": "Crafting material",
+      "quest": "Quest item"
+    },
+    "Loot": {
+      "Sheet": {
+        "Quantity": "How many",
+        "QuantityHint": "Each use spends one, unless the item has charges.",
+        "GoldValue": "Gold value",
+        "LootType": "What kind of item",
+        "Mode": "When used, it does",
+        "ModeHint": "Every effect below, or one picked at random by weight.",
+        "ModeDefault": "Default (all effects)",
+        "Charges": "Charges (left / most)",
+        "ChargesHint": "A wand spends a charge per use instead of its quantity.",
+        "InscribedSpell": "Spell it casts",
+        "ChooseSpell": "Choose a spell",
+        "Deity": "God it names",
+        "DeityHint": "Reading it adds this god to the reader's known gods. Write the god's identifier.",
+        "DeityPlaceholder": "god identifier",
+        "Lottery": "Lottery prizes",
+        "LotteryHint": "One prize is picked by weight when it is scratched.",
+        "AddPrize": "Add prize",
+        "NoPrizes": "No prizes yet. Add one above.",
+        "Builder": "What using it does",
+        "ModeRandom": "One at random (total weight {total})",
+        "ModeAll": "All of them",
+        "AddEffect": "Add effect",
+        "NoEffects": "No effects yet. Add one above.",
+        "TotalWeight": "Total weight {total}. Weights are relative: an outcome's chance is its weight divided by the total.",
+        "EvenOut": "Even out weights",
+        "Notes": "Notes (text only)",
+        "Description": "Description",
+        "Outcome": {
+          "Name": "Name",
+          "Weight": "Weight",
+          "WeightOf": "Weight (of {total})",
+          "Does": "Does",
+          "Who": "Who",
+          "Amount": "Amount",
+          "Bars": "Bars",
+          "BarsPerRound": "b/rnd",
+          "Rounds": "rnds",
+          "Full": "Full",
+          "AmountMode": "Amount",
+          "InjuryMinor": "Minor Injury",
+          "InjuryMajor": "Major Injury",
+          "InjuryAll": "All Injuries",
+          "ChooseSpell": "Choose a spell",
+          "ChooseBuff": "Choose an existing buff",
+          "ChooseDebuff": "Choose an existing debuff",
+          "ChooseTable": "Choose a roll table",
+          "ChooseType": "Type",
+          "DescriptionPlaceholder": "Flavor and rules description..."
+        }
+      }
     },
     "BuffCard": {
       "AppliedOnUse": "Applied on use",
@@ -631,13 +1709,43 @@
       "ChangeForm": "Change form",
       "Revert": "Revert",
       "RevertTooltip": "Undo the change (asks a Rule Break when the cure window is closed)",
-      "Banner": "Transformation"
+      "Banner": "Transformation",
+      "ConfirmChangeInto": "Change {actor} into {form} now?",
+      "ConfirmChangeBy": "{actor} is changed by {affliction}. Apply it now?",
+      "HeldRevertInto": "{actor} has already changed into {form}. Revert anyway as a Rule Break?",
+      "HeldRevertBy": "{actor} is changed by {affliction}. Revert anyway as a Rule Break?",
+      "RaceReturnsTo": "{race} is what {actor} returns to when the change ends.",
+      "RaceNotInForce": "Not in force while changed into {form}. It returns when the change ends.",
+      "NotInForceBadge": "[NOT IN FORCE]",
+      "NotInForceTooltip": "Not in force while changed; it returns when the change ends."
     },
     "Debuff": {
       "Paused": "Paused",
       "PausedTooltip": "A paused debuff does nothing until it is switched back on.",
       "Secret": "Secret (ask the GM to hold it when it lands)",
-      "SecretTooltip": "When it lands, the GM is asked whether to hold it out of the player's sight."
+      "SecretTooltip": "When it lands, the GM is asked whether to hold it out of the player's sight.",
+      "Sheet": {
+        "Severity": "How bad",
+        "SeverityHint": "Minor or Major: shown on the crawler sheet and in the summary. An injury's severity is its injury.* tag, not this.",
+        "DamagePerRound": "Damage each round",
+        "DamagePerRoundHint": "Dealt to the bearer at the end of each combat round.",
+        "DamageType": "Damage type",
+        "DamageTypeNone": "None",
+        "DurationText": "Duration (text)",
+        "DurationHint": "Shown to people; \"What ends it\" below is what ends the debuff.",
+        "Repeat": "When applied again",
+        "RepeatHint": "Refresh: one debuff, its timer renewed. Stack: one more copy, and every copy counts. Promote: the pair becomes another debuff.",
+        "RepeatInto": "Turns into this debuff",
+        "RepeatIntoHint": "Used by Promote: the identifier of the debuff a second application turns this one into.",
+        "EndsHint": "What ends this debuff. A rest clears every debuff set to end at that rest or an earlier one.",
+        "Description": "Description"
+      },
+      "Suppresses": {
+        "Title": "Suppresses",
+        "Buffs": "Buffs it switches off",
+        "Skills": "Skills it makes unusable",
+        "Hint": "While this debuff is in force, buffs and skills matching these tags are switched off. An empty query suppresses nothing."
+      }
     },
     "RaceCreatorForm": {
       "Label": "Transformation form",
@@ -661,6 +1769,555 @@
       "SecretGone": "That secret is no longer held.",
       "GMOnly": "Only the GM can do that."
     },
+    "Activation": {
+      "Used": "{actor} uses {buff} {window}.",
+      "Suppressed": "{buff} cannot take effect right now.",
+      "WindowCombat": "until the end of combat",
+      "WindowOneUse": "for one use",
+      "WindowUses": "for {n} uses",
+      "WindowOneHit": "until the next hit",
+      "WindowHits": "for {n} hits",
+      "WindowTimed": "for {n} {unit}",
+      "Sheet": {
+        "Heading": "ACTIVATION",
+        "HeadingHint": "Use opens a window; the buff's rows apply only inside it.",
+        "Enabled": "Activated",
+        "EnabledHint": "On: this buff's rows apply only inside a window that Use opens.",
+        "WindowAmount": "Window length",
+        "WindowUnit": "Window unit",
+        "WindowQuery": "Counts only uses with these tags (empty = any use or hit)",
+        "Cooldown": "Cooldown (once per day: 1 day)",
+        "Note": "While the window is closed the buff does nothing. Use opens it; it closes by the clock, at combat end, after the counted uses or hits, or by End.",
+        "Unit": {
+          "use": "uses",
+          "hit": "hits",
+          "combat": "this combat"
+        },
+        "BadgeReady": "READY",
+        "BadgeActive": "ACTIVE: {left}",
+        "BadgeCooldown": "COOLDOWN {left}",
+        "LeftUses": "{n} use(s)",
+        "LeftHits": "{n} hit(s)",
+        "LeftCombat": "this combat",
+        "LeftSpent": "last use",
+        "Use": "Use",
+        "End": "End"
+      }
+    },
+    "Buff": {
+      "Sheet": {
+        "AuraNote": "Buffs cannot emit an aura. Make the aura a spell or skill and list this buff in its area's Granted Buffs.",
+        "HealingPerRound": "Healing each round",
+        "HealingPerRoundHint": "Restored to the bearer at the end of each combat round.",
+        "DamageType": "Damage type it is about",
+        "DamageTypeAny": "Any",
+        "DamageTypeHint": "For a buff whose rows name a damage type; blank for any.",
+        "DurationText": "Duration (text)",
+        "DurationHint": "Shown to people; the timed duration below is what ends the buff.",
+        "Description": "Description"
+      }
+    },
+    "LimbModifiers": {
+      "Heading": "Arms, legs and hands",
+      "Hands": "Hands",
+      "Arms": "Arms",
+      "Legs": "Legs",
+      "Hint": "A positive number adds, a negative one takes away.",
+      "BuffNote": "Changes how many arms, legs and wielding hands the bearer has while the buff is on.",
+      "DebuffNote": "Changes how many arms, legs and wielding hands the bearer has while the debuff is on (-1 for a lost hand)."
+    },
+    "Patron": {
+      "Block": {
+        "Title": "Patrons",
+        "Add": "Add a patron",
+        "Empty": "No patron.",
+        "MakePatron": "Make this your patron",
+        "Leave": "Leave this patron",
+        "Edit": "Open the patron",
+        "Delete": "Remove from the sheet",
+        "Progress": "Check {n} of {total}",
+        "Badge": {
+          "Prospect": "[PROSPECT]",
+          "Auditioning": "[AUDITIONING]",
+          "Patron": "[PATRON]",
+          "Former": "[FORMER]",
+          "Deity": "[DEITY]",
+          "LinkBroken": "[LINK BROKEN]"
+        },
+        "Attitude": {
+          "Opposed": "Opposed",
+          "Reluctant": "Reluctant",
+          "Willing": "Willing",
+          "Enthusiastic": "Enthusiastic"
+        }
+      },
+      "Audition": {
+        "Attitude": {
+          "opposed": "Opposed",
+          "reluctant": "Reluctant",
+          "willing": "Willing",
+          "enthusiastic": "Enthusiastic"
+        },
+        "Button": {
+          "Start": "Start an audition",
+          "Check": "Roll an audition check",
+          "Undo": "Undo the last check",
+          "Benefit": "Roll Table 70",
+          "Humiliation": "Roll Table 69",
+          "PopularityUp": "+1 Popularity",
+          "PopularityDown": "-1 Popularity",
+          "Steady": "Steady nerves"
+        },
+        "Card": {
+          "StartTitle": "Audition",
+          "Title": "Audition: {patron}",
+          "Start": "Audition: {actor} for {patron}, starting {attitude}",
+          "Forced": "(they killed their last patron)",
+          "Step": "{skill}: {outcome}. Attitude {from} -> {to}",
+          "Agreed": "{patron} agrees to be {actor}'s patron.",
+          "Declined": "{patron} declines.",
+          "StormedOff": "{patron} storms off."
+        },
+        "Check": {
+          "Who": "Audition for {patron}",
+          "Apply": "Apply to audition",
+          "Applied": "Applied: {from} -> {to}",
+          "Waiting": "Waiting for the GM to set the Difficulty",
+          "Title": "Audition check",
+          "Skill": "Skill",
+          "Roll": "Roll"
+        },
+        "Criteria": {
+          "presence": "Presence",
+          "performance": "Performance",
+          "combat": "Combat Skill or Spell",
+          "access": "Access",
+          "State": {
+            "met": "met",
+            "unmet": "unmet",
+            "unchecked": "the GM judges"
+          }
+        },
+        "Start": {
+          "Title": "Start audition",
+          "Intro": "Start {actor}'s audition for {patron}. Three checks, each with a different Skill.",
+          "Forced": "They killed their last patron, so this audition starts Opposed.",
+          "Attitude": "Starting attitude",
+          "Go": "Start"
+        },
+        "StartAsk": "{reasons}. Start {actor}'s audition for {patron} anyway as a Rule Break?",
+        "OpposedAsk": "Starting Opposed is only for a patron forced by violence or deception (p. 315)",
+        "UsedAsk": "{skill} was already used in this audition; each check uses a different Skill. Use it again as a Rule Break?",
+        "Difficulty": "Difficulty",
+        "DifficultyTitle": "Audition Difficulty",
+        "DifficultyOk": "Judge",
+        "NotAuditioning": "That audition is not under way.",
+        "AlreadyApplied": "That check is already applied.",
+        "Cancel": "Cancel",
+        "Used": "(used)",
+        "PopularityReason": "Audition"
+      },
+      "Picker": {
+        "Title": "Patrons",
+        "SearchPlaceholder": "Search patrons by name or title...",
+        "Clear": "Clear search",
+        "Known": "[ON SHEET]",
+        "Deity": "[DEITY]",
+        "NoPatronage": "[NO PATRONAGE]",
+        "Offered": "[OFFERED]",
+        "Offer": "Offer",
+        "Pick": "Add as a prospect",
+        "Empty": "No patron to show."
+      },
+      "Ending": {
+        "QuitTip": "The patron quits",
+        "DiedTip": "The patron died",
+        "EndDeityTip": "The god ends the patronage",
+        "QuitTitle": "{patron} quits",
+        "Fee": "Termination fee owed to the showrunners: {fee} gold ({percent}% of {earned})",
+        "Transfer": "Transfer",
+        "WhoKilled": "Who killed them?",
+        "WhoKilledTitle": "{patron} died",
+        "Confirm": "Confirm",
+        "DeathTitle": "A patron has died",
+        "DeathLine": "{patron}, {actor}'s patron, was killed (p. 316). Who killed them?",
+        "BardKilled": "The Bard killed them",
+        "KillerPatron": "Killer becomes patron",
+        "RivalTitle": "Rival worship",
+        "RivalLine": "{actor} now worships {god}, a rival of their patron {patron} (p. 316).",
+        "RivalReason": "rival worship",
+        "EndPatronage": "End patronage",
+        "EndTitle": "{patron} ends the patronage",
+        "ReasonHint": "Why? (optional)",
+        "EndedTitle": "{patron} ends the patronage",
+        "EndedWhy": "{patron} is no longer {actor}'s patron: {reason}",
+        "Ended": "{patron} is no longer {actor}'s patron"
+      },
+      "Offer": {
+        "Title": "Patron",
+        "Must": "{actor} must choose a patron (p. 146). Offer two or three.",
+        "Button": "Offer patrons",
+        "Send": "Send offer",
+        "CountTitle": "Patron offer",
+        "CountReason": "The book offers two or three patrons; this offer has {n}. Send it as a Rule Break?",
+        "CardTitle": "Choose a patron",
+        "CardIntro": "{actor} must choose a patron (p. 146). Pick one.",
+        "Choose": "Choose"
+      },
+      "Gate": {
+        "Title": "Patron",
+        "Ask": "{reasons}. Make {patron} {actor}'s patron anyway as a Rule Break?",
+        "NotEligible": "{actor} has nothing that gives access to a patron",
+        "Another": "{actor} already has a patron ({others})",
+        "NoPatronage": "{patron} does not take patrons",
+        "NoAudition": "{patron} has not agreed at an audition (p. 315)",
+        "Murdered": "{actor} killed their last patron this Floor (p. 316)",
+        "Leave": "Leaving {patron} is not one of the ways a patronage ends. Leave anyway as a Rule Break?",
+        "Criteria": {
+          "Unmet": "{patron} wants more of {actor}: {criteria}",
+          "Performance": "a performance Skill above the Bard's at Rank 10 or more",
+          "Combat": "a Combat Skill or Spell the Bard is untrained in",
+          "Access": "access to a club, guild or PR agent"
+        }
+      },
+      "Gig": {
+        "Title": "Gig",
+        "Tooltip": "Perform a gig for this patron",
+        "Pick": "Perform for {patron} with",
+        "Perform": "Perform (1 hour)",
+        "Cancel": "Cancel",
+        "NotPatron": "{patron} is not {actor}'s patron, so books no performances (p. 316). Perform anyway as a Rule Break?",
+        "PaidAsk": "This gig is already paid. Pay it again as a Rule Break?",
+        "PayTitle": "Pay gig",
+        "Pay": "Pay gig",
+        "Modifier": "Modifier (audience, fame and the patron's influence)",
+        "Difficulty": "Difficulty",
+        "Figures": "Rank {rank}, Floor {floor}, {outcome}: {gross} gold ({net} to the Bard, {cut} to the patron) before the modifier.",
+        "Pending": "Rank {rank}, Floor {floor}: set the Difficulty to judge the check.",
+        "CardTitle": "Gig: {patron}",
+        "Paid": "Gig paid: {gross} gold ({net} to {actor}, {cut} to {patron})",
+        "PaidNotice": "{patron}'s gig paid {net} gold.",
+        "Check": {
+          "Who": "Gig for {patron}: 1 hour",
+          "Pay": "Pay gig",
+          "Paid": "Paid: {net} gold"
+        }
+      },
+      "Advice": {
+        "Hud": "Advice: HUD chat",
+        "Fairy": "Advice: messenger fairy, {minutes} min each way"
+      },
+      "Mentor": {
+        "Tooltip": "Have this patron mentor you",
+        "Title": "Mentor",
+        "Pick": "What does {patron} teach?",
+        "SpellMark": "(Spell, a Rule Break)",
+        "Button": "Mentor (1 hour)",
+        "Cancel": "Cancel",
+        "Nothing": "{patron} has nothing left to teach {actor}.",
+        "OffList": "{skill} is not one of {patron}'s Skills",
+        "IsSpell": "{skill} is a Spell, and a patron mentors a Skill",
+        "Ask": "{reasons}. Have {patron} mentor {actor} anyway as a Rule Break?",
+        "Done": "{patron} mentored {actor} in {skill}.",
+        "GrindTitle": "Grinding with a patron",
+        "GrindAsk": "Grinding with {patron}, or on their Advice?"
+      },
+      "Quest": {
+        "Tooltip": "Set a quest from this patron",
+        "Title": "Patron quest",
+        "FieldTitle": "Quest",
+        "FieldReward": "Reward",
+        "FieldDescription": "Details",
+        "Add": "Set the quest",
+        "NoSpace": "{actor} has no personal space to hold a quest. Link one from the Story tab first.",
+        "Open": "{patron} already has a quest open ({quest}); a patron sets one at a time. Set another anyway as a Rule Break?"
+      },
+      "Ideas": {
+        "Tooltip": "Ideas from this patron",
+        "Title": "Ideas from {patron}",
+        "Quests": "Quest ideas",
+        "Favours": "Favour ideas",
+        "Roll": "Roll {table}",
+        "Missing": "Import the core rulebook tables to draw them"
+      },
+      "Sheet": {
+        "Title": "Role (text)",
+        "Availability": "Availability (text)",
+      "AvailabilityHint": "Who it takes on is read from its access tags, not from this text.",
+        "Specialty": "Performance specialty",
+        "PerformanceSkills": "Performance Skills",
+      "PerformanceSkillsHint": "A Bard's performance is measured against these.",
+        "NoPerformanceSkills": "None.",
+        "Skills": "Skills and spells it mentors",
+        "NoSkills": "None.",
+        "ChooseSkill": "+ Add skill or spell...",
+        "CustomSkill": "Or another identifier...",
+        "Add": "Add",
+        "Venues": "Venue connections",
+        "Messaging": "Advice reaches the Bard by",
+        "MessagingHud": "HUD chat",
+        "MessagingFairy": "Messenger fairy",
+        "MessagingHint": "HUD chat for a crawler, a former crawler or an outworlder; otherwise a messenger fairy (p. 316).",
+        "Actor": "The person this patron is",
+        "ActorDrop": "Drop an Actor here to link it.",
+        "ActorBroken": "Link broken: that actor no longer exists.",
+        "ActorClear": "Unlink",
+        "Quests": "Quests",
+        "Favours": "Favours",
+        "Rewards": "Rewards",
+        "Description": "Description"
+      }
+    },
+    "Achievement": {
+      "Sheet": {
+        "Tier": "Trophy tier",
+        "Category": "Category (text)",
+        "CategoryPlaceholder": "e.g. Attendance",
+        "Floor": "Floor",
+        "FloorNone": "None / any",
+        "DateEarned": "When earned (text)",
+        "DatePlaceholder": "e.g. Session 3",
+        "Quote": "What the announcement says",
+        "Reward": "Reward (text on the card)",
+        "RewardHint": "Words only. The boxes below are what the crawler receives.",
+        "RewardPlaceholder": "e.g. Bronze Box",
+        "Favor": "AI favor",
+        "Xp": "XP",
+        "FavorXpHint": "Given once, when the GM awards it.",
+        "RewardContents": "Reward details (text)",
+        "RewardContentsPlaceholder": "e.g. A novelty hat, a coupon, or another small prize.",
+        "Description": "How it is earned",
+        "Broadcast": "Announce in chat"
+      }
+    },
+    "Sponsor": {
+      "Sheet": {
+        "Gifts": "What the sponsor gives and asks (text)",
+        "GiftsHint": "Its tags, below, apply to the crawler who holds it.",
+        "Notes": "Notes (text)",
+        "Description": "Description"
+      }
+    },
+    "SpaceUpgrade": {
+      "Sheet": {
+        "Tier": "Tier",
+        "TierHint": "The highest-tier training room in a space is the one used.",
+        "Cost": "Cost (gold)",
+        "Installed": "Installed (counts toward the space)",
+        "Description": "Description",
+        "Bonuses": "Bonuses to the space",
+        "RemovesInjuries": "Removes minor injuries on rest",
+        "Buffs": "Buffs the space gives (identifiers, comma separated)",
+        "BuffsHint": "Joined to the space's own buffs.",
+        "Training": "Training room",
+        "SetUp": "[set up]",
+        "TrainingBadge": "[TRAINING ROOM]",
+        "TrainingEnabled": "This upgrade is a training room",
+        "Advantage": "Advantage on training rolls",
+        "TrainableSkills": "Skills it trains",
+        "TrainableSkillsHint": "Tags a Skill must match; blank trains any Skill.",
+        "Crafting": "Crafting table",
+        "CraftingBadge": "[CRAFTING TABLE]",
+        "CraftingEnabled": "This upgrade is a crafting table",
+        "TableType": "Which crafting table",
+        "NoTable": "None",
+        "CustomTable": "{tag} (custom)",
+        "Studio": "Studio",
+        "StudioBadge": "[STUDIO]",
+        "StudioEnabled": "This upgrade is a studio (takes no table space)",
+        "StudioTableType": "Which crafting table it serves",
+        "StudioHint": "A studio serves one kind of table and takes no table space.",
+        "StudioRows": "Its crafting and check rows apply to a craft that uses a table of this type."
+      }
+    },
+    "Dying": {
+      "Badge": "[DYING]",
+      "BadgeRounds": "[DYING {rounds}]",
+      "Title": "{actor} is Dying: {rounds} rounds left.",
+      "Hint": "One Health Bar slot of healing ends it. Each round's end, and each hit that takes a slot, costs 1 round.",
+      "StabilisedBadge": "[STABILISED]",
+      "Stabilised": "{actor} is no longer Dying.",
+      "DeadBadge": "[DEAD]",
+      "Died": "{actor} has died.",
+      "Dead": "{actor} is dead.",
+      "CauseCountdown": "The countdown ran out.",
+      "CauseHit": "A hit ran the countdown out.",
+      "CauseClock": "The clock ran the countdown out.",
+      "KillByHand": "The hit that downed them is no longer on record: the GM awards the kill by hand."
+    },
+    "Deity": {
+      "Obligations": {
+        "BlessedTitle": "Rival's blessing",
+        "BlessedMessage": "{item} is blessed by {god}, a rival of {rival}, whom {actor} worships (p. 163). Equip it anyway as a Rule Break?",
+        "AttackTitle": "Fellow worshipper",
+        "AttackMessage": "{actor} and {target} both worship {god}. Attacking a fellow worshipper is an Offense against {god} (pp. 163, 312). Attack anyway as a Rule Break?",
+        "InfidelsTitle": "Death to the Infidels",
+        "InfidelsLine": "{actor} killed {victim}, who worships {rival}, a rival of {god}: Death to the Infidels (p. 164), one Level once per Floor.",
+        "AwardLevel": "Award Level",
+        "InfidelsUsed": "Death to the Infidels",
+        "ScrollUnknown": "{item} names a god that could not be found (\"{id}\"). It was not used."
+      },
+      "Rivals": {
+        "Title": "Rival worshippers",
+        "Line": "{token} worships {god}, a rival of {rival} (worshipped by {crawler})"
+      },
+      "Sheet": {
+        "Title": "God of",
+      "TitleHint": "Shown with the name.",
+        "Temple": "Temple",
+        "HighCleric": "High Cleric",
+        "Sponsor": "Likely sponsors (text)",
+        "Symbol": "Symbol",
+        "Patronage": "Can be a Bard's patron",
+      "PatronageHint": "A Bard who knows this god is offered Make Patron for it.",
+        "Offering": "Offering",
+        "OfferingRequired": "Asks for an offering each day",
+      "OfferingRequiredHint": "Off: worshippers never lapse for a missed offering.",
+        "OfferingText": "What is offered",
+        "OfferingGold": "Gold each offering",
+      "OfferingGoldHint": "Before any tithe.",
+        "OfferingQuantity": "Items used up per offering",
+        "OfferingConsumes": "Which items",
+      "OfferingConsumesHint": "Items matching these tags are used up by each offering.",
+        "Rivals": "Rivals",
+        "NoRivals": "No rivals.",
+        "ChooseDeity": "+ Add rival...",
+        "CustomDeity": "Or another deity identifier...",
+        "Add": "Add",
+        "SignatureStat": "Signature Stat",
+      "SignatureStatHint": "A Zealot of this god gains points in this Stat.",
+        "NoStat": "None",
+        "SignatureSkills": "Signature Skills and spells",
+      "SignatureSkillsHint": "A Zealot may raise one of these past the usual cap; as a patron, the god mentors them.",
+        "NoSignatureSkills": "None.",
+        "ChooseSkill": "+ Add skill or spell...",
+        "CustomSkill": "Or another identifier...",
+        "SignatureEffects": "Its own buff and debuff",
+      "SignatureEffectsHint": "Offered first when the GM grants a boon or a smite.",
+        "DropEffect": "Drop a buff or debuff here.",
+        "AddEffect": "+ Add buff or debuff...",
+        "Buffs": "Buffs",
+        "Debuffs": "Debuffs",
+        "Remove": "Remove",
+        "TierUp": "Move up a tier",
+        "TierDown": "Move down a tier",
+        "Description": "Description",
+        "EffectRefused": "Not added: {reason}",
+        "Block": {
+          "Title": "DEITY / PATRON",
+          "Add": "Learn of a deity",
+          "Empty": "No deity known yet.",
+          "Worshipped": "[WORSHIPPED]",
+          "Known": "[KNOWN]",
+          "Former": "[FORMER]",
+          "Patron": "[PATRON]",
+          "Shunned": "[SHUNNED]",
+          "Lapsed": "[LAPSED]",
+          "Acolyte": "Acolyte",
+          "Devotee": "Devotee",
+          "Zealot": "Zealot",
+          "Worship": "Worship",
+          "Leave": "Leave worship",
+          "PatronToggle": "Make patron or end patronage",
+          "TierUp": "Raise the tier",
+          "TierDown": "Lower the tier",
+          "Edit": "Edit",
+          "Delete": "Delete",
+          "Boon": "Grant a boon",
+          "Smite": "Grant a smite",
+          "Offer": "Make an offering",
+          "Offense": "Record an offense",
+          "Penance": "Pay penance",
+          "Streak": "Streak: {n}",
+          "FloorOfferings": "Offerings this Floor: {n}"
+        }
+      },
+      "Gift": {
+        "GMOnly": "Only the GM can grant a boon or a smite.",
+        "NoDialog": "The gift dialog is not available.",
+        "TitleBoon": "Boon: {actor}",
+        "TitleSmite": "Smite: {actor}",
+        "IntroBoon": "Choose a boon for {actor}, of {deity}.",
+        "IntroSmite": "Choose a smite for {actor}, of {deity}.",
+        "Hours": "Hours",
+        "Permanent": "Permanent",
+        "PermanentHint": "Lasts until a Quest is completed (p. 312).",
+        "Choices": "The god's gifts",
+        "Signature": "Signature",
+        "Tagged": "Catalog",
+        "Empty": "No gifts of this kind are listed. Roll a table or pick one below.",
+        "Grant": "Grant",
+        "Tables": "Book tables",
+        "Roll": "Roll",
+        "NoTables": "The book's tables have not been imported.",
+        "Fallback": "Any buff or debuff",
+        "FallbackPick": "Choose...",
+        "Forgiven": "Forgiven",
+        "ForgivenHint": "Wipes the offenses and Shunned (Table 63, p. 313).",
+        "ForgivenDone": "{actor} is forgiven by {deity}.",
+        "Granted": "{gift} granted to {actor}."
+      },
+      "Picker": {
+        "Title": "Deities",
+        "SearchPlaceholder": "Search deities by name or title...",
+        "Clear": "Clear search",
+        "Known": "[KNOWN]",
+        "Pick": "Learn of this deity",
+        "Empty": "No deity to show."
+      },
+      "Worship": {
+        "FallenTitle": "Fallen from Grace",
+        "FallenReason": "{actor} is Fallen from Grace and cannot worship any deity (p. 163). Worship {deity} anyway as a Rule Break?",
+        "SecondTitle": "Another god",
+        "SecondBody": "{actor} already worships {others}. Leave that faith (a smite is due), keep both as a Rule Break, or cancel?",
+        "Leave": "Leave the old faith",
+        "KeepBoth": "Keep both",
+        "KeepBothReason": "Worshipping two gods at once is outside the rules (p. 163). Keep both as a Rule Break?",
+        "Cancel": "Cancel",
+        "ZealotTitle": "Zealot",
+        "ZealotReason": "Only a Cleric or Paladin rises above Devotee (p. 163). Make {actor} a Zealot of {deity} as a Rule Break?",
+        "ZealotSkillTitle": "Zealot skill",
+        "ZealotSkillBody": "Which of {deity}'s signature Skills gains the higher Rank cap?",
+        "RequirementTitle": "Requirement broken",
+        "LeaveBreaks": "Leaving {deity} breaks {lines}. Leave anyway as a Rule Break?",
+        "StartBreaks": "Worshipping {deity} breaks {lines}. Worship anyway as a Rule Break?"
+      },
+      "Notice": {
+        "SmiteDueTitle": "Smite due",
+        "SmiteButton": "Smite",
+        "SmiteDue": "{actor} left the faith of {deity}. Leaving voluntarily means being smote (p. 163): roll or pick a smite for them.",
+        "SmiteDueOffenses": "{actor} has offended {deity} three times (p. 312): roll or pick a smite for them.",
+        "BoonDueTitle": "Boon due",
+        "BoonButton": "Boon",
+        "BoonDue": "{actor} has kept up the offerings to {deity}: a Boon is due (p. 164).",
+        "OffenseTitle": "Offense",
+        "Offense": "{actor} offended {deity} and is Shunned: its worship benefits are withheld until penance is paid (p. 312). A Divine Debuff may follow.",
+        "DevotionTitle": "Devotion",
+        "Lapsed": "{actor} missed an offering to {deity}: its worship benefits are withheld until the next offering (p. 163).",
+        "DivineDue": "{actor} has missed {days} days of offerings to {deity}: a Divine Debuff is due (p. 163).",
+        "FallenDue": "{actor} has missed {days} days of offerings to {deity}: Fallen from Grace is due (p. 163).",
+        "RollTable64": "Roll Table 64",
+        "Pick": "Pick",
+        "Apply": "Apply",
+        "RollSmiteChance": "Roll smite chance",
+        "Smitten": "{actor} is smitten by {deity} ({percent}% chance).",
+        "NotSmitten": "{actor} is spared by {deity} ({percent}% chance)."
+      },
+      "Offering": {
+        "Title": "Offering to {deity}",
+        "Gold": "Gold (cost / held)",
+        "Looted": "Gold looted since the last tithe",
+        "Tithe": "Tithe",
+        "Confirm": "Make the offering",
+        "NotRequired": "This god asks no daily offering.",
+        "ItemCost": "{need} item(s) tagged for it ({have} held)",
+        "Made": "{actor} made an offering to {deity}.",
+        "ShortTitle": "Offering short",
+        "ShortGold": "it costs {cost} gold and {actor} has {held}",
+        "ShortItems": "{actor} is short {count} of the {need} items it asks for",
+        "ShortReason": "The offering to {deity} is short: {lines}. Make it anyway as a Rule Break?"
+      }
+    },
     "ItemSummary": {
       "Heading": "What this does",
       "HeadingGrants": "What this grants",
@@ -675,7 +2332,10 @@
         "RankCeiling": "Rank {n} (ceiling {max})",
         "CeilingOnly": "Rank ceiling {max}",
         "BoonBonus": "{n} Rank from boons",
-        "NoRankGain": "Cannot gain Ranks by training",
+        "AdvancesBy": "Advances by {routes}",
+        "AdvancesOnly": "Advances only by {routes}",
+        "UpToRank": "up to Rank {n}",
+        "Always": "always",
         "SpellRole": "{type} spell",
         "SkillGroup": "Group: {group}",
         "Specialty": "Specialty: {label}",
@@ -687,7 +2347,7 @@
         "DamageTyped": "Damage {formula} {type}",
         "DamageParts": "Plus {parts} damage",
         "IgnoresDr": "Ignores DR",
-        "CritFromRank": "Critical hits x{n} from Rank {rank}",
+        "CritFromRank": "Critical Hit: {n}x base dice from Rank {rank}",
         "Heal": "Heals {bars} ({targets})",
         "HealOverTime": "Heals {bars} each round for {rounds} rounds ({targets})",
         "Cleanse": "Cleanses {list}",
@@ -738,7 +2398,7 @@
         "AtRank": "At Rank {rank}: {text}",
         "AtRankBand": "At Rank {rank}: {text}",
         "FromRank": "From Rank {rank}: {text}",
-        "TierCrit": "Critical hits x{n}",
+        "TierCrit": "Critical Hit: {n}x base dice",
         "TierBaseDice": "Base dice {mod}",
         "TierDamageType": "{type} damage",
         "TierIgnoresDr": "Ignores DR",
@@ -762,15 +2422,13 @@
         "WieldTwo": "Two-handed",
         "WieldTwoOrOne": "Two-handed; can be used one-handed at Disadvantage",
         "WeaponFlag": "Counts as a weapon",
-        "WeaponClass": "Weapon: {text}",
         "WeaponSkills": "Uses the skill: {skills}",
-        "WeaponSkillsHighest": "Uses the highest of: {skills}",
-        "WeaponSkillsManual": "Uses the chosen skill of: {skills}",
+        "WeaponSkillsOrdered": "Uses the first of these you are trained in: {skills}",
         "ToHitOwned": "To hit: {formula} ({stat})",
         "ToHitBase": "To hit: {stat} + Rank {rank}",
         "ToHitBaseNoRank": "To hit: {stat}",
         "Damage": "Damage: {text}",
-        "Crit": "Critical hits multiply damage by {n}",
+        "Crit": "Critical Hit: {n}x base dice",
         "IgnoreDR": "Ignores DR",
         "PersistentBuffs": "While equipped, grants: {list}",
         "PersistentDebuffs": "While equipped, inflicts: {list}",
@@ -850,7 +2508,18 @@
         "DamageType": "Damage type: {type}",
         "DamagePerRound": "{amount} damage each round",
         "DamagePerRoundTyped": "{amount} {type} damage each round",
+        "Activated": "{cooldown}: {window}",
+        "ActivatedNoCooldown": "Activated: {window}",
+        "WindowCombat": "until the end of combat",
+        "WindowOneUse": "for one use",
+        "WindowUses": "for {n} uses",
+        "WindowOneHit": "until the next hit",
+        "WindowHits": "for {n} hits",
+        "WindowTimed": "for {n} {unit}",
         "Severity": "{severity} severity",
+        "RepeatStack": "Stacks when applied again",
+        "RepeatPromote": "A second application becomes {into}",
+        "AlsoApplies": "Also lands: {list}",
         "Limbs": "Limbs: {parts}",
         "LimbArms": "Arms {delta}",
         "LimbLegs": "Legs {delta}",
@@ -862,6 +2531,9 @@
         "TransformCure": "Cure after the change: {window}",
         "Secret": "Asks the GM to hide it from players when it lands",
         "Paused": "Paused",
+        "Suppresses": "Suppresses {parts}",
+        "SuppressesBuffs": "buffs: {tags}",
+        "SuppressesSkills": "skills: {tags}",
         "EndsWithCombat": "Ends when combat ends",
         "InterruptTouch": "Interrupt at touch range of the {origin}",
         "InterruptRange": "Interrupt within {feet} ft of the {origin}",
@@ -902,18 +2574,39 @@
         "TrainingAny": "any of {tags}",
         "Crafting": "Crafting table: {parts}",
         "CraftingType": "{type}",
-        "CraftingUpgrade": "next tier costs {cost} gold"
+        "CraftingUpgrade": "next tier costs {cost} gold",
+        "Studio": "Studio for {type}",
+        "StudioAny": "Studio",
+        "DeityRivals": "Rivals: {names}",
+        "DeitySignature": "Signature: {parts}",
+        "DeitySignatureEffects": "Signature gifts: {names}",
+        "DeityOfferingNone": "Offering: none",
+        "DeityOffering": "Offering: {parts}",
+        "DeityGold": "+{gold} gold",
+        "DeityConsumes": "consumes {quantity} × {tags}",
+        "DeityTier1": "Acolyte: {names}",
+        "DeityTier2": "Devotee: {names}",
+        "DeityTier3": "Zealot: {names}",
+        "DeityPatron": "May be a patron",
+        "PatronPerformance": "Performance: {names}",
+        "PatronSkills": "Also knows: {names}",
+        "PatronAdviceHud": "Advice: HUD chat",
+        "PatronAdviceFairy": "Advice: messenger fairy",
+        "PatronLinked": "Linked to {name}",
+        "PatronLinkBroken": "Linked actor: link broken",
+        "PatronAvailability": "Available: {text}",
+        "PatronVenues": "Venues: {text}"
       }
     },
     "StatGrant": {
-      "Title": "STAT BONUSES",
-      "TitlePenalty": "STAT PENALTIES",
+      "Title": "Stat bonuses",
+      "TitlePenalty": "Stat penalties",
       "AddBonus": "Add Stat Bonus",
       "AddPenalty": "Add Stat Penalty",
       "Stat": "Ability / Stat",
       "Label": "Label",
-      "Flat": "Flat (+/-)",
-      "Percent": "% (+/-)",
+      "Flat": "Flat amount (+ or -)",
+      "Percent": "Percent (+ or -)",
       "Locked": "Locked",
       "LockedTooltip": "The percent, worked out when the owner got the item. Edit it to re-work it.",
       "NotLocked": "not yet",
@@ -940,6 +2633,7 @@
       "RankBonusFloor": "{text}, never below {floor}",
       "RankBonusOwned": "{text}, only if owned",
       "RankCap": "Rank cap {value}: {target}",
+      "RankRaise": "{target}: Rank {floor}, or {value} if already at {floor} or higher",
       "RankCapChoice": "Rank cap {value} for {count} chosen skill(s)",
       "Dr": "{value} DR",
       "Walk": "{value} ft Walk speed",
@@ -1178,7 +2872,9 @@
         "Custom": "Write-in",
         "Choice": "Pick from the catalog",
         "NeedsImport": "needs an import",
-        "CustomName": "Name"
+        "CustomName": "Homebrew name",
+        "WriteInKind": "Write-in is a",
+        "Kind": { "skill": "Skill", "spell": "Spell" }
       },
       "Marker": {
         "Rolled": "rolled",
@@ -1212,7 +2908,8 @@
         "Pool": "{pool} to spend · {left} left",
         "Note": "Points go to the Unenhanced score; the Enhanced score follows.",
         "Enhanced": "Enhanced {from} → {to}",
-        "Leftover": "{left} points stay pending on the sheet."
+        "Leftover": "{left} points stay pending on the sheet.",
+        "Held": "+{points} held for"
       },
       "AiFavor": {
         "Rating": "Weapon AI Favor rating",
@@ -1246,11 +2943,16 @@
         "Warnings": "{count} notes",
         "None": "Nothing to preview."
       },
-      "RollAll": "Roll everything remaining",
+      "RollAll": "Roll Everything Remaining",
+      "RandomizeAll": "Randomize All",
       "Back": "Back",
       "Next": "Next"
     },
     "CrawlerCreator": {
+      "Description": {
+        "Label": "Description (the crawler's Notes)",
+        "Placeholder": "Who this crawler is, in a few sentences."
+      },
       "Footer": {
         "Ready": "Crawler is fully configured and ready to enter the dungeon.",
         "Dice": { "One": "{n} die will be rolled for you", "Other": "{n} dice will be rolled for you" },
@@ -1258,7 +2960,8 @@
         "Loot": { "One": "{n} loot card", "Other": "{n} loot cards" },
         "And": "{a} and {b}",
         "NothingPicked": "{items} have nothing picked",
-        "NothingPickedOne": "{items} has nothing picked"
+        "NothingPickedOne": "{items} has nothing picked",
+        "Blocked": "Floor {floor}: choose what the {slot} card gives before going on."
       },
       "Stage": {
         "induction": "Induction",
@@ -1272,7 +2975,8 @@
         "Pool": { "One": "{label}: {points} point, {left} left", "Other": "{label}: {points} points, {left} left" },
         "PoolDefault": "Stat points",
         "StartingItems": "Starting items",
-        "NoFields": "Nothing to choose."
+        "NoFields": "Nothing to choose.",
+        "Moved": "Stat points moved from the pool: {n}"
       }
     },
     "Sex": {
@@ -1290,7 +2994,22 @@
       "ActorHintGm": "Add tag (e.g. creature.female)",
       "ActorEditRefused": "Sprinter RPG | Only a GM can add or remove {tag} here. Owners may edit tags in identity namespaces such as creature.*.",
       "ActorEditDerived": "Sprinter RPG | {tag} is derived and cannot be edited as a tag.",
-      "GmOnlyPill": "Only a GM can remove this tag."
+      "GmOnlyPill": "Only a GM can remove this tag.",
+      "Section": {
+        "Title": "Tags",
+        "Manager": "Tag Manager",
+        "Identifier": "Identifier",
+        "IdentifierHint": "Made from the name once, when the item is created, then fixed. Renaming never changes it; tags and references use it.",
+        "IdentifierPlaceholder": "made from the name, then fixed",
+        "OnItem": "Tags on this item",
+        "NoneOnItem": "No tags yet.",
+        "Remove": "Remove tag",
+        "AddPlaceholder": "Add a tag, e.g. element.fire",
+        "Add": "Add",
+        "Automatic": "Tags it gets from its own settings (read only)",
+        "AutomaticBadge": "[AUTOMATIC]"
+      },
+      "QualifiedName": "{tag} — {name}"
     },
     "TagManager": {
       "IdentityBadge": "[IDENTITY]",
@@ -1318,6 +3037,12 @@
       }
     },
     "PointBuilder": {
+      "AppliesTo": "Applies to {name}",
+      "ApplyTo": "Apply to {name}",
+      "Replaces": "(replaces {name})",
+      "AppliedNotice": "{player} applied {name} to {actor}.",
+      "AppliedRuleBreak": "Rule Break",
+      "NoActorPermission": "You do not own {name}, so this cannot be applied to them.",
       "ChooseOne": "Choose...",
       "Mechanics": "Mechanics ({count} rows)",
       "MechanicsHint": "The rows this perk adds to the race or class. Everything here lands on the item exactly as the item sheet would write it.",
@@ -1601,6 +3326,29 @@
       "SceneLabel": "Certified Safe Room",
       "SceneHint": "Crawlers with a token on this scene open loot boxes without a Rule Break."
     },
+    "Attack": {
+      "Sheet": {
+        "Title": "Attack",
+        "Equipped": "Ready to use",
+        "EquippedHint": "An attack that is not ready is kept but not offered when attacking.",
+        "Rolls": "This attack rolls {damage}.",
+        "OtherEffects": "Other effects (text only)",
+        "OtherEffectsPlaceholder": "Shown on the card"
+      },
+      "Skill": {
+        "Label": "Skill used",
+        "Rank": "{name} (Rank {rank})",
+        "Untrained": "{name} (untrained: Disadvantage, no Rank)",
+        "NotInWorld": "{name} (not in this world: untrained)",
+        "Hint": "The first Skill you are trained in is picked for you.",
+        "Changed": "The Damage Effects and situations listed are for the default Skill. One the Skill you picked does not allow is a Rule Break, and the roll asks first.",
+        "Used": "Skill: {name}",
+        "Default": "Default: the first Skill you are trained in is picked for you",
+        "OrderHint": "Listed in order of preference. The first Skill you are trained in is used unless the attacker picks another.",
+        "MoveUp": "Move up",
+        "MoveDown": "Move down"
+      }
+    },
     "AttackOptions": {
       "Title": "{name}: Attack Options",
       "RollAttack": "Roll Attack",
@@ -1736,6 +3484,17 @@
       "ToggleZeroZoneHint": "GM: switch the world-wide zero zone on or off (crawlers' interface goes dark).",
       "ToggleHudHint": "Hide or show the crawler HUD (hotlist bar, actions, effects and the clocks) on this browser."
     },
+    "ActionBlockGate": {
+      "Title": "Cannot Act",
+      "Prompt": "{name} cannot take Actions. Act anyway as a Rule Break?",
+      "PromptDebuff": "{name} cannot take Actions ({debuffs}). Act anyway as a Rule Break?",
+      "Cause": "{name}: {cause}",
+      "CauseDebuff": "{name}: {cause} ({debuffs})"
+    },
+    "HealingGate": {
+      "Title": "Cannot Be Healed",
+      "Prompt": "{name} cannot be healed. Heal anyway as a Rule Break?"
+    },
     "ZeroZoneGate": {
       "PlayerTitle": "Interface",
       "PlayerPrompt": "{notice} {verb} {name} anyway as a Rule Break?",
@@ -1790,9 +3549,11 @@
       "EvadeDC": "Evade DC {dc}",
       "EvadeBreakdown": "Base {base} + Floor {floor}",
       "EvadeShift": "{sign}{n} ({label})",
+      "FlatLabel": "Check modifiers",
       "EvadeButton": "Roll Evade vs Attack (DC {dc})",
       "EvadeButtonFree": "Roll Evade vs Attack (DC {dc}): first Evade free",
       "FreeEvadeLine": "Free Evade: the attacker is at Disadvantage",
+      "EvadeCoveredLine": "Evade Action already spent this round: no Action",
       "SaveShift": "Save Difficulty {sign}{n} ({label})",
       "EvadeHint": "Crawler rolls 1d20 + Dex Mod + Evade gear/buffs. Roll \u2265 {dc} succeeds.",
       "AreaBadge": "AREA ATTACK: Successful evade takes 50% damage.",
@@ -1816,6 +3577,43 @@
       "NoDeclaration": "Sprinter RPG | This attack is not declared in the active combat.",
       "ResolvedCount": "Sprinter RPG | Resolved {count} declared attack(s).",
       "TauntName": "Taunt"
+    },
+    "Difficulty": {
+      "NotSet": "Difficulty not set",
+      "Line": "Difficulty {dc}",
+      "Unopposed": "Unopposed",
+      "StatCheck": "Stat Check",
+      "Opposed": "Opposed",
+      "Typed": "set by the GM",
+      "FormulaUnopposed": "10 + 2 × Floor {floor}",
+      "FormulaStat": "10 + Floor {floor}",
+      "FormulaOpposed": "10 + {foe} {stat} {mod} + Floor {floor}",
+      "FormulaOpposedNoFoe": "10 + {mod} + Floor {floor}",
+      "ShiftAdvantage": "+ {shift} Advantage",
+      "ShiftDisadvantage": "- {shift} Disadvantage",
+      "Standing": "Standing",
+      "Change": "Change Difficulty",
+      "Set": "Set",
+      "Clear": "Clear",
+      "ButtonUnopposed": "Unopposed {dc}",
+      "ButtonStat": "Stat Check {dc}",
+      "ButtonOpposed": "Opposed {dc} ({foe}, {stat})",
+      "ButtonOpposedAsk": "Opposed…",
+      "ChangeOpposed": "Choose the foe and Stat",
+      "NumberLabel": "Difficulty",
+      "StandingTitle": "Standing Difficulty",
+      "StandingNone": "None",
+      "StandingNumber": "Number",
+      "StandingCount": "{n} cards",
+      "LedgerHint": "That roll's chat card is no longer available to set a Difficulty on.",
+      "Dialog": {
+        "Title": "Opposed Difficulty",
+        "Foe": "Opposed by",
+        "Opposing": "Opposing",
+        "Other": "Other",
+        "OtherValue": "Other value",
+        "Ok": "Set"
+      }
     },
     "Assist": {
       "Title": "ASSIST",
@@ -1936,6 +3734,54 @@
       "HiddenCount": "{count} AI-written entries hidden",
       "EmptyLists": "The race and class lists are empty because AI-written content is hidden (World Settings, AI-Written Content). Import your own books or make your own."
     },
+    "ItemFromWords": {
+      "Title": "Describe an Item",
+      "Button": "Describe it (with a chatbot)",
+      "Bridge": {
+        "Intro": "Pick the kind of item and say what it does. Copy the prompt into a chatbot you already use, then paste its reply below. Nothing is sent from here and no key is stored.",
+        "Type": "What kind of item",
+        "NoType": "Pick the kind of item first.",
+        "Words": "What the item does",
+        "WordsHint": "A ring that gives +2 Strength and +2 Constitution. Make up a name for it.",
+        "Copy": "Copy prompt",
+        "Privacy": "The prompt holds this world's item vocabulary, tag names and catalog names, and your words.",
+        "Reply": "The chatbot's reply",
+        "ReplyHint": "Paste the reply here.",
+        "Check": "Check reply",
+        "NoWords": "Type what the item does first.",
+        "Copied": "Prompt copied. Paste it into your chatbot.",
+        "NotChecked": "The reply could not be checked.",
+        "ProviderFailed": "{label} could not write the draft.",
+        "ProviderEmpty": "{label} returned nothing."
+      },
+      "Review": {
+        "Title": "Review the Item",
+        "Matched": "Matched by name",
+        "MatchedByName": "{kind}: \"{ref}\" matched {name}",
+        "Unresolved": "Not in the catalog",
+        "UnresolvedHint": "Pick the real entry, or leave it as a note. Until then it is left out of the item.",
+        "Pick": "Pick an entry...",
+        "Note": "Leave it as a note",
+        "NoteLine": "{kind}: {ref}",
+        "Findings": {
+          "Heading": "What is missing",
+          "Hint": "You can still create the item as it is; an unfinished item breaks no rule.",
+          "broken": "Will not work as made",
+          "warning": "Worth a look",
+          "note": "Notes"
+        },
+        "Warnings": "Warnings",
+        "Dropped": "Left out of the draft",
+        "Unexpressed": "Not expressed as rules",
+        "KeepNotes": "Add these lines to the description",
+        "Authorship": "Who wrote it",
+        "Hidden": "AI-written content is hidden in this world, so this item will be hidden. Choose another mark to see it.",
+        "Create": "Create",
+        "Back": "Back",
+        "Type": { "gear": "Gear", "weapon": "Weapon", "loot": "Loot", "buff": "Buff", "debuff": "Debuff" },
+        "Kind": { "skills": "Skill", "spells": "Spell", "buffs": "Buff", "debuffs": "Debuff" }
+      }
+    },
     "Authorship": {
       "Ai": "Written with AI",
       "Edited": "AI-written, edited by a person",
@@ -1970,7 +3816,10 @@
       "ReplacedWhere": "{theme} · {set}",
       "ReplacedOn": "{label}, {date}",
       "ReplacedNoName": "a document",
-      "ReplacedUnknown": "Replaced (unknown)"
+      "ReplacedUnknown": "Replaced (unknown)",
+      "GiftBoon": "Boon of {god}",
+      "GiftSmite": "Smite of {god}",
+      "GiftTier": "Gift of {god}"
     },
     "CelestialAiPoop": {
       "Restore": "Restore",
@@ -1988,7 +3837,7 @@
       "Redacted": "Book text for this entry has not been imported yet."
     },
     "Rows": {
-      "AddRow": "Add row:",
+      "AddRow": "Add to this list:",
       "Array": {
         "Damage": {
           "Title": "Damage modifiers",
@@ -2097,6 +3946,8 @@
         "CraftMaxBonus": "Highest bonus level",
         "CraftTimeMultiplier": "Time multiplier",
         "CraftBatchMultiplier": "Batch minutes multiplier",
+        "CraftMaterialMultiplier": "Materials multiplier",
+        "CraftSalvageSteps": "Tiers better",
         "ShiftSteps": "Steps",
         "VehicleMoveAdd": "Move (ft)",
         "VehicleMoveMultiplier": "Move multiplier"
@@ -2246,6 +4097,22 @@
         "NewSituation": "+ New situation",
         "SituationLabel": "Situation name"
       },
+      "Requirement": {
+        "Title": "Requirements",
+        "Empty": "No requirements. Anyone may take this.",
+        "NoOptions": "Any one of these",
+        "Prerequisites": "Prerequisites (text)",
+        "PrerequisitesHint": "The words as written. The rows above are the rules; nothing reads this text.",
+        "Field": {
+          "stat": "Stat",
+          "value": "At least",
+          "identifier": "Reference",
+          "options": "Any of",
+          "query": "Matching",
+          "text": "What the GM decides",
+          "label": "Label"
+        }
+      },
       "Grant": {
         "Title": "Grants",
         "Incomplete": "Fill this row in, or it adds nothing (fix it on the sheet later)",
@@ -2279,7 +4146,8 @@
           "skill": "Skill",
           "spell": "Spell",
           "rank_bonus": "Rank bonus",
-          "rank_cap": "Rank cap"
+          "rank_cap": "Rank cap",
+          "rank_raise": "Rank raise"
         },
         "Mode": {
           "fixed": "Fixed",
@@ -2294,9 +4162,11 @@
           "spell_fixed": "Spell",
           "spell_choice": "Spell choice",
           "rank_bonus_fixed": "Rank bonus",
+          "rank_raise_fixed": "Rank raise",
           "rank_cap_fixed": "Rank cap",
           "rank_cap_choice": "Rank cap choice"
-        }
+        },
+        "AddRejected": "That row could not be added: {reason}"
       },
       "StartingItem": {
         "Title": "Starting items",
@@ -2352,16 +4222,13 @@
           "con": "CON",
           "int": "INT",
           "cha": "CHA"
-        },
-        "requires": {
-          "Title": "Requires",
-          "Hint": "Tags a crawler must (or must not) have to take this."
         }
       },
       "Kind": {
         "Damage": {
           "add": {
             "Label": "Add damage",
+            "Hint": "Adds dice, a flat amount or a stat to the damage of each matching hit.",
             "OptionLabel": "Damage die",
             "OptionHint": "A Rank damage die is not doubled on a Critical Hit.",
             "Option": {
@@ -2370,36 +4237,54 @@
             }
           },
           "multiply": {
-            "Label": "Multiply damage"
+            "Label": "Multiply damage",
+            "Hint": "Multiplies the damage of each matching hit, for one damage type or all of it."
           },
           "suppress_stat": {
-            "Label": "Suppress stat bonus"
+            "Label": "Suppress stat bonus",
+            "Hint": "The matching hits add no stat bonus to their damage, for one damage type or all of it."
           }
         },
         "Defense": {
           "resistance": {
-            "Label": "Resistance"
+            "Label": "Resistance",
+            "Hint": "Halves the damage of each matching hit, for one damage type or all of it."
           },
           "immunity": {
-            "Label": "Immunity"
+            "Label": "Immunity",
+            "Hint": "The holder takes no damage of the matching type, or of any type when none is named."
           },
           "tempHp": {
-            "Label": "Temp HP"
+            "Label": "Temp HP",
+            "Hint": "Adds Temp HP to the holder while the row's condition matches."
           },
           "reduction": {
-            "Label": "Reduction %"
+            "Label": "Reduction %",
+            "Hint": "Cuts each matching hit by a percentage, a flat amount, or both."
           },
           "dr": {
-            "Label": "Damage Resist (DR)"
+            "Label": "Damage Resist (DR)",
+            "Hint": "Damage Resist: each matching hit loses up to this much damage before it lands."
           },
           "evade": {
-            "Label": "Evade bonus"
+            "Label": "Evade bonus",
+            "Hint": "Adds to the holder's Evade while the row's condition matches."
           },
           "vulnerability": {
-            "Label": "Vulnerability"
+            "Label": "Vulnerability",
+            "Hint": "The holder takes double damage from each matching hit, for one damage type or all of it."
           },
           "suppress_dr": {
-            "Label": "Suppress DR"
+            "Label": "Suppress DR",
+            "Hint": "Damage Resist does not apply to the matching hits, for one damage type or all of it."
+          },
+          "healthBarScale": {
+            "Label": "Health Bar scale",
+            "Hint": "Each Health Bar slot holds this many times its HP: damage reaching the bar is divided by it."
+          },
+          "effectImmunity": {
+            "Label": "Immune to effect",
+            "Hint": "The row's condition is the effect: a Debuff or a contested Skill or Spell it matches does not land."
           },
           "reflect": {
             "Label": "Damage Reflection",
@@ -2414,14 +4299,25 @@
               "none": "Evade does not reduce damage"
             },
             "OptionLabel": "Area Evade"
+          },
+          "attackerAdvantage": {
+            "Label": "Attackers' Advantage",
+            "Hint": "Whoever attacks the holder rolls with Advantage (or Disadvantage) while the row's condition matches.",
+            "Option": {
+              "advantage": "Attackers have Advantage",
+              "disadvantage": "Attackers have Disadvantage"
+            },
+            "OptionLabel": "Attackers roll with"
           }
         },
         "Roll": {
           "bonus": {
-            "Label": "Bonus"
+            "Label": "Bonus",
+            "Hint": "Adds a flat value, dice or the stat's modifier to each matching roll."
           },
           "advantage": {
-            "Label": "Advantage"
+            "Label": "Advantage",
+            "Hint": "Gives Advantage or Disadvantage on each matching roll."
           },
           "assist": {
             "Label": "Assist dice",
@@ -2456,31 +4352,51 @@
         },
         "ManaCost": {
           "add": {
-            "Label": "Add"
+            "Label": "Add",
+            "Hint": "Adds to a matching spell's Mana cost. Adds apply first, then multiplies, and the cost rounds up."
           },
           "multiply": {
-            "Label": "Multiply"
+            "Label": "Multiply",
+            "Hint": "Multiplies a matching spell's Mana cost after the adds, and the cost rounds up."
           }
         },
         "Recovery": {
           "default": {
-            "Label": "Recovery"
+            "Label": "Recovery",
+            "Hint": "Multiplies the Mana or HP a matching rest restores, for the resource the row names."
           }
         },
         "AiFavor": {
           "default": {
-            "Label": "AI Favor rating"
+            "Label": "AI Favor rating",
+            "Hint": "Gives the AI Favor rating of a matching weapon, weapon Skill or attack. The highest matching rating applies; ratings do not stack."
           }
         },
         "Popularity": {
           "default": {
-            "Label": "Popularity"
+            "Label": "Popularity",
+            "Hint": "Awards or takes Popularity when the named event happens: a natural 20 or 1 on a roll, or a kill. A once-per limit asks for a Rule Break before the award."
           }
         },
         "Substitution": {
           "default": {
-            "Label": "Stat substitution"
+            "Label": "Stat substitution",
+            "Hint": "Uses another stat in place of the one a roll would use, for the scope the row names. The matching row with the best modifier applies."
           }
+        },
+        "Requirement": {
+          "stat": { "Label": "Stat minimum", "Hint": "A Stat that must be at least this high. Only the unenhanced score counts." },
+          "skillRank": { "Label": "Skill Rank", "Hint": "A Skill at this Rank or higher: a named Skill, one of a list, or any Skill matching tags." },
+          "popularity": { "Label": "Popularity", "Hint": "A Popularity score of at least this." },
+          "floor": { "Label": "Floor", "Hint": "The crawler is on at least this Floor." },
+          "race": { "Label": "Race", "Hint": "The crawler already has this Race, one of a list, or a Race matching tags." },
+          "class": { "Label": "Class", "Hint": "The crawler already has this Class, one of a list, or a Class matching tags." },
+          "achievement": { "Label": "Achievement", "Hint": "The crawler owns this achievement (or one of a list)." },
+          "tags": { "Label": "Tags", "Hint": "The crawler's tags, with this race or class applied, must match: needs all, needs one of, cannot have." },
+          "note": { "Label": "Note (GM decides)", "Hint": "A condition the system cannot judge. Shown as GM decides; never unmet." },
+          "worship": { "Label": "Worships a deity", "Hint": "The crawler worships a deity: a named one, one of a list, one matching tags, or any. A minimum tier of 2 is Devotee, 3 is Zealot." },
+          "noWorship": { "Label": "Cannot worship", "Hint": "The crawler worships no deity." },
+          "patron": { "Label": "Has a patron", "Hint": "Has this patron, a patron item or a god: a named one, one of a list, one matching tags, or any." }
         },
         "BoxContents": {
           "item": {
@@ -2566,6 +4482,22 @@
           "bonusValue": {
             "Label": "Extra bonus value",
             "Hint": "Adds this much to the numbers an enchantment writes, with no extra Difficulty or time."
+          },
+          "materials": {
+            "Label": "Materials multiplier",
+            "Hint": "Multiplies the units of every material line and the Misc. Junk a craft needs, rounded up (0.5 halves them, 0 asks for none). Matching rows multiply."
+          },
+          "batchAny": {
+            "Label": "Batches any blueprint",
+            "Hint": "A blueprint that is not a batch recipe can be made in a batch where this row applies."
+          },
+          "unlockRecipes": {
+            "Label": "Unlocks locked recipes",
+            "Hint": "A blueprint tagged crafting.recipe.<id> stays locked until a matching row applies. Put the recipe tag in the row condition to unlock only those recipes; leave it empty to unlock every recipe."
+          },
+          "salvage": {
+            "Label": "Better salvage on failure",
+            "Hint": "A failed step returns more materials: each tier moves Major Failure to Failure to Near Miss. A Critical Failure still breaks the item."
           }
         },
         "Vehicle": {
@@ -2624,6 +4556,14 @@
         "move": {
           "Label": "Move",
           "Hint": "The row owner's Move in feet (write per: 0.1 for \"per 10ft\")."
+        },
+        "worshipTier": {
+          "Label": "Tier of Devotion",
+          "Hint": "The Tier (1-3) of the god whose gift carries the row, or of the highest god worshipped. A god not worshipped reads 0.",
+          "Scope": {
+            "source": "The god of this gift",
+            "highest": "The highest god worshipped"
+          }
         }
       },
       "Reads": {
@@ -2661,6 +4601,7 @@
       "race": "Race",
       "class": "Class",
       "deity": "Deity",
+      "patron": "Patron",
       "sponsor": "Sponsor",
       "loot": "Loot",
       "buff": "Buff",

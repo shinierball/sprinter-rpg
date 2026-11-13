@@ -3,17 +3,10 @@
 import { contentRegistry } from '../../content/registry.mjs';
 import { buildPayload } from '../builders/item-payload.mjs';
 
-export function getSpaceTypeInfo(typeKey) {
-  return contentRegistry.getSpaceType(typeKey);
-}
-
 export function getSpaceUpgrade(upgradeId) {
   const upgrades = contentRegistry.getSpaceUpgrades();
   return upgrades.find(u => u.id === upgradeId) || null;
 }
-
-/** Crafting station type on a catalog entry to the table type tag the `craftingTable` field holds. */
-const STATION_TABLE_TAGS = Object.freeze({ alchemy: 'crafting.table.alchemist', forge: 'crafting.table.blacksmith', workbench: 'crafting.table.tinkerer' });
 
 /**
  * Turn a catalog upgrade entry (the flat shape in `COG_SPACE_UPGRADES`) into the creation payload of an embedded
@@ -50,9 +43,8 @@ export function spaceUpgradeItemData(def) {
   };
   // A training room's fields are stored on the entry as they are on the item; nothing is derived from the tier.
   if (def?.training && typeof def.training === 'object') system.training = structuredClone(def.training);
-  if (def?.craftingStationType) {
-    const station = String(def.craftingStationType);
-    system.craftingTable = { enabled: true, tableTypeTag: STATION_TABLE_TAGS[station] ?? `crafting.table.${station}`, baseTier: tier };
-  }
+  // A studio's block and its crafting and check rows are stored as authored (the builder cleans them)
+  if (def?.studio && typeof def.studio === 'object') system.studio = structuredClone(def.studio);
+  for (const key of ['checkModifiers', 'craftModifiers']) if (Array.isArray(def?.[key])) system[key] = structuredClone(def[key]);
   return buildPayload('space_upgrade', { name: def?.name, system }, { warnings: [] });
 }

@@ -11,7 +11,7 @@
  */
 
 /**
- * @typedef {'damage'|'target'|'defense'|'derived'|'evade'|'reflect'|'rollBonus'|'rollAdvantage'|'assist'|'craft'|'boxChoose'|'boxOpen'|'magicItem'} Stage
+ * @typedef {'damage'|'target'|'defense'|'derived'|'evade'|'reflect'|'effect'|'incoming'|'rollBonus'|'rollAdvantage'|'assist'|'craft'|'boxChoose'|'boxOpen'|'magicItem'|'require'} Stage
  * @typedef {object} RowKindDef
  * @property {string} id /^[A-Za-z][\w.-]*$/ ; built-ins unprefixed, modules prefixed ('my-module.ward')
  * @property {string} label i18n key (or plain text from a module) for the kind select
@@ -25,6 +25,9 @@
  *   `magicItem` (the `magicProperties` array, 7.3 D15) is an exception: `(option, ctx) => { template, line } | null`, pure;
  *   `boxOpen` (the `boxContents` array, 7.3c) is the other: async, awaited by the open engine; `boxChoose` (7.3i-1) is sync:
  *   `(row, ctx) => { label, itemType, rank, candidates } | null`, asked before the open for a pick the opener makes
+ *   `require` (the `requirements` array, 7.38) is pure too: `(row, ctx) => { status: 'met'|'unmet'|'unchecked', have?, need?, shortfall?, stat?, details? }`,
+ *   read through `ctx.subject` only (requirements.mjs builds it)
+ * @property {'skills'|'spells'|'races'|'classes'|'achievements'} [catalog] requirements kinds only: the catalog the editor's identifier select reads
  * @property {(row: object) => string} [summarize] compact plain-text line (modifier-summary.mjs)
  * @property {(row: object, info: { standby: number|null }) => { effect: string, line: string }} [describeTarget]
  *   damage kinds with apply.target: the Per-target box effect and the Stage A breakdown line
@@ -34,6 +37,7 @@
 const ID_PATTERN = /^[A-Za-z][\w.-]*$/;
 const SCALE_KINDS = Object.freeze(['whole', 'factor']);
 const STATIC_POLICIES = Object.freeze(['derived', 'unconditional', 'never']);
+const REQUIREMENT_CATALOGS = Object.freeze(['skills', 'spells', 'races', 'classes', 'achievements', 'items']);
 export const MAX_SNAPSHOT_TEXT = 64;
 const ROLL_FIELDS = Object.freeze(['value', 'dice', 'stat', 'advantage', 'option']);
 
@@ -45,7 +49,7 @@ const ROLL_FIELDS = Object.freeze(['value', 'dice', 'stat', 'advantage', 'option
  */
 export const ROW_ARRAYS = Object.freeze({
   damageModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'mode', default: 'add', open: true, enforce: true, stages: Object.freeze(['damage', 'target']), fields: Object.freeze(['value', 'dice', 'stat', 'multiplier', 'damageType', 'option']) }),
-  defenseModifiers: Object.freeze({ roles: Object.freeze(['self', 'attacker']), kindField: 'kind', default: 'resistance', open: true, enforce: true, stages: Object.freeze(['defense', 'derived', 'evade', 'reflect']), fields: Object.freeze(['damageType', 'value', 'percent', 'flat', 'rounding', 'option']) }),
+  defenseModifiers: Object.freeze({ roles: Object.freeze(['self', 'attacker']), kindField: 'kind', default: 'resistance', open: true, enforce: true, stages: Object.freeze(['defense', 'derived', 'evade', 'reflect', 'effect', 'incoming']), fields: Object.freeze(['damageType', 'value', 'percent', 'flat', 'rounding', 'option']) }),
   attackModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'kind', default: 'bonus', open: true, enforce: true, stages: Object.freeze(['rollBonus', 'rollAdvantage', 'waive']), fields: ROLL_FIELDS }),
   // 3.44c: `afterRoll` is offered after the roll (reroll, degree shift); `waive` lifts an engine roll penalty (a `rollPenalties` id).
   checkModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject', 'attacker']), kindField: 'kind', default: 'bonus', open: true, enforce: true, stages: Object.freeze(['rollBonus', 'rollAdvantage', 'assist', 'afterRoll', 'waive']), fields: ROLL_FIELDS }),
@@ -64,7 +68,9 @@ export const ROW_ARRAYS = Object.freeze({
   // 7.3j: the property kinds of the magic item generator (D15). A "row" is the `magic` option of a rolled property table
   // row (`{ kind: 'magic', property, damageTypes?, label? }`), so the discriminator is `property`, and a blank one is no
   // kind (the row is recorded for the GM). Not stored on any document.
-  magicProperties: Object.freeze({ modifierRows: false, roles: Object.freeze(['self']), kindField: 'property', default: '', open: true, enforce: false, stages: Object.freeze(['magicItem']), fields: Object.freeze(['damageTypes', 'label']) })
+  magicProperties: Object.freeze({ modifierRows: false, roles: Object.freeze(['self']), kindField: 'property', default: '', open: true, enforce: false, stages: Object.freeze(['magicItem']), fields: Object.freeze(['damageTypes', 'label']) }),
+  // 7.38: what a race or class needs (`system.requirements[]`). `require` is the one stage, read by the checker (utils/character/requirements.mjs); rows are joined with AND.
+  requirements: Object.freeze({ modifierRows: false, roles: Object.freeze(['self']), kindField: 'kind', default: 'stat', open: true, enforce: false, stages: Object.freeze(['require']), fields: Object.freeze(['stat', 'value', 'identifier', 'options', 'query', 'text', 'label']) })
 });
 
 const NUMERIC_FIELDS = new Set(['value', 'multiplier', 'percent', 'flat']);
@@ -85,7 +91,8 @@ export const ROW_KINDS = {
   aiFavorRatings: {},
   statSubstitutions: {},
   boxContents: {},
-  magicProperties: {}
+  magicProperties: {},
+  requirements: {}
 };
 
 const priorities = new Map();
@@ -156,6 +163,10 @@ function defError(arrayKey, def, provider) {
   if (def.snapshot !== undefined) {
     if (!apply.target) return 'snapshot needs apply.target';
     if (!Array.isArray(def.snapshot) || !def.snapshot.every(f => typeof f === 'string' && array.fields.includes(f))) return 'snapshot is not a list of fields';
+  }
+  if (def.catalog !== undefined) {
+    if (arrayKey !== 'requirements') return 'catalog is for requirements kinds';
+    if (!REQUIREMENT_CATALOGS.includes(def.catalog)) return `catalog is not one of ${REQUIREMENT_CATALOGS.join(', ')}`;
   }
   for (const fn of ['summarize', 'describeTarget']) {
     if (def[fn] !== undefined && typeof def[fn] !== 'function') return `${fn} is not a function`;
@@ -315,7 +326,6 @@ export function damagePartOf(row, ctx) {
     value: val,
     source: `${row.label || source.name || 'Damage Modifier'}${scale ? ` (${scale.note})` : ''}`,
     rowKey: ctx.rowKey,
-    ...(row.option === 'rank' ? { excludeFromCrit: true } : {}),
     ...(scale ? { scaleNote: scale.note } : {})
   };
 }

@@ -12,6 +12,9 @@
  *               ('heading' | 'alias' | 'inline') restricts the candidates to that class of hit, for an
  *               entity printed as a table row or a lead-in under a name that is also a heading elsewhere
  *               { kind: 'table', number }  the literal `TABLE n:` label
+ *               { kind: 'row', number, hash }  one row of that table: the row one of whose cells is the heading whose
+ *               hash is `hash` (the row's name). The table reader (`table-slicer.mjs`) cuts the rows; the cell is the
+ *               document's name and the cells after it fill the grammar's `cells` (a debuff printed as a table row)
  *   pageHint    1-based page in the compiling edition; the resolver corrects it by a per-book shift
  *   prefixHash  advisory SHA-256 of the first 80 normalised characters of the block's body (rule 5); never a gate.
  *               Among same-name candidates it breaks the tie first (191 a)
@@ -94,7 +97,7 @@ function readInt(raw, max) {
   return Number.isInteger(n) && n >= 0 && n <= max ? n : null;
 }
 
-/** Sanitise an anchor `{ kind, hash | number }`. Returns null when malformed. */
+/** Sanitise an anchor `{ kind, hash | number }` (a `row` anchor has both). Returns null when malformed. */
 export function readAnchor(raw) {
   if (!isRecord(raw)) return null;
   const kind = scalarString(raw.kind);
@@ -107,6 +110,11 @@ export function readAnchor(raw) {
   if (kind === 'table') {
     const number = readInt(raw.number, MAX_TABLE);
     return number ? { kind, number } : null;
+  }
+  if (kind === 'row') {
+    const number = readInt(raw.number, MAX_TABLE);
+    const hash = scalarString(raw.hash).toLowerCase();
+    return number && HASH.test(hash) ? { kind, number, hash } : null;
   }
   return null;
 }
@@ -154,12 +162,16 @@ export function readPicks(raw) {
     // defines inside a mob's attack). Never into `name`.
     // With `last` (and optional `skip`) it keeps instead the `last` words just before that colon, leaving out the `skip` words
     // nearest it (the label word `Debuff`): the name the book prints in front of the colon. Only `last` may feed `name`.
-    if (p.stat === true) {
+    // `after` (with `last`/`skip`) on a plain line does the same with one of the block's own lines (a debuff the book
+    // defines inside a rules paragraph: `... you gain the X Debuff: text`).
+    const plainAfter = p.stat !== true && p.after !== undefined;
+    if (plainAfter && (p.label === true || p.other === true || p.lead === true)) { bad++; continue; }
+    if (p.stat === true || plainAfter) {
       const after = readInt(p.after, 9);
       const last = p.last === undefined ? 0 : readInt(p.last, 8);
       const skip = p.skip === undefined ? 0 : readInt(p.skip, 4);
       if ((into === 'name') !== (last > 0) || p.lead === true || !after || last === null || skip === null) { bad++; continue; }
-      pick.stat = true;
+      if (p.stat === true) pick.stat = true;
       pick.after = after;
       if (last) { pick.last = last; if (skip) pick.skip = skip; }
     }

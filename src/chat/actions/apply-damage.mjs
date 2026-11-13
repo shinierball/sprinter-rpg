@@ -26,6 +26,7 @@ import { evadeFailDegree, meetsEvadeGate } from '../../utils/attack/evade-degree
 import { conditionLabel } from '../../documents/actor/condition-data.mjs';
 import { addDispelEntry } from '../../utils/effects/dispel.mjs';
 import { isOutOfRangeOnMessage, rangeText } from '../../utils/attack/attack-range.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** The Amazing Success mode of a clicked button (E6.9 D6): `auto` (absent), `force` or `off`. */
 function amazingModeOf(raw) {
@@ -63,10 +64,11 @@ export function parseApplyDamage(button) {
 
   // Per-part amounts (with their rolled bases, so each target can recompute them), the card's target rows, and the
   // attack's context in `data-roll-context`: the target's conditional defenseModifiers resolve against it.
-  const damageParts = parseCardParts(card.dataset?.damageParts);
+  // Only a Critical Hit button counts the card's extra Critical Hit dice parts.
+  const isCrit = button.dataset?.crit === 'true' || button.dataset?.crit === true;
+  const damageParts = parseCardParts(card.dataset?.damageParts, { crit: isCrit });
   const targetRows = targetRowsFor({ targetRows: parseTargetRows(card.dataset?.targetRows) });
   const rollContext = parseRollContext(card.dataset?.rollContext);
-  const isCrit = button.dataset?.crit === 'true' || button.dataset?.crit === true;
 
   const conditionTags = [];
   const rawConditionTags = button.dataset?.conditionTags || card?.dataset?.conditionTags;
@@ -241,7 +243,7 @@ export async function chooseOneDebuff(refs, { title = '', target = '' } = {}) {
   if (refs.length === 1) return refs[0];
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
   if (typeof DialogV2?.wait !== 'function') return null;
-  const who = target ? ` on ${globalThis.foundry?.utils?.escapeHTML?.(target) ?? target}` : '';
+  const who = target ? ` on ${escapeAttr(target)}` : '';
   const picked = await DialogV2.wait({
     window: { title: title || 'Choose a debuff' },
     content: `<p>Choose the debuff to inflict${who}.</p>`,
@@ -312,6 +314,7 @@ export async function applyDamageTo(targetActor, params, ctx) {
     amazing,
     extraDr: interception?.drBonus ?? 0,
     extraDrLabel: interception?.name ?? '',
+    intercepting: Boolean(interception),
     applicationId: newApplicationId(),
     messageId: ctx?.message?.id ?? null
   });
@@ -468,6 +471,7 @@ export async function handleApplyDamage(event, button, message) {
       text += `, ${r.excessDamage} excess ignored`;
     }
     text += ')';
+    if (r.dying) text += r.dying.died ? ' (Dying: the countdown ran out)' : ` (Dying: ${r.dying.remaining} round${r.dying.remaining === 1 ? '' : 's'} left)`;
     if (r.lifesteal) {
       text += r.lifesteal.skipped
         ? ` (Life Drain: heal ${r.lifesteal.attackerName} ${r.lifesteal.slots} slot${r.lifesteal.slots === 1 ? '' : 's'} by hand)`

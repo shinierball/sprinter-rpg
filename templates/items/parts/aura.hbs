@@ -1,0 +1,130 @@
+{{!-- Aura and area block shared by gear, skill and spell. Hash: titleKey, emitsKey, configureKey (lang keys). --}}
+<details class="cog-collapsible-block" {{#if hasAuraConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-circle-notch"></i> {{localize titleKey}}</span>
+    <span class="cog-toggle-indicator {{#if hasAuraConfigured}}active{{/if}}">{{#if hasAuraConfigured}}{{localize "COG.AuraSheet.Configured"}}{{else}}{{localize configureKey}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.AuraSheet.Hint"}}</p>
+    <div class="cog-field-row" style="margin-bottom: 6px; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <label class="cog-text" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
+        <input type="checkbox" name="system.area.hasArea" {{#if system.area.hasArea}}checked{{/if}} />
+        <span>{{localize emitsKey}}</span>
+      </label>
+      {{> "systems/sprinter-rpg/templates/items/parts/area-shape.hbs"}}
+      <div class="cog-field-group small" style="flex: 1.2;">
+        <span class="cog-field-label">{{localize "COG.AuraSheet.TargetFilter"}}</span>
+        <select class="cog-field-input" name="system.area.targetFilter" style="font-size: 11px;">
+          <option value="allies" {{#if (eq system.area.targetFilter "allies")}}selected{{/if}}>{{localize "COG.AuraSheet.Allies"}}</option>
+          <option value="enemies" {{#if (eq system.area.targetFilter "enemies")}}selected{{/if}}>{{localize "COG.AuraSheet.Enemies"}}</option>
+          <option value="both" {{#if (eq system.area.targetFilter "both")}}selected{{/if}}>{{localize "COG.AuraSheet.Both"}}</option>
+        </select>
+      </div>
+    </div>
+
+    {{!-- Allied Protection / Temp Health Bars Sub-Block --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 6px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-success); padding: 6px; border-radius: 3px;">
+      <div class="cog-text-success" style="font-weight: bold; font-size: 11px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+        <span><i class="fa-solid fa-shield-halved"></i> {{localize "COG.AuraSheet.Protection"}}</span>
+        <label class="cog-text" style="font-size: 10px; font-weight: normal; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="checkbox" name="system.tempBars.hasTempBars" {{#if system.tempBars.hasTempBars}}checked{{/if}} />
+          <span>{{localize "COG.AuraSheet.EnableBars"}}</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="gap: 6px;">
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.SlotsFormula"}}</span>
+          <select class="cog-field-input" name="system.tempBars.slotsFormula" style="font-size: 11px;">
+            <option value="" {{#unless system.tempBars.slotsFormula}}selected{{/unless}}>{{localize "COG.AuraSheet.NotSet"}}</option>
+            <option value="con" {{#if (eq system.tempBars.slotsFormula "con")}}selected{{/if}}>{{localize "COG.AuraSheet.ConMod"}}</option>
+            <option value="cha" {{#if (eq system.tempBars.slotsFormula "cha")}}selected{{/if}}>{{localize "COG.AuraSheet.ChaMod"}}</option>
+            <option value="int" {{#if (eq system.tempBars.slotsFormula "int")}}selected{{/if}}>{{localize "COG.AuraSheet.IntMod"}}</option>
+            <option value="str" {{#if (eq system.tempBars.slotsFormula "str")}}selected{{/if}}>{{localize "COG.AuraSheet.StrMod"}}</option>
+            <option value="dex" {{#if (eq system.tempBars.slotsFormula "dex")}}selected{{/if}}>{{localize "COG.AuraSheet.DexMod"}}</option>
+            <option value="1" {{#if (eq system.tempBars.slotsFormula "1")}}selected{{/if}}>{{localize "COG.AuraSheet.Fixed1"}}</option>
+            <option value="2" {{#if (eq system.tempBars.slotsFormula "2")}}selected{{/if}}>{{localize "COG.AuraSheet.Fixed2"}}</option>
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.HpPerBar"}}</span>
+          <input class="cog-field-input" type="number" name="system.tempBars.hpPerSlot" value="{{system.tempBars.hpPerSlot}}" placeholder="2" min="0" style="font-size: 11px;" />
+        </div>
+      </div>
+    </div>
+
+    {{!-- Aura Combat Bonuses, Resistances & Granted Buffs Sub-Block --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 6px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-info); padding: 6px; border-radius: 3px;">
+      <div class="cog-text-info" style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">
+        <i class="fa-solid fa-sparkles"></i> {{localize "COG.AuraSheet.Combat"}}
+      </div>
+      <div class="cog-field-row" style="gap: 6px; margin-bottom: 4px;">
+        <div class="cog-field-group small" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.Evade"}}</span>
+          <input class="cog-field-input" type="number" name="system.area.evadeBonus" value="{{system.area.evadeBonus}}" placeholder="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group small" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.Attack"}}</span>
+          <input class="cog-field-input" type="number" name="system.area.attackBonus" value="{{system.area.attackBonus}}" placeholder="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group small" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.Damage"}}</span>
+          <input class="cog-field-input" type="number" name="system.area.damageBonus" value="{{system.area.damageBonus}}" placeholder="0" style="font-size: 11px;" />
+        </div>
+      </div>
+      <div class="cog-field-row cog-pick-row">
+        {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedResistancesPicker}}
+        {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedImmunitiesPicker}}
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaGrantedBuffsPicker}}
+    </div>
+
+    {{!-- Aura Healing & Cleansing Sub-Block --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 6px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-success); padding: 6px; border-radius: 3px;">
+      <div class="cog-text-success" style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">
+        <i class="fa-solid fa-heart-pulse"></i> {{localize "COG.AuraSheet.Healing"}}
+      </div>
+      <div class="cog-field-row" style="gap: 6px; margin-bottom: 4px; align-items: center;">
+        <div class="cog-field-group small" style="width: 80px;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.HealingBars"}}</span>
+          <input class="cog-field-input" type="number" name="system.area.healingBars" value="{{system.area.healingBars}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <label class="cog-text-info" style="display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; cursor: pointer; margin-top: 10px;">
+          <input type="checkbox" name="system.area.isHoT" {{#if system.area.isHoT}}checked{{/if}} />
+          <span>{{localize "COG.AuraSheet.Hot"}}</span>
+        </label>
+        <div class="cog-field-group small" style="width: 80px;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.HotRounds"}}</span>
+          <input class="cog-field-input" type="number" name="system.area.hotRounds" value="{{#if system.area.hotRounds}}{{system.area.hotRounds}}{{/if}}" placeholder="3" min="1" style="font-size: 11px;" />
+        </div>
+        {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaCleanseDebuffsPicker}}
+      </div>
+    </div>
+
+    {{!-- Enemy Hazard / Periodic Aura Damage Sub-Block --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-accent); padding: 6px; border-radius: 3px;">
+      <div class="cog-text-accent" style="font-weight: bold; font-size: 11px; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+        <span><i class="fa-solid fa-burst"></i> {{localize "COG.AuraSheet.Hazard"}}</span>
+        <label class="cog-text" style="font-size: 10px; font-weight: normal; display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="checkbox" name="system.area.hasPeriodicDamage" {{#if system.area.hasPeriodicDamage}}checked{{/if}} />
+          <span>{{localize "COG.AuraSheet.EnablePeriodic"}}</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="gap: 6px; margin-bottom: 4px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.TickFormula"}}</span>
+          <input class="cog-field-input" type="text" name="system.area.periodicDamageFormula" value="{{system.area.periodicDamageFormula}}" placeholder="{{localize "COG.AuraSheet.TickPlaceholder"}}" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.Element"}}</span>
+          <select class="cog-field-input" name="system.area.periodicDamageType" style="font-size: 11px;">
+            {{#each periodicDamageTypeOptions as |opt|}}
+              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaInflictedDebuffsPicker}}
+      {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=areaPulseConditionsPicker}}
+    </div>
+  </div>
+</details>

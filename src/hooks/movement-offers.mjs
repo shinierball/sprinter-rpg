@@ -12,6 +12,7 @@ import { positionAfterMovement } from '../utils/combat/movement-position.mjs';
 import { isMarkerActor } from '../utils/area/marker.mjs';
 import { collectMoveInterruptOffers, interruptEffectsText } from '../utils/combat/interrupts.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
+import { ownerAndGmIds } from '../utils/owner-recipients.mjs';
 import { MOVE_EVENTS } from '../utils/tag/tag-mechanics.mjs';
 
 /** Moves for one scene inside this window share one evaluation (a drag fires many). Tests may lower it. */
@@ -24,11 +25,6 @@ const EVENT_TEXT = Object.freeze({
   [MOVE_EVENTS.leave]: { title: 'moved out of reach', note: 'Not offered if the foe used its Step.' },
   [MOVE_EVENTS.enter]: { title: 'moved into reach', note: 'Once per round.' }
 });
-
-function userIdsFor(actors) {
-  const users = Array.from(globalThis.game?.users?.contents ?? globalThis.game?.users ?? []);
-  return users.filter(u => u?.isGM || actors.some(a => a?.testUserPermission?.(u, 'OWNER'))).map(u => u.id);
-}
 
 /** The card for one mover's offers. */
 function movementOfferHtml(offers) {
@@ -71,7 +67,7 @@ async function offerForMover({ tokenDoc, origin, destination }) {
   if (!offers.length || !globalThis.ChatMessage?.create) return null;
   return globalThis.ChatMessage.create({
     speaker: { alias: tokenDoc.actor?.name ?? 'Movement' },
-    whisper: userIdsFor(offers.map(o => o.actor)),
+    whisper: ownerAndGmIds(offers.map(o => o.actor)),
     content: movementOfferHtml(offers),
     flags: { [SYSTEM_ID]: { movementOffer: { moverUuid: tokenDoc.uuid ?? '', events: [...new Set(offers.map(o => o.event))] } } }
   });

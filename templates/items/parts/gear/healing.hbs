@@ -1,0 +1,25 @@
+{{!-- PERSISTENT HEALING & CLEANSING AT ROUND END (EQUIPPED) --}}
+<details class="cog-collapsible-block" {{#if (or system.healing.hasHealing system.healing.barsPerRound cleanseDebuffsString)}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-heart-pulse"></i> {{localize "COG.GearSheet.Healing.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if (or system.healing.hasHealing system.healing.barsPerRound cleanseDebuffsString)}}active{{/if}}">{{#if (or system.healing.hasHealing system.healing.barsPerRound cleanseDebuffsString)}}{{localize "COG.GearSheet.Healing.Configured"}}{{else}}{{localize "COG.GearSheet.Healing.Configure"}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-field-row" style="margin-bottom: 6px;">
+      <div class="cog-field-group small" style="text-align: center;">
+        <span class="cog-field-label">{{localize "COG.GearSheet.Healing.Enable"}}</span>
+        <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;">
+          <input type="checkbox" name="system.healing.hasHealing" {{#if (or system.healing.hasHealing (gt system.healing.barsPerRound 0))}}checked{{/if}} class="cog-checkbox-lg" />
+        </label>
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.GearSheet.Healing.BarsPerRound"}}</span>
+        <input class="cog-field-input" type="number" name="system.healing.barsPerRound" value="{{system.healing.barsPerRound}}" placeholder="1" min="0" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="flex: 2;">
+        <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> {{localize "COG.GearSheet.Healing.Cleanse"}}</span>
+        <input class="cog-field-input" type="text" name="system.healing.cleanseDebuffs" value="{{cleanseDebuffsString}}" placeholder="{{localize "COG.GearSheet.Healing.CleansePlaceholder"}}" list="cog-available-debuffs-list-{{item.id}}" style="font-size: 11px;" />
+      </div>
+    </div>
+  </div>
+</details>

@@ -1,6 +1,7 @@
 /**
  * Builders for game.cog and CONFIG.COG, and environment accessors.
  */
+import { syncDeityTags } from './deity-tags.mjs';
 import { COGActor } from '../documents/actor.mjs';
 import {
   getCurrentFloor,
@@ -44,6 +45,7 @@ import { COGCrawlerCreatorApp } from '../apps/crawler-creator.mjs';
 import { COGClassCreatorApp } from '../apps/class-creator.mjs';
 import { COGRaceCreatorApp } from '../apps/race-creator.mjs';
 import { COGMobCreatorApp } from '../apps/mob-creator/mob-creator-app.mjs';
+import { COGWeaponBuilderApp } from '../apps/weapon-builder/weapon-builder-app.mjs';
 import { COGBasePointBuilderApp } from '../apps/base-point-builder.mjs';
 import { COGAchievementManagerApp } from '../apps/achievement-manager.mjs';
 import { COGFloorClockHUD } from '../apps/floor-clock-hud.mjs';
@@ -89,7 +91,8 @@ import {
   NPCDataModel,
   MobDataModel
 } from '../models/index.mjs';
-import { getSpaceTypeInfo, getSpaceUpgrade } from '../data/rules/personal-space-rules.mjs';
+import { getSpaceUpgrade } from '../data/rules/personal-space-rules.mjs';
+import { DEFAULT_SPACE_RULES, spaceTypeForRank } from '../data/rules/space-rank-rules.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { SCALARS } from '../utils/roll/scalars.mjs';
 import { TIME_UNITS } from '../utils/time/timing.mjs';
@@ -104,13 +107,26 @@ import { CHECK_TYPES } from '../data/rules/check-types.mjs';
 import { AREA_REGION_BUILDERS } from '../utils/area/region-shapes.mjs';
 import { ROW_KINDS } from '../utils/row-kinds.mjs';
 import { RULE_SKILL_DEFS, ruleSkillRank } from '../utils/skill/rule-skills.mjs';
+import { ADVANCEMENT_ROUTE_DEFS } from '../utils/skill/advancement-routes.mjs';
+import { ZERO_HEALTH_OUTCOMES } from '../documents/actor/dying.mjs';
 import { RULE_FLAGS, RULE_FLAG_DEFS, hasRuleFlag, registerRuleFlag, getTagBehaviour, listBehaviourTags, tagBehaviourErrors } from '../utils/tag/tag-behaviour.mjs';
 import { registerSexOption } from '../utils/tag/sex.mjs';
 import { registerStepHandler } from '../data/floor-simulator/steps/index.mjs';
 import { onRenderChatMessage } from '../chat/render-chat-message.mjs';
 import { registerChatMessageHook } from '../chat/register-chat-hook.mjs';
-import { createAndEditItem, openGlobalItemCreatorDialog } from '../apps/item-creator-dialog.mjs';
+import { describeVocabulary } from '../utils/item-from-words/vocabulary.mjs';
+import { buildItemPrompt } from '../utils/item-from-words/prompt.mjs';
+import { extractDraft } from '../utils/item-from-words/extract-draft.mjs';
+import { checkDraft } from '../utils/item-from-words/check-draft.mjs';
+import { DRAFT_PROVIDERS, registerDraftProvider } from '../utils/item-from-words/providers.mjs';
+import { COGItemFromWordsApp } from '../apps/item-from-words-app.mjs';
+import { COGDraftReviewApp } from '../apps/draft-review-app.mjs';
+import { createAndEditItem } from '../apps/item-create.mjs';
+import { COGItemSetupApp } from '../apps/item-setup-app.mjs';
 import { unpauseGame } from './pause.mjs';
+import { useBuffActivation, endBuffActivation } from '../documents/actor/buff-activation.mjs';
+import { addKnownDeity, startWorship, leaveWorship, setWorshipTier, writeBond, syncTierGifts } from '../documents/actor/worship.mjs';
+import { addPatronProspect, becomePatron, endPatronage, writePatronage, patronCriteriaFor } from '../documents/actor/patronage.mjs';
 import { findFloorTableData, loadFloorTableSnapshots } from '../data/floor-simulator/tables.mjs';
 import { RACE_CLASS_UNLOCK_FLOOR } from '../utils/character/race-class-floor.mjs';
 import { DEFAULT_LIGHT } from '../documents/actor/light-source.mjs';
@@ -119,6 +135,9 @@ import { DEFAULT_GEAR_CONTRIBUTIONS } from '../utils/effects/gear-suppression.mj
 export function buildGameNamespace() {
   return {
     unpauseGame,
+    activation: { use: useBuffActivation, end: endBuffActivation },
+    patron: { addPatronProspect, becomePatron, endPatronage, writePatronage, patronCriteriaFor },
+    worship: { addKnownDeity, startWorship, leaveWorship, setWorshipTier, writeBond, syncTierGifts },
     COGActor,
     COGDamage,
     COGItem,
@@ -165,8 +184,18 @@ export function buildGameNamespace() {
     onRenderChatMessage,
     registerChatMessageHook,
     createAndEditItem,
-    openGlobalItemCreatorDialog,
+    openItemSetup: (options = {}) => COGItemSetupApp.open(options),
+    itemFromWords: {
+      describeVocabulary,
+      buildItemPrompt,
+      extractDraft,
+      checkDraft,
+      registerDraftProvider,
+      openBridge: (options = {}) => COGItemFromWordsApp.open({ createItem: createAndEditItem, ...options }),
+      openReview: (options = {}) => new COGDraftReviewApp({ createItem: createAndEditItem, ...options }).render({ force: true })
+    },
     openMobCreator: (options = {}) => COGMobCreatorApp.open(options),
+    openWeaponBuilder: (options = {}) => COGWeaponBuilderApp.open(options),
     TagIndex,
     tags: tagIndex,
     hasRuleFlag,
@@ -194,6 +223,7 @@ export function buildGameNamespace() {
         COGClassCreatorApp,
       COGRaceCreatorApp,
       COGMobCreatorApp,
+      COGWeaponBuilderApp,
       COGBasePointBuilderApp,
       COGAchievementManagerApp,
       COGCombatArchiveApp,
@@ -231,7 +261,7 @@ export function buildGameNamespace() {
     spaces: {
       types: contentRegistry.getSpaceTypes(),
       upgrades: contentRegistry.getSpaceUpgrades(),
-      getSpaceTypeInfo,
+      spaceTypeForRank,
       getSpaceUpgrade
     }
   };
@@ -251,9 +281,13 @@ export function buildConfigCOG() {
     mobCreator: COGMobCreatorApp,
     promptAttackOptions,
     cameraAudiences: { ...DEFAULT_CAMERA_AUDIENCES },
+    // Personal space ranks and prices (tables per rank, coupon prices); a module may replace it
+    spaceRules: structuredClone(DEFAULT_SPACE_RULES),
     bossTiers: { ...BOSS_TIERS },
     // New actors' prototype token defaults by actor type; a module may edit a row
     tokenDefaults: { ...TOKEN_DEFAULTS },
+    // Item from words: the providers that can write a draft for the bridge window (`registerDraftProvider`)
+    draftProviders: DRAFT_PROVIDERS,
     lootBoxTiers: { ...LOOT_BOX_TIERS },
     // The Loot Box Showcase's opening effects (`cog-lootbox-fx-<id>`); a module that adds a tier `fx` lists it here and ships its CSS
     lootBoxFx: [...LOOT_BOX_FX],
@@ -281,6 +315,9 @@ export function buildConfigCOG() {
     areaRegionBuilders: AREA_REGION_BUILDERS,
     rowKinds: ROW_KINDS,
     ruleFlags: RULE_FLAG_DEFS,
+    // What happens at 0% by actor type: 'dying', 'dead' or 'none' (dying.mjs; a module may add a type)
+    zeroHealthOutcomes: ZERO_HEALTH_OUTCOMES,
+    advancementRoutes: ADVANCEMENT_ROUTE_DEFS,
     lightDefaults: { ...DEFAULT_LIGHT },
     gearContributions: Object.fromEntries(Object.entries(DEFAULT_GEAR_CONTRIBUTIONS).map(([kind, def]) => [kind, { ...def }])),
     ruleSkills: RULE_SKILL_DEFS,
@@ -329,6 +366,7 @@ export function syncRegistryConfig() {
     ns.backgroundTables = contentRegistry.getBackgroundTables();
     ns.spaces = { ...ns.spaces, types: contentRegistry.getSpaceTypes(), upgrades: contentRegistry.getSpaceUpgrades() };
   }
+  syncDeityTags();
   // An open crawler creator shows the old matrices and story tables until it redraws
   for (const app of openApplications()) if (app instanceof COGCrawlerCreatorApp) app.refreshContent();
 }

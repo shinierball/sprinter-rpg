@@ -1,7 +1,7 @@
 {{!-- Area shape, size and splash inputs shared by the spell, skill and gear area blocks. Context: areaShapeView (options from the registered shape tags, size flags, resolved line). --}}
 <div class="cog-field-row cog-area-shape-row" data-anchor="{{areaShapeView.anchorHint}}">
   <div class="cog-field-group small">
-    <span class="cog-field-label">Shape</span>
+    <span class="cog-field-label">{{localize "COG.AbilitySheet.AreaShape.Shape"}}</span>
     <select class="cog-field-input" name="system.area.shape">
       {{#each areaShapeView.options}}
       <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
@@ -10,27 +10,27 @@
   </div>
   {{#if areaShapeView.showRadius}}
   <div class="cog-field-group small">
-    <span class="cog-field-label">Base Radius (ft)</span>
+    <span class="cog-field-label">{{localize "COG.AbilitySheet.AreaShape.Radius"}}</span>
     <input class="cog-field-input" type="number" name="system.area.radius" value="{{system.area.radius}}" placeholder="5" min="0" />
   </div>
   {{/if}}
   {{#if areaShapeView.showLength}}
   <div class="cog-field-group small">
-    <span class="cog-field-label">Length (ft)</span>
+    <span class="cog-field-label">{{localize "COG.AbilitySheet.AreaShape.Length"}}</span>
     <input class="cog-field-input" type="number" name="system.area.lineLength" value="{{system.area.lineLength}}" placeholder="10" min="0" />
   </div>
   <div class="cog-field-group small">
-    <span class="cog-field-label">Width (ft)</span>
+    <span class="cog-field-label">{{localize "COG.AbilitySheet.AreaShape.Width"}}</span>
     <input class="cog-field-input" type="number" name="system.area.lineWidth" value="{{system.area.lineWidth}}" placeholder="5" min="0" />
   </div>
   {{/if}}
   <div class="cog-field-group small">
-    <span class="cog-field-label">Splash (ft)</span>
+    <span class="cog-field-label">{{localize "COG.AbilitySheet.AreaShape.Splash"}}</span>
     <input class="cog-field-input" type="number" name="system.area.splash" value="{{system.area.splash}}" placeholder="0" min="0" />
   </div>
   {{#unless hideAbsorb}}
   <div class="cog-field-group small">
-    <span class="cog-field-label">Temp Bars Absorb</span>
+    <span class="cog-field-label">{{localize "COG.AbilitySheet.AreaShape.Absorb"}}</span>
     <select class="cog-field-input" name="system.area.absorbElement">
       {{#each areaShapeView.absorbElementOptions}}
       <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>

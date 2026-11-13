@@ -45,6 +45,7 @@ export const FIELD_UI = Object.freeze({
       checkModifiers: 'COG.Rows.Field.Bonus',
       'checkModifiers:degreeShift': 'COG.Rows.Field.ShiftSteps',
       craftModifiers: 'COG.Rows.Field.CraftMaxBonus',
+      'craftModifiers:salvage': 'COG.Rows.Field.CraftSalvageSteps',
       'vehicleModifiers:moveAdd': 'COG.Rows.Field.VehicleMoveAdd',
       manaCostModifiers: 'COG.Rows.Field.Mana',
       popularityTriggers: 'COG.Rows.Field.PopularityAmount',
@@ -53,7 +54,7 @@ export const FIELD_UI = Object.freeze({
   },
   dice: { placeholder: '1d6' },
   stat: { options: 'stats' },
-  multiplier: { step: 'any', labels: { 'vehicleModifiers:moveMultiply': 'COG.Rows.Field.VehicleMoveMultiplier', 'craftModifiers:batchTime': 'COG.Rows.Field.CraftBatchMultiplier', craftModifiers: 'COG.Rows.Field.CraftTimeMultiplier' } },
+  multiplier: { step: 'any', labels: { 'vehicleModifiers:moveMultiply': 'COG.Rows.Field.VehicleMoveMultiplier', 'craftModifiers:batchTime': 'COG.Rows.Field.CraftBatchMultiplier', 'craftModifiers:materials': 'COG.Rows.Field.CraftMaterialMultiplier', craftModifiers: 'COG.Rows.Field.CraftTimeMultiplier' } },
   damageType: {
     input: 'select',
     options: 'damageTypes',

@@ -1,0 +1,63 @@
+{{!-- The GM's gift dialog (a boon or a smite). Every control is a data-action or a data-field; nothing here is a form input. --}}
+<div class="cog-deity-gift cog-bg-window cog-text-strong">
+  <p class="cog-text-muted cog-deity-gift-intro">{{intro}}</p>
+
+  <div class="cog-field-row cog-deity-gift-length">
+    <div class="cog-field-group small">
+      <span class="cog-field-label">{{localize 'COG.Deity.Gift.Hours'}}</span>
+      <input class="cog-field-input" type="number" min="1" step="1" value="{{hours}}" data-field="hours" />
+    </div>
+    <label class="cog-checkbox-label" title="{{localize 'COG.Deity.Gift.PermanentHint'}}">
+      <input type="checkbox" data-field="permanent" />
+      <span>{{localize 'COG.Deity.Gift.Permanent'}}</span>
+    </label>
+  </div>
+
+  <div class="cog-stat-block cog-deity-gift-block">
+    <div class="cog-banner-header cog-bg-accent-fill"><span>{{localize 'COG.Deity.Gift.Choices'}}</span></div>
+    <div class="cog-block-content">
+      {{#each candidates as |c|}}
+        <div class="cog-bg-surface cog-deity-gift-row">
+          <img class="cog-picker-item-icon cog-deity-gift-img" src="{{c.img}}" alt="" />
+          <span class="cog-deity-gift-name">{{c.name}}</span>
+          <span class="cog-badge">{{c.groupLabel}}</span>
+          <button type="button" data-action="grantGift" data-key="{{c.key}}"><i class="fa-solid fa-gift"></i> {{localize 'COG.Deity.Gift.Grant'}}</button>
+        </div>
+      {{else}}
+        <p class="cog-text-muted">{{localize 'COG.Deity.Gift.Empty'}}</p>
+      {{/each}}
+    </div>
+  </div>
+
+  <div class="cog-stat-block cog-deity-gift-block">
+    <div class="cog-banner-header cog-bg-accent-fill"><span>{{localize 'COG.Deity.Gift.Tables'}}</span></div>
+    <div class="cog-block-content">
+      {{#each tables as |table|}}
+        <div class="cog-bg-surface cog-deity-gift-row">
+          <span class="cog-deity-gift-name">{{table.name}}</span>
+          <button type="button" data-action="rollGiftTable" data-table-uuid="{{table.uuid}}"><i class="fa-solid fa-dice-d20"></i> {{localize 'COG.Deity.Gift.Roll'}}</button>
+        </div>
+      {{else}}
+        <p class="cog-text-muted">{{localize 'COG.Deity.Gift.NoTables'}}</p>
+      {{/each}}
+      {{#if rolled}}<p class="cog-deity-gift-rolled"><strong>{{rolled.table}}:</strong> {{rolled.text}}</p>{{/if}}
+    </div>
+  </div>
+
+  <div class="cog-field-row cog-deity-gift-fallback">
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize 'COG.Deity.Gift.Fallback'}}</span>
+      <select class="cog-field-input" data-field="fallback">
+        <option value="">{{localize 'COG.Deity.Gift.FallbackPick'}}</option>
+        {{#each fallback as |f|}}<option value="{{f.key}}">{{f.label}}</option>{{/each}}
+      </select>
+    </div>
+    <button type="button" data-action="grantFallback"><i class="fa-solid fa-gift"></i> {{localize 'COG.Deity.Gift.Grant'}}</button>
+  </div>
+
+  {{#if canForgive}}
+    <div class="cog-deity-gift-forgive">
+      <button type="button" data-action="forgiveGift" data-tooltip="{{localize 'COG.Deity.Gift.ForgivenHint'}}"><i class="fa-solid fa-dove"></i> {{localize 'COG.Deity.Gift.Forgiven'}}</button>
+    </div>
+  {{/if}}
+</div>

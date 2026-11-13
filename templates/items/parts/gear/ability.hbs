@@ -1,0 +1,250 @@
+{{!-- COOLDOWN for gear whose rows (not an activated ability) use it; with an ability the editor is in its block below --}}
+{{#if showStandaloneCooldown}}
+<div class="cog-field-row" style="margin-bottom: 8px;" data-standalone-cooldown>
+  <div class="cog-field-group">
+    {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=cooldownEditor}}
+  </div>
+</div>
+{{/if}}
+
+{{!-- ACTIVATED ABILITY / ON-USE EFFECTS --}}
+<details class="cog-collapsible-block" {{#if hasActivatedAbilityConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary cog-bg-accent-strong-fill">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-bolt"></i> {{localize "COG.GearSheet.Ability.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if hasActivatedAbilityConfigured}}active{{/if}}">{{#if hasActivatedAbilityConfigured}}{{localize "COG.GearSheet.Ability.Configured"}}{{else}}{{localize "COG.GearSheet.Ability.Configure"}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <label class="cog-text" style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">
+        <input type="checkbox"  name="system.hasActivatedAbility" {{#if system.hasActivatedAbility}}checked{{/if}} />
+        <span>{{localize "COG.GearSheet.Ability.Enable"}}</span>
+      </label>
+    </div>
+    {{> "systems/sprinter-rpg/templates/items/parts/usage-readout.hbs"}}
+    {{#if (or system.hasActivatedAbility system.outcomes.length)}}
+      <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider); border-radius: 3px;">
+        <div class="cog-field-row" style="margin-bottom: 6px;">
+          <div class="cog-field-group">
+            <span class="cog-field-label">{{localize "COG.GearSheet.Ability.CastSpell"}}</span>
+            <select class="cog-field-input" name="system.spellIdentifier" style="font-size: 11px;">
+              <option value="">{{localize "COG.GearSheet.Ability.None"}}</option>
+              {{#each spellIdentifierOptions as |sp|}}
+                <option value="{{sp.value}}" {{#if sp.selected}}selected{{/if}}>{{sp.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        <div class="cog-field-row" style="margin-bottom: 6px;">
+          <div class="cog-field-group">
+            {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=cooldownEditor}}
+          </div>
+          <div class="cog-field-group">
+            <span class="cog-field-label">{{localize "COG.GearSheet.Ability.ExecutionMode"}}</span>
+            <select class="cog-field-input" name="system.executionMode">
+              {{#each executionModeOptions as |mOpt|}}<option value="{{mOpt.value}}" {{#if mOpt.selected}}selected{{/if}}>{{mOpt.label}}</option>{{/each}}
+            </select>
+          </div>
+          <div class="cog-field-group small">
+            <span class="cog-field-label">{{localize "COG.GearSheet.Ability.Charges"}}</span>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <input class="cog-field-input" type="number" name="system.charges.value" value="{{system.charges.value}}" min="0" style="text-align: center; width: 45px;" />
+              <span>/</span>
+              <input class="cog-field-input" type="number" name="system.charges.max" value="{{system.charges.max}}" min="0" style="text-align: center; width: 45px;" />
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-end; padding-bottom: 2px;">
+            <a class="cog-bg-accent-fill cog-text-on-fill" data-action="addGearOutcome" style="padding: 4px 8px; border-radius: 3px; font-size: 11px; text-decoration: none; cursor: pointer;">
+              <i class="fa-solid fa-plus"></i> {{localize "COG.GearSheet.Ability.AddEffect"}}
+            </a>
+          </div>
+        </div>
+
+        {{#if system.outcomes.length}}
+          <table class="cog-table" style="width: 100%; font-size: 12px; margin-bottom: 0;">
+            <thead>
+              <tr class="cog-bg-surface-muted">
+                <th style="width: 25%;">{{localize "COG.GearSheet.Ability.EffectName"}}</th>
+                {{#if (eq system.executionMode "random")}}
+                  <th style="width: 12%;">{{localize "COG.GearSheet.Ability.Weight"}}</th>
+                {{/if}}
+                <th style="width: 18%;">{{localize "COG.GearSheet.Ability.Type"}}</th>
+                <th style="width: 16%;">{{localize "COG.GearSheet.Ability.Target"}}</th>
+                <th style="width: 25%;">{{localize "COG.GearSheet.Ability.Details"}}</th>
+                <th style="width: 8%; text-align: center;">{{localize "COG.GearSheet.Ability.Act"}}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each system.outcomes as |out idx|}}
+                <tr style="border-bottom: 1px solid var(--cog-divider);">
+                  <td>
+                    <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.name" value="{{out.name}}" placeholder="{{localize "COG.GearSheet.Ability.EffectName"}}" style="width: 100%; font-size: 11px;" />
+                  </td>
+                  {{#if (eq ../system.executionMode "random")}}
+                    <td>
+                      <input class="cog-field-input" data-input-action="sanitizeWeight" type="number" name="system.outcomes.{{idx}}.weight" value="{{out.weight}}" min="0" max="100" data-index="{{idx}}" style="width: 100%; font-size: 11px;" />
+                    </td>
+                  {{/if}}
+                  <td>
+                    <select class="cog-field-input" data-index="{{idx}}" name="system.outcomes.{{idx}}.type" style="width: 100%; font-size: 11px;">
+                      {{#each out.typeOptionsGear as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
+                    </select>
+                  </td>
+                  <td>
+                    <select class="cog-field-input" name="system.outcomes.{{idx}}.targetType" style="width: 100%; font-size: 11px;">
+                      {{#each out.targetOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
+                    </select>
+                  </td>
+                  <td>
+                    {{#if (eq out.type "heal")}}
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="{{localize "COG.GearSheet.Ability.Bars"}}" style="width: 50px; font-size: 11px;" />
+                        <span style="font-size: 10px;">{{localize "COG.GearSheet.Ability.Bars"}}</span>
+                      </div>
+                    {{else if (eq out.type "heal_over_time")}}
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.healBars" value="{{out.healBars}}" placeholder="{{localize "COG.GearSheet.Ability.Bars"}}" style="width: 40px; font-size: 11px;" />
+                        <span style="font-size: 10px;">{{localize "COG.GearSheet.Ability.BarsPerRound"}}</span>
+                        <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rounds" value="{{out.rounds}}" placeholder="3" style="width: 40px; font-size: 11px;" />
+                        <span style="font-size: 10px;">{{localize "COG.GearSheet.Ability.Rounds"}}</span>
+                      </div>
+                    {{else if (eq out.type "restore_resource")}}
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.resource" style="width: 30%; font-size: 11px;">
+                          {{#each out.resourceOptions as |rOpt|}}<option value="{{rOpt.value}}" {{#if rOpt.selected}}selected{{/if}}>{{rOpt.label}}</option>{{/each}}
+                        </select>
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.mode" style="width: 35%; font-size: 11px;">
+                          <option value="full" {{#if out.restoreFull}}selected{{/if}}>{{localize "COG.GearSheet.Ability.Full"}}</option>
+                          <option value="amount" {{#unless out.restoreFull}}selected{{/unless}}>{{localize "COG.GearSheet.Ability.Amount"}}</option>
+                        </select>
+                        <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.amount" value="{{out.amount}}" placeholder="10" style="width: 35%; font-size: 11px;" />
+                      </div>
+                    {{else if (eq out.type "mend_injury")}}
+                      <select class="cog-field-input" name="system.outcomes.{{idx}}.injurySeverity" style="width: 100%; font-size: 11px;">
+                        <option value="minor" {{#if (eq out.injurySeverity "minor")}}selected{{/if}}>{{localize "COG.GearSheet.Ability.MinorInjury"}}</option>
+                        <option value="major" {{#if (eq out.injurySeverity "major")}}selected{{/if}}>{{localize "COG.GearSheet.Ability.MajorInjury"}}</option>
+                        <option value="all" {{#if (eq out.injurySeverity "all")}}selected{{/if}}>{{localize "COG.GearSheet.Ability.AllInjuries"}}</option>
+                      </select>
+                    {{else if (eq out.type "cure_debuff")}}
+                      {{> "systems/sprinter-rpg/templates/items/parts/outcome-cure-filter.hbs" out=out idx=idx}}
+                    {{else if (eq out.type "skill_rank")}}
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.skillIdentifier" style="width: 70%; font-size: 11px;">
+                      {{#each out.skillOptions as |sk|}}
+                        <option value="{{sk.value}}" {{#if sk.selected}}selected{{/if}}>{{sk.label}}</option>
+                      {{/each}}
+                    </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.skillBadge}}
+                        <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.rankBonus" value="{{out.rankBonus}}" placeholder="+1" style="width: 30%; font-size: 11px;" />
+                      </div>
+                    {{else if (eq out.type "learn_spell")}}
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.spellIdentifier" style="width: 70%; font-size: 11px;">
+                          <option value="">{{localize "COG.GearSheet.Ability.ChooseSpell"}}</option>
+                          {{#each out.spellOptions as |sOpt|}}
+                            <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
+                          {{/each}}
+                        </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.spellBadge}}
+                        <input class="cog-field-input" type="number" min="1" name="system.outcomes.{{idx}}.rank" value="{{out.rank}}" placeholder="{{localize "COG.GearSheet.Ability.RankPlaceholder"}}" style="width: 30%; font-size: 11px;" />
+                      </div>
+                    {{else if (eq out.type "stat_permanent")}}
+                      <div style="display: flex; gap: 4px; align-items: center;">
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.stat" style="width: 50%; font-size: 11px;">
+                          {{#each out.statOptions as |so|}}
+                            <option value="{{so.value}}" {{#if so.selected}}selected{{/if}}>{{so.label}}</option>
+                          {{/each}}
+                        </select>
+                        <input class="cog-field-input" type="number" name="system.outcomes.{{idx}}.value" value="{{out.value}}" placeholder="+1" style="width: 50%; font-size: 11px;" />
+                      </div>
+                    {{else if (eq out.type "buff")}}
+                      <select class="cog-field-input" data-change-action="selectOutcomeBuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.buffIdentifier" style="width: 100%; font-size: 11px;">
+                        <option value="">{{localize "COG.GearSheet.Ability.ChooseBuff"}}</option>
+                        {{#each out.buffOptions as |bOpt|}}
+                          <option value="{{bOpt.value}}" {{#if bOpt.selected}}selected{{/if}}>{{bOpt.label}}</option>
+                        {{/each}}
+                      </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.buffBadge}}
+                    {{else if (eq out.type "debuff")}}
+                      <select class="cog-field-input" data-change-action="selectOutcomeDebuff" data-index="{{idx}}" name="system.outcomes.{{idx}}.debuffIdentifier" style="width: 100%; font-size: 11px;">
+                        <option value="">{{localize "COG.GearSheet.Ability.ChooseDebuff"}}</option>
+                        {{#each out.debuffOptions as |dOpt|}}
+                          <option value="{{dOpt.value}}" {{#if dOpt.selected}}selected{{/if}}>{{dOpt.label}}</option>
+                        {{/each}}
+                      </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.debuffBadge}}
+                    {{else if (eq out.type "spell")}}
+                      <select class="cog-field-input" data-change-action="selectOutcomeSpell" data-index="{{idx}}" name="system.outcomes.{{idx}}.spellIdentifier" style="width: 100%; font-size: 11px;">
+                        <option value="">{{localize "COG.GearSheet.Ability.ChooseSpell"}}</option>
+                        {{#each out.spellOptions as |sOpt|}}
+                          <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
+                        {{/each}}
+                      </select> {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=out.spellBadge}}
+{{> "systems/sprinter-rpg/templates/items/parts/outcome-spell-damage.hbs" out=out idx=idx}}
+                    {{else if (eq out.type "roll_table")}}
+                      <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" name="system.outcomes.{{idx}}.tableUuid" style="width: 100%; font-size: 11px;">
+                        <option value="">{{localize "COG.GearSheet.Ability.ChooseTable"}}</option>
+                        {{#each out.tableOptions as |tOpt|}}
+                          <option value="{{tOpt.uuid}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.name}}</option>
+                        {{/each}}
+                      </select>
+                    {{else if out.isEnchantItem}}
+                      <span class="cog-text-secondary">{{localize "COG.CraftSheet.Outcome.Summary" count=out.enchantTemplates.length}}</span>
+                    {{else}}
+                      <div data-outcome-damage>
+                      <div style="display: flex; gap: 4px;">
+                        <input class="cog-field-input" data-input-action="checkOutcomeDamage" type="text" name="system.outcomes.{{idx}}.damage" value="{{out.damage}}" placeholder="{{localize "COG.GearSheet.Ability.DicePlaceholder"}}" style="width: 40%; font-size: 11px;" />
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.damageStat" data-tooltip="{{localize "COG.Item.OutcomeDamageStat"}}" style="width: 20%; font-size: 11px;">
+                          {{#each out.damageStatOptions as |sOpt|}}
+                            <option value="{{sOpt.value}}" {{#if sOpt.selected}}selected{{/if}}>{{sOpt.label}}</option>
+                          {{/each}}
+                        </select>
+                        <select class="cog-field-input" name="system.outcomes.{{idx}}.damageType" style="width: 40%; font-size: 11px;">
+                          <option value="">{{localize "COG.GearSheet.Ability.ChooseType"}}</option>
+                          {{#each out.damageTypeOptions as |dtOpt|}}
+                            <option value="{{dtOpt.value}}" {{#if dtOpt.selected}}selected{{/if}}>{{dtOpt.label}}</option>
+                          {{/each}}
+                        </select>
+                      </div>
+                      <div class="cog-text-accent" data-outcome-damage-warn {{#unless out.damageWarn}}hidden{{/unless}} style="font-size: 10px;">{{localize "COG.Item.OutcomeDamageNoRoll"}}</div>
+                      </div>
+                    {{/if}}
+                  </td>
+                  <td style="text-align: center;">
+                    <a class="cog-text-accent" data-action="deleteGearOutcome" data-index="{{idx}}" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="{{#if (eq ../system.executionMode "random")}}6{{else}}5{{/if}}" style="padding-bottom: 6px; padding-top: 2px;">
+                    <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="{{localize "COG.GearSheet.Ability.DescriptionPlaceholder"}}" style="width: 100%; font-size: 11px;" />
+                  </td>
+                </tr>
+            {{#if out.isEnchantItem}}
+              <tr>
+                <td colspan="6" class="cog-outcome-enchant-table">
+                  <label class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.EnchantTable.Label"}}</label>
+                  <select class="cog-field-input" data-change-action="selectOutcomeTable" data-index="{{idx}}" style="width: 100%; font-size: 11px;">
+                    {{#each out.enchantTableOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{#if tOpt.group}}{{tOpt.group}}: {{/if}}{{tOpt.name}}</option>{{/each}}
+                  </select>
+                  <div class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.EnchantTable.Hint"}}</div>
+                </td>
+              </tr>
+            {{/if}}
+            {{#if out.isEnchantItem}}
+              <tr>
+                <td colspan="6" class="cog-outcome-enchantments">
+                  {{> "systems/sprinter-rpg/templates/items/parts/enchantment-templates.hbs" templates=out.enchantTemplates templatesPath=out.enchantTemplatesPath}}
+                </td>
+              </tr>
+            {{/if}}
+              {{/each}}
+            </tbody>
+          </table>
+        {{else}}
+          <div class="cog-text-secondary" style="text-align: center; font-size: 11px; padding: 6px;">
+            {{localize "COG.GearSheet.Ability.EnabledHint"}}
+          </div>
+        {{/if}}
+      </div>
+    {{else}}
+      <div class="cog-text-muted cog-bg-surface" style="text-align: center; font-style: italic; font-size: 11px; padding: 6px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+        {{localize "COG.GearSheet.Ability.DisabledHint"}}
+      </div>
+    {{/if}}
+  </div>
+</details>

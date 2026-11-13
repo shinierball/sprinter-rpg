@@ -9,10 +9,11 @@
  * skips it. Skills are matched by `system.identifier` only, never by name.
  */
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
-import { collectGearSkillBonuses, gearGrantKey } from '../../models/actors/actor-derivation.mjs';
+import { collectGearSkillBonuses, collectRankRaiseGrants, gearGrantKey, raiseRowsFor, raisedRank } from '../../models/actors/actor-derivation.mjs';
 import { SKILL_GROUP_TAGS } from '../tag/tag-mechanics.mjs';
 import { matchesTagQuery } from '../tag/tag-query.mjs';
 import { workingGear } from '../effects/gear-suppression.mjs';
+import { rankGrantSources } from './rank-grant-sources.mjs';
 
 const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -21,7 +22,7 @@ function gearEntryFor(actor, identifier) {
   const items = actor?.items;
   if (!items || typeof items.filter !== 'function') return null;
   const equipped = items.filter((i) => i?.type === 'gear' && i.system?.equipped);
-  return collectGearSkillBonuses(equipped).get(gearGrantKey('skill', identifier)) ?? null;
+  return collectGearSkillBonuses(rankGrantSources(actor, equipped)).get(gearGrantKey('skill', identifier)) ?? null;
 }
 
 /**
@@ -37,6 +38,8 @@ export function isGearOnlySkillOffline(actor, identifier) {
   if (!id || !items || typeof items.filter !== 'function') return false;
   if (typeof actor.getSkillByIdentifier === 'function' && actor.getSkillByIdentifier(id)) return false;
   const key = gearGrantKey('skill', id);
+  // A buff that grants the skill is never offline (only worn gear stops responding)
+  if (collectGearSkillBonuses(actor.getActiveBuffs?.() ?? []).has(key)) return false;
   const equipped = items.filter((i) => i?.type === 'gear' && i.system?.equipped);
   if (!collectGearSkillBonuses(equipped).has(key)) return false;
   return !collectGearSkillBonuses(workingGear(actor, equipped, 'grantedAbilities')).has(key);
@@ -47,16 +50,22 @@ export function isGearOnlySkillOffline(actor, identifier) {
  * @param {object} actor
  * @param {string} identifier skill `system.identifier`
  * @param {{ bonus?: number, sources?: string[], label?: string }|null} [entry] gear bonus entry; null = untrained
+ * @param {object|null} [definition] the Skill's own definition (a world Skill item); read before the catalog
  * @returns {object} skill-shaped, `isGranted: true`, id `granted-<identifier>`
  */
-export function buildSkillStandIn(actor, identifier, entry = null) {
-  const official = catalogEntries('skills').find((s) => s.system?.identifier === identifier);
+export function buildSkillStandIn(actor, identifier, entry = null, definition = null) {
+  const official = definition?.system ? definition : catalogEntries('skills').find((s) => s.system?.identifier === identifier);
   const grantedId = `granted-${identifier}`;
   const stat = official ? official.system.stat : 'str';
   const mod = actor?.system?.abilities?.[stat]?.mod ?? 0;
   const bonus = Number(entry?.bonus) || 0;
   const sources = Array.isArray(entry?.sources) ? entry.sources : [];
-  const modifiedRank = bonus;
+  const tags = official ? [...(official.system.tags ?? [])] : [SKILL_GROUP_TAGS.combat];
+  // A granted skill acts at its bonus, raised by the rank_raise rows of gear and active buffs that name it (a skill the
+  // actor has no grant for stays untrained)
+  const equipped = typeof actor?.items?.filter === 'function' ? actor.items.filter((i) => i?.type === 'gear' && i.system?.equipped) : [];
+  const raises = entry ? raiseRowsFor({ system: { identifier, tags } }, collectRankRaiseGrants({ sources: rankGrantSources(actor, equipped) })) : [];
+  const modifiedRank = raisedRank(bonus, raises);
   const totalSkill = modifiedRank + mod;
   return {
     id: grantedId,
@@ -85,7 +94,10 @@ export function buildSkillStandIn(actor, identifier, entry = null) {
       stat,
       checkType: official ? official.system.checkType : 'stat',
       // The official's tags carry its weaponGroup.* and skillGroup.* groups; with no official the stand-in is a combat skill
-      tags: official ? [...(official.system.tags ?? [])] : [SKILL_GROUP_TAGS.combat],
+      tags,
+      // A weapon attack with the stand-in deals the official's Base Damage and reaches its rank breaks
+      baseDamage: official?.system?.baseDamage,
+      rankBreaks: official?.system?.rankBreaks,
       notes: sources.length ? `Granted by ${sources.join(', ')}` : '',
       upgrades: '',
       checked: false
@@ -98,14 +110,15 @@ export function buildSkillStandIn(actor, identifier, entry = null) {
  * untrained catalog stand-in (rank 0). Returns null only for an empty identifier.
  * @param {object} actor
  * @param {string} identifier
+ * @param {object|null} [definition] the Skill's own definition (a world Skill item), read before the catalog
  * @returns {object|null}
  */
-export function skillStandIn(actor, identifier) {
+export function skillStandIn(actor, identifier, definition = null) {
   const id = typeof identifier === 'string' ? identifier.trim() : '';
   if (!id) return null;
   const owned = typeof actor?.getSkillByIdentifier === 'function' ? actor.getSkillByIdentifier(id) : null;
   if (owned) return owned;
-  const stand = buildSkillStandIn(actor, id, gearEntryFor(actor, id));
+  const stand = buildSkillStandIn(actor, id, gearEntryFor(actor, id), definition);
   if (isGearOnlySkillOffline(actor, id)) stand.offline = true;
   return stand;
 }

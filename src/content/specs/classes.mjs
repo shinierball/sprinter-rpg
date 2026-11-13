@@ -852,6 +852,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "options": [
+            "cat",
+            "cat-girl-cat-boy",
+            "dccrce0000000023"
+          ]
+        }
+      ],
       "description": "",
       "drBonus": 1,
       "movement": {
@@ -963,6 +973,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "tags",
+          "query": {
+            "all": [
+              "creature.female"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 1,
       "movement": {
@@ -1305,6 +1325,15 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "popularity",
+          "value": 3
+        },
+        {
+          "kind": "note"
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -1503,7 +1532,7 @@ export const COG_CLASSES = [
         "archetype.bard",
         "kind.class",
         "access.club.all_memberships",
-        "access.patron"
+        "rule.patron-required"
       ],
       "grants": [
         {
@@ -1879,14 +1908,19 @@ export const COG_CLASSES = [
           "label": "Weapon Skill 1 (Rank 2)"
         }
       ],
-      "requires": {
-        "all": [
-          "kind.deity"
-        ],
-        "none": [
-          "access.club.outlaws"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "worship"
+        },
+        {
+          "kind": "tags",
+          "query": {
+            "none": [
+              "access.club.outlaws"
+            ]
+          }
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {
@@ -1996,14 +2030,19 @@ export const COG_CLASSES = [
           "label": "Weapon Skill 1 (Rank 2)"
         }
       ],
-      "requires": {
-        "all": [
-          "kind.deity"
-        ],
-        "none": [
-          "access.club.outlaws"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "worship"
+        },
+        {
+          "kind": "tags",
+          "query": {
+            "none": [
+              "access.club.outlaws"
+            ]
+          }
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {
@@ -3009,6 +3048,13 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "skillRank",
+          "identifier": "driving",
+          "value": 5
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -4044,6 +4090,13 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "skillRank",
+          "identifier": "pugilism",
+          "value": 5
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -4427,14 +4480,19 @@ export const COG_CLASSES = [
           "label": "Catcher or Shield Block (Rank 2)"
         }
       ],
-      "requires": {
-        "all": [
-          "kind.deity"
-        ],
-        "none": [
-          "access.club.outlaws"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "worship"
+        },
+        {
+          "kind": "tags",
+          "query": {
+            "none": [
+              "access.club.outlaws"
+            ]
+          }
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {
@@ -4532,11 +4590,11 @@ export const COG_CLASSES = [
           "label": "Bonded Mount"
         }
       ],
-      "requires": {
-        "all": [
-          "kind.deity"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "worship"
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {
@@ -4630,14 +4688,19 @@ export const COG_CLASSES = [
           "rank": 2
         }
       ],
-      "requires": {
-        "all": [
-          "kind.deity"
-        ],
-        "none": [
-          "access.club.outlaws"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "worship"
+        },
+        {
+          "kind": "tags",
+          "query": {
+            "none": [
+              "access.club.outlaws"
+            ]
+          }
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {
@@ -4738,11 +4801,16 @@ export const COG_CLASSES = [
       "senses": {
         "darkvisionUnlimited": true
       },
-      "requires": {
-        "none": [
-          "access.club.champions"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "tags",
+          "query": {
+            "none": [
+              "access.club.champions"
+            ]
+          }
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {
@@ -4762,6 +4830,11 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "note"
+        }
+      ],
       "description": "",
       "drBonus": 1,
       "movement": {
@@ -4845,6 +4918,17 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "popularity",
+          "value": 3
+        },
+        {
+          "kind": "skillRank",
+          "identifier": "explosives-handling",
+          "value": 5
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -5091,11 +5175,16 @@ export const COG_CLASSES = [
           "rank": 1
         }
       ],
-      "requires": {
-        "none": [
-          "access.club.champions"
-        ]
-      },
+      "requirements": [
+        {
+          "kind": "tags",
+          "query": {
+            "none": [
+              "access.club.champions"
+            ]
+          }
+        }
+      ],
       "startingItems": [
         {
           "identifier": "dccitm0000000012",
@@ -5191,11 +5280,16 @@ export const COG_CLASSES = [
           "label": ""
         }
       ],
-      "requires": {
-        "none": [
-          "access.club.champions"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "tags",
+          "query": {
+            "none": [
+              "access.club.champions"
+            ]
+          }
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {
@@ -5551,11 +5645,11 @@ export const COG_CLASSES = [
       "senses": {
         "darkvisionUnlimited": true
       },
-      "requires": {
-        "all": [
-          "kind.deity"
-        ]
-      }
+      "requirements": [
+        {
+          "kind": "worship"
+        }
+      ]
     },
     "flags": {
       "sprinter-rpg": {

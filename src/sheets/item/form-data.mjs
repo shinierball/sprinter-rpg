@@ -12,7 +12,11 @@ import { enchantmentTemplateId } from '../../utils/loot/outcome-defaults.mjs';
 import { RANK_BREAK_THRESHOLDS } from '../../data/tag-vocabulary.mjs';
 import { normalizeOutcome } from '../../models/items/base-item-model.mjs';
 import { isWeaponFlagShown } from '../../utils/gear/wield-mode.mjs';
-import { objectRowArrayKeys, toArray, toStringList } from './util.mjs';
+import { objectRowArrayKeys, schemaFieldAt, storedTransform, toArray } from './util.mjs';
+import { toStringList } from '../../utils/first-scalar.mjs';
+import { ADVANCEMENT_ROUTE_DEFS, cleanRankLimits } from '../../utils/skill/advancement-routes.mjs';
+import { trimRequirementRow } from './context-requirements.mjs';
+import { GRANT_ROW_FIELDS, grantKeyOf } from './grant-row-fields.mjs';
 
 /** `system` paths holding string arrays that may be authored as comma-separated text. */
 const STRING_LIST_PATHS = [
@@ -27,7 +31,7 @@ const STRING_LIST_PATHS = [
 export const GM_ONLY_FIELDS = Object.freeze({ gear: ['value'], loot: ['value'] });
 
 /** Row arrays with their own merge (`mergeIndexedRows`). */
-const INDEXED_ROW_PATHS = ['grants'];
+const INDEXED_ROW_PATHS = ['grants', 'rankLimits'];
 
 /**
  * Submitted rows laid over the stored rows by index (the submitted count wins). The merge is deep, so a nested field
@@ -60,6 +64,7 @@ function mergeTemplates(stored, submitted) {
     if (rows && typeof rows === 'object') {
       out.rows = { ...(prior.rows ?? {}) };
       for (const key of Object.keys(rows)) out.rows[key] = mergeRows(prior.rows?.[key], rows[key]);
+      if (out.rows.grants) out.rows.grants = out.rows.grants.map((row, j) => keepOneTarget(prior.rows?.grants?.[j], row));
     }
     return out;
   }).reduce((all, out, i) => {
@@ -111,6 +116,20 @@ export function cleanTiming(timing) {
 }
 
 /**
+ * A grant row whose editor shows both a skill (`identifier`) and a `tag` (a fixed rank raise or rank cap) names one of
+ * them: a tag chosen in this submit clears the skill, and a skill chosen clears the tag, since the row would match either
+ * (Question 1069 (a)). A save that changes neither leaves the row as it was.
+ */
+function keepOneTarget(prior, merged) {
+  const fields = GRANT_ROW_FIELDS[grantKeyOf(merged)];
+  if (!fields?.includes('identifier') || !fields.includes('tag')) return merged;
+  const chosen = (field) => String(merged[field] ?? '').trim() !== '' && String(merged[field] ?? '') !== String(prior?.[field] ?? '');
+  if (chosen('tag')) return { ...merged, identifier: '' };
+  if (chosen('identifier')) return { ...merged, tag: '' };
+  return merged;
+}
+
+/**
  * Rows edited in place by index (`system.grants`): the table shows only some rows, so each submitted row is laid over
  * the stored row with the same index and every other stored row is kept. Rows are added and removed by actions only.
  */
@@ -131,7 +150,7 @@ function mergeIndexedRows(stored, submitted) {
       if (floor === null) delete merged.floor;
       else merged.floor = Math.max(0, Math.trunc(floor));
     }
-    return merged;
+    return keepOneTarget(prior, merged);
   });
 }
 
@@ -262,15 +281,31 @@ export function processItemFormData(item, data, { isGM } = {}) {
     if (INDEXED_ROW_PATHS.includes(path) || sys[path] === undefined) continue;
     sys[path] = clearBlankScale(mergeRows(item.system?.[path], sys[path]));
   }
+  // The Advancement box: a blank line is no limit (no row); a row naming a route the box does not show (a module's, gone) is kept.
+  if (sys.rankLimits !== undefined) {
+    const kept = toArray(item.system?.rankLimits).filter((row) => row && !Object.hasOwn(ADVANCEMENT_ROUTE_DEFS, row.route));
+    sys.rankLimits = [...cleanRankLimits(toArray(sys.rankLimits)), ...kept];
+  }
   if (sys.grants !== undefined) sys.grants = mergeIndexedRows(item.system?.grants, sys.grants);
+  // A requirement row keeps only what its kind shows, so changing the kind leaves no stale Stat or reference behind; the
+  // schema fills the rest with its initials.
+  if (Array.isArray(sys.requirements)) {
+    const element = schemaFieldAt(item, 'system.requirements')?.element;
+    sys.requirements = sys.requirements.map((row) => {
+      const trimmed = trimRequirementRow(row);
+      return typeof element?.clean === 'function' ? element.clean(trimmed) : trimmed;
+    });
+  }
   if (sys.transform !== undefined) {
-    const transform = cleanTransform(item.system?.transform, sys.transform);
+    const transform = cleanTransform(storedTransform(item), sys.transform);
     if (transform) sys.transform = transform; else delete sys.transform;
   }
   // A blank number input means "unset" for a nullable number: an attack's hit difficulty then falls back to the mob's Evade.
   if (sys.hitDifficulty !== undefined) sys.hitDifficulty = blankToNull(sys.hitDifficulty);
   if (sys.cooldown && typeof sys.cooldown === 'object') sys.cooldown = cleanTiming(sys.cooldown);
   if (sys.durationConfig && typeof sys.durationConfig === 'object') sys.durationConfig = cleanTiming(sys.durationConfig);
+  // A buff's activation cooldown is a timing too: a blank Scale by stores no scaling.
+  if (sys.activation?.cooldown && typeof sys.activation.cooldown === 'object') sys.activation.cooldown = cleanTiming(sys.activation.cooldown);
   // The Light section is always on the sheet, so its burn time posts on every save; an amount of 0 is an untimed light (null).
   if (sys.light?.duration && typeof sys.light.duration === 'object') {
     const burn = cleanTiming(sys.light.duration);

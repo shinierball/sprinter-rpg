@@ -7,6 +7,9 @@ import { SYSTEM_ID } from '../../constants.mjs';
 import { isMobCombatant } from './combatants.mjs';
 import { COG_ACTION_TYPES } from './action-ledger.mjs';
 
+/** World setting: the archived combats. */
+export const ARCHIVED_COMBATS_SETTING = 'archivedCombats';
+
 /**
  * Snapshot and archive a combat encounter to permanent world storage.
  * Preserves encounter metadata, combatants, round history, and AI metrics.
@@ -93,7 +96,7 @@ export async function archiveCombat(combat) {
  */
 export function getArchivedCombats() {
   try {
-    return globalThis.game?.settings?.get?.(SYSTEM_ID, 'archivedCombats') || [];
+    return globalThis.game?.settings?.get?.(SYSTEM_ID, ARCHIVED_COMBATS_SETTING) || [];
   } catch {
     return [];
   }
@@ -109,7 +112,7 @@ export async function saveArchivedCombat(record) {
   const existing = getArchivedCombats();
   const updated = [record, ...existing.filter(e => e.id !== record.id)];
   if (!globalThis.game?.user || globalThis.game.user.isGM !== false) {
-    await globalThis.game.settings.set(SYSTEM_ID, 'archivedCombats', updated);
+    await globalThis.game.settings.set(SYSTEM_ID, ARCHIVED_COMBATS_SETTING, updated);
   }
   return updated;
 }
@@ -124,7 +127,7 @@ export async function deleteArchivedCombat(id) {
   const existing = getArchivedCombats();
   const updated = existing.filter(e => e.id !== id);
   if (!globalThis.game?.user || globalThis.game.user.isGM !== false) {
-    await globalThis.game.settings.set(SYSTEM_ID, 'archivedCombats', updated);
+    await globalThis.game.settings.set(SYSTEM_ID, ARCHIVED_COMBATS_SETTING, updated);
   }
   return updated;
 }
@@ -136,7 +139,7 @@ export async function deleteArchivedCombat(id) {
 export async function clearArchivedCombats() {
   if (!globalThis.game?.settings) return [];
   if (!globalThis.game?.user || globalThis.game.user.isGM !== false) {
-    await globalThis.game.settings.set(SYSTEM_ID, 'archivedCombats', []);
+    await globalThis.game.settings.set(SYSTEM_ID, ARCHIVED_COMBATS_SETTING, []);
   }
   return [];
 }

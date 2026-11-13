@@ -4,6 +4,19 @@
 
 import { itemIdentifier, slugifyIdentifier } from '../../utils/identifier.mjs';
 import { carrySourceStamp, landItems } from '../../utils/content-source.mjs';
+import { effectiveFloor, raceClassUnlockFloor } from '../../utils/character/race-class-floor.mjs';
+import { untrainedTrainingAllowance } from '../../utils/skill/skill-advancement.mjs';
+import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { ADVANCEMENT_ROUTES } from '../../utils/skill/advancement-routes.mjs';
+import { confirmRouteGain } from '../actor/advancement-gates.mjs';
+
+/** The catalog skill with this identifier, or undefined. */
+const canonicalSkill = (ident) => (CONFIG?.COG?.skills || []).find(s => itemIdentifier(s) === ident);
+
+const UNTRAINED_BREAK_TEXT = {
+  window: '{actor} already gained a Skill from untrained attempts this session. Train {skill} anyway as a Rule Break?',
+  floor: 'Untrained use teaches no new Skills from the Third Floor. Train {skill} for {actor} anyway as a Rule Break?'
+};
 
 export const sessionProgressionMixin = {
   /**
@@ -57,30 +70,65 @@ export const sessionProgressionMixin = {
   },
 
   /**
-   * Promote an untrained skill to Rank 1 on a crawler actor document
+   * Promote an untrained skill to Rank 1 on a crawler actor document. Rules for Survival, Checks Without Skill
+   * Ranks: one Skill per session on the Tutorial Floors, none from the Third Floor. Going past either asks a Rule
+   * Break (a decline trains nothing). Training one erases the crawler's other untrained entries for the session.
    * @param {string} actorId
    * @param {string} skillIdentifier The ledger event's `skillIdentifier` (matched against the actor's skill `system.identifier`)
    * @param {string} [skillName] Display name, used only for the result and a newly made skill
+   * @param {object} [options] `ruleBreak: true` pre-confirms the prompt; `interactive: false` refuses instead of asking
    * @returns {Promise<object>}
    */
-  async trainUntrainedSkill(actorId, skillIdentifier, skillName = '') {
+  async trainUntrainedSkill(actorId, skillIdentifier, skillName = '', options = {}) {
     const actor = this._getActor(actorId);
     if (!actor) return { success: false, error: 'Actor not found' };
 
     const ident = String(skillIdentifier ?? '').trim();
     skillName = String(skillName || '').trim() || ident;
-    const existing = ident ? actor.items?.find(i => i.type === 'skill' && i.system?.identifier === ident) : null;
 
+    const sessions = this.getAllSessions();
+    const session = sessions.find(s => s.id === (options.sessionId ?? this.getActiveSessionId())) ?? null;
+    const record = session?.crawlers?.[actor.id] ?? null;
+    const allowance = untrainedTrainingAllowance({
+      floor: effectiveFloor(actor),
+      unlockFloor: raceClassUnlockFloor(),
+      trained: record?.untrainedTrained
+    });
+    let ruleBreak = false;
+    if (!allowance.allowed) {
+      const text = UNTRAINED_BREAK_TEXT[allowance.reason].replace('{actor}', actor.name).replace('{skill}', skillName);
+      const res = await confirmRuleBreak({ title: 'Untrained Skill Limit', message: text, reason: text, options });
+      if (!res.confirmed) return { success: false, actorName: actor.name, skillName, error: 'Rule Break declined', ruleBreak: false };
+      ruleBreak = true;
+    }
+
+    const existing = ident ? actor.items?.find(i => i.type === 'skill' && i.system?.identifier === ident) : null;
+    let res;
     if (existing) {
-      // Same outcome as a passed Rank check, so the Rank cap and canGainRanks apply.
-      const gain = await actor.applyRankGain(existing, { source: 'untrained' });
+      // Same outcome as a passed Rank check, so the Rank cap and the skill's use-route limit apply.
+      const previousRank = Number(existing.system?.rank) || 0;
+      const gain = await actor.applyRankGain(existing, { source: 'untrained', options });
       if (!gain.gained) {
         return { success: false, actorName: actor.name, skillName, newRank: gain.newRank, error: 'Rank gain declined', ruleBreak: false };
       }
-      return { success: true, actorName: actor.name, skillName, newRank: gain.newRank, ruleBreak: gain.ruleBreak };
+      res = { success: true, actorName: actor.name, skillName, skillId: existing.id, previousRank, newRank: gain.newRank, ruleBreak: ruleBreak || gain.ruleBreak };
+    } else {
+      // A skill not owned yet: its catalog entry's use limit (a magic-only skill is learned through a Race, Class or item) asks before it is created
+      const entry = canonicalSkill(ident);
+      const gate = await confirmRouteGain(actor, { name: entry?.name ?? skillName, system: { rank: 0, rankLimits: entry?.system?.rankLimits } }, ADVANCEMENT_ROUTES.use, { options, verb: 'Train', title: 'Skill Does Not Advance This Way' });
+      if (!gate.ok) return { success: false, actorName: actor.name, skillName, error: 'Rank gain declined', ruleBreak: false };
+      res = { ...(await this.createRankOneSkill(actor, skillName, ident)), previousRank: 0, ruleBreak: ruleBreak || gate.ruleBreak };
     }
 
-    return this.createRankOneSkill(actor, skillName, ident);
+    // The session's window: count it and erase every untrained entry of this crawler (they cannot be saved).
+    if (record) {
+      record.untrainedTrained = (Number(record.untrainedTrained) || 0) + 1;
+      record.untrainedAttempted = {};
+      record.untrainedNames = {};
+      this._recomputeSessionSummaries(session);
+      await this.saveAllSessions(sessions);
+    }
+    return res;
   },
 
   /**
@@ -94,7 +142,7 @@ export const sessionProgressionMixin = {
    */
   async createRankOneSkill(actor, skillName, skillIdentifier = '') {
     const ident = String(skillIdentifier ?? '').trim() || slugifyIdentifier(skillName);
-    const canonical = (CONFIG?.COG?.skills || []).find(s => itemIdentifier(s) === ident);
+    const canonical = canonicalSkill(ident);
     if (canonical) {
       await actor.createEmbeddedDocuments('Item', landItems([carrySourceStamp({
         name: canonical.name,

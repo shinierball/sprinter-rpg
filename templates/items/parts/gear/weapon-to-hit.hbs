@@ -1,0 +1,16 @@
+{{!-- To-hit: the stat the attack rolls with, and the Rank it uses when no Skill applies. --}}
+<div class="cog-field-row" data-weapon-to-hit>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.GearSheet.ToHit.Stat"}}</span>
+    <select name="system.toHitStat" class="cog-field-input">
+      {{#each toHitStatOptions as |opt|}}
+        <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+      {{/each}}
+    </select>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.GearSheet.ToHit.Rank"}}</span>
+    <input class="cog-field-input" type="number" min="0" name="system.toHitRank" value="{{system.toHitRank}}" />
+    <small class="cog-text-muted">{{localize "COG.GearSheet.ToHit.RankHint"}}</small>
+  </div>
+</div>

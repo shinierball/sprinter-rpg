@@ -10,9 +10,9 @@ import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { workingGear } from '../../utils/effects/gear-suppression.mjs';
 import { droppedTickText } from '../../utils/roll/ticked-subject.mjs';
 import { buildRollContext, actionTagsOf, roleTagsOf, parseRollContext, retargetContext, serializeRollContext } from '../../utils/roll/roll-context.mjs';
-import { resolveTargetParts, resolveApplyRows, breakdownLines, multiplierOf } from '../../utils/damage/per-target-damage.mjs';
+import { resolveTargetParts, resolveApplyRows, breakdownLines, multiplierOf, critAmountOf } from '../../utils/damage/per-target-damage.mjs';
 import { clickTargetsOf } from '../../utils/roll/scalars.mjs';
-import { damageTypeToElement, normalizeElementTag } from '../../data/tag-vocabulary.mjs';
+import { damageTypeToElement, ENGINE_SITUATIONS, normalizeElementTag } from '../../data/tag-vocabulary.mjs';
 import { amazingNames } from '../../utils/roll/amazing-success.mjs';
 
 /**
@@ -70,9 +70,10 @@ export function hitFactors({ multiplier, evade, amazing, isCrit, slotLoss }) {
  * @param {Array<object>|null} params.targetRows the card's snapshotted target rows
  * @param {Array<object>|null} params.clickTargets the click's batch
  * @param {Array<object>|null} params.parts the damage card's per-part amounts
+ * @param {boolean} [params.intercepting] the target caught this hit for an ally (Catcher): its defence context says so
  * @returns {{ card: object|null, retargeted: object|null, stageA: object, attackTags: string[], defenseContext: object }}
  */
-export function targetDamageContexts({ targetActor, attackerActor, rollContext, isCrit, amazingOn, targetRows, clickTargets, parts }) {
+export function targetDamageContexts({ targetActor, attackerActor, rollContext, isCrit, amazingOn, targetRows, clickTargets, parts, intercepting = false }) {
   // Defense rows are judged against one `defense` context per target: `self.*` is the target, `attacker.*` the one
   // hitting it, and the unprefixed tags are the attack's own.
   const card = rollContext ? parseRollContext(rollContext) : null;
@@ -97,7 +98,7 @@ export function targetDamageContexts({ targetActor, attackerActor, rollContext, 
   const defenseContext = buildRollContext({
     actor: targetActor,
     phase: 'defense',
-    tags: attackTags,
+    tags: intercepting ? [...attackTags, ENGINE_SITUATIONS.intercepting] : attackTags,
     other: attackerActor ?? null,
     otherRole: 'attacker',
     otherTags: attackerActor ? undefined : roleTagsOf(card, 'self')
@@ -108,28 +109,25 @@ export function targetDamageContexts({ targetActor, attackerActor, rollContext, 
 /**
  * The damage per type: the card's parts summed per type, else the typed-damage dictionary, else one legacy amount. Slot mode has none.
  * @param {object} params
- * @param {Array<{type?: string, amount?: number, exempt?: boolean}>} params.parts Stage A's resolved parts
+ * @param {Array<{type?: string, amount?: number}>} params.parts Stage A's resolved parts
  * @param {boolean} params.slotMode
  * @param {object|null} params.typedDamage
  * @param {string} params.damageType
  * @param {number} params.rawDamage
- * @returns {{ damageBuckets: Record<string, number>, exemptBuckets: Record<string, number> }}
+ * @returns {{ damageBuckets: Record<string, number> }}
  */
 export function damageBucketsFor({ parts, slotMode, typedDamage, damageType, rawDamage }) {
   const partBuckets = {};
-  const exemptBuckets = {}; // the part of a bucket a Critical Hit multiplier never scales (the Rank damage die)
   for (const part of parts) {
     const type = String(part?.type || 'Physical');
-    const amount = Number(part?.amount) || 0;
-    partBuckets[type] = (partBuckets[type] || 0) + amount;
-    if (part?.exempt) exemptBuckets[type] = (exemptBuckets[type] || 0) + amount;
+    partBuckets[type] = (partBuckets[type] || 0) + (Number(part?.amount) || 0);
   }
   const damageBuckets = slotMode ? {} : Object.keys(partBuckets).length > 0
     ? partBuckets
     : typedDamage && typeof typedDamage === 'object'
       ? { ...typedDamage }
       : (damageType ? { [damageType]: Number(rawDamage) || 0 } : { 'Physical': Number(rawDamage) || 0 });
-  return { damageBuckets, exemptBuckets };
+  return { damageBuckets };
 }
 
 /**
@@ -137,21 +135,19 @@ export function damageBucketsFor({ parts, slotMode, typedDamage, damageType, raw
  * @param {Actor} targetActor
  * @param {object} params
  * @param {Record<string, number>} params.damageBuckets
- * @param {Record<string, number>} params.exemptBuckets
  * @param {object} params.factors `hitFactors` output
  * @param {object} params.defenseContext
  * @returns {{ entries: object[], conditionalDr: number, anyImmune: boolean, anyResistant: boolean, floorImmune: boolean, amazingImmune: boolean }}
  */
-export function typeEntriesFor(targetActor, { damageBuckets, exemptBuckets, factors, defenseContext }) {
+export function typeEntriesFor(targetActor, { damageBuckets, factors, defenseContext }) {
   const { mult, evadeMult, evadeDouble, evadeFloorBonus, amazingFloor } = factors;
   let anyImmune = false;
   let anyResistant = false;
   let conditionalDr = 0;
+  const healthBar = { factor: 1, source: '' };
   const entries = [];
   for (const [dt, rawAmt] of Object.entries(damageBuckets)) {
-    // An exempt amount is only ever reduced (Half), never raised, by the multiplier
-    const exemptAmt = Math.min(Number(exemptBuckets[dt]) || 0, Number(rawAmt) || 0);
-    const scaled = Math.max(0, Math.floor((((Number(rawAmt) || 0) - exemptAmt) * mult + exemptAmt * Math.min(mult, 1)) * evadeMult));
+    const scaled = Math.max(0, Math.floor((Number(rawAmt) || 0) * mult * evadeMult));
     const initialAmt = scaled * evadeDouble;
     const entry = { dt, initialAmt, isImmune: false, isResistant: false, vulnerable: false, suppressDr: false, sources: [], percent: 0, flat: 0, rounding: 'up', legacyHalf: false };
     if (typeof targetActor.getDamageReduction === 'function') {
@@ -165,6 +161,7 @@ export function typeEntriesFor(targetActor, { damageBuckets, exemptBuckets, fact
       entry.percent = Number(red.percent) || 0;
       entry.flat = Number(red.flat) || 0;
       entry.rounding = red.rounding;
+      if ((Number(red.hbFactor) || 1) > healthBar.factor) Object.assign(healthBar, { factor: Number(red.hbFactor), source: red.hbSource || '' });
     } else if (typeof targetActor.hasImmunity === 'function' && targetActor.hasImmunity(dt)) {
       entry.isImmune = true;
     } else if (typeof targetActor.hasResistance === 'function' && targetActor.hasResistance(dt)) {
@@ -182,7 +179,7 @@ export function typeEntriesFor(targetActor, { damageBuckets, exemptBuckets, fact
   if (floorEntry) floorEntry.initialAmt += evadeFloorBonus + amazingFloor;
   const floorImmune = evadeFloorBonus > 0 && !floorEntry;
   const amazingImmune = amazingFloor > 0 && !floorEntry;
-  return { entries, conditionalDr, anyImmune, anyResistant, floorImmune, amazingImmune };
+  return { entries, conditionalDr, anyImmune, anyResistant, floorImmune, amazingImmune, healthBar };
 }
 
 /**
@@ -409,16 +406,17 @@ export function hpPoolUpdates(targetActor, pools, before) {
  * @param {object} p
  * @returns {{ damagePartsApplied: object[], amazingRecord: object|null, lines: object[], evadeRecord: object|null, perTargetContext: object|null }}
  */
-export function perTargetRecord({ stageA, card, retargeted, factors, isCrit, typeBreakdown, dr, ignoreDR, antiPiercingDr, interruptDr, extraDrLabel, evade, amazing, floorImmune, amazingImmune, damageBuckets }) {
+export function perTargetRecord({ stageA, card, retargeted, factors, isCrit, typeBreakdown, dr, ignoreDR, antiPiercingDr, interruptDr, extraDrLabel, evade, amazing, floorImmune, amazingImmune, damageBuckets, healthBar = null }) {
   const { mult, evadeDouble, amazingOn, amazingFloor, slotMode, slotsToLose } = factors;
   const damagePartsApplied = Object.entries(damageBuckets).map(([type, amount]) => ({ type, amount: Number(amount) || 0 }));
   const amazingRecord = amazingOn ? { floorBonus: amazingFloor, immune: amazingImmune } : null;
   const lines = breakdownLines({
-    stageA, multiplier: mult, isCrit: Boolean(isCrit), typeBreakdown, dr, ignoreDR: ignoreDR && !antiPiercingDr,
+    stageA, multiplier: mult, isCrit: Boolean(isCrit), critAmount: critAmountOf(stageA.parts), typeBreakdown, dr, ignoreDR: ignoreDR && !antiPiercingDr,
     evade: evade && floorImmune ? { ...evade, floorImmune: true } : evade,
     amazing: amazingOn ? { ...amazingRecord, triggers: amazing.triggers, found: amazingNames(amazing.triggers) } : null
   });
   if (interruptDr > 0) lines.push({ stage: 'dr', text: `+${interruptDr} DR${extraDrLabel ? ` (${String(extraDrLabel).slice(0, 40)})` : ''}` });
+  if (healthBar && healthBar.factor > 1 && !slotMode) lines.push({ stage: 'dr', text: `Health Bars ×${healthBar.factor}${healthBar.source ? ` (${String(healthBar.source).slice(0, 40)})` : ''}` });
   if (slotMode) lines.push({ stage: 'crit', text: `Lost ${slotsToLose} Health Bar slot${slotsToLose === 1 ? '' : 's'}` });
   const evadeRecord = evade ? { messageId: evade.messageId ?? null, outcome: evade.outcome, multiplier: evade.multiplier, floorBonus: evadeDouble === 2 ? 0 : Number(evade.floorBonus) || 0, double: evade.double === true, ignored: Boolean(evade.ignored), rolls: evade.rolls ?? 1 } : null;
   // This target's context: its subject.* tags, the button's crit, and the rows that went into its numbers (frozen

@@ -1,6 +1,6 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
-import { aiFavorRatingsField, asTriggersField } from '../fields/modifier-fields.mjs';
-import { damagePartField, onHitField, contestField, interruptSchemaField, areaSchemaField } from '../fields/effect-fields.mjs';
+import { aiFavorRatingsField, asTriggersField, damageModifiersField } from '../fields/modifier-fields.mjs';
+import { baseDamageField, onHitField, contestField, interruptSchemaField, areaSchemaField } from '../fields/effect-fields.mjs';
 import { cooldownField, useRecordsField } from '../fields/timing-fields.mjs';
 
 /**
@@ -17,21 +17,17 @@ export class AttackDataModel extends BaseItemDataModel {
         choices: ['one_handed', 'two_handed', 'two_handed_disadv_1h']
       }),
       wieldedOneHanded: new fields.BooleanField({ initial: false }),
-      weaponCategory: new fields.StringField({ initial: '' }),
-      weaponType: new fields.StringField({ initial: '' }),
       associatedSkills: new fields.ArrayField(new fields.StringField(), { initial: [] }),
       requires: new fields.ArrayField(new fields.StringField(), { initial: [] }),
-      proficiencyMode: new fields.StringField({
-        initial: 'highest',
-        choices: ['highest', 'manual']
-      }),
-      selectedSkill: new fields.StringField({ initial: '' }),
       toHitStat: new fields.StringField({ initial: 'dex' }),
       toHitRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
-      damageParts: new fields.ArrayField(damagePartField(fields), { initial: [] }),
+      // Optional override of the chosen Skill's Base Damage: only the sub-fields it fills replace the Skill's
+      baseDamage: baseDamageField(fields),
+      // The attack's own bonus damage: `add` rows scoped to this attack (a flat bonus, bonus dice)
+      damageModifiers: damageModifiersField(fields),
       asTriggers: asTriggersField(fields),
       aiFavorRatings: aiFavorRatingsField(fields),
-      effects: new fields.HTMLField({ initial: '' }),
+      effects: new fields.StringField({ initial: '' }),
       critMultiplier: new fields.NumberField({ integer: true, min: 1, initial: 1 }),
       optionalEffects: new fields.ArrayField(new fields.StringField(), { initial: [] }),
       ignoreDR: new fields.BooleanField({ initial: false }),

@@ -1,0 +1,88 @@
+<div class="cog-item-words cog-draft-review">
+  <header class="cog-draft-review-head">
+    <span class="cog-draft-review-type">{{typeLabel}}</span>
+    <strong class="cog-draft-review-name">{{name}}</strong>
+  </header>
+
+  <section class="cog-draft-review-section">
+    <h3>{{labels.does}}</h3>
+    <ul class="cog-draft-review-lines">
+      {{#each lines}}<li>{{#if badge}}<span class="cog-draft-review-badge">[{{badge}}]</span> {{/if}}{{text}}</li>{{/each}}
+    </ul>
+  </section>
+
+  {{#if matched.length}}
+  <section class="cog-draft-review-section">
+    <h3>{{labels.matched}}</h3>
+    <ul class="cog-draft-review-lines">{{#each matched}}<li>{{this}}</li>{{/each}}</ul>
+  </section>
+  {{/if}}
+
+  {{#if unresolved.length}}
+  <section class="cog-draft-review-section">
+    <h3>{{labels.unresolved}}</h3>
+    <p class="cog-item-words-hint">{{labels.unresolvedHint}}</p>
+    {{#each unresolved}}
+    <div class="cog-draft-review-unresolved">
+      <span class="cog-draft-review-ref">{{kind}}: {{ref}}</span>
+      <select data-change-action="pickReference" data-index="{{index}}">
+        {{#each options}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      <button type="button" data-action="noteReference" data-index="{{index}}">{{../labels.note}}</button>
+    </div>
+    {{/each}}
+  </section>
+  {{/if}}
+
+  {{#if findings.length}}
+  <section class="cog-draft-review-section">
+    <h3>{{labels.findings}}</h3>
+    <p class="cog-item-words-hint">{{labels.findingsHint}}</p>
+    {{#each findings}}
+    <p class="cog-item-words-notice{{#if broken}} is-warn{{/if}}">{{label}}</p>
+    <ul class="cog-draft-review-lines">{{#each items}}<li>{{this}}</li>{{/each}}</ul>
+    {{/each}}
+  </section>
+  {{/if}}
+
+  {{#if warnings.length}}
+  <section class="cog-draft-review-section">
+    <h3>{{labels.warnings}}</h3>
+    <ul class="cog-draft-review-lines">{{#each warnings}}<li>{{this}}</li>{{/each}}</ul>
+  </section>
+  {{/if}}
+
+  {{#if dropped.length}}
+  <section class="cog-draft-review-section">
+    <h3>{{labels.dropped}}</h3>
+    <ul class="cog-draft-review-lines">{{#each dropped}}<li>{{this}}</li>{{/each}}</ul>
+  </section>
+  {{/if}}
+
+  {{#if unexpressed.length}}
+  <section class="cog-draft-review-section">
+    <h3>{{labels.unexpressed}}</h3>
+    <ul class="cog-draft-review-lines">{{#each unexpressed}}<li>{{this}}</li>{{/each}}</ul>
+    <label class="cog-draft-review-keep"><input type="checkbox" data-action="toggleNotes" {{#if keepNotes}}checked{{/if}}> {{labels.keepNotes}}</label>
+  </section>
+  {{/if}}
+
+  <section class="cog-draft-review-section">
+    <h3>{{labels.authorship}}</h3>
+    <div class="cog-authorship-choices" role="radiogroup">
+      {{#each authorship}}
+      <label class="cog-authorship-choice{{#if checked}} is-checked{{/if}}">
+        <input type="radio" data-action="setAuthorship" data-authorship="{{id}}" {{#if checked}}checked{{/if}}>
+        <i class="{{icon}}"></i>
+        <span>{{label}}</span>
+      </label>
+      {{/each}}
+    </div>
+    {{#if hiddenNote}}<p class="cog-item-words-notice is-warn">{{labels.hidden}}</p>{{/if}}
+  </section>
+
+  <footer class="cog-item-words-footer">
+    <button type="button" data-action="createDraftItem"><i class="fa-solid fa-check"></i> {{labels.create}}</button>
+    <button type="button" data-action="backToBridge">{{labels.back}}</button>
+  </footer>
+</div>

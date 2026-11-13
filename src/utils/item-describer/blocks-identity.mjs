@@ -8,6 +8,7 @@ import { isFloorRanked } from '../skill/rank-source.mjs';
 import { sanitizeSizeId, sizeText } from '../../data/sizes.mjs';
 import { ARCHETYPE_TO_TAG } from '../../data/tag-vocabulary.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { isRaceOrClass } from '../document-types.mjs';
 
 const K = 'COG.ItemSummary.Identity.';
 
@@ -38,7 +39,7 @@ const rankFloor = {
 const archetypes = {
   id: 'archetypes',
   group: 'other',
-  applies: (item) => item?.type === 'race' || item?.type === 'class',
+  applies: isRaceOrClass,
   describe(item) {
     const list = Array.isArray(sysOf(item).archetypes) ? sysOf(item).archetypes : [];
     const names = [];

@@ -14,7 +14,7 @@
 import { getTagDefinition } from '../tag-definitions.mjs';
 import { splitRoleTag } from '../tag-vocabulary.mjs';
 import { sanitizeLootBox, sanitizeRewardBoxes } from '../loot-box-rows.mjs';
-import { grantRowErrors, GRANTED_EFFECT_TYPES } from '../../models/items/grant-validation.mjs';
+import { grantRowErrors } from '../../models/items/grant-validation.mjs';
 import { normalizeItemSystemData, RUNTIME_ONLY_SYSTEM_KEYS } from '../../models/items/base-item-model.mjs';
 import { fillEnchantmentTemplateIds } from '../../utils/loot/outcome-defaults.mjs';
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
@@ -23,12 +23,17 @@ import { normalizeTransform } from '../../utils/character/transform-rules.mjs';
 import { isRedacted, placeholderName, placeholderBase } from '../../sourcery/redacted.mjs';
 import { buildRollTablePayload } from './rolltable-payload.mjs';
 import { buildJournalPayload } from './journal-payload.mjs';
+import { normalizeDeitySystem } from './deity-payload.mjs';
+import { normalizePatronSystem } from './patron-payload.mjs';
+import { normalizeActivation } from './activation-payload.mjs';
 import { applyTokenDefaults, TOKEN_DEFAULTS } from '../token-defaults.mjs';
 import { readSourceStamp, stampSpec } from '../../utils/content-source.mjs';
+import { checkItem } from '../../utils/item-check/check-item.mjs';
+import { EFFECT_ITEM_TYPES, RACE_CLASS_TYPES, RANKED_ITEM_TYPES } from '../../utils/document-types.mjs';
 
 /** Item document types the builder knows. */
 export const PAYLOAD_ITEM_TYPES = Object.freeze([
-  'skill', 'spell', 'attack', 'gear', 'buff', 'debuff', 'loot', 'achievement', 'race', 'class', 'deity', 'sponsor', 'space_upgrade'
+  'skill', 'spell', 'attack', 'gear', 'buff', 'debuff', 'loot', 'achievement', 'race', 'class', 'deity', 'patron', 'sponsor', 'space_upgrade'
 ]);
 
 /** Actor document types the builder knows. */
@@ -50,6 +55,7 @@ export const DEFAULT_NAMES = Object.freeze({
   loot: 'New Consumable Item',
   achievement: 'New Achievement',
   deity: 'New Deity',
+  patron: 'New Patron',
   sponsor: 'New Sponsor',
   space_upgrade: 'New Space Upgrade',
   crawler: 'New Crawler',
@@ -76,6 +82,7 @@ export const DEFAULT_ICONS = Object.freeze({
   loot: 'icons/svg/item-bag.svg',
   achievement: 'icons/svg/levels.svg',
   deity: 'icons/svg/sun.svg',
+  patron: 'icons/svg/mystery-man.svg',
   sponsor: 'icons/svg/coins.svg',
   space_upgrade: 'icons/svg/upgrade.svg',
   crawler: 'icons/svg/mystery-man.svg',
@@ -89,7 +96,7 @@ export const DEFAULT_ICONS = Object.freeze({
 });
 
 /** Keys whose value is a TagQuery ({ all, any, none }). */
-const TAG_QUERY_KEYS = new Set(['condition', 'query', 'appliesToQuery', 'allowedSkillTags', 'requires', 'where']);
+const TAG_QUERY_KEYS = new Set(['condition', 'query', 'appliesToQuery', 'allowedSkillTags', 'where']);
 
 /** Budget builders by type, filled by the builder modules themselves (they cannot be imported without Foundry). */
 const delegates = new Map();
@@ -114,10 +121,14 @@ function isPlainObject(v) {
 }
 
 /** Types whose spec carries a `system` overlay over the budget builder's result. */
-const OVERLAY_TYPES = new Set(['race', 'class']);
+const OVERLAY_TYPES = new Set(RACE_CLASS_TYPES);
 
-/** Types whose `system.grantedEffects[]` is compiled entry by entry. */
-const GRANTED_EFFECT_OWNERS = new Set(['race', 'class']);
+/** Types whose granted-effect lists are compiled entry by entry, and the `system` keys that hold them. */
+const GRANTED_EFFECT_OWNERS = Object.freeze({
+  race: ['grantedEffects'],
+  class: ['grantedEffects'],
+  deity: ['signatureEffects', 'tierEffects']
+});
 
 /**
  * Deep-merge a spec's `system` overlay over a budget builder's `system` (3.32). The overlay wins; plain objects merge key
@@ -141,7 +152,7 @@ function mergeOverlay(base, overlay) {
  * @param {object} system the payload's `system`, filled in place
  */
 function applyTypeDefaults(docType, system) {
-  if (docType === 'buff' || docType === 'debuff') {
+  if (EFFECT_ITEM_TYPES.includes(docType)) {
     if (typeof system.damageType !== 'string') system.damageType = '';
     if (typeof system.duration !== 'string') system.duration = docType === 'buff' ? '1 Hour' : 'Combat';
     if (docType === 'debuff' && typeof system.severity !== 'string') system.severity = 'Minor';
@@ -193,8 +204,10 @@ function isKnownTag(tag) {
  * @param {object} [spec] partial payload `{ _id?, name?, img?, system?, flags?, items?, folder? }`; budget types take their builder's spec.
  *   A `race` or `class` spec is the point-buy spec plus an optional `system` overlay, deep-merged over the builder's result
  *   (the overlay wins; arrays replace), so a canonical entry the builder cannot express (rows) still compiles.
- * @param {{ warnings?: Array<{path: string, message: string, code: string}>, delegate?: boolean, dataModel?: boolean, normalize?: boolean }} [options]
- *   `warnings`, when an array, collects `{ path, message, code }` (code: tag, grant, type, schema, spec). `delegate: false` treats the spec as a ready payload even
+ * @param {{ warnings?: Array<{path: string, message: string, code: string}>, delegate?: boolean, dataModel?: boolean, normalize?: boolean, check?: boolean|object }} [options]
+ *   `warnings`, when an array, collects `{ path, message, code }` (code: tag, grant, type, schema, spec; `check` for a completeness finding, which also carries `severity` and `finding`).
+ *   `check` (true, or `{ resolve, tags }` for `checkItem`) runs the item completeness check on every item document built, embedded ones included, and appends its findings to `warnings`.
+ *   `delegate: false` treats the spec as a ready payload even
  *   for a budget type (bundled datasets are payloads, not builder specs). `dataModel: false` skips the cleanData pass.
  *   `normalize: false` also skips identifier, crit and row defaults (name, icon and tag checks always run); a caller that
  *   needs a spec's literal output (the 3.32 golden test) uses it. `nested: true` (set for embedded items and granted
@@ -206,6 +219,11 @@ export function buildPayload(type, spec = {}, options = {}) {
   const warn = (path, message, code = 'spec') => {
     if (warnings) warnings.push({ path, message, code });
     else console.warn(`Sprinter RPG | ${path}: ${message}`);
+  };
+  // A warning raised by a nested build (an embedded item, a granted effect), re-raised under its parent's path with every field kept.
+  const rewarn = (prefix, w) => {
+    if (warnings) warnings.push({ ...w, path: `${prefix}.${w.path}` });
+    else console.warn(`Sprinter RPG | ${prefix}.${w.path}: ${w.message}`);
   };
   const input = isPlainObject(spec) ? spec : {};
 
@@ -284,7 +302,7 @@ export function buildPayload(type, spec = {}, options = {}) {
       if (!system.slot) system.slot = 'hands';
       if (system.critMultiplier === undefined) system.critMultiplier = 1;
     }
-    if (docType === 'skill' || docType === 'spell') {
+    if (RANKED_ITEM_TYPES.includes(docType)) {
       if (system.critMultiplierR5 === undefined) system.critMultiplierR5 = 1;
       if (system.critMultiplierR15 === undefined) system.critMultiplierR15 = 1;
     }
@@ -309,8 +327,12 @@ export function buildPayload(type, spec = {}, options = {}) {
 
   // Granted effects leave `system` here so the outer tag walk and row pass do not see them: the nested
   // buildPayload below checks their tags once. They go back before the DataModel clean (step 8).
-  const grantedEffectsIn = GRANTED_EFFECT_OWNERS.has(docType) && Array.isArray(system.grantedEffects) ? system.grantedEffects : null;
-  if (grantedEffectsIn) delete system.grantedEffects;
+  if (docType === 'deity' && normalize) normalizeDeitySystem(system, warn);
+  if (docType === 'patron' && normalize) normalizePatronSystem(system, warn);
+  if (docType === 'buff' && normalize) normalizeActivation(system, warn);
+  const grantedEffectKeys = (GRANTED_EFFECT_OWNERS[docType] ?? []).filter((key) => Array.isArray(system[key]));
+  const grantedEffectsIn = Object.fromEntries(grantedEffectKeys.map((key) => [key, system[key]]));
+  for (const key of grantedEffectKeys) delete system[key];
 
   // 6. Tags: every tag and every tag inside a TagQuery must be registered (role prefixes wrap a registered tag).
   const seen = new Set();
@@ -345,17 +367,18 @@ export function buildPayload(type, spec = {}, options = {}) {
     });
   }
 
-  if (grantedEffectsIn) {
-    system.grantedEffects = [];
-    grantedEffectsIn.forEach((entry, i) => {
-      if (!isPlainObject(entry) || !GRANTED_EFFECT_TYPES.includes(entry.type)) {
-        warn(`system.grantedEffects[${i}]`, `a granted effect must be a buff or a debuff, not "${isPlainObject(entry) ? entry.type : typeof entry}"`, 'grant');
+  for (const [key, entries] of Object.entries(grantedEffectsIn)) {
+    system[key] = [];
+    entries.forEach((entry, i) => {
+      if (!isPlainObject(entry) || !EFFECT_ITEM_TYPES.includes(entry.type)) {
+        warn(`system.${key}[${i}]`, `a granted effect must be a buff or a debuff, not "${isPlainObject(entry) ? entry.type : typeof entry}"`, 'grant');
         return;
       }
       const inner = [];
-      const built = buildPayload(entry.type, entry, { warnings: inner, delegate: false, dataModel: options?.dataModel, normalize: options?.normalize, nested: true });
-      for (const w of inner) warn(`grantedEffects[${i}].${w.path}`, w.message, w.code);
-      system.grantedEffects.push({ type: built.type, name: built.name, img: built.img, system: built.system });
+      const built = buildPayload(entry.type, entry, { warnings: inner, delegate: false, dataModel: options?.dataModel, normalize: options?.normalize, nested: true, check: options?.check });
+      for (const w of inner) rewarn(`${key}[${i}]`, w);
+      // A deity's tier effect keeps the worship tier it belongs to.
+      system[key].push({ type: built.type, name: built.name, img: built.img, system: built.system, ...(entry.tier !== undefined ? { tier: entry.tier } : {}) });
     });
   }
 
@@ -377,13 +400,23 @@ export function buildPayload(type, spec = {}, options = {}) {
     payload.system = system;
   }
 
+  // Opt-in completeness check (the item-check engine): each finding joins the warnings as `{ path, message, code: 'check', severity, finding }`.
+  // An unknown tag was already warned in step 6, so its finding is not repeated.
+  if (options?.check && warnings && !isActor) {
+    const context = isPlainObject(options.check) ? options.check : {};
+    for (const found of checkItem(payload, context)) {
+      if (found.code === 'tag.unknown') continue;
+      warnings.push({ path: found.path, message: `${found.code} ${JSON.stringify(found.data)}`, code: 'check', severity: found.severity, finding: found });
+    }
+  }
+
   // Embedded items on a spec are normalised the same way (a delegate's own items too: they go through the same validation).
   if (Array.isArray(payload.items)) {
     payload.items = payload.items.map((item, i) => {
       if (!isPlainObject(item)) return item;
       const inner = [];
-      const built = buildPayload(item.type, item, { warnings: inner, delegate: false, dataModel: options?.dataModel, normalize: options?.normalize, nested: true });
-      for (const w of inner) warn(`items[${i}].${w.path}`, w.message, w.code);
+      const built = buildPayload(item.type, item, { warnings: inner, delegate: false, dataModel: options?.dataModel, normalize: options?.normalize, nested: true, check: options?.check });
+      for (const w of inner) rewarn(`items[${i}]`, w);
       return built;
     });
   }
@@ -395,7 +428,7 @@ export function buildPayload(type, spec = {}, options = {}) {
  * Compile a list of specs (each `{ type, ... }`) into payloads. `strict` turns any warning into a thrown Error naming
  * every problem (used by build:packs); otherwise warnings are returned in `options.warnings` or logged.
  * @param {object[]} specs
- * @param {{ strict?: boolean, warnings?: Array, delegate?: boolean, dataModel?: boolean, normalize?: boolean, buildOptions?: (spec: object) => object }} [options] see `buildPayload` for the delegate, dataModel and normalize; `buildOptions` gives the extra options one spec is built with (a crawler's floor tables and Race and Class definitions)
+ * @param {{ strict?: boolean, warnings?: Array, delegate?: boolean, dataModel?: boolean, normalize?: boolean, buildOptions?: (spec: object) => object, check?: boolean|object }} [options] see `buildPayload` for the delegate, dataModel, normalize and check; `buildOptions` gives the extra options one spec is built with (a crawler's floor tables and Race and Class definitions)
  * @returns {object[]} payloads in order
  */
 export function compileSpecs(specs, options = {}) {
@@ -403,7 +436,7 @@ export function compileSpecs(specs, options = {}) {
   const out = [];
   for (const [i, spec] of (Array.isArray(specs) ? specs : []).entries()) {
     const own = [];
-    const built = buildPayload(spec?.type, spec, { warnings: own, delegate: options.delegate, dataModel: options.dataModel, normalize: options.normalize, ...(options.buildOptions?.(spec) ?? {}) });
+    const built = buildPayload(spec?.type, spec, { warnings: own, delegate: options.delegate, dataModel: options.dataModel, normalize: options.normalize, check: options.check, ...(options.buildOptions?.(spec) ?? {}) });
     const label = `${spec?.name ?? `#${i}`}`;
     for (const w of own) collected.push({ ...w, path: `${label}: ${w.path}` });
     // The source stamp of the spec (7.7c) survives a builder that rebuilds `flags` (mobs, crawlers, spaces), on the
@@ -426,5 +459,5 @@ export function compileSpecs(specs, options = {}) {
  * @returns {object[]}
  */
 export function compilePackSpecs(entry, options = {}) {
-  return compileSpecs(entry?.specs, { ...options, delegate: entry?.delegate ?? options.delegate, dataModel: entry?.dataModel ?? options.dataModel, normalize: entry?.normalize ?? options.normalize, buildOptions: entry?.buildOptions ?? options.buildOptions });
+  return compileSpecs(entry?.specs, { ...options, delegate: entry?.delegate ?? options.delegate, dataModel: entry?.dataModel ?? options.dataModel, normalize: entry?.normalize ?? options.normalize, buildOptions: entry?.buildOptions ?? options.buildOptions, check: options.check });
 }

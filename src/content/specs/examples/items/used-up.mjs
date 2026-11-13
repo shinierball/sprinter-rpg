@@ -16,7 +16,8 @@ export const SPECS = Object.freeze([
     system: {
       identifier: 'trivia-buzzer',
       description: '<p>A hand buzzer from a quiz show nobody finished. Press it and you feel smarter for one round. It does not run out, and it is not clear that it was ever plugged in.</p>',
-      slot: 'hands',
+      slot: 'accessory',
+      isWeapon: false,
       hasActivatedAbility: true,
       executionMode: 'all',
       // Reusable: using it never changes its quantity or spends anything.
@@ -33,7 +34,7 @@ export const SPECS = Object.freeze([
     img: 'icons/svg/aura.svg',
     system: {
       identifier: 'wand-of-mild-applause',
-      description: '<p>Three polite claps per charge. When the charges are gone it still works if the GM says so, and something in a back office can refill it.</p>',
+      description: '<p>Three polite claps per charge, each 1d4 Sonic damage. When the charges are gone it still works if the GM says so, and something in a back office can refill it.</p>',
       lootType: 'wand',
       quantity: 1,
       executionMode: 'all',

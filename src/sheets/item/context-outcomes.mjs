@@ -3,13 +3,36 @@
  * their total, and per-row select options (CONTRIBUTING §5).
  */
 
-import { statOptions } from '../../utils/ui/field-options.mjs';
+import { statOptions, pickOptions } from '../../utils/ui/field-options.mjs';
 import { identifierOptions, pickedBadge } from '../../utils/ui/identifier-options.mjs';
 import { rollsNoDamage } from '../../utils/damage/base-damage.mjs';
 import { outcomeWeight } from '../../utils/loot/outcome-weights.mjs';
-import { isScratchLootType } from '../../models/items/loot-model.mjs';
-import { ENCHANT_ITEM_OUTCOME, RESTORE_RESOURCES, outcomeRestore, outcomeTypeOptions } from '../../utils/loot/outcome-defaults.mjs';
+import { isScratchLootType, LOOT_TYPE_CHOICES } from '../../models/items/loot-model.mjs';
+import { ENCHANT_ITEM_OUTCOME, RESTORE_RESOURCES, OUTCOME_TARGET_TYPES, OUTCOME_EXECUTION_MODES, outcomeRestore, outcomeTypeOptions } from '../../utils/loot/outcome-defaults.mjs';
 import { buildBlueprintContext, buildEnchantmentLedgerContext, buildTemplateViews } from './context-blueprint.mjs';
+
+const TARGET_LABELS = Object.freeze({ self: 'Self', closest_mob: 'Closest Mob', target: 'Targeted Token' });
+const EXECUTION_MODE_LABELS = Object.freeze({ all: 'All Effects (Guaranteed Combo)', random: 'Weighted Random Outcome' });
+const labelled = (ids, labels) => ids.map((id) => ({ id, label: labels[id] ?? id }));
+
+/**
+ * The Target select of an outcome row: every {@link OUTCOME_TARGET_TYPES} entry, the stored one selected (a blank target reads as Self).
+ * @param {string} targetType the row's stored `targetType`
+ */
+function outcomeTargetOptions(targetType) {
+  return pickOptions(labelled(OUTCOME_TARGET_TYPES, TARGET_LABELS), targetType || 'self');
+}
+
+/**
+ * The Execution Mode select: every {@link OUTCOME_EXECUTION_MODES} entry. The loot sheet adds a leading blank "Default" choice
+ * (selected when no mode is stored); the gear sheet has none and shows the default mode, `all`, when blank.
+ * @param {string} mode the item's stored `executionMode`
+ * @param {{ blankLabel?: string|null }} [options]
+ */
+export function executionModeOptions(mode, { blankLabel = null } = {}) {
+  const entries = labelled(OUTCOME_EXECUTION_MODES, EXECUTION_MODE_LABELS);
+  return pickOptions(entries, blankLabel === null ? mode || OUTCOME_EXECUTION_MODES[0] : mode, { blankLabel });
+}
 
 /**
  * The table select of an `enchant_item` row: a blank first option, every table (selected by key, else by uuid; only the
@@ -99,8 +122,7 @@ export function buildOutcomesContext(context) {
     // A restore row: which pool, and whole-pool or a fixed amount (the executor's `outcomeRestore` reading)
     out.resourceOptions = RESTORE_RESOURCES.map((r) => ({ ...r, selected: r.value === String(out.resource || 'mana').toLowerCase() }));
     out.restoreFull = outcomeRestore(out).full;
-    out.targetIs = { [out.targetType || '']: true };
-    out.targetSelf = !out.targetType || out.targetType === 'self';
+    out.targetOptions = outcomeTargetOptions(out.targetType);
     // The damage stat select, and the "rolls no damage" warning for dice that are not plain NdM (3.58 D7, 393 a).
     out.damageStatOptions = statOptions(out.damageStat, { blankLabel: 'No stat' });
     out.damageWarn = rollsNoDamage(out.damage);
@@ -123,10 +145,13 @@ export function buildOutcomesContext(context) {
 }
 
 
-/** Loot: scratch-ticket / random-mode flags on top of the outcome table. */
+/** Loot: the type select, scratch-ticket / random-mode flags and the outcome table. */
 export function buildLootContext(context) {
+  const localize = (key) => globalThis.game?.i18n?.localize?.(key) ?? key;
+  context.lootTypeOptions = pickOptions(LOOT_TYPE_CHOICES.map((choice) => ({ id: choice.value, label: localize(choice.labelKey) })), context.system.lootType);
   context.isScratchTicket = isScratchLootType(context.system.lootType);
   context.isRandomMode = context.isScratchTicket || context.system.executionMode === 'random';
+  context.executionModeOptions = executionModeOptions(context.system.executionMode, { blankLabel: localize('COG.Loot.Sheet.ModeDefault') });
   buildOutcomesContext(context);
   buildBlueprintContext(context, context.item);
   buildEnchantmentLedgerContext(context, context.item);

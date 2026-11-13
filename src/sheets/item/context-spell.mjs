@@ -7,7 +7,8 @@ import { hasOnHitDebuff } from '../../utils/attack/on-hit.mjs';
 import { buildOnHitContext } from './context-on-hit.mjs';
 import { normalizeBaseDamage, baseDamageDice } from '../../utils/damage/base-damage.mjs';
 import { buildBaseDamageContext, buildHealingContext, buildRankBreakTagText, buildRankBreakViews } from './context-common.mjs';
-import { deliveryModes, pickOptions, RANK_DICE_SOURCES } from '../../utils/ui/field-options.mjs';
+import { buildRankBreakCards } from './context-rank-breaks.mjs';
+import { deliveryModes, pickOptions, statOptions } from '../../utils/ui/field-options.mjs';
 
 /**
  * The Favored picker: the item's explicit `favored.*` tags as pills and the registered `favored.*` tags it does not
@@ -30,6 +31,7 @@ export function buildSpellContext(context, item) {
   context.favoredPicker = buildFavoredPicker(item);
   buildRankBreakTagText(context, RANK_BREAK_THRESHOLDS);
   buildRankBreakViews(context, RANK_BREAK_THRESHOLDS);
+  buildRankBreakCards(context, item);
 
   const dmgData = item.actor ? item.actor.getSpellDamageData(item) : null;
   if (dmgData) {
@@ -44,10 +46,10 @@ export function buildSpellContext(context, item) {
     context.damageFormula = base.dice || (mods.length ? mods.map((m) => m.dice || m.value).filter(Boolean).join(' + ') : '');
   }
 
-  buildBaseDamageContext(context, { ownStatLabel: 'Spell stat' });
+  buildBaseDamageContext(context, { ownStatLabel: game.i18n?.localize?.('COG.Spell.Sheet.OwnStat') ?? 'COG.Spell.Sheet.OwnStat' });
+  context.statOptions = statOptions(sys.stat);
   buildHealingContext(context);
   context.deliveryOptions = pickOptions(deliveryModes(), sys.delivery);
-  context.rank15DiceSourceOptions = pickOptions(RANK_DICE_SOURCES, sys.rankBreaks?.rank15?.rankDiceSource || 'attack');
   context.hasAuraConfigured = Boolean(sys.area?.hasArea);
   context.hasArmorPiercingConfigured = Boolean(sys.ignoreDR);
   context.hasRankDamagePartsConfigured = sys.rankDamageParts?.length > 0;

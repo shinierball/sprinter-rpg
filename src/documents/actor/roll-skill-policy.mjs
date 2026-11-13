@@ -1,18 +1,14 @@
 /**
- * Which one skill a weapon roll uses (provisional): strictly one skill per roll. Its Rank, stat,
- * rank breaks and advancement mark all come from that skill. Passive skills (`action.passive`, e.g. Aiming) never count
- * as the weapon's skill, and `proficiencyMode: 'manual'` keeps the player's `selectedSkill` pick.
+ * Which one skill a weapon roll uses: strictly one skill per roll. Its Rank, stat, rank breaks and advancement mark all
+ * come from that skill. Passive skills (`action.passive`, e.g. Aiming) never count as the weapon's skill. The weapon lists
+ * its Skills in order of preference (7.51); the attacker may choose one per attack.
  *
  * This is the one replaceable function: a later ruling changes `pickRollSkill` and `tests/roll-skill-policy-3-22.test.mjs`.
  */
 import { getItemAllTags } from '../active-tags.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { isPassiveSkill, isAttackSkill, isCombatSkill } from '../../utils/tag/tag-mechanics.mjs';
-
-/** The skill's effective Rank (the higher of its modified and stored Rank). */
-function skillRankOf(skill) {
-  return Math.max(Number(skill?.system?.modifiedRank) || 0, Number(skill?.system?.rank) || 0);
-}
+import { skillRefSlug } from '../../utils/skill/weapon-skill-options.mjs';
 
 /** A skill that makes attacks itself (never a passive one). */
 export function isPrimaryCombatSkill(skill) {
@@ -23,39 +19,34 @@ export function isPrimaryCombatSkill(skill) {
   return isCombatSkill(skill) || hasRuleFlag(tags, RULE_FLAGS.requiresWeapon);
 }
 
-const slug = (v) => String(v ?? '').trim().toLowerCase().replace(/^id\.skill\./, '');
+/** A Skill reference as the bare identifier slug (`id.skill.<slug>` loses its prefix). */
+const slug = skillRefSlug;
 
 /**
  * @param {object} actor the attacker (unused by this policy; kept so a later ruling can read the actor)
- * @param {object} attackItem the weapon or attack; reads `system.selectedSkill` and `system.proficiencyMode`
- * @param {Array<object>} candidates the skills that matched the attack (weapon tag, association, weapon type)
- * @returns {{ skill: object|null, rank: number, markSkills: object[], ordered: object[] }} `ordered` is the candidates in
- *   preference order (selected, primary combat, highest Rank), passive ones last
+ * @param {object} attackItem the weapon or attack (unused; the order lives in `options`)
+ * @param {Array<{ identifier: string, skill: object, rank: number, trained: boolean, listed: boolean }>} options the
+ *   weapon's Skill options: the listed Skills in list order, then the owned unlisted tag matches (`weaponSkillOptions`)
+ * @param {string} [chosen] an identifier the attacker picked; counts only when it is one of the options
+ * @returns {{ skill: object|null, rank: number, markSkills: object[], ordered: object[], option: object|null }}
+ *   Order of choice: the chosen option; else the first listed option the attacker is trained in; else the best-Rank
+ *   unlisted option (an owned tag match: primary combat Skills first, then Rank, then list order); else the first option
+ *   (1073, 1077). `ordered` is the option Skills with the pick first.
  */
-export function pickRollSkill(actor, attackItem, candidates) {
-  const list = Array.isArray(candidates) ? candidates.filter(Boolean) : [];
-  const sys = attackItem?.system ?? {};
-  const selectedId = slug(sys.selectedSkill);
-  // The player's pick counts only in manual mode; 'highest' (the default) takes the best matching skill.
-  const manual = sys.proficiencyMode === 'manual' && Boolean(selectedId);
-  const isSelected = (s) => manual && slug(s.system?.identifier) === selectedId;
-
-  const active = list.filter(s => !isPassiveSkill(s));
-  const passive = list.filter(s => isPassiveSkill(s));
-  const rank = (s) => skillRankOf(s);
-  const ordered = [
-    ...active.map((s, i) => ({ s, i })).sort((a, b) => {
-      if (isSelected(a.s) !== isSelected(b.s)) return isSelected(a.s) ? -1 : 1;
-      if (isPrimaryCombatSkill(a.s) !== isPrimaryCombatSkill(b.s)) return isPrimaryCombatSkill(a.s) ? -1 : 1;
-      return rank(b.s) - rank(a.s) || a.i - b.i;
-    }).map(x => x.s),
-    ...passive
-  ];
-
-  // Manual keeps the player's pick even when it is passive (B10); otherwise passive skills never match.
-  const manualPick = manual ? list.find(isSelected) : null;
-  const skill = manualPick ?? (active.length ? ordered[0] : null);
-  return skill
-    ? { skill, rank: rank(skill), markSkills: [skill], ordered }
-    : { skill: null, rank: 0, markSkills: [], ordered };
+export function pickRollSkill(actor, attackItem, options, chosen = '') {
+  const list = (Array.isArray(options) ? options : []).filter(o => o?.skill && !isPassiveSkill(o.skill));
+  const chosenId = slug(chosen);
+  const unlisted = list.filter(o => !o.listed)
+    .map((o, i) => ({ o, i }))
+    .sort((a, b) => (isPrimaryCombatSkill(b.o.skill) - isPrimaryCombatSkill(a.o.skill)) || (b.o.rank - a.o.rank) || (a.i - b.i))
+    .map(x => x.o);
+  const option = (chosenId && list.find(o => o.identifier === chosenId))
+    || list.find(o => o.listed && o.trained)
+    || unlisted[0]
+    || list[0]
+    || null;
+  const ordered = [...(option ? [option] : []), ...list.filter(o => o !== option)].map(o => o.skill);
+  return option
+    ? { skill: option.skill, rank: option.rank, markSkills: [option.skill], ordered, option }
+    : { skill: null, rank: 0, markSkills: [], ordered, option: null };
 }

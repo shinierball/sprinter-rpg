@@ -1,0 +1,29 @@
+<div class="cog-item-words">
+  <p class="cog-item-words-hint">{{labels.intro}}</p>
+
+  <span class="cog-item-words-label">{{labels.type}}</span>
+  <div class="cog-item-words-row">
+    {{#each types}}<button type="button" class="cog-badge cog-btn {{#if selected}}cog-btn-primary{{else}}cog-btn-secondary{{/if}}" data-action="setType" data-type="{{id}}" aria-pressed="{{#if selected}}true{{else}}false{{/if}}" style="width: auto;">{{label}}</button>{{/each}}
+  </div>
+
+  <label class="cog-item-words-label" for="{{rootId}}-words">{{labels.words}}</label>
+  <textarea id="{{rootId}}-words" class="cog-item-words-box" rows="4" data-input-action="setWords" placeholder="{{labels.wordsHint}}">{{words}}</textarea>
+  <div class="cog-item-words-row">
+    <button type="button" data-action="copyPrompt"><i class="fa-solid fa-copy"></i> {{labels.copy}}</button>
+    <span class="cog-item-words-hint">{{labels.privacy}}</span>
+  </div>
+  {{#if providers.length}}
+  <div class="cog-item-words-row">
+    {{#each providers}}<button type="button" data-action="generate" data-provider="{{id}}"><i class="fa-solid fa-wand-magic-sparkles"></i> {{label}}</button>{{/each}}
+  </div>
+  {{/if}}
+
+  <label class="cog-item-words-label" for="{{rootId}}-reply">{{labels.reply}}</label>
+  <textarea id="{{rootId}}-reply" class="cog-item-words-box" rows="8" data-input-action="setReply" placeholder="{{labels.replyHint}}">{{reply}}</textarea>
+
+  {{#if notice}}<p class="cog-item-words-notice is-{{notice.kind}}" role="status">{{notice.text}}</p>{{/if}}
+
+  <footer class="cog-item-words-footer">
+    <button type="button" data-action="checkReply"><i class="fa-solid fa-clipboard-check"></i> {{labels.check}}</button>
+  </footer>
+</div>

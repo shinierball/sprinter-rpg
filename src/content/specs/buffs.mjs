@@ -781,13 +781,16 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "shocked",
+      "tags": [
+        "rule.forfeit-action"
+      ],
       "severity": "Minor",
       "damageType": "Electric",
       "damagePerRound": "",
       "damageModifiers": [],
       "duration": "Once you forfeit that Action.",
       "durationConfig": {
-        "type": "permanent",
+        "type": "next_action",
         "value": 0
       },
       "description": ""
@@ -813,6 +816,10 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "poisoned",
+      "repeat": {
+        "mode": "stack",
+        "into": ""
+      },
       "severity": "Minor",
       "damageType": "Poison",
       "damagePerRound": "1d8+F",
@@ -848,6 +855,12 @@ export const COG_DEBUFFS = [
       "severity": "Major",
       "damageType": "",
       "damageModifiers": [],
+      "defenseModifiers": [
+        {
+          "kind": "attackerAdvantage",
+          "option": "advantage"
+        }
+      ],
       "duration": "",
       "durationConfig": {
         "type": "permanent",
@@ -888,7 +901,7 @@ export const COG_DEBUFFS = [
       "damageModifiers": [],
       "duration": "Once you make a Check.",
       "durationConfig": {
-        "type": "permanent",
+        "type": "next_check",
         "value": 0
       },
       "description": ""
@@ -918,15 +931,20 @@ export const COG_DEBUFFS = [
       "damageType": "",
       "checkModifiers": [
         {
-          "kind": "advantage",
-          "advantage": "disadvantage",
+          "kind": "bonus",
+          "value": -1,
+          "scaleBy": {
+            "source": "stat",
+            "stat": "dex",
+            "max": 0
+          },
           "condition": {
-            "all": [],
+            "all": [
+              "stat.dex"
+            ],
             "any": [
               "check.attack",
-              "check.spell",
-              "check.skill",
-              "stat.dex"
+              "check.evade"
             ],
             "none": []
           }
@@ -936,7 +954,7 @@ export const COG_DEBUFFS = [
       "duration": "Until the end of the next round.",
       "durationConfig": {
         "type": "rounds",
-        "value": 1
+        "value": 2
       },
       "description": ""
     },
@@ -972,7 +990,7 @@ export const COG_DEBUFFS = [
       "damageModifiers": [],
       "duration": "",
       "durationConfig": {
-        "type": "permanent",
+        "type": "next_action",
         "value": 0
       },
       "description": ""
@@ -1032,6 +1050,9 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "dccdeb0000000009",
+      "tags": [
+        "rule.no-healing"
+      ],
       "severity": "Major",
       "damageType": "Necrotic",
       "damageModifiers": [],
@@ -1067,7 +1088,18 @@ export const COG_DEBUFFS = [
       "identifier": "sore-as-shit",
       "severity": "Minor",
       "damageType": "",
-      "damageModifiers": [],
+      "checkModifiers": [
+        {
+          "kind": "bonus",
+          "value": -1
+        }
+      ],
+      "damageModifiers": [
+        {
+          "mode": "add",
+          "value": -1
+        }
+      ],
       "duration": "Until the end of 1 hour.",
       "durationConfig": {
         "type": "hours",
@@ -1121,92 +1153,6 @@ export const COG_DEBUFFS = [
     }
   },
   {
-    "_id": "dccdeb0000000012",
-    "name": "Bleeding",
-    "type": "debuff",
-    "img": "icons/svg/blood.svg",
-    "severity": "Minor",
-    "description": "Active open wound leaking blood each turn.",
-    "system": {
-      "identifier": "bleeding",
-      "severity": "Minor",
-      "damageType": "Slashing",
-      "grants": [
-        {
-          "kind": "stat",
-          "stat": "con",
-          "value": -1
-        }
-      ],
-      "damageModifiers": [],
-      "duration": "Combat",
-      "durationConfig": {
-        "type": "combat",
-        "value": 0
-      },
-      "description": "Active open wound leaking blood each turn."
-    }
-  },
-  {
-    "_id": "dccdeb0000000013",
-    "name": "Frozen",
-    "type": "debuff",
-    "img": "icons/svg/frozen.svg",
-    "severity": "Minor",
-    "description": "Deep chill numbing limbs and slowing reactions. -2 Dexterity.",
-    "system": {
-      "identifier": "frozen",
-      "severity": "Minor",
-      "damageType": "Ice",
-      "grants": [
-        {
-          "kind": "stat",
-          "stat": "dex",
-          "value": -2
-        }
-      ],
-      "damageModifiers": [],
-      "duration": "Combat",
-      "durationConfig": {
-        "type": "combat",
-        "value": 0
-      },
-      "description": "Deep chill numbing limbs and slowing reactions. -2 Dexterity."
-    }
-  },
-  {
-    "_id": "dccdeb0000000014",
-    "name": "Crippled",
-    "type": "debuff",
-    "img": "icons/svg/leg.svg",
-    "severity": "Major",
-    "description": "Severely broken limb or torn tendon. -4 Dexterity and -2 Strength.",
-    "system": {
-      "identifier": "crippled",
-      "severity": "Major",
-      "damageType": "",
-      "grants": [
-        {
-          "kind": "stat",
-          "stat": "dex",
-          "value": -4
-        },
-        {
-          "kind": "stat",
-          "stat": "str",
-          "value": -2
-        }
-      ],
-      "damageModifiers": [],
-      "duration": "Until Treated",
-      "durationConfig": {
-        "type": "permanent",
-        "value": 0
-      },
-      "description": "Severely broken limb or torn tendon. -4 Dexterity and -2 Strength."
-    }
-  },
-  {
     "_id": "dccdeb0000000015",
     "name": "",
     "type": "debuff",
@@ -1215,11 +1161,21 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "minor-injury",
+      "repeat": {
+        "mode": "promote",
+        "into": "long-term-minor-injury"
+      },
       "tags": [
         "injury.minor"
       ],
       "severity": "Minor",
       "damageType": "",
+      "checkModifiers": [
+        {
+          "kind": "bonus",
+          "value": -2
+        }
+      ],
       "damageModifiers": [],
       "duration": "Until the end of a short rest.",
       "durationConfig": {
@@ -1249,11 +1205,21 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "major-injury",
+      "repeat": {
+        "mode": "promote",
+        "into": "long-term-major-injury"
+      },
       "tags": [
         "injury.major"
       ],
       "severity": "Major",
       "damageType": "",
+      "checkModifiers": [
+        {
+          "kind": "bonus",
+          "value": -5
+        }
+      ],
       "damageModifiers": [],
       "duration": "Until the end of a long rest.",
       "durationConfig": {
@@ -1292,9 +1258,7 @@ export const COG_DEBUFFS = [
           "condition": {
             "all": [],
             "any": [
-              "check.attack",
-              "check.skill",
-              "stat.dex"
+              "check.skill"
             ],
             "none": []
           }
@@ -1304,7 +1268,7 @@ export const COG_DEBUFFS = [
       "duration": "Until the end of the next round.",
       "durationConfig": {
         "type": "rounds",
-        "value": 1
+        "value": 2
       },
       "description": ""
     },
@@ -1329,8 +1293,12 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "blood-trail",
+      "repeat": {
+        "mode": "stack",
+        "into": ""
+      },
       "severity": "Minor",
-      "damageType": "Piercing",
+      "damageType": "",
       "damagePerRound": "1d6+F",
       "damageModifiers": [],
       "duration": "",
@@ -1363,7 +1331,7 @@ export const COG_DEBUFFS = [
     "system": {
       "identifier": "drowning",
       "severity": "Major",
-      "damageType": "Physical",
+      "damageType": "",
       "damagePerRound": "1d6+F",
       "damageModifiers": [],
       "duration": "Until your head is above water.",
@@ -1399,8 +1367,12 @@ export const COG_DEBUFFS = [
       "damageModifiers": [],
       "duration": "",
       "durationConfig": {
-        "type": "permanent",
-        "value": 0
+        "type": "rounds",
+        "value": 1,
+        "scaleBy": {
+          "source": "stat",
+          "stat": "con"
+        }
       },
       "description": ""
     },
@@ -1458,21 +1430,22 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "fatigued",
+      "repeat": {
+        "mode": "stack",
+        "into": ""
+      },
       "severity": "Minor",
       "damageType": "",
       "checkModifiers": [
         {
-          "kind": "advantage",
-          "advantage": "disadvantage",
-          "condition": {
-            "all": [],
-            "any": [
-              "check.attack",
-              "stat.str",
-              "stat.dex"
-            ],
-            "none": []
-          }
+          "kind": "bonus",
+          "value": -1
+        }
+      ],
+      "vehicleModifiers": [
+        {
+          "kind": "moveMultiply",
+          "multiplier": 0.5
         }
       ],
       "damageModifiers": [],
@@ -1505,10 +1478,17 @@ export const COG_DEBUFFS = [
     "system": {
       "identifier": "long-term-major-injury",
       "tags": [
-        "injury.long_term"
+        "injury.long_term",
+        "injury.major"
       ],
       "severity": "Major",
       "damageType": "",
+      "checkModifiers": [
+        {
+          "kind": "bonus",
+          "value": -5
+        }
+      ],
       "damageModifiers": [],
       "duration": "",
       "durationConfig": {
@@ -1540,10 +1520,17 @@ export const COG_DEBUFFS = [
     "system": {
       "identifier": "long-term-minor-injury",
       "tags": [
-        "injury.long_term"
+        "injury.long_term",
+        "injury.minor"
       ],
       "severity": "Minor",
       "damageType": "",
+      "checkModifiers": [
+        {
+          "kind": "bonus",
+          "value": -2
+        }
+      ],
       "damageModifiers": [],
       "duration": "Until the end of a long rest.",
       "durationConfig": {
@@ -1573,19 +1560,17 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "paralyzed",
+      "tags": [
+        "condition.paralyzed"
+      ],
       "severity": "Major",
       "damageType": "",
-      "checkModifiers": [
-        {
-          "kind": "advantage",
-          "advantage": "disadvantage"
-        }
-      ],
+      "checkModifiers": [],
       "damageModifiers": [],
       "duration": "Until the end of the next round.",
       "durationConfig": {
         "type": "rounds",
-        "value": 1
+        "value": 2
       },
       "description": ""
     },
@@ -1610,12 +1595,16 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "sepsis",
+      "alsoApplies": [
+        "staggered"
+      ],
       "severity": "Major",
       "damageType": "Poison",
+      "damagePerRound": "1d10+F",
       "damageModifiers": [],
       "duration": "",
       "durationConfig": {
-        "type": "permanent",
+        "type": "until_healed",
         "value": 0
       },
       "description": ""
@@ -1644,6 +1633,12 @@ export const COG_DEBUFFS = [
       "identifier": "shit-faced",
       "severity": "Minor",
       "damageType": "",
+      "checkModifiers": [
+        {
+          "kind": "advantage",
+          "advantage": "disadvantage"
+        }
+      ],
       "damageModifiers": [],
       "duration": "Until the end of 10 minutes.",
       "durationConfig": {
@@ -1691,7 +1686,7 @@ export const COG_DEBUFFS = [
       "damageModifiers": [],
       "duration": "",
       "durationConfig": {
-        "type": "permanent",
+        "type": "next_action",
         "value": 0
       },
       "description": ""
@@ -1721,6 +1716,12 @@ export const COG_DEBUFFS = [
       "severity": "Minor",
       "damageType": "",
       "damageModifiers": [],
+      "defenseModifiers": [
+        {
+          "kind": "attackerAdvantage",
+          "option": "advantage"
+        }
+      ],
       "duration": "Use your 10ft Step to stand.",
       "durationConfig": {
         "type": "permanent",
@@ -1768,7 +1769,7 @@ export const COG_DEBUFFS = [
       "duration": "",
       "durationConfig": {
         "type": "rounds",
-        "value": 1
+        "value": 2
       },
       "description": ""
     },
@@ -2092,6 +2093,10 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "splitting-headache",
+      "repeat": {
+        "mode": "stack",
+        "into": ""
+      },
       "severity": "Minor",
       "damageType": "Psychic",
       "damagePerRound": "1d6+F",
@@ -2460,6 +2465,278 @@ export const COG_DEBUFFS = [
         "value": 0
       },
       "description": ""
+    }
+  },
+  {
+    "_id": "dccdeb1000000001",
+    "name": "",
+    "type": "debuff",
+    "img": "icons/svg/downgrade.svg",
+    "severity": "Major",
+    "description": "",
+    "system": {
+      "identifier": "dccdeb1000000001",
+      "severity": "Major",
+      "damageType": "",
+      "damageModifiers": [],
+      "duration": "Until removed",
+      "durationConfig": {
+        "type": "permanent",
+        "value": 0
+      },
+      "description": "",
+      "tags": [
+        "worship.divine"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "description",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccdeb1000000002",
+    "name": "",
+    "type": "debuff",
+    "img": "icons/svg/downgrade.svg",
+    "severity": "Major",
+    "description": "",
+    "system": {
+      "identifier": "dccdeb1000000002",
+      "severity": "Major",
+      "damageType": "",
+      "damageModifiers": [],
+      "duration": "Until removed",
+      "durationConfig": {
+        "type": "permanent",
+        "value": 0
+      },
+      "description": "",
+      "tags": [
+        "worship.divine"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "description",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccdeb1000000003",
+    "name": "",
+    "type": "debuff",
+    "img": "icons/svg/downgrade.svg",
+    "severity": "Major",
+    "description": "",
+    "system": {
+      "identifier": "dccdeb1000000003",
+      "severity": "Major",
+      "damageType": "",
+      "damageModifiers": [],
+      "duration": "Until removed",
+      "durationConfig": {
+        "type": "permanent",
+        "value": 0
+      },
+      "description": "",
+      "tags": [
+        "worship.divine"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "description",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccdeb1000000004",
+    "name": "",
+    "type": "debuff",
+    "img": "icons/svg/downgrade.svg",
+    "severity": "Major",
+    "description": "",
+    "system": {
+      "identifier": "dccdeb1000000004",
+      "severity": "Major",
+      "damageType": "",
+      "damageModifiers": [],
+      "duration": "Until removed",
+      "durationConfig": {
+        "type": "permanent",
+        "value": 0
+      },
+      "description": "",
+      "tags": [
+        "worship.divine"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "description",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccdeb1000000005",
+    "name": "",
+    "type": "debuff",
+    "img": "icons/svg/downgrade.svg",
+    "severity": "Major",
+    "description": "",
+    "system": {
+      "identifier": "dccdeb1000000005",
+      "severity": "Major",
+      "damageType": "",
+      "damageModifiers": [],
+      "duration": "Until removed",
+      "durationConfig": {
+        "type": "permanent",
+        "value": 0
+      },
+      "description": "",
+      "tags": [
+        "worship.divine"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "description",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccdeb1000000006",
+    "name": "",
+    "type": "debuff",
+    "img": "icons/svg/downgrade.svg",
+    "severity": "Major",
+    "description": "",
+    "system": {
+      "identifier": "dccdeb1000000006",
+      "severity": "Major",
+      "damageType": "",
+      "damageModifiers": [],
+      "duration": "Until removed",
+      "durationConfig": {
+        "type": "permanent",
+        "value": 0
+      },
+      "description": "",
+      "tags": [
+        "worship.divine"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "description",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccdeb1000000007",
+    "name": "",
+    "type": "debuff",
+    "img": "icons/svg/downgrade.svg",
+    "severity": "Major",
+    "description": "",
+    "system": {
+      "identifier": "dccdeb1000000007",
+      "severity": "Major",
+      "damageType": "",
+      "damageModifiers": [],
+      "duration": "Until removed",
+      "durationConfig": {
+        "type": "permanent",
+        "value": 0
+      },
+      "description": "",
+      "tags": [
+        "worship.divine"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "description",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccdeb1000000008",
+    "name": "",
+    "type": "debuff",
+    "img": "icons/svg/downgrade.svg",
+    "severity": "Major",
+    "description": "",
+    "system": {
+      "identifier": "dccdeb1000000008",
+      "severity": "Major",
+      "damageType": "",
+      "damageModifiers": [],
+      "duration": "Until removed",
+      "durationConfig": {
+        "type": "permanent",
+        "value": 0
+      },
+      "description": "",
+      "tags": [
+        "worship.fallen"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "description",
+            "system.description"
+          ]
+        }
+      }
     }
   }
 ];

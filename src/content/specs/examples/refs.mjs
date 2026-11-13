@@ -118,6 +118,14 @@ export const EXAMPLE_GLUE_HOLSTER_TAG = Object.freeze({
   description: 'A table attachment: the glue gun is always within reach, so props take less time.'
 });
 
+/** The recipe the Backlit Trim blueprint carries: a locked recipe, opened by a studio row whose condition names this tag. */
+export const EXAMPLE_SIGNAGE_RECIPE_TAG = Object.freeze({
+  id: 'crafting.recipe.signage',
+  label: 'Signage Recipe',
+  namespace: 'crafting',
+  description: 'A locked recipe: a crafting table will not take a blueprint with this tag until a studio\'s unlock row names it.'
+});
+
 /** The tag the Loot Boxes choice example queries: gear that is a souvenir of the show. */
 export const EXAMPLE_SOUVENIR_TAG = Object.freeze({
   id: 'prize.souvenir',
@@ -132,6 +140,7 @@ export function exampleTagDefinitions() {
     { ...EXAMPLE_CUE_LIGHT_TAG, rows: structuredClone(EXAMPLE_CUE_LIGHT_TAG.rows), flags: [...EXAMPLE_CUE_LIGHT_TAG.flags] },
     { ...EXAMPLE_LIVE_AUDIENCE_TAG },
     { ...EXAMPLE_GLUE_HOLSTER_TAG },
+    { ...EXAMPLE_SIGNAGE_RECIPE_TAG },
     { ...EXAMPLE_SOUVENIR_TAG }
   ];
 }

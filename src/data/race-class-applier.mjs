@@ -9,10 +9,13 @@ import { sanitizeSizeId } from './sizes.mjs';
 import { sanitizeHeritageId } from './rules/heritages.mjs';
 import { catalogNameFor } from '../models/actors/actor-derivation.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
-import { confirmRequires } from '../utils/character/requires.mjs';
+import { confirmRequirements } from '../utils/character/requirements.mjs';
 import { confirmRaceClassFloor } from '../utils/character/race-class-floor.mjs';
+import { confirmRuleBreak } from '../utils/rule-break.mjs';
+import { PRE_RACE_CLASS_RANK_LIMIT } from '../utils/skill/rank-limits.mjs';
 import { normalizeTiming } from '../utils/time/timing.mjs';
-import { effectiveRace } from '../utils/character/overlay-state.mjs';
+import { effectiveRace, overlayOf } from '../utils/character/overlay-state.mjs';
+import { transformText } from '../utils/character/transform-text.mjs';
 import { grantStartingItems } from './starting-items.mjs';
 import { RACE_CLASS_KINDS, writeKindPlan } from './race-class-grants.mjs';
 import { planRaceClassKind, raceClassView, raceClassBreakKey, prefetchKindDocuments } from './race-class-plan.mjs';
@@ -268,8 +271,8 @@ export class COGRaceClassApplier {
   }
 
   /** Precomputed select options for the Race and Class dropdowns. */
-  static getRaceClassContext(actor) {
-    return getRaceClassContext(this, actor);
+  static getRaceClassContext(actor, options) {
+    return getRaceClassContext(this, actor, options);
   }
 
   /**
@@ -299,7 +302,7 @@ export class COGRaceClassApplier {
    * @param {Actor} actor
    * @param {'race'|'class'} kind
    * @param {string|object} identifier
-   * @param {object} [options]
+   * @param {object} [options] `createOptions` go to every embedded create (`{ cogHomebrew: true }` stamps the new items)
    * @returns {Promise<boolean>}
    */
   static async applyKind(actor, kind, identifier, options = {}) {
@@ -330,7 +333,7 @@ export class COGRaceClassApplier {
     }
 
     // Prerequisites and exclusions: unmet ones need a Rule Break confirmation (recorded on the embedded item)
-    const requirement = await confirmRequires(actor, { ...def, type: kind }, options);
+    const requirement = await confirmRequirements(actor, { ...def, type: kind }, options);
     if (!requirement.proceed) return false;
 
     // The gates already confirmed, as the planner's Rule Break keys
@@ -348,14 +351,30 @@ export class COGRaceClassApplier {
     const lookup = await prefetchKindDocuments(kind, def, selections);
     await profile.remove(this, actor);
 
-    const plan = planRaceClassKind(raceClassView(actor), kind, def, selections, {
-      lookup, worldFloor: getCurrentFloor(), confirmed, startingItems: false, strict: true
-    });
+    const planCtx = { lookup, worldFloor: getCurrentFloor(), confirmed, startingItems: false, strict: true };
+    let plan = planRaceClassKind(raceClassView(actor), kind, def, selections, planCtx);
+    // A grant that would take a Skill past the Rank limit of 10 stops there unless the Rule Break is confirmed
+    const rankKey = raceClassBreakKey(kind, 'rankLimit');
+    const rankBreak = plan.ruleBreaks.pending.find(p => p.key === rankKey);
+    if (rankBreak) {
+      const ask = await confirmRuleBreak({
+        title: 'Skill Rank Limit',
+        message: `${rankBreak.reason} Take the extra Ranks anyway as a Rule Break?`,
+        reason: rankBreak.reason,
+        options
+      });
+      if (ask.confirmed) plan = planRaceClassKind(raceClassView(actor), kind, def, selections, { ...planCtx, confirmed: [...confirmed, rankKey] });
+      else for (const w of plan.wastedRanks) globalThis.ui?.notifications?.warn?.(`${w.name}: stopped at Rank ${PRE_RACE_CLASS_RANK_LIMIT}, ${w.wasted} Rank(s) wasted.`);
+    }
     for (const warning of plan.warnings) console.warn(`Sprinter RPG | ${warning}`);
-    await writeKindPlan(actor, plan, { allowOffTheme: options.allowOffTheme === true });
+    await writeKindPlan(actor, plan, { allowOffTheme: options.allowOffTheme === true, createOptions: options.createOptions });
 
     if (globalThis.ui?.notifications) {
       globalThis.ui.notifications.info(`Applied ${profile.label} "${def.name}" to ${actor.name}.`);
+      // Under a transformation the new race is what the victim returns to (the overlay keeps overlaying)
+      if (kind === 'race' && overlayOf(actor.items)) {
+        globalThis.ui.notifications.info(transformText('COG.Transform.RaceReturnsTo', { race: def.name, actor: actor.name }));
+      }
     }
 
     // Starting items are given once per source (a repeat needs a Rule Break confirmation)

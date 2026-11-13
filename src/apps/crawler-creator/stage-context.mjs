@@ -5,13 +5,14 @@
  * simulator's own (`stepPanel` over that arrival's `ArrivalDraft`). Static words live in the templates as lang keys.
  */
 import { describeOrigin } from '../../chat/floor-arrival-card.mjs';
-import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { startingChoiceCandidates } from '../../data/starting-items.mjs';
 import { floorLabel } from '../../utils/floor/floor-number.mjs';
 import { sourceBadge } from '../../utils/content-source.mjs';
 import { aiContentIsHidden } from '../../content/ai-content.mjs';
 import { stepPanel } from '../floor-simulator/context.mjs';
-import { INDUCTION_STOP, RACE_CLASS_STOP, REVIEW_STOP } from './controller.mjs';
+import { CrawlerCreatorController, INDUCTION_STOP, RACE_CLASS_STOP, REVIEW_STOP } from './controller.mjs';
+import { raceClassSelects, requirementBadges } from './race-class-requirements.mjs';
+import { RACE_CLASS_TYPES } from '../../utils/document-types.mjs';
 
 const STAT_KEYS = ['str', 'dex', 'con', 'int', 'cha'];
 const STAGE = 'COG.CrawlerCreator.Stage';
@@ -37,8 +38,8 @@ const resultOf = (compiled, floor) => compiled?.results?.find(r => r.floor === f
 const statusOf = (breaks, visited, open) => (breaks ? 'break' : (visited && !open ? 'done' : 'open'));
 
 /**
- * The stage rail: Induction, each arrival as a stage with its steps nested under it, Race and Class after the first
- * arrival, and Review. Each entry's `id` is the stop its button goes to (a stage goes to its first step).
+ * The stage rail: Induction, each arrival as a stage with its steps nested under it (the first arrival's Race and Class
+ * among them, where the stops put it: before its Stats), and Review. Each entry's `id` is the stop its button goes to (a stage goes to its first step).
  * @param {import('./controller.mjs').CrawlerCreatorController} controller
  * @param {{ inductionBreaks?: number }} [options] the Induction stage's own Rule Breaks (the creator's reasons)
  */
@@ -59,19 +60,21 @@ export function stageRail(controller, { inductionBreaks = 0 } = {}) {
       const breaks = pending.filter(b => b.step === step.id).length;
       return { id, labelKey: step.labelKey ?? `COG.FloorSim.Step.${step.id}`, nested: true, active: active === id, openDice: open, breaks, status: statusOf(breaks, controller.visited.has(id), open) };
     });
+    if (index === 0) {
+      const rcBreaks = compiled?.raceClass?.ruleBreaks?.pending?.length ?? 0;
+      const steps = controller.stepsFor(floor);
+      const at = steps.findIndex(step => step.kind === 'stats');
+      nested.splice(at < 0 ? nested.length : at, 0, {
+        id: RACE_CLASS_STOP, labelKey: `${STAGE}.raceClass`, nested: true, active: active === RACE_CLASS_STOP, openDice: 0,
+        breaks: rcBreaks, status: statusOf(rcBreaks, controller.visited.has(RACE_CLASS_STOP), 0)
+      });
+    }
     const breaks = nested.reduce((n, s) => n + s.breaks, 0);
     const open = nested.reduce((n, s) => n + s.openDice, 0);
     steps.push({
       id: nested[0]?.id ?? REVIEW_STOP, labelKey: index === 0 ? `${STAGE}.tutorial` : `${STAGE}.floor${floor}`, stage: true, active: false,
       openDice: open, breaks, status: breaks ? 'break' : (nested.length && nested.every(s => s.status === 'done') ? 'done' : 'open')
     }, ...nested);
-    if (index === 0) {
-      const rcBreaks = compiled?.raceClass?.ruleBreaks?.pending?.length ?? 0;
-      steps.push({
-        id: RACE_CLASS_STOP, labelKey: `${STAGE}.raceClass`, stage: true, active: active === RACE_CLASS_STOP, openDice: 0,
-        breaks: rcBreaks, status: statusOf(rcBreaks, controller.visited.has(RACE_CLASS_STOP), 0)
-      });
-    }
   });
   const allBreaks = (compiled?.ruleBreaks?.pending?.length ?? 0) + inductionBreaks;
   steps.push({
@@ -119,12 +122,16 @@ function emptyListsNote(rc) {
 /** The Race and Class stage: the two selects of the simulator's panel, plus each picked kind's choices, pools and starting items. */
 function raceClassPanel(controller) {
   const picks = controller.raceClass;
-  const rc = COGRaceClassApplier.getRaceClassContext({ type: 'crawler', system: { details: { race: picks.race, class: picks.class } }, items: [] });
-  const plan = controller.compiled()?.raceClass ?? null;
+  const compiled = controller.compiled();
+  const rc = raceClassSelects(compiled, picks);
+  const plan = compiled?.raceClass ?? null;
+  const held = controller.heldStats();
   return {
     isRaceClass: true, stepId: RACE_CLASS_STOP, racePath: 'raceClass.race', classPath: 'raceClass.class',
     raceOptions: rc.raceOptions, classOptions: rc.classOptions, emptyListsNote: emptyListsNote(rc), laterChosen: !picks.race && !picks.class,
-    kinds: ['race', 'class'].filter(kind => picks[kind] && plan?.[kind]).map(kind => kindForm(kind, plan[kind]))
+    raceRequirements: requirementBadges(plan?.race?.requirements, 'race', held),
+    classRequirements: requirementBadges(plan?.class?.requirements, 'class', held),
+    kinds: RACE_CLASS_TYPES.filter(kind => picks[kind] && plan?.[kind]).map(kind => kindForm(kind, plan[kind]))
   };
 }
 
@@ -142,7 +149,7 @@ function reviewPanel(controller) {
       section.entries.push({ ...entry, origin: describeOrigin(entry), pendingDie: entry.rolled === true && openSteps.has(entry.step) });
     }
     if (index === 0 && compiled.raceClass) {
-      const entries = ['race', 'class'].map(kind => compiled.raceClass[kind]).filter(Boolean).map(plan => ({ label: plan.def?.name ?? plan.ref, origin: '' }));
+      const entries = RACE_CLASS_TYPES.map(kind => compiled.raceClass[kind]).filter(Boolean).map(plan => ({ label: plan.def?.name ?? plan.ref, origin: '' }));
       if (entries.length) sections.push({ id: RACE_CLASS_STOP, labelKey: 'COG.FloorSim.Step.raceClass', floorLabel: '', entries });
     }
   });
@@ -226,8 +233,10 @@ export function createNote(controller) {
 
 /** The footer's stage controls. */
 export function stageFooter(controller) {
+  const blocked = controller.blockingChoices().map(c => CrawlerCreatorController.blockedText(c));
   return {
     staged: controller.staged, canBack: controller.canBack, canNext: controller.canNext, openDice: controller.openDice(),
+    openAny: controller.openDice() + controller.openChoiceCount(), blocked, canFinish: blocked.length === 0,
     onInduction: controller.active === INDUCTION_STOP, onReview: controller.active === REVIEW_STOP,
     floorBreaks: controller.pendingRuleBreaks().length,
     note: createNote(controller)

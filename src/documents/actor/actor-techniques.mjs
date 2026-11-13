@@ -189,22 +189,19 @@ export function techniqueInPlayTags(chosenEffect, techniques = []) {
  * to nothing; an attack carrying the no-damage-effects flag takes none. Names are never matched.
  * @param {object|Item} tech
  * @param {object|Item} attackItem
+ * @param {{ chosen?: string }} [opts] `chosen`: the identifier of the Skill picked for this attack; its tags, not the default Skill's, are read
  * @returns {boolean}
  */
-export function isTechniqueApplicable(actor, tech, attackItem) {
+export function isTechniqueApplicable(actor, tech, attackItem, { chosen = '' } = {}) {
   if (!tech || !attackItem) return false;
   const query = (tech.system || tech.item?.system || {}).appliesToQuery;
   if (!hasQuery(query)) return false;
 
   const attackItemTags = new Set(attackItem.allTags instanceof Set ? attackItem.allTags : getItemAllTags(attackItem));
-  const sys = attackItem.system || {};
-  // associatedSkills hold skill identifiers (or skill identity tags).
-  for (const as of (Array.isArray(sys.associatedSkills) ? sys.associatedSkills : [])) {
-    const tag = identityTag('skill', as);
-    if (tag) attackItemTags.add(tag);
-  }
+  // Only the Skill the attack uses (chosen, else the default matched one) contributes its tags: a weapon listing several Skills
+  // does not let a technique keyed to one of them apply under another.
   // Tags of the structurally matched weapon skill (synthesized profile, or resolved from the item's own tags/references)
-  const matchedSkill = attackItem.matchingSkill || resolveWeaponSkills(actor, attackItem).matchingSkill;
+  const matchedSkill = chosen ? resolveWeaponSkills(actor, attackItem, null, { chosen }).matchingSkill : (attackItem.matchingSkill || resolveWeaponSkills(actor, attackItem).matchingSkill);
   if (matchedSkill) {
     for (const t of (matchedSkill.allTags instanceof Set ? matchedSkill.allTags : getItemAllTags(matchedSkill))) attackItemTags.add(t);
   }
@@ -221,9 +218,10 @@ export function isTechniqueApplicable(actor, tech, attackItem) {
  * `optionalEffects`, else its matched weapon skill's `optionalEffects` plus every owned technique whose
  * `appliesToQuery` matches it.
  * @param {Item} attackItem
+ * @param {{ chosen?: string }} [opts] `chosen`: the identifier of the Skill picked for this attack, read instead of the default Skill
  * @returns {string[]} damage effect identifiers
  */
-export function getValidDamageEffects(actor, attackItem) {
+export function getValidDamageEffects(actor, attackItem, { chosen = '' } = {}) {
   if (!attackItem) return [];
   const attackTags = attackItem.allTags instanceof Set ? attackItem.allTags : getItemAllTags(attackItem);
   // Rule: entities carrying the no-damage-effects flag cannot choose any damage effect.
@@ -236,14 +234,15 @@ export function getValidDamageEffects(actor, attackItem) {
   const skills = actor.items ? actor.items.filter(i => i.type === 'skill') : [];
   const candidates = [];
   // 2. The matched weapon skill's optionalEffects
-  const matchingSkill = resolveWeaponSkills(actor, attackItem, skills).matchingSkill;
+  const matchingSkill = resolveWeaponSkills(actor, attackItem, skills, { chosen }).matchingSkill;
+  if (matchingSkill && hasRuleFlag(matchingSkill.allTags instanceof Set ? matchingSkill.allTags : getItemAllTags(matchingSkill), RULE_FLAGS.noDamageEffects)) return [];
   if (matchingSkill) candidates.push(...effectIdentifiers(matchingSkill.system?.optionalEffects));
 
   // 3. Owned skills configured as techniques / damage effects whose query matches
   for (const s of skills) {
     const sSys = s.system || {};
     if (!isTechniqueSkill(s)) continue;
-    if (sSys.identifier && isTechniqueApplicable(actor, s, attackItem)) candidates.push(sSys.identifier);
+    if (sSys.identifier && isTechniqueApplicable(actor, s, attackItem, { chosen })) candidates.push(sSys.identifier);
   }
   return [...new Set(candidates)];
 }
@@ -253,11 +252,12 @@ export function getValidDamageEffects(actor, attackItem) {
  * Determine the selectable damage effects for an attack item or skill,
  * filtered strictly to those the actor actually knows or possesses via gear.
  * @param {Item|object} attackItem
+ * @param {{ chosen?: string }} [opts] `chosen`: the identifier of the Skill picked for this attack
  * @returns {string[]} damage effect identifiers the actor can select
  */
-export function getSelectableDamageEffects(actor, attackItem) {
+export function getSelectableDamageEffects(actor, attackItem, { chosen = '' } = {}) {
   if (!attackItem) return [];
-  const validEffects = getValidDamageEffects(actor, attackItem);
+  const validEffects = getValidDamageEffects(actor, attackItem, { chosen });
   if (!validEffects || validEffects.length === 0) return [];
 
   // Known: an owned skill with that identifier, or a gear grant of it.
@@ -396,7 +396,6 @@ export function resolveDamageEffect(actor, chosenEffectRaw, baseItem = null, opt
     condition: tConfig.condition || null,
     healthMultiplier: reachedHealthMultiplier(tConfig.healthMultipliers, rank),
     cooldown,
-    notes: tConfig.notes || sys.notes || '',
     activeBreaks
   };
 }

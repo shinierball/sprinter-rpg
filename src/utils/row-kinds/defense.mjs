@@ -10,6 +10,7 @@ const addDerivedValue = (field) => (out, row) => { out[field] += Number(row.valu
 registerCoreKind('defenseModifiers', {
   id: 'resistance',
   label: 'COG.Rows.Kind.Defense.resistance.Label',
+  hint: 'COG.Rows.Kind.Defense.resistance.Hint',
   fields: ['damageType'],
   static: 'unconditional',
   apply: {
@@ -22,6 +23,7 @@ registerCoreKind('defenseModifiers', {
 registerCoreKind('defenseModifiers', {
   id: 'immunity',
   label: 'COG.Rows.Kind.Defense.immunity.Label',
+  hint: 'COG.Rows.Kind.Defense.immunity.Hint',
   fields: ['damageType'],
   static: 'unconditional',
   apply: {
@@ -34,6 +36,7 @@ registerCoreKind('defenseModifiers', {
 registerCoreKind('defenseModifiers', {
   id: 'tempHp',
   label: 'COG.Rows.Kind.Defense.tempHp.Label',
+  hint: 'COG.Rows.Kind.Defense.tempHp.Hint',
   fields: ['value'],
   static: 'derived',
   apply: { derived: addDerivedValue('tempHp') },
@@ -43,6 +46,7 @@ registerCoreKind('defenseModifiers', {
 registerCoreKind('defenseModifiers', {
   id: 'reduction',
   label: 'COG.Rows.Kind.Defense.reduction.Label',
+  hint: 'COG.Rows.Kind.Defense.reduction.Hint',
   fields: ['percent', 'flat', 'rounding', 'damageType'],
   scaled: { flat: 'whole' },
   static: 'never',
@@ -67,6 +71,7 @@ registerCoreKind('defenseModifiers', {
 registerCoreKind('defenseModifiers', {
   id: 'dr',
   label: 'COG.Rows.Kind.Defense.dr.Label',
+  hint: 'COG.Rows.Kind.Defense.dr.Hint',
   fields: ['value'],
   scaled: { value: 'whole' },
   static: 'unconditional',
@@ -80,6 +85,7 @@ registerCoreKind('defenseModifiers', {
 registerCoreKind('defenseModifiers', {
   id: 'evade',
   label: 'COG.Rows.Kind.Defense.evade.Label',
+  hint: 'COG.Rows.Kind.Defense.evade.Hint',
   fields: ['value'],
   static: 'derived',
   apply: { derived: addDerivedValue('evade') },
@@ -89,6 +95,7 @@ registerCoreKind('defenseModifiers', {
 registerCoreKind('defenseModifiers', {
   id: 'vulnerability',
   label: 'COG.Rows.Kind.Defense.vulnerability.Label',
+  hint: 'COG.Rows.Kind.Defense.vulnerability.Hint',
   fields: ['damageType'],
   static: 'never',
   apply: { defense(acc) { acc.vulnerable = true; } },
@@ -98,10 +105,41 @@ registerCoreKind('defenseModifiers', {
 registerCoreKind('defenseModifiers', {
   id: 'suppress_dr',
   label: 'COG.Rows.Kind.Defense.suppress_dr.Label',
+  hint: 'COG.Rows.Kind.Defense.suppress_dr.Hint',
   fields: ['damageType'],
   static: 'never',
   apply: { defense(acc) { acc.suppressDr = true; } },
   summarize(row) { return `No DR${typeSuffix(row)}`; }
+});
+
+/** The tags a row's condition names positively (a string, a tag array, or the `all` and `any` lists of a query). */
+function conditionTags(condition) {
+  if (!condition) return [];
+  const list = typeof condition === 'string' ? [condition]
+    : Array.isArray(condition) ? condition
+      : typeof condition === 'object' ? [...(condition.all ?? []), ...(condition.any ?? [])] : [];
+  return list.filter(t => typeof t === 'string' && t.trim()).map(t => t.trim());
+}
+
+// Immunity to an effect rather than a damage type (a Debuff, a contested Skill or Spell). The row's `condition` is judged
+// against the incoming effect's tags, not a roll's. An empty condition is immune to nothing, never to everything.
+registerCoreKind('defenseModifiers', {
+  id: 'effectImmunity',
+  label: 'COG.Rows.Kind.Defense.effectImmunity.Label',
+  hint: 'COG.Rows.Kind.Defense.effectImmunity.Hint',
+  fields: [],
+  static: 'never',
+  apply: {
+    // acc: Array<{ label }>; ctx.label is the row's label
+    effect(acc, row, ctx) {
+      if (conditionTags(row.condition).length === 0) return false;
+      acc.push({ label: ctx.label });
+    }
+  },
+  summarize(row) {
+    const tags = conditionTags(row.condition);
+    return tags.length ? `Immune to effects: ${tags.join(', ')}` : 'Immune to nothing (no condition)';
+  }
 });
 
 /** How bad each Area Evade outcome is for the defender; the worse one wins when rows disagree. */
@@ -123,6 +161,30 @@ registerCoreKind('defenseModifiers', {
     }
   },
   summarize(row) { return `Area Evade: ${(typeof row.option === 'string' && row.option.trim()) || 'half'}`; }
+});
+
+// Attackers of the bearer roll with Advantage or Disadvantage (a Held or prone target). Read when someone attacks the
+// bearer: one more reason in the attacker's net (a crawler's roll, or a mob's Difficulty shift). The condition sees the
+// attack's tags and `attacker.*`.
+registerCoreKind('defenseModifiers', {
+  id: 'attackerAdvantage',
+  label: 'COG.Rows.Kind.Defense.attackerAdvantage.Label',
+  hint: 'COG.Rows.Kind.Defense.attackerAdvantage.Hint',
+  fields: ['option'],
+  option: {
+    label: 'COG.Rows.Kind.Defense.attackerAdvantage.OptionLabel',
+    choices: ['advantage', 'disadvantage'],
+    default: 'advantage',
+    labels: { advantage: 'COG.Rows.Kind.Defense.attackerAdvantage.Option.advantage', disadvantage: 'COG.Rows.Kind.Defense.attackerAdvantage.Option.disadvantage' }
+  },
+  static: 'never',
+  apply: {
+    // acc: { advantages: string[], disadvantages: string[] }; ctx.label is the row's label
+    incoming(acc, row, ctx) {
+      (row.option === 'disadvantage' ? acc.disadvantages : acc.advantages).push(ctx.label);
+    }
+  },
+  summarize(row) { return `Attackers have ${row.option === 'disadvantage' ? 'Disadvantage' : 'Advantage'}`; }
 });
 
 /** Slots the attacker loses by default when a `reflect` row names none. */
@@ -151,4 +213,24 @@ registerCoreKind('defenseModifiers', {
     const slots = Math.max(1, Math.floor(Number(row.flat) || DEFAULT_REFLECT_SLOTS));
     return `Reflect ${slots} slot${slots === 1 ? '' : 's'} when losing ${min}+`;
   }
+});
+
+/** "Double Con Mod to Health Bars" (p. 165): each slot holds twice its HP. */
+const HEALTH_BAR_SCALE_DEFAULT = 2;
+const healthBarFactor = (row) => Math.max(1, Number(row?.value) || HEALTH_BAR_SCALE_DEFAULT);
+
+registerCoreKind('defenseModifiers', {
+  id: 'healthBarScale',
+  label: 'COG.Rows.Kind.Defense.healthBarScale.Label',
+  hint: 'COG.Rows.Kind.Defense.healthBarScale.Hint',
+  fields: ['value'],
+  static: 'never',
+  apply: {
+    // acc.hbFactor (initial 1) keeps the highest factor, acc.hbSource its row label
+    defense(acc, row, ctx) {
+      const factor = healthBarFactor(row);
+      if (factor > (acc.hbFactor ?? 1)) { acc.hbFactor = factor; acc.hbSource = ctx.label; }
+    }
+  },
+  summarize(row) { return `Health Bars ×${healthBarFactor(row)}`; }
 });

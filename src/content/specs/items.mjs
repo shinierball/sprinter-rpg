@@ -26,7 +26,9 @@ export const COG_ITEMS = [
         "weaponClass.melee",
         "weapon.club"
       ],
-      "damageParts": [],
+      "associatedSkills": [
+        "club"
+      ],
       "grants": [],
       "notes": "Heavy wooden bat driven through with rusty nails. Bashing skill bonus +1.",
       "description": "A crude but undeniably effective dungeon classic. Delivers crushing bludgeoning damage alongside piercing puncture wounds from rusty steel nails."
@@ -54,7 +56,9 @@ export const COG_ITEMS = [
         "weaponClass.ranged",
         "weapon.bow"
       ],
-      "damageParts": [],
+      "associatedSkills": [
+        "bow"
+      ],
       "grants": [],
       "notes": "Compound hunting bow with balanced draw string. Range: 60ft.",
       "description": "A precision hunting bow scavenged from sporting goods displays. Silent, reliable, and lethal at a distance."
@@ -82,7 +86,9 @@ export const COG_ITEMS = [
         "weaponClass.melee",
         "weapon.dagger"
       ],
-      "damageParts": [],
+      "associatedSkills": [
+        "dagger"
+      ],
       "notes": "Serrated steel blade with non-slip polymer grip.",
       "description": "A tactical military dagger with a dark matte anti-glare finish and razor-sharp serrations."
     }
@@ -109,7 +115,9 @@ export const COG_ITEMS = [
         "weaponClass.melee",
         "weapon.polearm"
       ],
-      "damageParts": [],
+      "associatedSkills": [
+        "polearm"
+      ],
       "notes": "Long reach polearm. Can strike enemies from 10ft away.",
       "description": "A heavy reinforced spear that keeps ravenous goblins and burrowing pests at a comfortable arm's length."
     }
@@ -136,7 +144,9 @@ export const COG_ITEMS = [
         "weaponClass.ranged",
         "weapon.crossbow"
       ],
-      "damageParts": [],
+      "associatedSkills": [
+        "crossbow"
+      ],
       "notes": "High-tension steel prod delivering punchy bolts with armor penetration.",
       "description": "Mechanical devastation in a compact frame. Requires two hands to load, but punches straight through light armor."
     }
@@ -156,7 +166,6 @@ export const COG_ITEMS = [
         "value": 0,
         "unit": ""
       },
-      "damageParts": [],
       "grants": [
         {
           "kind": "skill",
@@ -171,6 +180,10 @@ export const COG_ITEMS = [
         "kind.gear",
         "kind.weapon",
         "weaponClass.unarmed"
+      ],
+      "associatedSkills": [
+        "pugilism",
+        "unarmed-combat"
       ]
     }
   },
@@ -803,12 +816,6 @@ export const COG_ITEMS = [
       "value": 95,
       "equipped": false,
       "drBonus": 1,
-      "damageParts": [
-        {
-          "dice": "1d4",
-          "type": "Piercing"
-        }
-      ],
       "grants": [
         {
           "kind": "stat",
@@ -938,10 +945,17 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 110,
       "equipped": false,
-      "damageParts": [
+      "damageModifiers": [
         {
+          "mode": "add",
+          "label": "Tooth Cap damage",
           "dice": "1d6",
-          "type": "Piercing"
+          "damageType": "Piercing",
+          "condition": {
+            "all": [
+              "weaponClass.natural"
+            ]
+          }
         }
       ],
       "ignoreDR": true,
@@ -954,11 +968,15 @@ export const COG_ITEMS = [
       ],
       "notes": "+2 STR. Adds +1d6 Piercing damage to all bite and natural attacks. Diamond facets ignore 2 points of target DR (Armor Piercing).",
       "description": "Industrial diamond shards crimped onto dental molds. Transforms ordinary animal jaws into high-speed hydraulic drills that chew through steel carapaces.",
+      "associatedSkills": [
+        "chomp"
+      ],
       "tags": [
         "kind.gear",
         "companion.pet",
         "action.armor_piercing",
-        "element.piercing"
+        "element.piercing",
+        "weaponClass.natural"
       ]
     }
   },
@@ -972,10 +990,17 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 85,
       "equipped": false,
-      "damageParts": [
+      "damageModifiers": [
         {
+          "mode": "add",
+          "label": "Tooth Cap damage",
           "dice": "1d4",
-          "type": "Bludgeoning"
+          "damageType": "Bludgeoning",
+          "condition": {
+            "all": [
+              "weaponClass.natural"
+            ]
+          }
         }
       ],
       "grants": [
@@ -1004,10 +1029,14 @@ export const COG_ITEMS = [
       ],
       "notes": "+2 CON, +1 STR. Adds +1d4 Bludgeoning damage to natural attacks and grants +1 bonus to Lockjaw Clamp and Chomp skills.",
       "description": "Cast titanium sleeve caps fitted over canine and incisor teeth, reinforcing the pet's skull against concussive rebound.",
+      "associatedSkills": [
+        "chomp"
+      ],
       "tags": [
         "kind.gear",
         "companion.pet",
-        "element.bludgeoning"
+        "element.bludgeoning",
+        "weaponClass.natural"
       ]
     }
   },
@@ -1021,10 +1050,17 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 125,
       "equipped": false,
-      "damageParts": [
+      "damageModifiers": [
         {
+          "mode": "add",
+          "label": "Tooth Cap damage",
           "dice": "1d6",
-          "type": "Lightning"
+          "damageType": "Lightning",
+          "condition": {
+            "all": [
+              "weaponClass.natural"
+            ]
+          }
         }
       ],
       "grants": [
@@ -1036,10 +1072,14 @@ export const COG_ITEMS = [
       ],
       "notes": "+2 DEX. Adds +1d6 Lightning damage to bite and natural strikes. Critical hits deliver a static shock that stuns minor mobs for 1 round.",
       "description": "Polished 24k gold dental crowns wired to a microscopic piezoelectric spark battery. Every bite crackles with blue electrical arc discharge.",
+      "associatedSkills": [
+        "chomp"
+      ],
       "tags": [
         "kind.gear",
         "companion.pet",
-        "element.electric"
+        "element.electric",
+        "weaponClass.natural"
       ]
     }
   },
@@ -1073,9 +1113,13 @@ export const COG_ITEMS = [
       ],
       "notes": "+2 STR, +2 CHA. Life Leech: heals the pet 1 Health Bar slot each time a natural bite attack takes at least 1 Health Bar slot from a living target (the bite and the living target are for the GM to judge).",
       "description": "Carved from dark blood-agate and fitted over natural fangs. Syphons vitality directly from enemies into the companion.",
+      "associatedSkills": [
+        "chomp"
+      ],
       "tags": [
         "kind.gear",
-        "companion.pet"
+        "companion.pet",
+        "weaponClass.natural"
       ]
     }
   },
@@ -1089,10 +1133,17 @@ export const COG_ITEMS = [
       "quantity": 1,
       "value": 95,
       "equipped": false,
-      "damageParts": [
+      "damageModifiers": [
         {
+          "mode": "add",
+          "label": "Tooth Cap damage",
           "dice": "1d4",
-          "type": "Poison"
+          "damageType": "Poison",
+          "condition": {
+            "all": [
+              "weaponClass.natural"
+            ]
+          }
         }
       ],
       "grants": [
@@ -1104,10 +1155,14 @@ export const COG_ITEMS = [
       ],
       "notes": "+2 DEX. Adds +1d4 Poison damage and inflicts the Poisoned debuff on target when scoring a hit with natural attacks.",
       "description": "Hollowed synthetic emerald fangs filled with concentrated dungeon viper toxin that reloads automatically after every rest.",
+      "associatedSkills": [
+        "chomp"
+      ],
       "tags": [
         "kind.gear",
         "companion.pet",
-        "element.poison"
+        "element.poison",
+        "weaponClass.natural"
       ]
     }
   },
@@ -1476,6 +1531,3257 @@ export const COG_ITEMS = [
           "redacted": true,
           "emptied": [
             "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000001",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000001",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": true,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "dccitm1000000007"
+      ],
+      "signature": {
+        "stat": "int",
+        "skills": [
+          "catcher",
+          "shield"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000001-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "dr",
+                "value": 1,
+                "scaleBy": {
+                  "source": "worshipTier"
+                },
+                "condition": {
+                  "all": [
+                    "situation.intercepting"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000001-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "int",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.int"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "kind.skill",
+                    "stat.int"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000001-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "condition.blood_trail"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000001-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "int",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.int"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "minutes",
+                "value": 10
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000001-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "catcher",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "catcher",
+                "floor": 10,
+                "value": 2
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000001-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "int",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.int"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hours",
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000001-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "catcher",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "catcher",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.skill.catcher"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000002",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000002",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": true,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "dccitm1000000005"
+      ],
+      "signature": {
+        "stat": "con",
+        "skills": [
+          "dccspl0000000054",
+          "heal-others"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000002-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "advantage",
+                "advantage": "advantage",
+                "condition": {
+                  "all": [
+                    "check.resist",
+                    "check.stat",
+                    "condition.possession"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000002-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "healthBarScale",
+                "value": 2
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hit",
+                "value": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000002-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "condition.poisoned"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000002-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "healthBarScale",
+                "value": 2
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "combat",
+                "value": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000002-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "spell",
+                "identifier": "heal-others"
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "heal-others",
+                "floor": 10,
+                "value": 2
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000002-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "healthBarScale",
+                "value": 2
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hours",
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000002-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "spell",
+                "identifier": "dccspl0000000054"
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "dccspl0000000054",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.spell.dccspl0000000054"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000003",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000003",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": true,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "dccitm1000000006"
+      ],
+      "signature": {
+        "stat": "con",
+        "skills": [
+          "club",
+          "dccspl0000000011"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000003-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "resistance",
+                "damageType": "Fire"
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000003-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "healthBarScale",
+                "value": 2
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hit",
+                "value": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000003-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "condition.burned"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000003-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "stat": "str"
+              }
+            ],
+            "defenseModifiers": [],
+            "attackModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "str",
+                "condition": {
+                  "all": [
+                    "stat.str"
+                  ]
+                }
+              }
+            ],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "combat",
+                "value": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000003-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "immunity",
+                "damageType": "Fire"
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000003-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "resistance",
+                "damageType": "Brimstone"
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000003-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "spell",
+                "identifier": "fireball"
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "fireball",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.spell.fireball"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000004",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000004",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": true,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "oshun"
+      ],
+      "signature": {
+        "stat": "cha",
+        "skills": [
+          "deception",
+          "grand-illusion"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000004-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "advantage",
+                "advantage": "advantage",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "id.skill.deception"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000004-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "cha",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.cha"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "kind.skill",
+                    "stat.cha"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000004-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "id.skill.deception"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000004-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "cha",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.cha"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "minutes",
+                "value": 10
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000004-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "deception",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "deception",
+                "floor": 10,
+                "value": 2
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000004-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "cha",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.cha"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hours",
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000004-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "deception",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "deception",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.skill.deception"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000005",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000005",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": true,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "dccitm1000000002"
+      ],
+      "signature": {
+        "stat": "str",
+        "skills": [
+          "dccskl0000000018",
+          "pugilism"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000005-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "advantage",
+                "advantage": "advantage",
+                "condition": {
+                  "all": [
+                    "check.resist"
+                  ],
+                  "any": [
+                    "condition.fear",
+                    "condition.terrified"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000005-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "stat": "str"
+              }
+            ],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "action.attack"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000005-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "condition.fear",
+                    "condition.terrified"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000005-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "stat": "str"
+              }
+            ],
+            "defenseModifiers": [],
+            "attackModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "str",
+                "condition": {
+                  "all": [
+                    "stat.str"
+                  ]
+                }
+              }
+            ],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "combat",
+                "value": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000005-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "intimidate",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "intimidate",
+                "floor": 10,
+                "value": 2
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000005-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "stat": "str"
+              }
+            ],
+            "defenseModifiers": [],
+            "attackModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "str",
+                "condition": {
+                  "all": [
+                    "stat.str"
+                  ]
+                }
+              }
+            ],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "window": {
+                "unit": "hours",
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000005-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "pugilism",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "pugilism",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.skill.pugilism"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000006",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000006",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": false,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "dccitm1000000003"
+      ],
+      "signature": {
+        "stat": "cha",
+        "skills": [
+          "taunt",
+          "second-chance"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000006-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "advantage",
+                "advantage": "advantage",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "id.skill.persuasion"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000006-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "cha",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.cha"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "kind.skill",
+                    "stat.cha"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000006-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "condition.enraged"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000006-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "cha",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.cha"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "minutes",
+                "value": 10
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000006-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "taunt",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "taunt",
+                "floor": 10,
+                "value": 2
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000006-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "cha",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.cha"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hours",
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000006-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "spell",
+                "identifier": "second-chance"
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "second-chance",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.spell.second-chance"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000007",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000007",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": true,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "dccitm1000000001"
+      ],
+      "signature": {
+        "stat": "int",
+        "skills": [
+          "first-aid",
+          "salvage"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000007-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "advantage",
+                "advantage": "advantage",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "id.skill.first-aid"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000007-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "int",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.int"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "kind.skill",
+                    "stat.int"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000007-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "condition.queasy"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000007-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "int",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.int"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "minutes",
+                "value": 10
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000007-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "first-aid",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "first-aid",
+                "floor": 10,
+                "value": 2
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000007-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "int",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.int"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hours",
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000007-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "salvage",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "salvage",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.skill.salvage"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000008",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000008",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": true,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "legba"
+      ],
+      "signature": {
+        "stat": "str",
+        "skills": [
+          "warhammer",
+          "smithing"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000008-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "advantage",
+                "advantage": "advantage",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "id.skill.intimidate"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000008-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "stat": "str"
+              }
+            ],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "action.attack"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000008-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "condition.take_down"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000008-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "stat": "str"
+              }
+            ],
+            "defenseModifiers": [],
+            "attackModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "str",
+                "condition": {
+                  "all": [
+                    "stat.str"
+                  ]
+                }
+              }
+            ],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "combat",
+                "value": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000008-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "smithing",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "smithing",
+                "floor": 10,
+                "value": 2
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000008-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "stat": "str"
+              }
+            ],
+            "defenseModifiers": [],
+            "attackModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "str",
+                "condition": {
+                  "all": [
+                    "stat.str"
+                  ]
+                }
+              }
+            ],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "window": {
+                "unit": "hours",
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000008-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "warhammer",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "warhammer",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.skill.warhammer"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000009",
+    "type": "deity",
+    "img": "icons/svg/sun.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000009",
+      "title": "",
+      "temple": "",
+      "highCleric": "",
+      "offering": {
+        "required": true,
+        "text": ""
+      },
+      "sponsor": "",
+      "symbol": "",
+      "description": "",
+      "rivals": [
+        "dccitm1000000003"
+      ],
+      "signature": {
+        "stat": "dex",
+        "skills": [
+          "dodge",
+          "lightning-bolt"
+        ]
+      },
+      "tierEffects": [
+        {
+          "type": "buff",
+          "name": "New Buff 1",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000009-t1-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "value": 1,
+                "scaleBy": {
+                  "source": "floor"
+                },
+                "condition": {
+                  "all": [
+                    "element.electric"
+                  ]
+                }
+              }
+            ],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 2",
+          "img": "icons/svg/aura.svg",
+          "tier": 1,
+          "system": {
+            "identifier": "dccitm1000000009-t1-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "dex",
+                "condition": {
+                  "all": [
+                    "check.evade",
+                    "stat.dex"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "combat",
+                "value": 1
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 3",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000009-t2-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [
+              {
+                "kind": "effectImmunity",
+                "condition": {
+                  "any": [
+                    "condition.shocked"
+                  ]
+                }
+              }
+            ],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 4",
+          "img": "icons/svg/aura.svg",
+          "tier": 2,
+          "system": {
+            "identifier": "dccitm1000000009-t2-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "dex",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.dex"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "minutes",
+                "value": 10
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 5",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000009-t3-1",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "skill",
+                "identifier": "dodge",
+                "value": 0
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "dodge",
+                "floor": 5,
+                "value": 2
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": []
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 6",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000009-t3-2",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "stat": "dex",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "stat.dex"
+                  ]
+                }
+              }
+            ],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hours",
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "New Buff 7",
+          "img": "icons/svg/aura.svg",
+          "tier": 3,
+          "system": {
+            "identifier": "dccitm1000000009-t3-3",
+            "durationConfig": {
+              "type": "permanent",
+              "value": 0
+            },
+            "tags": [
+              "worship.benefit"
+            ],
+            "grants": [
+              {
+                "kind": "spell",
+                "identifier": "lightning-bolt"
+              },
+              {
+                "kind": "rank_raise",
+                "identifier": "lightning-bolt",
+                "floor": 20,
+                "value": 0
+              }
+            ],
+            "damageModifiers": [],
+            "defenseModifiers": [],
+            "attackModifiers": [],
+            "checkModifiers": [],
+            "vehicleModifiers": [],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "id.spell.lightning-bolt"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "patronage": false,
+      "tags": [
+        "kind.deity"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.title",
+            "system.temple",
+            "system.highCleric",
+            "system.offering.text",
+            "system.sponsor",
+            "system.symbol",
+            "system.description"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000010",
+    "type": "patron",
+    "img": "icons/svg/mystery-man.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000010",
+      "title": "",
+      "description": "",
+      "availability": "",
+      "specialty": "",
+      "venues": "",
+      "quests": "",
+      "favours": "",
+      "rewards": "",
+      "performanceSkills": [
+        "performance"
+      ],
+      "skills": [
+        "detect-lies",
+        "drain-life",
+        "negotiation",
+        "persuasion",
+        "dccspl0000000054"
+      ],
+      "messaging": "hud",
+      "actorUuid": "",
+      "tags": [
+        "access.club.outlaws"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description",
+            "system.availability",
+            "system.specialty",
+            "system.venues",
+            "system.quests",
+            "system.favours",
+            "system.rewards"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000011",
+    "type": "patron",
+    "img": "icons/svg/mystery-man.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000011",
+      "title": "",
+      "description": "",
+      "availability": "",
+      "specialty": "",
+      "venues": "",
+      "quests": "",
+      "favours": "",
+      "rewards": "",
+      "performanceSkills": [
+        "performance"
+      ],
+      "skills": [
+        "animal-handling",
+        "dccspl0000000002",
+        "dccspl0000000011",
+        "sleight-of-hand",
+        "taunt"
+      ],
+      "messaging": "hud",
+      "actorUuid": "",
+      "tags": [
+        "access.club.champions"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description",
+            "system.availability",
+            "system.specialty",
+            "system.venues",
+            "system.quests",
+            "system.favours",
+            "system.rewards"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000012",
+    "type": "patron",
+    "img": "icons/svg/mystery-man.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000012",
+      "title": "",
+      "description": "",
+      "availability": "",
+      "specialty": "",
+      "venues": "",
+      "quests": "",
+      "favours": "",
+      "rewards": "",
+      "performanceSkills": [
+        "performance"
+      ],
+      "skills": [
+        "torch",
+        "second-chance",
+        "hide-in-shadows",
+        "good-first-impression",
+        "escape-artist"
+      ],
+      "messaging": "hud",
+      "actorUuid": "",
+      "tags": [
+        "access.club.all_memberships"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description",
+            "system.availability",
+            "system.specialty",
+            "system.venues",
+            "system.quests",
+            "system.favours",
+            "system.rewards"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000013",
+    "type": "patron",
+    "img": "icons/svg/mystery-man.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000013",
+      "title": "",
+      "description": "",
+      "availability": "",
+      "specialty": "",
+      "venues": "",
+      "quests": "",
+      "favours": "",
+      "rewards": "",
+      "performanceSkills": [
+        "performance"
+      ],
+      "skills": [
+        "fireball",
+        "intimidate",
+        "negotiation",
+        "dccspl0000000042",
+        "survival"
+      ],
+      "messaging": "fairy",
+      "actorUuid": "",
+      "tags": []
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description",
+            "system.availability",
+            "system.specialty",
+            "system.venues",
+            "system.quests",
+            "system.favours",
+            "system.rewards"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000014",
+    "type": "patron",
+    "img": "icons/svg/mystery-man.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000014",
+      "title": "",
+      "description": "",
+      "availability": "",
+      "specialty": "",
+      "venues": "",
+      "quests": "",
+      "favours": "",
+      "rewards": "",
+      "performanceSkills": [
+        "performance"
+      ],
+      "skills": [
+        "hole",
+        "persuasion",
+        "dccspl0000000035",
+        "stealth",
+        "tactics"
+      ],
+      "messaging": "fairy",
+      "actorUuid": "",
+      "tags": [
+        "access.club.champions",
+        "access.club.outlaws"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description",
+            "system.availability",
+            "system.specialty",
+            "system.venues",
+            "system.quests",
+            "system.favours",
+            "system.rewards"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccitm1000000015",
+    "type": "patron",
+    "img": "icons/svg/mystery-man.svg",
+    "name": "",
+    "system": {
+      "identifier": "dccitm1000000015",
+      "title": "",
+      "description": "",
+      "availability": "",
+      "specialty": "",
+      "venues": "",
+      "quests": "",
+      "favours": "",
+      "rewards": "",
+      "performanceSkills": [
+        "performance"
+      ],
+      "skills": [
+        "confusing-fog",
+        "deception",
+        "endurance",
+        "jumping",
+        "dccspl0000000035"
+      ],
+      "messaging": "hud",
+      "actorUuid": "",
+      "tags": [
+        "access.club.champions",
+        "access.club.outlaws"
+      ]
+    },
+    "flags": {
+      "sprinter-rpg": {
+        "sourcery": {
+          "redacted": true,
+          "emptied": [
+            "system.description",
+            "system.availability",
+            "system.specialty",
+            "system.venues",
+            "system.quests",
+            "system.favours",
+            "system.rewards"
           ]
         }
       }

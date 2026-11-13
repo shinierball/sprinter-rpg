@@ -23,6 +23,7 @@ import { combatText } from '../utils/combat/combat-round-text.mjs';
 import { postAiFavorTallyCard } from '../chat/ai-favor-tally-card.mjs';
 import { runAuraPulseStep } from './combat-aura-pulse.mjs';
 import { tickRoundEffects } from './actor/duration-expiry.mjs';
+import { settleNextActionsAtCleanUp } from './actor/condition-expiry.mjs';
 import { evaluateEffectFormula, postRoundEndEffectsChatCard, triggerRoundEndEffects } from './combat-round-end.mjs';
 import { isMobCombatant, findCombatant } from './combat/combatants.mjs';
 import {
@@ -496,15 +497,5 @@ Object.assign(COGCombat.prototype, combatDeclarationsMixin);
 // Built-in Step 5 Clean Up steps. Other rows register theirs with COGCombat.registerCleanUpStep.
 COGCombat.registerCleanUpStep('round-end-effects', (combat, { round }) => combat.triggerRoundEndEffects?.(round) ?? [], { order: CLEAN_UP_ORDER.ROUND_END_EFFECTS });
 COGCombat.registerCleanUpStep('aura-pulse', (combat, { round }) => runAuraPulseStep(combat, { round }), { order: CLEAN_UP_ORDER.AURA_PULSE });
+COGCombat.registerCleanUpStep('next-actions', (combat) => settleNextActionsAtCleanUp(combat), { order: CLEAN_UP_ORDER.DURATIONS + 1 });
 COGCombat.registerCleanUpStep('durations', (combat, { round }) => combat.processRoundDurations?.(round) ?? [], { order: CLEAN_UP_ORDER.DURATIONS });
-COGCombat.registerCleanUpStep('clear-evade', async (combat) => {
-  for (const c of (combat.combatants || [])) {
-    const actor = c.actor || (globalThis.game?.actors?.get ? globalThis.game.actors.get(c.actorId) : null);
-    if (!actor) continue;
-    if (typeof actor.setFlag === 'function') {
-      await actor.setFlag(SYSTEM_ID, 'isEvading', false);
-    } else if (actor.flags?.[SYSTEM_ID]) {
-      actor.flags[SYSTEM_ID].isEvading = false;
-    }
-  }
-}, { order: CLEAN_UP_ORDER.CLEAR_EVADE });

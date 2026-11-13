@@ -1,0 +1,15 @@
+{{!-- Page 1: name, picture and description. The identifier and the tags (the `tags` part) follow. --}}
+<section class="cog-wb-page" data-page="basics" {{#unless (eq page "basics")}}hidden{{/unless}}>
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.WeaponBuilder.Basics.Intro"}}</p>
+  <div class="cog-field-row">
+    <img class="cog-item-header-img" src="{{draftImg}}" data-action="editImage" data-tooltip="{{localize 'COG.WeaponBuilder.Basics.Image'}}" />
+    <div class="cog-field-group" style="flex: 1;">
+      <span class="cog-field-label">{{localize "COG.WeaponBuilder.Basics.Name"}}</span>
+      <input class="cog-field-input" type="text" name="name" value="{{draftName}}" placeholder="{{localize 'COG.WeaponBuilder.Basics.NamePlaceholder'}}" autofocus />
+    </div>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.WeaponBuilder.Basics.Description"}}</span>
+    <textarea class="cog-field-input" name="system.description" rows="5">{{system.description}}</textarea>
+  </div>
+</section>

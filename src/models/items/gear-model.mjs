@@ -1,5 +1,5 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
-import { onHitField, areaSchemaField, damagePartField, interruptSchemaField, lightSchemaField, auraStateField } from '../fields/effect-fields.mjs';
+import { onHitField, areaSchemaField, baseDamageField, interruptSchemaField, lightSchemaField, auraStateField } from '../fields/effect-fields.mjs';
 import { cooldownField, useRecordsField } from '../fields/timing-fields.mjs';
 import { damageModifiersField, asTriggersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, aiFavorRatingsField, sensesField } from '../fields/modifier-fields.mjs';
 import { grantsField } from '../fields/grant-fields.mjs';
@@ -29,15 +29,8 @@ export class GearDataModel extends BaseItemDataModel {
       spellName: new fields.StringField({ initial: '' }),
       toHitStat: new fields.StringField({ initial: '' }),
       toHitRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
-      weaponCategory: new fields.StringField({ initial: '' }),
-      weaponType: new fields.StringField({ initial: '' }),
       associatedSkills: new fields.ArrayField(new fields.StringField(), { initial: [] }),
       requires: new fields.ArrayField(new fields.StringField(), { initial: [] }),
-      proficiencyMode: new fields.StringField({
-        initial: 'highest',
-        choices: ['highest', 'manual']
-      }),
-      selectedSkill: new fields.StringField({ initial: '' }),
       critMultiplier: new fields.NumberField({ integer: true, min: 1, initial: 1 }),
       optionalEffects: new fields.ArrayField(new fields.StringField(), { initial: [] }),
       ignoreDR: new fields.BooleanField({ initial: false }),
@@ -51,7 +44,8 @@ export class GearDataModel extends BaseItemDataModel {
         barsPerRound: new fields.NumberField({ integer: true, initial: 0 }),
         cleanseDebuffs: new fields.ArrayField(new fields.StringField(), { initial: [] })
       }),
-      damageParts: new fields.ArrayField(damagePartField(fields), { initial: [] }),
+      // Optional override of the chosen Skill's Base Damage: only the sub-fields it fills replace the Skill's
+      baseDamage: baseDamageField(fields),
       damageModifiers: damageModifiersField(fields),
       asTriggers: asTriggersField(fields),
       defenseModifiers: defenseModifiersField(fields),
@@ -86,7 +80,7 @@ export class GearDataModel extends BaseItemDataModel {
         slotsFormula: new fields.StringField({ initial: '' }),
         hpPerSlot: new fields.NumberField({ initial: 0, min: 0 })
       }),
-      notes: new fields.HTMLField({ initial: '' }),
+      notes: new fields.StringField({ initial: '' }),
       interrupt: interruptSchemaField(fields),
       light: lightSchemaField(fields),
       rankBreaks: new fields.ObjectField({ initial: {} }),

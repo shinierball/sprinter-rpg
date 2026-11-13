@@ -9,23 +9,24 @@ import { resolveFullItemData, resolveManagerSource } from '../content/catalog-so
 import { carrySourceStamp } from '../utils/content-source.mjs';
 
 /**
- * Embed `data` on `app.actor` (`onActor`, default), else create it as a world item; open the new sheet and re-render.
+ * Open the item setup window at `data`'s kind, seeded with `data` (its folder and starting values) and set to embed on
+ * `app.actor` (`onActor`, default) or create a world item; the manager re-renders when the item is made. Nothing is created
+ * until the window's Create. A weapon (gear with `isWeapon`) opens the weapon page.
  * A plain function so an action can run it with only `{ actor }` as `this`.
  * @param {{ actor?: object|null, render?: Function }} app
  * @param {object} data
  * @param {{ onActor?: boolean }} [options]
  */
 export async function createBlankDocument(app, data, { onActor = true } = {}) {
-  let created;
-  if (onActor && app.actor) {
-    created = (await app.actor.createEmbeddedDocuments('Item', [data]))?.[0];
-  } else {
-    const ItemClass = CONFIG.Item?.documentClass ?? globalThis.foundry?.documents?.Item ?? globalThis.Item;
-    created = await ItemClass.create(data);
-  }
-  if (created && typeof created.sheet?.render === 'function') created.sheet.render({ force: true });
-  if (typeof app.render === 'function') app.render();
-  return created;
+  // Loaded here, not at the top: the setup window reaches the item sheets, which reach the managers, which use this file.
+  const { COGItemSetupApp } = await import('./item-setup-app.mjs');
+  const weapon = data.type === 'gear' && data.system?.isWeapon;
+  return COGItemSetupApp.open({
+    kind: weapon ? 'weapon' : data.type,
+    actor: onActor ? app.actor : null,
+    seed: data,
+    onCreated: () => app.render?.()
+  });
 }
 
 /**

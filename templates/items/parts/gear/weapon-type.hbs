@@ -1,0 +1,24 @@
+{{!-- Weapon type and group: chips over the weapon.* and weaponGroup.* tags, each with its description; "Use the Skill's" copies the Skill's. --}}
+<div class="cog-bg-surface cog-gear-weapon-block" data-weapon-type>
+  <div class="cog-gear-weapon-head">
+    <span class="cog-field-label cog-text"><i class="fa-solid fa-tag"></i> {{localize "COG.GearSheet.Type.Title"}}</span>
+    {{#if weapon.canUseSkillType}}
+    <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="useSkillWeaponType" data-tooltip="{{localize "COG.GearSheet.Type.UseSkillTip"}}"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.GearSheet.Type.UseSkill"}}</button>
+    {{/if}}
+  </div>
+  <div class="cog-gear-chips">
+    {{#each weapon.typeChips as |chip|}}
+    <button type="button" class="cog-badge cog-gear-chip {{#if chip.selected}}cog-bg-header-fill cog-text-on-fill cog-dark selected{{else}}cog-bg-surface-alt{{/if}}" data-action="toggleWeaponTag" data-tag="{{chip.id}}" data-tooltip="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}">{{chip.label}}</button>
+    {{/each}}
+  </div>
+  <span class="cog-field-label">{{localize "COG.GearSheet.Type.GroupTitle"}}</span>
+  <div class="cog-gear-chips">
+    {{#each weapon.groupChips as |chip|}}
+    <button type="button" class="cog-badge cog-gear-chip {{#if chip.selected}}cog-bg-header-fill cog-text-on-fill cog-dark selected{{else}}cog-bg-surface-alt{{/if}}" data-action="toggleWeaponTag" data-tag="{{chip.id}}" data-tooltip="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}">{{chip.label}}</button>
+    {{/each}}
+  </div>
+  {{#each weapon.selectedChips as |chip|}}
+  {{#if chip.description}}<p class="cog-rule-hint cog-gear-chip-description"><strong>{{chip.label}}</strong>: {{chip.description}}</p>{{/if}}
+  {{/each}}
+  {{#unless weapon.hasType}}{{#unless weapon.typeOptional}}<p class="cog-param-warning cog-gear-no-type"><i class="fa-solid fa-triangle-exclamation"></i> {{localize "COG.GearSheet.Type.None"}}</p>{{/unless}}{{/unless}}
+</div>

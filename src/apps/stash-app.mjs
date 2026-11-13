@@ -70,9 +70,10 @@ export class COGStashApp extends COGToolApp {
       ? (Array.from(this.crawler.items ?? []))
       : [];
 
-    const storableTypes = ['gear', 'loot', 'attack', 'weapon'];
+    const storableTypes = ['gear', 'loot', 'attack'];
+    // A carried table or studio deposits into the space too: it is installed there, not stashed
     let crawlerBackpack = crawlerItems.filter(item => {
-      if (!storableTypes.includes(item.type)) return false;
+      if (!storableTypes.includes(item.type) && item.type !== 'space_upgrade') return false;
       if (item.system?.equipped) return false;
       // Boxes are never stashed; achievements are the GM's, so a player's stash never offers them.
       if (isUnopenedBox(item)) return false;
@@ -108,7 +109,7 @@ export class COGStashApp extends COGToolApp {
 
     // Capacity calculations
     const maxCap = Number(this.space?.system?.effectiveStashCapacity ?? this.space?.system?.stashCapacity) || 100;
-    const currentCount = spaceItems.length;
+    const currentCount = spaceItems.filter(item => item.type !== 'space_upgrade').length;
     const isFull = currentCount >= maxCap;
     const capPct = Math.min(100, Math.round((currentCount / maxCap) * 100));
 

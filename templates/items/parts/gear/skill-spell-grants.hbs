@@ -1,0 +1,72 @@
+{{!-- SKILL / SPELL BONUSES (system.grants rows of kind skill | spell, by identifier) --}}
+<details class="cog-collapsible-block" {{#if hasGearGrantsConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-graduation-cap"></i> {{localize "COG.GearSheet.Grants.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if hasGearGrantsConfigured}}active{{/if}}">{{#if hasGearGrantsConfigured}}{{localize "COG.GearSheet.Grants.Count" count=gearGrantRows.length}}{{else}}{{localize "COG.GearSheet.Grants.Add"}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <p class="cog-rule-hint cog-gear-grants-note"><i class="fa-solid fa-circle-info"></i> {{localize "COG.GearSheet.Grants.NotAttackSkill"}}</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <span style="font-size: 11px;">
+        {{#if system.equipped}}
+          <span class="cog-text-success" style="font-weight: bold;">{{localize "COG.GearSheet.Grants.Active"}}</span>
+        {{else}}
+          <span class="cog-text-warning" style="font-weight: bold;" title="{{localize "COG.GearSheet.Grants.InactiveTip"}}">{{localize "COG.GearSheet.Grants.Inactive"}}</span>
+        {{/if}}
+      </span>
+      <a class="cog-text-on-fill cog-dark cog-bg-header-fill" data-action="openSkillPicker" data-tooltip="{{localize "COG.Content.AddSkillFromCompendiumTooltip"}}" style="font-size: 11px; cursor: pointer; padding: 3px 8px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px; font-weight: bold;">
+        <i class="fa-solid fa-book-bookmark"></i> {{localize "COG.Content.AddSkillFromCompendium"}}
+      </a>
+    </div>
+    {{#if gearGrantRows.length}}
+      <table class="cog-table" style="margin: 0; font-size: 11px;">
+        <thead>
+          <tr>
+            <th style="width: 12%;">{{localize "COG.GearSheet.Grants.Kind"}}</th>
+            <th style="width: 50%;">{{localize "COG.GearSheet.Grants.SkillSpell"}}</th>
+            <th style="width: 14%;">{{localize "COG.GearSheet.Grants.RankBonus"}}</th>
+            <th style="width: 14%;" title="{{localize "COG.GearSheet.Grants.GrantRankTip"}}">{{localize "COG.GearSheet.Grants.GrantRank"}}</th>
+            <th style="width: 10%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each gearGrantRows as |row|}}
+            <tr>
+              <td><span class="cog-badge">{{#if row.isSpell}}[SPELL]{{else}}[SKILL]{{/if}}</span>{{#if row.enchantment}} <span class="cog-badge cog-badge-info">{{localize "COG.CraftSheet.Badge.Enchantment"}}</span>{{/if}}</td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <select class="cog-field-input" name="system.grants.{{row.idx}}.identifier" style="font-size: 11px; flex: 1;">
+                    {{#each row.options as |opt|}}
+                      <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+                    {{/each}}
+                  </select>
+                  {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=row.sourceBadge}}
+                  {{#unless row.isSpell}}
+                    <a class="cog-text" data-action="openSkillPicker" data-index="{{row.idx}}" data-tooltip="{{localize "COG.Content.PickFromCompendium"}}" style="cursor: pointer; padding: 2px 4px;"><i class="fa-solid fa-book-bookmark"></i></a>
+                  {{/unless}}
+                </div>
+                <input class="cog-field-input" type="text" name="system.grants.{{row.idx}}.label" value="{{row.label}}" placeholder="{{localize "COG.Content.GrantLabelPlaceholder"}}" title="{{localize "COG.Content.GrantLabelTooltip"}}" style="font-size: 11px; width: 100%; margin-top: 3px;" />
+              </td>
+              <td>
+                <input class="cog-stat-input" type="number" name="system.grants.{{row.idx}}.value" value="{{row.value}}" style="width: 100%; font-size: 11px;" />
+              </td>
+              <td>
+                {{#if row.isSpell}}
+                  <input class="cog-stat-input" type="number" min="1" step="1" name="system.grants.{{row.idx}}.rank" value="{{row.rank}}" style="width: 100%; font-size: 11px;" />
+                  {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=row.cooldownEditor}}
+                {{/if}}
+              </td>
+              <td style="text-align: center;">
+                <a class="cog-text-accent" data-action="deleteRow" data-row-table="grant" data-index="{{row.idx}}" data-tooltip="{{localize "COG.GearSheet.Grants.Delete"}}" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="cog-text-secondary cog-bg-surface" style="text-align: center; font-style: italic; font-size: 11px; padding: 6px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+        {{localize "COG.Content.NoGearSkillBonuses"}}
+      </div>
+    {{/if}}
+  </div>
+</details>

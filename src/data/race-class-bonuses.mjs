@@ -2,6 +2,7 @@
  * Race and class stat, damage-reduction and movement deltas: the pure writes the applier makes into an update payload
  * when it applies a race or class and when it reverts one.
  */
+import { storedAttributes } from '../utils/character/overlay-state.mjs';
 
 /**
  * Adds (sign = 1) or removes (sign = -1) per-stat deltas on an actor's abilities,
@@ -36,7 +37,7 @@ export function addDrAndMovementBonuses(actor, updates, bonuses) {
   }
   if (bonuses.movement) {
     if (bonuses.movement.walkDelta) {
-      const curMove = Number(actor.system?.attributes?.speed?.move) || 20;
+      const curMove = Number(storedAttributes(actor).speed?.move) || 20;
       updates['system.attributes.speed.move'] = curMove + bonuses.movement.walkDelta;
     }
     if (bonuses.movement.climb) updates['system.attributes.speed.climb'] = bonuses.movement.climb;
@@ -60,7 +61,7 @@ export function revertDrAndMovementBonuses(actor, updates, applied) {
   }
   if (applied?.movement) {
     if (applied.movement.walkDelta) {
-      const curMove = Number(actor.system?.attributes?.speed?.move) || 20;
+      const curMove = Number(storedAttributes(actor).speed?.move) || 20;
       updates['system.attributes.speed.move'] = curMove - applied.movement.walkDelta;
     }
     if (applied.movement.climb) updates['system.attributes.speed.climb'] = 0;

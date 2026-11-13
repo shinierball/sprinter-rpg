@@ -15,7 +15,7 @@
  */
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { damageTypesOfRarity } from '../../utils/damage/damage-types.mjs';
-import { getStarterWeaponDefinition, starterPotionPayload } from '../../content/creation-loadouts.mjs';
+import { getStarterWeaponDefinition, starterPotionPayload, weaponTagsForSkill } from '../../content/creation-loadouts.mjs';
 import { buildPayload } from '../builders/item-payload.mjs';
 import { skillPotionPayload } from '../skill-potion-payload.mjs';
 import { cleanText } from './state.mjs';
@@ -277,21 +277,26 @@ function compileWeapon(option, tierSpec, choice, state, ctx, out, label, rollHaz
     out.summary = `${weapon.name} upgraded`;
   } else {
     const def = getStarterWeaponDefinition(cleanText(choice.weapon) || cleanText(choice.name) || option.defaultName);
-    const name = cleanText(choice.name) || cleanText(choice.weapon) || option.defaultName;
-    const dice = option.damageDice || def.damageDice;
+    const name = cleanText(choice.name) || def.name;
+    // The weapon's Skill supplies its Base Damage. A starter weapon type (it has a Skill) never takes an override; the option's
+    // own dice apply only to a weapon that is no starter type (the unnamed default).
+    const baseDamage = option.damageDice && !def.skillIdentifier ? { baseDamage: { dice: option.damageDice } } : {};
     const skill = cleanText(choice.skill);
+    // The weapon's own Skill is its loadout's; a weapon that is no starter weapon takes the Skill its bonus went to.
+    const weaponSkill = cleanText(def.skillIdentifier) || skill;
+    const associatedSkills = weaponSkill ? [weaponSkill] : [];
+    const tags = weaponTagsForSkill(weaponSkill);
     const rows = weaponBonusRows(ctx, bonuses, skill, stat, out, label);
-    const parts = [{ dice, stat: def.damageStat, type: def.damageType, value: 0 }];
     const gear = build(out, 'weapon', {
       name, img: def.img,
       system: {
-        slot: 'hands', quantity: 1, equipped: true, isWeapon: true, toHitStat: def.toHitStat, damageParts: parts,
+        slot: 'hands', quantity: 1, equipped: true, isWeapon: true, toHitStat: def.toHitStat, ...baseDamage, associatedSkills, tags,
         aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []), grants: [...rows.statRows, ...rows.grants], damageModifiers: rows.damageModifiers,
         notes: def.effects || ''
       }
     }, label);
     // The AI Favor reader looks at the attack item, not the gear it was made from: the rows ride on both, like the creator's starter attack.
-    const attack = build(out, 'attack', { name, img: def.img, system: { toHitStat: def.toHitStat, toHitRank: 3, damageParts: parts, effects: def.effects || '', aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []) } }, label);
+    const attack = build(out, 'attack', { name, img: def.img, system: { toHitStat: def.toHitStat, toHitRank: 3, ...baseDamage, associatedSkills, tags, effects: def.effects || '', aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []) } }, label);
     out.creates.push(gear, attack);
     out.unequip = weapons.filter(w => w.equipped).map(w => w.id);
     out.newWeapon = { name, aiFavor: prefillAiFavorRating(bonuses.aiFavorRatings), aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []), skillIdentifier: skill, grants: [...rows.statRows, ...rows.grants], damageModifiers: rows.damageModifiers };

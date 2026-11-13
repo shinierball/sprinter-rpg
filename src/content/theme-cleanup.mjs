@@ -11,9 +11,13 @@ import { isContentOff, readSourceStamp } from '../utils/content-source.mjs';
 import { celestialAiPoopPayload, isPoop, readReplacedRecord, replacedRecordOf } from '../data/rules/celestial-ai-poop.mjs';
 import { restoreFromPoop } from './theme-restore.mjs';
 import { slotReferencesTo } from '../utils/ui/slot-references.mjs';
+import { RACE_CLASS_TYPES } from '../utils/document-types.mjs';
+
+/** World setting: the off-content list the GM has already been shown. */
+export const THEME_CLEANUP_SEEN_SETTING = 'themeCleanupSeen';
 
 /** Race and class items go first, one at a time, so their grants are reverted before anything else is replaced. */
-const REVERTING_TYPES = new Set(['race', 'class']);
+const REVERTING_TYPES = new Set(RACE_CLASS_TYPES);
 
 const list = (collection) => {
   try { return Array.from(collection ?? []); } catch { return []; }
@@ -241,13 +245,13 @@ export async function postCleanupSummary(counts) {
 export async function maybePromptCleanup({ registry = contentRegistry, game = globalThis.game, isActiveGM, open, find = findOffContent } = {}) {
   if (!isActiveGM?.()) return false;
   const off = offContentList(registry);
-  const raw = game?.settings?.get?.(SYSTEM_ID, 'themeCleanupSeen');
+  const raw = game?.settings?.get?.(SYSTEM_ID, THEME_CLEANUP_SEEN_SETTING);
   const seen = (Array.isArray(raw) ? raw : []).filter((id) => typeof id === 'string').sort();
   if (JSON.stringify(seen) === JSON.stringify(off)) return false;
   const summary = summarizeFound(find({ registry, game }));
   const anything = summary.documents + summary.wholeActors + summary.worldItems + summary.worldTables + summary.restorable > 0;
   if (!anything) {
-    await game.settings.set(SYSTEM_ID, 'themeCleanupSeen', off);
+    await game.settings.set(SYSTEM_ID, THEME_CLEANUP_SEEN_SETTING, off);
     return false;
   }
   await open?.();

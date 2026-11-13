@@ -11,6 +11,8 @@
  */
 
 import { COGToolApp } from './tool-app.mjs';
+import { RACE_CLASS_KINDS } from '../data/race-class-grants.mjs';
+import { SYSTEM_ID } from '../constants.mjs';
 import { paramPickers } from '../utils/character/point-build-params.mjs';
 import { sizeName } from '../data/sizes.mjs';
 import {
@@ -40,6 +42,7 @@ export class COGBasePointBuilderApp extends COGToolApp {
       ...rowActions(),
       ...PERK_ROW_DELEGATES,
       togglePerkRows: COGBasePointBuilderApp.#onTogglePerkRows,
+      toggleRequirements: COGBasePointBuilderApp.#onToggleRequirements,
       setRowField: COGBasePointBuilderApp.#onSetRowField,
       setCatalogText: COGBasePointBuilderApp.#onSetCatalogText,
       toggleBenefit: COGBasePointBuilderApp.#onToggleBenefit,
@@ -63,9 +66,14 @@ export class COGBasePointBuilderApp extends COGToolApp {
     const builderType = options.builderType || 'class'; // 'class' | 'race'
     this.spec = blankPointBuySpec(builderType, options);
     this.baseBudget = options.baseBudget ?? (this.spec.builderType === 'race' ? 25 : 30);
+    /** @type {object|null} the crawler this studio applies to (an actor document, token actors included); null from the Items directory */
+    this.targetActor = options.actor ?? null;
+    /** Options for Foundry's create calls (`{ cogHomebrew: true }` from a crawler sheet). */
+    this.createOptions = options.createOptions ?? {};
     this.targetActorId = options.targetActorId || options.actor?.id || null;
 
     // UI State (Accordion and search)
+    this.requirementsOpen = new WeakSet(); // the spec and the custom perks whose Requirements accordion is open (collapsed by default)
     this.perkRowsOpen = new WeakSet(); // the custom perk rows whose Mechanics editor is open (closed by default)
     this.searchQuery = '';
     this.activeTierFilter = 'all';
@@ -123,6 +131,8 @@ export class COGBasePointBuilderApp extends COGToolApp {
 
   loadGrantRows(entry) { return specEdits.loadGrantRows(this.spec, entry); }
 
+  loadRequirements(entry) { return specEdits.loadRequirements(this.spec, entry); }
+
   importBuildJSON(jsonStr) { return specEdits.importPointBuyJSON(this.spec, jsonStr); }
 
   loadPreset(presetId) { return specEdits.loadPointBuyPreset(this.spec, presetId); }
@@ -142,6 +152,8 @@ export class COGBasePointBuilderApp extends COGToolApp {
   setRowField(key, index, fieldName, raw) { return rowEdits.setRowField(this, key, index, fieldName, raw); }
 
   perkRowsHost(list, index) { return rowEdits.perkRowsHost(this, list, index); }
+
+  specRequirementsHost() { return rowEdits.specRequirementsHost(this); }
 
   specGrantRowsHost(list) { return rowEdits.specGrantRowsHost(this, list); }
 
@@ -201,6 +213,43 @@ export class COGBasePointBuilderApp extends COGToolApp {
   /** The complete point ledger and receipt. */
   getPointLedger() { return pointLedger(this.spec, this.baseBudget); }
 
+  /** The crawlers the user owns, for the "Apply to World Crawler" select (only shown when no crawler was handed over). */
+  crawlerTargets() {
+    return Array.from(globalThis.game?.actors?.values?.() ?? [])
+      .filter((a) => a.type === 'crawler' && a.isOwner !== false)
+      .map((a) => ({ id: a.id, name: a.name, isSelected: a.id === this.targetActorId }));
+  }
+
+  /**
+   * The footer's crawler fields: with a handed-over crawler, its name and what Apply replaces (its current race or
+   * class); without one, the owned crawlers for the select.
+   */
+  targetContext() {
+    const actor = this.targetActor;
+    if (!actor) return { targetActor: null, crawlers: this.crawlerTargets() };
+    const profile = RACE_CLASS_KINDS[this.spec.builderType];
+    const currentId = actor.getFlag?.(SYSTEM_ID, profile.flagKey)?.itemId;
+    const current = currentId ? actor.items?.get(currentId) : null;
+    const i18n = globalThis.game?.i18n;
+    const fmt = (key, data) => i18n?.format?.(key, data) ?? key;
+    const replaces = current?.name ?? '';
+    const apply = fmt('COG.PointBuilder.ApplyTo', { name: actor.name });
+    return {
+      targetActor: {
+        name: actor.name,
+        replaces,
+        appliesTo: fmt('COG.PointBuilder.AppliesTo', { name: actor.name }),
+        applyLabel: replaces ? `${apply} ${fmt('COG.PointBuilder.Replaces', { name: replaces })}` : apply
+      },
+      crawlers: []
+    };
+  }
+
+  /** The crawler Apply writes to: the handed-over one, else the chosen world crawler. */
+  resolveTargetActor() {
+    return this.targetActor ?? (this.targetActorId ? globalThis.game?.actors?.get(this.targetActorId) ?? null : null);
+  }
+
   /** The inline rows' display model (see `pointBuyRowViews`). */
   _rowViews() { return pointBuyRowViews(this); }
 
@@ -209,7 +258,7 @@ export class COGBasePointBuilderApp extends COGToolApp {
    */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    return Object.assign(context, await this._rowViews(), pointBuyContextFields(this, this.getPointLedger()));
+    return Object.assign(context, await this._rowViews(), pointBuyContextFields(this, this.getPointLedger()), this.targetContext());
   }
 
 
@@ -308,6 +357,12 @@ export class COGBasePointBuilderApp extends COGToolApp {
     await this._refreshBuild();
   }
 
+  /** The Requirements accordion's summary (the creator's own, or inside a custom perk's Mechanics). */
+  static #onToggleRequirements(event, target) {
+    event.preventDefault?.();
+    rowEdits.toggleRequirements(this, target);
+  }
+
   /** The custom-wording input of a picked catalog benefit or detriment: stored as typed, no re-render. */
   static #onSetCatalogText(event, target) {
     this.setCatalogText(target.dataset.list, target.dataset.id, target.value);
@@ -381,19 +436,23 @@ export class COGBasePointBuilderApp extends COGToolApp {
   }
 
   static async #onApplyToCrawler() {
-    if (!this.targetActorId && globalThis.game?.actors) {
-      const crawlers = Array.from(globalThis.game.actors.values()).filter(a => a.type === 'crawler');
+    if (!this.targetActor && !this.targetActorId) {
+      const crawlers = this.crawlerTargets();
       if (crawlers.length === 1) this.targetActorId = crawlers[0].id;
     }
-
-    if (!this.targetActorId) {
+    const actor = this.resolveTargetActor();
+    if (!actor) {
       const noun = this.spec.builderType === 'race' ? 'Race' : 'Class';
       globalThis.ui?.notifications?.warn(`Please select a target Crawler to apply this ${noun} to.`);
       return;
     }
-
-    const actor = globalThis.game?.actors?.get(this.targetActorId);
-    if (actor) await this.applyToActor(actor, { interactive: true });
+    if (actor.isOwner === false) {
+      globalThis.ui?.notifications?.warn(globalThis.game?.i18n?.format?.('COG.PointBuilder.NoActorPermission', { name: actor.name }) ?? 'COG.PointBuilder.NoActorPermission');
+      return;
+    }
+    const applied = await this.applyToActor(actor, { interactive: true });
+    // Handed a crawler by its sheet, the studio's job is done once the race or class is on it.
+    if (applied && this.targetActor) await this.close();
   }
 
   static async #onResetBlank() {

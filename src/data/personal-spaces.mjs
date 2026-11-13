@@ -1,7 +1,7 @@
 /**
  * Personal Spaces Data Catalog for Sprinter RPG
  *
- * Defines space types (Single Room, Apartment, Bunker, Suite, Guild Hall),
+ * Defines space types (Single Room, Apartment, Bunker, Suite, Guild Hall; each starts at a rank),
  * default amenities, and upgrade catalog modules (Rest, Training,
  * Quest Board, Outside Comms, Security, Stash Expansion, Crafting Tables).
  */
@@ -10,8 +10,7 @@ export const COG_SPACE_TYPES = {
   'space.single_room': {
     id: 'space.single_room',
     label: 'Single-Room Safe Room',
-    size: 'Single Room',
-    tier: 1,
+    rank: 1,
     baseDefense: 10,
     baseCapacity: 100,
     amenities: 'Basic Foam Mattress, Shower Locker, Chemical Toilet',
@@ -21,8 +20,7 @@ export const COG_SPACE_TYPES = {
   'space.apartment': {
     id: 'space.apartment',
     label: '1-Bedroom Safe Room Apartment',
-    size: '1-Bedroom',
-    tier: 2,
+    rank: 2,
     baseDefense: 12,
     baseCapacity: 200,
     amenities: 'Memory Foam Bed, Full Bathroom, Kitchenette, Mini-Fridge',
@@ -32,8 +30,7 @@ export const COG_SPACE_TYPES = {
   'space.bunker': {
     id: 'space.bunker',
     label: 'Reinforced Crawler Bunker',
-    size: 'Bunker Suite',
-    tier: 3,
+    rank: 3,
     baseDefense: 16,
     baseCapacity: 350,
     amenities: 'Hydro-Therapy Bunk, Medical Decon Station, Storage Lockers',
@@ -43,8 +40,7 @@ export const COG_SPACE_TYPES = {
   'space.suite': {
     id: 'space.suite',
     label: 'Penthouse Sponsor Suite',
-    size: 'Penthouse',
-    tier: 4,
+    rank: 4,
     baseDefense: 18,
     baseCapacity: 500,
     amenities: 'Velvet King Bed, Luxury Whirlpool Jacuzzi, Gourmet Dispenser, Wet Bar',
@@ -54,8 +50,7 @@ export const COG_SPACE_TYPES = {
   'space.guild_hall': {
     id: 'space.guild_hall',
     label: 'Guild Safe House',
-    size: 'Guild Compound',
-    tier: 5,
+    rank: 5,
     baseDefense: 20,
     baseCapacity: 1000,
     mercenaryCapacity: 4,
@@ -215,35 +210,6 @@ export const COG_SPACE_UPGRADES = [
     description: 'Subspace compression storage locker. Increases personal space stash capacity by +250 items.'
   },
 
-  // --- Crafting Station Hardpoint Upgrades ---
-  {
-    id: 'upgrade.crafting.alchemy',
-    name: 'Alchemy & Brewing Station Hardpoint',
-    typeTag: 'upgrade.crafting_table',
-    tier: 1,
-    cost: 400,
-    craftingStationType: 'alchemy',
-    description: 'Reinforced ventilation hood and burner station ready to mount an Alchemy Crafting Table.'
-  },
-  {
-    id: 'upgrade.crafting.forge',
-    name: 'Blacksmithing Forge & Anvil Hardpoint',
-    typeTag: 'upgrade.crafting_table',
-    tier: 1,
-    cost: 500,
-    craftingStationType: 'forge',
-    description: 'Heat-resistant stone hearth and hardened steel anvil ready to mount a Forge Crafting Table.'
-  },
-  {
-    id: 'upgrade.crafting.workbench',
-    name: 'Tinkerer & Engineering Workbench Hardpoint',
-    typeTag: 'upgrade.crafting_table',
-    tier: 1,
-    cost: 400,
-    craftingStationType: 'workbench',
-    description: 'Precision tool rack and vice grips ready to mount a Mechanical & Gadget Crafting Table.'
-  },
-
   // --- Barracks & Retainer Housing Upgrades ---
   {
     id: 'upgrade.barracks.bunkhouse',
@@ -274,5 +240,40 @@ export const COG_SPACE_UPGRADES = [
     mercenaryCapacity: 10,
     mercenaryDiscountPct: 30,
     description: 'Expansive military-grade garrison complete with mess cookstation, armory lockers, and training arena. Houses up to 10 mercenaries or NPCs between floors with a 30% discount on daily upkeep and +1 to morale rolls.'
+  },
+
+  // --- Studios: bought for one table type; +1 to the crafting check and crafting time x0.75 at that type. A space of rank 2 or more takes one. ---
+  {
+    id: 'upgrade.studio.alchemy',
+    name: 'Alchemy Studio',
+    typeTag: 'upgrade.studio',
+    tier: 2,
+    cost: 100000,
+    studio: { enabled: true, tableTypeTag: 'crafting.table.alchemist' },
+    checkModifiers: [{ kind: 'bonus', value: 1 }],
+    craftModifiers: [{ kind: 'time', multiplier: 0.75 }],
+    description: 'Ventilation, a second sink and a shelf nobody is allowed to rearrange. Crafts at an Alchemy Table take +1 on the crafting check and a quarter less time.'
+  },
+  {
+    id: 'upgrade.studio.smithing',
+    name: 'Smithing Studio',
+    typeTag: 'upgrade.studio',
+    tier: 2,
+    cost: 100000,
+    studio: { enabled: true, tableTypeTag: 'crafting.table.blacksmith' },
+    checkModifiers: [{ kind: 'bonus', value: 1 }],
+    craftModifiers: [{ kind: 'time', multiplier: 0.75 }],
+    description: 'A proper quench trough and a wall of labelled tongs. Crafts at a Smithing Table take +1 on the crafting check and a quarter less time.'
+  },
+  {
+    id: 'upgrade.studio.workbench',
+    name: 'Workbench Studio',
+    typeTag: 'upgrade.studio',
+    tier: 2,
+    cost: 100000,
+    studio: { enabled: true, tableTypeTag: 'crafting.table.tinkerer' },
+    checkModifiers: [{ kind: 'bonus', value: 1 }],
+    craftModifiers: [{ kind: 'time', multiplier: 0.75 }],
+    description: 'Pegboard, good light and a magnifier on an arm. Crafts at a Workbench take +1 on the crafting check and a quarter less time.'
   }
 ];

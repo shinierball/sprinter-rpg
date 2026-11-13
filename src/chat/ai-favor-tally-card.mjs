@@ -13,6 +13,7 @@ import { ruleBreakBadgeHtml } from '../utils/rule-break-visibility.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { CHECK_RECORD_FLAG } from '../utils/roll/check-assists.mjs';
 import { isMobSide } from '../utils/combat/combat-sides.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 export const AI_FAVOR_TALLY_FLAG = 'aiFavorTally';
 const AI_FAVOR_TALLY_ACTION = 'crawlerApplyAiFavorTally';
@@ -43,11 +44,6 @@ export function tallyText(key, data = {}) {
   return (TEMPLATES[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
 }
 
-const esc = (value) => String(value ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;');
 
 const asList = (collection) => {
   if (!collection) return [];
@@ -147,16 +143,16 @@ export function renderAiFavorTallyCard(lines, applied = {}) {
   const rows = lines.map((line) => {
     const done = applied?.[line.id];
     const text = tallyText('COG.AiFavorTally.Line', { item: line.itemName || '?', value: line.value, k: line.k, m: line.m, r: line.rounds });
-    const warn = line.meetsBook ? '' : ` <span class="cog-text-gold">${esc(tallyText('COG.AiFavorTally.BelowBook'))}</span>`;
+    const warn = line.meetsBook ? '' : ` <span class="cog-text-gold">${escapeAttr(tallyText('COG.AiFavorTally.BelowBook'))}</span>`;
     const control = done
-      ? `<span class="cog-text-success" style="font-weight: bold;">${esc(tallyText('COG.AiFavorTally.Applied'))}${done.ruleBreak ? ` ${ruleBreakBadgeHtml({ cls: '' })}` : ''}</span>`
-      : `<button type="button" class="cog-bg-accent-fill cog-text-on-fill" data-action="${AI_FAVOR_TALLY_ACTION}" data-line-id="${esc(line.id)}" data-actor-uuid="${esc(line.actorUuid)}" data-item-id="${esc(line.itemId)}" data-value="${line.value}" data-meets-book="${line.meetsBook ? 'true' : 'false'}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">${esc(tallyText('COG.AiFavorTally.Apply', { value: line.value }))}</button>`;
-    return `<li style="margin-bottom: 6px;"><strong>${esc(line.actorName)}</strong><br/>${esc(text)}${warn}<div style="margin-top: 3px;">${control}</div></li>`;
+      ? `<span class="cog-text-success" style="font-weight: bold;">${escapeAttr(tallyText('COG.AiFavorTally.Applied'))}${done.ruleBreak ? ` ${ruleBreakBadgeHtml({ cls: '' })}` : ''}</span>`
+      : `<button type="button" class="cog-bg-accent-fill cog-text-on-fill" data-action="${AI_FAVOR_TALLY_ACTION}" data-line-id="${escapeAttr(line.id)}" data-actor-uuid="${escapeAttr(line.actorUuid)}" data-item-id="${escapeAttr(line.itemId)}" data-value="${line.value}" data-meets-book="${line.meetsBook ? 'true' : 'false'}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">${escapeAttr(tallyText('COG.AiFavorTally.Apply', { value: line.value }))}</button>`;
+    return `<li style="margin-bottom: 6px;"><strong>${escapeAttr(line.actorName)}</strong><br/>${escapeAttr(text)}${warn}<div style="margin-top: 3px;">${control}</div></li>`;
   }).join('');
   return `
     <div class="cog-chat-card cog-ai-favor-tally-card cog-bg-window cog-text-strong" style="border: 2px solid var(--cog-accent); border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif;">
-      <div class="cog-bg-accent-fill cog-text-on-fill" style="text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 5px 8px; border-radius: 3px; font-weight: bold; text-align: center;">${esc(tallyText('COG.AiFavorTally.Title'))}</div>
-      <div class="cog-text-secondary" style="margin-top: 6px; font-size: 11px;">${esc(tallyText('COG.AiFavorTally.Hint'))}</div>
+      <div class="cog-bg-accent-fill cog-text-on-fill" style="text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 5px 8px; border-radius: 3px; font-weight: bold; text-align: center;">${escapeAttr(tallyText('COG.AiFavorTally.Title'))}</div>
+      <div class="cog-text-secondary" style="margin-top: 6px; font-size: 11px;">${escapeAttr(tallyText('COG.AiFavorTally.Hint'))}</div>
       <ul style="margin: 8px 0 0 16px; padding: 0; font-size: 12px;">${rows}</ul>
     </div>
   `;

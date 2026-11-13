@@ -7542,6 +7542,16 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "dccskl0000000058",
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 5
+        },
+        {
+          "route": "grind",
+          "maxRank": 5
+        }
+      ],
       "tags": [
         "kind.skill",
         "skillGroup.utility",
@@ -8403,6 +8413,16 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "dodge",
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 5
+        },
+        {
+          "route": "grind",
+          "maxRank": 5
+        }
+      ],
       "tags": [
         "action.passive",
         "kind.skill",
@@ -15624,7 +15644,20 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "call-a-play",
-      "canGainRanks": false,
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
       "assist": {
         "formula": "2d6kh",
         "when": {
@@ -15768,7 +15801,20 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "intervene",
-      "canGainRanks": false,
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
       "assist": {
         "formula": "1d6",
         "when": {
@@ -15825,7 +15871,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "Leap from stealth or range to dig razor claws into the target. Base Damage: 1d8 + Dex Slashing.",
-      "upgrades": "Rank 5: +1d8 base damage\nRank 10: +1d8 base damage and inflicts Bleeding DoT\nRank 15: +1d8 base damage and critical hits ignore armor DR.",
+      "upgrades": "Rank 5: +1d8 base damage\nRank 10: +1d8 base damage and the target takes a Squib Malfunction\nRank 15: +1d8 base damage and critical hits ignore armor DR.",
       "checked": false,
       "damageModifiers": [],
       "isAttack": true,
@@ -15862,8 +15908,8 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "bleeding",
-          "notes": "+1d8 base damage and inflicts Bleeding DoT",
+          "debuff": "squib-malfunction",
+          "notes": "+1d8 base damage; the target takes a Squib Malfunction",
           "isArmorPiercing": false,
           "healing": {
             "barsBonus": 0,
@@ -19277,7 +19323,6 @@ export const COG_SKILLS = [
       "stat": "cha",
       "checkType": "stat",
       "checkNote": "Stat Check",
-      "canGainRanks": true,
       "rankSource": "own",
       "isAttack": false,
       "hasDamage": false,
@@ -19572,7 +19617,6 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "canGainRanks": true,
       "rankSource": "own",
       "isAttack": true,
       "hasDamage": true,
@@ -19863,7 +19907,6 @@ export const COG_SKILLS = [
       "stat": "int",
       "checkType": "stat",
       "checkNote": "Stat Check",
-      "canGainRanks": true,
       "rankSource": "own",
       "isAttack": false,
       "hasDamage": false,
@@ -20154,7 +20197,20 @@ export const COG_SKILLS = [
       "stat": "con",
       "checkType": "stat",
       "checkNote": "Stat Check",
-      "canGainRanks": false,
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
       "rankSource": "own",
       "isAttack": false,
       "hasDamage": false,
@@ -20446,7 +20502,6 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
-      "canGainRanks": true,
       "rankSource": "floor",
       "isAttack": true,
       "hasDamage": true,
@@ -20734,7 +20789,6 @@ export const COG_SKILLS = [
       "stat": "int",
       "checkType": "stat",
       "checkNote": "Stat Check",
-      "canGainRanks": true,
       "rankSource": "own",
       "isAttack": false,
       "hasDamage": false,
@@ -21022,7 +21076,6 @@ export const COG_SKILLS = [
       "stat": "con",
       "checkType": "stat",
       "checkNote": "Stat Check",
-      "canGainRanks": true,
       "rankSource": "own",
       "isAttack": false,
       "hasDamage": false,
@@ -21314,7 +21367,6 @@ export const COG_SKILLS = [
       "stat": "cha",
       "checkType": "opposed",
       "checkNote": "Opposed, Interrupt",
-      "canGainRanks": true,
       "rankSource": "floor",
       "isAttack": false,
       "hasDamage": false,
@@ -21606,7 +21658,6 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "attack",
       "checkNote": "Ranged Attack, Dex",
-      "canGainRanks": true,
       "rankSource": "floor",
       "isAttack": true,
       "hasDamage": true,
@@ -21895,7 +21946,6 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "stat",
       "checkNote": "Stat Check",
-      "canGainRanks": true,
       "rankSource": "own",
       "isAttack": false,
       "hasDamage": false,
@@ -22183,7 +22233,20 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "stat",
       "checkNote": "Standard",
-      "canGainRanks": false,
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
       "rankSource": "own",
       "isAttack": false,
       "hasDamage": false,

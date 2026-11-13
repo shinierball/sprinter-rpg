@@ -11,8 +11,11 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, dispatchRelay } from '../../utils/gm-relay.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
+import { actionBlockLines } from '../actor/action-block.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { endsByRoll, settleAfterAction, settleForfeits } from '../actor/condition-expiry.mjs';
 import { bossActionBudget } from '../../data/mob-creation-rules.mjs';
-import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, RULE_BREAK_REFUSALS, withRuleBreak } from '../../utils/rule-break.mjs';
 import { combatText } from '../../utils/combat/combat-round-text.mjs';
 import { addAiFavor } from '../../chat/actions/ai-favor-tally.mjs';
 import { findCombatById, isCombatWriter, canWriteCombatant, isMobCombatant } from './combatants.mjs';
@@ -21,7 +24,7 @@ import { CALLED_PLAYS_FLAG } from './called-plays.mjs';
 /** Relay action: a player records an action (e.g. an interrupt) on a Combat only the GM can update. */
 const RECORD_ACTION_RELAY = 'recordCombatantAction';
 const CLEAR_ACTION_RELAY = 'clearCombatantAction';
-const ACTION_DATA_KEYS = ['type', 'label', 'category', 'icon', 'isAttack', 'isInterrupt', 'note', 'slotIndex'];
+const ACTION_DATA_KEYS = ['type', 'label', 'category', 'icon', 'isAttack', 'isInterrupt', 'note', 'slotIndex', 'forfeited'];
 
 function pickActionData(actionData = {}) {
   const out = {};
@@ -201,6 +204,19 @@ export function getCombatantActions(combatantOrId, combat = null, round = null) 
 }
 
 /**
+ * True when the combatant has spent the Evade Action in the round: one Evade Action covers every Attack aimed at them
+ * that round (core book pp. 81, 90), so a later Evade Check costs nothing more. A Rule Break slot counts. Pure read.
+ * @param {object} combat
+ * @param {Combatant|string} combatant
+ * @param {number|null} [round=null] defaults to the active round
+ * @returns {boolean}
+ */
+export function hasEvadeAction(combat, combatant, round = null) {
+  const slots = combat.getCombatantActions(combatant, round)?.slots ?? [];
+  return slots.some(slot => slot?.type === COG_ACTION_TYPES.evade.id);
+}
+
+/**
  * Snapshot current combatant actions for a specified round into roundHistory flag.
  * @param {object} combat
  * @param {number} [round=combat.round]
@@ -261,6 +277,8 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
   const overBudget = actions.spent >= actions.max && actionData.slotIndex === undefined;
   const budgetCause = `Action budget exceeded (${actions.spent + 1}/${actions.max})`;
   if (overBudget) causes.push(budgetCause);
+  // A "no Actions" bearer (Paralyzed, Dying): the same confirm, unless the roll that led here already asked.
+  if (options?.actionBlockChecked !== true) causes.push(...actionBlockLines(actor, type));
 
   let ruleBreak = false;
   let ruleBreakReason = '';
@@ -269,7 +287,7 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
     const reasonText = causes.join('; ');
     const confirmRes = await confirmRuleBreak({
       title: 'Action Limit Exceeded',
-      message: `${reasonText}. Proceed anyway as a Rule Break?`,
+      message: `${escapeAttr(reasonText)}. Proceed anyway as a Rule Break?`,
       reason: reasonText,
       options
     });
@@ -292,6 +310,7 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
     icon: actionData.icon || typeDef.icon,
     isAttack,
     isInterrupt: Boolean(typeDef.isInterrupt || actionData.isInterrupt),
+    ...(actionData.forfeited === true ? { forfeited: true } : {}),
     timestamp: Date.now(),
     note: actionData.note || '',
     ruleBreak,
@@ -317,6 +336,8 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
     slots
   };
 
+  // A relayed record is settled by the GM's own call, so only a direct write settles here.
+  let wroteHere = true;
   if (isCombatWriter()) {
     if (isPastRound) {
       const history = deepClone(combat.getFlag(SYSTEM_ID, 'roundHistory') || {});
@@ -337,6 +358,7 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
     await c.setFlag(SYSTEM_ID, 'actions', updatedActions);
   } else {
     // Only the GM may update a Combat document: ask the active GM to record it (re-validated there).
+    wroteHere = false;
     const sent = await dispatchRelay(RECORD_ACTION_RELAY, {
       combatId: combat.id,
       combatantId: c.id,
@@ -346,6 +368,9 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
     }, { direct: false });
     if (!sent) return { success: false, error: 'No GM is connected to record this action.', actions };
   }
+
+  // An Action with no roll of its own (a Move, a Retrieve...) is the "next Action" that ends Queasy and Staggered.
+  if (wroteHere && !isPastRound && actionData.forfeited !== true && !endsByRoll(type)) await settleAfterAction(actor);
 
   return {
     success: true,
@@ -494,7 +519,7 @@ export async function spendAIFavorBonusAction(combat, combatantOrId, options = {
       : '';
     await globalThis.ChatMessage.create({
       speaker: globalThis.ChatMessage.getSpeaker?.({ actor }) || { alias: c.name },
-      flags: ruleBreak ? { [SYSTEM_ID]: { ruleBreak: true } } : undefined,
+      flags: ruleBreak ? withRuleBreak({}).flags : undefined,
       content: `
         <div class="cog-bg-danger-tint" style="border: 1.5px solid var(--cog-danger); padding: 6px 8px; border-radius: 4px; font-family: 'Oswald', sans-serif;">
           <div class="cog-text-danger" style="font-weight: bold; text-transform: uppercase; font-size: 13px;">
@@ -539,4 +564,6 @@ export async function resetRoundActions(combat) {
       await c.unsetFlag(SYSTEM_ID, CALLED_PLAYS_FLAG);
     }
   }
+  // A Shocked bearer with no Action left last round loses one of the new round's.
+  for (const c of (combat.combatants || [])) await settleForfeits(combat, c);
 }

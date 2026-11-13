@@ -90,7 +90,7 @@ export const COG_POINT_BUILD_ENTRIES = [
     description: 'Cannot choose this Class/Race if you possess membership in a specific club (you pick the club).',
     rowParams: ['clubTag'],
     rows: [
-      { path: 'system.requires', row: { none: ['$clubTag'] } }
+      { path: 'system.requirements', row: { kind: 'tags', query: { none: ['$clubTag'] } } }
     ]
   },
   {

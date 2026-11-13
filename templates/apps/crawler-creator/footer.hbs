@@ -5,17 +5,19 @@
     {{else}}
       <span class="status-not-ready"><i class="fa-solid fa-triangle-exclamation"></i> Creating now is a Rule Break:{{#each ruleBreakReasons}} {{this}}{{/each}}{{#each floorBreakReasons}} {{this}}.{{/each}}{{#if stageFooter.note.open}} {{stageFooter.note.text}}.{{/if}}</span>
     {{/if}}
+    {{#each stageFooter.blocked}}<span class="status-not-ready"><i class="fa-solid fa-hand"></i> {{this}}</span>{{/each}}
   </div>
 
   {{#if stageFooter.staged}}
     <div class="cog-fsim-footer-right">
-      <button type="button" class="cog-fsim-btn" data-action="rollAll" {{#unless stageFooter.openDice}}disabled{{/unless}}><i class="fa-solid fa-dice"></i> {{localize 'COG.FloorSim.RollAll'}}{{#if stageFooter.openDice}} ({{stageFooter.openDice}}){{/if}}</button>
+      <button type="button" class="cog-fsim-btn" data-action="randomize"><i class="fa-solid fa-dice-d20"></i> {{localize 'COG.FloorSim.RandomizeAll'}}</button>
+      <button type="button" class="cog-fsim-btn" data-action="rollAll" {{#unless stageFooter.openAny}}disabled{{/unless}}><i class="fa-solid fa-dice"></i> {{localize 'COG.FloorSim.RollAll'}}{{#if stageFooter.openAny}} ({{stageFooter.openAny}}){{/if}}</button>
       <button type="button" class="cog-fsim-btn" data-action="prevStep" {{#unless stageFooter.canBack}}disabled{{/unless}}><i class="fa-solid fa-chevron-left"></i> {{localize 'COG.FloorSim.Back'}}</button>
       <button type="button" class="cog-fsim-btn" data-action="nextStep" {{#unless stageFooter.canNext}}disabled{{/unless}}>{{localize 'COG.FloorSim.Next'}} <i class="fa-solid fa-chevron-right"></i></button>
     </div>
   {{/if}}
 
-  <button type="button" class="cog-create-crawler-btn {{#unless canCreate}}rule-break{{/unless}}" data-action="createCrawler">
+  <button type="button" class="cog-create-crawler-btn {{#unless canCreate}}rule-break{{/unless}}" data-action="createCrawler" {{#unless stageFooter.canFinish}}disabled title="{{#each stageFooter.blocked}}{{this}} {{/each}}"{{/unless}}>
     <i class="fa-solid fa-door-open"></i> ENTER THE DUNGEON (CREATE CRAWLER)
   </button>
 </footer>

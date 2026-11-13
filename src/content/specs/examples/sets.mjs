@@ -88,6 +88,46 @@ export const EXAMPLE_SET_META = Object.freeze([
     id: 'contract-clauses', symbol: 'CC', code: 'cc', label: 'Contract Clauses', release: '7.0.0',
     authorship: 'ai',
     premise: 'Studio paperwork that changes you: a mascot clause, an extras contract and a night-shift drink, a lawyer in a can, and a spill of Toxic Sludge that iodine pills fix if you take them before the floor ends.'
+  }),
+  Object.freeze({
+    id: 'fine-print', symbol: 'FP', code: 'fp', label: 'Fine Print', release: '8.0.0',
+    authorship: 'ai',
+    premise: 'A race and two classes that ask for something first: a Stat score, a Skill Rank, Popularity, a Floor, another Race or Class, an achievement, a tag, and one thing only the GM can judge.'
+  }),
+  Object.freeze({
+    id: 'network-notes', symbol: 'NN', code: 'nn', label: 'Network Notes', release: '8.0.0',
+    authorship: 'ai',
+    premise: 'A skill that only magic can raise, a skill that advances by use and grinding up to Rank 5 and by training and magic after, and a sealed note that raises the first.'
+  }),
+  Object.freeze({
+    id: 'open-plan', symbol: 'OP', code: 'op', label: 'Open Plan', release: '8.0.0',
+    authorship: 'ai',
+    premise: 'Two crawlers in one party and their joined spaces, a studio that speeds up and trims a Prop Shop table, one that batches and salvages, a recipe the studio unlocks, a Personal Space Coupon, and a crate with a table inside.'
+  }),
+  Object.freeze({
+    id: 'prime-time-pantheon', symbol: 'PP', code: 'pp', label: 'Prime Time Pantheon', release: '8.0.0',
+    authorship: 'ai',
+    premise: 'Nine network gods, two feuds, a priest who must pick one, and an usher who keeps score.'
+  }),
+  Object.freeze({
+    id: 'green-room', symbol: 'GR', code: 'gr', label: 'Green Room', release: '8.0.0',
+    authorship: 'ai',
+    premise: 'Three talent scouts, a god who takes clients, an opening act who needs representation, and a gig that pays in gold and exposure.'
+  }),
+  Object.freeze({
+    id: 'final-credits', symbol: 'FC', code: 'fc', label: 'Final Credits', release: '8.0.0',
+    authorship: 'ai',
+    premise: 'The debuff a dead actor carries, and nothing else: no Actions, no healing, and only the GM can lift it.'
+  }),
+  Object.freeze({
+    id: 'weapon-workshop', symbol: 'WW', code: 'ww', label: 'Weapon Workshop', release: '8.0.0',
+    authorship: 'ai',
+    premise: 'Weapons that show what the weapon sheet authors: a broom that lists two Skills in order of preference, a sabre that deals its Skill\'s damage, one that overrides it on purpose and one that adds a bonus of its own.'
+  }),
+  Object.freeze({
+    id: 'technical-difficulties', symbol: 'TD', code: 'td', label: 'Technical Difficulties', release: '8.0.0',
+    authorship: 'ai',
+    premise: 'Debuffs in the shapes the rules call for: one that stacks, a warning that becomes a final warning, one that brings another with it, a dropped feed that leaves its bearer unable to take Actions, and a supervisor who hands them out.'
   })
 ]);
 

@@ -3,17 +3,19 @@
  */
 
 import { COGSessionEngine } from '../session/session-engine.mjs';
+import { newRollId } from '../../utils/roll/check-difficulty.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { CHECK_TAGS } from '../../utils/tag/tag-mechanics.mjs';
 import { buildCheckRecord, classifyEvade, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
 import { collectCheckModifiers, collectRollAdvantage, collectEvadeOutcome } from '../../utils/roll/damage-modifiers.mjs';
 import { cameraParts, consumeArmedCamera } from '../../utils/roll/cameras.mjs';
 import { buildRollContext, extendContext, resolveRollToggles, resolveRowAdvantage, actionTagsOf, roleTagsOf } from '../../utils/roll/roll-context.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
 import { aboardState, isEvadeNearMiss, isHeadOn, occupantEvadeLine } from '../../utils/vehicle/vehicle-combat.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { gateActionBlock, actionBlockApplies } from './action-block.mjs';
 
 const vehicleText = (key, fallback) => {
   const text = globalThis.game?.i18n?.localize?.(key);
@@ -34,6 +36,13 @@ const vehicleText = (key, fallback) => {
  * @param {boolean} [options.freeEvade=false] - The first Evade against a disadvantaged mob attack: it spends no Action (E6.10)
  */
 export async function rollEvade(actor, options = {}) {
+  // Every entry point (sheet button, attack card, tracker drawer) lands here: a bearer who cannot take Actions asks first.
+  // A caller that already asked passes `actionBlockChecked`; a declined Evade rolls nothing.
+  if (actionBlockApplies(actor, 'evade', options)) {
+    const blockGate = await gateActionBlock(actor, 'evade', { options });
+    if (!blockGate.proceed) return null;
+    if (blockGate.ruleBreak) options = { ...options, ruleBreak: true };
+  }
   const dexMod = actor.system.abilities?.dex?.mod ?? 0;
   const evadeAttr = actor.system.attributes?.evade;
   const items = Number(evadeAttr?.items ?? evadeAttr?.gear) || 0;
@@ -70,13 +79,18 @@ export async function rollEvade(actor, options = {}) {
   if (movingLine) parts.push(movingLine.label);
   if (rowAdv.mode !== 'normal') parts.push(rowAdv.label);
   if (options.freeEvade === true) parts.push(mobAttackText('COG.MobAttack.FreeEvadeLine'));
+  if (options.evadeActionSpent === true) parts.push(mobAttackText('COG.MobAttack.EvadeCoveredLine'));
 
+  const rollId = newRollId();
   COGSessionEngine.recordRoll({
     actor,
     roll,
     type: 'stat',
     name: 'Evade Roll',
-    isUntrained: false
+    isUntrained: false,
+    rollId,
+    // The Evade Action is spent once a round (9.17): a free or already covered Evade is no new Action.
+    spendsAction: options.freeEvade !== true && options.evadeActionSpent !== true
   }).catch(() => {});
   actor.awardPopularityForRoll(roll, { context: rollContext, options }).catch(() => {});
 
@@ -129,44 +143,44 @@ export async function rollEvade(actor, options = {}) {
     `;
   }
 
-  const rollHtml = typeof roll.render === 'function' ? await roll.render() : '';
+  const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
   const content = rollHtml ? `${rollHtml}${resultHtml}` : (resultHtml || undefined);
   const attackMessageId = typeof options.attackMessageId === 'string' && options.attackMessageId ? options.attackMessageId : null;
 
-  const message = await roll.toMessage({
+  const message = await roll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor: `${flavor}${camera.noteHtml}`,
-    content,
-    flags: {
-      [SYSTEM_ID]: {
-        isEvadeRoll: true,
-        ...camera.flags,
-        evadeTotal: roll.total,
-        targetDC,
-        attackTotal: targetDC,
-        isEvaded,
-        isArea,
-        evadeOutcome,
-        damageMultiplier,
-        floorBonus,
-        double,
-        attackMessageId,
-        evaderUuid: actor.uuid,
-        ...(options.ruleBreak === true ? { ruleBreak: true } : {}),
-        ...(options.freeEvade === true ? { freeEvade: true } : {}),
-        [CHECK_RECORD_FLAG]: buildCheckRecord({
-          kind: 'evade',
-          roller: actor,
-          rollerTokenId: rollerTokenIdOf(actor),
-          roll,
-          combat: combatRefFor(actor),
-          tags: [CHECK_TAGS.evade],
-          dc: targetDC,
-          evade: { isArea, areaOutcome, floor: floorNumber }
-        })
-      }
-    }
-  });
+    content
+  }, {
+    isEvadeRoll: true,
+    ...camera.flags,
+    evadeTotal: roll.total,
+    targetDC,
+    attackTotal: targetDC,
+    isEvaded,
+    isArea,
+    evadeOutcome,
+    damageMultiplier,
+    floorBonus,
+    double,
+    attackMessageId,
+    evaderUuid: actor.uuid,
+    ...(options.ruleBreak === true ? { ruleBreak: true } : {}),
+    ...(options.freeEvade === true ? { freeEvade: true } : {}),
+    [CHECK_RECORD_FLAG]: buildCheckRecord({
+      kind: 'evade',
+      roller: actor,
+      rollerTokenId: rollerTokenIdOf(actor),
+      roll,
+      combat: combatRefFor(actor),
+      tags: [CHECK_TAGS.evade],
+      dc: targetDC,
+      evade: { isArea, areaOutcome, floor: floorNumber },
+      rollId,
+      stat: 'dex',
+      floor: floorNumber
+    })
+  }));
   await consumeArmedCamera(actor);
   return message;
 }

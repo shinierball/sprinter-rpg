@@ -12,3 +12,14 @@ export function firstScalar(raw, fallback = '') {
   if (typeof val === 'string' && val.includes(',')) val = val.split(',')[0].trim();
   return val;
 }
+
+/**
+ * A list of strings from an array or a comma-separated string (authoring-time input only).
+ * @param {string[]|string|undefined} raw
+ * @returns {string[]} trimmed, non-empty entries
+ */
+export function toStringList(raw) {
+  if (Array.isArray(raw)) return raw.map((s) => String(s ?? '').trim()).filter(Boolean);
+  if (typeof raw === 'string') return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  return [];
+}

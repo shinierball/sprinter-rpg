@@ -1,0 +1,17 @@
+{{!-- WEAPON: the Skill used to attack, the weapon type, hands, damage and to-hit. Open by default; context: `weapon` from src/sheets/item/context-weapon.mjs --}}
+<details class="cog-collapsible-block cog-gear-weapon" open>
+  <summary class="cog-collapsible-summary cog-bg-accent-strong-fill">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-crosshairs"></i> {{weapon.title}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-skills.hbs"}}
+    {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-type.hbs"}}
+    {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-hands.hbs"}}
+    {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-damage.hbs"}}
+    {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-readout.hbs"}}
+    {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-to-hit.hbs"}}
+    {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-techniques.hbs"}}
+  </div>
+</details>
+
+{{> "systems/sprinter-rpg/templates/items/parts/as-triggers.hbs"}}

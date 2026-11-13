@@ -17,6 +17,10 @@ import { debuffInForce } from '../effects/debuff-force.mjs';
 import { raceInForce } from '../character/overlay-state.mjs';
 import { isGearSuppressed, isEffectPaused, bindGearFlagReader } from '../effects/gear-suppression.mjs';
 import { referencedDebuffSources } from '../effects/referenced-debuffs.mjs';
+import { isWorshipBond } from '../deity/worship-state.mjs';
+
+/** World setting: the GM's changes to built-in tags. */
+export const TAG_OVERRIDES_SETTING = 'tagOverrides';
 
 /** The row arrays a tag may carry (the open ones, K2). Adding one later is one line. */
 export const TAG_ROW_ARRAYS = Object.freeze(['damageModifiers', 'defenseModifiers', 'attackModifiers', 'checkModifiers']);
@@ -42,7 +46,10 @@ export const RULE_FLAGS = Object.freeze({
   zone: 'zone',
   maneuver: 'maneuver',
   mountedOnly: 'mounted-only',
-  worksInZeroZone: 'works-in-zero-zone'
+  worksInZeroZone: 'works-in-zero-zone',
+  noActions: 'no-actions',
+  forfeitsAction: 'forfeits-action',
+  noHealing: 'no-healing'
 });
 
 /** @type {Record<string, { id: string, label: string, hint: string }>} `CONFIG.COG.ruleFlags` is this same object. */
@@ -88,6 +95,9 @@ function seedFlags() {
   registerRuleFlag({ id: RULE_FLAGS.maneuver, label: 'Maneuver', hint: 'A situation the attacker opts into per attack; listed under Maneuvers in the Attack Options pop-up.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.mount, label: 'Mount', hint: 'A pet carrying this can be ridden.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.worksInZeroZone, label: 'Works in Zero Zone', hint: 'Worn gear carrying this keeps working while its wearer is in a zero zone.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.noActions, label: 'Cannot take Actions', hint: 'Acting while carrying this is a Rule Break confirm.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.forfeitsAction, label: 'Forfeits the next Action', hint: 'A bearer with an Action left loses it (a slot is recorded) and the debuff ends; acting before it is forfeited is a Rule Break confirm.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.noHealing, label: 'Cannot be healed', hint: 'Healing the bearer is a Rule Break confirm; an automatic heal is skipped.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.mountedOnly, label: 'Mounted use only', hint: 'A weapon made for use while mounted or driving; a vehicle\'s driver uses it without Disadvantage.' }, { priority: 0 });
 }
 seedFlags();
@@ -173,7 +183,7 @@ function cleanFlags(flags) {
 /** The world override map `{ [tagId]: { rows?, flags? } }` (the `tagOverrides` setting; E7.5 writes it). */
 export function getTagOverrides() {
   try {
-    const saved = globalThis.game?.settings?.get?.(SYSTEM_ID, 'tagOverrides');
+    const saved = globalThis.game?.settings?.get?.(SYSTEM_ID, TAG_OVERRIDES_SETTING);
     if (isPlain(saved)) return saved;
   } catch {
     // Setting not registered yet.
@@ -310,8 +320,8 @@ export function collectItemSources(actor, ctxItem = null) {
   return sources;
 }
 
-/** Deity and sponsor items: identity carriers that are not modifier sources. */
-const IDENTITY_ONLY_TYPES = ['deity', 'sponsor'];
+/** Deity and sponsor items: identity carriers that are not modifier sources. A god counts only while worshipped, as in `collectActorTags`. */
+const identityCarrier = (item) => item?.type === 'sponsor' || isWorshipBond(item);
 
 /**
  * Append one synthetic source per row-carrying tag the actor carries (spec §4.1). The tags counted are those of the
@@ -338,7 +348,7 @@ export function appendTagSources(actor, sources) {
     for (const t of tagsOf(src)) note(t, src);
   }
   for (const item of itemsOf(actor)) {
-    if (item && IDENTITY_ONLY_TYPES.includes(item.type)) for (const t of tagsOf(item)) note(t, item);
+    if (identityCarrier(item)) for (const t of tagsOf(item)) note(t, item);
   }
   for (const t of collectActorTags(actor, { identityOnly: true })) {
     if (!carriersByTag.has(t)) note(t, actor);

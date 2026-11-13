@@ -1,0 +1,17 @@
+{{!-- "What's missing": the item completeness check (src/sheets/item/context-findings.mjs). A finding with a ready fix gets a button; no named inputs. The root always renders (a part needs one); it is hidden when nothing is missing. --}}
+<section class="cog-item-findings" data-item-findings {{#unless hasFindings}}hidden{{/unless}}>
+  {{#if hasFindings}}
+  <h4 class="cog-field-label">{{localize "COG.ItemFindings.Title"}}</h4>
+  <ul class="cog-item-findings-list">
+    {{#each findings as |finding|}}
+    <li class="cog-item-finding {{#if finding.isBroken}}cog-param-warning{{else}}cog-rule-hint{{/if}}" data-severity="{{finding.severity}}" data-code="{{finding.code}}">
+      <i class="fa-solid {{#if finding.isBroken}}fa-triangle-exclamation{{else}}fa-circle-info{{/if}}"></i>
+      <span class="cog-item-finding-text">{{finding.text}}</span>
+      {{#if finding.hasFix}}
+      <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="applyFinding" data-code="{{finding.code}}" data-path="{{finding.path}}">{{finding.fixLabel}}</button>
+      {{/if}}
+    </li>
+    {{/each}}
+  </ul>
+  {{/if}}
+</section>

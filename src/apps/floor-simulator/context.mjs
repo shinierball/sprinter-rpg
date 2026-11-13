@@ -8,7 +8,9 @@ import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { formulaForRank } from '../../data/floor-simulator/steps/skill-boost.mjs';
 import { LOOT_BRACELET_RACE_TABLE, LOOT_UPGRADE_TABLE, rowForTotal } from '../../data/floor-simulator/tables.mjs';
 import { damageTypesOfRarity } from '../../utils/damage/damage-types.mjs';
-import { LOOT_SPELL_TABLE, plainValue } from '../crawler-creator/arrival-draft.mjs';
+import { identifierOptions, pickedBadge } from '../../utils/ui/identifier-options.mjs';
+import { LOOT_SPELL_TABLE } from '../crawler-creator/arrival-draft.mjs';
+import { plainValue } from '../crawler-creator/draft-values.mjs';
 
 const STAT_KEYS = ['str', 'dex', 'con', 'int', 'cha'];
 const ARMOR_SLOTS = ['head', 'torso', 'arms', 'legs', 'feet'];
@@ -140,6 +142,17 @@ function chosenPanel(session, step, spec, result) {
   return { isChosenSkills: true, stepId: step.id, rows, counter: { count, max: step.count, over: count > step.count } };
 }
 
+/** A write-in option: the kind (Skill or Spell), then the catalog entry of that kind; a homebrew name is the fallback. */
+function writeInView(skill, base) {
+  const docKind = skill.docKind === 'spell' ? 'spell' : 'skill';
+  const identifiers = identifierOptions(docKind, skill.identifier ?? '', { blankLabel: '' });
+  return {
+    kindPath: `${base}.docKind`, kinds: [opt('skill', '', docKind === 'skill', { labelKey: 'COG.FloorSim.Exp.Kind.skill' }), opt('spell', '', docKind === 'spell', { labelKey: 'COG.FloorSim.Exp.Kind.spell' })],
+    identifierPath: `${base}.identifier`, identifiers, badge: pickedBadge(identifiers),
+    namePath: `${base}.name`, name: skill.name ?? ''
+  };
+}
+
 function experienceSlots(session, step, spec) {
   const ctx = session.context;
   return (spec.picks ?? []).map((slot, i) => {
@@ -173,9 +186,7 @@ function experienceSlots(session, step, spec) {
           ceiling: o.kind === 'named' || o.kind === 'spell' ? ceilingFor(session, o.docKind || (o.kind === 'spell' ? 'spell' : 'skill'), o.identifier) : null
         })),
         choice: picked?.kind === 'choice' ? { path: `${skillBase}.identifier`, options: [opt('', '', !skill.identifier), ...(picked.choices ?? []).map(c => opt(c.value, c.label, c.value === skill.identifier))] } : null,
-        custom: picked?.kind === 'custom'
-          ? { namePath: `${skillBase}.name`, name: skill.name ?? '', kindPath: `${skillBase}.docKind`, kinds: [opt('skill', '', (skill.docKind ?? 'skill') === 'skill'), opt('spell', '', skill.docKind === 'spell')] }
-          : null,
+        custom: picked?.kind === 'custom' ? writeInView(skill, skillBase) : null,
         die: hasValue(skill.option) ? die(session, `${skillBase}.value`, skill.formula || step.rankFormulas[j]) : null,
         ready: Boolean(pickedItem)
       });
@@ -301,15 +312,23 @@ function statsPanel(session, step, spec, result) {
   const allocation = spec.allocation ?? {};
   const after = result?.preview?.abilities ?? {};
   const allocated = STAT_KEYS.reduce((sum, k) => sum + (Number(allocation[k]) || 0), 0);
+  // Points the creator holds for a Race or Class requirement: not the player's own, and out of what is left to spend
+  const held = session.heldFor(step.id);
+  const heldTotal = session.heldTotal(step.id);
+  const spent = allocated + heldTotal;
   return {
-    isStats: true, stepId: step.id, pool: step.pool, allocated, left: step.pool - allocated, over: allocated > step.pool,
-    leftover: Math.max(0, step.pool - allocated),
+    isStats: true, stepId: step.id, pool: step.pool, allocated, left: step.pool - spent, over: spent > step.pool,
+    leftover: Math.max(0, step.pool - spent),
     rows: STAT_KEYS.map(key => {
       const a = step.abilities[key];
       const add = Number(allocation[key]) || 0;
+      const hold = held[key];
+      const total = add + (hold?.points ?? 0);
       return {
-        key, unenhanced: a.unenhanced, enhanced: a.value, added: add, afterUnenhanced: after[key]?.unenhanced ?? a.unenhanced + add,
-        afterEnhanced: after[key]?.value ?? a.value + add, cap: a.cap
+        key, unenhanced: a.unenhanced, enhanced: a.value, added: add, afterUnenhanced: after[key]?.unenhanced ?? a.unenhanced + total,
+        afterEnhanced: after[key]?.value ?? a.value + total, cap: a.cap,
+        held: hold?.points ?? 0,
+        heldFor: (hold?.for ?? []).map(kind => ({ labelKey: kind === 'race' ? 'COG.FloorSim.RaceClass.Race' : 'COG.FloorSim.RaceClass.Class', name: hold.names?.[kind] ?? '' }))
       };
     })
   };
@@ -318,7 +337,7 @@ function statsPanel(session, step, spec, result) {
 function aiFavorPanel(session, step, spec, result) {
   const rating = Number(spec.rating ?? step.defaultRating ?? 0);
   return {
-    isAiFavor: true, stepId: step.id, ratingPath: `${step.id}.rating`, current: step.current, mode: step.mode, defaultRating: step.defaultRating,
+    isAiFavor: true, stepId: step.id, ratingPath: `${step.id}.rating`, current: step.current, defaultRating: step.defaultRating,
     ratings: [0, 1, 2].map(n => opt(n, String(n), n === rating)), rating,
     baseDie: die(session, `${step.id}.value`, step.formula),
     bonusDie: rating > 0 && step.byRating?.[rating] ? die(session, `${step.id}.ratingValue`, step.byRating[rating]) : null,

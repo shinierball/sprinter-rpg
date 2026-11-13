@@ -5,6 +5,7 @@ import { raceInForce } from '../utils/character/overlay-state.mjs';
 import { bossTierFromTags } from '../data/mob-creation-rules.mjs';
 import { MOB_BOSS_TAG } from '../data/tag-vocabulary.mjs';
 import { computeDerivedTags } from '../data/derived-tags.mjs';
+import { isWorshipBond, worshipDerivedTags } from '../utils/deity/worship-state.mjs';
 
 /**
  * The tags a live document carries right now: an item's explicit, derived and identity tags, and the tags an actor
@@ -94,9 +95,11 @@ export function collectActorTags(actor, { identityOnly = false } = {}) {
     let shouldInclude = false;
 
     if (identityOnly) {
-      shouldInclude = type === 'race' ? raceInForce(items, item) : ['class', 'deity', 'sponsor'].includes(type);
+      shouldInclude = type === 'race' ? raceInForce(items, item) : type === 'deity' ? isWorshipBond(item) : ['class', 'sponsor'].includes(type);
     } else {
-      if (['race', 'class', 'deity', 'sponsor', 'skill'].includes(type)) {
+      if (type === 'deity') {
+        shouldInclude = isWorshipBond(item);
+      } else if (['race', 'class', 'sponsor', 'skill'].includes(type)) {
         shouldInclude = type === 'race' ? raceInForce(items, item) : true;
       } else if (type === 'gear') {
         shouldInclude = Boolean(item.system?.equipped) && !isGearSuppressed(actor, item, 'tags');
@@ -112,6 +115,7 @@ export function collectActorTags(actor, { identityOnly = false } = {}) {
       for (const t of itemTags) {
         tags.add(t);
       }
+      if (type === 'deity') for (const t of worshipDerivedTags(item)) tags.add(t);
     }
   }
 

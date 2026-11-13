@@ -6,9 +6,12 @@ import { buildCheckRecord, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } fr
 import { collectCheckToHit, rollCheckTargets } from '../../utils/attack/per-target-to-hit.mjs';
 import { buildRollContext, extendContext, resolveRollToggles } from '../../utils/roll/roll-context.mjs';
 import { cameraParts, consumeArmedCamera } from '../../utils/roll/cameras.mjs';
+import { newRollId, standingStampFor, noteStandingStamp } from '../../utils/roll/check-difficulty.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { attackTargetEntries } from './attack-targets.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
+import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from './action-block.mjs';
+import { trustedHtml } from '../../utils/escape-attr.mjs';
 
 /**
  * Roll a stat check
@@ -18,6 +21,9 @@ import { getRollAdvantageState } from './combat-rolls.mjs';
 export async function rollStat(actor, statKey, options = {}) {
   const ability = actor.system.abilities?.[statKey];
   if (!ability) return;
+  // A bearer who cannot take Actions (Dying, Paralyzed) asks a Rule Break first; a declined gate rolls nothing.
+  const actionBlockGate = actionBlockApplies(actor, 'check', options) ? await gateActionBlock(actor, 'check', { options }) : ACTION_BLOCK_CLEAR;
+  if (!actionBlockGate.proceed) return null;
 
   const mod = ability.mod ?? 0;
   const statName = statKey.toUpperCase();
@@ -58,12 +64,14 @@ export async function rollStat(actor, statKey, options = {}) {
   const formula = `${advState.formula} + ${total}${extraDice}`;
   const roll = await new Roll(formula, { mod }).evaluate();
 
+  const rollId = newRollId();
   COGSessionEngine.recordRoll({
     actor: actor,
     roll,
     type: 'stat',
     name: `${statName} Check`,
-    isUntrained: false
+    isUntrained: false,
+    rollId
   }).catch(() => {});
 
   const modLines = moveLine(contest) ? [...checkMods.breakdown, moveLine(contest)] : checkMods.breakdown;
@@ -73,14 +81,18 @@ export async function rollStat(actor, statKey, options = {}) {
     : `<strong>${actor.name}</strong>: ${statName} Check${modDesc}`;
 
   const perTarget = await rollCheckTargets(roll, targetRows, rollContext, targetActors);
+  // A plain check card with no Difficulty of its own takes the standing one, when the GM put it up.
+  const floor = getCurrentFloor();
+  const stamp = standingStampFor({ kind: 'stat', rollerType: actor.type, hasOwnDc: Boolean(vehicle || contest), floor });
   const message = await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor: actor }),
     flavor: `${flavor}${camera.noteHtml}`,
-    ...(perTarget.html ? { content: `${typeof roll.render === 'function' ? await roll.render() : ''}${perTarget.html}` } : {}),
+    ...(perTarget.html ? { content: `${typeof roll.render === 'function' ? trustedHtml(await roll.render()) : ''}${perTarget.html}` } : {}),
     flags: {
       [SYSTEM_ID]: {
         ...perTarget.flags,
         ...camera.flags,
+        ...actionBlockGate.flags,
         [CHECK_RECORD_FLAG]: buildCheckRecord({
           kind: 'stat',
           roller: actor,
@@ -88,14 +100,19 @@ export async function rollStat(actor, statKey, options = {}) {
           roll,
           combat: combatRefFor(actor),
           tags: [...rollContext.tags],
-          targets: perTarget.results.map((r, i) => ({ actorId: r.actorId, actorUuid: targetActors[i]?.uuid, name: r.actorName, dc: null, bonus: r.bonus })),
-          dc: vehicle ? vehicle.dc : null,
+          targets: perTarget.results.map((r, i) => ({ actorId: r.actorId, actorUuid: targetActors[i]?.uuid, name: r.actorName, dc: stamp?.dc ?? null, bonus: r.bonus })),
+          dc: vehicle ? vehicle.dc : (stamp?.dc ?? null),
+          difficulty: stamp?.difficulty ?? null,
+          rollId,
+          stat: statKey,
+          floor,
           contest,
           vehicle
         })
       }
     }
   });
+  if (stamp) await noteStandingStamp();
   await consumeArmedCamera(actor);
   return message;
 }

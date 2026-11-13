@@ -2,7 +2,7 @@
  * The last pick of the Attack Options pop-up.
  *
  * Each attack remembers what its user last picked (a Damage Effect, its variant, the ticked maneuvers and the mark
- * target) as a flag on the USER document: `game.user.flags['sprinter-rpg'].attackPicks[<actorId>][<itemId>]`. A User
+ * target, and the weapon Skill when it differs from the default) as a flag on the USER document: `game.user.flags['sprinter-rpg'].attackPicks[<actorId>][<itemId>]`. A User
  * document follows the account across browsers and devices, so nothing is kept in `localStorage`. The pick is a
  * preference, never round state: nothing here is read by a card or a damage roll.
  *
@@ -13,6 +13,7 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { attackText } from './attack-text.mjs';
 import { firstScalar } from '../first-scalar.mjs';
+import { skillRefSlug } from '../skill/weapon-skill-options.mjs';
 
 export const ATTACK_PICKS_FLAG = 'attackPicks';
 export const MAX_ATTACK_PICKS = 200;
@@ -55,7 +56,7 @@ export function pickKey(actor, item) {
 /**
  * Sanitise a stored pick.
  * @param {unknown} raw
- * @returns {{ effect: string, variant: string, maneuvers: string[], markTarget: 'attack'|'effect', at: number }|null}
+ * @returns {{ effect: string, variant: string, maneuvers: string[], markTarget: 'attack'|'effect', skill: string, at: number }|null}
  */
 export function readAttackPick(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -65,6 +66,7 @@ export function readAttackPick(raw) {
     variant: firstText(raw.variant),
     maneuvers: maneuverTags(raw.maneuvers),
     markTarget: raw.markTarget === 'attack' ? 'attack' : 'effect',
+    skill: skillRefSlug(firstText(raw.skill)),
     at: Number.isFinite(at) ? at : 0
   };
 }
@@ -113,6 +115,8 @@ export function prefill(model, pick) {
     situations: [],
     calledPlays: (Array.isArray(model?.calledPlays) ? model.calledPlays : []).map(e => e?.id).filter(id => typeof id === 'string'),
     markTarget: pick?.markTarget === 'attack' ? 'attack' : 'effect',
+    // the weapon Skill picked last time, only while it is still one of the weapon's options ('' = the default)
+    skill: pick?.skill && (Array.isArray(model?.skills) ? model.skills : []).some(s => s.identifier === pick.skill) ? pick.skill : '',
     // the armed Playing to the Cameras choice (one-shot, never remembered) opens pre-selected
     cameras: typeof model?.armedCameras === 'string' ? model.armedCameras : ''
   };
@@ -147,7 +151,7 @@ export function prefill(model, pick) {
  * The pick a Roll stores: the first effect only (a multi-effect Rule Break is never proposed again), its variant,
  * the ticked maneuvers and the mark target. Situations and Called Plays are never remembered.
  * @param {object} choices an AttackChoices
- * @returns {{ effect: string, variant: string, maneuvers: string[], markTarget: 'attack'|'effect' }}
+ * @returns {{ effect: string, variant: string, maneuvers: string[], markTarget: 'attack'|'effect', skill: string }}
  */
 export function pickFromChoices(choices) {
   const effect = firstText(Array.isArray(choices?.effects) ? choices.effects[0] : '');
@@ -155,7 +159,8 @@ export function pickFromChoices(choices) {
     effect,
     variant: effect ? firstText(choices?.variant) : '',
     maneuvers: maneuverTags(choices?.maneuvers),
-    markTarget: MARK_TARGETS.includes(choices?.markTarget) ? choices.markTarget : 'effect'
+    markTarget: MARK_TARGETS.includes(choices?.markTarget) ? choices.markTarget : 'effect',
+    skill: skillRefSlug(firstText(choices?.skill))
   };
 }
 
@@ -169,7 +174,7 @@ function pickRows(all) {
   return rows;
 }
 
-const sameInterior = (a, b) => a && b && a.effect === b.effect && a.variant === b.variant && a.markTarget === b.markTarget
+const sameInterior = (a, b) => a && b && a.effect === b.effect && a.variant === b.variant && a.markTarget === b.markTarget && a.skill === b.skill
   && a.maneuvers.length === b.maneuvers.length && a.maneuvers.every((t, i) => t === b.maneuvers[i]);
 
 /**
@@ -180,14 +185,16 @@ const sameInterior = (a, b) => a && b && a.effect === b.effect && a.variant === 
  * @param {object} actor
  * @param {object} item
  * @param {object} choices an AttackChoices
+ * @param {{ keepSkill?: boolean }} [opts] `keepSkill`: the window offered no Skill select (a damage roll), so the stored Skill pick stands
  * @returns {Promise<boolean>} whether a write happened
  */
-export async function rememberAttackPick(user, actor, item, choices) {
+export async function rememberAttackPick(user, actor, item, choices, { keepSkill = false } = {}) {
   const key = pickKey(actor, item);
   if (!key || typeof user?.setFlag !== 'function') return false;
   const next = pickFromChoices(choices);
   const stored = getAttackPick(user, actor, item);
-  if (stored ? sameInterior(stored, next) : (!next.effect && next.maneuvers.length === 0 && next.markTarget === 'effect')) return false;
+  if (keepSkill && stored) next.skill = stored.skill;
+  if (stored ? sameInterior(stored, next) : (!next.effect && next.maneuvers.length === 0 && next.markTarget === 'effect' && !next.skill)) return false;
   try {
     await user.setFlag(SYSTEM_ID, `${ATTACK_PICKS_FLAG}.${key.actorId}.${key.itemId}`, { ...next, at: Date.now() });
     const rows = pickRows(storedPicks(user));

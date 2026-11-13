@@ -1,28 +1,17 @@
 <section class="cog-item-body cog-item-body-traits">
-{{!-- DEITY TYPE --}}
-{{#if (eq item.type "deity")}}
-  <div class="cog-field-group" style="margin-bottom: 8px;">
-    <span class="cog-field-label">Boons & Perks</span>
-    <textarea class="cog-field-input" name="system.boons" style="height: 120px;">{{system.boons}}</textarea>
-  </div>
-  <div class="cog-field-group">
-    <span class="cog-field-label">Description</span>
-    {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
-  </div>
-{{/if}}
-
 {{!-- SPONSOR TYPE --}}
 {{#if (eq item.type "sponsor")}}
   <div class="cog-field-group" style="margin-bottom: 8px;">
-    <span class="cog-field-label">Gifts & Conditions</span>
+    <span class="cog-field-label">{{localize "COG.Sponsor.Sheet.Gifts"}}</span>
     <textarea class="cog-field-input" name="system.gifts" style="height: 120px;">{{system.gifts}}</textarea>
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Sponsor.Sheet.GiftsHint"}}</p>
   </div>
   <div class="cog-field-group">
-    <span class="cog-field-label">Notes</span>
+    <span class="cog-field-label">{{localize "COG.Sponsor.Sheet.Notes"}}</span>
     <textarea class="cog-field-input" name="system.notes" style="height: 100px;">{{system.notes}}</textarea>
   </div>
   <div class="cog-field-group">
-    <span class="cog-field-label">Description</span>
+    <span class="cog-field-label">{{localize "COG.Sponsor.Sheet.Description"}}</span>
     {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
   </div>
 {{/if}}

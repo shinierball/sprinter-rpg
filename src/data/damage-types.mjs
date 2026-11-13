@@ -18,7 +18,8 @@ export const COG_DAMAGE_TYPE_RARITY = Object.freeze({
 });
 
 /**
- * The 13 built-in Damage Types
+ * The built-in Damage Types: Table 10's thirteen, then Brimstone (not a Table 10 type, so no rarity: it is not standard
+ * Fire, and Fire resistance or immunity does not cover it).
  */
 export const COG_DAMAGE_TYPES = [
   "Acid",
@@ -33,6 +34,7 @@ export const COG_DAMAGE_TYPES = [
   "Poison",
   "Psychic",
   "Slashing",
-  "Sonic"
+  "Sonic",
+  "Brimstone"
 ];
 

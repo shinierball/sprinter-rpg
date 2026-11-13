@@ -141,40 +141,30 @@ export function buildAttackItem(atkSpec = {}, { mobLevel = 1, isBoss = false, de
     }
   }
 
-  // Damage Parts
-  let damageParts;
-  if (Array.isArray(atkSpec.damageParts) && atkSpec.damageParts.length > 0) {
-    damageParts = atkSpec.damageParts.map(p => ({
-      dice: String(p.dice || ''),
-      stat: String(p.stat || ''),
-      type: String(p.type || rawElement || 'Physical'),
-      value: sanitizeNumber(p.value, 0)
-    }));
-  } else {
-    let diceStr = String(atkSpec.damageDice || '').trim();
-    if (!diceStr) {
-      const diceCount = atkSpec.dice !== undefined && atkSpec.dice !== null
-        ? sanitizeNumber(atkSpec.dice, 1)
-        : recommendedDice({
-            level: mobLevel,
-            floor: atkSpec.floor ?? null,
-            isBoss,
-            area: Boolean(area),
-            rider: hasRider
-          });
-      const dieSize = String(atkSpec.die || 'd6').trim();
-      diceStr = `${diceCount}${dieSize.startsWith('d') ? dieSize : `d${dieSize}`}`;
-    }
-
-    damageParts = [
-      {
-        dice: diceStr,
-        stat: String(atkSpec.damageStat || (toHitStat === 'dex' ? 'dex' : 'str')),
-        type: String(rawElement || 'Physical'),
-        value: sanitizeNumber(atkSpec.damageBonus, 0)
-      }
-    ];
+  // Base Damage: the spec's own `baseDamage`, else the compact keys (dice or die count, stat, bonus). A mob attack has no Skill
+  // to supply it, so the attack carries its dice, stat and type itself; a flat bonus is an `add` Damage row on the attack.
+  const given = atkSpec.baseDamage && typeof atkSpec.baseDamage === 'object' ? normalizeBaseDamage(atkSpec.baseDamage) : null;
+  let diceStr = given?.dice || String(atkSpec.damageDice || '').trim();
+  if (!diceStr) {
+    const diceCount = atkSpec.dice !== undefined && atkSpec.dice !== null
+      ? sanitizeNumber(atkSpec.dice, 1)
+      : recommendedDice({
+          level: mobLevel,
+          floor: atkSpec.floor ?? null,
+          isBoss,
+          area: Boolean(area),
+          rider: hasRider
+        });
+    const dieSize = String(atkSpec.die || 'd6').trim();
+    diceStr = `${diceCount}${dieSize.startsWith('d') ? dieSize : `d${dieSize}`}`;
   }
+  const baseDamage = {
+    dice: diceStr,
+    stat: given?.stat || String(atkSpec.damageStat || (toHitStat === 'dex' ? 'dex' : 'str')),
+    damageType: given?.damageType || String(rawElement || 'Physical')
+  };
+  const flatBonus = sanitizeNumber(atkSpec.damageBonus, 0);
+  const damageModifiers = flatBonus ? [{ label: name, mode: 'add', value: flatBonus, damageType: '' }] : [];
 
   // Prose only: the mechanics line is generated from the structured fields at display time.
   const effects = String(atkSpec.effects ?? '');
@@ -204,7 +194,8 @@ export function buildAttackItem(atkSpec = {}, { mobLevel = 1, isBoss = false, de
     system: {
       toHitStat,
       toHitRank,
-      damageParts,
+      baseDamage,
+      damageModifiers,
       effects,
       ignoreDR,
       hitDifficulty,

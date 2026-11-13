@@ -1,9 +1,11 @@
 /** Space upgrade context: labelled field lists for the bonus, training and crafting sections, and the skill tag query view. */
 import { buildQueryView } from './context-query.mjs';
-import { toStringList } from './util.mjs';
+import { toStringList } from '../../utils/first-scalar.mjs';
 import { tableTierParts } from '../../utils/item-describer/blocks-crafting.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { tableCoupons } from '../../documents/actor/crafting-tables.mjs';
+import { tableTypeOptions } from '../../documents/actor/space-purchases.mjs';
+import { pickOptions } from '../../utils/ui/field-options.mjs';
 import { canManageTable, tablePayer } from './actions-blueprint.mjs';
 import { BONUS_NUMBERS, TRAINING_NUMBERS, CRAFTING_NUMBERS } from '../../utils/item-describer/space-upgrade-fields.mjs';
 
@@ -11,6 +13,17 @@ import { BONUS_NUMBERS, TRAINING_NUMBERS, CRAFTING_NUMBERS } from '../../utils/i
 const numberFields = (section, rows, data) => rows.map(([key, label, min, hint]) => ({
   path: `system.${section}.${key}`, label, min: min ?? '', placeholder: hint ?? '', value: data?.[key] ?? (hint ? '' : 0)
 }));
+
+/**
+ * The crafting table types as a select: every `crafting.table.*` tag, and a stored value the list lacks kept as a
+ * "(custom)" option so saving the sheet never drops it.
+ * @param {string} current the stored table type tag
+ */
+function tableTypeSelect(current) {
+  const options = pickOptions(tableTypeOptions().map(({ tag, label }) => ({ id: tag, label })), current, { blankLabel: loc('COG.SpaceUpgrade.Sheet.NoTable') });
+  if (current && !options.some((o) => o.value === current)) options.push({ value: current, label: loc('COG.SpaceUpgrade.Sheet.CustomTable', { tag: current }), selected: true });
+  return options;
+}
 
 /**
  * @param {object} context render context (`context.system` is a copy of the item's system data)
@@ -24,6 +37,9 @@ export function buildSpaceUpgradeContext(context) {
   context.craftingFields = numberFields('craftingTable', CRAFTING_NUMBERS, sys.craftingTable);
   context.hasTrainingConfigured = Boolean(sys.training?.enabled);
   context.hasCraftingConfigured = Boolean(sys.craftingTable?.enabled);
+  context.hasStudioConfigured = Boolean(sys.studio?.enabled);
+  context.craftingTableTypeOptions = tableTypeSelect(sys.craftingTable?.tableTypeTag ?? '');
+  context.studioTableTypeOptions = tableTypeSelect(sys.studio?.tableTypeTag ?? '');
   buildCraftingTableContext(context, context.item);
 }
 

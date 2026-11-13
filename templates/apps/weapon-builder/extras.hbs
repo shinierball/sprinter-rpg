@@ -1,0 +1,12 @@
+{{!-- Page 5: on-hit effects, to-hit rows, and the to-hit stat and Rank (the sheet's own partials). --}}
+<section class="cog-wb-page" data-page="extras" {{#unless (eq page "extras")}}hidden{{/unless}}>
+  {{> "systems/sprinter-rpg/templates/items/parts/on-hit.hbs"}}
+  {{#if attackBlock}}
+    {{> "systems/sprinter-rpg/templates/items/parts/modifier-rows.hbs" block=attackBlock tagOptions=rowEditors.tagOptions}}
+  {{else if attackAdd}}
+    <div class="cog-modifier-addbar">
+      <a class="cog-modifier-add-chip" data-action="addRow" data-row-table="{{attackAdd.arrayKey}}"><i class="fa-solid {{attackAdd.icon}}"></i> {{localize attackAdd.labelKey}}</a>
+    </div>
+  {{/if}}
+  {{> "systems/sprinter-rpg/templates/items/parts/gear/weapon-to-hit.hbs"}}
+</section>

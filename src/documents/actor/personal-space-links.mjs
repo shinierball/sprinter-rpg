@@ -18,11 +18,11 @@ import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { syncActorOwnership } from './ownership-relay.mjs';
 import { resolveActor } from './actor-constants.mjs';
-import { getSpaceTypeInfo } from '../../data/rules/personal-space-rules.mjs';
-import { contentRegistry } from '../../content/registry.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { spaceTypeForRank } from '../../data/rules/space-rank-rules.mjs';
 import { registerPayloadDelegate } from '../../data/builders/item-payload.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
+import { withRuleBreak } from '../../utils/rule-break.mjs';
+import { baseActorOf } from './token-base-actor.mjs';
 
 export const RELAY_ACTION_PERSONAL_SPACE_LEAVE = 'personalSpaceLeave';
 export const RELAY_ACTION_CREATE_PERSONAL_SPACE = 'createPersonalSpace';
@@ -69,8 +69,7 @@ export function worldCrawlers() {
 
 /** World actor for a crawler (unwraps synthetic token actors). */
 export function crawlerDoc(actor) {
-  if (!actor) return null;
-  return actor.baseActor ?? actor;
+  return baseActorOf(actor);
 }
 
 /** The uuid a space stores for this crawler. */
@@ -142,15 +141,13 @@ export function spaceMembers(space) {
 /**
  * Pure: the create data for a new space owned by `crawler`. It carries no `ownership` key (the caller sets it).
  * @param {{ crawlerUuid: string, crawlerName: string }} crawler
- * @param {object} [options] name, spaceType and the manual overrides; `ruleBreak: true` flags a second space
+ * @param {object} [options] name, rank (default 1) and the manual overrides; `ruleBreak: true` flags a second space
  */
 export function buildPersonalSpacePayload({ crawlerUuid, crawlerName }, options = {}) {
   const opts = options || {};
-  let typeKey = firstScalar(opts.spaceType, '');
-  const spaceTypes = contentRegistry.getSpaceTypes();
-  // An unknown type falls back to the first registered one (the baseline safe room when none are registered)
-  if (typeof typeKey !== 'string' || !Object.hasOwn(spaceTypes, typeKey)) typeKey = Object.keys(spaceTypes)[0];
-  const typeInfo = getSpaceTypeInfo(typeKey);
+  // A rank that is not a whole number of at least 1 is rank 1; the type of that rank gives the space its look
+  const rank = Math.max(1, Math.trunc(Number(firstScalar(opts.rank, 1))) || 1);
+  const typeInfo = spaceTypeForRank(rank).def;
   const rawName = typeof opts.name === 'string' ? opts.name.trim().slice(0, MAX_NAME_LENGTH) : '';
   const stamp = Date.now();
 
@@ -159,11 +156,11 @@ export function buildPersonalSpacePayload({ crawlerUuid, crawlerName }, options 
     type: 'personal_space',
     system: {
       ownerUuid: crawlerUuid,
-      occupantUuids: [crawlerUuid],
-      spaceType: typeKey,
-      tier: opts.tier || typeInfo.tier || 1,
-      size: opts.size || typeInfo.size || 'Single Room',
-      // null follows the space type's base values (also after a type change); a number is an explicit override
+      // A spec may list more occupants (the owner is always first) and the spaces this one joined
+      occupantUuids: [...new Set([crawlerUuid, ...asList(opts.occupantUuids)])],
+      rank,
+      joinedToUuids: asList(opts.joinedToUuids),
+      // null follows the base values of the type of the space's rank; a number is an explicit override
       defenseRating: explicitCount(opts.defenseRating),
       stashCapacity: explicitCount(opts.stashCapacity),
       restHoursReduction: Number(opts.restHoursReduction) || 0,
@@ -192,12 +189,12 @@ export function buildPersonalSpacePayload({ crawlerUuid, crawlerName }, options 
       details: {
         amenities: opts.amenities || typeInfo.amenities || '',
         security: opts.security || typeInfo.security || '',
-        notes: opts.notes || `<p>${typeInfo.description}</p>`
+        notes: opts.notes || typeInfo.description || ''
       }
     }
   };
   if (opts.ruleBreak === true) {
-    data.flags = { [SYSTEM_ID]: { ruleBreak: true, ruleBreakReason: SECOND_SPACE_REASON } };
+    data.flags = withRuleBreak({}, SECOND_SPACE_REASON).flags;
   }
   return data;
 }
@@ -285,11 +282,13 @@ export async function createSpaceForCrawler(crawler, options = {}) {
   const user = globalThis.game?.user;
   const { NONE, OWNER } = levels();
   if (user?.isGM || user?.hasPermission?.('ACTOR_CREATE')) {
-    const space = await createSpaceActor(doc, options, { default: NONE, ...(user.isGM ? {} : { [user.id]: OWNER }) });
+    // Only the GM sets a rank; a player's new space is rank 1
+    const made = user.isGM ? options : { ...options, rank: 1 };
+    const space = await createSpaceActor(doc, made, { default: NONE, ...(user.isGM ? {} : { [user.id]: OWNER }) });
     return space ?? null;
   }
   const reply = await requestRelay(RELAY_ACTION_CREATE_PERSONAL_SPACE, {
-    crawlerUuid: doc.uuid, name: options.name, spaceType: options.spaceType, ruleBreak: options.ruleBreak === true
+    crawlerUuid: doc.uuid, name: options.name, ruleBreak: options.ruleBreak === true
   });
   return resolveActorByUuid(reply.result?.uuid);
 }
@@ -327,10 +326,10 @@ registerRelayAction(RELAY_ACTION_CREATE_PERSONAL_SPACE, {
     const { NONE, OWNER } = levels();
     const ruleBreak = payload.ruleBreak === true
       || Boolean(typeof crawler.getOwnedPersonalSpace === 'function' && crawler.getOwnedPersonalSpace());
-    // Ownership and every field except name and spaceType are derived here; nothing else the client sent is used.
+    // Ownership and every field except the name are derived here (a requested rank is ignored: a new space is rank 1).
     const space = await createSpaceActor(
       crawler,
-      { name: payload.name, spaceType: payload.spaceType, ruleBreak },
+      { name: payload.name, rank: 1, ruleBreak },
       { default: NONE, [requester.id]: OWNER }
     );
     if (!space) return null;

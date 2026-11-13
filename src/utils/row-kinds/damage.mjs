@@ -7,6 +7,7 @@ import { signed, typeSuffix } from './summary-text.mjs';
 registerCoreKind('damageModifiers', {
   id: 'add',
   label: 'COG.Rows.Kind.Damage.add.Label',
+  hint: 'COG.Rows.Kind.Damage.add.Hint',
   fields: ['value', 'dice', 'stat', 'damageType', 'option'],
   // `rank` marks the row as a Rank damage die: Table 37 does not double it on a Critical Hit.
   option: { label: 'COG.Rows.Kind.Damage.add.OptionLabel', hint: 'COG.Rows.Kind.Damage.add.OptionHint', choices: ['standard', 'rank'], default: 'standard', labels: { standard: 'COG.Rows.Kind.Damage.add.Option.standard', rank: 'COG.Rows.Kind.Damage.add.Option.rank' } },
@@ -37,6 +38,7 @@ registerCoreKind('damageModifiers', {
 registerCoreKind('damageModifiers', {
   id: 'multiply',
   label: 'COG.Rows.Kind.Damage.multiply.Label',
+  hint: 'COG.Rows.Kind.Damage.multiply.Hint',
   fields: ['multiplier', 'damageType'],
   scaled: { multiplier: 'factor' },
   snapshot: ['multiplier'],
@@ -62,6 +64,7 @@ registerCoreKind('damageModifiers', {
 registerCoreKind('damageModifiers', {
   id: 'suppress_stat',
   label: 'COG.Rows.Kind.Damage.suppress_stat.Label',
+  hint: 'COG.Rows.Kind.Damage.suppress_stat.Hint',
   fields: ['damageType'],
   snapshot: [],
   apply: {

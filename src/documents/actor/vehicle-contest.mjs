@@ -2,16 +2,23 @@
  * Vehicles in races and chases (3.44i, 3.45 gap G11). Kept out of `vehicle-drive.mjs` so the contest modules take the two
  * small hooks they need without the rest of the drive code.
  *
- * - `contestMoveOptions`: the injected `vehicleMove` for `contestMoveOf`: a vehicle races at its rated Move (upgrades
+ * - `contestMoveOptions`: the injected `vehicleMove` and `actorMove` for `contestMoveOf`: a vehicle races at its rated Move (upgrades
  *   and the driver's skill rows, no Table 6 cap).
  * - `contestVehicleRef`: the `vehicle` check reference of a driving leg, so the vehicle's upgrades and the after-roll
  *   offers apply to it and the driver Disadvantage does not (a driving check).
  */
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { vehicleMoveOf } from './vehicle-move.mjs';
+import { creatureMoveOf } from './actor-move.mjs';
 
-/** Options for `contestMoveOf(participant, leg, resolve, options)`. */
-export const contestMoveOptions = Object.freeze({ vehicleMove: (vehicle) => vehicleMoveOf(vehicle).rated });
+/**
+ * Options for `contestMoveOf(participant, leg, resolve, options)`. `actorMove` is the creature's Move now (its debuffs'
+ * Move rows count), used for a participant's own Move.
+ */
+export const contestMoveOptions = Object.freeze({
+  vehicleMove: (vehicle) => vehicleMoveOf(vehicle).rated,
+  actorMove: (actor) => creatureMoveOf(actor).rated
+});
 
 /**
  * The `options.vehicle` of a leg roll, or null when the participant is not driving a vehicle. A participant counts as the

@@ -5,6 +5,7 @@
  * context builders live in `./crawler/context-*.mjs`, action tables in `./crawler/actions-*.mjs`,
  * drop handling in `./crawler/drop.mjs`.
  */
+import { zeroHealthBadge } from '../documents/actor/zero-health-state.mjs';
 import { COGActorSheetV2 } from './base/actor-sheet-v2.mjs';
 import { COGSkillManager } from '../apps/skill-manager.mjs';
 import { COGSpellManager } from '../apps/spell-manager.mjs';
@@ -29,11 +30,20 @@ import { slotActions } from './crawler/actions-slots.mjs';
 import { grindActions } from './crawler/actions-grind.mjs';
 import { storyActions } from './crawler/actions-story.mjs';
 import { tagActions, addActorTag } from './crawler/actions-tags.mjs';
+import { DEITY_ACTIONS } from './crawler/actions-deity.mjs';
+import { PATRON_ACTIONS } from './crawler/actions-patron.mjs';
+import { PATRON_ENDINGS_ACTIONS } from './crawler/actions-patron-endings.mjs';
+import { PATRON_AUDITION_ACTIONS } from './crawler/actions-patron-audition.mjs';
+import { PATRON_GIG_ACTIONS } from './crawler/actions-patron-gig.mjs';
+import { PATRON_MENTOR_ACTIONS } from './crawler/actions-patron-mentor.mjs';
+import { buildDeityRows } from './crawler/context-deities.mjs';
+import { buildPatronRows } from './crawler/context-patrons.mjs';
 import { achievementActions, applyAchievementFilter } from './crawler/actions-achievements.mjs';
 import { dropItem, dropActor } from './crawler/drop.mjs';
 import { completeItemTransfer, refuseGmOnlyDrop } from './base/item-transfer.mjs';
 import { MOB_TIER_PREFIX } from '../utils/tag/tag-mechanics.mjs';
 import { MOB_BOSS_TAG } from '../data/tag-vocabulary.mjs';
+import { isInventoryItem, isRaceOrClass } from '../utils/document-types.mjs';
 
 const PARTS_PATH = `${SYSTEM_PATH}/templates/actors/parts`;
 
@@ -88,7 +98,13 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
       ...grindActions,
       ...storyActions,
       ...achievementActions,
-      ...tagActions
+      ...tagActions,
+      ...DEITY_ACTIONS,
+      ...PATRON_ENDINGS_ACTIONS,
+      ...PATRON_ACTIONS,
+      ...PATRON_AUDITION_ACTIONS,
+      ...PATRON_GIG_ACTIONS,
+      ...PATRON_MENTOR_ACTIONS
     }
   };
 
@@ -139,7 +155,10 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
     const actor = this.actor;
 
     prepareCoreContext(context, actor);
+    context.zeroHealth = zeroHealthBadge(actor);
     prepareItemLists(context, actor);
+    buildDeityRows(context, actor);
+    buildPatronRows(context, actor);
     await prepareItemSummaries(context, actor);
     const { grantedSkills, grantedSpells } = prepareSkillsAndSpells(context, actor);
     this._grantedSkills = grantedSkills;
@@ -210,19 +229,6 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
     return data;
   }
 
-  /**
-   * A synthetic token actor of a crawler or pet also writes its base world actor.
-   * @override
-   */
-  async _processSubmitData(event, form, submitData, ...rest) {
-    const actor = this.actor;
-    if (actor.isToken && (actor.type === 'crawler' || actor.type === 'pet')) {
-      const base = actor.token?.baseActor ?? game.actors?.get?.(actor.token?.actorId ?? actor.id);
-      if (base && base !== actor) await base.update(submitData);
-    }
-    return super._processSubmitData(event, form, submitData, ...rest);
-  }
-
   /* -------------------------------------------- */
   /*  Drag and drop                               */
   /* -------------------------------------------- */
@@ -232,7 +238,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
     if (!this.actor.isOwner || refuseGmOnlyDrop(item, this.actor)) return null;
     const result = await dropItem(this, event, item);
     // Race / class drops apply the item rather than embedding a copy, so only embedded results transfer.
-    if (result && !['race', 'class'].includes(item.type)) await completeItemTransfer(item, this.actor);
+    if (result && !isRaceOrClass(item)) await completeItemTransfer(item, this.actor);
     return result;
   }
 
@@ -262,8 +268,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
    */
   _isSortSibling(source, other) {
     if (other.id === source.id) return false;
-    const inventory = ['gear', 'loot'];
-    if (inventory.includes(source.type)) return inventory.includes(other.type);
+    if (isInventoryItem(source)) return isInventoryItem(other);
     return other.type === source.type;
   }
 

@@ -145,7 +145,8 @@ export const SPECS = Object.freeze([
     system: {
       identifier: 'folding-step-ladder',
       description: '<p>Three steps and a wobble. It grants nothing, though the GM may let you climb with Advantage.</p>',
-      slot: 'hands'
+      slot: 'accessory',
+      isWeapon: false
     }
   },
   {
@@ -228,7 +229,8 @@ export const SPECS = Object.freeze([
     system: {
       identifier: 'slightly-exploded-toaster',
       description: '<p>It used to make toast. Now it makes a point.</p>',
-      slot: 'hands',
+      slot: 'accessory',
+      isWeapon: false,
       // Broken: equipping it asks for a Rule Break, and a Repair check can mend it.
       tags: ['item.broken']
     }
@@ -240,8 +242,9 @@ export const SPECS = Object.freeze([
     img: 'icons/svg/skull.svg',
     system: {
       identifier: 'the-previous-jacket',
-      description: '<p>It did not survive the glitter. There is a small, formal service. Nothing can repair it, but the glitter is still good.</p>',
+      description: '<p>It did not survive the glitter. There is a small, formal service. Nothing can repair it, but the glitter is still good. Whole, it gave +1 DR; destroyed, it gives that no more.</p>',
       slot: 'torso',
+      drBonus: 1,
       // Destroyed: past repair.
       tags: ['item.destroyed']
     }
@@ -344,7 +347,8 @@ export const SPECS = Object.freeze([
     system: {
       identifier: 'laugh-track-tripwire',
       description: '<p>It does no harm. It does, however, play the sound of a studio audience, and some creatures take that personally. A trap, and not an explosive one.</p>',
-      slot: 'hands',
+      slot: 'accessory',
+      isWeapon: false,
       tags: ['item.trap']
     }
   },
@@ -356,7 +360,8 @@ export const SPECS = Object.freeze([
     system: {
       identifier: 'confetti-mine',
       description: '<p>Step on it and the floor throws a party. The party is a small explosion with streamers. It counts as a trap and as an explosive, so a trap skill that only likes quiet traps will not help you build one.</p>',
-      slot: 'hands',
+      slot: 'accessory',
+      isWeapon: false,
       tags: ['item.trap', 'item.explosive']
     }
   }

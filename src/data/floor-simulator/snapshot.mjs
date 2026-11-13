@@ -72,10 +72,10 @@ export function snapshotForFloorSim(actor, { floorRun = null } = {}) {
         id: item.id, identifier: item.system?.identifier ?? '', name: item.name, rank: intOr(item.system?.rank), rankCeiling: getRankCeiling(item),
         manaCost: intOr(item.system?.manaCost), aiFavor: intOr(item.system?.aiFavor), starterRole: role
       });
-    } else if (item.type === 'gear' && Array.isArray(item.system?.damageParts) && item.system.damageParts.length) {
+    } else if (item.type === 'gear' && item.system?.isWeapon === true) {
       weapons.push({
         id: item.id, name: item.name, equipped: Boolean(item.system?.equipped), attackId: null,
-        skillIdentifier: item.system?.selectedSkill || item.system?.associatedSkills?.[0] || null, aiFavor: prefillAiFavorRating(item.system?.aiFavorRatings), aiFavorRatings: structuredClone(item.system?.aiFavorRatings ?? []), hasAsTrigger: hasAsTrigger(item), asTriggers: structuredClone(asTriggersOf(item)), tags: Array.from(item.system?.tags ?? []),
+        skillIdentifier: item.system?.associatedSkills?.[0] || null, aiFavor: prefillAiFavorRating(item.system?.aiFavorRatings), aiFavorRatings: structuredClone(item.system?.aiFavorRatings ?? []), hasAsTrigger: hasAsTrigger(item), asTriggers: structuredClone(asTriggersOf(item)), tags: Array.from(item.system?.tags ?? []),
         grants: structuredClone(Array.from(item.system?.grants ?? [])), damageModifiers: structuredClone(Array.from(item.system?.damageModifiers ?? [])),
         enchantments: structuredClone(Array.from(item.system?.enchantments ?? []))
       });

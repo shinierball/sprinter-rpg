@@ -405,7 +405,7 @@
   border: 1px solid var(--cog-panel-border);
   color: var(--cog-text-strong);
   width: 22px;
-  height: 22px;
+  min-height: 22px;
   line-height: 20px;
   border-radius: 3px;
   cursor: pointer;
@@ -1128,7 +1128,6 @@
   font-family: 'Oswald', sans-serif;
   font-size: 11px;
   cursor: pointer;
-  white-space: nowrap;
 }
 
 .cog-add-skill-btn:hover,
@@ -1350,5 +1349,130 @@
   border-color: var(--cog-accent);
   color: var(--cog-danger);
   font-weight: bold;
+}
+
+
+/* Item from words: the bridge window and the review window */
+.cog-item-words {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  font-family: 'Oswald', sans-serif;
+}
+
+.cog-item-words-label,
+.cog-draft-review h3 {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cog-item-words-hint {
+  margin: 0;
+  color: var(--cog-text-muted);
+  font-size: 12px;
+}
+
+.cog-item-words-box {
+  width: 100%;
+  resize: vertical;
+}
+
+.cog-item-words-row,
+.cog-item-words-footer,
+.cog-draft-review-unresolved {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-item-words-footer {
+  justify-content: flex-end;
+}
+
+.cog-item-words-notice {
+  margin: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--cog-border);
+  border-radius: 3px;
+}
+
+.cog-item-words-notice.is-warn {
+  border-color: var(--cog-accent-fill);
+}
+
+.cog-draft-review-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cog-draft-review-type {
+  color: var(--cog-text-muted);
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.cog-draft-review-lines {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.cog-draft-review-badge {
+  color: var(--cog-text-muted);
+  font-size: 11px;
+}
+
+.cog-draft-review-ref {
+  flex: 1;
+}
+
+/* =======================================================
+   ADVANCED WEAPON BUILDER (7.57): the pages are the gear sheet's weapon partials over an in-memory draft
+   ======================================================= */
+.cog-weapon-builder-app .window-content {
+  overflow-y: auto;
+  background: var(--cog-window-bg);
+}
+
+.cog-weapon-builder-app .cog-wb-page {
+  padding: 8px 14px;
+}
+
+.cog-weapon-builder-app .cog-wb-page[hidden] {
+  display: none;
+}
+
+.cog-weapon-builder-app .cog-wb-skill-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.cog-weapon-builder-app .cog-wb-readout-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cog-weapon-builder-app .cog-wb-readout-table th {
+  text-align: left;
+  width: 18%;
+  padding: 3px 6px;
+}
+
+.cog-weapon-builder-app .cog-wb-readout-table td {
+  padding: 3px 6px;
+  border-top: 1px solid var(--cog-divider);
+}
+
+.cog-item-setup-builder-link {
+  margin: 4px 0;
+  font-size: 12px;
+}
+
+.cog-item-setup-builder-link a {
+  cursor: pointer;
 }
 

@@ -18,14 +18,13 @@ import { landItems } from '../utils/content-source.mjs';
 import { tagIndex } from '../utils/tag/tag-index.mjs';
 import { dialogAnswer } from '../utils/ui/dialog-answer.mjs';
 import { choiceSelectHtml, readChoicePicks } from '../utils/ui/choice-picker.mjs';
-import { confirmRuleBreak } from '../utils/rule-break.mjs';
+import { confirmRuleBreak, withRuleBreak } from '../utils/rule-break.mjs';
 import { resolveGrantDocument } from './race-class-grants.mjs';
 import { stampCompendiumLink } from './compendium-sync.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 export const STARTING_ITEMS_FLAG = 'startingItemsGranted';
 
-const escapeHtml = (value) => String(value ?? '')
-  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 /** The stable key a race or class is recorded under (`race:<id>`), from its uuid, identifier or id. */
 export function startingSourceKey(source) {
@@ -133,18 +132,18 @@ export function recordFor(plan, ruleBreak, previous) {
  * @returns {Promise<{ accepted: number[], choices: Object<number, string> }|null>} null when skipped or closed
  */
 async function promptStartingItems(source, plan) {
-  const name = escapeHtml(source.def?.name);
+  const name = escapeAttr(source.def?.name);
   const rows = plan.items.map(i => `
     <label class="cog-starting-item" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
       <input type="checkbox" name="starting-${i.index}" checked />
-      <span>${escapeHtml(i.label)}${Number(i.entry.quantity) > 1 ? ` x${Number(i.entry.quantity)}` : ''}</span>
+      <span>${escapeAttr(i.label)}${Number(i.entry.quantity) > 1 ? ` x${Number(i.entry.quantity)}` : ''}</span>
     </label>`);
   const picks = plan.pending.map(p => ({ key: p.index, candidates: p.candidates.map(c => ({ value: c.uuid, label: c.name })) }));
   for (const [i, p] of plan.pending.entries()) {
     rows.push(`
     <label class="cog-starting-item" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
       <input type="checkbox" name="starting-${p.index}" checked />
-      <span>${escapeHtml(p.label)}</span>
+      <span>${escapeAttr(p.label)}</span>
       ${choiceSelectHtml(picks[i])}
     </label>`);
   }
@@ -229,7 +228,7 @@ export async function grantStartingItems(actor, source, options = {}) {
   const chosen = plan.items.filter(i => !accepted || accepted.has(i.index));
   if (!chosen.length) return result;
   if (ruleBreak) {
-    for (const i of chosen) i.data.flags[SYSTEM_ID].ruleBreak = true;
+    for (const i of chosen) i.data = withRuleBreak(i.data);
   }
   const created = typeof actor.createEmbeddedDocuments === 'function'
     ? await actor.createEmbeddedDocuments('Item', options.allowOffTheme === true ? chosen.map(i => i.data) : landItems(chosen.map(i => i.data)))

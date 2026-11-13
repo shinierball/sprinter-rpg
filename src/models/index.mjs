@@ -8,7 +8,7 @@ export { BuffDataModel } from './items/buff-model.mjs';
 export { DebuffDataModel } from './items/debuff-model.mjs';
 export { LootDataModel } from './items/loot-model.mjs';
 export { AchievementDataModel } from './items/achievement-model.mjs';
-export { RaceDataModel, ClassDataModel, DeityDataModel, SponsorDataModel } from './items/lore-model.mjs';
+export { RaceDataModel, ClassDataModel, DeityDataModel, PatronDataModel, SponsorDataModel } from './items/lore-model.mjs';
 export { SpaceUpgradeDataModel } from './items/space-upgrade-model.mjs';
 
 // Actor Type Data Models

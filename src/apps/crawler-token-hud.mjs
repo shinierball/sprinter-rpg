@@ -11,7 +11,7 @@ import { nextCameraChoice, armedCamera, camerasOffered, cameraArmView } from '..
 import { isWeaponGear } from '../documents/actor.mjs';
 import { SYSTEM_PATH, SYSTEM_ID } from '../constants.mjs';
 import { COGToolApp } from './tool-app.mjs';
-import { primaryDamagePart, formatDamagePart } from '../utils/damage/damage-parts.mjs';
+import { attackDamageDisplay } from '../utils/damage/damage-parts.mjs';
 import { isPassiveSkill, isAttackSkill, spellRole, spellRoleLabel } from '../utils/tag/tag-mechanics.mjs';
 import { hotlistSlotId, resolveHotlistItem, isActivatableGear } from '../utils/ui/hotlist.mjs';
 import { offersSpellAttack } from '../utils/attack/spell-cast-link.mjs';
@@ -19,10 +19,9 @@ import { attackText } from '../utils/attack/attack-text.mjs';
 import { skipOptions } from '../utils/attack/attack-options.mjs';
 import { setItemEquipped } from '../documents/item/enchantments.mjs';
 import { setDebuffPaused, canSwitchDebuff } from '../documents/actor/debuff-switch.mjs';
+import { ACTION_HUD_POSITION_SETTING } from '../utils/ui/action-hud-position.mjs';
+import { itemDisplayName } from '../utils/tag/display-name.mjs';
 import { rollDamageFromHitCard } from '../utils/damage/hit-card-damage.mjs';
-
-/** Client-scoped setting holding the dragged position of the action HUD. */
-export const ACTION_HUD_POSITION_SETTING = 'actionHudPosition';
 
 /**
  * Finds an owned item by id on an actor, from its item collection.
@@ -152,7 +151,7 @@ export class COGCrawlerHotbarHUD extends COGToolApp {
         } else if (slotType === 'attack') {
           isAttack = true;
           badge = 'ATTACK';
-          detail = formatDamagePart(primaryDamagePart(resolvedItem.system));
+          detail = attackDamageDisplay(resolvedItem, this.actor);
           hasDamage = true;
         } else if (slotType === 'skill') {
           isSkill = true;
@@ -410,7 +409,7 @@ export class COGCrawlerActionHUD extends COGToolApp {
       const isAttack = item.type === 'attack' && item.system?.equipped !== false;
       const isWeapon = item.type === 'gear' && item.system?.equipped && isWeaponGear(item);
       if (isAttack || isWeapon) {
-        const formula = formatDamagePart(primaryDamagePart(item.system), { withType: true });
+        const formula = attackDamageDisplay(item, this.actor);
 
         attacks.push({
           id: item.id,
@@ -459,9 +458,8 @@ export class COGCrawlerActionHUD extends COGToolApp {
     }
 
     const debuffs = allItems.filter(i => i.type === 'debuff' && canSwitchDebuff(i)).map(i => ({
-      id: i.id, name: i.name, img: i.img || 'icons/svg/skull.svg', paused: i.system?.paused === true
-    }));
-    debuffs.sort((a, b) => a.name.localeCompare(b.name));
+      id: i.id, name: itemDisplayName(i), img: i.img || 'icons/svg/skull.svg', paused: i.system?.paused === true
+    })).sort((a, b) => a.name.localeCompare(b.name));
 
     // Sort alphabetically by name
     attacks.sort((a, b) => a.name.localeCompare(b.name));

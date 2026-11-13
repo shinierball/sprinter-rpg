@@ -8,10 +8,11 @@
  *
  * Strings live under `COG.ItemSummary.GearLoot` in lang/en.json; the defaults below are identical (a test checks it).
  */
-import { rollsNoDamage, baseDamageText as structuredDamageText } from '../damage/base-damage.mjs';
+import { rollsNoDamage, normalizeBaseDamage, baseDamageText as structuredDamageText } from '../damage/base-damage.mjs';
 import { itemLine, t, conditionName, documentName, humanizeId, defineItemSummaryTemplates, str, token, num, signed, healBarsText, tempBarsText } from './shared.mjs';
 import { isWeaponGear, getWieldMode, isNaturalWeapon } from '../gear/wielding.mjs';
-import { getDamageParts, formatDamagePart, primaryDamagePart, attackDamageDisplay } from '../damage/damage-parts.mjs';
+import { hasWeaponTypeTag } from '../gear/wield-mode.mjs';
+import { attackDamageDisplay } from '../damage/damage-parts.mjs';
 import { resolveAttackToHit, attackToHitStat } from '../attack/to-hit-display.mjs';
 import { statName, applyRowLabels, choiceLabel } from './feature-describer.mjs';
 import { outcomeWeightTotal, outcomeChancePercent } from '../loot/outcome-weights.mjs';
@@ -27,6 +28,7 @@ import { describeAreaEffects } from './blocks-spell-skill.mjs';
 import { getUsedForm } from '../../data/rules/used-forms.mjs';
 import { enchantOutcomeEffect } from './blocks-crafting.mjs';
 import { ENCHANT_ITEM_OUTCOME } from '../loot/outcome-defaults.mjs';
+import { isWeaponCapable } from '../document-types.mjs';
 
 const K = 'COG.ItemSummary.GearLoot.';
 
@@ -36,15 +38,13 @@ defineItemSummaryTemplates({
   [`${K}WieldTwo`]: 'Two-handed',
   [`${K}WieldTwoOrOne`]: 'Two-handed; can be used one-handed at Disadvantage',
   [`${K}WeaponFlag`]: 'Counts as a weapon',
-  [`${K}WeaponClass`]: 'Weapon: {text}',
   [`${K}WeaponSkills`]: 'Uses the skill: {skills}',
-  [`${K}WeaponSkillsHighest`]: 'Uses the highest of: {skills}',
-  [`${K}WeaponSkillsManual`]: 'Uses the chosen skill of: {skills}',
+  [`${K}WeaponSkillsOrdered`]: 'Uses the first of these you are trained in: {skills}',
   [`${K}ToHitOwned`]: 'To hit: {formula} ({stat})',
   [`${K}ToHitBase`]: 'To hit: {stat} + Rank {rank}',
   [`${K}ToHitBaseNoRank`]: 'To hit: {stat}',
   [`${K}Damage`]: 'Damage: {text}',
-  [`${K}Crit`]: 'Critical hits multiply damage by {n}',
+  [`${K}Crit`]: 'Critical Hit: {n}x base dice',
   [`${K}IgnoreDR`]: 'Ignores DR',
   [`${K}PersistentBuffs`]: 'While equipped, grants: {list}',
   [`${K}PersistentDebuffs`]: 'While equipped, inflicts: {list}',
@@ -90,7 +90,7 @@ const sysOf = (item) => (item?.system && typeof item.system === 'object' ? item.
 const strings = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim()) : []);
 const isGear = (item) => item?.type === 'gear';
 const isLoot = (item) => item?.type === 'loot';
-const isWeapon = (item) => (item?.type === 'gear' || item?.type === 'attack') && isWeaponGear(item);
+const isWeapon = (item) => isWeaponCapable(item) && isWeaponGear(item);
 const ownerOf = (ctx) => (ctx?.actor && typeof ctx.actor === 'object' ? ctx.actor : null);
 
 const joinNames = (names) => names.filter(Boolean).join(', ');
@@ -117,8 +117,8 @@ const wieldMode = {
     const sys = sysOf(item);
     let handless = false;
     try { handless = isNaturalWeapon(item); } catch { /* a bare object has no tags */ }
-    // A bare attack item (no category or type) is a natural attack: no hands, as `calculateItemHandsRequired` has it
-    if (handless || (item.type === 'attack' && !str(sys.weaponCategory) && !str(sys.weaponType))) return [];
+    // A bare attack item (no weapon type tag) is a natural attack: no hands, as `calculateItemHandsRequired` has it
+    if (handless || (item.type === 'attack' && !hasWeaponTypeTag(sys))) return [];
     if (!getWieldMode(sys, { itemType: item.type, handless })) return [];
     const key = { two_handed: 'WieldTwo', two_handed_disadv_1h: 'WieldTwoOrOne' }[sys.wieldMode] ?? 'WieldOne';
     return [itemLine('wield', t(`${K}${key}`), 'system.wieldMode')];
@@ -141,17 +141,6 @@ const gearAreaEffects = {
   describe: (item) => describeAreaEffects(item)
 };
 
-const weaponClass = {
-  id: 'weapon-class',
-  group: 'wield',
-  applies: (item) => isWeapon(item),
-  describe: (item) => {
-    const sys = sysOf(item);
-    const parts = [token(sys.weaponCategory), token(sys.weaponType)].filter(Boolean);
-    return parts.length ? [itemLine('wield', t(`${K}WeaponClass`, { text: parts.map(humanizeId).join(' / ') }), 'system.weaponCategory')] : [];
-  }
-};
-
 const weaponSkills = {
   id: 'weapon-skills',
   group: 'wield',
@@ -159,7 +148,7 @@ const weaponSkills = {
   describe: async (item) => {
     const sys = sysOf(item);
     const skills = joinNames(await Promise.all(strings(sys.associatedSkills).map((s) => documentName(s, 'skill'))));
-    const key = sys.proficiencyMode === 'manual' ? 'WeaponSkillsManual' : (strings(sys.associatedSkills).length > 1 ? 'WeaponSkillsHighest' : 'WeaponSkills');
+    const key = strings(sys.associatedSkills).length > 1 ? 'WeaponSkillsOrdered' : 'WeaponSkills';
     return [itemLine('skill', t(`${K}${key}`, { skills }), 'system.associatedSkills')];
   }
 };
@@ -193,27 +182,12 @@ const weaponToHit = {
     }
     const rank = Math.max(0, Math.floor(num(sys.toHitRank)));
     // A bare natural attack (default DEX, Rank 0) has nothing to say about its own to-hit
-    if (!rank && !str(sys.weaponCategory) && !str(sys.weaponType) && !(isGear(item) && str(sys.toHitStat))) return [];
-    const stat = attackToHitStat(item, null, primaryDamagePart(sys)).toUpperCase();
+    if (!rank && !hasWeaponTypeTag(sys) && !(isGear(item) && str(sys.toHitStat))) return [];
+    const stat = attackToHitStat(item, null, sys.baseDamage).toUpperCase();
     const out = rank ? t(`${K}ToHitBase`, { stat, rank }) : t(`${K}ToHitBaseNoRank`, { stat });
     return [itemLine('attack', out, 'system.toHitStat')];
   }
 };
-
-/** The item's own damage parts as text: every part with dice, stat modifier, flat bonus and type. */
-function baseDamageText(sys) {
-  const parts = [];
-  for (const part of getDamageParts(sys)) {
-    const base = formatDamagePart(part);
-    const flat = num(part.value);
-    let out = base;
-    if (flat) out = base ? `${base} ${flat > 0 ? '+' : '-'} ${Math.abs(flat)}` : signed(flat);
-    if (!out) continue;
-    const type = str(part.type);
-    parts.push(type ? `${out} (${type})` : out);
-  }
-  return parts.join(', ');
-}
 
 const weaponDamage = {
   id: 'weapon-damage',
@@ -226,8 +200,8 @@ const weaponDamage = {
     if (actor && typeof actor.getAttackDamageParts === 'function') {
       try { out = attackDamageDisplay(item, actor); } catch { out = ''; }
     }
-    if (!out) out = baseDamageText(sys);
-    return out ? [itemLine('damage', t(`${K}Damage`, { text: out }), 'system.damageParts')] : [];
+    if (!out) out = structuredDamageText(sys.baseDamage);
+    return out ? [itemLine('damage', t(`${K}Damage`, { text: out }), 'system.baseDamage')] : [];
   }
 };
 
@@ -289,7 +263,7 @@ const weaponRankBreaks = {
       .map(([key, tier]) => ({ key, tier, at: num(tier.rank) || DEFAULT_THRESHOLDS[key] || 0 }))
       .filter((x) => x.at > 0)
       .sort((a, b) => a.at - b.at);
-    const ownDamageType = str(primaryDamagePart(sysOf(item))?.type);
+    const ownDamageType = normalizeBaseDamage(sysOf(item).baseDamage).damageType;
     const out = []; // ascending Rank; kind 'attack' (a weapon's break changes the attack)
     for (const { key, tier, at } of tiers) {
       // A reached break leaves out its damage: the Damage line (the actor's own damage parts) already carries it. Armor piercing stays, the weapon's Ignores DR line reads only its own field.
@@ -531,7 +505,7 @@ const outcomes = {
 
 /** @type {ReadonlyArray<import('./shared.mjs').ItemSummaryBlock>} */
 export const BLOCKS = Object.freeze([
-  gearSlot, wieldMode, weaponFlag, gearAreaEffects, weaponClass, weaponSkills, optionalEffects,
+  gearSlot, wieldMode, weaponFlag, gearAreaEffects, weaponSkills, optionalEffects,
   weaponToHit, weaponDamage, weaponCrit, ignoreDR, asTriggers, weaponRankBreaks,
   persistentBuffs, persistentDebuffs, gearHealing, gearTempBars,
   activatedAbility, lootType, usageLine, charges, lootCooldown, linkedSpell, outcomes

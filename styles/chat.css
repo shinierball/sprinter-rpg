@@ -154,7 +154,6 @@
 .cog-damage-sub-actions .cog-apply-damage-btn {
   flex: 1 1 auto;
   min-width: max-content;
-  white-space: normal;
   line-height: 1.2;
   font-size: 10px;
   padding: 3px 5px;
@@ -203,4 +202,37 @@
 .cog-combat-awards-header-btn:hover {
   color: var(--cog-gold);
 }
+
+/* ==========================================================================
+   Difficulty block on plain skill and stat check cards
+   ========================================================================== */
+
+.cog-check-difficulty {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid var(--cog-divider);
+  font-family: 'Oswald', sans-serif;
+}
+.cog-check-difficulty-line {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: var(--cog-text-muted);
+}
+.cog-check-degree {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--cog-divider);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--cog-text);
+}
+.cog-check-difficulty-controls summary { cursor: pointer; font-size: 10px; color: var(--cog-text-muted); }
+.cog-check-difficulty-formulas { display: flex; flex-wrap: wrap; gap: 4px; }
+.cog-check-difficulty-formulas .cog-assist-offer-btn { width: auto; }
+.cog-check-difficulty .cog-assist-offer-btn.is-default { border-color: var(--cog-accent); }
+.cog-check-difficulty-typed { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+.cog-check-difficulty-typed input[type="number"] { width: 60px; }
+.cog-check-difficulty-typed .cog-assist-offer-btn { width: auto; margin-top: 0; }
 

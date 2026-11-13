@@ -7,8 +7,10 @@
  * so a crawler created on Floor 3 is never prompted while the world clock still reads Floor 1.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { getCurrentFloor, parseFloorNumber } from '../../documents/actor/actor-environment.mjs';
-import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../rule-break.mjs';
+import { getCurrentFloor } from '../floor/current-floor.mjs';
+import { parseFloorNumber } from '../floor/floor-number.mjs';
+import { confirmRuleBreak, RULE_BREAK_REFUSALS, isRuleBreak } from '../rule-break.mjs';
+import { escapeAttr } from '../escape-attr.mjs';
 
 /** Default unlock floor; worlds and modules override it with `CONFIG.COG.raceClassUnlockFloor`. */
 export const RACE_CLASS_UNLOCK_FLOOR = 3;
@@ -34,7 +36,6 @@ export function raceClassText(key, data = {}) {
   return (TEMPLATES[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
 }
 
-const escapeHtml = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 const norm = (v) => (typeof v === 'string' ? v.trim().toLowerCase() : '');
 
@@ -114,7 +115,7 @@ export function raceClassFloorBreak(actor, kind, def, { worldFloor = getCurrentF
   if (!isRaceClassLocked(actor, worldFloor)) return { needed: false, ruleBreak: false };
   if (isSameAppliedSource(actor, kind, def)) {
     const previous = appliedSource(actor, kind).item;
-    return { needed: false, ruleBreak: previous?.getFlag?.(SYSTEM_ID, 'ruleBreak') === true || previous?.flags?.[SYSTEM_ID]?.ruleBreak === true };
+    return { needed: false, ruleBreak: isRuleBreak(previous) };
   }
   const data = { floor: raceClassUnlockFloor(), current: effectiveFloor(actor, worldFloor), actor: actor?.name || 'This crawler', name: def?.name || kind };
   return { needed: true, ruleBreak: false, reason: raceClassText('COG.RaceClass.RuleBreakReason', data), data };
@@ -136,7 +137,7 @@ export async function confirmRaceClassFloor(actor, kind, def, options = {}) {
   const { data, reason } = gate;
   const res = await confirmRuleBreak({
     title: raceClassText('COG.RaceClass.RuleBreakTitle'),
-    message: raceClassText('COG.RaceClass.RuleBreakMessage', { ...data, actor: escapeHtml(data.actor), name: escapeHtml(data.name) }),
+    message: raceClassText('COG.RaceClass.RuleBreakMessage', { ...data, actor: escapeAttr(data.actor), name: escapeAttr(data.name) }),
     reason,
     options
   });

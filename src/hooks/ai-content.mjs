@@ -8,6 +8,7 @@ import { applyAiContentChange, noteAppliedAiLevel } from '../content/ai-content.
 import { maybePromptCleanup } from '../content/theme-cleanup.mjs';
 import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
 import { syncRegistryConfig, refreshOfferedContent } from './system-api.mjs';
+import { AI_CONTENT_SETTING } from '../content/registry/authorship.mjs';
 
 const t = (key, data) => {
   const i18n = globalThis.game?.i18n;
@@ -32,7 +33,7 @@ export async function onAiContentChange(value, _options, userId) {
     level: value,
     ask: mine && Boolean(globalThis.game?.user?.isGM),
     confirm: confirmEmpty,
-    revert: (previous) => globalThis.game.settings.set(SYSTEM_ID, 'aiContent', previous),
+    revert: (previous) => globalThis.game.settings.set(SYSTEM_ID, AI_CONTENT_SETTING, previous),
     sync: syncRegistryConfig,
     refresh: refreshOfferedContent,
     prompt: () => maybePromptCleanup({ isActiveGM: () => true, open: () => COGThemeCleanupApp.open() })

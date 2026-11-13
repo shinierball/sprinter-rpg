@@ -21,7 +21,10 @@ import { getCurrentFloor } from '../utils/floor/current-floor.mjs';
 import { parseFloorNumber } from '../documents/actor/actor-environment.mjs';
 import { buildAdvancementControls, runAdvancementControl } from './advancement-batch.mjs';
 import { openAwardLevels } from './award-levels-app.mjs';
+import { lowestLevelBonusMembers } from '../utils/skill/skill-advancement.mjs';
+import { ADVANCEMENT_ROUTES, routeAllowsGain } from '../utils/skill/advancement-routes.mjs';
 import { ruleSkillRank } from '../utils/skill/rule-skills.mjs';
+import { patronGrindOptions } from '../documents/actor/patron-benefits.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../utils/tag/tag-behaviour.mjs';
 
 
@@ -88,8 +91,9 @@ export class COGGrindApp extends COGToolApp {
 
     // Party selection state: every crawler starts unticked, so each grind needs a deliberate pick
     this.selectedActorIds = new Set();
-    // Crawlers the GM ticked as "lowest-Level party member": a Level from grinding rolls 1d2 instead of 1
-    this.lowestLevelBonusIds = new Set();
+    // The GM's own ticks on the "lowest-Level party member" box (id -> checked). They win over the
+    // automatic tick, which comes from the selected party's Levels; a change of party clears them.
+    this.lowestLevelOverrides = new Map();
     this.activeCrawlerId = this.actor?.id || null;
 
     // Map selection: explicit option or auto-detect from actor inventory
@@ -173,6 +177,7 @@ export class COGGrindApp extends COGToolApp {
     context.resultingFloorTimer = Math.max(0, floorTimer - this.hours);
 
     // Map Party Roster
+    const lowestIds = this._lowestLevelBonusIds();
     context.crawlers = allCrawlers.map(c => {
       const isSelected = this.selectedActorIds.has(c.id);
       const isActive = c.id === this.activeCrawlerId;
@@ -184,7 +189,7 @@ export class COGGrindApp extends COGToolApp {
         bankedHours: actorBanked,
         level: Number(c.system?.details?.level) || 1,
         grindLevelHours: Number(c.system?.details?.grindLevelHours) || 0,
-        lowestLevelBonus: this.lowestLevelBonusIds.has(c.id),
+        lowestLevelBonus: lowestIds.has(c.id),
         isSelected,
         isActive
       };
@@ -220,6 +225,8 @@ export class COGGrindApp extends COGToolApp {
       const neededHours = Math.max(0, reqHours - investedHours);
       const isSelected = skill.id === this.selectedSkillId;
       const canAdvance = investedHours >= reqHours;
+      // Grinding closed at this Rank: the skill is listed after the others and labelled; putting hours in asks a Rule Break.
+      const grindClosed = !routeAllowsGain(skill, ADVANCEMENT_ROUTES.grind, baseRank);
       const canAddHour = bankedHours > 0 && investedHours < reqHours;
       const canSubHour = investedHours > 0;
       const progressPct = Math.min(100, Math.round((investedHours / Math.max(1, reqHours)) * 100));
@@ -240,7 +247,8 @@ export class COGGrindApp extends COGToolApp {
         progressPct,
         target,
         isSelected,
-        canAdvance
+        canAdvance,
+        grindClosed
       };
     });
 
@@ -253,8 +261,9 @@ export class COGGrindApp extends COGToolApp {
       }
     }
 
-    // Sort: selected first, then checked, then alphabetical
+    // Sort: grinding-closed skills last, then selected first, then checked, then alphabetical
     mappedSkills.sort((a, b) => {
+      if (a.grindClosed !== b.grindClosed) return a.grindClosed ? 1 : -1;
       if (a.isSelected) return -1;
       if (b.isSelected) return 1;
       if (a.checked && !b.checked) return -1;
@@ -321,14 +330,14 @@ export class COGGrindApp extends COGToolApp {
     } else {
       this.selectedActorIds.delete(actorId);
     }
+    this.lowestLevelOverrides.clear();
     await this.render();
   }
 
   static async #onToggleLowestBonus(event, target) {
     const actorId = target.dataset.actorId;
     if (!actorId) return;
-    if (target.checked) this.lowestLevelBonusIds.add(actorId);
-    else this.lowestLevelBonusIds.delete(actorId);
+    this.lowestLevelOverrides.set(actorId, Boolean(target.checked));
   }
 
   static async #onSelectCrawler(event, target) {
@@ -374,8 +383,24 @@ export class COGGrindApp extends COGToolApp {
   static async #onAttemptAdvancement(event, target) {
     const skillId = target.dataset.skillId;
     if (!this.actor || !skillId) return;
-    await this.actor.attemptSkillAdvancement(skillId);
+    const skill = this.actor.items?.get(skillId);
+    if (skill) await this.actor.attemptSkillAdvancement(skillId, await patronGrindOptions(this.actor, skill));
     await this.render();
+  }
+
+  /**
+   * Crawlers whose "lowest-Level party member" box is ticked: the selected party's strictly lowest Level
+   * (a tie ticks nobody), with the GM's own ticks taking over.
+   * @returns {Set<string>}
+   */
+  _lowestLevelBonusIds() {
+    const members = this._selectedCrawlers().map(c => ({ id: c.id, level: Number(c.system?.details?.level) || 1 }));
+    const ids = lowestLevelBonusMembers(members);
+    for (const [id, checked] of this.lowestLevelOverrides) {
+      if (checked) ids.add(id);
+      else ids.delete(id);
+    }
+    return ids;
   }
 
   /** Crawlers ticked in the roster. */
@@ -431,7 +456,7 @@ export class COGGrindApp extends COGToolApp {
       floor: this.floorNumber,
       rollComplication: this.rollComplication,
       resetPool: true, // Use it or lose it
-      lowestLevelBonusIds: [...this.lowestLevelBonusIds]
+      lowestLevelBonusIds: [...this._lowestLevelBonusIds()]
     };
 
     const result = await COGActor.executePartyGrindSession(participants, options);

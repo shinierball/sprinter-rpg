@@ -15,11 +15,10 @@ import { GRANT_KINDS, grantRowErrors } from '../../models/items/grant-validation
 import { CHOICE_CATEGORY_QUERIES } from '../../data/race-class-choices.mjs';
 import { normalizeTiming } from '../../utils/time/timing.mjs';
 import { groupedTagOptions } from '../../utils/character/point-build-params.mjs';
-import { identifierOptions, pickedBadge } from '../../utils/ui/identifier-options.mjs';
-import { ABILITIES, pickOptions, statOptions } from '../../utils/ui/field-options.mjs';
+import { identifierOptions } from '../../utils/ui/identifier-options.mjs';
+import { ABILITIES, pickOptions } from '../../utils/ui/field-options.mjs';
 import { buildPickList } from './context-pick-list.mjs';
-import { buildQueryView } from './context-query.mjs';
-import { queryBucketsAt } from './util.mjs';
+import { ALL_BUCKETS, CHECKBOX_FIELDS, NUMBER_FIELDS, loc, sharedFieldView } from './row-field-views.mjs';
 
 /** The fields each `kind:mode` shows, after the kind and mode selects. */
 export const GRANT_ROW_FIELDS = Object.freeze({
@@ -30,20 +29,10 @@ export const GRANT_ROW_FIELDS = Object.freeze({
   'spell:fixed':      Object.freeze(['identifier', 'rank', 'label']),
   'spell:choice':     Object.freeze(['rank', 'count', 'distinct', 'query', 'options', 'category', 'label']),
   'rank_bonus:fixed': Object.freeze(['value', 'tag', 'query', 'floor', 'onlyIfOwned', 'label']),
+  'rank_raise:fixed': Object.freeze(['identifier', 'tag', 'query', 'floor', 'value', 'label']),
   'rank_cap:fixed':   Object.freeze(['value', 'identifier', 'tag', 'label']),
   'rank_cap:choice':  Object.freeze(['value', 'query', 'options', 'category', 'label'])
 });
-
-const ALL_BUCKETS = Object.freeze(['all', 'any', 'none']);
-const NUMBER_FIELDS = Object.freeze({
-  value: { step: 'any' },
-  rank: { min: 1, step: 1 },
-  count: { min: 0, step: 1 },
-  floor: { min: 0, step: 1 }
-});
-const CHECKBOX_FIELDS = Object.freeze(['distinct', 'onlyIfOwned']);
-
-const loc = (key, data) => globalThis.game?.i18n?.localize?.(key, data) ?? key;
 
 /** The modes a kind has in the table, `fixed` first. */
 function grantModesOf(kind) {
@@ -68,7 +57,7 @@ export function grantKeyOf(row) {
  * @param {string} kindKey a key of {@link GRANT_ROW_FIELDS}
  * @returns {object}
  */
-export function blankGrantRow(kindKey) {
+function blankGrantRow(kindKey) {
   const [kind, mode = 'fixed'] = String(kindKey ?? '').split(':');
   if (!Object.hasOwn(GRANT_ROW_FIELDS, `${kind}:${mode}`)) return { kind: 'stat', stat: 'str', value: 1 };
   const defaults = {
@@ -79,10 +68,29 @@ export function blankGrantRow(kindKey) {
     'spell:fixed': { rank: 1 },
     'spell:choice': { rank: 1, count: 1 },
     'rank_bonus:fixed': { value: 1 },
+    'rank_raise:fixed': { floor: 1, value: 1 },
     'rank_cap:fixed': { value: 1 },
     'rank_cap:choice': { value: 1 }
   };
   return { kind, ...(mode === 'fixed' ? {} : { mode }), ...defaults[`${kind}:${mode}`] };
+}
+
+/**
+ * A new row that the item's `grants` field will accept. The field rejects a row with no target, so a skill, spell,
+ * rank raise or rank cap row starts on the first skill or spell the catalogs offer (its identifier select shows it, the
+ * author changes it). A kind with no identifier to default (a rank bonus needs a tag, a choice needs a query) is
+ * returned as {@link blankGrantRow} made it, and the caller shows the author what it lacks. A creator's draft is checked
+ * only at Save, so its rows start blank (a defaulted identifier would stay beside a tag the author sets later, and a
+ * rank raise or rank cap row applies to both).
+ * @param {string} kindKey a key of {@link GRANT_ROW_FIELDS}
+ * @param {{ draft?: boolean }} [options] `draft`: the rows belong to a creator's draft, not a live item
+ * @returns {object}
+ */
+export function startGrantRow(kindKey, { draft = false } = {}) {
+  const row = blankGrantRow(kindKey);
+  if (draft || grantRowErrors(row).length === 0 || !GRANT_ROW_FIELDS[grantKeyOf(row)]?.includes('identifier')) return row;
+  const first = identifierOptions(row.kind === 'spell' ? 'spell' : 'skill', '').find((option) => option.value);
+  return first ? { ...row, identifier: first.value } : row;
 }
 
 const queryHasTags = (query) => ALL_BUCKETS.some((bucket) => Array.isArray(query?.[bucket]) && query[bucket].length > 0);
@@ -153,35 +161,19 @@ function optionsPicker(row, key, ctx, rowPath) {
 function fieldView(field, row, key, rowPath, ctx) {
   const kind = key.split(':')[0];
   const base = { field, name: `${rowPath}.${field}`, label: `COG.Rows.Grant.Field.${field}` };
-  if (field === 'query') {
-    const path = `${rowPath}.query`;
-    return {
-      ...base, name: '', isQuery: true, tagOptions: ctx.tagOptions ?? [],
-      query: buildQueryView(row.query, path, (ctx.item && queryBucketsAt(ctx.item, path)) || ALL_BUCKETS)
-    };
-  }
-  if (field === 'options') return { ...base, name: '', isPicker: true, picker: optionsPicker(row, key, ctx, rowPath) };
   if (field === 'tag') return { ...base, isTag: true, ...tagGroups(String(row.tag ?? '')), blank: loc('COG.Rows.Grant.NoTag') };
-  if (field === 'stat') {
-    return { ...base, isSelect: true, options: statOptions(row.stat, { blankLabel: kind === 'skill' ? loc('COG.Rows.Grant.SkillOwnStat') : null }) };
-  }
-  if (field === 'identifier') {
-    const source = kind === 'spell' ? (ctx.spells ?? 'spell') : (ctx.skills ?? 'skill');
-    const options = identifierOptions(source, row.identifier, { blankLabel: loc('COG.Rows.Grant.ChooseOne') });
-    return { ...base, isSelect: true, options, badge: pickedBadge(options) };
-  }
   if (field === 'category') {
     const options = pickOptions(Object.keys(CHOICE_CATEGORY_QUERIES), row.category, { blankLabel: loc('COG.Rows.Grant.NoCategory') });
     if (row.category && !options.some((option) => option.selected)) options.push({ value: row.category, label: row.category, selected: true });
     return { ...base, isSelect: true, options };
   }
-  if (CHECKBOX_FIELDS.includes(field)) return { ...base, isCheckbox: true, checked: Boolean(row[field]) };
-  if (Object.hasOwn(NUMBER_FIELDS, field)) {
-    const numeric = Number(row[field]);
-    const fallback = field === 'rank' || field === 'count' ? 1 : 0;
-    return { ...base, isNumber: true, ...NUMBER_FIELDS[field], minAttr: NUMBER_FIELDS[field].min === undefined ? '' : String(NUMBER_FIELDS[field].min), value: row[field] === undefined || row[field] === null || row[field] === '' || !Number.isFinite(numeric) ? fallback : numeric };
-  }
-  return { ...base, isText: true, value: String(row[field] ?? '') };
+  return sharedFieldView(field, row, rowPath, ctx, {
+    labelPrefix: 'COG.Rows.Grant.Field.',
+    picker: () => optionsPicker(row, key, ctx, rowPath),
+    source: kind === 'spell' ? (ctx.spells ?? 'spell') : (ctx.skills ?? 'skill'),
+    statBlank: kind === 'skill' ? loc('COG.Rows.Grant.SkillOwnStat') : null,
+    fallbacks: { rank: 1, count: 1 }
+  });
 }
 
 /**
@@ -190,7 +182,8 @@ function fieldView(field, row, key, rowPath, ctx) {
  * @param {string} rowPath input-name root of the row, e.g. `system.grants.2`
  * @param {object} ctx `{ item, tagOptions?, skills?, spells?, locked?, index? }`: `item` is the row host (for the query
  *   editor's buckets), `tagOptions` the registered tags for the query editor, `skills` / `spells` the catalog entries to
- *   offer (default the registry catalogs), `locked` hides the kind and mode selects
+ *   offer (default the registry catalogs), `locked` hides the kind and mode selects, `fieldsByKey` shows another field list for a `kind:mode` key (a buff's skill row
+ *   shows its `value` bonus, not a `rank`)
  * @returns {object} `{ path, index, kind, mode, key, known, locked, kindOptions, modeOptions, fields, incomplete, problem }`
  */
 export function grantRowView(row, rowPath, ctx = {}) {
@@ -211,7 +204,7 @@ export function grantRowView(row, rowPath, ctx = {}) {
     kindOptions: GRANT_KINDS.map((value) => ({ value, labelKey: `COG.Rows.Grant.Kind.${value}`, selected: value === kind })),
     modeOptions: key ? grantModesOf(kind).map((value) => ({ value, labelKey: `COG.Rows.Grant.Mode.${value}`, selected: value === mode })) : [],
     showModes: key ? grantModesOf(kind).length > 1 : false,
-    fields: key ? GRANT_ROW_FIELDS[key].map((field) => fieldView(field, source, key, rowPath, ctx)) : [],
+    fields: key ? (ctx.fieldsByKey?.[key] ?? GRANT_ROW_FIELDS[key]).map((field) => fieldView(field, source, key, rowPath, ctx)) : [],
     incomplete: errors.length > 0,
     problem: errors.join('; ')
   };

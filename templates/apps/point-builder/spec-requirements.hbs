@@ -1,0 +1,9 @@
+{{!--
+  The creator's own Requirements accordion: the rows of spec.requirements and the free-text prerequisites inside it.
+  One rows form (`data-perk-list="requirements"`, no perk index) whose inputs are named
+  perkRows.requirements.requirements.<i>.<field>; the prerequisites text keeps its own name and `setField` action.
+  Parameter: rr = requirementRows (buildSpecRequirements, src/apps/perk-rows-host.mjs).
+--}}
+<form class="cog-spec-requirements-form" data-perk-list="requirements" autocomplete="off" onsubmit="return false">
+  {{> "systems/sprinter-rpg/templates/items/parts/requirement-rows.hbs" rr=rr}}
+</form>

@@ -26,6 +26,8 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { findDamageUndoRecord, isApplicationId, markDamageUndoKillAwarded } from '../../utils/damage/damage-undo.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 export const AWARD_POPULARITY = 'awardPopularity';
 const USAGE_FLAG = 'popularityUsage';
@@ -45,7 +47,6 @@ function t(key, data = {}) {
 /** The combat id inside a `combat:<id>` token, or ''. */
 const tokenCombatId = (tokens) => (String(tokens.combat).startsWith('combat:') ? String(tokens.combat).slice(7) : '');
 
-const escapeHtml = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
 /**
  * The id of the running combat an award counts against: the hinted combat when it is running, else the world's
@@ -101,14 +102,13 @@ async function writePopularityAward(actor, { event, context, confirmedKeys = [],
   const lines = awarded.map(a => {
     const label = a.row.label || a.source?.name || 'Popularity';
     const value = a.value > 0 ? `+${a.value}` : `${a.value}`;
-    return `<p><i class="fa-solid fa-star"></i> ${escapeHtml(t('COG.Popularity.Award', { name: actor.name, value, label }))}${a.ruleBreak ? ` ${ruleBreakBadgeHtml({ cls: '' })}` : ''}</p>`;
+    return `<p><i class="fa-solid fa-star"></i> ${escapeAttr(t('COG.Popularity.Award', { name: actor.name, value, label }))}${a.ruleBreak ? ` ${ruleBreakBadgeHtml({ cls: '' })}` : ''}</p>`;
   }).join('');
   const anyRuleBreak = awarded.some(a => a.ruleBreak);
-  const awardMessage = {
+  const awardMessage = withFlags({
     speaker: globalThis.ChatMessage.getSpeaker?.({ actor }),
-    content: `<div class="cog-chat-card">${lines}</div>`,
-    flags: { [SYSTEM_ID]: { popularityAward: true, ruleBreak: anyRuleBreak, ...(triggeredBy ? { triggeredBy } : {}) } }
-  };
+    content: `<div class="cog-chat-card">${lines}</div>`
+  }, { popularityAward: true, ruleBreak: anyRuleBreak, ...(triggeredBy ? { triggeredBy } : {}) });
   await globalThis.ChatMessage?.create?.(anyRuleBreak ? ruleBreakMessageData(awardMessage) : awardMessage);
   return { total, awarded };
 }

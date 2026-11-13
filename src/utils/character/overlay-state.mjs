@@ -19,6 +19,17 @@ export function transformState(item) {
   return flag && typeof flag === 'object' && !Array.isArray(flag) ? flag : {};
 }
 
+/**
+ * The actor's stored attributes (`_source`), or its prepared ones when it has no source. While a form is laid over the
+ * victim the prepared size and Move are the form's, so anything that reads a number to write it back, or to show it in
+ * an input a save will submit, reads this.
+ * @param {object} actor
+ * @returns {object}
+ */
+export function storedAttributes(actor) {
+  return actor?.system?._source?.attributes ?? actor?.system?.attributes ?? {};
+}
+
 /** The id of the affliction an item belongs to (a form race, its traits, a created skill, an added effect), or ''. */
 export function transformationOfItem(item) {
   const id = item?.flags?.[SYSTEM_ID]?.transformationOf;

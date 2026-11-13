@@ -16,6 +16,7 @@ import { indexDamageApplication } from '../damage-applications.mjs';
 import { findDamageUndoRecord, isApplicationId, markDamageUndoReflected } from '../../utils/damage/damage-undo.mjs';
 import { earnedReflections } from '../../utils/damage/damage-reflection.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
+import { ownerAndGmIds } from '../../utils/owner-recipients.mjs';
 
 export const REFLECT_RELAY = 'chatReflectApply';
 const REFLECT_ATTACK_NAME = 'Damage Reflection';
@@ -80,11 +81,6 @@ export function reflectOfferHtml({ holderName, attackerName, label, slots, appli
   `;
 }
 
-function userIdsFor(holder) {
-  const users = Array.from(globalThis.game?.users?.contents ?? globalThis.game?.users ?? []);
-  return users.filter(u => u?.isGM || holder?.testUserPermission?.(u, 'OWNER')).map(u => u.id);
-}
-
 /**
  * Whisper one offer card per earned reflection to the holder's owners and the GM.
  * @param {{ holder: Actor, attacker: Actor|null, reflections: Array<{ label: string, slots: number }>, applicationId: string }} p
@@ -97,7 +93,7 @@ export async function postReflectOffers({ holder, attacker, reflections, applica
     const slots = Math.min(MAX_REFLECT_SLOTS, Math.max(1, Math.floor(Number(refl.slots) || 1)));
     const msg = await globalThis.ChatMessage.create({
       speaker: globalThis.ChatMessage.getSpeaker?.({ actor: holder }) || { alias: holder.name },
-      whisper: userIdsFor(holder),
+      whisper: ownerAndGmIds(holder),
       content: reflectOfferHtml({ holderName: holder.name, attackerName: attacker.name, label: refl.label, slots }),
       flags: { [SYSTEM_ID]: { reflect: { holderUuid: holder.uuid, attackerUuid: attacker.uuid, slots, label: String(refl.label ?? ''), applied: false, applicationId, reflectIndex } } }
     });

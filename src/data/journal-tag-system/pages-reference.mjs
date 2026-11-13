@@ -31,7 +31,7 @@ export const REFERENCE_PAGES = [
       <tr><td>Item type</td><td><code>kind.&lt;type&gt;</code>; gear that is a weapon also <code>kind.weapon</code>; an actor gets <code>kind.&lt;actor type&gt;</code></td></tr>
       <tr><td>Identifier</td><td>The identity tag, <code>id.&lt;type&gt;.&lt;identifier&gt;</code></td></tr>
       <tr><td>Governing stat; stat grants</td><td><code>stat.str</code>, <code>stat.dex</code> and the other stats</td></tr>
-      <tr><td>Damage type, damage parts</td><td><code>element.fire</code> and the other damage types</td></tr>
+      <tr><td>Damage type; the type of a Base Damage (a weapon's Different base damage too)</td><td><code>element.fire</code> and the other damage types</td></tr>
       <tr><td>Check type (skill or spell)</td><td><code>action.attack</code> for Attack, <code>action.passive</code> for Passive, nothing for None</td></tr>
       <tr><td>Technique flags</td><td><code>kind.technique</code></td></tr>
       <tr><td>A race's heritage</td><td><code>heritage.&lt;id&gt;</code> (earth, alien, pet, or one a module registers)</td></tr>
@@ -41,8 +41,7 @@ export const REFERENCE_PAGES = [
       <tr><td>Critical multiplier, fumble debuff, On Hit parts</td><td><code>trigger.crit</code>, <code>trigger.fumble</code>, <code>trigger.on_hit</code>, <code>trigger.on_slot_loss</code></td></tr>
       <tr><td>Debuffs an attack, a technique or an area inflicts</td><td><code>action.inflict_debuff</code>; an attack also derives each <code>condition.&lt;x&gt;</code> it can inflict; a debuff item derives its own <code>condition.&lt;x&gt;</code></td></tr>
       <tr><td>Lifesteal, dispel</td><td><code>rule.lifesteal</code>, <code>action.dispel</code></td></tr>
-      <tr><td>Weapon category</td><td><code>weaponGroup.&lt;group&gt;</code>. A weapon skill has no Skill Type field: it stores its own <code>weaponGroup.*</code> tag.</td></tr>
-      <tr><td>Wield mode</td><td><code>wield.one_handed</code> or <code>wield.two_handed</code></td></tr>
+      <tr><td>A weapon's Hands (wield mode)</td><td><code>wield.one_handed</code> or <code>wield.two_handed</code>; Two-Handed (Disadvantage if 1-Handed) derives the one it is wielded with</td></tr>
       <tr><td>Class archetypes</td><td><code>archetype.&lt;name&gt;</code></td></tr>
       <tr><td>Area: radius, line length or the Has Area box; shape</td><td><code>shape.aoe</code>, <code>shape.&lt;shape&gt;</code>, <code>shape.splash</code>; any listed shape carrying the <code>area</code> flag also derives <code>shape.aoe</code></td></tr>
       <tr><td>Area target filter; a caster-anchored shape; an aura</td><td><code>target.&lt;filter&gt;</code>, <code>target.self</code></td></tr>
@@ -57,6 +56,9 @@ export const REFERENCE_PAGES = [
       <tr><td>Personal space and upgrade types</td><td><code>kind.personal_space</code>, <code>kind.upgrade</code> and the type tag</td></tr>
     </tbody>
   </table>
+  <p>
+    <strong>Not derived:</strong> a weapon's type and group. <code>weapon.*</code> and <code>weaponGroup.*</code> are typed tags, picked as chips on the weapon's sheet (<em>Use the Skill's</em> copies them from the Skill used to attack, page 3); a weapon Skill stores its own. No other field sets them.
+  </p>
   <p>
     On an actor, the same idea applies: <code>mob.boss</code> is derived from a registered <code>mob.tier.&lt;id&gt;</code> (page 16), and <code>resource.health_N</code> comes from how hurt it is (page 14).
   </p>
@@ -101,7 +103,7 @@ export const REFERENCE_PAGES = [
 <div class="cog-journal-page">
   <h2>Descriptive Tags: Labels the GM Rules On</h2>
   <p>
-    Some tags are marked <strong>descriptive</strong> (a grey badge in the Tag Manager and on the Tags tab). A descriptive tag is a label for people. It records that a crawler has a trait, a sense, an access or a perk, and the engine never reads it. The GM decides what it means at the table. Examples: <code>access.patron</code>, <code>sense.water_breathing</code>, <code>rule.taunt</code>, <code>rule.pet-skill</code>, <code>rule.offset-disadvantage</code>, <code>action.summon</code>.
+    Some tags are marked <strong>descriptive</strong> (a grey badge in the Tag Manager and on the Tags tab). A descriptive tag is a label for people. It records that a crawler has a trait, a sense, an access or a perk, and the engine never reads it. The GM decides what it means at the table. Examples: <code>sense.water_breathing</code>, <code>rule.taunt</code>, <code>rule.pet-skill</code>, <code>rule.offset-disadvantage</code>, <code>action.summon</code>.
   </p>
 
   <h3>Why a Descriptive Tag Cannot Carry Rows</h3>

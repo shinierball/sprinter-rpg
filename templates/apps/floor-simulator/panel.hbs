@@ -126,10 +126,16 @@
                 </select>
               {{/if}}
               {{#if custom}}
-                <input type="text" data-change-action="setField" data-type="text" data-path="{{custom.namePath}}" value="{{custom.name}}" placeholder="{{localize 'COG.FloorSim.Exp.CustomName'}}" />
-                <select data-change-action="setField" data-type="text" data-path="{{custom.kindPath}}">
-                  {{#each custom.kinds}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{value}}</option>{{/each}}
+                <label class="cog-fsim-field"><span>{{localize 'COG.FloorSim.Exp.WriteInKind'}}</span>
+                  <select data-change-action="setField" data-type="text" data-path="{{custom.kindPath}}">
+                    {{#each custom.kinds}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>{{/each}}
+                  </select>
+                </label>
+                <select data-change-action="setField" data-type="text" data-path="{{custom.identifierPath}}">
+                  {{#each custom.identifiers}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
                 </select>
+                {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=custom.badge}}
+                <input type="text" data-change-action="setField" data-type="text" data-path="{{custom.namePath}}" value="{{custom.name}}" placeholder="{{localize 'COG.FloorSim.Exp.CustomName'}}" />
               {{/if}}
               {{#if die}}<div class="cog-fsim-line">{{> die die}}</div>{{/if}}
             </div>
@@ -265,6 +271,7 @@
             <td class="cog-fsim-stepper">
               <button type="button" data-action="adjustStat" data-step="{{p.stepId}}" data-key="{{key}}" data-delta="-1" aria-label="-1"><i class="fa-solid fa-minus"></i></button>
               <span class="cog-fsim-stepper-value">+{{added}}</span>
+              {{#if held}}<span class="cog-fsim-badge hold">{{localize 'COG.FloorSim.Stats.Held' points=held}}{{#each heldFor}} {{localize labelKey}}{{#if name}}: {{name}}{{/if}}{{/each}}</span>{{/if}}
               <button type="button" data-action="adjustStat" data-step="{{p.stepId}}" data-key="{{key}}" data-delta="1" aria-label="+1"><i class="fa-solid fa-plus"></i></button>
             </td>
           </tr>
@@ -302,12 +309,14 @@
         {{#each p.raceOptions as |group|}}<optgroup label="{{group.label}}">{{#each group.options}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</optgroup>{{/each}}
       </select>
     </label>
+    {{> "systems/sprinter-rpg/templates/shared/requirement-badges.hbs" rows=p.raceRequirements}}
     <label class="cog-fsim-field"><span>{{localize 'COG.FloorSim.RaceClass.Class'}}</span>
       <select data-change-action="setField" data-type="text" data-path="{{p.classPath}}">
         <option value="">{{localize 'COG.FloorSim.RaceClass.Later'}}</option>
         {{#each p.classOptions as |group|}}<optgroup label="{{group.label}}">{{#each group.options}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</optgroup>{{/each}}
       </select>
     </label>
+    {{> "systems/sprinter-rpg/templates/shared/requirement-badges.hbs" rows=p.classRequirements}}
     {{#if p.laterChosen}}<p class="cog-fsim-note">{{localize 'COG.FloorSim.RaceClass.LaterNote'}}</p>{{/if}}
     {{#each p.kinds as |k|}}
       <div class="cog-fsim-card">

@@ -95,12 +95,27 @@ export const COG_PETS = [
         system: {
           slot: "head",
           equipped: true,
-          damageParts: [{ dice: "1d4", type: "Bludgeoning" }],
+          damageModifiers: [{ mode: "add", label: "Tooth Cap damage", dice: "1d4", damageType: "Bludgeoning", condition: { all: ["weaponClass.natural"] } }],
           grants: [
             { kind: "stat", stat: "con", value: 2 },
             { kind: "stat", stat: "str", value: 1 }
           ],
-          tags: ["kind.gear", "companion.pet"]
+          associatedSkills: ["chomp"],
+          tags: ["kind.gear", "companion.pet", "weaponClass.natural"]
+        }
+      },
+      {
+        name: "Raptor Bite",
+        type: "skill",
+        system: {
+          rank: 15,
+          stat: "str",
+          checkType: "attack",
+          checkNote: "Melee Attack, Str",
+          isAttack: true,
+          hasDamage: true,
+          baseDamage: { dice: '1d8', stat: 'str', damageType: 'Piercing' },
+          tags: ["kind.skill", "companion.pet", "action.attack", "element.piercing", "weaponClass.natural", "skillGroup.strike", "skillGroup.combat"]
         }
       }
     ]
@@ -210,7 +225,7 @@ export const COG_PETS = [
         creatureType: "Beast",
         isMount: false,
         special: "Nine Lives Instinct & Pounce Shred",
-        notes: "<p>A pampered, pristine feline with gleaming yellow eyes and an aura of supreme contempt for dungeon monsters. Equipped with diamond tooth caps that pierce goblin hides like tin foil.</p>",
+        notes: "A pampered, pristine feline with gleaming yellow eyes and an aura of supreme contempt for dungeon monsters. Equipped with diamond tooth caps that pierce goblin hides like tin foil.",
         floor: "1st Floor"
       },
       gearSlots: {
@@ -227,7 +242,7 @@ export const COG_PETS = [
           isAttack: true,
           hasDamage: true,
           baseDamage: { dice: '1d8', stat: 'dex', damageType: 'Slashing' },
-          tags: ["kind.skill", "companion.pet", "action.attack", "element.slashing", "skillGroup.strike", "skillGroup.combat"]
+          tags: ["kind.skill", "companion.pet", "action.attack", "element.slashing", "weaponClass.natural", "skillGroup.strike", "skillGroup.combat"]
         }
       },
       {
@@ -255,9 +270,10 @@ export const COG_PETS = [
           slot: "head",
           equipped: true,
           grants: [{ kind: "stat", stat: "str", value: 2 }],
-          damageParts: [{ dice: "1d6", type: "Piercing" }],
+          damageModifiers: [{ mode: "add", label: "Tooth Cap damage", dice: "1d6", damageType: "Piercing", condition: { all: ["weaponClass.natural"] } }],
           ignoreDR: true,
-          tags: ["kind.gear", "companion.pet", "action.armor_piercing"]
+          associatedSkills: ["chomp"],
+          tags: ["kind.gear", "companion.pet", "action.armor_piercing", "weaponClass.natural"]
         }
       }
     ]
@@ -289,7 +305,7 @@ export const COG_PETS = [
         creatureType: "Beast",
         isMount: false,
         special: "Pack Alert: Party cannot be ambushed or surprised",
-        notes: "<p>Barnaby is the best boy in the dungeon. He never sleeps when danger is near and clamps onto enemies with bone-breaking tenacity.</p>",
+        notes: "Barnaby is the best boy in the dungeon. He never sleeps when danger is near and clamps onto enemies with bone-breaking tenacity.",
         floor: "2nd Floor"
       },
       gearSlots: {
@@ -306,7 +322,7 @@ export const COG_PETS = [
           isAttack: true,
           hasDamage: true,
           baseDamage: { dice: '1d8', stat: 'str', damageType: 'Piercing' },
-          tags: ["kind.skill", "companion.pet", "action.attack", "element.piercing", "rule.latch", "skillGroup.strike", "skillGroup.combat"]
+          tags: ["kind.skill", "companion.pet", "action.attack", "element.piercing", "rule.latch", "weaponClass.natural", "skillGroup.strike", "skillGroup.combat"]
         }
       },
       {
@@ -333,12 +349,13 @@ export const COG_PETS = [
         system: {
           slot: "head",
           equipped: true,
-          damageParts: [{ dice: "1d4", type: "Bludgeoning" }],
+          damageModifiers: [{ mode: "add", label: "Tooth Cap damage", dice: "1d4", damageType: "Bludgeoning", condition: { all: ["weaponClass.natural"] } }],
           grants: [
             { kind: "stat", stat: "con", value: 2 },
             { kind: "stat", stat: "str", value: 1 }
           ],
-          tags: ["kind.gear", "companion.pet"]
+          associatedSkills: ["chomp"],
+          tags: ["kind.gear", "companion.pet", "weaponClass.natural"]
         }
       }
     ]
@@ -370,7 +387,7 @@ export const COG_PETS = [
         creatureType: "Beast",
         isMount: true,
         special: "Talon Dive-Bomb & Apex Keen Eye",
-        notes: "<p>A colossal golden war eagle trained to carry riders aloft through cavernous dungeon ceilings, diving upon mobs at blinding speeds.</p>",
+        notes: "A colossal golden war eagle trained to carry riders aloft through cavernous dungeon ceilings, diving upon mobs at blinding speeds.",
         floor: "3rd Floor"
       },
       gearSlots: {
@@ -448,7 +465,7 @@ export const COG_PETS = [
         creatureType: "Beast",
         isMount: true,
         special: "Incinerating Breath (2d10 Fire)",
-        notes: "<p>A crimson-scaled drake mount who hatched in an incendiary floor trap. Ignis flies into combat with scorching dragon breath and an eye for shiny loot.</p>",
+        notes: "A crimson-scaled drake mount who hatched in an incendiary floor trap. Ignis flies into combat with scorching dragon breath and an eye for shiny loot.",
         floor: "4th Floor"
       },
       gearSlots: {
@@ -549,7 +566,7 @@ export const COG_PETS = [
         "level": 1,
         "creatureType": "Beast",
         "isMount": false,
-        "notes": "<p>A friendly Pet that joins the Shepherd's Herd.</p>"
+        "notes": "A friendly Pet that joins the Shepherd's Herd."
       }
     }
   }

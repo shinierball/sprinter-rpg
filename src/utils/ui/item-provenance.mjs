@@ -8,6 +8,7 @@ import { lootBoxTierDef } from '../../data/loot-box-tiers.mjs';
 import { sourceBadge } from '../content-source.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { isPoop, readReplacedRecord } from '../../data/rules/celestial-ai-poop.mjs';
+import { deityGiftOf, deityIdOf } from '../deity/worship-state.mjs';
 
 const isPlain = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 const text = (v) => (typeof v === 'string' ? v.trim() : '');
@@ -97,7 +98,24 @@ function replacedEntry(item) {
   return { ...base, label, tooltip: date ? t('COG.Provenance.ReplacedOn', { label, date }) : label };
 }
 
-const PROVIDERS = [contentSourceEntry, lootBoxEntry, magicItemEntry, prerollEntry, replacedEntry];
+/** The gift kinds' label keys: a boon, a smite, and the tier and standing gifts of a worshipped god. */
+const GIFT_LABELS = Object.freeze({ boon: 'COG.Provenance.GiftBoon', smite: 'COG.Provenance.GiftSmite', tier: 'COG.Provenance.GiftTier', standing: 'COG.Provenance.GiftTier' });
+
+/** The god's name from the owner's deity item (by identifier), else the identifier. */
+function giftGodName(item, identifier) {
+  const god = Array.from(item?.parent?.items ?? []).find((i) => i?.type === 'deity' && deityIdOf(i) === identifier);
+  return text(god?.name) || identifier;
+}
+
+/** A gift from a god (tier, standing, boon or smite). Everyone sees it. */
+function deityGiftEntry(item) {
+  const gift = deityGiftOf(item);
+  if (!gift) return null;
+  const label = t(GIFT_LABELS[gift.kind], { god: giftGodName(item, gift.deity) });
+  return { kind: 'deityGift', icon: 'fa-solid fa-hands-praying', color: '', label, tooltip: label, gmOnly: false };
+}
+
+const PROVIDERS = [contentSourceEntry, lootBoxEntry, magicItemEntry, prerollEntry, replacedEntry, deityGiftEntry];
 
 /**
  * @param {Item} item

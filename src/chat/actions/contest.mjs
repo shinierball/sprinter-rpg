@@ -6,6 +6,7 @@ import { rollContestLeg, requestContestDrop, requestContestSkill } from '../cont
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
 import { MOVEMENT_SKILL_TAG } from '../../data/tag-vocabulary.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 const notify = (level, message) => globalThis.ui?.notifications?.[level]?.(`Sprinter RPG | ${message}`);
 
@@ -35,7 +36,6 @@ export async function handleContestDrop(event, button, message) {
   if (!res.ok && res.reason && res.reason !== 'no-gm' && res.reason !== 'no-socket') notify('warn', 'The GM could not apply that.');
 }
 
-const escapeHtml = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 /**
  * The skills a participant may propose, as `{ identifier, name }` sorted by name: the actor's own skills, then the
@@ -59,7 +59,7 @@ export function proposableSkills(actor) {
 async function askSkill(skills) {
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
   if (typeof DialogV2?.prompt !== 'function') return null;
-  const options = skills.map((s) => `<option value="${escapeHtml(s.identifier)}">${escapeHtml(s.name)}</option>`).join('');
+  const options = skills.map((s) => `<option value="${escapeAttr(s.identifier)}">${escapeAttr(s.name)}</option>`).join('');
   try {
     const picked = await DialogV2.prompt({
       window: { title: 'Propose a skill' },

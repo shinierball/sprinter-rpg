@@ -8,10 +8,10 @@ import { popularityTokens, usedKeys, recordUsage } from './popularity.mjs';
 import { confirmRuleBreak } from '../rule-break.mjs';
 import { getCurrentFloor } from './current-floor.mjs';
 import { USE_TAG_PREFIX } from '../../data/tag-vocabulary.mjs';
+import { escapeAttr } from '../escape-attr.mjs';
 
 export const ADVANCEMENT_USAGE_FLAG = 'advancementUsage';
 
-const escapeHtml = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 /** The row keys already spent on the current floor. */
 export function floorRowsUsed(actor) {
@@ -41,7 +41,7 @@ export async function settleFloorUses(actor, situations, { labels = new Map(), o
       const label = labels.get(key) || key;
       const res = await confirmRuleBreak({
         title: 'Once Per Floor',
-        message: escapeHtml(`${label} was already used this floor. Use it again as a Rule Break?`),
+        message: escapeAttr(`${label} was already used this floor. Use it again as a Rule Break?`),
         options
       });
       if (!res.confirmed) { drop.add(tag); continue; }

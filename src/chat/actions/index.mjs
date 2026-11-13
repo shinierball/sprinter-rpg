@@ -27,13 +27,32 @@ import { handleCameraPickRow, handleCameraAward, handleCameraChoice, handleCamer
 import { handleContestRoll, handleContestDrop, handleContestPropose } from './contest.mjs';
 import { handleTauntDeclared, handleResolveDeclared } from './declared-attacks.mjs';
 import { handleLootBoxWatch } from './loot-box-watch.mjs';
+import { handleDeityGift, handleDeityFallen, handleDeitySmiteChance, handleDeityInfidels } from './deity.mjs';
 import {
   handleVehicleChoose, handleVehicleOffer, handleVehicleBoardAnyway, handleVehicleRamDamage, handleVehicleCollision,
   handleVehicleExplode, handleVehicleExplodeDismiss
 } from './vehicle-check.mjs';
+import { handlePatronOffer, handlePatronChoose } from './patron-offer.mjs';
+import { handlePatronTransfer, handlePatronDeath, handlePatronEndDeity } from './patron-endings.mjs';
+import { handlePatronGig } from './patron-gig.mjs';
+import { handlePatronAudition, handlePatronPopularity, handlePatronSteady } from './patron-audition.mjs';
+import { handleSetDifficulty, handleAskOpposed, handleClearDifficulty } from './check-difficulty.mjs';
 import { handleHitVehicle, handleVehicleEvade } from './vehicle-combat.mjs';
 
 export const CHAT_ACTIONS = Object.freeze({
+  crawlerPatronOffer: handlePatronOffer,
+  crawlerPatronChoose: handlePatronChoose,
+  crawlerPatronTransfer: handlePatronTransfer,
+  crawlerPatronDeath: handlePatronDeath,
+  crawlerPatronEndDeity: handlePatronEndDeity,
+  crawlerPatronAudition: handlePatronAudition,
+  crawlerPatronGig: handlePatronGig,
+  crawlerPatronPopularity: handlePatronPopularity,
+  crawlerPatronSteady: handlePatronSteady,
+  crawlerDeityGift: handleDeityGift,
+  crawlerDeityFallen: handleDeityFallen,
+  crawlerDeitySmiteChance: handleDeitySmiteChance,
+  crawlerDeityInfidels: handleDeityInfidels,
   crawlerVehicleChoose: handleVehicleChoose,
   crawlerVehicleOffer: handleVehicleOffer,
   crawlerVehicleBoardAnyway: handleVehicleBoardAnyway,
@@ -73,6 +92,9 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerUseAssist: handleUseAssist,
   crawlerApplyAssist: handleApplyAssist,
   crawlerResolveCalledPlay: handleResolveCalledPlay,
+  crawlerSetDifficulty: handleSetDifficulty,
+  crawlerAskOpposed: handleAskOpposed,
+  crawlerClearDifficulty: handleClearDifficulty,
   crawlerApplyAiFavorTally: handleApplyAiFavorTally,
   crawlerCameraPickRow: handleCameraPickRow,
   crawlerCameraAward: handleCameraAward,

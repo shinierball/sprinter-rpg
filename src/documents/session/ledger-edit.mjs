@@ -456,6 +456,7 @@ export const ledgerEditMixin = {
       entry.d20Result = (updateData.d20Result !== '' && updateData.d20Result !== null && !isNaN(Number(updateData.d20Result))) ? Number(updateData.d20Result) : null;
     }
     if (updateData.total !== undefined) entry.total = Number(updateData.total) || 0;
+    if (updateData.difficultyMode !== undefined) entry.difficultyMode = typeof updateData.difficultyMode === 'string' ? updateData.difficultyMode : '';
 
     if (updateData.targetDC !== undefined) {
       entry.targetDC = updateData.targetDC !== '' && updateData.targetDC !== null && !isNaN(Number(updateData.targetDC)) ? Number(updateData.targetDC) : null;

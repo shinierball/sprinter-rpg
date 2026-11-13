@@ -8,9 +8,10 @@
 
 import { contentRegistry } from '../../content/registry.mjs';
 import {
-  STARTER_RANK, STARTER_POTION_COUNT, findLoadout, defaultLoadout, resolveLoadoutId, getStarterWeaponDefinition,
+  STARTER_RANK, STARTER_POTION_COUNT, findLoadout, defaultLoadout, resolveLoadoutId, getStarterWeaponDefinition, weaponTagsForSkill,
   starterSpellPayload, starterUnarmedPayloads, starterPotionPayload
 } from '../../content/creation-loadouts.mjs';
+import { starterWeaponSkillFields } from '../../utils/skill/starter-weapon-skill.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { getCOGStatModifier } from '../../documents/actor/actor-constants.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
@@ -21,6 +22,7 @@ import { coreSkillPayloads } from '../../utils/skill/core-skills.mjs';
 import { registerPayloadDelegate } from './item-payload.mjs';
 import { compileFloorStart } from '../floor-simulator/pipeline.mjs';
 import { contentIds } from '../../utils/stable-id.mjs';
+import { withRuleBreak } from '../../utils/rule-break.mjs';
 
 /**
  * The starter hotlist for a crawler's items, read from their `starterRole` flags only. A starter spell
@@ -85,7 +87,7 @@ function starterSkillCopy(identifier) {
  * @param {Function} [options.lookup] sync grant document lookup for Race and Class
  * @param {object} [options.tables] floor table snapshots by key
  * @param {{ race?: Function, class?: Function }} [options.definitions] finds a Race or Class definition by reference before the catalog and world items are asked (a build with no registry, such as build:packs)
- * @param {object} [options.out] receives `{ results, raceClass, ruleBreaks, choicesNeeded, warnings }` of a floor start
+ * @param {object} [options.out] receives `{ results, raceClass, raceClassBase, ruleBreaks, choicesNeeded, warnings }` of a floor start
  * @returns {object} Actor creation payload for a Crawler
  */
 export function buildCrawlerPayload(spec = {}, options = {}) {
@@ -187,6 +189,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
           stat: (wDef.toHitStat || 'str').toLowerCase(),
           checkType: 'stat',
           notes: `Skill: ${wDef.name}`,
+          ...starterWeaponSkillFields(wDef, weaponTagsForSkill(wDef.skillIdentifier)),
           damageModifiers: []
         }
       }
@@ -247,6 +250,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
 
   // If starterMode === 'weapon': add the weapon to inventory (gear), equip it, and add an attack using it
   if (starterMode === 'weapon') {
+    const weaponTags = weaponTagsForSkill(wDef.skillIdentifier);
     // 1. Add weapon to inventory and equip it
     itemPayloads.push({
       name: wDef.name,
@@ -256,9 +260,10 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         slot: 'hands',
         quantity: 1,
         equipped: true,
+        isWeapon: true,
         drBonus: 0,
-        damageParts: [{ dice: wDef.damageDice, stat: wDef.damageStat, type: wDef.damageType, value: 0 }],
         ...(wDef.skillIdentifier ? { associatedSkills: [wDef.skillIdentifier] } : {}),
+        ...(weaponTags.length ? { tags: weaponTags } : {}),
         notes: wDef.effects || `Equipped weapon: ${wDef.name}`
       }
     });
@@ -272,8 +277,8 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
       system: {
         toHitStat: wDef.toHitStat,
         toHitRank: 3,
-        damageParts: [{ dice: wDef.damageDice, stat: wDef.damageStat, type: wDef.damageType, value: 0 }],
         ...(wDef.skillIdentifier ? { associatedSkills: [wDef.skillIdentifier] } : {}),
+        ...(weaponTags.length ? { tags: weaponTags } : {}),
         effects: wDef.effects || ''
       }
     });
@@ -353,17 +358,16 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         floor,
         level: hasRun ? 1 : startLevelForFloor(floorNumber),
         crawlerNumber: spec.crawlerNumber || '',
+        // Free prose (commas are text, never a list): the sheet's Notes field
+        notes: typeof spec.description === 'string' ? spec.description : '',
         pastTrauma: spec.pastTrauma || '',
         looseEnds: spec.looseEnds || '',
-        regrets: spec.regrets || ''
+        regrets: spec.regrets || '',
+        // The party key joins crawlers into one party (space joins read it); left to the schema default when the spec has none
+        ...(typeof spec.party === 'string' && spec.party.trim() ? { party: spec.party.trim() } : {})
       }
     },
-    flags: {
-      ...(spec.flags || {}),
-      ...(isRuleBreak
-        ? { [SYSTEM_ID]: { ...(spec.flags?.[SYSTEM_ID] || {}), ruleBreak: true } }
-        : {})
-    },
+    flags: isRuleBreak ? withRuleBreak({ flags: spec.flags }).flags : { ...(spec.flags || {}) },
     items: itemPayloads
   };
 
@@ -375,7 +379,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
     ids, rng: options.rng, snapshot: options.snapshot, lookup: options.lookup, tables: options.tables, definitions: options.definitions
   });
   if (options.out && typeof options.out === 'object') {
-    Object.assign(options.out, { results: compiled.results, raceClass: compiled.raceClass, ruleBreaks: compiled.ruleBreaks, choicesNeeded: compiled.choicesNeeded, warnings: compiled.warnings });
+    Object.assign(options.out, { results: compiled.results, raceClass: compiled.raceClass, raceClassBase: compiled.raceClassBase, ruleBreaks: compiled.ruleBreaks, choicesNeeded: compiled.choicesNeeded, warnings: compiled.warnings });
   }
   return compiled.payload;
 }

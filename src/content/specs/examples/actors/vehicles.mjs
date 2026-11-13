@@ -26,7 +26,7 @@ export const SPECS = Object.freeze([
     system: {
       kind: 'wheeled',
       attributes: { move: 60, size: 'huge', occupancy: 3, cargoOccupancy: 8, dr: { armor: 3 } },
-      details: { notes: '<p>Everything in the back comes with a contract. Fitted with Sponsor Logo Plating, a Canned Applause Injector, a Foam Finger Ram Bar, a Producer\'s Bobblehead and a Roof-Mounted T-Shirt Launcher, all installed.</p>' }
+      details: { notes: 'Everything in the back comes with a contract. Huge, wheeled, Move 60 ft, Armor DR 3; it seats 3 and carries 8 more in the cargo bay. Fitted with Sponsor Logo Plating, a Canned Applause Injector, a Foam Finger Ram Bar, a Producer\'s Bobblehead and a Roof-Mounted T-Shirt Launcher, all installed.' }
     },
     items: [installed(1), installed(2), installed(4), installed(6), installed(7)]
   },
@@ -38,7 +38,7 @@ export const SPECS = Object.freeze([
     system: {
       kind: 'two_wheeled',
       attributes: { move: 90, size: 'medium', occupancy: 1, cargoOccupancy: 0, dr: { armor: 1 } },
-      details: { notes: '<p>For the contestant who would rather be standing when they win. Fitted with a Lucky Rabbit Hubcap, installed.</p>' }
+      details: { notes: 'For the contestant who would rather be standing when they win. Medium, two-wheeled, Move 90 ft, Armor DR 1; it seats 1 and carries no cargo. Fitted with a Lucky Rabbit Hubcap, installed.' }
     },
     items: [installed(5)]
   }

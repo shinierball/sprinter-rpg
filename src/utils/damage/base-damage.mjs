@@ -24,6 +24,19 @@ export function normalizeBaseDamage(raw) {
 }
 
 /**
+ * The Base Damage a weapon rolls: the chosen Skill's, with the weapon's own `baseDamage` filling only the sub-fields it
+ * sets (dice, stat, type). A blank sub-field inherits the Skill's.
+ * @param {*} skillBase the chosen Skill's Base Damage (any stored value; null when no Skill applies)
+ * @param {*} override the weapon's own `baseDamage`
+ * @returns {{dice: string, stat: string, damageType: string}}
+ */
+export function mergeBaseDamage(skillBase, override) {
+  const base = normalizeBaseDamage(skillBase);
+  const own = normalizeBaseDamage(override);
+  return { dice: own.dice || base.dice, stat: own.stat || base.stat, damageType: own.damageType || base.damageType };
+}
+
+/**
  * The base dice as numbers, or null when the field is not exactly `NdM`.
  * @param {*} base
  * @returns {{count: number, sides: number}|null}
@@ -64,7 +77,7 @@ export function baseDamageText(base, ownStat = '') {
  * @param {*} value
  * @returns {boolean}
  */
-function isPlainDice(value) {
+export function isPlainDice(value) {
   return typeof value === 'string' && PLAIN_DICE.test(value.trim());
 }
 

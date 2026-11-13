@@ -1,7 +1,10 @@
 import { SYSTEM_ID } from '../constants.mjs';
 import { COG_TAGS } from './tag-catalog.mjs';
-import { splitRoleTag } from './tag-vocabulary.mjs';
+import { DEITY_TAG_FAMILIES, splitRoleTag } from './tag-vocabulary.mjs';
 import { firstScalar } from '../utils/first-scalar.mjs';
+
+/** World setting: the tags the GM added. */
+export const CUSTOM_TAGS_SETTING = 'customTags';
 
 /**
  * Tag definitions: the lookup from a stable tag id to its definition, over the built-in catalog (`tag-catalog.mjs`),
@@ -65,7 +68,7 @@ export function definitionHasBehaviour(def) {
 export function getCustomTags() {
   if (typeof game !== 'undefined' && game?.settings?.get) {
     try {
-      const saved = game.settings.get(SYSTEM_ID, 'customTags');
+      const saved = game.settings.get(SYSTEM_ID, CUSTOM_TAGS_SETTING);
       if (Array.isArray(saved)) return saved;
     } catch {
       // Setting not registered yet, proceed to in-memory fallback
@@ -90,6 +93,7 @@ export async function registerCustomTag(tagDef) {
     description: tagDef.description || '',
     references: tagDef.references || null,
     descriptive: tagDef.descriptive === true,
+    ...(tagDef.qualifiesName === true ? { qualifiesName: true } : {}),
     ...(tagDef.rows ? { rows: tagDef.rows } : {}),
     ...(Array.isArray(tagDef.flags) ? { flags: tagDef.flags } : {})
   };
@@ -101,7 +105,7 @@ export async function registerCustomTag(tagDef) {
   if (typeof game !== 'undefined' && game?.settings?.set) {
     if (globalThis.game?.user && globalThis.game.user.isGM === false) return newTag;
     try {
-      await game.settings.set(SYSTEM_ID, 'customTags', customTags);
+      await game.settings.set(SYSTEM_ID, CUSTOM_TAGS_SETTING, customTags);
     } catch (e) {
       console.warn('Sprinter RPG | Could not save custom tag to settings', e);
     }
@@ -169,6 +173,20 @@ export function getTagDefinition(tagId) {
       descriptive: false,
       category: 'condition',
       description: `Condition tag for ${slug}`
+    };
+  }
+
+  // 4b. Per-god tag (worships.<id>, blessed.<id>, access.temple.<id>): one per deity, so never registered ahead of the deity.
+  const family = DEITY_TAG_FAMILIES.find((f) => normalizedId.startsWith(f.prefix) && normalizedId.length > f.prefix.length);
+  if (family) {
+    const slug = normalizedId.slice(family.prefix.length);
+    return {
+      id: normalizedId,
+      label: `${family.label} ${slugLabel('deity', slug)}`,
+      namespace: family.namespace,
+      descriptive: false,
+      category: family.namespace,
+      description: `${family.label} the deity with identifier ${slug}`
     };
   }
 

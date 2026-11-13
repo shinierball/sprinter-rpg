@@ -12,7 +12,7 @@ import { normalizeBaseDamage, baseDamageText } from '../utils/damage/base-damage
 import { describeHealing } from '../utils/item-describer/blocks-spell-skill.mjs';
 import { getTagDefinition } from '../data/tag-definitions.mjs';
 import { spellRole, spellRoleLabel } from '../utils/tag/tag-mechanics.mjs';
-import { htmlSnippet } from './item-manager.mjs';
+import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/spell-manager`;
 

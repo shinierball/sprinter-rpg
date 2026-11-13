@@ -1,0 +1,47 @@
+{{!-- Damage: what the default Skill rolls, an optional different base damage, and the bonus damage rows. --}}
+<div class="cog-bg-surface cog-gear-weapon-block" data-weapon-damage>
+  <div class="cog-gear-weapon-head">
+    <span class="cog-field-label cog-text-accent"><i class="fa-solid fa-burst"></i> {{localize "COG.GearSheet.Damage.Title"}}</span>
+  </div>
+  <p class="cog-gear-damage-skill">{{weapon.damage.skillLine}}</p>
+  {{#if weapon.damage.hasOverride}}<p class="cog-gear-damage-rolls"><strong>{{weapon.damage.effectiveLine}}</strong></p>{{/if}}
+
+  <details class="cog-collapsible-block" {{#if hasBaseDamageConfigured}}open{{/if}}>
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> {{localize "COG.GearSheet.Damage.Different"}}</span>
+      <span class="cog-toggle-indicator {{#if hasBaseDamageConfigured}}active{{/if}}">{{#if hasBaseDamageConfigured}}{{localize "COG.GearSheet.Damage.Overridden"}}{{else}}{{localize "COG.GearSheet.Damage.UsesSkill"}}{{/if}}</span>
+    </summary>
+    <div class="cog-collapsible-content">
+      <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.GearSheet.Damage.DifferentHint"}}</p>
+      <div class="cog-field-row">
+        {{> "systems/sprinter-rpg/templates/items/parts/base-damage.hbs"}}
+      </div>
+    </div>
+  </details>
+
+  <div class="cog-gear-bonus" data-weapon-bonus>
+    <span class="cog-field-label">{{localize "COG.GearSheet.Damage.Bonus"}}</span>
+    {{#if weapon.damage.hasBonus}}
+      <ul class="cog-gear-bonus-list">
+        {{#each weapon.damage.bonus as |row|}}<li class="cog-gear-bonus-row {{#if row.disabled}}cog-text-muted{{/if}}">{{row.text}}</li>{{/each}}
+      </ul>
+    {{else}}
+      <span class="cog-text-muted">{{localize "COG.GearSheet.Damage.BonusNone"}}</span>
+    {{/if}}
+    <button type="button" class="cog-btn cog-bg-header-fill cog-text-on-fill cog-dark" data-action="addRow" data-row-table="damageModifiers"><i class="fa-solid fa-plus"></i> {{localize "COG.GearSheet.Damage.BonusAdd"}}</button>
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.GearSheet.Damage.BonusHint"}}</p>
+  </div>
+
+  <div class="cog-field-row">
+    <div class="cog-field-group">
+      <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> {{localize "COG.GearSheet.Damage.Crit"}}</span>
+      <input class="cog-field-input" type="number" name="system.critMultiplier" value="{{#if system.critMultiplier}}{{system.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" title="{{localize "COG.GearSheet.Damage.CritTip"}}" />
+    </div>
+    <div class="cog-field-group small cog-gear-centered">
+      <span class="cog-field-label">{{localize "COG.GearSheet.Damage.IgnoreDR"}}</span>
+      <label class="cog-gear-check" title="{{localize "COG.GearSheet.Damage.IgnoreDRTip"}}">
+        <input type="checkbox" name="system.ignoreDR" {{#if system.ignoreDR}}checked{{/if}} class="cog-checkbox-lg" />
+      </label>
+    </div>
+  </div>
+</div>

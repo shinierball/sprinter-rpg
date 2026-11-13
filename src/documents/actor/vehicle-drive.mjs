@@ -17,11 +17,12 @@ import { offerByKey } from '../../utils/roll/after-roll.mjs';
 import { gateItemCooldown } from './cooldown-gate.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
 import { resultEffect, VEHICLE_CHECK_RESULTS } from '../../data/rules/vehicle-rules.mjs';
-import { str, say, esc, speakerOf, gmWhisper, messageById, cardFlag, cardKey, RELAY_ACTION_VEHICLE_DRIVE, VEHICLE_CARD_FLAGS } from './vehicle-drive-common.mjs';
+import { str, say, speakerOf, gmWhisper, messageById, cardFlag, cardKey, RELAY_ACTION_VEHICLE_DRIVE, VEHICLE_CARD_FLAGS } from './vehicle-drive-common.mjs';
 import { vehicleNow, writeVehicleSpeed } from './vehicle-move.mjs';
 import { settleVehicleResult, syncCard, ingestVehicleCheck, ingestVehicleCheckNow } from './vehicle-checks.mjs';
 import { vehicleCardInfo, findCarrier } from './vehicle-after-roll.mjs';
 import { ramFlag, applyCollision, explodeVehicle } from './vehicle-ram.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 let hooksRegistered = false;
 
@@ -129,7 +130,7 @@ async function applyClear(vehicle, user) {
   if (damage > 0) parts.push(say('COG.VehicleClear.Healed', '{hp} HP restored.', { hp: damage }));
   if (favor > 0) parts.push(say('COG.VehicleClear.Favor', '{favor} AI Favor taken back from {name}.', { favor, name: resolveActorByUuid(prev.driverUuid)?.name ?? '' }));
   await globalThis.ChatMessage.create({
-    speaker: speakerOf(vehicle), whisper: gmWhisper(), content: `<div class="cog-chat-card cog-vehicle-clear">${esc(parts.join(' '))}</div>`
+    speaker: speakerOf(vehicle), whisper: gmWhisper(), content: `<div class="cog-chat-card cog-vehicle-clear">${escapeAttr(parts.join(' '))}</div>`
   });
   return { ok: true };
 }

@@ -7,8 +7,8 @@
 import { combatText } from '../utils/combat/combat-round-text.mjs';
 import { conditionLabel } from './actor/condition-data.mjs';
 import { activeAurasOnScene, pulseAura } from './actor/aura-pulse.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
-const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /**
  * Pulse every active aura on the combat's scene once for this round.
@@ -41,12 +41,12 @@ export function pulseRows({ item, result }) {
   const rows = [];
   const damage = report.damage;
   if (damage) {
-    rows.push(`<div class="cog-text-muted">${esc(combatText('COG.AuraPulse.DamageRoll', {
+    rows.push(`<div class="cog-text-muted">${escapeAttr(combatText('COG.AuraPulse.DamageRoll', {
       aura: item.name, formula: damage.formula, total: damage.total, type: damage.type
     }))}</div>`);
   }
   for (const failure of report.errors ?? []) {
-    rows.push(`<div class="cog-text-muted">${esc(combatText('COG.AuraPulse.Failed', { aura: item.name, name: failure.actor?.name ?? '?', message: failure.message }))}</div>`);
+    rows.push(`<div class="cog-text-muted">${escapeAttr(combatText('COG.AuraPulse.Failed', { aura: item.name, name: failure.actor?.name ?? '?', message: failure.message }))}</div>`);
   }
   const heal = Number(item.system?.area?.healingBars) || 0;
   for (const entry of report.enemies) {
@@ -54,17 +54,17 @@ export function pulseRows({ item, result }) {
     // Damage is dealt in whole Health Bars: a roll too small to take one reads as no bar lost, not "-0 HP"
     if (damage) {
       parts.push(entry.damage > 0
-        ? `<span class="cog-text-accent">&minus;${esc(combatText('COG.AuraPulse.Damage', { amount: entry.damage, type: entry.damageType }))}</span>`
-        : `<span class="cog-text-muted">${esc(combatText('COG.AuraPulse.NoBarLost', { type: entry.damageType || damage.type }))}</span>`);
+        ? `<span class="cog-text-accent">&minus;${escapeAttr(combatText('COG.AuraPulse.Damage', { amount: entry.damage, type: entry.damageType }))}</span>`
+        : `<span class="cog-text-muted">${escapeAttr(combatText('COG.AuraPulse.NoBarLost', { type: entry.damageType || damage.type }))}</span>`);
     }
-    for (const debuff of entry.inflicted ?? []) parts.push(esc(combatText('COG.AuraPulse.Debuff', { debuff: conditionLabel(debuff) })));
-    if (parts.length) rows.push(`<div class="cog-bg-danger-tint"><strong>${esc(item.name)}</strong> &rarr; ${esc(entry.actor.name)}: ${parts.join(', ')}</div>`);
+    for (const debuff of entry.inflicted ?? []) parts.push(escapeAttr(combatText('COG.AuraPulse.Debuff', { debuff: conditionLabel(debuff) })));
+    if (parts.length) rows.push(`<div class="cog-bg-danger-tint"><strong>${escapeAttr(item.name)}</strong> &rarr; ${escapeAttr(entry.actor.name)}: ${parts.join(', ')}</div>`);
   }
   for (const entry of report.allies) {
     const parts = [];
-    if (entry.healed) parts.push(esc(combatText('COG.AuraPulse.Heal', { bars: heal })));
-    for (const debuff of entry.cleansed) parts.push(esc(combatText('COG.AuraPulse.Cleanse', { debuff: conditionLabel(debuff) })));
-    if (parts.length) rows.push(`<div class="cog-bg-success-tint"><strong>${esc(item.name)}</strong> &rarr; ${esc(entry.actor.name)}: ${parts.join(', ')}</div>`);
+    if (entry.healed) parts.push(escapeAttr(combatText('COG.AuraPulse.Heal', { bars: heal })));
+    for (const debuff of entry.cleansed) parts.push(escapeAttr(combatText('COG.AuraPulse.Cleanse', { debuff: conditionLabel(debuff) })));
+    if (parts.length) rows.push(`<div class="cog-bg-success-tint"><strong>${escapeAttr(item.name)}</strong> &rarr; ${escapeAttr(entry.actor.name)}: ${parts.join(', ')}</div>`);
   }
   return rows;
 }
@@ -79,7 +79,7 @@ async function postAuraPulseCard(pulses, round) {
   const rows = pulses.flatMap(pulseRows);
   if (!rows.length || typeof globalThis.ChatMessage?.create !== 'function') return null;
   const content = `<div class="cog-chat-card cog-round-end-card cog-aura-pulse-card">
-    <header class="cog-card-header"><h3><i class="fa-solid fa-circle-radiation"></i> ${esc(combatText('COG.AuraPulse.Title', { round }))}</h3></header>
+    <header class="cog-card-header"><h3><i class="fa-solid fa-circle-radiation"></i> ${escapeAttr(combatText('COG.AuraPulse.Title', { round }))}</h3></header>
     <div class="cog-card-body">${rows.join('')}</div>
   </div>`;
   return globalThis.ChatMessage.create({ content, speaker: { alias: 'Combat Tracker' } });

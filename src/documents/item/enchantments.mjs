@@ -7,7 +7,7 @@
  */
 
 import { SYSTEM_ID } from '../../constants.mjs';
-import { confirmRuleBreak, getRuleBreakMode, RULE_BREAK_MODES } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, getRuleBreakMode, RULE_BREAK_MODES, markRuleBreak } from '../../utils/rule-break.mjs';
 import { hasAsTrigger } from '../../utils/roll/amazing-success.mjs';
 import { craftText } from '../../utils/crafting/craft-text.mjs';
 import {
@@ -18,9 +18,11 @@ import { ITEM_STATE_TAGS } from '../../utils/tag/tag-mechanics.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
+import { confirmRivalBlessedGear } from '../actor/worship-obligations.mjs';
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { collectCraftModifiers } from '../../utils/roll/damage-modifiers.mjs';
 import { decrementFloorTimer } from '../actor/actor-environment.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** Hours a Repair takes (the book: 2 hours). */
 export const REPAIR_HOURS = 2;
@@ -46,7 +48,7 @@ async function askHazard(item, count, interactive) {
   if (!interactive || typeof DialogV2?.wait !== 'function') return 'cancel';
   const answer = await DialogV2.wait({
     window: { title: craftText('COG.Enchanting.OverTitle') },
-    content: `<p>${esc(craftText('COG.Enchanting.OverMessage', { name: item.name, count, breaksOn: HAZARD_BREAKS_ON }))}</p>`,
+    content: `<p>${escapeAttr(craftText('COG.Enchanting.OverMessage', { name: item.name, count, breaksOn: HAZARD_BREAKS_ON }))}</p>`,
     buttons: [
       { action: 'roll', label: craftText('COG.Enchanting.Roll'), default: true },
       // The GM's "refuse" mode enforces the limits: the roll is the rule, skipping it is not offered.
@@ -166,8 +168,14 @@ export async function setItemEquipped(item, value, options = {}) {
     if (!res.confirmed) return false;
     ruleBreak = true;
   }
+  // The Enemy God's Prohibition (p. 163): gear blessed by a rival of a god the owner worships asks a Rule Break.
+  if (equip && item.actor) {
+    const rival = await confirmRivalBlessedGear(item.actor, item, options);
+    if (!rival.proceed) return false;
+    ruleBreak = ruleBreak || rival.ruleBreak;
+  }
   await item.update({ 'system.equipped': equip });
-  if (ruleBreak && typeof item.setFlag === 'function') await item.setFlag(SYSTEM_ID, 'ruleBreak', true);
+  if (ruleBreak) await markRuleBreak(item);
   return true;
 }
 
@@ -237,14 +245,13 @@ export async function repairItem(actor, item, { skill, options = {} } = {}) {
     const gone = new Set([ITEM_STATE_TAGS.broken, ITEM_STATE_TAGS.destroyed]);
     await item.update({ 'system.tags': tagsOf(item).filter((t) => !gone.has(t)) });
   }
-  if (ruleBreak && typeof item.setFlag === 'function') await item.setFlag(SYSTEM_ID, 'ruleBreak', true);
+  if (ruleBreak) await markRuleBreak(item);
   return { repaired, dc, total, hours, ruleBreak, rebuilt: repaired && destroyed };
 }
 
 /** The identifier of the skill a Repair defaults to. */
 const REPAIR_SKILL_IDENTIFIER = 'repair';
 
-const esc = (v) => (globalThis.foundry?.utils?.escapeHTML ? globalThis.foundry.utils.escapeHTML(String(v ?? '')) : String(v ?? ''));
 
 /**
  * The skills a Repair can be rolled with: the crawler's own skills, plus the catalog Repair skill as an untrained stand-in
@@ -269,10 +276,10 @@ async function askRepairSkill(item, choices) {
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
   const fallback = (choices.find((c) => c.isDefault) ?? choices[0])?.value ?? null;
   if (typeof DialogV2?.wait !== 'function') return fallback;
-  const options = choices.map((c) => `<option value="${esc(c.value)}"${c.isDefault ? ' selected' : ''}>${esc(c.label)}</option>`).join('');
+  const options = choices.map((c) => `<option value="${escapeAttr(c.value)}"${c.isDefault ? ' selected' : ''}>${escapeAttr(c.label)}</option>`).join('');
   const picked = await DialogV2.wait({
     window: { title: loc('COG.Repair.DialogTitle') },
-    content: `<div class="form-group"><label>${esc(loc('COG.Repair.PickSkill', { name: item.name }))}</label><select name="skill">${options}</select></div>`,
+    content: `<div class="form-group"><label>${escapeAttr(loc('COG.Repair.PickSkill', { name: item.name }))}</label><select name="skill">${options}</select></div>`,
     buttons: [
       { action: 'repair', label: loc('COG.Repair.Button'), default: true, callback: (event, button) => button.form?.elements?.skill?.value ?? fallback },
       { action: 'cancel', label: loc('COG.Repair.Cancel') }
@@ -313,7 +320,7 @@ export async function startRepair(actor, item, options = {}) {
   }
   const result = await repairItem(actor, item, { skill, options });
   // The untrained roll is a confirmed Rule Break too: record it on the item once the check was made.
-  if (untrained && result.refusal !== 'roll-declined' && typeof item.setFlag === 'function') await item.setFlag(SYSTEM_ID, 'ruleBreak', true);
+  if (untrained && result.refusal !== 'roll-declined') await markRuleBreak(item);
   return { ...result, untrained, ruleBreak: result.ruleBreak === true || untrained };
 }
 

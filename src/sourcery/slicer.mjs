@@ -26,12 +26,17 @@
  *      starts a stat block, together with the short name line right before it. From there on no unlabelled paragraph is
  *      text (body, sidebar or line), so a sidebar slice stops at a stat block whatever heading it was found under.
  *   9. Empty upgrades: an `UPGRADES` label with `None` under it is dropped, both paragraphs.
+ *  10. Table rows: a hit on a `TABLE n:` label that carries a row's hash (a `row` anchor, anchors.mjs) is cut from the table
+ *      reader's rows (`table-slicer.mjs`), not from the runs after the label: the cell whose heading hash is the row's is the
+ *      name, and the cells after it fill the grammar's `cells` in order (with no `cells`, the body). The reader keeps apart
+ *      cells that the block runs merge (a name set less than a cell gutter before its effect, the next row's roll number).
  */
 import { inMargin, inEdge, MAX_HEADING_CHARS, MAX_HEADING_LINES, runOf, isTableLabel } from './indexer.mjs';
 import { styleOf } from './runs.mjs';
 import { headingKeys, normalizeHeading, unwrap } from './normalize.mjs';
 import { sha256 } from './hash.mjs';
 import { resolveRun, endVerdict, EMPTY_VOCABULARY } from './hyphens.mjs';
+import { tableRowCells } from './table-slicer.mjs';
 
 const MAX_PAGES = 3;
 const LABEL_MAX = 40;
@@ -256,6 +261,20 @@ function headingName(run, hit, vocab) {
   return unwrap(text).replace(BULLET, '').replace(/\s*:\s*$/, '').trim();
 }
 
+/** Rule 10: the block of a table row (see the module comment). An absent row leaves the block empty. */
+function sliceRow(index, hit, grammar, out) {
+  const cells = tableRowCells(index, hit, hit.hash);
+  if (!cells) return out;
+  const [name, ...rest] = cells.map(cleanLine);
+  out.name = name.replace(/\s*:\s*$/, '');
+  if (grammar.cells) {
+    out.fields = Object.fromEntries(grammar.cells.map((key, i) => [key, rest[i] ?? '']));
+    out.labels = grammar.cells.map(c => `cell:${c}`);
+  } else out.body = rest.filter(Boolean).join('\n\n');
+  out.lines = [out.name, ...rest].filter(Boolean);
+  return out;
+}
+
 /**
  * Slice a block.
  * @returns {{ name, quote, typeLine, body, fields, labels, mechanics, page, pages, lines, labelLines, statLines }}
@@ -270,6 +289,7 @@ export function sliceBlock(index, hit, grammar, options = {}) {
   const anchor = runOf(index, hit);
   const out = { name: '', quote: '', typeLine: '', body: '', fields: {}, labels: [], mechanics: 0, page: hit.page, pages: [hit.page], lines: [], labelLines: [], statLines: [] };
   if (!anchor || !grammar) return out;
+  if (hit.via === 'table' && hit.hash) return sliceRow(index, hit, grammar, out);
   out.name = headingName(anchor, hit, index.vocab);
   const pieces = collectBlock(index, hit, options);
   out.pages = [...new Set([hit.page, ...pieces.map(p => p.page)])];
@@ -346,10 +366,13 @@ export function sliceBlock(index, hit, grammar, options = {}) {
     }
     // A continuation is set in the same styles as the field's text (the stat block's). Narrative in another style,
     // typically the next creature's description in the book's body style, is not part of it.
-    const sameText = para.pieces.some(p => openStyles.has(styleOf(p)));
+    // With `listLabels`, a field whose label stands alone on its line takes on the styles of the paragraph after it (the first
+    // bullet of a list printed under the label).
+    const listStart = !!grammar.listLabels && !!open && openStyles.size === 0 && !out.fields[open];
+    const sameText = listStart || para.pieces.some(p => openStyles.has(styleOf(p)));
     if (open && (bodyLabel || (grammar.continues?.includes(open) && sameText))) {
       for (const p of para.pieces) openStyles.add(styleOf(p));
-      out.fields[open] += `\n\n${unwrap(para.text)}`;
+      out.fields[open] = listStart ? unwrap(para.text) : `${out.fields[open]}\n\n${unwrap(para.text)}`;
       line(para.text);
       return;
     }

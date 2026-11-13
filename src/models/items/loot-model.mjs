@@ -40,27 +40,44 @@ export function isLootBoxType(lootType) {
   return String(lootType ?? '').trim() === LOOT_BOX_LOOT_TYPE;
 }
 
+/** Every loot type the sheet offers, in its order: `value` is `system.lootType`, `labelKey` the word for it. */
+export const LOOT_TYPE_CHOICES = Object.freeze([
+  { value: 'consumable', labelKey: 'COG.LootType.consumable' },
+  { value: SCRATCH_LOOT_TYPE, labelKey: 'COG.LootType.scratch' },
+  { value: 'wand', labelKey: 'COG.LootType.wand' },
+  { value: 'scroll', labelKey: 'COG.LootType.scroll' },
+  { value: 'treasure', labelKey: 'COG.LootType.treasure' },
+  { value: 'crafting', labelKey: 'COG.LootType.crafting' },
+  { value: 'quest', labelKey: 'COG.LootType.quest' },
+  { value: BLUEPRINT_LOOT_TYPE, labelKey: 'COG.LootType.blueprint' },
+  { value: LOOT_BOX_LOOT_TYPE, labelKey: 'COG.LootType.box' }
+].map((choice) => Object.freeze(choice)));
+
 /** English defaults for `COG.LootType.*`, used when no language file is loaded (headless tests). */
-const LOOT_TYPE_LABELS = Object.freeze({ scroll: 'Spell scroll', wand: 'Wand', scratch: 'Lottery ticket', blueprint: 'Blueprint', box: 'Loot box', consumable: 'Consumable' });
+const LOOT_TYPE_LABELS = Object.freeze({
+  'COG.LootType.consumable': 'Consumable',
+  'COG.LootType.scratch': 'Lottery ticket',
+  'COG.LootType.wand': 'Wand',
+  'COG.LootType.scroll': 'Spell scroll',
+  'COG.LootType.treasure': 'Treasure',
+  'COG.LootType.crafting': 'Crafting material',
+  'COG.LootType.quest': 'Quest item',
+  'COG.LootType.blueprint': 'Blueprint',
+  'COG.LootType.box': 'Loot box'
+});
 
 /**
- * The player-facing word for a loot type, as the item manager's badge and the item summary print it. The known types
- * are `scroll`, `wand` and the scratch ticket; any other value (`consumable`, `potion`) reads as a consumable.
+ * The player-facing word for a loot type, as the item manager's badge and the item summary print it. A type not in
+ * {@link LOOT_TYPE_CHOICES} (a blank value, `potion`) reads as a consumable.
  * @param {*} lootType
  * @returns {string} `COG.LootType.*` localized, else the English default
  */
 export function lootTypeLabel(lootType) {
   const type = String(lootType || 'consumable').toLowerCase().trim();
-  let key = 'consumable';
-  if (type === 'scroll') key = 'scroll';
-  else if (type === 'wand') key = 'wand';
-  else if (isScratchLootType(type)) key = 'scratch';
-  else if (isBlueprintLootType(type)) key = 'blueprint';
-  else if (isLootBoxType(type)) key = 'box';
-  const i18nKey = `COG.LootType.${key}`;
+  const { labelKey } = LOOT_TYPE_CHOICES.find((choice) => choice.value === type) ?? LOOT_TYPE_CHOICES[0];
   const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(i18nKey) && typeof i18n.localize === 'function') return i18n.localize(i18nKey);
-  return LOOT_TYPE_LABELS[key];
+  if (i18n?.has?.(labelKey) && typeof i18n.localize === 'function') return i18n.localize(labelKey);
+  return LOOT_TYPE_LABELS[labelKey];
 }
 
 /**
@@ -95,6 +112,8 @@ export class LootDataModel extends BaseItemDataModel {
       // The spell this item casts, by identifier; spellName is its display label.
       spellIdentifier: new fields.StringField({ initial: '' }),
       spellName: new fields.StringField({ initial: '' }),
+      // The god a scroll of prayer names, by deity identifier: reading it adds that god to the reader's known gods (p. 163).
+      deity: new fields.StringField({ initial: '' }),
       outcomes: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
       // What the item has been enchanted with (3.15)
       enchantments: enchantmentLedgerField(fields),
@@ -136,7 +155,7 @@ export class LootDataModel extends BaseItemDataModel {
         // What an unfilled box does: '' = the tier's default contents; 'keep' = not spent, the GM is warned
         whenEmpty: new fields.StringField({ initial: '' })
       }),
-      notes: new fields.HTMLField({ initial: '' }),
+      notes: new fields.StringField({ initial: '' }),
       description: new fields.HTMLField({ initial: '' })
     };
   }

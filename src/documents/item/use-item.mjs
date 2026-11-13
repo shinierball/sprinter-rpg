@@ -12,10 +12,16 @@ import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { emitsLight, igniteLight } from '../actor/light-source.mjs';
 import { cooldownLabel, hasCooldown } from '../../utils/time/cooldowns.mjs';
 import { gateItemCooldown } from '../actor/cooldown-gate.mjs';
+import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from '../actor/action-block.mjs';
 import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from '../actor/zero-zone-gate.mjs';
 import { isActivatedGearAura, toggleGearAura } from '../actor/gear-aura.mjs';
 import { resolveSingleOutcome, enchantWasRefused, outcomeCardSummary } from './resolve-outcome.mjs';
+import { addKnownDeity } from '../actor/worship.mjs';
+import { deityRecords } from '../../utils/deity/deity-names.mjs';
+import { deityIdOf } from '../../utils/deity/worship-state.mjs';
+import { say } from '../actor/vehicle-drive-common.mjs';
 import { spellByIdentifier } from './spell-tome.mjs';
+import { spendActivationUses } from '../actor/buff-activation.mjs';
 import { rollSpellCard } from './spell-card.mjs';
 
 const WASTED_SCROLL_TEXT = '{name} read {item} with nothing equipped. The dumbass has wasted a valuable scroll. No reward. We do not encourage this behavior.';
@@ -64,6 +70,10 @@ export async function useItem(item, options = {}) {
   const sys = item.system || {};
   const itemName = item.name || 'Item';
 
+  // A bearer who cannot take Actions asks first, so a declined gate asks nothing else.
+  const actionBlockGate = actionBlockApplies(actor, 'item', options) ? await gateActionBlock(actor, 'item', { options }) : ACTION_BLOCK_CLEAR;
+  if (!actionBlockGate.proceed) return { error: 'action_block_cancelled', message: `"${itemName}" was not used.` };
+
   // In a zero zone a player's crawler has no working interface: any use (loot box, gear aura, potion, scroll) asks first.
   const zeroZoneGate = actor && zeroZoneApplies(actor, options) ? await gateZeroZone(actor, item, { verb: 'Use', options }) : ZERO_ZONE_CLEAR;
   if (!zeroZoneGate.proceed) return { error: 'zero_zone_cancelled', message: `"${itemName}" was not used.` };
@@ -109,6 +119,15 @@ export async function useItem(item, options = {}) {
     return { error: 'spell_not_found', message: msg };
   }
 
+  // 2a'. A scroll of prayer names a god (p. 163): reading it teaches the reader that god. An unknown god keeps the scroll.
+  const prayerId = actor ? String(sys.deity ?? '').trim() : '';
+  const prayerDeity = prayerId ? deityRecords().find((d) => deityIdOf(d) === prayerId) ?? null : null;
+  if (prayerId && !prayerDeity) {
+    const msg = say('COG.Deity.Obligations.ScrollUnknown', '{item} names a god that could not be found ("{id}"). It was not used.', { item: itemName, id: prayerId });
+    if (typeof ui !== 'undefined' && ui.notifications?.warn) ui.notifications.warn(msg);
+    return { error: 'deity_not_found', message: msg };
+  }
+
   // 2b. Usage gate: charges at 0, or a consumable already used up, asks for a Rule Break and records it on the card.
   let usageFlags = {};
   if (hasCharges ? currentCharges <= 0 : (spendsQuantity && currentQty <= 0)) {
@@ -130,7 +149,8 @@ export async function useItem(item, options = {}) {
   // whether or not the item has outcomes. Items with no owner carry no record.
   const cooldownGate = actor ? await gateItemCooldown(actor, item, { options }) : { proceed: true, flags: {}, commit: async () => {} };
   if (!cooldownGate.proceed) return { error: 'cooldown_cancelled', message: `"${itemName}" is on cooldown.` };
-  const gateFlags = { ...cooldownGate.flags, ...usageFlags, ...zeroZoneGate.flags };
+  if (actor) await spendActivationUses(actor, [item]);
+  const gateFlags = { ...cooldownGate.flags, ...usageFlags, ...zeroZoneGate.flags, ...actionBlockGate.flags };
   // A confirmed Rule Break (no charges, used up, on cooldown) shows on the card like every other Rule Break card.
   const ruleBreakBadge = gateFlags.ruleBreak ? ` ${ruleBreakBadgeHtml()}` : '';
 
@@ -156,6 +176,7 @@ export async function useItem(item, options = {}) {
       return;
     }
     await cooldownGate.commit();
+    if (prayerDeity) await addKnownDeity(actor, prayerDeity, { via: 'scroll' });
     // The last unit of a consumable leaves its used form; a consumed light leaves it when the light ends (3.76 B3).
     const unit = { quantity: currentQty, leaveForm: !(actor && emitsLight(item)) };
     if (hasCharges) {
@@ -319,7 +340,7 @@ export async function useItem(item, options = {}) {
           <span>${remainingUsesLabel}</span>
           ${hasCooldown(sys) ? `<span><strong>Limit:</strong> ${cooldownLabel(sys)}</span>` : ''}
         </div>
-        ${sys.notes ? `<p class="cog-text-secondary" style="margin: 3px 0 6px 0; font-size: 11px;">${sys.notes}</p>` : ''}
+        ${sys.notes ? `<p class="cog-text-secondary" style="margin: 3px 0 6px 0; font-size: 11px;">${escapeAttr(sys.notes)}</p>` : ''}
         <div class="cog-outcomes-container" style="display: flex; flex-direction: column; gap: 4px;">
           ${outcomeHtmls.join('')}
         </div>
@@ -391,7 +412,7 @@ export async function useItem(item, options = {}) {
           </div>
         </div>
         <p style="margin: 2px 0; font-size: 12px;">${remainingUsesLabel}</p>
-        ${sys.notes ? `<p style="margin: 4px 0; font-size: 12px;">${sys.notes}</p>` : ''}
+        ${sys.notes ? `<p style="margin: 4px 0; font-size: 12px;">${escapeAttr(sys.notes)}</p>` : ''}
         ${sys.description ? `<div style="font-size: 12px; margin-top: 4px;">${sys.description}</div>` : ''}
         ${plainSummaryHtml}
       </div>

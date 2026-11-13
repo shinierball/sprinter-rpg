@@ -9,17 +9,6 @@ import { ROW_ARRAYS } from '../../utils/row-kinds.mjs';
 
 const QUERY_BUCKETS = Object.freeze(['all', 'any', 'none']);
 
-/**
- * A list of strings from an array or a comma-separated string (authoring-time input only).
- * @param {string[]|string|undefined} raw
- * @returns {string[]} trimmed, non-empty entries
- */
-export function toStringList(raw) {
-  if (Array.isArray(raw)) return raw.map((s) => String(s ?? '').trim()).filter(Boolean);
-  if (typeof raw === 'string') return raw.split(',').map((s) => s.trim()).filter(Boolean);
-  return [];
-}
-
 /** The decimal digits of a string, in order. */
 export function digitsOnly(text) {
   return [...String(text ?? '')].filter((c) => c >= '0' && c <= '9').join('');
@@ -39,6 +28,17 @@ export function balanceWeights(rows) {
 export function hasSystemField(item, field) {
   const fields = item?.system?.constructor?.schema?.fields;
   return Boolean(fields && Object.hasOwn(fields, field));
+}
+
+/**
+ * A debuff's `transform` block as stored (`_source`), or null. The prepared block drops form rows that name no race
+ * (the engine never sees them), so a sheet that lists, indexes or merges rows reads this: a row just added has no race yet.
+ * @param {object} item
+ * @returns {object|null}
+ */
+export function storedTransform(item) {
+  const block = (item?.system?._source ?? item?.system)?.transform;
+  return block && typeof block === 'object' && !Array.isArray(block) ? block : null;
 }
 
 /** A row index from `data-index`, or -1 when missing or not an integer. */
@@ -72,10 +72,10 @@ export function objectRowArrayKeys(item) {
     .map(([key]) => key);
 }
 
-/** `rowArrayKeys(item)` that are also `ROW_ARRAYS` keys, in `ROW_ARRAYS` order (the modifier editor blocks). */
+/** `rowArrayKeys(item)` that are also `ROW_ARRAYS` keys, in `ROW_ARRAYS` order (the modifier editor blocks); arrays that are not modifier rows (`modifierRows: false`) have their own editors. */
 export function modifierArrayKeys(item) {
   const keys = new Set(rowArrayKeys(item));
-  return Object.keys(ROW_ARRAYS).filter((key) => keys.has(key));
+  return Object.keys(ROW_ARRAYS).filter((key) => keys.has(key) && ROW_ARRAYS[key].modifierRows !== false);
 }
 
 let outcomeTemplatesField = null;
@@ -119,4 +119,20 @@ export function queryBucketsAt(item, path) {
   if (!fields || typeof fields !== 'object') return null;
   const keys = Object.keys(fields);
   return keys.length > 0 && keys.every((k) => QUERY_BUCKETS.includes(k)) ? keys : null;
+}
+
+/**
+ * A copy of `list` with the entry at `index` swapped with its neighbour (`direction` 'up' or 'down'); null when the move
+ * would leave the list (nothing to do).
+ * @param {Array} list
+ * @param {number} index
+ * @param {string} direction
+ * @returns {Array|null}
+ */
+export function swapWithNeighbour(list, index, direction) {
+  const to = index + (direction === 'up' ? -1 : direction === 'down' ? 1 : 0);
+  if (!Number.isInteger(index) || index < 0 || index >= list.length || to < 0 || to >= list.length || to === index) return null;
+  const next = [...list];
+  [next[index], next[to]] = [next[to], next[index]];
+  return next;
 }

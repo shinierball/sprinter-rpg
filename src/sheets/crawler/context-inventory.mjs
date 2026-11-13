@@ -1,5 +1,5 @@
 /**
- * Page 2 (Equipment & Inventory) context: Determine Value gating and inventory sort order.
+ * Page 2 (Equipment & Inventory) context: Determine Value gating, inventory sort order and the category groups.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { sortItems } from './context-items.mjs';
@@ -10,6 +10,7 @@ import { itemProvenance } from '../../utils/ui/item-provenance.mjs';
 import { lootBoxTierDef } from '../../data/loot-box-tiers.mjs';
 import { unopenedBoxUnits } from '../../documents/actor/loot-box-open.mjs';
 import { isUnopenedBox } from '../../documents/actor/gm-only-items.mjs';
+import { groupItemsByCategory } from '../../utils/gear/item-category.mjs';
 
 const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
 const value = (item) => Number(item.system?.value ?? 0);
@@ -75,4 +76,6 @@ export function prepareInventory(context, actor, sheetSort = null) {
   context.gear.sort(sorter);
   context.loot.sort(sorter);
   context.usedLoot.sort(byName);
+  // The table lists the items under the item picker's categories (weapons, armor, ... other items), each group sorted
+  context.inventoryGroups = groupItemsByCategory([...context.gear, ...context.loot]);
 }

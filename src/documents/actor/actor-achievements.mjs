@@ -3,9 +3,8 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { COG_ACHIEVEMENT_TIERS } from '../../data/rules/achievement-tiers.mjs';
 import { lootBoxName } from './achievement-award.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
-const escapeHtml = (value) => String(value ?? '')
-  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 
 /**
@@ -21,18 +20,19 @@ export async function announceAchievement(actor, achievement) {
 
   const sys = item.system || {};
   const title = item.name || 'UNNAMED ACHIEVEMENT';
-  const quote = sys.quote || sys.description || 'The Dungeon AI watches in silent, amused judgment.';
+  // The quote is typed as plain text (escaped); the fallback description is rich text (HTML as the editor stored it).
+  const quote = sys.quote ? escapeAttr(sys.quote) : (sys.description || 'The Dungeon AI watches in silent, amused judgment.');
   const reward = sys.reward || 'Special Recognition';
-  const contents = sys.rewardContents || '';
+  const contents = escapeAttr(sys.rewardContents);
   const tier = (sys.tier || 'bronze').toLowerCase();
-  const floor = sys.floor || actor.system?.details?.floor || 'Floor 1';
+  const floor = escapeAttr(sys.floor || actor.system?.details?.floor || 'Floor 1');
 
   // Tier styling comes from the registry (CONFIG.COG.achievementTiers), so homebrew tiers and edits show here
   const tierDef = (globalThis.CONFIG?.COG?.achievementTiers ?? COG_ACHIEVEMENT_TIERS)[tier] ?? {};
   const icon = tierDef.icon || 'fa-solid fa-trophy';
   const color = tierDef.color || '#e74c3c';
   const boxLines = (Array.isArray(sys.rewardBoxes) ? sys.rewardBoxes : [])
-    .map(row => `${Math.max(1, Number(row?.quantity) || 1)}x ${escapeHtml(row?.name || lootBoxName(row?.tier))}`);
+    .map(row => `${Math.max(1, Number(row?.quantity) || 1)}x ${escapeAttr(row?.name || lootBoxName(row?.tier))}`);
 
   const chatContent = `
     <div class="cog-chat-card cog-ai-announcement-card cog-achievement-card cog-bg-window cog-text-strong" style="border: 2px solid var(--cog-accent); border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
@@ -44,11 +44,11 @@ export async function announceAchievement(actor, achievement) {
         <div style="flex: 1;">
           <div class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Crawler: <strong class="cog-text-strong">${actor.name}</strong> • ${floor}</div>
           <h3 class="cog-text-strong" style="margin: 2px 0 0 0; font-size: 17px; font-weight: bold; line-height: 1.2;">
-            <i class="${icon} cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${color};"></i> ${title}
+            <i class="${icon} cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${color};"></i> ${escapeAttr(title)}
           </h3>
         </div>
         <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${color}; border: 1px solid ${color}; font-size: 10px; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; font-weight: bold;">
-          ${tier}
+          ${escapeAttr(tier)}
         </span>
       </div>
       <div class="cog-bg-surface-muted cog-text" style="border-left: 3px solid var(--cog-accent); padding: 8px 12px; font-style: italic; font-size: 13px; margin-bottom: 10px; line-height: 1.45;">
@@ -57,7 +57,7 @@ export async function announceAchievement(actor, achievement) {
       <div class="cog-bg-surface-muted" style="border: 1px solid var(--cog-panel-border); padding: 8px 10px; border-radius: 4px; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span class="cog-text-secondary" style="text-transform: uppercase; font-size: 11px;"><i class="fa-solid fa-gift"></i> Reward:</span>
-          <span class="cog-text-success" style="font-weight: bold; font-size: 13px;">${reward}</span>
+          <span class="cog-text-success" style="font-weight: bold; font-size: 13px;">${escapeAttr(reward)}</span>
         </div>
         ${boxLines.map(line => `<div class="cog-text-secondary" style="font-size: 11px;"><i class="fa-solid fa-box-open"></i> ${line}</div>`).join('')}
         ${contents ? `<div class="cog-text-secondary" style="font-size: 11px; border-top: 1px solid var(--cog-panel-border); padding-top: 4px;"><strong>Contents:</strong> ${contents}</div>` : ''}

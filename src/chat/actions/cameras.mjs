@@ -20,12 +20,12 @@ import { addPopularity } from '../../documents/actor/actor-popularity.mjs';
 import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { addAiFavor, aiFavorBarState, setAiFavorBar } from './ai-favor-tally.mjs';
 import { isTrustedAssist } from './use-assist.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** The chat-message flag on a prompt card: `{ sourceId, row, resolved }`. */
 const CAMERA_PROMPT_FLAG = 'cameraPrompt';
 
-const escapeHtml = (value) => String(value ?? '')
-  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 const signed = (n) => (n > 0 ? `+${n}` : `${n}`);
 const notify = (level, key, data) => globalThis.ui?.notifications?.[level]?.(cameraText(key, data));
@@ -91,16 +91,15 @@ export function cameraAwardPlan(message) {
 }
 
 function lineCard(actor, { content, ruleBreak = false, flags = {} }) {
-  const data = {
+  const data = withFlags({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }),
-    content: `<div class="cog-chat-card cog-camera-award">${content}</div>`,
-    flags: { [SYSTEM_ID]: { cameraAward: true, ruleBreak, ...flags } }
-  };
+    content: `<div class="cog-chat-card cog-camera-award">${content}</div>`
+  }, { cameraAward: true, ruleBreak, ...flags });
   return globalThis.ChatMessage?.create?.(ruleBreak ? ruleBreakMessageData(data) : data);
 }
 
 function lineHtml(text, ruleBreak = false) {
-  return `<p><i class="fa-solid fa-video"></i> ${escapeHtml(text)}${ruleBreak ? ` ${ruleBreakBadgeHtml({ cls: '' })}` : ''}</p>`;
+  return `<p><i class="fa-solid fa-video"></i> ${escapeAttr(text)}${ruleBreak ? ` ${ruleBreakBadgeHtml({ cls: '' })}` : ''}</p>`;
 }
 
 async function logSponsor(actor, choiceLabel) {
@@ -115,11 +114,11 @@ async function logSponsor(actor, choiceLabel) {
 async function postPrompt(message, plan) {
   const { record, actor, row, cell } = plan;
   const reason = cameraReasonLabel(record.choice);
-  const buttons = cell.choices.map(c => `<button type="button" class="cog-camera-choice" data-action="crawlerCameraChoice" data-gm-only="true" data-choice-id="${escapeHtml(c.id)}">${escapeHtml(c.label)}</button>`).join('');
+  const buttons = cell.choices.map(c => `<button type="button" class="cog-camera-choice" data-action="crawlerCameraChoice" data-gm-only="true" data-choice-id="${escapeAttr(c.id)}">${escapeAttr(c.label)}</button>`).join('');
   const whisper = globalThis.ChatMessage?.getWhisperRecipients?.('GM')?.map(u => u.id);
   const created = await globalThis.ChatMessage?.create?.({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }),
-    content: `<div class="cog-chat-card cog-camera-prompt"><p>${escapeHtml(cameraText('COG.Cameras.PromptTitle', { reason, name: actor.name, row: cameraRowLabel(row) }))}</p><div class="cog-camera-choices">${buttons}</div></div>`,
+    content: `<div class="cog-chat-card cog-camera-prompt"><p>${escapeAttr(cameraText('COG.Cameras.PromptTitle', { reason, name: actor.name, row: cameraRowLabel(row) }))}</p><div class="cog-camera-choices">${buttons}</div></div>`,
     ...(whisper?.length ? { whisper } : {}),
     flags: { [SYSTEM_ID]: { [CAMERA_PROMPT_FLAG]: { sourceId: message.id, row, resolved: null } } }
   });
@@ -147,7 +146,7 @@ async function settleNow(message) {
     const base = changes
       ? cameraText('COG.Cameras.Line', { reason: cameraReasonLabel(record.choice), name: actor.name, changes, row: cameraRowLabel(row) })
       : cameraText('COG.Cameras.LineNone', { reason: cameraReasonLabel(record.choice), name: actor.name, row: cameraRowLabel(row) });
-    const text = cell?.text ? `<p>${escapeHtml(cell.text)}</p>` : '';
+    const text = cell?.text ? `<p>${escapeAttr(cell.text)}</p>` : '';
     await lineCard(actor, { content: lineHtml(base) + text });
   }
   if (plan.needsPrompt) await postPrompt(message, plan);
@@ -239,7 +238,7 @@ export async function handleCameraChoice(event, button, message) {
   // Claim the prompt before writing so a second click cannot apply again.
   await message.update({
     [`flags.${SYSTEM_ID}.${CAMERA_PROMPT_FLAG}.resolved`]: choice.id,
-    content: `<div class="cog-chat-card cog-camera-prompt"><p>${escapeHtml(cameraText('COG.Cameras.Chosen', { choice: choice.label }))}</p></div>`
+    content: `<div class="cog-chat-card cog-camera-prompt"><p>${escapeAttr(cameraText('COG.Cameras.Chosen', { choice: choice.label }))}</p></div>`
   });
   const reason = `${cameraReasonLabel(record.choice)}: ${choice.label}`;
   const popularity = Number(choice.popularity) || 0;

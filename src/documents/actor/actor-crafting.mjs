@@ -9,7 +9,7 @@
  * the check marks the skill like any skill check.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, markRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
 import { landingFor } from '../../utils/content-source.mjs';
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
@@ -18,15 +18,16 @@ import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import { COG_OUTCOME_CONFIG } from '../session/roll-outcomes.mjs';
 import {
-  planCraft, raiseTemplateBonus, evaluateSalvage, planJunkSpend, isCraftSuccess, sanitizeCraftRef, craftContextTags, sharesProperty, propertyKeys
+  planCraft, raiseTemplateBonus, evaluateSalvage, isCraftSuccess, sanitizeCraftRef, craftContextTags, sharesProperty, propertyKeys
 } from '../../utils/crafting/crafting-engine.mjs';
+import { planJunkSpend } from '../../utils/crafting/craft-materials.mjs';
 import { collectCraftModifiers } from '../../utils/roll/damage-modifiers.mjs';
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { CRAFT_TAGS } from '../../utils/tag/tag-mechanics.mjs';
 import { matchesTagQuery } from '../../utils/tag/tag-query.mjs';
 import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
-import { escapeHtml } from '../../sourcery/text.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { craftText } from '../../utils/crafting/craft-text.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
@@ -36,9 +37,12 @@ import { hasAsTrigger } from '../../utils/roll/amazing-success.mjs';
 import { getFloorTimer, decrementFloorTimer, MAX_FLOOR_TIMER_DECREMENT } from './actor-environment.mjs';
 import { applyJunkPlan } from './misc-junk.mjs';
 import { getPersonalSpace } from './actor-spaces.mjs';
+import { groupLinksCrawler, spaceGroupFurniture } from './space-group.mjs';
+import { isStudio } from './crafting-tables.mjs';
 import {
   canWriteSpace, crawlerDoc, crawlerRef, resolveSpace, spaceLinksCrawler, userOwnsActor
 } from './personal-space-links.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 export const RELAY_ACTION_CRAFT_SPACE_MATERIALS = 'craftSpaceMaterials';
 
@@ -47,7 +51,6 @@ const MAX_TAKES = 200;
 
 const asArray = (v) => (Array.isArray(v) ? v : []);
 const round6 = (n) => Math.round(n * 1e6) / 1e6;
-const esc = (v) => escapeHtml(String(v ?? ''));
 
 /** Titles of the Rule Break confirm of each plan warning (one per `planCraft` warning code). */
 const WARNING_TITLES = Object.freeze({
@@ -61,7 +64,8 @@ const WARNING_TITLES = Object.freeze({
   missingJunk: 'Not Enough Misc. Junk',
   notBatchable: 'Not a Batch Recipe',
   overSkillCap: 'Above the Skill Limit',
-  clockShort: 'Not Enough Time'
+  clockShort: 'Not Enough Time',
+  recipeLocked: 'Locked Recipe'
 });
 
 /**
@@ -153,8 +157,11 @@ function pickSkill(actor, step, index, skillIds) {
   return entry ? skillStandIn(actor, entry.system.identifier) : null;
 }
 
+/** The `crafting.recipe.<id>` tags of a blueprint item: an `unlockRecipes` row's condition is matched against them. */
+const recipeTagsOf = (blueprint) => (blueprint ? [...getItemAllTags(blueprint)].filter((t) => t.startsWith(CRAFT_TAGS.recipePrefix)) : []);
+
 /** The craft reference a step is rolled with (`rollSkill`'s `craft` option); the modifier rows read the same tags. */
-function craftRefOf(step, blueprintTarget, template) {
+function craftRefOf(step, blueprintTarget, template, blueprint = null) {
   const tableTags = asArray(step.tableBonus?.used).map((t) => t.type).filter(Boolean);
   const subject = template ?? blueprintTarget;
   return {
@@ -164,28 +171,36 @@ function craftRefOf(step, blueprintTarget, template) {
     tableMultiplier: step.modifiers?.tableMultiplier ?? 1,
     tableLabel: asArray(step.tableBonus?.used).map((t) => t.name).filter(Boolean).join(', '),
     mode: step.mode,
-    tags: [...tableTags, ...(subject ? [...getItemAllTags(subject)] : [])],
+    tags: [...tableTags, ...recipeTagsOf(blueprint), ...(subject ? [...getItemAllTags(subject)] : [])],
     stepLabel: step.label
   };
 }
 
 /**
- * The personal-space items whose `craftModifiers` rows count for a step: the tables the step uses and every installed
- * attachment (a space upgrade carrying a `crafting.attachment.<id>` tag). Items of a space the crawler is not linked to count
- * for nothing.
- * @param {object|null} spaceDoc
+ * The personal-space items whose rows count for a step: the tables the step uses, every installed attachment (a space upgrade
+ * carrying a `crafting.attachment.<id>` tag) and every studio whose table type is the type of a table the step uses. A studio
+ * for a type the step does not use counts for nothing. Items of a space the crawler is not linked to count for nothing.
+ * @param {object[]} furniture the space group's upgrades (`spaceGroupFurniture`)
  * @param {boolean} linked
  * @param {object} step a planned step (its `tableBonus.used`)
  * @returns {object[]}
  */
-export function craftSpaceSources(spaceDoc, linked, step) {
-  if (!spaceDoc || !linked) return [];
-  const usedIds = new Set(asArray(step?.tableBonus?.used).map((t) => t.id).filter(Boolean));
-  return [...(spaceDoc.items ?? [])].filter((item) => {
+export function craftSpaceSources(furniture, linked, step) {
+  if (!linked) return [];
+  const used = asArray(step?.tableBonus?.used);
+  const usedIds = new Set(used.map((t) => t.id).filter(Boolean));
+  const usedTypes = new Set(used.map((t) => t.type).filter(Boolean));
+  return [...(furniture ?? [])].filter((item) => {
     if (item?.type !== 'space_upgrade' || item.system?.purchased === false) return false;
     if (usedIds.has(item.id)) return true;
+    if (isStudio(item) && usedTypes.has(String(item.system.studio.tableTypeTag ?? '').trim())) return true;
     return [...getItemAllTags(item)].some((tag) => tag.startsWith(CRAFT_TAGS.attachmentPrefix));
   });
+}
+
+/** What the plan reads of a space: its stash (materials), its group's furniture (tables, studios, attachments) and whether the crafter is linked. */
+export function craftSpaceInput(spaceDoc, linked) {
+  return spaceDoc ? { items: [...(spaceDoc.items ?? [])], furniture: spaceGroupFurniture(spaceDoc), linked } : null;
 }
 
 /**
@@ -193,20 +208,19 @@ export function craftSpaceSources(spaceDoc, linked, step) {
  * the crawler already has, with a skill's rows counting only when that skill rolls the step) and the rows of the
  * space's tables and attachments, judged against the tags the step's check carries.
  * @param {Actor} actor
- * @param {{ skills: Array<Item|null>, spaceDoc: object|null, linked: boolean, target?: Item|null, template?: Item|null }} params
- *   `skills[i]` is the skill that rolls step `i`; `template` is the item an item-mode blueprint makes
- * @returns {(step: object, index: number) => { maxBonus: number|null, timeMultiplier: number, batchMultiplier: number, tableMultiplier: number, bonusValue: number }}
+ * @param {{ skills: Array<Item|null>, spaceDoc: object|null, linked: boolean, target?: Item|null, template?: Item|null, blueprint?: Item|null }} params
+ *   `skills[i]` is the skill that rolls step `i`; `template` is the item an item-mode blueprint makes; `blueprint` carries the recipe tags
+ * @returns {(step: object, index: number) => object} the whole fold of `collectCraftModifiers` (`maxBonus`, the multipliers,
+ *   `batchAny`, `unlocked`, `materialMultiplier`, `salvageSteps`, ...)
  */
-export function craftModifierResolver(actor, { skills = [], spaceDoc = null, linked = false, target = null, template = null } = {}) {
+export function craftModifierResolver(actor, { skills = [], spaceDoc = null, linked = false, target = null, template = null, blueprint = null } = {}) {
+  const furniture = spaceDoc ? spaceGroupFurniture(spaceDoc) : [];
   return (step, index) => {
-    const craft = sanitizeCraftRef(craftRefOf(step, target, template));
+    const craft = sanitizeCraftRef(craftRefOf(step, target, template, blueprint));
     const context = buildRollContext({
       actor, phase: 'check', item: skills[index] ?? null, other: null, tags: craftContextTags(craft)
     });
-    const { maxBonus, timeMultiplier, batchMultiplier, tableMultiplier, bonusValue } = collectCraftModifiers(actor, context, {
-      extraSources: craftSpaceSources(spaceDoc, linked, step)
-    });
-    return { maxBonus, timeMultiplier, batchMultiplier, tableMultiplier, bonusValue };
+    return collectCraftModifiers(actor, context, { extraSources: craftSpaceSources(furniture, linked, step) });
   };
 }
 
@@ -233,9 +247,9 @@ async function stampCrafted(item, crafted, ruleBreak) {
   if (!item) return;
   if (typeof item.setFlag === 'function') {
     await item.setFlag(SYSTEM_ID, 'crafted', crafted);
-    if (ruleBreak) await item.setFlag(SYSTEM_ID, 'ruleBreak', true);
+    if (ruleBreak) await markRuleBreak(item);
   } else {
-    await item.update({ [`flags.${SYSTEM_ID}.crafted`]: crafted, ...(ruleBreak ? { [`flags.${SYSTEM_ID}.ruleBreak`]: true } : {}) });
+    await item.update({ [`flags.${SYSTEM_ID}.crafted`]: crafted, ...(ruleBreak ? ruleBreakUpdate() : {}) });
   }
 }
 
@@ -246,10 +260,7 @@ async function createOutput(actor, template, units, crafted, ruleBreak) {
   system.quantity = units;
   if (template.type === 'gear') system.equipped = false;
   const payload = buildPayload(template.type, { name: source.name ?? template.name, img: source.img, system }, { warnings: [] });
-  payload.flags = {
-    ...payload.flags,
-    [SYSTEM_ID]: { ...payload.flags?.[SYSTEM_ID], crafted, ...(ruleBreak ? { ruleBreak: true } : {}) }
-  };
+  payload.flags = withFlags(payload, { crafted, ...(ruleBreak ? { ruleBreak: true } : {}) }).flags;
   // A blueprint's output from a turned-off theme arrives as Celestial AI Poop (the template carries the stamp).
   const landing = landingFor(source);
   const [item] = await actor.createEmbeddedDocuments('Item', [landing.off ? landing.poop : payload]);
@@ -273,7 +284,7 @@ function craftResultCardHtml(data) {
   const lines = asArray(data.steps).map((s) => {
     const outcome = COG_OUTCOME_CONFIG[s.outcome]?.label ?? s.outcome ?? 'Not rolled';
     const salvage = asArray(s.salvage).filter((m) => m.needed > 0)
-      .map((m) => `${esc(m.label || m.identifier || 'material')} ${m.consumed} used${m.kept ? `, ${m.kept} kept` : ''}`);
+      .map((m) => `${escapeAttr(m.label || m.identifier || 'material')} ${m.consumed} used${m.kept ? `, ${m.kept} kept` : ''}`);
     const extras = [
       s.applied ? 'applied' : '',
       s.created ? 'made' : '',
@@ -281,17 +292,17 @@ function craftResultCardHtml(data) {
       s.broke ? 'the item broke' : '',
       s.bonusRaised ? (s.bonusRaised.raised > 0 ? craftText('COG.Craft.BonusRaised', { n: s.bonusRaised.n, source: s.bonusRaised.source ?? '' }) : craftText('COG.Craft.BonusNothingToRaise')) : ''
     ].filter(Boolean);
-    return `<li><strong>${esc(s.label || s.kind)}</strong>: ${esc(outcome)}${s.dc !== undefined ? ` (Difficulty ${esc(s.dc)})` : ''}`
-      + `, ${esc(s.hours)} h${extras.length ? `; ${esc(extras.join(', '))}` : ''}`
+    return `<li><strong>${escapeAttr(s.label || s.kind)}</strong>: ${escapeAttr(outcome)}${s.dc !== undefined ? ` (Difficulty ${escapeAttr(s.dc)})` : ''}`
+      + `, ${escapeAttr(s.hours)} h${extras.length ? `; ${escapeAttr(extras.join(', '))}` : ''}`
       + `${salvage.length ? `<br><em>${salvage.join('; ')}</em>` : ''}</li>`;
   }).join('');
-  const made = asArray(data.made).map((m) => `<li>${esc(m)}</li>`).join('');
-  const breaks = asArray(data.ruleBreaks).map((b) => `<li>${esc(b)}</li>`).join('');
+  const made = asArray(data.made).map((m) => `<li>${escapeAttr(m)}</li>`).join('');
+  const breaks = asArray(data.ruleBreaks).map((b) => `<li>${escapeAttr(b)}</li>`).join('');
   return `<div class="cog-chat-card cog-craft-card">
-    <h4><strong>${esc(data.actorName)}</strong> crafts ${esc(data.blueprintName)}${data.ruleBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</h4>
+    <h4><strong>${escapeAttr(data.actorName)}</strong> crafts ${escapeAttr(data.blueprintName)}${data.ruleBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</h4>
     <ol>${lines}</ol>
     ${made ? `<p><strong>Result</strong></p><ul>${made}</ul>` : ''}
-    ${data.stopped ? `<p><em>${esc(data.stopped)}</em></p>` : ''}
+    ${data.stopped ? `<p><em>${escapeAttr(data.stopped)}</em></p>` : ''}
     ${breaks ? `<p><strong>Rule Breaks</strong></p><ul>${breaks}</ul>` : ''}
   </div>`;
 }
@@ -341,7 +352,8 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
 
   const wanted = space ?? options.space;
   const spaceDoc = wanted === false ? null : (resolveSpace(wanted) ?? getPersonalSpace(actor));
-  const linked = !!spaceDoc && spaceLinksCrawler(spaceDoc, actor);
+  const linked = !!spaceDoc && groupLinksCrawler(spaceDoc, actor);
+  const furniture = spaceDoc ? spaceGroupFurniture(spaceDoc) : [];
   const items = [...(actor.items ?? [])];
   const floor = getCurrentFloor();
   // The output item is resolved first: its tags can name the skills (a vehicle upgrade, 3.44i).
@@ -351,7 +363,7 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
     target,
     template,
     crawler: { items, skills: items.filter((i) => i.type === 'skill'), floor },
-    space: spaceDoc ? { items: [...(spaceDoc.items ?? [])], linked } : null,
+    space: craftSpaceInput(spaceDoc, linked),
     floor,
     clockHours: getFloorTimer(),
     quantity
@@ -372,7 +384,7 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
   }
   const plan = planCraft({
     ...planInput,
-    modifiers: { ...modifiers, resolve: craftModifierResolver(actor, { skills, spaceDoc, linked, target, template }) }
+    modifiers: { ...modifiers, resolve: craftModifierResolver(actor, { skills, spaceDoc, linked, target, template, blueprint }) }
   });
 
   const confirmedCodes = new Set();
@@ -434,7 +446,11 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
     const record = { kind: step.kind, label: step.label, dc: step.dc, hours: step.hours, outcome: '', salvage: [] };
     result.steps.push(record);
 
-    const message = await actor.rollSkill(skills[i], { ...options, craft: craftRefOf(step, target, template) });
+    const message = await actor.rollSkill(skills[i], {
+      ...options,
+      craft: craftRefOf(step, target, template, blueprint),
+      craftSources: craftSpaceSources(furniture, linked, step)
+    });
     const info = message?.flags?.[SYSTEM_ID]?.craft;
     if (!info) {
       result.success = false;
@@ -454,7 +470,8 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
     const lines = step.materials.map((m) => ({
       label: m.label, identifier: m.identifier, needed: m.found, salvageable: m.salvageable
     }));
-    const salvage = evaluateSalvage({ outcome: info.outcome, margin: info.margin, materials: lines });
+    const salvageSteps = step.modifiers?.salvageSteps ?? 0;
+    const salvage = evaluateSalvage({ outcome: info.outcome, margin: info.margin, materials: lines, steps: salvageSteps });
     record.salvage = salvage;
     const spaceTakes = [];
     const crawlerTakes = new Map();
@@ -470,7 +487,7 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
       }
     });
     if (step.junk > 0) {
-      const junk = evaluateSalvage({ outcome: info.outcome, margin: info.margin, materials: [{ label: 'Misc. Junk', needed: step.junk, salvageable: true }] })[0];
+      const junk = evaluateSalvage({ outcome: info.outcome, margin: info.margin, materials: [{ label: 'Misc. Junk', needed: step.junk, salvageable: true }], steps: salvageSteps })[0];
       record.salvage.push(junk);
     }
     await applyCrawlerTakes(actor, crawlerTakes);
@@ -550,7 +567,7 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
   if (!allDone && result.success) result.success = false;
   result.ruleBreak = anyBreak();
 
-  result.message = await globalThis.ChatMessage.create({
+  result.message = await globalThis.ChatMessage.create(withFlags({
     speaker: globalThis.ChatMessage.getSpeaker?.({ actor }),
     content: craftResultCardHtml({
       actorName: actor.name,
@@ -560,9 +577,8 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
       ruleBreaks,
       ruleBreak: result.ruleBreak,
       stopped
-    }),
-    flags: { [SYSTEM_ID]: { isCraftResult: true, ...(result.ruleBreak ? { ruleBreak: true } : {}) } }
-  }, cardMessageOptions(actor));
+    })
+  }, { isCraftResult: true, ...(result.ruleBreak ? { ruleBreak: true } : {}) }), cardMessageOptions(actor));
   return result;
 }
 

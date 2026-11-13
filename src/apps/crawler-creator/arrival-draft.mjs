@@ -8,14 +8,11 @@
  * value left out is "open". The preview rolls open dice with a fixed placeholder RNG (so it never flickers) and the
  * panels mark them as pending; "Roll everything remaining" fills them through the injected `rng` first.
  */
-import { offeredEntries } from '../../utils/content-source.mjs';
 import { planFloorArrival, simulateFloorArrival } from '../../data/floor-simulator/compile.mjs';
 import { LOOT_BRACELET_RACE_TABLE, LOOT_SPELL_TABLE, LOOT_UPGRADE_TABLE, rowForTotal } from '../../data/floor-simulator/tables.mjs';
-import { foundryRng, rollFormula, rngIndex } from '../../utils/rng.mjs';
-import { loadoutOptions, getStarterWeaponDefinition } from '../../content/creation-loadouts.mjs';
-import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
-import { damageTypesOfRarity } from '../../utils/damage/damage-types.mjs';
-import { isFormRace } from '../../utils/character/transform-rules.mjs';
+import { foundryRng, rollFormula } from '../../utils/rng.mjs';
+import { autoPick, openChoices } from './auto-pick.mjs';
+import { plainValue } from './draft-values.mjs';
 
 const REVIEW_STEP = 'review';
 export { LOOT_SPELL_TABLE };
@@ -23,14 +20,8 @@ export { LOOT_SPELL_TABLE };
 /** The placeholder dice of the live preview: every open die reads 1, so the preview is stable between edits. */
 export const PREVIEW_RNG = Object.freeze({ die: () => 1 });
 
-const STAT_KEYS = ['str', 'dex', 'con', 'int', 'cha'];
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const hasValue = (v) => v !== undefined && v !== null && v !== '';
-
-/** The number inside a draft value: a plain number, or the `value` of the rolled form. */
-export function plainValue(v) {
-  return isObj(v) && 'value' in v ? v.value : v;
-}
 
 /** The rolled form the compiler reads for a die the app rolled. */
 function rolledValue(total, dice) {
@@ -91,6 +82,8 @@ export class ArrivalDraft {
     // Foundry Roll objects by draft path, attached to the arrival's chat card; the rolled/typed marker lives in the draft itself
     this.rolls = new Map();
     this._preview = null;
+    // Stat points the creator holds for a Race or Class requirement, by stats step id (`setStatHolds`); never in `draft`
+    this.statHolds = {};
   }
 
   /** The floor this draft arrives at. */
@@ -169,6 +162,11 @@ export class ArrivalDraft {
         for (const [slot, value] of Object.entries(spec.slots ?? {})) {
           if (!isObj(value) || !hasValue(value.take)) delete spec.slots[slot];
         }
+      } else if (step.kind === 'stats') {
+        // The held points ride on top of the player's own, so the compiler sees one allocation
+        for (const [key, hold] of Object.entries(this.heldFor(step.id))) {
+          spec.allocation = { ...spec.allocation, [key]: (Number(spec.allocation?.[key]) || 0) + hold.points };
+        }
       }
     }
     return { targetFloor: this.floor, steps, confirmedRuleBreaks: [] };
@@ -205,6 +203,12 @@ export class ArrivalDraft {
     if (scroll) {
       const upgrade = this.draft.steps[scroll[1]]?.slots?.[scroll[2]]?.upgrade;
       if (upgrade) delete upgrade.optionIndex;
+      return;
+    }
+    // A write-in's catalog identifier belongs to its kind: a new kind clears it.
+    const kind = /^([^.]+)\.picks\.(\d+)\.skills\.(\d+)\.docKind$/.exec(path);
+    if (kind) {
+      delete this.draft.steps[kind[1]]?.picks?.[Number(kind[2])]?.skills?.[Number(kind[3])]?.identifier;
       return;
     }
     const m = /^([^.]+)\.picks\.(\d+)\.(indexRow|tableKey|row)$/.exec(path);
@@ -335,11 +339,44 @@ export class ArrivalDraft {
     this._touch();
   }
 
-  /** Move Unenhanced Stat points (Question K (a)); never below zero. */
+  /**
+   * Set the Stat points held for a requirement on a stats step (`planStatHolds`' `holds`, each with the `names` of the
+   * Race and Class that asked). The player's own allocation is untouched; `buildSpec` adds the two.
+   */
+  setStatHolds(stepId, holds, names = {}) {
+    const next = Object.fromEntries(Object.entries(holds ?? {}).map(([key, h]) => [key, { points: h.points, for: [...(h.for ?? [])], names }]));
+    if (JSON.stringify(next) === JSON.stringify(this.statHolds[stepId] ?? {})) return false;
+    this.statHolds[stepId] = next;
+    this._touch();
+    return true;
+  }
+
+  /** The Stat points held on a stats step, by Stat: `{ points, for, names }`. */
+  heldFor(stepId) {
+    return this.statHolds[stepId] ?? {};
+  }
+
+  /** The total Stat points held on a stats step. */
+  heldTotal(stepId) {
+    return Object.values(this.heldFor(stepId)).reduce((sum, h) => sum + h.points, 0);
+  }
+
+  /**
+   * Move Unenhanced Stat points (Question K (a)); never below zero. A point taken away is a held one first (the creator
+   * lowers that Stat's hold limit through `deps.takeBackHold`), then the player's own.
+   */
   adjustStat(stepId, key, delta) {
     const allocation = this.draft.steps[stepId]?.allocation;
     if (!allocation) return;
-    const next = Math.max(0, (Number(allocation[key]) || 0) + Math.trunc(Number(delta) || 0));
+    let move = Math.trunc(Number(delta) || 0);
+    const held = this.heldFor(stepId)[key]?.points ?? 0;
+    if (move < 0 && held > 0 && this.deps.takeBackHold) {
+      const back = Math.min(-move, held);
+      this.deps.takeBackHold(key, held - back);
+      move += back;
+      this._touch();
+    }
+    const next = Math.max(0, (Number(allocation[key]) || 0) + move);
     if (next) allocation[key] = next;
     else delete allocation[key];
     this._touch();
@@ -530,136 +567,26 @@ export class ArrivalDraft {
     return rolled;
   }
 
-  // ---------------------------------------------------------------- automatic picks (Randomize All)
+  // ---------------------------------------------------------------- automatic picks
 
   /**
-   * Answer every open choice of the draft with the injected RNG, the way a player who takes whatever comes would: a
-   * random option for each experience Skill (never one that needs an import or a write-in), loot from every card of
-   * the row with a random option, the chosen-Skills count filled with distinct candidates, the Stat points spread over
-   * the five stats, and then every open die rolled. Answers already given are kept.
+   * Answer everything not yet completed, the way a player who takes whatever comes would (`auto-pick.mjs`), and roll every
+   * open die, until nothing is open: the picks open dice (an experience Skill opens its Rank die) and the dice open picks.
+   * Answers already given are kept.
    * @returns {Promise<number>} the dice rolled
    */
   async autoFill() {
-    const rng = this.deps.rng;
     let rolled = 0;
-    for (let pass = 0; pass < 6; pass++) {
+    for (let pass = 0; pass < 12; pass++) {
       rolled += await this.rollRemaining();
-      if (!this._autoPick(rng)) break;
+      if (!autoPick(this, this.deps.rng)) break;
     }
     return rolled + await this.rollRemaining();
   }
 
-  /** One round of automatic picks; true when something changed (the dice they open are rolled next round). */
-  _autoPick(rng) {
-    let changed = false;
-    for (const step of this.plan?.steps ?? []) {
-      const spec = this.draft.steps[step.id];
-      if (!spec || step.skipped) continue;
-      if (step.kind === 'skillBoost' && step.target === 'chosen' && !(spec.picks ?? []).length) {
-        const pool = [...(step.candidates ?? [])];
-        const count = Math.min(Number(step.count) || 0, pool.length);
-        const picks = [];
-        for (let i = 0; i < count; i++) picks.push({ itemId: pool.splice(rngIndex(rng, pool.length), 1)[0].id });
-        if (picks.length) { spec.picks = picks; changed = true; }
-      } else if (step.kind === 'experiences') {
-        changed = this._autoExperiences(step, spec, rng) || changed;
-      } else if (step.kind === 'startingLoot') {
-        changed = this._autoLoot(step, spec, rng) || changed;
-      } else if (step.kind === 'stats' && !Object.keys(spec.allocation ?? {}).length && Number(step.pool) > 0) {
-        const allocation = {};
-        for (let i = 0; i < Number(step.pool); i++) {
-          const key = STAT_KEYS[rngIndex(rng, STAT_KEYS.length)];
-          allocation[key] = (allocation[key] ?? 0) + 1;
-        }
-        spec.allocation = allocation;
-        changed = true;
-      }
-    }
-    if (changed) {
-      this._replan();
-      this._touch();
-    }
-    return changed;
-  }
-
-  _autoExperiences(step, spec, rng) {
-    let changed = false;
-    (spec.picks ?? []).forEach((slot, i) => {
-      if (spec.mode === 'custom' && !slot.tableKey) {
-        const suggested = step.slots?.[i]?.tableKey;
-        const tables = (step.tables ?? []).filter(t => t.available);
-        const key = suggested || tables[rngIndex(rng, tables.length)]?.key;
-        if (key) { slot.tableKey = key; changed = true; }
-      }
-      const key = this.slotTableKey(step, spec, slot);
-      const view = key ? step.tableData?.[key] : null;
-      if (!view || !hasValue(slot.row)) return;
-      const rowNumber = Number(plainValue(slot.row));
-      const row = view.rows.find(r => rowNumber >= r.range[0] && rowNumber <= r.range[1]);
-      const usable = (row?.options ?? []).filter(o => !o.needsImport && (o.kind === 'named' || o.kind === 'spell' || (o.kind === 'choice' && o.choices?.length)));
-      const taken = new Set((slot.skills ?? []).filter(s => hasValue(s.option)).map(s => Number(s.option)));
-      for (const skill of slot.skills ?? []) {
-        if (hasValue(skill.option)) continue;
-        const free = usable.filter(o => !taken.has(o.index));
-        const option = (free.length ? free : usable)[rngIndex(rng, (free.length ? free : usable).length)];
-        if (!option) continue;
-        skill.option = option.index;
-        taken.add(option.index);
-        if (option.kind === 'choice') skill.identifier = option.choices[rngIndex(rng, option.choices.length)].value;
-        changed = true;
-      }
-    });
-    return changed;
-  }
-
-  _autoLoot(step, spec, rng) {
-    let changed = false;
-    spec.slots = spec.slots ?? {};
-    for (const card of this.lootCards(step, spec)) {
-      if (spec.slots[card.slot]?.take) continue;
-      const options = card.options ?? [];
-      if (!options.length) continue;
-      const option = options[rngIndex(rng, options.length)];
-      const choice = this._autoLootChoice(card, option, rng);
-      spec.slots[card.slot] = { take: 'loot', option: option.id, ...(Object.keys(choice).length ? { choice } : {}) };
-      changed = true;
-    }
-    return changed;
-  }
-
-  /** The inputs a loot option needs (the keys `compileLootPick` reads from `choice`), answered at random. */
-  _autoLootChoice(card, option, rng) {
-    const pick = (list) => (list.length ? list[rngIndex(rng, list.length)] : undefined);
-    const bonuses = this.context?.lootTiers?.[card.slot]?.[card.tier]?.bonuses ?? {};
-    const weapons = this.snapshot?.weapons ?? [];
-    const ownWeapon = weapons.find(w => w.equipped) ?? weapons[0];
-    // The weapon Skill bonus goes to the weapon's own Skill, else the crawler's primary attack skill
-    const weaponSkill = (own) => own?.skillIdentifier || (this.snapshot?.skills ?? []).find(s => s.starterRole === 'primarySkill')?.identifier || '';
-    const choice = {};
-    if (bonuses.stat && Array.isArray(bonuses.statChoices) && bonuses.statChoices.length) choice.stat = pick(bonuses.statChoices);
-    if (option?.kind === 'weaponUpgrade' && ownWeapon) {
-      choice.weaponId = ownWeapon.id;
-      if (weaponSkill(ownWeapon)) choice.skill = weaponSkill(ownWeapon);
-    } else if (option?.kind === 'weaponNew') {
-      const weapon = pick(loadoutOptions('weapon'));
-      if (weapon) choice.weapon = weapon.id;
-      const skill = getStarterWeaponDefinition(weapon?.id).skillIdentifier || weaponSkill(ownWeapon);
-      if (skill) choice.skill = skill;
-    } else if (option?.kind === 'armor') {
-      if (bonuses.resistanceRarity) {
-        const type = pick(damageTypesOfRarity(bonuses.resistanceRarity));
-        if (type) choice.resistance = type;
-      }
-      if (Array.isArray(bonuses.grantSkillChoices) && bonuses.grantSkillChoices.length) choice.skill = pick(bonuses.grantSkillChoices);
-    } else if (option?.kind === 'bracelet') {
-      // With a race table the die answers it (rolled with the other open dice); without one a random race is chosen
-      const race = this.context?.tables?.[LOOT_BRACELET_RACE_TABLE] ? null : pick(offeredEntries('races').filter(r => !COGRaceClassApplier.isPetRace(r) && !isFormRace(r)));
-      if (race) choice.race = String(COGRaceClassApplier.definitionRef(race)).toLowerCase();
-    } else if (option?.kind === 'skillPotion') {
-      const skill = pick((this.context?.catalog?.skills ?? []).filter(s => s.identifier));
-      if (skill) choice.skill = skill.identifier;
-    }
-    return choice;
+  /** The picks still open (`openChoices` in `auto-pick.mjs`); `blocking` ones stop Next and Finish. */
+  openChoices() {
+    return openChoices(this);
   }
 
   /**

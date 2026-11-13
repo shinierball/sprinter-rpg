@@ -1,4 +1,4 @@
-
+import { isGmActor } from '../../utils/document-types.mjs';
 
 /**
  * Target detection helper for item outcomes: closest mob, self, or targeted token.
@@ -18,7 +18,7 @@ export function resolveOutcomeTarget(actor, targetType = 'self') {
       const candidateTokens = canvas.tokens.placeables.filter(t =>
         t.actor &&
         t.actor.id !== actor?.id &&
-        (t.actor.type === 'mob' || t.actor.type === 'npc') &&
+        isGmActor(t.actor) &&
         Number(t.actor.system?.attributes?.hp?.value ?? 1) > 0
       );
 

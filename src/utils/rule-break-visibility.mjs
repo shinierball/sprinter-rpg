@@ -7,6 +7,10 @@
  * run by the chat render hook for every message) strips the marked badges. A card never decides visibility itself.
  */
 import { SYSTEM_ID } from '../constants.mjs';
+import { withRuleBreak } from './rule-break.mjs';
+
+/** World setting: whether players see the GM's Rule Breaks. */
+export const SHOW_GM_RULE_BREAKS_SETTING = 'showGmRuleBreaks';
 
 /** The attribute that marks a badge as a Rule Break badge for the render-time check. */
 export const RULE_BREAK_BADGE_ATTR = 'data-rule-break-badge';
@@ -14,7 +18,7 @@ export const RULE_BREAK_BADGE_ATTR = 'data-rule-break-badge';
 /** Whether players may see the Rule Breaks a GM makes; anything unreadable means yes. */
 export function showGmRuleBreaks() {
   try {
-    const value = globalThis.game?.settings?.get?.(SYSTEM_ID, 'showGmRuleBreaks');
+    const value = globalThis.game?.settings?.get?.(SYSTEM_ID, SHOW_GM_RULE_BREAKS_SETTING);
     return value !== false;
   } catch {
     return true;
@@ -48,12 +52,14 @@ export function hideGmRuleBreakBadges(root, message) {
 }
 
 /**
- * Chat data for a message that reports a Rule Break: whispered to GMs when a GM produces it and the setting is off.
+ * Chat data for a message that reports a Rule Break: stamped as one, and whispered to GMs when a GM produces it and
+ * the setting is off.
  * @param {object} data ChatMessage create data
  * @returns {object}
  */
 export function ruleBreakMessageData(data) {
-  if (!globalThis.game?.user?.isGM || showGmRuleBreaks()) return data;
+  const stamped = withRuleBreak(data);
+  if (!globalThis.game?.user?.isGM || showGmRuleBreaks()) return stamped;
   const whisper = globalThis.ChatMessage?.getWhisperRecipients?.('GM')?.map(u => u.id) ?? [];
-  return whisper.length ? { ...data, whisper } : data;
+  return whisper.length ? { ...stamped, whisper } : stamped;
 }

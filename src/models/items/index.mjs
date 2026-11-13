@@ -6,7 +6,7 @@ import { BuffDataModel } from './buff-model.mjs';
 import { DebuffDataModel } from './debuff-model.mjs';
 import { LootDataModel } from './loot-model.mjs';
 import { AchievementDataModel } from './achievement-model.mjs';
-import { RaceDataModel, ClassDataModel, DeityDataModel, SponsorDataModel } from './lore-model.mjs';
+import { RaceDataModel, ClassDataModel, DeityDataModel, PatronDataModel, SponsorDataModel } from './lore-model.mjs';
 import { SpaceUpgradeDataModel } from './space-upgrade-model.mjs';
 
 export const ITEM_DATA_MODELS = {
@@ -21,6 +21,7 @@ export const ITEM_DATA_MODELS = {
   race: RaceDataModel,
   class: ClassDataModel,
   deity: DeityDataModel,
+  patron: PatronDataModel,
   sponsor: SponsorDataModel,
   space_upgrade: SpaceUpgradeDataModel
 };

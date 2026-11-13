@@ -7,6 +7,9 @@
 
 import { SYSTEM_ID } from '../../constants.mjs';
 
+/** World setting: whether AI-written content is offered. */
+export const AI_CONTENT_SETTING = 'aiContent';
+
 /** The values of the `aiContent` setting. */
 const AI_CONTENT_LEVELS = Object.freeze(['show', 'hide-ai', 'hide-ai-edited']);
 
@@ -60,7 +63,7 @@ export function listAuthorship(reg) {
 export function getAiContentLevel(reg) {
   let raw = null;
   try {
-    raw = globalThis.game?.settings?.get?.(SYSTEM_ID, 'aiContent');
+    raw = globalThis.game?.settings?.get?.(SYSTEM_ID, AI_CONTENT_SETTING);
   } catch (_e) {
     // World setting not yet registered or unavailable
   }

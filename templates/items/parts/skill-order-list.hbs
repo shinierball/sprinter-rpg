@@ -1,0 +1,19 @@
+{{!-- A weapon's Skills in order of preference (7.51). Context: `associatedSkillsPills` (value, label, isFirst, isLast, index) from
+     src/sheets/item/context-common.mjs. The first pill is the default; the controls have no name (they are data-actions). --}}
+<div class="cog-associated-skills-pills cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; min-height: 24px; padding: 3px; border: 1px dashed var(--cog-border-muted); border-radius: 3px;">
+  {{#if associatedSkillsPills.length}}
+    {{#each associatedSkillsPills as |sk|}}
+      <span class="cog-badge cog-skill-pill cog-dark cog-bg-header-fill cog-text-on-fill" data-skill-order="{{sk.index}}" style="font-size: 11px; padding: 2px 6px; border-radius: 3px; display: inline-flex; align-items: center; gap: 4px;">
+        {{#if sk.isFirst}}<i class="fa-solid fa-star" data-tooltip="{{localize 'COG.Attack.Skill.Default'}}"></i>{{/if}}
+        {{sk.label}}
+        {{#if sk.unknown}}<i class="fa-solid fa-triangle-exclamation cog-text-warning cog-skill-unresolved" data-tooltip="{{localize 'COG.GearSheet.Skills.Unresolved'}}"></i>{{/if}}
+        {{#unless sk.isFirst}}<a class="cog-modifier-move" data-action="moveAssociatedSkill" data-direction="up" data-index="{{sk.index}}" data-tooltip="{{localize 'COG.Attack.Skill.MoveUp'}}"><i class="fa-solid fa-arrow-up"></i></a>{{/unless}}
+        {{#unless sk.isLast}}<a class="cog-modifier-move" data-action="moveAssociatedSkill" data-direction="down" data-index="{{sk.index}}" data-tooltip="{{localize 'COG.Attack.Skill.MoveDown'}}"><i class="fa-solid fa-arrow-down"></i></a>{{/unless}}
+        <a class="cog-text-danger" data-action="removeAssociatedSkill" data-skill="{{sk.value}}" title="{{localize 'COG.GearSheet.Skills.Remove'}}" style="cursor: pointer; font-weight: bold; text-decoration: none;">&times;</a>
+      </span>
+    {{/each}}
+  {{else}}
+    <span class="cog-text-muted" style="font-size: 10px; font-style: italic; align-self: center;">{{localize 'COG.GearSheet.Skills.Empty'}}</span>
+  {{/if}}
+</div>
+<small class="cog-text-muted" style="display: block; margin-bottom: 6px;">{{localize 'COG.Attack.Skill.OrderHint'}}</small>

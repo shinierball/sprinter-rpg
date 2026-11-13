@@ -17,7 +17,7 @@ export const SPECS = Object.freeze([
     system: {
       identifier: 'regulation-pursuit-sneakers',
       description: '<p>Approved by the Commission for Fair Fleeing, which has never fled anything. +1 to every check you roll for a leg of a chase. Races are a matter for the shoelaces.</p>',
-      slot: 'feet',
+      slot: 'accessory',
       checkModifiers: [{ kind: 'bonus', label: 'Commission-approved tread', value: 1, condition: q(['contest.chase']) }]
     }
   }

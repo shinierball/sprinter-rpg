@@ -10,6 +10,16 @@ export function isHeldSlot(slot) {
 }
 
 /**
+ * Whether an item's own tags name a weapon type (`weapon.<type>`). A bare attack item with none (a mob's claw) is a
+ * natural attack: it takes no hands and has no wield mode unless it says so.
+ * @param {object} sys an item's `system`
+ * @returns {boolean}
+ */
+export function hasWeaponTypeTag(sys) {
+  return Array.isArray(sys?.tags) && sys.tags.some((tag) => typeof tag === 'string' && tag.startsWith('weapon.'));
+}
+
+/**
  * What the gear sheet's Weapon box shows: the stored flag, or (never set, null or absent) the hands-slot default.
  * @param {object} sys the gear's `system`
  * @returns {boolean}
@@ -24,9 +34,7 @@ export function isWeaponFlagShown(sys) {
  * Recognized if:
  * 1. An attack item (type === 'attack')
  * 2. Explicitly marked as weapon (system.isWeapon === true)
- * 3. It names a weapon category or type
- * 4. It defines weapon damageParts with dice, value, or stat
- * 5. Slot is 'hands' or 'holding', unless the weapon flag was set to false (null or absent means never set)
+ * 3. Slot is 'hands' or 'holding', unless the weapon flag was set to false (null or absent means never set)
  * @param {object} itemOrSystem
  * @returns {boolean}
  */
@@ -41,12 +49,7 @@ export function isWeaponGear(itemOrSystem) {
 
   const sys = itemOrSystem.system || itemOrSystem;
   if (sys.isWeapon === true) return true;
-  if (sys.weaponCategory || sys.weaponType) return true;
-
-  const rawParts = sys.damageParts;
-  const parts = Array.isArray(rawParts) ? rawParts : Object.values(rawParts || {});
-  const hasDamageParts = parts.length > 0 && parts.some(p => p && (p.dice || p.value || p.stat));
-  if (hasDamageParts) return true;
+  // Dice and weapon-type tags do not make gear a weapon: only the flag, or a held slot not flagged false
   if (sys.isWeapon !== false && isHeldSlot(sys.slot)) return true;
 
   return false;
@@ -55,7 +58,7 @@ export function isWeaponGear(itemOrSystem) {
 /**
  * Resolves the wield mode for a weapon item or system data:
  * - Handless attacks (options.handless: a tag with the `no-hands` flag, e.g. natural/unarmed) return '' (no wield tag).
- * - Bare attack items (no category, no type, no explicit wieldMode) return ''.
+ * - Bare attack items (no `weapon.*` tag, no explicit wieldMode) return ''.
  * - 'two_handed' returns 'two_handed'.
  * - 'two_handed_disadv_1h' returns 'one_handed' when wieldedOneHanded is true, else 'two_handed'.
  * - Default for weapons is 'one_handed'.
@@ -74,7 +77,7 @@ export function getWieldMode(sys, options = {}) {
   if (options.handless === true) return '';
 
   const itemType = options.itemType || options.type;
-  if (itemType === 'attack' && !sys?.weaponCategory && !sys?.weaponType && !sys?.wieldMode) {
+  if (itemType === 'attack' && !hasWeaponTypeTag(sys) && !sys?.wieldMode) {
     return '';
   }
 

@@ -26,7 +26,7 @@ const NAME = { path: 'name', from: 'name', as: 'text' };
 export const FIELD_MAPS = Object.freeze({
   skill: [
     NAME,
-    // Plain paragraphs, like every other text field: the sheets show this field in a textarea, where a tag would read literally.
+    // `as: 'text'` is the book's text; the hydrator renders it by the field's schema kind (an `HTMLField` gets paragraphs).
     { path: 'system.description', from: 'body', as: 'text' },
     ...RANK_NOTES,
     {
@@ -99,6 +99,31 @@ export const FIELD_MAPS = Object.freeze({
   space: [
     NAME,
     { path: 'system.description', from: 'body', as: 'text' }
+  ],
+  // The title is the entry's whole heading line (the name and its epithet), picked into `fields.title`. Each tier benefit's
+  // name is its bullet, picked into `fields.tier<n>` (n = its index in `tierEffects`): a deity holds at most nine.
+  deity: [
+    NAME,
+    { path: 'system.title', from: 'fields.title', as: 'heading' },
+    { path: 'system.temple', from: 'fields.temple', as: 'text' },
+    { path: 'system.highCleric', from: 'fields.highCleric', as: 'text' },
+    { path: 'system.offering.text', from: 'fields.offering', as: 'text' },
+    { path: 'system.sponsor', from: 'fields.sponsor', as: 'text' },
+    { path: 'system.symbol', from: 'fields.symbol', as: 'text' },
+    { path: 'system.description', from: 'body', as: 'html' },
+    ...Array.from({ length: 9 }, (_, n) => ({ path: `system.tierEffects.${n}.name`, from: `fields.tier${n}`, as: 'text' }))
+  ],
+  // The specialty is the whole Performance Skills line (the printed specialty and its examples). The book prints no role
+  // line, so `system.title` is not asked.
+  patron: [
+    NAME,
+    { path: 'system.availability', from: 'fields.availability', as: 'text' },
+    { path: 'system.specialty', from: 'fields.performance', as: 'text' },
+    { path: 'system.venues', from: 'fields.venues', as: 'text' },
+    { path: 'system.quests', from: 'fields.quests', as: 'text' },
+    { path: 'system.favours', from: 'fields.favours', as: 'text' },
+    { path: 'system.rewards', from: 'fields.rewards', as: 'text' },
+    { path: 'system.description', from: 'body', as: 'html' }
   ]
 });
 
@@ -123,6 +148,9 @@ const N = FIELD_CLASS.NAME;
 const RANKS = [5, 10, 15];
 const LABELS = ['grants', 'startingItems', 'attackModifiers', 'checkModifiers', 'damageModifiers', 'defenseModifiers',
   'manaCostModifiers', 'recoveryModifiers', 'popularityTriggers'].map(k => [`system.${k}.*.label`, N]);
+
+/** The human text of a race or class's requirement rows: a row's display label and a note row's text. */
+const REQUIREMENT_TEXT = { 'system.requirements.*.label': N, 'system.requirements.*.text': R };
 
 /** The embedded items of a pet or a mercenary (skills, spells, gear): hand-written and public, listed so the short-line gate reads them. */
 const EMBEDDED_ROWS = {
@@ -149,8 +177,8 @@ export const FIELD_CLASSES = Object.freeze({
     ...Object.fromEntries(RANKS.flatMap(n => [[`system.upgrades.rank${n}`, R], [`system.rankBreaks.rank${n}.notes`, R]])),
     ...Object.fromEntries(LABELS)
   },
-  race: { name: N, 'system.description': S, 'system.prerequisites': R, ...Object.fromEntries(LABELS) },
-  class: { name: N, 'system.description': S, 'system.prerequisites': R, ...Object.fromEntries(LABELS) },
+  race: { name: N, 'system.description': S, 'system.prerequisites': R, ...REQUIREMENT_TEXT, ...Object.fromEntries(LABELS) },
+  class: { name: N, 'system.description': S, 'system.prerequisites': R, ...REQUIREMENT_TEXT, ...Object.fromEntries(LABELS) },
   mob: {
     name: N, 'prototypeToken.name': N, 'system.details.description': S, 'system.details.aiDescription': S,
     'system.details.notes': S, 'system.details.special': R, 'system.details.creatureType': N,
@@ -167,6 +195,16 @@ export const FIELD_CLASSES = Object.freeze({
   debuff: { name: N, description: S, 'system.description': S, 'system.duration': R },
   achievement: { name: N, 'system.quote': S, 'system.description': S, 'system.reward': R, 'system.rewardContents': R },
   space: { name: N, 'system.description': S },
+  // Every deity text is the book's own (withheld below); a tier benefit's name takes a placeholder in the public spec.
+  deity: {
+    name: N, 'system.title': S, 'system.temple': S, 'system.highCleric': S, 'system.offering.text': S, 'system.sponsor': S,
+    'system.symbol': S, 'system.description': S, 'system.tierEffects.*.name': N, 'system.signatureEffects.*.name': N
+  },
+  // Every patron text is the book's own (withheld below).
+  patron: {
+    name: N, 'system.title': S, 'system.availability': S, 'system.specialty': S, 'system.venues': S, 'system.quests': S,
+    'system.favours': S, 'system.rewards': S, 'system.description': S
+  },
   // No grammar and no import path; listed for completeness and for the coverage test. Never redacted (src/data/*.mjs).
   pet: { name: N, 'prototypeToken.name': N, 'system.details.notes': S, 'system.details.special': R, ...EMBEDDED_ROWS },
   mercenary: { name: N, 'prototypeToken.name': N, 'system.details.notes': S, 'system.details.special': R, ...EMBEDDED_ROWS }
@@ -175,7 +213,12 @@ export const FIELD_CLASSES = Object.freeze({
 /** Story paths emptied on every canon document of the kind (a mob's prose and a spell's quote). */
 export const WITHHELD_PATHS = Object.freeze({
   mob: Object.freeze(['system.details.description', 'system.details.aiDescription', 'system.details.notes']),
-  spell: Object.freeze(['system.quote'])
+  spell: Object.freeze(['system.quote']),
+  deity: Object.freeze(['system.title', 'system.temple', 'system.highCleric', 'system.offering.text', 'system.sponsor', 'system.symbol', 'system.description']),
+  patron: Object.freeze([
+    'system.availability', 'system.specialty', 'system.venues', 'system.quests', 'system.favours', 'system.rewards',
+    'system.description'
+  ])
 });
 
 const COMPILED = new Map();

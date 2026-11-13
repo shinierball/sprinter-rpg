@@ -138,7 +138,8 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
         img: 'icons/svg/skull.svg',
         system: { description: debuffDesc, duration: outcome.duration || (outcome.permanent ? 'Permanent' : 'Combat') }
       };
-      await targetActor.createEmbeddedDocuments('Item', landItems([debuffData]));
+      // The same landing as an attack's: an affliction is stamped and posts its cue, a secret one is held for the GM
+      await targetActor.applyCondition(debuffData, { source: originItem?.name || '' });
     }
 
     outcomeHtml = `
@@ -383,7 +384,7 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
           <strong>Recipient:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
         </p>
         <div class="cog-text-warning" style="font-size: 13px; font-weight: bold; margin: 4px 0;">
-          Permanently increases <strong>${skillName}</strong> by +${bonus} Rank! ${skillRes ? `(Now Rank ${skillRes.newRank})` : ''}
+          Permanently increases <strong>${skillName}</strong> by +${bonus} Rank! ${skillRes ? (skillRes.declined ? `(declined, still Rank ${skillRes.newRank})` : `(Now Rank ${skillRes.newRank})`) : ''}
         </div>
         ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
         <div style="margin-top: 8px;">

@@ -1,4 +1,4 @@
-import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, withRuleBreak, isRuleBreak } from '../../utils/rule-break.mjs';
 import {
   RELAY_ACTION_PERSONAL_SPACE_LEAVE,
   addCrawlerToSpace,
@@ -25,6 +25,10 @@ import { matchesTagQuery } from '../../utils/tag/tag-query.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
 import { findConditionEntry } from '../../content/catalog-lookup.mjs';
 import { rollAdvancementCheck, applyRankGain, postAdvancementCard } from './actor-advancement.mjs';
+import { confirmRouteGain } from './advancement-gates.mjs';
+import { ADVANCEMENT_ROUTES } from '../../utils/skill/advancement-routes.mjs';
+import { roomOf, tablesIn, confirmRoomFor, studioProblems, confirmStudioFor } from './space-room.mjs';
+import { spaceGroupFurniture } from './space-group.mjs';
 import { isGmOnlyItem, isUnopenedBox, refuseGmOnlyItem, refuseStashedBox } from './gm-only-items.mjs';
 
 /** `flags.sprinter-rpg.restBuff` of the buff a rest in a personal space applies; found by this flag, never by name. */
@@ -39,7 +43,9 @@ const STASH_REFUSALS = {
   equipped: 'Cannot stash equipped items. Unequip first.',
   'gm-only': 'Only the GM can move or change loot boxes and achievements.',
   box: 'Loot boxes cannot go in or out of a stash. Open them instead.',
-  full: 'Personal Space stash is full!'
+  full: 'Personal Space stash is full!',
+  noRoom: 'No room for another table.',
+  noStudio: 'A studio needs a bigger space, or one with no studio for that table type.'
 };
 
 /** Stash moves for one space run one at a time (create-then-delete must not interleave); the item is read inside. */
@@ -55,17 +61,25 @@ async function performDeposit(crawler, space, itemId, { ruleBreak = false, perfo
 
   const stashItems = getPersonalSpaceStashItems(crawler, space);
   const maxCapacity = space.system?.effectiveStashCapacity ?? space.system?.stashCapacity ?? 100;
-  const over = stashItems.length >= maxCapacity;
+  // A space upgrade (a table, a studio) is installed, not stashed: it takes no stash slot
+  const over = item.type !== 'space_upgrade' && stashItems.length >= maxCapacity;
   if (over && !ruleBreak) return { ok: false, reason: 'full' };
+  // A table past the group's room is a Rule Break too (the caller asks through `confirmRoomFor`).
+  const overRoom = tablesIn([item]) > roomOf(space).left;
+  if (overRoom && !ruleBreak) return { ok: false, reason: 'noRoom' };
+  // A studio the space cannot take as the rules stand (too small a group, or a second one for a table type) is one too
+  const found = studioProblems(space, [item]);
+  const overStudio = found.tooSmall || found.duplicates.length > 0;
+  if (overStudio && !ruleBreak) return { ok: false, reason: 'noStudio' };
 
   const itemData = item.toObject ? item.toObject() : structuredClone(item);
   delete itemData._id;
   delete itemData.id;
-  if (over) itemData.flags = { ...itemData.flags, [SYSTEM_ID]: { ...itemData.flags?.[SYSTEM_ID], ruleBreak: true } };
+  if (over || overRoom || overStudio) itemData.flags = withRuleBreak(itemData).flags;
 
   await space.createEmbeddedDocuments('Item', [itemData]);
   await crawler.deleteEmbeddedDocuments('Item', [item.id]);
-  return { ok: true, ruleBreak: over };
+  return { ok: true, ruleBreak: over || overRoom || overStudio };
 }
 
 /** Move one item from the space vault into the crawler. Runs where the caller can write both documents. */
@@ -127,6 +141,16 @@ async function moveStashItem(crawler, mode, itemId, options = {}) {
     if (!confirm.confirmed) return false;
     result = await attempt(true);
     if (result === null) return false;
+  } else if (result?.reason === 'noRoom') {
+    const room = await confirmRoomFor(space, [crawler.items?.get(itemId)], { ruleBreak: options.ruleBreak });
+    if (!room.ok) return false;
+    result = await attempt(true);
+    if (result === null) return false;
+  } else if (result?.reason === 'noStudio') {
+    const studio = await confirmStudioFor(space, [crawler.items?.get(itemId)], { ruleBreak: options.ruleBreak });
+    if (!studio.ok) return false;
+    result = await attempt(true);
+    if (result === null) return false;
   }
   if (STASH_REFUSALS[result?.reason]) globalThis.ui?.notifications?.[result.reason === 'full' ? 'error' : 'warn']?.(STASH_REFUSALS[result.reason]);
   return result?.ok === true;
@@ -158,8 +182,6 @@ registerRelayAction(RELAY_ACTION_SPACE_STASH, {
 /** Crawler uuids already warned about owning several spaces (once per page load; this runs on every sheet render). */
 const warnedMultiOwner = new Set();
 
-const hasRuleBreakFlag = (space) => space?.flags?.[SYSTEM_ID]?.ruleBreak === true;
-
 /**
  * What is left of a crawler's open Training Room window ("3h 10m remaining"); empty when no window is open.
  * @param {Actor} crawler
@@ -173,7 +195,7 @@ export function trainingWindowLabel(crawler, now) {
 }
 
 /**
- * Resolves the active training room of a personal space: the highest-tier embedded `space_upgrade` item with
+ * Resolves the active training room of a personal space's group (the best room in any joined space): the highest-tier `space_upgrade` item with
  * `training.enabled` (or the one whose id or identifier is `options.upgradeId`). Reads the stored fields only;
  * the schema initial values are the defaults.
  * @param {Actor} space
@@ -181,11 +203,8 @@ export function trainingWindowLabel(crawler, now) {
  * @returns {object|null} the room's `training` fields
  */
 export function resolveTrainingRoomConfig(space, options = {}) {
-  const itemsList = Array.from(space?.items ?? []);
-  const candidates = itemsList.filter(item => item?.type === 'space_upgrade'
-    && item.system?.purchased !== false
-    && (item.system?.training?.enabled === true
-      || Boolean(options.upgradeId && (item.id === options.upgradeId || item.system?.identifier === options.upgradeId))));
+  const candidates = spaceGroupFurniture(space).filter(item => item.system?.training?.enabled === true
+    || Boolean(options.upgradeId && (item.id === options.upgradeId || item.system?.identifier === options.upgradeId)));
   if (!candidates.length) return null;
   const picked = (options.upgradeId && candidates.find(i => i.id === options.upgradeId || i.system?.identifier === options.upgradeId))
     || [...candidates].sort((a, b) => (Number(b.system?.tier) || 1) - (Number(a.system?.tier) || 1))[0];
@@ -228,7 +247,7 @@ export function getOwnedPersonalSpace(actor) {
     warnedMultiOwner.add(ref);
     console.warn(`Sprinter RPG | ${actor.name} owns ${owned.length} personal spaces; a crawler may own only one.`);
   }
-  return owned.find(s => !hasRuleBreakFlag(s)) ?? owned[0] ?? null;
+  return owned.find(s => !isRuleBreak(s)) ?? owned[0] ?? null;
 }
 
 /**
@@ -290,7 +309,7 @@ export async function unlinkPersonalSpace(actor, spaceOrRef = null) {
 /**
  * 1-Click Auto-Provisioning: creates a new Personal Space Actor owned by this crawler.
  * A crawler may own only one space; a second needs a Rule Break confirmation.
- * @param {object} [options={}] name, spaceType, ruleBreak and the manual stat overrides
+ * @param {object} [options={}] name, rank, ruleBreak and the manual stat overrides
  * @returns {Promise<COGActor|null>} null when declined or when the space could not be created
  */
 export async function acquirePersonalSpace(actor, options = {}) {
@@ -503,6 +522,11 @@ export async function trainSkillInPersonalSpace(actor, skillOrId, options = {}) 
     return { success: false, reason: 'skill-not-allowed' };
   }
 
+  // A closed training route asks with the room's limits, before any hours are spent; the gain below then does not ask it again
+  const routeGate = await confirmRouteGain(actor, skill, ADVANCEMENT_ROUTES.training, { options, verb: 'Train' });
+  if (!routeGate.ok) return { success: false, reason: 'route-limit' };
+  if (routeGate.ruleBreak) ruleBreak = true;
+
   // The window runs on world time (3.12f): a floor change or a GM timer correction leaves it open.
   const now = currentTimeContext(actor);
   const windowHours = Number(training.windowHours) || 30;
@@ -536,7 +560,7 @@ export async function trainSkillInPersonalSpace(actor, skillOrId, options = {}) 
   let newRank = currentRank;
   if (check.passed) {
     // The caller's own options only: a Rule Break confirmed for the window does not pre-confirm the cap.
-    gainResult = await applyRankGain(actor, skill, { source: 'training', options });
+    gainResult = await applyRankGain(actor, skill, { source: 'training', options, routeChecked: routeGate.limited });
     advanced = gainResult.gained;
     if (gainResult.gained) newRank = gainResult.newRank;
     if (gainResult.ruleBreak) ruleBreak = true;
@@ -544,7 +568,7 @@ export async function trainSkillInPersonalSpace(actor, skillOrId, options = {}) 
 
   // What the result card says: a pass that gained nothing (Rank cap, locked, Floor-ranked) is not a failure.
   let outcome = 'fail';
-  if (check.passed) outcome = advanced ? 'gain' : (gainResult?.limit === 'locked' || gainResult?.reason === 'floor-ranked' ? 'locked' : 'capped');
+  if (check.passed) outcome = advanced ? 'gain' : (gainResult?.limit === 'limited' || gainResult?.reason === 'floor-ranked' ? 'limited' : 'capped');
 
   trainingState.sessionsUsedInWindow = (Number(trainingState.sessionsUsedInWindow) || 0) + 1;
   if (typeof actor.setFlag === 'function') {

@@ -18,16 +18,23 @@ import { buildTimingContext } from './item/context-timing.mjs';
 import { buildLootContext } from './item/context-outcomes.mjs';
 import { buildSpaceUpgradeContext } from './item/context-space-upgrade.mjs';
 import { buildClassContext, buildRaceContext } from './item/context-race-class.mjs';
-import { describeItem, emptyLine } from '../utils/item-describer/index.mjs';
-import { t as summaryLabel } from '../utils/item-describer/shared.mjs';
+import { buildDeityContext } from './item/context-deity.mjs';
+import { buildPatronContext } from './item/context-patron.mjs';
+import { DEITY_EFFECT_ACTIONS, dropDeityEffect } from './item/deity-effects.mjs';
+import { buildSummaryContext } from './item/context-summary.mjs';
 import { processItemFormData } from './item/form-data.mjs';
 import { TAG_ACTIONS, addTagFromInput } from './item/actions-tags.mjs';
 import { LIST_ACTIONS } from './item/actions-lists.mjs';
+import { WEAPON_ACTIONS } from './item/actions-weapon.mjs';
+import { FINDING_ACTIONS, buildFindingsContext } from './item/context-findings.mjs';
 import { TRANSFORM_ACTIONS } from './item/actions-transform.mjs';
 import { buildTransformContext } from './item/context-transform.mjs';
+import { buildDebuffSuppressesContext, buildDebuffSeverityContext, buildDebuffRepeatContext } from './item/context-debuff.mjs';
+import { buildActivationContext } from './item/context-activation.mjs';
 import { ROW_ACTIONS } from './item/actions-rows.mjs';
 import { OUTCOME_ACTIONS } from './item/actions-outcomes.mjs';
 import { SPECIALTY_ACTIONS } from './item/actions-specialty.mjs';
+import { ADVANCEMENT_ACTIONS } from './item/actions-advancement.mjs';
 import { AS_TRIGGER_ACTIONS } from './item/actions-as-triggers.mjs';
 import { BLUEPRINT_ACTIONS, canManageTable } from './item/actions-blueprint.mjs';
 import { isBlueprintLootType, isLootBoxType } from '../models/items/loot-model.mjs';
@@ -42,19 +49,6 @@ import { startRepair } from '../documents/item/enchantments.mjs';
 
 // `scrollable` keeps each part's scroll position across a re-render (a pick or any field change), so the form does not jump to the top.
 const part = (name) => ({ template: `${SYSTEM_PATH}/templates/items/parts/${name}.hbs`, scrollable: [''] });
-
-/**
- * The read-only "what this does" block: the lines, the heading ("What this
- * grants" for races and classes, "What this does" for the rest) and the muted empty line, built from an empty result only.
- */
-async function buildSummaryContext(context, item) {
-  const lines = await describeItem(item);
-  const grants = item.type === 'race' || item.type === 'class';
-  context.summaryTitle = summaryLabel(grants ? 'COG.ItemSummary.HeadingGrants' : 'COG.ItemSummary.Heading');
-  context.summaryLines = lines;
-  context.summaryEmpty = lines.length === 0;
-  context.summaryEmptyText = emptyLine().text;
-}
 
 /** Actions that use the item rather than edit it. */
 const USE_ACTIONS = {
@@ -76,14 +70,21 @@ const USE_ACTIONS = {
   }
 };
 
+/** The patron sheet's one action: unlink the actor the patron is. */
+const PATRON_ACTIONS = {
+  async clearPatronActor() {
+    if (this.isEditable) await this.item.update({ 'system.actorUuid': '' });
+  }
+};
+
 export class COGItemSheet extends COGItemSheetV2 {
   static DEFAULT_OPTIONS = {
     classes: ['item'],
     position: { width: 580, height: 640 },
-    actions: { ...TAG_ACTIONS, ...LIST_ACTIONS, ...ROW_ACTIONS, ...OUTCOME_ACTIONS, ...AS_TRIGGER_ACTIONS, ...SPECIALTY_ACTIONS, ...COPY_BLUEPRINT_ACTIONS, ...POOP_ACTIONS, ...TIMING_ACTIONS, ...USE_ACTIONS, ...BLUEPRINT_ACTIONS, ...LOOT_BOX_ACTIONS, ...TRANSFORM_ACTIONS }
+    actions: { ...TAG_ACTIONS, ...LIST_ACTIONS, ...WEAPON_ACTIONS, ...FINDING_ACTIONS, ...ROW_ACTIONS, ...OUTCOME_ACTIONS, ...AS_TRIGGER_ACTIONS, ...SPECIALTY_ACTIONS, ...ADVANCEMENT_ACTIONS, ...COPY_BLUEPRINT_ACTIONS, ...POOP_ACTIONS, ...TIMING_ACTIONS, ...USE_ACTIONS, ...BLUEPRINT_ACTIONS, ...LOOT_BOX_ACTIONS, ...TRANSFORM_ACTIONS, ...DEITY_EFFECT_ACTIONS, ...PATRON_ACTIONS }
   };
 
-  /** Body part for each item type (the `item.type` enum; deity and sponsor share the traits part). */
+  /** Body part for each item type (the `item.type` enum; sponsor has the traits part). */
   static TYPE_PART = Object.freeze({
     skill: 'skill',
     attack: 'attack',
@@ -91,7 +92,8 @@ export class COGItemSheet extends COGItemSheetV2 {
     gear: 'gear',
     race: 'race',
     class: 'class',
-    deity: 'traits',
+    deity: 'deity',
+    patron: 'patron',
     sponsor: 'traits',
     buff: 'buff',
     debuff: 'debuff',
@@ -101,10 +103,11 @@ export class COGItemSheet extends COGItemSheetV2 {
   });
 
   /** Parts every item renders around its body part (`modifiers` only when the item's schema has a modifier row array). */
-  static FRAME_PARTS = Object.freeze({ before: ['header', 'summary'], after: ['modifiers', 'interrupt', 'light', 'tags'] });
+  static FRAME_PARTS = Object.freeze({ before: ['header', 'findings', 'summary'], after: ['modifiers', 'interrupt', 'light', 'tags'] });
 
   static PARTS = {
     header: part('header'),
+    findings: part('findings'),
     summary: part('summary'),
     skill: part('skill'),
     attack: part('attack'),
@@ -112,6 +115,8 @@ export class COGItemSheet extends COGItemSheetV2 {
     gear: part('gear'),
     race: part('race'),
     class: part('class'),
+    deity: part('deity'),
+    patron: part('patron'),
     traits: part('traits'),
     buff: part('buff'),
     debuff: part('debuff'),
@@ -134,7 +139,10 @@ export class COGItemSheet extends COGItemSheetV2 {
     achievement: (context, item) => { buildRewardBoxesContext(context, item); buildAchievementTierContext(context); },
     race: buildRaceContext,
     class: buildClassContext,
-    debuff: buildTransformContext,
+    deity: buildDeityContext,
+    patron: buildPatronContext,
+    buff: buildActivationContext,
+    debuff: (context, item) => { buildTransformContext(context, item); buildDebuffSuppressesContext(context, item); buildDebuffSeverityContext(context, item); buildDebuffRepeatContext(context, item); },
     space_upgrade: buildSpaceUpgradeContext
   });
 
@@ -160,6 +168,10 @@ export class COGItemSheet extends COGItemSheetV2 {
     const item = this.item;
     // Builders normalise and decorate the system data; they work on a copy so nothing leaks into the document.
     context.system = cloneSystem(item.system);
+    // The header names the type in words (`TYPES.Item.<type>`), never the raw type id; a module's own type falls back to its id.
+    const typeKey = `TYPES.Item.${item.type}`;
+    const typeWords = globalThis.game?.i18n?.localize?.(typeKey);
+    context.typeLabel = typeWords && typeWords !== typeKey ? typeWords : item.type;
     const [skills, buffs, debuffs, spells, tables] = await Promise.all([
       getCompendiumSkills(), getAvailableBuffs(), getAvailableDebuffs(), getAvailableSpells(), getAvailableRollTables()
     ]);
@@ -173,6 +185,7 @@ export class COGItemSheet extends COGItemSheetV2 {
       context.availableBoxTables = await getAvailableRollTables({ packs: true });
     }
     buildRowEditorContext(context, item, { preview: this._rowPreview });
+    context.requirementsOpen = Boolean(this._requirementsOpen);
     this.constructor.CONTEXT_BUILDERS[item.type]?.(context, item);
     // Descriptions are rich text: the editor helper takes the enriched HTML.
     if (typeof item.system?.description === 'string') {
@@ -180,6 +193,7 @@ export class COGItemSheet extends COGItemSheetV2 {
       context.descriptionHtml = await TE.enrichHTML(item.system?.description ?? '', { relativeTo: item, secrets: item.isOwner });
     }
     buildTimingContext(context, item);
+    buildFindingsContext(context, item);
     await buildSummaryContext(context, item);
     return context;
   }
@@ -223,6 +237,7 @@ export class COGItemSheet extends COGItemSheetV2 {
   async _onDropItem(event, item) {
     if (this.isEditable && this.item?.type === 'loot' && isLootBoxType(this.item.system?.lootType)) return dropBoxItem(this.item, item);
     if (this.isEditable && this.item?.type === 'achievement') return dropRewardBoxTemplate(this.item, item);
+    if (this.isEditable && this.item?.type === 'deity') return dropDeityEffect(this.item, item, event?.target?.closest?.('[data-deity-drop]')?.dataset?.deityDrop);
     if (this.isEditable && this.item?.type === 'loot' && isBlueprintLootType(this.item.system?.lootType)) return this.#dropBlueprintOutput(item);
     if (!this.isEditable || this.item?.type !== 'gear' || !GEAR_GRANT_KINDS.includes(item?.type)) return null;
     const identifier = itemIdentifier(item);
@@ -233,6 +248,13 @@ export class COGItemSheet extends COGItemSheetV2 {
     await this.item.update({ 'system.grants': rows });
     globalThis.ui?.notifications?.info(`Added "${label || identifier}" ${item.type} bonus to ${this.item.name}.`);
     return rows;
+  }
+
+  /** @override An Actor dropped on a patron item is the person the patron is (`system.actorUuid`). */
+  async _onDropActor(event, actor) {
+    if (!this.isEditable || this.item?.type !== 'patron' || !actor?.uuid) return null;
+    await this.item.update({ 'system.actorUuid': actor.uuid });
+    return actor;
   }
 
   /** @override A RollTable dropped on a loot box becomes a `table` row (7.3d); everything else keeps the base routing. */

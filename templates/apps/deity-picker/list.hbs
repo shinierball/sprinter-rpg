@@ -1,0 +1,33 @@
+<div class="cog-sm-list-container">
+  {{#if deities.length}}
+    <table class="cog-sm-table">
+      <tbody>
+        {{#each deities as |deity|}}
+          <tr class="cog-sm-row {{#if deity.isKnown}}is-added{{/if}}" data-deity-id="{{deity.id}}">
+            <td>
+              <div class="cog-sm-name-cell">
+                <img src="{{deity.img}}" class="cog-sm-icon" />
+                <div class="cog-deity-picker-name">
+                  <span class="cog-sm-name">{{deity.name}}</span>
+                  {{#if deity.title}}<span class="cog-text-muted">{{deity.title}}</span>{{/if}}
+                </div>
+              </div>
+            </td>
+            <td>
+              {{#if deity.isKnown}}
+                <span class="cog-badge cog-sm-on-sheet-badge">{{localize 'COG.Deity.Picker.Known'}}</span>
+              {{/if}}
+            </td>
+            <td class="cog-deity-picker-actions">
+              <button type="button" data-action="pickDeity" data-deity-id="{{deity.id}}" {{#if deity.isKnown}}disabled{{/if}}>
+                <i class="fa-solid fa-user-plus"></i> {{localize 'COG.Deity.Picker.Pick'}}
+              </button>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="cog-text-muted">{{localize 'COG.Deity.Picker.Empty'}}</p>
+  {{/if}}
+</div>

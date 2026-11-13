@@ -4,6 +4,7 @@
  * The fragments `rollSpell` shares live in `use-card-parts.mjs`.
  */
 import { rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { auraActiveBlockHtml, damageSourcesPreviewHtml } from './use-card-parts.mjs';
 
 /**
@@ -35,7 +36,7 @@ export function skillAuraActivationCardHtml(actor, skill, auraData, summaryHtml 
           </div>
           ${auraActiveBlockHtml(actor, skill, shown, { itemIdAttr: true })}
           ${sys.description ? `<div style="font-size: 12px; line-height: 1.4; margin-top: 6px;">${sys.description}</div>` : ''}
-          ${sys.notes ? `<div class="cog-text-muted" style="font-size: 11px; margin-top: 4px;"><em>${sys.notes}</em></div>` : ''}
+          ${sys.notes ? `<div class="cog-text-muted" style="font-size: 11px; margin-top: 4px;"><em>${escapeAttr(sys.notes)}</em></div>` : ''}
           ${summaryHtml}
         </div>
       `;
@@ -55,7 +56,7 @@ export function passiveSkillCardHtml(actor, skill, { modifiedRank, baseRank, ite
           <h4><strong>${actor.name}</strong>: ${skill.name}</h4>
           <p><em>Passive Skill (No roll required)</em></p>
           <p><strong>Modified Rank:</strong> ${modifiedRank} (Base ${baseRank}${itemBonus ? `, Items +${itemBonus}` : ''}${boonBonus ? `, Boons +${boonBonus}` : ''})</p>
-          <p>${sys.notes || 'Static bonus active.'}</p>
+          <p>${escapeAttr(sys.notes) || 'Static bonus active.'}</p>
           ${summaryHtml}
         </div>`;
 }

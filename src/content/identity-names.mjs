@@ -6,12 +6,13 @@
  */
 import { findCatalogEntry, catalogEntries } from './catalog-lookup.mjs';
 import { conditionTagId } from '../utils/identifier.mjs';
+import { catalogKindOfItemType } from './registry/catalogs.mjs';
+
+/** The item types that have identity tags (no patron, sponsor, attack or space upgrade); the catalog of each is the one rule's. */
+const IDENTITY_TYPES = Object.freeze(['skill', 'spell', 'class', 'race', 'buff', 'debuff', 'gear', 'loot', 'deity', 'achievement']);
 
 /** Item type of an identity tag to the registry catalog that holds it. */
-export const IDENTITY_CATALOG_KINDS = Object.freeze({
-  skill: 'skills', spell: 'spells', class: 'classes', race: 'races', buff: 'buffs', debuff: 'debuffs',
-  gear: 'items', loot: 'items', achievement: 'achievements'
-});
+export const IDENTITY_CATALOG_KINDS = Object.freeze(Object.fromEntries(IDENTITY_TYPES.map(type => [type, catalogKindOfItemType(type)])));
 
 /**
  * @param {string} type an item type, or 'condition'
@@ -24,6 +25,6 @@ export function resolveIdentityName(type, ref) {
     const id = `condition.${ref}`;
     return catalogEntries('debuffs').find(d => conditionTagId(d?.system?.identifier) === id)?.name ?? null;
   }
-  const kind = IDENTITY_CATALOG_KINDS[type];
+  const kind = Object.hasOwn(IDENTITY_CATALOG_KINDS, type) ? IDENTITY_CATALOG_KINDS[type] : null;
   return kind ? findCatalogEntry(kind, ref)?.name ?? null : null;
 }

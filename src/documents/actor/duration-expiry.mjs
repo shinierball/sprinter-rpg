@@ -7,6 +7,8 @@ import { durationSpec, effectiveDuration, expiryStamp, isTimeExpired, tickRoundD
 import { currentTimeContext } from './dungeon-time.mjs';
 import { auraRank } from './aura-effects.mjs';
 import { activeAurasOnScene } from './aura-pulse.mjs';
+import { isDyingDebuff, die, sweepDyingClock, restampDyingClock } from './dying.mjs';
+import { isRankedItem } from '../../utils/document-types.mjs';
 
 /**
  * Duration stamping and expiry.
@@ -45,7 +47,7 @@ function durationStampPatch(item, now = currentTimeContext(item?.actor ?? null))
   if (!item || !TIMED_TYPES.has(item.type)) return null;
   const cfg = item.system?.durationConfig;
   if (!cfg) return null;
-  const rank = item.actor && (item.type === 'spell' || item.type === 'skill') ? auraRank(item.actor, item) : undefined;
+  const rank = item.actor && isRankedItem(item) ? auraRank(item.actor, item) : undefined;
   const eff = effectiveDuration(item, { rank });
   const kind = TIME_UNITS[eff.type]?.kind;
   if (kind !== 'time' && kind !== 'rounds') return null;
@@ -94,11 +96,17 @@ export function stampOnUpdate(item, changed) {
 /**
  * End one effect. A debuff is deleted; an aura goes through `deactivateAura`; anything else is switched off (and
  * releases the temporary bars it granted).
+ * A Dying debuff that runs out is not deleted: the actor dies.
  * @param {Actor} actor the holder
  * @param {Item} item
  * @param {{ combatants?: object }} [opts]
+ * @returns {Promise<false|undefined>} false when the effect ended in a death, which has its own card
  */
 async function expireEffect(actor, item, { combatants } = {}) {
+  if (isDyingDebuff(item)) {
+    await die(actor, { cause: 'countdown' });
+    return false;
+  }
   if (item.type === 'debuff') {
     await item.delete();
     return;
@@ -146,7 +154,7 @@ const expiredRow = (actor, item, extra = {}) => ({
 
 /** True when the effective duration (a reached rank-break override included) is in rounds. */
 function countsInRounds(item, actor) {
-  const rank = actor && (item.type === 'spell' || item.type === 'skill') ? auraRank(actor, item) : undefined;
+  const rank = actor && isRankedItem(item) ? auraRank(actor, item) : undefined;
   return effectiveDuration(item, { rank }).type === 'rounds';
 }
 
@@ -198,9 +206,10 @@ export async function tickRoundEffects(combat, round) {
       continue;
     }
     const row = expiredRow(actor, item, { combatantId, round });
-    await expireEffect(actor, item, { combatants: combat.combatants });
+    if (await expireEffect(actor, item, { combatants: combat.combatants }) === false) continue;
     expired.push(row);
   }
+  await restampDyingClock(combat);
   await postExpiryCard(`Combat Round ${round} Expirations`, expired);
   return expired;
 }
@@ -236,6 +245,7 @@ export async function expireCombatEffects(combat) {
     await expireEffect(actor, item, { combatants: combat.combatants });
     expired.push(row);
   }
+  await restampDyingClock(combat);
   await postExpiryCard('Combat Ended', expired);
   return expired;
 }
@@ -255,7 +265,7 @@ export function registerExpirySource(id, source) {
 export function unregisterExpirySourceForTests(id) { expirySources.delete(id); }
 
 /** Every world actor plus the unlinked token actors on every scene. */
-function sweepActors() {
+export function sweepActors() {
   const actors = new Map();
   const add = (actor) => { if (actor?.items) actors.set(actor.uuid || actor.id || actor, actor); };
   for (const actor of asArray(globalThis.game?.actors)) add(actor);
@@ -304,6 +314,7 @@ export function registerDurationHooks() {
   if (hooks) return;
   hooks = [
     ['updateWorldTime', (worldTime) => { if (isActiveGM()) return sweepTimedEffects(worldTime); }],
+    ['updateWorldTime', (worldTime) => { if (isActiveGM()) return sweepDyingClock(worldTime, sweepActors()); }],
     ['deleteCombat', (combat) => { if (isActiveGM()) return expireCombatEffects(combat); }]
   ];
   for (const [name, fn] of hooks) globalThis.Hooks?.on?.(name, fn);

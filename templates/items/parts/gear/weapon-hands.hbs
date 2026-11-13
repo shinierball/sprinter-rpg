@@ -1,0 +1,16 @@
+{{!-- Hands: how many hands the weapon takes (wield mode). --}}
+<div class="cog-field-row" data-weapon-hands>
+  <div class="cog-field-group">
+    <span class="cog-field-label"><i class="fa-solid fa-hand"></i> {{localize "COG.GearSheet.Hands.Title"}}</span>
+    <select name="system.wieldMode" class="cog-field-input">
+      {{#each wieldModeOptions as |wm|}}
+        <option value="{{wm.value}}" {{#if wm.selected}}selected{{/if}}>{{wm.label}}</option>
+      {{/each}}
+    </select>
+  </div>
+  {{#if (eq system.wieldMode "two_handed_disadv_1h")}}
+  <div class="cog-field-group">
+    <label><input type="checkbox" name="system.wieldedOneHanded" {{checked system.wieldedOneHanded}}> {{localize "COG.GearSheet.Hands.OneHanded"}}</label>
+  </div>
+  {{/if}}
+</div>

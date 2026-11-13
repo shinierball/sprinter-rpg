@@ -1,34 +1,25 @@
 /**
- * Damage parts: the one shape an attack or a gear weapon stores its damage in.
- * Leaf module with no imports.
+ * Damage parts: the roll-part shape and the card helpers a damage roll shares.
+ * Imports only the Base Damage helpers.
  *
  * Part shape: { dice, stat, type, value }. `dice` is a dice formula or ''; `stat` is the ability whose
  * modifier is added ('' for none); `type` is a damage type where '' means Physical at runtime;
- * `value` is a flat bonus. Runtime part ids are computed, never stored.
+ * `value` is a flat bonus. Runtime part ids are computed, never stored. A weapon stores no parts: its
+ * damage is its Skill's Base Damage with an optional `baseDamage` override, and its bonus damage is `damageModifiers` rows.
  */
 
-/** Returned by primaryDamagePart when an item has no parts: no dice, no stat, no damage. */
-export const EMPTY_DAMAGE_PART = Object.freeze({ dice: '', stat: '', type: '', value: 0 });
+import { normalizeBaseDamage, baseDamageStat } from './base-damage.mjs';
+import { escapeAttr, jsonAttr } from '../escape-attr.mjs';
 
 /**
- * sys.damageParts as an array (array or {0:..,1:..} object; anything else -> []).
+ * The weapon's own `baseDamage` override as a part: what the item itself sets, never the Skill's.
+ * An item with no override gives the empty part (no dice, no stat, no damage).
  * @param {object} sys an item's system data
- * @returns {object[]}
- */
-export function getDamageParts(sys) {
-  const raw = sys?.damageParts;
-  if (Array.isArray(raw)) return raw.filter(Boolean);
-  if (raw && typeof raw === 'object') return Object.values(raw).filter(Boolean);
-  return [];
-}
-
-/**
- * The first damage part, or the frozen empty part when the item has none.
- * @param {object} sys an item's system data
- * @returns {object}
+ * @returns {{ dice: string, stat: string, type: string, value: number }}
  */
 export function primaryDamagePart(sys) {
-  return getDamageParts(sys)[0] || EMPTY_DAMAGE_PART;
+  const own = normalizeBaseDamage(sys?.baseDamage);
+  return { dice: own.dice, stat: baseDamageStat(own), type: own.damageType, value: 0 };
 }
 
 /**
@@ -37,7 +28,7 @@ export function primaryDamagePart(sys) {
  * @param {{withType?: boolean}} [options]
  * @returns {string}
  */
-export function formatDamagePart(part, { withType = false } = {}) {
+function formatDamagePart(part, { withType = false } = {}) {
   const tokens = [];
   if (part?.dice) tokens.push(part.dice);
   if (part?.stat) tokens.push(String(part.stat).toUpperCase());
@@ -70,8 +61,8 @@ export function formatDamageFormula(parts) {
 /**
  * The damage cell for an attack row. When the actor can resolve roll parts this is the same
  * formula the damage roll and chat card use (matching skill base damage, rank dice, stat modifier,
- * gear and technique parts), so a weapon with no `damageParts` of its own still shows its damage.
- * Without an actor that resolves parts, falls back to the item's own damage parts.
+ * gear and technique parts), so a weapon with no override of its own still shows its damage.
+ * Without an actor that resolves parts, falls back to the item's own Base Damage override.
  */
 export function attackDamageDisplay(item, actor) {
   const sys = item.system || {};
@@ -82,14 +73,7 @@ export function attackDamageDisplay(item, actor) {
     const type = (rollParts.find(p => p.dice) || rollParts[0])?.type;
     return type ? `${formula} (${type})` : formula;
   }
-  const parts = getDamageParts(sys);
-  const extra = parts.length > 1 ? ` (+${parts.length - 1} parts)` : '';
-  return `${formatDamagePart(primaryDamagePart(sys), { withType: true })}${extra}`;
-}
-
-/** Escape a JSON string for a single-quoted HTML data attribute. */
-function jsonDataAttr(value) {
-  return JSON.stringify(value).replaceAll('&', '&amp;').replaceAll("'", '&#39;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  return formatDamagePart(primaryDamagePart(sys), { withType: true });
 }
 
 /**
@@ -99,15 +83,15 @@ function jsonDataAttr(value) {
  * @property {number} [base] the rolled total before multipliers (with `statMod`, `mult`: lets a target recompute `amount`)
  * @property {number} [statMod] the stat modifier inside `base` (0 when none or suppressed)
  * @property {number} [mult] the frozen multiplier for the type times the effect multiplier
- * @property {boolean} [exempt] not scaled by a Critical Hit multiplier (the Rank damage die)
+ * @property {boolean} [crit] an extra Critical Hit base dice part: counted only by a Critical Hit apply
  * @property {string} [rowKey] the target row a standby part belongs to
  * @property {boolean} [standby] counts for a target only when its row matches that target
  */
 
 /**
  * The card form of one evaluated damage part. A part without a rolled `baseTotal` keeps only
- * `{ type, amount, exempt? }`, which is the shape older cards have.
- * @param {object} evaluatedPart `{ type, finalDamage, baseTotal?, statMod?, stat?, multiplier?, excludeFromCrit?, rowKey?, standby? }`
+ * `{ type, amount, crit? }`, which is the shape older cards have.
+ * @param {object} evaluatedPart `{ type, finalDamage, baseTotal?, statMod?, stat?, multiplier?, crit?, rowKey?, standby? }`
  * @returns {CardPart}
  */
 export function cardPartOf(evaluatedPart) {
@@ -120,8 +104,7 @@ export function cardPartOf(evaluatedPart) {
     const mult = Number(p.multiplier);
     out.mult = Number.isFinite(mult) ? mult : 1;
   }
-  // `excludeFromCrit` (the Rank damage die, Table 37) rides as `exempt`: a Critical Hit apply multiplies the rest only
-  if (p.excludeFromCrit) out.exempt = true;
+  if (p.crit) out.crit = true;
   if (p.standby) {
     out.standby = true;
     if (typeof p.rowKey === 'string' && p.rowKey) out.rowKey = p.rowKey;
@@ -131,19 +114,21 @@ export function cardPartOf(evaluatedPart) {
 
 /**
  * Read `data-damage-parts` back (a JSON string or an array). Pure; [] on anything malformed. A part without a finite
- * `base` keeps only `{ type, amount, exempt? }`, which makes a per-target recompute take its fast path.
+ * `base` keeps only `{ type, amount, crit? }`, which makes a per-target recompute take its fast path. The Critical Hit
+ * dice parts are kept only when `crit` is asked for (a Critical Hit apply).
  * @param {string|Array<object>|null} raw
+ * @param {{ crit?: boolean }} [options]
  * @returns {CardPart[]}
  */
-export function parseCardParts(raw) {
+export function parseCardParts(raw, { crit = false } = {}) {
   let data = raw;
   if (typeof raw === 'string') {
     try { data = JSON.parse(raw); } catch { return []; }
   }
   if (!Array.isArray(data)) return [];
-  return data.filter(p => p && typeof p === 'object').map(p => {
+  return data.filter(p => p && typeof p === 'object' && (crit || !p.crit)).map(p => {
     const out = { type: String(p.type || 'Physical'), amount: Math.max(0, Number(p.amount) || 0) };
-    if (p.exempt) out.exempt = true;
+    if (p.crit) out.crit = true;
     if (p.base !== undefined && p.base !== null && p.base !== '' && Number.isFinite(Number(p.base))) {
       out.base = Number(p.base);
       out.statMod = Number(p.statMod) || 0;
@@ -184,7 +169,7 @@ export function damageCardDataAttrs(evaluatedParts, rollContextAttr, critDebuffs
   const parts = (evaluatedParts || []).map(cardPartOf);
   const crit = [...(critDebuffs || [])].filter(t => typeof t === 'string' && t);
   const sourceAttr = typeof sourceMessageId === 'string' && sourceMessageId
-    ? ` data-source-message-id="${sourceMessageId.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}"`
+    ? ` data-source-message-id="${escapeAttr(sourceMessageId)}"`
     : '';
-  return ` data-damage-parts='${jsonDataAttr(parts)}'${rollContextAttr} data-crit-debuffs='${jsonDataAttr(crit)}'${targetRowsAttr || ''}${sourceAttr}`;
+  return ` data-damage-parts='${jsonAttr(parts)}'${rollContextAttr} data-crit-debuffs='${jsonAttr(crit)}'${targetRowsAttr || ''}${sourceAttr}`;
 }

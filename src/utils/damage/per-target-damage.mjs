@@ -6,6 +6,7 @@ import { normalizeScaleSpec, resolveApplyScale } from '../roll/scalars.mjs';
 import { getRowKind, applyRowKind, isNumericRowField, warnRowKindOnce, SNAPSHOT_TEXT_LIMIT } from '../row-kinds.mjs';
 import { evadeLine, evadeBonusLines } from '../attack/evade-link.mjs';
 import { asTriggerLines } from '../roll/amazing-success.mjs';
+import { escapeAttr, jsonAttr } from '../escape-attr.mjs';
 
 /**
  * Per-target damage rows. A damage row whose condition mentions
@@ -166,9 +167,7 @@ export function parseTargetRows(raw) {
 /** ` data-target-rows='…'` for a damage card, escaped for a single-quoted HTML attribute; '' when there are none. */
 export function targetRowsDataAttr(rows) {
   if (!Array.isArray(rows) || rows.length === 0) return '';
-  const json = JSON.stringify(rows)
-    .replaceAll('&', '&amp;').replaceAll("'", '&#39;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-  return ` data-target-rows='${json}'`;
+  return ` data-target-rows='${jsonAttr(rows)}'`;
 }
 
 /**
@@ -266,6 +265,11 @@ const DEFENSE_SOURCE_KINDS = new Set(['immunity', 'resistance', 'reduction']);
 
 export { multiplierOf };
 
+/** The summed amount of a Critical Hit apply's extra base dice parts (the `crit` parts of Stage A's output). */
+export function critAmountOf(parts) {
+  return (Array.isArray(parts) ? parts : []).filter(p => p?.crit).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+}
+
 const noZero = (n) => String(Math.round(n * 100) / 100);
 
 /**
@@ -279,11 +283,11 @@ const noZero = (n) => String(Math.round(n * 100) / 100);
  *   line per AS trigger)
  * @returns {BreakdownLine[]} at most MAX_TARGET_LINES
  */
-export function breakdownLines({ stageA = null, multiplier = 1, isCrit = false, typeBreakdown = {}, dr = 0, ignoreDR = false, evade = null, amazing = null } = {}) {
+export function breakdownLines({ stageA = null, multiplier = 1, isCrit = false, critAmount = 0, typeBreakdown = {}, dr = 0, ignoreDR = false, evade = null, amazing = null } = {}) {
   const lines = [];
   for (const l of stageA?.lines ?? []) lines.push({ stage: 'attacker', text: clip(String(l.text)) });
   const m = multiplierOf(multiplier);
-  if (isCrit) lines.push({ stage: 'crit', text: `Critical Hit ×${noZero(m)}` });
+  if (isCrit) lines.push({ stage: 'crit', text: `Critical Hit: +${noZero(Number(critAmount) || 0)} (extra base dice)` });
   else if (m === 0) lines.push({ stage: 'crit', text: '×0' });
   else if (m < 1) lines.push({ stage: 'crit', text: `Half ×${noZero(m)}` });
   else if (m > 1) lines.push({ stage: 'crit', text: `×${noZero(m)}` });
@@ -336,8 +340,6 @@ export function resolveRollParts(evaluatedParts, targetRows, tags) {
     : { ...p, finalDamage: 0, perTargetPending: true }));
 }
 
-const escapeHtml = (value) => String(value ?? '')
-  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 
 /**
  * The "Per target" box of a damage card: each target row's label and effect. Labels are user text and are escaped.
@@ -355,7 +357,7 @@ export function perTargetBoxHtml(targetRows, parts = []) {
       : (targetKindOf(r.mode)?.describeTarget?.(r, { standby })?.effect ?? '');
     const crit = queryReferences(r.condition, t => t === ENGINE_SITUATIONS.criticalHit)
       ? ' <span class="cog-per-target-crit">Critical Hit</span>' : '';
-    return `<li class="cog-per-target-row"><span class="cog-per-target-label">${escapeHtml(r.label)}</span> <strong>${escapeHtml(effect)}</strong>${r.scaleNote ? ` <span class="cog-per-target-note">(${escapeHtml(r.scaleNote)})</span>` : ''}${crit}</li>`;
+    return `<li class="cog-per-target-row"><span class="cog-per-target-label">${escapeAttr(r.label)}</span> <strong>${escapeAttr(effect)}</strong>${r.scaleNote ? ` <span class="cog-per-target-note">(${escapeAttr(r.scaleNote)})</span>` : ''}${crit}</li>`;
   }).join('');
   return `<div class="cog-per-target-box"><div class="cog-per-target-title">Per target</div><ul class="cog-per-target-rows">${items}</ul></div>`;
 }

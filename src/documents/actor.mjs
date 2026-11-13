@@ -34,10 +34,14 @@ import * as attackProfiles from './actor/combat-attack-profiles.mjs';
 import * as skillDamage from './actor/combat-skill-damage.mjs';
 import * as techniques from './actor/actor-techniques.mjs';
 import * as attackTargets from './actor/attack-targets.mjs';
+import './actor/actor-move.mjs';
 import * as skills from './actor/actor-skills.mjs';
+import { rollContestResponse } from './actor/contest-response.mjs';
 import * as combatRolls from './actor/combat-rolls.mjs';
 import * as evade from './actor/combat-targeting.mjs';
+import { syncZeroHealth } from './actor/dying.mjs';
 import { lockEmbeddedOnActorCreate, stampLockOwnerOnActorCreated } from './actor/percent-lock.mjs';
+import { LINKED_ACTOR_TYPES } from '../utils/document-types.mjs';
 
 const BaseActor = globalThis.foundry?.documents?.Actor
   ?? globalThis.foundry?.documents?.BaseActor
@@ -132,7 +136,7 @@ export class COGActor extends BaseActor {
     await super._preCreate(data, options, user);
     lockEmbeddedOnActorCreate(this);
     this.updateSource(tokenDefaultUpdates(this.type, data, globalThis.CONFIG?.COG?.tokenDefaults));
-    if (this.type === 'crawler' || this.type === 'pet' || this.type === 'mercenary' || this.type === 'mount_vehicle') {
+    if (LINKED_ACTOR_TYPES.includes(this.type)) {
       const updates = {
         'prototypeToken.actorLink': true,
         'prototypeToken.disposition': 1
@@ -362,38 +366,23 @@ export class COGActor extends BaseActor {
 
   /**
    * Compatibility wrapper ensuring _preUpdate is invoked across environments.
-   * Also enforces that any update made to a crawler or pet on a scene persists
-   * to the base world actor, ensuring scene-independent persistence.
    * @override
    */
   async update(data, options = {}) {
     if (typeof this._preUpdate === 'function') {
       await this._preUpdate(data, options, globalThis.game?.user?.id || 'test-user');
     }
-    // If this is a crawler, pet, or mercenary token actor on a scene, persist changes to the base world actor!
-    if (this.isToken && (this.type === 'crawler' || this.type === 'pet' || this.type === 'mercenary')) {
-      const baseActor = this.token?.baseActor || globalThis.game?.actors?.get?.(this.token?.actorId || this.id);
-      if (baseActor && baseActor !== this) {
-        await baseActor.update(data, options);
-      }
-    }
-    return super.update ? super.update(data, options) : this;
+    const hpBefore = Number(this.system?.attributes?.hp?.value);
+    const result = super.update ? await super.update(data, options) : this;
+    await syncZeroHealth(this, { hpBefore, options });
+    return result;
   }
 
   /**
-   * Enforces spell idempotence (a spell is globally unique on an actor) and
-   * forwards embedded document creations on crawler/pet scene tokens to the base actor.
+   * Enforces spell idempotence (a spell is globally unique on an actor).
    * @override
    */
   async createEmbeddedDocuments(embeddedType, dataArray, options = {}) {
-    // Forward embedded creations on scene tokens to the base actor
-    if (this.isToken && (this.type === 'crawler' || this.type === 'pet' || this.type === 'mercenary')) {
-      const baseActor = this.token?.baseActor || globalThis.game?.actors?.get?.(this.token?.actorId || this.id);
-      if (baseActor && baseActor !== this) {
-        return baseActor.createEmbeddedDocuments(embeddedType, dataArray, options);
-      }
-    }
-
     if (embeddedType === 'Item' && Array.isArray(dataArray)) {
       const filteredData = [];
       const existingReturns = [];
@@ -449,42 +438,6 @@ export class COGActor extends BaseActor {
     }
 
     return super.createEmbeddedDocuments ? super.createEmbeddedDocuments(embeddedType, dataArray, options) : [];
-  }
-
-  /**
-   * Forwards embedded updates on crawler/pet scene tokens to the base actor.
-   * @override
-   */
-  async updateEmbeddedDocuments(embeddedType, updates = [], options = {}) {
-    if (this.isToken && (this.type === 'crawler' || this.type === 'pet' || this.type === 'mercenary')) {
-      const baseActor = this.token?.baseActor || globalThis.game?.actors?.get?.(this.token?.actorId || this.id);
-      if (baseActor && baseActor !== this) {
-        await baseActor.updateEmbeddedDocuments(embeddedType, updates, options);
-      }
-    }
-    return super.updateEmbeddedDocuments ? super.updateEmbeddedDocuments(embeddedType, updates, options) : [];
-  }
-
-  /**
-   * Forwards embedded deletions on crawler/pet scene tokens to the base actor.
-   * @override
-   */
-  async deleteEmbeddedDocuments(embeddedType, ids = [], options = {}) {
-    if (this.isToken && (this.type === 'crawler' || this.type === 'pet' || this.type === 'mercenary')) {
-      const baseActor = this.token?.baseActor || globalThis.game?.actors?.get?.(this.token?.actorId || this.id);
-      if (baseActor && baseActor !== this) {
-        await baseActor.deleteEmbeddedDocuments(embeddedType, ids, options);
-        // The base actor already removed these; the synthetic delta no longer holds them, so the second delete
-        // throws `undefined id [..] does not exist in the EmbeddedCollection` (3.40 e). The deletion has landed.
-        try {
-          return super.deleteEmbeddedDocuments ? await super.deleteEmbeddedDocuments(embeddedType, ids, options) : [];
-        } catch (err) {
-          console.warn('Sprinter RPG | Token delta delete skipped after the base actor delete:', err?.message ?? err);
-          return [];
-        }
-      }
-    }
-    return super.deleteEmbeddedDocuments ? super.deleteEmbeddedDocuments(embeddedType, ids, options) : [];
   }
 
   /** @override */
@@ -665,7 +618,7 @@ export class COGActor extends BaseActor {
   // skills
   rollSkill(...args) { return skills.rollSkill(this, ...args); }
   rest(...args) { return skills.rest(this, ...args); }
-  rollContestResponse(...args) { return skills.rollContestResponse(this, ...args); }
+  rollContestResponse(...args) { return rollContestResponse(this, ...args); }
   getSkillByIdentifier(...args) { return skills.getSkillByIdentifier(this, ...args); }
   getSkillRank(...args) { return skills.getSkillRank(this, ...args); }
   increaseSkillRank(...args) { return skills.increaseSkillRank(this, ...args); }

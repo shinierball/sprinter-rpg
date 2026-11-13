@@ -10,6 +10,7 @@ import { readReplacedRecord } from '../data/rules/celestial-ai-poop.mjs';
 import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { transformationOfItem } from '../utils/character/overlay-state.mjs';
+import { isRaceOrClass } from '../utils/document-types.mjs';
 
 const t = (key, data) => {
   const i18n = globalThis.game?.i18n;
@@ -66,7 +67,7 @@ export async function restoreFromPoop(actor, poop, { registry = contentRegistry,
   await actor.deleteEmbeddedDocuments('Item', [poop.id]);
   try {
     let item = null;
-    if (data.type === 'race' || data.type === 'class') {
+    if (isRaceOrClass(data)) {
       // The applier recreates the race or class item and its grants; the grants may name the theme that is off.
       await COGRaceClassApplier.applyKind(actor, data.type, data, { allowOffTheme: true, interactive: false });
       // The restored item, never a transformation's (form race) item of the same type (D4)

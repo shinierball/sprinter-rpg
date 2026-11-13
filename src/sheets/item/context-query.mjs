@@ -5,7 +5,7 @@
  * training skills. Everything the template needs is computed here (CONTRIBUTING §5, precompute complex options).
  * Badges warn; nothing here ever blocks an edit.
  */
-import { TAG_NAMESPACES, isTargetSensitiveTag, splitRoleTag } from '../../data/tag-vocabulary.mjs';
+import { isPartyTag, isTargetSensitiveTag, splitRoleTag } from '../../data/tag-vocabulary.mjs';
 import { getTagDefinition, isValidTag } from '../../data/tag-definitions.mjs';
 import { ROW_ARRAYS, rowKindOf } from '../../utils/row-kinds.mjs';
 import { queryReferences } from '../../utils/tag/tag-query.mjs';
@@ -67,7 +67,7 @@ function pillBadges(id, roles, warnUnprefixed) {
       : [];
   }
   if (!warnUnprefixed) return [];
-  return TAG_NAMESPACES[String(id).split('.')[0]]?.partyTag === true ? [{ key: 'COG.Rows.Badge.UnprefixedCreature' }] : [];
+  return isPartyTag(id) ? [{ key: 'COG.Rows.Badge.UnprefixedCreature' }] : [];
 }
 
 /** A pill for one tag ID; IDs outside the registry (and not `id.*` identity tags) carry a warning flag. */

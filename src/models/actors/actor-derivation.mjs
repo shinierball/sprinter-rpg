@@ -12,7 +12,9 @@ import { catalogEntries, findCatalogEntry } from '../../content/catalog-lookup.m
 import { slugifyIdentifier } from '../../utils/identifier.mjs';
 import { normalizeTiming } from '../../utils/time/timing.mjs';
 import { matchesTagQuery } from '../../utils/tag/tag-query.mjs';
+import { matchesAnySuppression } from '../../utils/effects/debuff-suppresses.mjs';
 import { baseRankOf } from '../../utils/skill/rank-source.mjs';
+import { SKILL_SOFT_CAP } from '../../utils/skill/rank-limits.mjs';
 import { isStaticDefenseRow } from '../../utils/roll/damage-modifiers.mjs';
 import { raceInForce } from '../../utils/character/overlay-state.mjs';
 import { applyRowKind, getRowKind, kindOf } from '../../utils/row-kinds.mjs';
@@ -248,6 +250,44 @@ export function collectTagBonusGrants({ equippedGear = [], activeBuffs = [], ite
 }
 
 /**
+ * rank_raise grants: the sources' rows (equipped gear and active buffs) plus the embedded class and race items in force.
+ * @returns {Array<{identifier?: string, tag?: string, query?: object, floor: number, value: number}>}
+ */
+export function collectRankRaiseGrants({ sources = [], items = [] } = {}) {
+  const out = [];
+  const take = (item) => {
+    const list = item?.system?.grants;
+    if (!Array.isArray(list)) return;
+    for (const g of list) if (g?.kind === 'rank_raise' && (!g.mode || g.mode === 'fixed')) out.push(g);
+  };
+  for (const s of sources) take(s);
+  for (const i of items) if (i?.type === 'class' || (i?.type === 'race' && raceInForce(items, i))) take(i);
+  return out;
+}
+
+/**
+ * A Rank after its rank_raise rows: each row takes a Rank below its `floor` up to the floor and a Rank at or above it
+ * up by `value`; the best row wins and a Rank is never lowered.
+ * @param {number} pre the acting Rank before the rows
+ * @param {Array<{floor: number, value: number}>} rows the rows that match the skill or spell
+ * @returns {number}
+ */
+export function raisedRank(pre, rows) {
+  let best = pre;
+  for (const r of rows) best = Math.max(best, pre < Number(r.floor) ? Number(r.floor) : pre + (Number(r.value) || 0));
+  return best;
+}
+
+/** The rank_raise rows that apply to an owned skill or spell (its identifier, a tag, or a tag query). */
+export function raiseRowsFor(item, rankRaises) {
+  if (!rankRaises?.length) return [];
+  const rawTags = item.allTags instanceof Set ? item.allTags : getItemAllTags(item);
+  const tagSet = rawTags instanceof Set ? rawTags : new Set(rawTags || []);
+  const id = item.system?.identifier;
+  return rankRaises.filter((g) => (g.identifier && g.identifier === id) || (g.tag && tagSet.has(g.tag)) || Boolean(g.query && matchesTagQuery(tagSet, g.query)));
+}
+
+/**
  * Display name of the catalog skill or spell with this `system.identifier`, or '' when the catalog
  * has none. The rank pipeline keys gear bonuses by normalized name; the identifier is what resolves it.
  */
@@ -281,7 +321,7 @@ export function gearGrantKey(kind, identifier) {
  * Gear skill and spell bonuses from equipped gear `grants` rows of kind `skill` / `spell`, keyed
  * {@link gearGrantKey}. A row's `value` adds to the owned skill or spell with that `system.identifier`; a spell row's
  * `rank` is the rank an unowned spell is granted at. Names are never matched.
- * @returns {Map<string, {kind: 'skill'|'spell', identifier: string, bonus: number, rank: number, cooldown: ({value: number, unit: string, scaleBy: object|null}|null), label: string, sources: string[], grantSources: {itemId: string, key: string, grantIndex: number, rank: number}[]}>}
+ * @returns {Map<string, {kind: 'skill'|'spell', identifier: string, bonus: number, rank: number, cooldown: ({value: number, unit: string, scaleBy: object|null}|null), label: string, sources: string[], itemIds: string[], grantSources: {itemId: string, key: string, grantIndex: number, rank: number}[]}>}
  */
 export function collectGearSkillBonuses(equippedGear) {
   const map = new Map();
@@ -293,10 +333,11 @@ export function collectGearSkillBonuses(equippedGear) {
       const identifier = String(g.identifier ?? '').trim();
       if (!identifier) continue;
       const key = gearGrantKey(g.kind, identifier);
-      if (!map.has(key)) map.set(key, { kind: g.kind, identifier, bonus: 0, rank: 0, cooldown: null, label: String(g.label ?? ''), sources: [], grantSources: [] });
+      if (!map.has(key)) map.set(key, { kind: g.kind, identifier, bonus: 0, rank: 0, cooldown: null, label: String(g.label ?? ''), sources: [], itemIds: [], grantSources: [] });
       const entry = map.get(key);
       const bonus = gearSkillGrantBonus(g);
       entry.bonus += bonus;
+      entry.itemIds.push(item.id ?? item._id ?? '');
       if (g.kind === 'spell') {
         entry.rank = Math.max(entry.rank, Number(g.rank) || 1);
         if (!entry.cooldown && normalizeTiming(g.cooldown).unit) entry.cooldown = normalizeTiming(g.cooldown);
@@ -349,8 +390,10 @@ const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 /**
  * Writes item.system.{itemBonus, boonBonus, modifiedRank, totalSkill, statMod} and the
  * document accessors (baseRank, itemBonus, ..., itemSources).
+ * The one place a skill's acting Rank is derived: with `highRankActive` false (a crawler above the Sixth Floor's
+ * reach), a stored Rank past the soft cap acts as the soft cap, so every reader of `modifiedRank` follows.
  */
-export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map(), tagGrants = [], animalSkillsLocked = false } = {}) {
+export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map(), tagGrants = [], rankRaises = [], animalSkillsLocked = false, skillSuppressions = [], highRankActive = true } = {}) {
   // Each skill's itemBonus (gear + tag grants) is computed once and used in both passes.
   const bonuses = new Map();
   for (const item of skills) {
@@ -360,11 +403,14 @@ export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map
 
   // Weapon groups are tags (`weaponGroup.*`), not skills: there is no group-skill type bonus.
   for (const item of skills) {
-    const baseRank = baseRankOf(item);
+    const storedRank = baseRankOf(item);
+    const baseRank = highRankActive ? storedRank : Math.min(storedRank, SKILL_SOFT_CAP);
     const gearData = gearBonusEntryFor(gearSkillBonuses, item, 'skill');
     const itemBonus = bonuses.get(item);
     const boonBonus = Number(item.system?.boonBonus) || 0;
-    const modifiedRank = Math.max(0, baseRank + itemBonus + boonBonus);
+    const preRank = Math.max(0, baseRank + itemBonus + boonBonus);
+    const modifiedRank = raisedRank(preRank, raiseRowsFor(item, rankRaises));
+    const raiseBonus = modifiedRank - preRank;
     const stat = item.system?.stat || 'str';
     const statMod = abilities?.[stat]?.mod ?? 0;
     const totalSkill = modifiedRank + statMod;
@@ -372,14 +418,17 @@ export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map
     if (item.system) {
       item.system.itemBonus = itemBonus;
       item.system.boonBonus = boonBonus;
+      item.system.raiseBonus = raiseBonus;
       item.system.modifiedRank = modifiedRank;
       item.system.effectiveRank = modifiedRank;
       item.system.totalSkill = totalSkill;
       item.system.statMod = statMod;
     }
     item.baseRank = baseRank;
+    item.storedRank = storedRank;
     item.itemBonus = itemBonus;
     item.boonBonus = boonBonus;
+    item.raiseBonus = raiseBonus;
     item.modifiedRank = modifiedRank;
     item.effectiveRank = modifiedRank;
     item.statMod = statMod;
@@ -388,10 +437,15 @@ export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map
     item.totalSkillStr = signed(totalSkill);
     item.itemSources = gearData ? gearData.sources.join(', ') : '';
 
-    // Animal skills (`skillGroup.animal`) are kept but unusable while the actor is locked out of them (permissive: Rule Break)
-    const unusable = Boolean(animalSkillsLocked && getItemAllTags(item).has?.(ANIMAL_TAGS.skill));
-    if (item.system) item.system.unusable = unusable;
+    // Animal skills (`skillGroup.animal`) are kept but unusable while the actor is locked out of them, and a skill a smite
+    // suppresses is unusable too (permissive: both are a Rule Break)
+    const tags = getItemAllTags(item);
+    const unusableReason = animalSkillsLocked && tags.has?.(ANIMAL_TAGS.skill) ? 'animal'
+      : matchesAnySuppression(tags, skillSuppressions) ? 'smite' : '';
+    const unusable = unusableReason !== '';
+    if (item.system) { item.system.unusable = unusable; item.system.unusableReason = unusableReason; }
     item.unusable = unusable;
+    item.unusableReason = unusableReason;
   }
 }
 
@@ -413,22 +467,26 @@ export function animalSkillsLockedFor(tagSet, items = []) {
  * Writes spell.system.{itemBonus, modifiedRank, effectiveRank, statMod} and spell.{baseRank, itemBonus, modifiedRank, effectiveRank, statMod, statModStr}.
  * baseRank = Number(rank) || 1; modifiedRank = Math.max(1, baseRank + itemBonus).
  */
-export function deriveSpellRanks(spells, { abilities, gearSkillBonuses = new Map(), tagGrants = [] } = {}) {
+export function deriveSpellRanks(spells, { abilities, gearSkillBonuses = new Map(), tagGrants = [], rankRaises = [] } = {}) {
   for (const spell of spells) {
     const baseRank = Number(spell.system?.rank) || 1;
     const gearData = gearBonusEntryFor(gearSkillBonuses, spell, 'spell');
     const itemBonus = (gearData ? gearData.bonus : 0) + tagBonusFor(spell, tagGrants);
-    const modifiedRank = Math.max(1, baseRank + itemBonus);
+    const preRank = Math.max(1, baseRank + itemBonus);
+    const modifiedRank = raisedRank(preRank, raiseRowsFor(spell, rankRaises));
+    const raiseBonus = modifiedRank - preRank;
     const stat = spell.system?.stat || 'int';
     const statMod = abilities?.[stat]?.mod ?? 0;
     if (spell.system) {
       spell.system.itemBonus = itemBonus;
+      spell.system.raiseBonus = raiseBonus;
       spell.system.modifiedRank = modifiedRank;
       spell.system.effectiveRank = modifiedRank;
       spell.system.statMod = statMod;
     }
     spell.baseRank = baseRank;
     spell.itemBonus = itemBonus;
+    spell.raiseBonus = raiseBonus;
     spell.modifiedRank = modifiedRank;
     spell.effectiveRank = modifiedRank;
     spell.statMod = statMod;

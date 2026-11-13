@@ -16,7 +16,7 @@ export const BASELINE_GENERIC_SAFE_ROOM = Object.freeze({
   id: 'space.safe_room',
   tag: 'space.safe_room',
   label: 'Safe Room',
-  tier: 1,
+  rank: 1,
   baseDefense: 10,
   baseCapacity: 100
 });

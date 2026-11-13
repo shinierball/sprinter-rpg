@@ -13,7 +13,9 @@ import { runGMWorldSetup } from './world-setup.mjs';
 import { checkDefaultUnpause } from './pause.mjs';
 import { registerSceneEpochHooks } from '../documents/actor/dungeon-time.mjs';
 import { registerDurationHooks } from '../documents/actor/duration-expiry.mjs';
+import { registerDevotionHooks } from '../documents/actor/devotion-sweep.mjs';
 import { registerLightExpiry } from '../documents/actor/light-source.mjs';
+import { registerActivationHooks } from '../documents/actor/buff-activation.mjs';
 import { registerCameraHooks } from '../chat/actions/cameras.mjs';
 import { registerContestHooks } from '../chat/contest-ingest.mjs';
 import { registerVehicleDriveHooks } from '../documents/actor/vehicle-drive.mjs';
@@ -22,12 +24,17 @@ import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
 import { maybePromptCleanup } from '../content/theme-cleanup.mjs';
 import { noteAiContentAtReady } from './ai-content.mjs';
 import { clearPopularityUsage } from '../documents/actor/actor-popularity.mjs';
+import { relinkAtReady } from './tokens.mjs';
 import { reconcilePersonalSpaceOwnership } from '../documents/actor/personal-space-links.mjs';
 import { reconcileVehicleOwnership } from '../documents/actor/vehicle-crew.mjs';
 import { sourceryCatalogsReady } from '../content/sourcery-content-provider.mjs';
 import { refreshHudVisibility } from '../utils/effects/hud-visibility.mjs';
 import { reconcileAllOnReady, refreshOnCanvasReady } from '../utils/effects/gear-offline-refresh.mjs';
 import { contentRegistry } from '../content/registry.mjs';
+import { registerDeityTagHooks } from './deity-tags.mjs';
+import { registerWorshipMarkerHooks } from './worship-markers.mjs';
+import { registerWorshipNoticeHooks } from './worship-notices.mjs';
+import { registerPatronOfferHooks } from './patron-offer.mjs';
 
 /**
  * The primary theme is always on. When the off list names it, the GM is told once at ready that it was ignored.
@@ -52,7 +59,18 @@ export async function onReady() {
   registerSceneEpochHooks();
   // Timed effects end on the world clock and at the end of a combat (the active GM only).
   registerDurationHooks();
+  // Missed offerings are counted when the world clock crosses into a new day (active GM only).
+  registerDevotionHooks();
   registerLightExpiry();
+  // An activated buff's combat window closes when the combat ends (the active GM only).
+  registerActivationHooks();
+  // The per-god tags follow the world's deity items.
+  registerDeityTagHooks();
+  // Rival worshippers: per-viewer markers on tokens and a GM whisper (token disposition is never changed).
+  registerWorshipMarkerHooks();
+  registerWorshipNoticeHooks();
+  // A class that must choose a patron tells the active GM to offer some.
+  registerPatronOfferHooks();
   // The Playing to the Cameras award settles on the active GM's client as camera cards are created and updated.
   registerCameraHooks();
   // A leg roll reaches its contest card on the active GM's client; a contest card asks before it is deleted.
@@ -71,6 +89,7 @@ export async function onReady() {
   if (getActiveGM()?.id === game.user.id) {
     await reconcilePersonalSpaceOwnership();
     await reconcileVehicleOwnership();
+    await relinkAtReady().catch(err => console.warn('Sprinter RPG | Token relink failed:', err));
   }
   await checkDefaultUnpause();
   await setupInitialHotbar(game.user);
@@ -144,6 +163,13 @@ export function initHuds() {
   // A badge must follow its item: switching an aura off, or adding/removing a buff, refreshes the panel.
   for (const hook of ['createItem', 'updateItem', 'deleteItem']) {
     Hooks.on(hook, (item) => COGEffectsPanel.onItemChange(item));
+  }
+
+  // A player's HUD goes dark while their own character is Dying or Dead: follow that actor's debuffs.
+  for (const hook of ['createItem', 'updateItem', 'deleteItem']) {
+    Hooks.on(hook, (item) => {
+      if (item?.type === 'debuff' && item.parent && item.parent === globalThis.game?.user?.character) refreshHudVisibility();
+    });
   }
 
   Hooks.on('renderSceneNavigation', () => {

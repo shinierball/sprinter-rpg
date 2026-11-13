@@ -8,6 +8,10 @@
     <span class="cog-bg-warning-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 8px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
       SELECTING FOR CRAWLER: {{actor.name}}
     </span>
+  {{else if isAttackSkillPicker}}
+    <span class="cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 8px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
+      {{attackSkillBanner}}
+    </span>
   {{else if isItemPicker}}
     <span class="cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 8px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
       SELECTING MODIFIER FOR: {{item.name}}

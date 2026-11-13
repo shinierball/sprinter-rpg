@@ -1,5 +1,6 @@
 import { hasRuleFlag, RULE_FLAGS } from '../tag/tag-behaviour.mjs';
-import { isWeaponGear, getWieldMode, isHeldSlot } from './wield-mode.mjs';
+import { isWeaponGear, getWieldMode, isHeldSlot, hasWeaponTypeTag } from './wield-mode.mjs';
+import { isWeaponCapable } from '../document-types.mjs';
 
 export { isWeaponGear, getWieldMode };
 
@@ -15,7 +16,7 @@ export function isNaturalWeapon(item) {
  */
 export function calculateItemHandsRequired(item) {
   if (!item) return 0;
-  if (item.type !== 'gear' && item.type !== 'attack') return 0;
+  if (!isWeaponCapable(item)) return 0;
   const sys = item.system || {};
 
   if (item.type === 'gear' && !sys.equipped) return 0;
@@ -24,8 +25,8 @@ export function calculateItemHandsRequired(item) {
 
   // Gear held in the hands (a shield, a lantern) takes its hands even with the Weapon box off; other non-weapon gear takes none.
   if (item.type === 'gear' && !isWeaponGear(item) && !isHeldSlot(sys.slot)) return 0;
-  // A bare attack item (no category or type) is a natural attack.
-  if (item.type === 'attack' && !sys.weaponCategory && !sys.weaponType) return 0;
+  // A bare attack item (no weapon type tag) is a natural attack.
+  if (item.type === 'attack' && !hasWeaponTypeTag(sys)) return 0;
 
   const mode = getWieldMode(sys, { itemType: item.type, wieldedOneHanded: sys.wieldedOneHanded, handless: isNaturalWeapon(item) });
   if (mode === 'two_handed') return 2;

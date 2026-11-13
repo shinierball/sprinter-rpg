@@ -1,0 +1,17 @@
+{{!-- Skill used to attack: the ordered list (first is the default), picked from the Skill library. No named inputs; every control is a data-action. --}}
+<div class="cog-bg-surface cog-gear-weapon-block" data-weapon-skills>
+  <div class="cog-gear-weapon-head">
+    <span class="cog-field-label cog-text"><i class="fa-solid fa-graduation-cap"></i> {{localize "COG.GearSheet.Skills.Title"}}</span>
+    <button type="button" class="cog-btn cog-bg-header-fill cog-text-on-fill cog-dark" data-action="openAttackSkillPicker"><i class="fa-solid fa-book-bookmark"></i> {{localize "COG.GearSheet.Skills.Add"}}</button>
+    <button type="button" class="cog-btn cog-bg-success-fill cog-text-on-fill" data-action="applyRecommendedSkills" data-tooltip="{{localize "COG.GearSheet.Skills.SuggestTip"}}"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.GearSheet.Skills.Suggest"}}</button>
+  </div>
+
+  {{> "systems/sprinter-rpg/templates/items/parts/skill-order-list.hbs"}}
+
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.GearSheet.Skills.Untrained"}}</p>
+
+  <div data-custom-entry class="cog-gear-weapon-custom">
+    <input class="cog-field-input" type="text" placeholder="{{localize "COG.GearSheet.Skills.CustomPlaceholder"}}" />
+    <button type="button" class="cog-btn cog-dark cog-bg-header-fill cog-text-on-fill" data-action="addCustomAssociatedSkill">{{localize "COG.GearSheet.Skills.AddCustom"}}</button>
+  </div>
+</div>

@@ -14,16 +14,18 @@ const VARIANTS = Object.freeze({
 /**
  * The card's banner: header, Floor badge, Evade DC with its breakdown, and the area note.
  * @param {{ variant?: 'attack'|'spell', evadeDC: number, floor: number, isArea?: boolean, base?: number,
- *   shift?: number, label?: string|null }} p `base` is the stat-block number and `shift` the mob's +/-5 (E6.10); the
+ *   shift?: number, flat?: number, label?: string|null }} p `base` is the stat-block number, `shift` the mob's +/-5 (E6.10) and `flat` its Check rows; the
  *   breakdown never derives the base from the DC once a shift exists
  * @returns {string}
  */
-export function mobDeclarationBannerHtml({ variant = 'attack', evadeDC, floor, isArea = false, base, shift = 0, label = null }) {
+export function mobDeclarationBannerHtml({ variant = 'attack', evadeDC, floor, isArea = false, base, shift = 0, flat = 0, label = null }) {
   const v = VARIANTS[variant] ?? VARIANTS.attack;
   const shiftNum = Number(shift) || 0;
-  const baseNum = Number.isFinite(Number(base)) && base !== undefined && base !== null ? Number(base) : Number(evadeDC) - Number(floor) - shiftNum;
+  const flatNum = Number(flat) || 0;
+  const baseNum = Number.isFinite(Number(base)) && base !== undefined && base !== null ? Number(base) : Number(evadeDC) - Number(floor) - shiftNum - flatNum;
   const breakdown = mobAttackText('COG.MobAttack.EvadeBreakdown', { base: baseNum, floor })
-    + (shiftNum !== 0 ? ` ${mobAttackText('COG.MobAttack.EvadeShift', { sign: shiftNum > 0 ? '+' : '\u2212', n: Math.abs(shiftNum), label: label ?? '' })}` : '');
+    + (shiftNum !== 0 ? ` ${mobAttackText('COG.MobAttack.EvadeShift', { sign: shiftNum > 0 ? '+' : '\u2212', n: Math.abs(shiftNum), label: label ?? '' })}` : '')
+    + (flatNum !== 0 ? ` ${mobAttackText('COG.MobAttack.EvadeShift', { sign: flatNum > 0 ? '+' : '\u2212', n: Math.abs(flatNum), label: mobAttackText('COG.MobAttack.FlatLabel') })}` : '');
   const areaBadge = isArea
     ? `<div class="cog-area-badge cog-bg-warning-tint cog-text-warning" style="margin-top: 4px; padding: 3px 6px; border: 1px solid var(--cog-warning); border-radius: 3px; font-size: 10px; font-weight: bold;"><i class="fa-solid fa-burst"></i> ${escapeAttr(mobAttackText('COG.MobAttack.AreaBadge'))}</div>`
     : '';
@@ -94,11 +96,12 @@ export function mobDeclarationFlags(attacker, item, targetResults) {
 /**
  * The card flag that fixes the mob's Action shift when the card is posted (E6.10 D-M2): every later reader (the Evade
  * button, the free-Evade rule) reads the card, never the mob's current state.
- * @param {{ mode?: string, shift?: number, reasons?: string[], base?: number }} state `getAttackDifficultyState` result
- * @returns {{ mode: string, shift: number, reasons: string[], base: number }}
+ * @param {{ mode?: string, net?: number, shift?: number, reasons?: string[], base?: number, floor?: number, flat?: number }} state `getAttackDifficultyState` result
+ * @returns {{ mode: string, net: number, shift: number, reasons: string[], base: number, floor: number, flat: number }}
+ *   `net`, `base`, `floor` and `flat` let each target's Difficulty be reckoned again (`mobTargetDifficulty`)
  */
 export function mobAdvantageFlag(state) {
   const reasons = (Array.isArray(state?.reasons) ? state.reasons : []).filter(r => typeof r === 'string').slice(0, 8).map(r => r.slice(0, 80));
   const mode = ['advantage', 'disadvantage', 'cancelled'].includes(state?.mode) ? state.mode : 'normal';
-  return { mode, shift: Number(state?.shift) || 0, reasons, base: Number(state?.base) || 0 };
+  return { mode, net: Number(state?.net) || 0, shift: Number(state?.shift) || 0, reasons, base: Number(state?.base) || 0, floor: Number(state?.floor) || 0, flat: Number(state?.flat) || 0 };
 }

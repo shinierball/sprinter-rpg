@@ -9,7 +9,8 @@
  */
 import { removeEnchantment } from '../../documents/item/enchantments.mjs';
 import { buyTableTier, applyTableCoupon, isCraftingTable } from '../../documents/actor/crafting-tables.mjs';
-import { crawlerDoc, spaceLinksCrawler } from '../../documents/actor/personal-space-links.mjs';
+import { crawlerDoc } from '../../documents/actor/personal-space-links.mjs';
+import { groupLinksCrawler } from '../../documents/actor/space-group.mjs';
 import { enchantmentTemplateId, sanitizeEnchantmentTemplate } from '../../utils/loot/outcome-defaults.mjs';
 import { COGCraftingApp, craftingContextFor } from '../../apps/crafting-app.mjs';
 import { ROW_ACTIONS } from './actions-rows.mjs';
@@ -67,7 +68,7 @@ const readList = (item, path) => toArray(readAtPath(item, path)).map((entry) => 
 export function tablePayer(table) {
   const space = table?.parent;
   const mine = crawlerDoc(globalThis.game?.user?.character);
-  if (mine?.type === 'crawler' && spaceLinksCrawler(space, mine)) return mine;
+  if (mine?.type === 'crawler' && groupLinksCrawler(space, mine)) return mine;
   return space?.system?.getOwnerActor?.() ?? null;
 }
 

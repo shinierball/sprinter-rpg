@@ -4,12 +4,15 @@
  * go through the form harvester. Every handler runs with `this` = the item sheet.
  */
 import { getFilePicker } from '../../compat.mjs';
-import { rowIndex } from './util.mjs';
+import { confirmAfflictionEdit } from '../../documents/actor/transformations.mjs';
+import { transformState } from '../../utils/character/transform-rules.mjs';
+import { rowIndex, storedTransform } from './util.mjs';
 
 /** A blank `transform` block: an affliction that changes nothing yet. */
 const blankTransform = () => ({ forms: [], effects: [], cue: '', curable: 'never' });
 
-const cloneForms = (item) => (Array.isArray(item.system?.transform?.forms) ? item.system.transform.forms : []).map((row) => ({ ...row }));
+/** The stored form rows, blank ones included: the row indexes the sheet shows are the stored ones. */
+const cloneForms = (item) => (Array.isArray(storedTransform(item)?.forms) ? storedTransform(item).forms : []).map((row) => ({ ...row }));
 
 export const TRANSFORM_ACTIONS = {
   /** "Make this a transformation": a debuff with no `transform` block gets a blank one. */
@@ -18,9 +21,13 @@ export const TRANSFORM_ACTIONS = {
     await this.item.update({ 'system.transform': blankTransform() });
   },
 
-  /** "Not a transformation": the block goes back to null (the forms, effects, cue and window are dropped). */
+  /**
+   * "Not a transformation": the block goes back to null (the forms, effects, cue and window are dropped). On a changed
+   * affliction the cure gate comes first and the change is reverted (7.1k).
+   */
   async disableTransform() {
     if (!this.isEditable || this.item.type !== 'debuff') return;
+    if (!(await confirmAfflictionEdit(this.item.actor, this.item, { keep: 'plain' }))) return;
     await this.item.update({ 'system.transform': null });
   },
 
@@ -37,6 +44,9 @@ export const TRANSFORM_ACTIONS = {
     const forms = cloneForms(this.item);
     const index = rowIndex(target);
     if (index < 0 || index >= forms.length) return;
+    // A changed affliction whose form in force is this row, or a later one, is reverted by losing it: the cure gate first
+    if (Number(transformState(this.item).formIndex) >= index
+      && !(await confirmAfflictionEdit(this.item.actor, this.item, { keep: 'pending' }))) return;
     forms.splice(index, 1);
     await this.item.update({ 'system.transform.forms': forms });
   },

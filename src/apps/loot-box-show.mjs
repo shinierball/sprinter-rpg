@@ -45,7 +45,7 @@ function showText(key, data = {}) {
 
 // --- settings -----------------------------------------------------------------------------------------------------------
 
-/** Register the two client settings (called from registerSettings). */
+/** Register the two client settings (called from the init hook, after registerSettings). */
 export function registerLootBoxShowSettings(settings = globalThis.game?.settings) {
   if (typeof settings?.register !== 'function') return;
   settings.register(SYSTEM_ID, LOOT_BOX_SHOW_SETTING, {

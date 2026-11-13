@@ -27,6 +27,7 @@ import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { combatText } from '../utils/combat/combat-round-text.mjs';
 import { DECLARATION_STATUS, TARGET_STATUS, TARGET_VIA, findDeclarationTarget, targetStatus } from '../utils/combat/declared-attacks.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
+import { zeroHealthBadge } from '../documents/actor/zero-health-state.mjs';
 
 const BaseCombatTracker = globalThis.foundry?.applications?.sidebar?.tabs?.CombatTracker ?? class {};
 
@@ -94,12 +95,13 @@ export function declarationRows(combat, round) {
  * @param {number} p.step Combat `currentStep`
  * @param {boolean} p.isMob
  * @param {boolean} p.isDefeated
+ * @param {boolean} p.isLocked Dying or Dead: no Actions left to take
  * @param {boolean} p.isComplete No actions left
  * @param {boolean} p.isDeclarationTarget Targeted by an open mob declaration
  * @returns {boolean}
  */
-export function isStepActiveCombatant({ step, isMob, isDefeated = false, isComplete = false, isDeclarationTarget = false }) {
-  if (isDefeated) return false;
+export function isStepActiveCombatant({ step, isMob, isDefeated = false, isLocked = false, isComplete = false, isDeclarationTarget = false }) {
+  if (isDefeated || isLocked) return false;
   switch (step) {
     case COMBAT_STEPS.MOB_DECLARATION:
     case COMBAT_STEPS.MOB_RESOLUTION:
@@ -459,10 +461,12 @@ export class COGCombatTracker extends BaseCombatTracker {
     const openDeclarations = isLiveRound && typeof combat.getDeclaredAttacks === 'function'
       ? combat.getDeclaredAttacks({ round: viewedRound, status: DECLARATION_STATUS.DECLARED })
       : [];
+    const zeroHealth = zeroHealthBadge(actor);
     const isStepActive = isLiveRound && isStepActiveCombatant({
       step: combat.currentStep ?? COMBAT_STEPS.MOB_DECLARATION,
       isMob,
       isDefeated: Boolean(combatant.isDefeated),
+      isLocked: Boolean(zeroHealth),
       isComplete: remainingActions <= 0,
       isDeclarationTarget: openDeclarations.some(decl => findDeclarationTarget(decl, {
         uuid: actor?.uuid, actorId: combatant.actorId, tokenId: combatant.tokenId
@@ -511,6 +515,7 @@ export class COGCombatTracker extends BaseCombatTracker {
       actor,
       calledPlays,
       isTargeted,
+      zeroHealth,
       canPing,
       isMob,
       healthThreshold,
@@ -874,7 +879,7 @@ export class COGCombatTracker extends BaseCombatTracker {
     const res = await combat.triggerInterrupt(combatantId, interruptId, { round: this._getViewedRound(combat), ruleBreak: confirmed });
     // Evade from the drawer rolls the same Evade the attack card's Roll Evade button does (3.40 o5).
     if (res?.success && res.interrupt?.id === 'evade' && typeof res.actor?.rollEvade === 'function') {
-      await res.actor.rollEvade();
+      await res.actor.rollEvade({ actionBlockChecked: true });
     }
     if (res && res.success) this.render();
   }

@@ -110,12 +110,12 @@ export const SPECS = Object.freeze([
     img: 'icons/skills/ranged/cannon-barrel-firing-orange.webp',
     system: {
       identifier: 'roof-mounted-t-shirt-launcher',
-      description: '<p>Now with a sponsored velocity. A ranged weapon bolted to the roof, 1d6 Bludgeoning. The driver and the gunner fire it freely; anyone else aboard may, as a Rule Break.</p>',
+      description: '<p>Now with a sponsored velocity. A ranged weapon bolted to the roof, 1d6 Bludgeoning. It belongs to the vehicle, which owns no Skill, so it carries its own Base Damage. The driver and the gunner fire it freely; anyone else aboard may, as a Rule Break.</p>',
       isWeapon: true,
       slot: 'hands',
-      weaponCategory: 'Ranged',
-      tags: ['vehicle.upgrade.mounted_weapon', 'weaponClass.ranged'],
-      damageParts: [{ dice: '1d6', stat: '', type: 'Bludgeoning', value: 0 }]
+      tags: ['vehicle.upgrade.mounted_weapon', 'weapon.improvised', 'weaponClass.ranged'],
+      associatedSkills: ['improvised-weapons'],
+      baseDamage: { dice: '1d6', damageType: 'Bludgeoning' }
     }
   },
   {
@@ -125,12 +125,11 @@ export const SPECS = Object.freeze([
     img: 'icons/weapons/polearms/spear-flared-steel.webp',
     system: {
       identifier: 'telescoping-selfie-lance',
-      description: '<p>Reaches the car next to you, and the one next to that. A melee weapon, 1d8 Piercing, made for use from a vehicle: a driver uses it without Disadvantage.</p>',
+      description: '<p>Reaches the car next to you, and the one next to that. A melee weapon. Its damage is its Skill\'s Base Damage (Lance Training): 1d12 + Strength Piercing. Made for use from a vehicle: a driver uses it without Disadvantage.</p>',
       isWeapon: true,
       slot: 'hands',
-      weaponCategory: 'Reach',
-      tags: ['rule.mounted_only', 'weaponClass.melee'],
-      damageParts: [{ dice: '1d8', stat: '', type: 'Piercing', value: 0 }]
+      tags: ['rule.mounted_only', 'weapon.lance', 'weaponClass.melee'],
+      associatedSkills: ['lance']
     }
   },
   {

@@ -1,31 +1,30 @@
 /**
  * Chat slash-command interceptor.
  */
-import { COGMercenaryGuildApp } from '../apps/mercenary-guild.mjs';
 import { COGSessionEngine } from '../documents/session/session-engine.mjs';
-import { COGRapidBatchImportApp } from '../apps/rapid-batch-import.mjs';
-import { COGRapidTextParser } from '../apps/rapid-text-parser.mjs';
-import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
+import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
 
 /**
  * Quick Chat Command Interceptor for Rapid In-Person Roll Logging
  * - /rapidlog, /batchlog, /rlog: Opens the Rapid Batch Import window
  * - /rapidlog <shorthand>, /log <shorthand>, /rlog <shorthand>: Parses a single line and directly logs it to active session
  * - /r is deliberately left to Foundry core (Fate dice, @ references, pools).
+ * `apps` is what `src/hooks/chat-command-apps.mjs` hands in: `openRapidBatchImport`, `openMercenaryGuild`, `openThemeCleanup`, `parseRapidLine`.
  */
-export function onChatMessageCommand(chatLog, message, chatData) {
-  const msg = (message || '').trim();
+export function onChatMessageCommand(chatLog, message, chatData, apps) {
+  // Foundry 14's chat input is ProseMirror: the hook receives `<p>text</p>` with `<` and `&` entity-escaped, before Foundry parses commands.
+  const msg = htmlSnippet(message);
   const lower = msg.toLowerCase();
 
   // Standalone rapidlog triggers: /rapidlog, /batchlog, /rlog
   if (lower === '/rapidlog' || lower === '/batchlog' || lower === '/rlog') {
-    COGRapidBatchImportApp.open();
+    apps.openRapidBatchImport();
     return false;
   }
 
   // Standalone Mercenary Guild triggers: /guild, /mercs, /mercenaries, /mercenary
   if (lower === '/guild' || lower === '/mercs' || lower === '/mercenaries' || lower === '/mercenary') {
-    COGMercenaryGuildApp.open();
+    apps.openMercenaryGuild();
     return false;
   }
 
@@ -34,7 +33,7 @@ export function onChatMessageCommand(chatLog, message, chatData) {
     if (!globalThis.game?.user?.isGM) {
       globalThis.ui?.notifications?.warn?.(globalThis.game?.i18n?.localize?.('COG.ThemeCleanup.GMOnly') ?? 'COG.ThemeCleanup.GMOnly');
     } else {
-      COGThemeCleanupApp.open();
+      apps.openThemeCleanup();
     }
     return false;
   }
@@ -45,11 +44,11 @@ export function onChatMessageCommand(chatLog, message, chatData) {
   if (matchedPrefix) {
     const raw = msg.slice(matchedPrefix.length).trim();
     if (!raw) {
-      COGRapidBatchImportApp.open();
+      apps.openRapidBatchImport();
       return false;
     }
     const crawlers = COGSessionEngine.getPartyCrawlers();
-    const event = COGRapidTextParser.parseLine(raw, crawlers);
+    const event = apps.parseRapidLine(raw, crawlers);
     if (event) {
       COGSessionEngine.batchCreateEvents([event]).then(() => {
         const actorName = crawlers.find(c => c.id === event.actorId)?.name || 'Crawler';
@@ -67,6 +66,6 @@ export function onChatMessageCommand(chatLog, message, chatData) {
   }
 }
 
-export function registerChatCommands() {
-  Hooks.on('chatMessage', onChatMessageCommand);
+export function registerChatCommands(apps) {
+  Hooks.on('chatMessage', (chatLog, message, chatData) => onChatMessageCommand(chatLog, message, chatData, apps));
 }

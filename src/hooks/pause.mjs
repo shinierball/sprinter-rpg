@@ -13,12 +13,10 @@
  */
 
 import { SYSTEM_ID } from '../constants.mjs';
+import { DELIBERATE_PAUSE_SETTING, UNPAUSE_BY_DEFAULT_SETTING } from '../utils/time/pause-settings.mjs';
 import { registerRelayAction, requestRelay, getActiveGM, isActiveGM } from '../utils/gm-relay.mjs';
 
 export const RELAY_ACTION_UNPAUSE = 'unpauseGame';
-
-/** Hidden world setting: true while the world is paused because a user paused it. */
-export const DELIBERATE_PAUSE_SETTING = 'deliberatePause';
 
 registerRelayAction(RELAY_ACTION_UNPAUSE, {
   authorize: (_payload, requester) => Boolean(requester?.id && typeof requester.id === 'string'),
@@ -70,7 +68,7 @@ export async function unpauseGame() {
  */
 export async function checkDefaultUnpause() {
   if (!globalThis.game?.paused) return false;
-  if (readSetting('unpauseByDefault', true) === false) return false;
+  if (readSetting(UNPAUSE_BY_DEFAULT_SETTING, true) === false) return false;
   if (readSetting(DELIBERATE_PAUSE_SETTING, false) === true) return false;
 
   if (globalThis.game.user?.isGM) {

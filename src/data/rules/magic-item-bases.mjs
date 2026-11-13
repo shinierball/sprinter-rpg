@@ -32,7 +32,8 @@ const SEEDED_MAGIC_ITEM_BASES = [
     matches: (item) => isGear(item) && item.system?.isWeapon === true,
     blank: {
       name: 'COG.MagicItem.Base.held',
-      system: { slot: 'hands', isWeapon: true, damageParts: [{ dice: '1d6', stat: '', type: 'Bludgeoning', value: 0 }] }
+      // A blank held weapon is a club: every weapon has a Skill and a `weapon.*` type (7.49), and the Skill supplies the damage.
+      system: { slot: 'hands', isWeapon: true, associatedSkills: ['club'], tags: ['weapon.club', 'weaponClass.melee'] }
     }
   },
   {

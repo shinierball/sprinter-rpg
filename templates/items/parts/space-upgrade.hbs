@@ -1,32 +1,33 @@
 <section class="cog-item-body cog-item-body-space-upgrade">
   <div class="cog-field-row">
     <div class="cog-field-group flex-1">
-      <span class="cog-field-label">Tier</span>
+      <span class="cog-field-label">{{localize "COG.SpaceUpgrade.Sheet.Tier"}}</span>
       <input class="cog-field-input" type="number" min="1" step="1" name="system.tier" value="{{system.tier}}" />
+      <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.SpaceUpgrade.Sheet.TierHint"}}</p>
     </div>
     <div class="cog-field-group flex-1">
-      <span class="cog-field-label">Cost (gold)</span>
+      <span class="cog-field-label">{{localize "COG.SpaceUpgrade.Sheet.Cost"}}</span>
       <input class="cog-field-input" type="number" min="0" name="system.cost" value="{{system.cost}}" />
     </div>
     <div class="cog-field-group flex-1">
       <label class="cog-field-label">
         <input type="checkbox" name="system.purchased" {{#if system.purchased}}checked{{/if}} />
-        Installed (counts toward the space)
+        {{localize "COG.SpaceUpgrade.Sheet.Installed"}}
       </label>
     </div>
   </div>
 
   <div class="cog-field-group">
-    <span class="cog-field-label">Description</span>
+    <span class="cog-field-label">{{localize "COG.SpaceUpgrade.Sheet.Description"}}</span>
     {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
   </div>
 
   <details class="cog-collapsible-block" open>
     <summary class="cog-collapsible-summary">
-      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-warehouse"></i> SPACE BONUSES</span>
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-warehouse"></i> {{localize "COG.SpaceUpgrade.Sheet.Bonuses"}}</span>
     </summary>
     <div class="cog-collapsible-content">
-      <div class="cog-field-row">
+      <div class="cog-field-row cog-field-row-wrap">
         {{#each bonusFields as |f|}}
           <div class="cog-field-group flex-1">
             <span class="cog-field-label">{{f.label}}</span>
@@ -37,29 +38,30 @@
       <div class="cog-field-group">
         <label class="cog-field-label">
           <input type="checkbox" name="system.bonuses.removesInjuriesOnRest" {{#if system.bonuses.removesInjuriesOnRest}}checked{{/if}} />
-          Removes minor injuries on rest
+          {{localize "COG.SpaceUpgrade.Sheet.RemovesInjuries"}}
         </label>
       </div>
       <div class="cog-field-group">
-        <span class="cog-field-label">Granted Buffs (comma separated)</span>
+        <span class="cog-field-label">{{localize "COG.SpaceUpgrade.Sheet.Buffs"}}</span>
         <input class="cog-field-input" type="text" name="system.bonuses.buffs" value="{{bonusBuffsString}}" />
+        <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.SpaceUpgrade.Sheet.BuffsHint"}}</p>
       </div>
     </div>
   </details>
 
   <details class="cog-collapsible-block" {{#if hasTrainingConfigured}}open{{/if}}>
     <summary class="cog-collapsible-summary">
-      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-dumbbell"></i> TRAINING ROOM</span>
-      <span class="cog-toggle-indicator {{#if hasTrainingConfigured}}active{{/if}}">{{#if hasTrainingConfigured}}[TRAINING ROOM]{{else}}[CLICK TO CONFIGURE]{{/if}}</span>
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-dumbbell"></i> {{localize "COG.SpaceUpgrade.Sheet.Training"}}</span>
+      <span class="cog-toggle-indicator {{#if hasTrainingConfigured}}active{{/if}}">{{#if hasTrainingConfigured}}{{localize "COG.SpaceUpgrade.Sheet.TrainingBadge"}}{{else}}{{localize "COG.SpaceUpgrade.Sheet.SetUp"}}{{/if}}</span>
     </summary>
     <div class="cog-collapsible-content">
       <div class="cog-field-group">
         <label class="cog-field-label">
           <input type="checkbox" name="system.training.enabled" {{#if system.training.enabled}}checked{{/if}} />
-          This upgrade is a training room
+          {{localize "COG.SpaceUpgrade.Sheet.TrainingEnabled"}}
         </label>
       </div>
-      <div class="cog-field-row">
+      <div class="cog-field-row cog-field-row-wrap">
         {{#each trainingFields as |f|}}
           <div class="cog-field-group flex-1">
             <span class="cog-field-label">{{f.label}}</span>
@@ -70,11 +72,12 @@
       <div class="cog-field-group">
         <label class="cog-field-label">
           <input type="checkbox" name="system.training.advantage" {{#if system.training.advantage}}checked{{/if}} />
-          Advantage on training rolls
+          {{localize "COG.SpaceUpgrade.Sheet.Advantage"}}
         </label>
       </div>
       <div class="cog-field-group">
-        <span class="cog-field-label">Trainable skills (by tag; empty allows any)</span>
+        <span class="cog-field-label">{{localize "COG.SpaceUpgrade.Sheet.TrainableSkills"}}</span>
+        <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.SpaceUpgrade.Sheet.TrainableSkillsHint"}}</p>
         {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=trainingSkillQuery tagOptions=techniqueTagOptions}}
       </div>
     </div>
@@ -82,21 +85,23 @@
 
   <details class="cog-collapsible-block" {{#if hasCraftingConfigured}}open{{/if}}>
     <summary class="cog-collapsible-summary">
-      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-hammer"></i> CRAFTING TABLE</span>
-      <span class="cog-toggle-indicator {{#if hasCraftingConfigured}}active{{/if}}">{{#if hasCraftingConfigured}}[CRAFTING TABLE]{{else}}[CLICK TO CONFIGURE]{{/if}}</span>
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-hammer"></i> {{localize "COG.SpaceUpgrade.Sheet.Crafting"}}</span>
+      <span class="cog-toggle-indicator {{#if hasCraftingConfigured}}active{{/if}}">{{#if hasCraftingConfigured}}{{localize "COG.SpaceUpgrade.Sheet.CraftingBadge"}}{{else}}{{localize "COG.SpaceUpgrade.Sheet.SetUp"}}{{/if}}</span>
     </summary>
     <div class="cog-collapsible-content">
       <div class="cog-field-group">
         <label class="cog-field-label">
           <input type="checkbox" name="system.craftingTable.enabled" {{#if system.craftingTable.enabled}}checked{{/if}} />
-          This upgrade is a crafting table
+          {{localize "COG.SpaceUpgrade.Sheet.CraftingEnabled"}}
         </label>
       </div>
       <div class="cog-field-group">
-        <span class="cog-field-label">Table Type Tag</span>
-        <input class="cog-field-input" type="text" name="system.craftingTable.tableTypeTag" value="{{system.craftingTable.tableTypeTag}}" placeholder="crafting.table.alchemist" />
+        <span class="cog-field-label">{{localize "COG.SpaceUpgrade.Sheet.TableType"}}</span>
+        <select class="cog-field-input" name="system.craftingTable.tableTypeTag">
+          {{#each craftingTableTypeOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+        </select>
       </div>
-      <div class="cog-field-row">
+      <div class="cog-field-row cog-field-row-wrap">
         {{#each craftingFields as |f|}}
           <div class="cog-field-group flex-1">
             <span class="cog-field-label">{{f.label}}</span>
@@ -117,6 +122,28 @@
           <span class="cog-text-secondary">{{#if craftingActions.hasPayer}}{{localize "COG.CraftSheet.Table.Payer" name=craftingActions.payerName}}{{else}}{{localize "COG.CraftSheet.Table.NoPayer"}}{{/if}}</span>
         </div>
       {{/if}}
+    </div>
+  </details>
+  <details class="cog-collapsible-block" {{#if hasStudioConfigured}}open{{/if}}>
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-palette"></i> {{localize "COG.SpaceUpgrade.Sheet.Studio"}}</span>
+      <span class="cog-toggle-indicator {{#if hasStudioConfigured}}active{{/if}}">{{#if hasStudioConfigured}}{{localize "COG.SpaceUpgrade.Sheet.StudioBadge"}}{{else}}{{localize "COG.SpaceUpgrade.Sheet.SetUp"}}{{/if}}</span>
+    </summary>
+    <div class="cog-collapsible-content">
+      <div class="cog-field-group">
+        <label class="cog-field-label">
+          <input type="checkbox" name="system.studio.enabled" {{#if system.studio.enabled}}checked{{/if}} />
+          {{localize "COG.SpaceUpgrade.Sheet.StudioEnabled"}}
+        </label>
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.SpaceUpgrade.Sheet.StudioTableType"}}</span>
+        <select class="cog-field-input" name="system.studio.tableTypeTag">
+          {{#each studioTableTypeOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+        </select>
+        <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.SpaceUpgrade.Sheet.StudioHint"}}</p>
+      </div>
+      <p class="cog-text-secondary">{{localize "COG.SpaceUpgrade.Sheet.StudioRows"}}</p>
     </div>
   </details>
 </section>

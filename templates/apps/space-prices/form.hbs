@@ -1,0 +1,31 @@
+<div class="cog-space-prices">
+  <p class="cog-text-secondary">{{localize "COG.SpacePrices.Hint"}}</p>
+  <div class="cog-form-group">
+    <label>{{localize "COG.SpacePrices.CouponPrice"}}</label>
+    <input type="number" min="0" step="1" data-price="couponPrice" value="{{couponPrice}}">
+  </div>
+  <fieldset>
+    <legend>{{localize "COG.SpacePrices.ByRank"}}</legend>
+    {{#each rows as |row|}}
+      <div class="cog-field-row" data-rank-row="{{@index}}" style="align-items: flex-end; margin-bottom: 6px;">
+        <label class="cog-field-group small"><span class="cog-field-label">{{localize "COG.SpacePrices.Rank"}}</span>
+          <input type="number" min="1" step="1" data-row-rank value="{{row.rank}}"></label>
+        <label class="cog-field-group flex-1"><span class="cog-field-label">{{localize "COG.SpacePrices.Price"}}</span>
+          <input type="number" min="0" step="1" data-row-price value="{{row.price}}"></label>
+        <button type="button" class="cog-btn cog-btn-secondary" style="flex: 0 0 auto; width: auto;" data-action="removeRankRow" data-index="{{@index}}" data-tooltip="{{localize 'COG.SpacePrices.RemoveRow'}}"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    {{/each}}
+    <button type="button" class="cog-btn cog-btn-secondary" data-action="addRankRow"><i class="fa-solid fa-plus"></i> {{localize "COG.SpacePrices.AddRow"}}</button>
+  </fieldset>
+  <div class="cog-form-group">
+    <label>{{localize "COG.SpacePrices.ConnectorPrice"}}</label>
+    <input type="number" min="0" step="1" data-price="connectorPrice" value="{{connectorPrice}}">
+  </div>
+  <div class="cog-form-group">
+    <label>{{localize "COG.SpacePrices.NewTablePrice"}}</label>
+    <input type="number" min="0" step="1" data-price="newTablePrice" value="{{newTablePrice}}">
+  </div>
+  <footer>
+    <button type="button" class="cog-btn cog-btn-primary" data-action="savePrices"><i class="fa-solid fa-floppy-disk"></i> {{localize "COG.SpacePrices.Save"}}</button>
+  </footer>
+</div>

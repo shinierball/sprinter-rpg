@@ -12,12 +12,12 @@
       </button>
     {{/if}}
 
-    {{#if isItemPicker}}
+    {{#if isItemPicker}}{{#unless isAttackSkillPicker}}
       <div class="cog-sm-gear-bonus-box">
         <label>Rank Bonus:</label>
         <input type="number" id="cog-sm-gear-bonus" value="1" min="1" />
       </div>
-    {{/if}}
+    {{/unless}}{{/if}}
 
     {{#if canCreate}}
       <button type="button" data-action="createSkill" class="cog-sm-action-btn cog-sm-create-skill-btn">

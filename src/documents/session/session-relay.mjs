@@ -15,6 +15,7 @@
 import { registerRelayAction, dispatchRelay, getActiveGM } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { extractD20Result } from './roll-outcomes.mjs';
+import { settleAfterCheck } from '../actor/condition-expiry.mjs';
 
 export const SESSION_OP = 'sessionOp';
 
@@ -75,7 +76,8 @@ const OPS = {
       return {
         actorUuid,
         roll: { total, formula: String(a.roll?.formula ?? total).slice(0, 200), d20Result: extractD20Result(a.roll) },
-        type: a.type, name: a.name, isUntrained: a.isUntrained, targetDC: a.targetDC, notes: a.notes
+        type: a.type, name: a.name, skillIdentifier: a.skillIdentifier, rollId: a.rollId,
+        isUntrained: a.isUntrained, targetDC: a.targetDC, notes: a.notes
       };
     },
     resolve(p) {
@@ -88,6 +90,8 @@ const OPS = {
           roll: { total: Number(p.roll.total), formula: str(p.roll.formula), d20Result: finite(p.roll.d20Result) },
           type: p.type,
           name: str(p.name) || 'Action',
+          skillIdentifier: str(p.skillIdentifier),
+          rollId: str(p.rollId, 32),
           isUntrained: p.isUntrained === true,
           targetDC: finite(p.targetDC),
           notes: str(p.notes, 500)
@@ -232,6 +236,9 @@ export function installSessionRelay(Engine) {
 
   for (const name of PLAYER_RELAYABLE.filter(n => n !== 'updateLedgerEntry' && n !== 'spendAIFavor')) {
     Engine[name] = async function relayableRecorder(args) {
+      // A d20 roll ends the roller's `next_check` and `next_action` debuffs here, on the client that rolled: a player's record
+      // is relayed and dropped with no GM, and a session that does not track the actor writes nothing, but the roll still counts.
+      if (name === 'recordRoll') settleAfterCheck(args?.actor, { spendsAction: args?.spendsAction !== false }).catch(() => {});
       if (!isNonGMClient()) return enqueue(() => originals[name].call(Engine, args));
       const packed = OPS[name].pack(args);
       if (!packed) return null;

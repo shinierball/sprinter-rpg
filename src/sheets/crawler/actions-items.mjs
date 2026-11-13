@@ -3,26 +3,25 @@
  * library pickers. Every handler runs with `this` bound to the sheet.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { COGItemSetupApp } from '../../apps/item-setup-app.mjs';
 import { rowItem, controlValue } from './dom.mjs';
 import { getRankCap } from '../../utils/skill/rank-cap.mjs';
 import { slotReferencesTo } from '../../utils/ui/slot-references.mjs';
-import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
 import { coreSkillPayloads } from '../../utils/skill/core-skills.mjs';
 import { pullOutCommonItem } from '../../documents/actor/misc-junk.mjs';
 import { setItemEquipped, startRepair } from '../../documents/item/enchantments.mjs';
 import { setDebuffPaused } from '../../documents/actor/debuff-switch.mjs';
+import { endBuffActivation, useBuffActivation } from '../../documents/actor/buff-activation.mjs';
 import { confirmTransformDelete } from '../../documents/actor/transformations.mjs';
 import { refuseGmOnlyItem } from '../../documents/actor/gm-only-items.mjs';
-
-const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export const itemActions = {
   async createItem(event, target) {
     if (!this.isEditable) return;
     const type = target.dataset.type || 'skill';
-    const [created] = await this.actor.createEmbeddedDocuments('Item', [{ name: `New ${capitalize(type)}`, type }], { cogHomebrew: true });
-    created?.sheet?.render({ force: true });
-    return created;
+    const createOptions = { cogHomebrew: true };
+    return COGItemSetupApp.open({ kind: type, actor: this.actor, createOptions });
   },
 
   /** Add every catalog `kind.core` skill the crawler lacks (idempotent; GM or owner). */
@@ -53,6 +52,18 @@ export const itemActions = {
     const updates = slotReferencesTo(this.actor, item);
     if (Object.keys(updates).length) await this.actor.update(updates);
     await item.delete();
+  },
+
+  /** The conditions row's Use: open the activated buff's window (a spent cooldown asks a Rule Break). */
+  async useBuffActivation(event, target) {
+    const item = rowItem(this, target);
+    if (item) await useBuffActivation(this.actor, item);
+  },
+
+  /** The conditions row's End: close the activated buff's window by hand. */
+  async endBuffActivation(event, target) {
+    const item = rowItem(this, target);
+    if (item) await endBuffActivation(this.actor, item);
   },
 
   /** The conditions row's pause switch (7.1b): owner or GM; a paused debuff does nothing. */
@@ -105,7 +116,7 @@ export const itemActions = {
       }
     }
     await item.update({ [field]: value });
-    if (ruleBreak) await item.setFlag(SYSTEM_ID, 'ruleBreak', true);
+    if (ruleBreak) await markRuleBreak(item);
   },
 
   async toggleGearEquipped(event, target) {

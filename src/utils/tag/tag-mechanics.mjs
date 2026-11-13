@@ -194,7 +194,8 @@ export const USAGE_KINDS = Object.freeze({
 /**
  * Crafting (3.15). The mode tags say which step of a craft is rolled (a check's context); `table`/`attachment` are the
  * prefixes of a crafting table's type (`crafting.table.<type>`, on `craftingTable.tableTypeTag`) and of an attachment
- * item (`crafting.attachment.<id>`) that a blueprint's `tables` query may require; `coupon` marks the loot that adds a table tier.
+ * item (`crafting.attachment.<id>`) that a blueprint's `tables` query may require; `recipe` is the prefix of a locked recipe on a blueprint
+ * (`crafting.recipe.<id>`, unlocked by an `unlockRecipes` craft row); `coupon` marks the loot that adds a table tier.
  */
 export const CRAFT_TAGS = Object.freeze({
   modeMundane: 'crafting.mode.mundane',
@@ -202,7 +203,12 @@ export const CRAFT_TAGS = Object.freeze({
   modeItem: 'crafting.mode.item',
   tablePrefix: 'crafting.table.',
   attachmentPrefix: 'crafting.attachment.',
+  recipePrefix: 'crafting.recipe.',
   coupon: 'crafting.coupon.table'
+});
+/** Personal spaces: `couponRank` marks the loot spent for one Rank Up. */
+export const SPACE_TAGS = Object.freeze({
+  couponRank: 'space.coupon.rank'
 });
 /** The state of a gear item that was broken (repairable) or destroyed (permanent) by crafting or the over-enchanting hazard. */
 export const ITEM_STATE_TAGS = Object.freeze({ broken: 'item.broken', destroyed: 'item.destroyed' });

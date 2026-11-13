@@ -1,0 +1,121 @@
+{{!-- One field of the item setup page, from `fieldView` (src/apps/item-setup/field-views.mjs). Nothing here has a `name`: a value
+     control carries `data-field`, every other control a data-action / data-change-action handled by COGItemSetupApp. --}}
+{{#if isText}}
+  <div class="cog-form-group">
+    <label for="{{inputId}}">{{label}}</label>
+    <input type="text" id="{{inputId}}" data-field="{{id}}" value="{{value}}" placeholder="{{placeholder}}">
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  </div>
+{{/if}}
+{{#if isTextarea}}
+  <div class="cog-form-group">
+    <label for="{{inputId}}">{{label}}</label>
+    <textarea id="{{inputId}}" class="cog-field-input" data-field="{{id}}" placeholder="{{placeholder}}">{{value}}</textarea>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  </div>
+{{/if}}
+{{#if isNumber}}
+  <div class="cog-form-group">
+    <label for="{{inputId}}">{{label}}</label>
+    <input type="number" id="{{inputId}}" min="{{min}}" step="1" data-field="{{id}}" value="{{value}}">
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  </div>
+{{/if}}
+{{#if isCheckbox}}
+  <div class="cog-form-group">
+    <label for="{{inputId}}"><input type="checkbox" id="{{inputId}}" data-field="{{id}}" {{#if checked}}checked{{/if}}> {{label}}</label>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  </div>
+{{/if}}
+{{#if isChoice}}
+  <div class="cog-form-group">
+    <label for="{{inputId}}">{{label}}</label>
+    <select id="{{inputId}}" class="cog-field-input" data-field="{{id}}" {{#if rerender}}data-change-action="setChoice"{{/if}}>
+      {{#each options as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+    </select>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  </div>
+{{/if}}
+{{#if isCatalogPick}}
+  <div class="cog-form-group">
+    <label for="{{inputId}}">{{label}}</label>
+    <select id="{{inputId}}" class="cog-field-input" data-field="{{id}}">
+      {{#each options as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+    </select>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  </div>
+{{/if}}
+{{#if isDuration}}
+  <div class="cog-form-group">
+    <span class="cog-field-label">{{label}}</span>
+    <div class="cog-field-row">
+      <input type="number" min="0" step="1" data-field="{{valueField}}" value="{{value}}">
+      <select class="cog-field-input" data-field="{{unitField}}">
+        {{#each unitOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+      </select>
+    </div>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  </div>
+{{/if}}
+{{#if isCatalogList}}
+  <div class="cog-form-group cog-item-setup-{{id}}">
+    <span class="cog-field-label">{{label}}</span>
+    <div class="cog-bg-surface-alt" style="padding: 3px; border: 1px dashed var(--cog-border-muted); border-radius: 3px; min-height: 24px;">
+      {{#each rows as |row|}}
+        <div class="cog-item-setup-entry" data-entry="{{row.identifier}}" style="display: flex; align-items: center; gap: 6px; padding: 2px 4px;">
+          {{#if row.defaultTip}}<i class="fa-solid fa-star" data-tooltip="{{row.defaultTip}}"></i>{{/if}}
+          <strong>{{row.name}}</strong>
+          <span class="cog-text-muted" style="flex: 1;">
+            {{row.note}}
+          </span>
+          {{#unless row.isFirst}}<a class="cog-modifier-move" data-action="moveListEntry" data-list="{{../id}}" data-direction="up" data-index="{{row.index}}" data-tooltip="{{../moveUp}}"><i class="fa-solid fa-arrow-up"></i></a>{{/unless}}
+          {{#unless row.isLast}}<a class="cog-modifier-move" data-action="moveListEntry" data-list="{{../id}}" data-direction="down" data-index="{{row.index}}" data-tooltip="{{../moveDown}}"><i class="fa-solid fa-arrow-down"></i></a>{{/unless}}
+          <a class="cog-text-danger" data-action="removeListEntry" data-list="{{../id}}" data-entry="{{row.identifier}}" data-tooltip="{{../remove}}" style="cursor: pointer; font-weight: bold;">&times;</a>
+        </div>
+      {{else}}
+        <span class="cog-text-muted" style="font-style: italic;">{{emptyText}}</span>
+      {{/each}}
+    </div>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+    <select class="cog-field-input" data-change-action="addListEntry" data-list="{{id}}">
+      <option value="">{{pick.choose}}</option>
+      {{#each pick.groups as |group|}}
+        {{#each group.options as |opt|}}<option value="{{opt.value}}">{{opt.label}}</option>{{/each}}
+      {{/each}}
+    </select>
+  </div>
+{{/if}}
+{{#if isTagChips}}
+  <div class="cog-form-group cog-item-setup-{{id}}">
+    <span class="cog-field-label">{{label}}</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+      {{#each chips as |chip|}}
+        <button type="button" class="cog-badge cog-btn {{#if chip.selected}}cog-btn-primary{{else}}cog-btn-secondary{{/if}}" data-action="toggleChip" data-chips="{{../id}}" data-tag="{{chip.id}}" data-tooltip="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}" style="width: auto;">{{chip.label}}</button>
+      {{/each}}
+    </div>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+    {{#if hasFollow}}<small class="cog-text-muted">{{#if following}}{{followNote}}{{else}}<a data-action="followAgain" data-chips="{{id}}">{{followLink}}</a>{{/if}}</small>{{/if}}
+  </div>
+{{/if}}
+{{#if isBaseDamage}}
+  {{#if collapsed}}<details class="cog-item-setup-damage" data-section="{{id}}" {{#if open}}open{{/if}}>
+    <summary>{{label}}</summary>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  {{else}}<div class="cog-item-setup-damage">
+    <span class="cog-field-label">{{label}}</span>
+    {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}
+  {{/if}}
+    <div class="cog-field-row">
+      <label class="cog-field-group"><span class="cog-field-label">{{diceLabel}}</span>
+        <input type="text" data-field="{{diceField}}" value="{{dice}}" placeholder="{{dicePlaceholder}}"></label>
+      <label class="cog-field-group"><span class="cog-field-label">{{statLabel}}</span>
+        <select class="cog-field-input" data-field="{{statField}}">
+          {{#each statOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+        </select></label>
+      <label class="cog-field-group"><span class="cog-field-label">{{typeLabel}}</span>
+        <select class="cog-field-input" data-field="{{typeField}}">
+          {{#each typeOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+        </select></label>
+    </div>
+  {{#if collapsed}}</details>{{else}}</div>{{/if}}
+{{/if}}

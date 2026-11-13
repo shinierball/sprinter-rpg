@@ -7,11 +7,13 @@
  *   range, No cancels and nothing is spent.
  * No tokens (theatre of the mind) or a `rangeFeet` of 0 means no check. Pure but for the token measure and the confirm.
  */
+import { actingRank } from '../skill/rank-source.mjs';
 import { measureTokenFeet } from '../combat/interrupts.mjs';
 import { escapeAttr } from '../escape-attr.mjs';
 import { confirmRuleBreak } from '../rule-break.mjs';
 import { resolveReachedRankBreaks } from '../skill/rank-breaks.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
+import { isRankedItem } from '../document-types.mjs';
 
 const TEXT = Object.freeze({
   'COG.AttackRange.Title': 'Target Out of Range',
@@ -40,9 +42,8 @@ function attackerTokenOf(attacker, explicit) {
 
 /** An item's reached rank-break range bonus (spells and skills carry them), 0 when it has none. */
 function itemRangeBonus(item) {
-  if (!item || (item.type !== 'spell' && item.type !== 'skill')) return 0;
-  const sys = item.system ?? {};
-  const rank = Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
+  if (!isRankedItem(item)) return 0;
+  const rank = Math.max(actingRank(item), 1);
   try {
     return Math.max(0, Number(resolveReachedRankBreaks(item, rank)?.rangeBonus) || 0);
   } catch {

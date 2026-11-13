@@ -3,7 +3,7 @@
  * stored in one or more string-array fields, and an Add select with one group per field. Every chip and option names
  * the field it belongs to (`list`, a `PICK_LISTS` key in actions-lists.mjs), so one picker can edit several fields.
  */
-import { toStringList } from './util.mjs';
+import { toStringList } from '../../utils/first-scalar.mjs';
 
 const lower = (v) => String(v ?? '').trim().toLowerCase();
 
@@ -33,17 +33,18 @@ export function plainEntries(values) {
  * @param {object} spec
  * @param {string} spec.label field label
  * @param {string} [spec.icon] Font Awesome class (`fa-sparkles`)
+ * @param {string} [spec.hint] a plain-words line shown under the list
  * @param {string} spec.emptyText shown when no list has a value
  * @param {string} spec.choose the select's blank option
  * @param {string} [spec.placeholder] the custom entry's placeholder ('' hides the custom entry)
  * @param {string} [spec.inputId] DOM id of the custom entry's text input (apps need one so core can restore focus)
  * @param {Array<{list: string, badge?: string, stored: *, entries: Array<{value: string, label: string}>, groupLabel?: string, customLabel?: string}>} spec.lists
- * @returns {{ label: string, icon: string, emptyText: string, choose: string, placeholder: string, hasValues: boolean,
+ * @returns {{ label: string, icon: string, hint: string, emptyText: string, choose: string, placeholder: string, hasValues: boolean,
  *   chips: Array<{list: string, value: string, label: string, badge: string, unknown: boolean}>,
  *   groups: Array<{label: string, options: Array<{list: string, value: string, label: string}>}>,
  *   buttons: Array<{list: string, label: string}> }}
  */
-export function buildPickList({ label, icon = '', emptyText, choose, placeholder = '', inputId = '', lists }) {
+export function buildPickList({ label, icon = '', hint = '', emptyText, choose, placeholder = '', inputId = '', lists }) {
   const chips = [];
   const groups = [];
   const buttons = [];
@@ -59,7 +60,7 @@ export function buildPickList({ label, icon = '', emptyText, choose, placeholder
     buttons.push({ list, label: customLabel });
   }
   return {
-    label, icon, emptyText, choose, placeholder, inputId, hasValues: chips.length > 0,
+    label, icon, hint, emptyText, choose, placeholder, inputId, hasValues: chips.length > 0,
     chips, groups, buttons: placeholder ? buttons : []
   };
 }

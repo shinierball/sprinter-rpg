@@ -1,0 +1,18 @@
+{{!-- What changes at higher Ranks: one card per break, shared by the skill and spell sheets. Context: rankBreakCards (buildRankBreakCards). --}}
+<details class="cog-collapsible-block" {{#if hasRankBreaksConfigured}}open{{/if}}>
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-layer-group"></i> {{localize "COG.AbilitySheet.RankBreaks.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if hasRankBreaksConfigured}}active{{/if}}">{{#if hasRankBreaksConfigured}}{{localize "COG.AbilitySheet.RankBreaks.Configured"}}{{else}}{{localize "COG.AbilitySheet.RankBreaks.Configure"}}{{/if}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <div class="cog-rank-break-hint cog-text-secondary" style="font-size: 11px; margin-bottom: 6px;">
+      <i class="fa-solid fa-circle-info"></i> {{localize "COG.AbilitySheet.RankBreaks.Hint"}}
+    </div>
+    <div style="margin-bottom: 6px;">
+      <button type="button" class="cog-btn" data-action="parseRankBreaks" title="{{localize "COG.AbilitySheet.RankBreaks.ParseTitle"}}"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "COG.AbilitySheet.RankBreaks.Parse"}}</button>
+    </div>
+    {{#each rankBreakCards}}
+    {{> "systems/sprinter-rpg/templates/items/parts/ability/rank-break-card.hbs"}}
+    {{/each}}
+  </div>
+</details>

@@ -9,6 +9,7 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { firstScalar } from '../first-scalar.mjs';
+import { escapeAttr } from '../escape-attr.mjs';
 
 /** The actor flag holding the armed (one-shot) choice. */
 export const CAMERA_ARMED_FLAG = 'cameraArmed';
@@ -218,13 +219,11 @@ export function newCameraRecord(choiceId, { actorUuid = '', floor = 1 } = {}) {
   };
 }
 
-const escapeHtml = (value) => String(value ?? '')
-  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 /** The one-line static note a camera card carries ("Playing to the Audience (Disadvantage)"); '' for no choice. */
 function cameraNoteHtml(choiceId) {
   const reason = cameraReasonLabel(choiceId);
-  return reason ? `<div class="cog-camera-note">${escapeHtml(cameraText('COG.Cameras.Note', { reason }))}</div>` : '';
+  return reason ? `<div class="cog-camera-note">${escapeAttr(cameraText('COG.Cameras.Note', { reason }))}</div>` : '';
 }
 
 /** The armed choice on an actor ('' when none or the flag is junk). */

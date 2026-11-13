@@ -8,6 +8,7 @@
  */
 
 import { registerRuleFlag } from '../utils/tag/tag-behaviour.mjs';
+import { registerAdvancementRoute } from '../utils/skill/advancement-routes.mjs';
 import { registerScalar, getScalar } from '../utils/roll/scalars.mjs';
 import { registerRowKind, getRowKind } from '../utils/row-kinds.mjs';
 import { registerRuleSkill } from '../utils/skill/rule-skills.mjs';
@@ -200,6 +201,16 @@ export class COGContentRegistry {
    */
   registerRuleFlag(def, { priority = 10 } = {}) {
     return registerRuleFlag(def, { priority, provider: 'module' });
+  }
+
+  /**
+   * Declare a way a Skill gains Ranks (an advancement route a skill's `rankLimits` may name).
+   * @param {{ id: string, label: string, hint?: string }} def
+   * @param {{ priority?: number }} [opts]
+   * @returns {boolean}
+   */
+  registerAdvancementRoute(def, { priority = 10 } = {}) {
+    return registerAdvancementRoute(def, { priority, provider: 'module' });
   }
 
   /**

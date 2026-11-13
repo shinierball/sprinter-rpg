@@ -9,14 +9,14 @@ import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { isWeaponGear, DEFAULT_CRIT_MULTIPLIER, configuredCritMultiplier } from './actor-constants.mjs';
 import { isOneHandedPenalty as hasOneHandedPenalty, isNaturalWeapon } from '../../utils/gear/wielding.mjs';
 import { isPassiveSkill, isAttackSkill, isTechniqueSkill, UNARMED_TAG } from '../../utils/tag/tag-mechanics.mjs';
-import { getDamageParts } from '../../utils/damage/damage-parts.mjs';
 import { attackToHitDisplay, attackToHitStat } from '../../utils/attack/to-hit-display.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
-import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
+import { mergeBaseDamage, baseDamageStat } from '../../utils/damage/base-damage.mjs';
 import { attackEffectsText } from '../../utils/attack/attack-mechanics.mjs';
 import { resolveWeaponSkills } from './weapon-skills.mjs';
 import { getAiFavorRating } from './actor-techniques.mjs';
 import { getSkillDamageData } from './combat-skill-damage.mjs';
+import { actingRank } from '../../utils/skill/rank-source.mjs';
 
 /**
  * Generates synthesized attack profiles combining equipped weapons and combat skills.
@@ -78,15 +78,12 @@ export function buildWeaponAttackProfile(actor, item, skills = (actor.items?.fil
   const skillList = Array.isArray(skills) ? skills : (actor.items?.filter(i => i.type === 'skill') || []);
   const { matchingSkill, skillRank } = resolveWeaponSkills(actor, item, skillList);
 
-  const parts = getDamageParts(sys);
-  const primaryPart = parts[0] || null;
-
   // The to-hit the roll would add with no toggle ticked: rank, stat, the actor's rows and the reached rank breaks (3.10)
-  const toHitStat = attackToHitStat(item, matchingSkill, primaryPart);
+  const toHitStat = attackToHitStat(item, matchingSkill, sys.baseDamage);
   const isOneHandedPenalty = hasOneHandedPenalty(sys, { handless: isNaturalWeapon(item) });
   const hit = attackToHitDisplay(actor, {
     item, skill: matchingSkill ?? null, stat: toHitStat, rank: skillRank, isOneHandedPenalty,
-    tags: [sys.weaponCategory, sys.weaponType, sys.slot].filter(Boolean)
+    tags: [sys.slot].filter(Boolean)
   });
   const { statMod, formula: toHitFormula } = hit;
   const toHitMod = hit.total;
@@ -95,18 +92,10 @@ export function buildWeaponAttackProfile(actor, item, skills = (actor.items?.fil
   const displayToHit = `${displayToHitStat} (${skillRank})`;
   const favor = getAiFavorRating(actor, item, { context: hit.rowContext, skill: matchingSkill });
 
-  // Base damage and rank damage die
-  let baseDice;
-  let dmgType;
-  const skillBaseDamage = matchingSkill ? normalizeBaseDamage(matchingSkill.system?.baseDamage) : null;
-  if (skillBaseDamage?.dice) {
-    baseDice = skillBaseDamage.dice;
-    dmgType = skillBaseDamage.damageType || primaryPart?.type || 'Physical';
-  } else {
-    // An attack with no damage parts and no damage-granting skill deals no weapon damage.
-    baseDice = primaryPart?.dice || '';
-    dmgType = primaryPart?.type || 'Physical';
-  }
+  // Base damage and rank damage die: the chosen Skill's Base Damage with the weapon's own override on top (the roll's own merge)
+  const base = mergeBaseDamage(matchingSkill?.system?.baseDamage, sys.baseDamage);
+  const baseDice = base.dice;
+  const dmgType = base.damageType || 'Physical';
 
   // The Table 37 Rank damage die shows only when a reached rank break grants one.
   const breakSource = matchingSkill?.system?.rankBreaks ? matchingSkill : item;
@@ -119,25 +108,11 @@ export function buildWeaponAttackProfile(actor, item, skills = (actor.items?.fil
     if (tier.damageDice) combinedDice = `${combinedDice ? `${combinedDice} + ` : ''}${tier.damageDice.replace(/^\+/, '')}`;
   }
 
-  // Include extra weapon damage parts additively
-  const extraParts = (skillBaseDamage?.dice && parts.length > 0) ? parts : parts.slice(1);
-  for (const ep of extraParts) {
-    if (ep?.dice) {
-      combinedDice = `${combinedDice ? `${combinedDice} + ` : ''}${ep.dice}${ep.type ? ` ${ep.type}` : ''}`;
-    }
-  }
-
-  // A skill that supplies the Base Damage supplies its stat too ('none' = no stat; blank = the skill's own stat, else none); weapon parts add no stat then.
-  const skillSuppliesDamage = Boolean(skillBaseDamage?.dice);
-  const skillDmgStat = skillBaseDamage?.stat || '';
-  const dmgStatKey = skillSuppliesDamage
-    ? (skillDmgStat === 'none' ? '' : (skillDmgStat || matchingSkill.system?.stat || '').toLowerCase())
-    : (primaryPart?.stat || skillDmgStat || matchingSkill?.system?.stat || toHitStat).toLowerCase();
+  // The stat the Base Damage adds: its own ('none' = no stat), else the Skill's
+  const dmgStatKey = baseDamageStat(base, matchingSkill?.system?.stat);
   const dmgStatMod = actor.system?.abilities?.[dmgStatKey]?.mod ?? 0;
   const displayDmgMod = dmgStatMod >= 0 ? `+${dmgStatMod}` : `${dmgStatMod}`;
   const typeStr = dmgType ? ` (${dmgType})` : '';
-  const extraPartsCount = (skillBaseDamage?.dice && parts.length > 0) ? parts.length : (parts.length > 1 ? parts.length - 1 : 0);
-  const extra = extraPartsCount > 0 ? ` (+${extraPartsCount} part${extraPartsCount > 1 ? 's' : ''})` : '';
 
   const formulaTokens = baseDice ? [baseDice] : [];
   if (rankDie) {
@@ -150,7 +125,7 @@ export function buildWeaponAttackProfile(actor, item, skills = (actor.items?.fil
     .replace(/\+\s*\+/g, '+')
     .replace(/\+\s*-\s*/g, '- ')
     .trim();
-  const displayDamage = `${cleanFormula}${typeStr}${extra}`;
+  const displayDamage = `${cleanFormula}${typeStr}`;
 
   let critMult = configuredCritMultiplier(sys.critMultiplier) || DEFAULT_CRIT_MULTIPLIER;
   let critRankReached = skillRank >= 15 ? 15 : 5;
@@ -213,7 +188,7 @@ export function buildWeaponAttackProfile(actor, item, skills = (actor.items?.fil
 
 export function buildSkillAttackProfile(actor, skill) {
   const sys = skill.system || {};
-  const rank = Math.max(Number(skill.modifiedRank) || 0, Number(sys.modifiedRank) || 0, Number(sys.rank) || 0);
+  const rank = actingRank(skill);
   const dmgData = getSkillDamageData(actor, skill);
 
   const sTags = skill.allTags instanceof Set ? skill.allTags : getItemAllTags(skill);
@@ -223,7 +198,7 @@ export function buildSkillAttackProfile(actor, skill) {
   const hit = attackToHitDisplay(actor, {
     item: skill, stat: toHitStat, rank,
     isOneHandedPenalty: hasOneHandedPenalty(sys, { handless: isNaturalWeapon(skill) }),
-    tags: [sys.weaponCategory, sys.weaponType, sys.slot].filter(Boolean)
+    tags: [sys.slot].filter(Boolean)
   });
   const { statMod, formula: toHitFormula } = hit;
   const toHitMod = hit.total;

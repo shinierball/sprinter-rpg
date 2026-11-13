@@ -55,12 +55,8 @@
   </div>
   {{/if}}
 
-  {{!-- PREREQUISITES --}}
-  {{#if prerequisites}}
-  <div class="cog-bg-gold-tint" style="border-left: 4px solid var(--cog-warning); padding: 6px 10px; margin-bottom: 8px; font-size: 12px;">
-    <strong><i class="fa-solid fa-triangle-exclamation"></i> Prerequisites:</strong> {{prerequisites}}
-  </div>
-  {{/if}}
+  {{!-- REQUIREMENTS (collapsed accordion; the prerequisites text is inside it) --}}
+  {{> "systems/sprinter-rpg/templates/items/parts/requirement-rows.hbs" rr=requirementRows}}
 
 
   {{!-- GRANTED SKILLS & SPELLS --}}

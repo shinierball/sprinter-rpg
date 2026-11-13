@@ -1,14 +1,43 @@
 <section class="tab {{tab.cssClass}}" data-group="primary" data-tab="upgrades">
+  {{!-- PURCHASES: who pays, Rank Up, Buy a Table --}}
+  {{#if purchase.canPurchase}}
+  <div class="cog-space-purchases cog-bg-surface" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 8px 12px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px;">
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <label class="cog-text-secondary" style="font-size: 12px;">{{localize "COG.SpacePurchase.PaidBy"}}</label>
+      <select class="cog-space-payer" data-change-action="setPayer">
+        {{#each purchase.payers as |p|}}<option value="{{p.uuid}}" {{#if p.selected}}selected{{/if}}>{{p.name}}</option>{{/each}}
+      </select>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button type="button" class="cog-btn cog-btn-primary" data-action="rankUp"><i class="fa-solid fa-turn-up"></i> {{purchase.rankUp.label}}</button>
+      {{#if purchase.rankUp.hasCoupons}}
+        <select class="cog-rank-coupon">
+          <option value="">{{purchase.rankUp.payGoldLabel}}</option>
+          {{#each purchase.rankUp.coupons as |c|}}<option value="{{c.id}}">{{c.name}}</option>{{/each}}
+        </select>
+      {{/if}}
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <label class="cog-text-secondary" style="font-size: 12px;">{{localize "COG.SpacePurchase.BuyTable"}}</label>
+      <select class="cog-table-type">
+        {{#each purchase.tableTypes as |o|}}<option value="{{o.tag}}">{{o.label}}</option>{{/each}}
+      </select>
+      <button type="button" class="cog-btn cog-btn-primary" data-action="buyTable"><i class="fa-solid fa-table"></i> {{purchase.buyTableLabel}}</button>
+    </div>
+  </div>
+  {{/if}}
+
   {{!-- INSTALLED UPGRADES --}}
   <div class="cog-text-success" style="font-size: 15px; font-weight: bold; margin-bottom: 8px;">
     <i class="fa-solid fa-circle-check"></i> INSTALLED MODULES & UPGRADES ({{installedUpgrades.length}})
+    <span class="cog-space-tables {{#if tableRoom.over}}cog-text-danger{{else}}cog-text-secondary{{/if}}" style="float: right; font-size: 12px;">{{localize "COG.SpaceRoom.Tables"}}: {{tableRoom.used}} / {{tableRoom.spaces}}{{#if tableRoom.grouped}} ({{localize "COG.SpaceRoom.Group"}}){{/if}}</span>
   </div>
   <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px;">
     {{#each installedUpgrades as |up|}}
       <div class="cog-bg-surface" style="border: 1px solid var(--cog-success); border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
         <div>
           <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">{{up.name}}</div>
-          <div class="cog-text-secondary" style="font-size: 11px;">{{up.description}}</div>
+          <div class="cog-text-secondary cog-space-upgrade-description" style="font-size: 11px;">{{{up.descriptionHtml}}}</div>
         </div>
         {{#if up.isCraftingTable}}
           <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="openCraftingApp" data-tooltip="{{localize 'COG.CraftApp.OpenerHint'}}" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
@@ -24,6 +53,33 @@
     {{/each}}
   </div>
 
+  {{!-- TABLES AND STUDIOS OF THE JOINED SPACES: read-only here, with Craft here and the tier buttons --}}
+  {{#if groupUpgrades.length}}
+  <div class="cog-text-info" style="font-size: 15px; font-weight: bold; margin-bottom: 8px;">
+    <i class="fa-solid fa-link"></i> {{localize "COG.SpaceRoom.GroupUpgrades"}} ({{groupUpgrades.length}})
+  </div>
+  <div class="cog-space-group-upgrades" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px;">
+    {{#each groupUpgrades as |up|}}
+      <div class="cog-bg-surface cog-space-group-upgrade" data-space-uuid="{{up.spaceUuid}}" data-item-id="{{up.itemId}}" style="border: 1px solid var(--cog-info); border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <div style="flex: 1;">
+          <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">{{up.name}}{{#if up.tierBadge}} <span class="cog-badge">{{up.tierBadge}}</span>{{/if}}</div>
+          <div class="cog-text-info" style="font-size: 11px;">{{up.fromLabel}}</div>
+          <div class="cog-text-secondary cog-space-upgrade-description" style="font-size: 11px;">{{{up.descriptionHtml}}}</div>
+        </div>
+        {{#if up.isCraftingTable}}
+          <div style="display: flex; flex-direction: column; gap: 4px; align-items: stretch;">
+            <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="openCraftingApp" data-tooltip="{{localize 'COG.CraftApp.OpenerHint'}}" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px 8px; font-size: 10px; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+              <i class="fa-solid fa-hammer"></i> {{localize "COG.CraftApp.OpenerHere"}}
+            </button>
+            <button type="button" class="cog-btn" data-action="buyGroupTableTier" data-space-uuid="{{up.spaceUuid}}" data-item-id="{{up.itemId}}"><i class="fa-solid fa-coins"></i> {{up.buyTierLabel}}</button>
+            {{#if up.coupons}}<button type="button" class="cog-btn" data-action="applyGroupTableCoupon" data-space-uuid="{{up.spaceUuid}}" data-item-id="{{up.itemId}}"><i class="fa-solid fa-ticket"></i> {{up.couponLabel}}</button>{{/if}}
+          </div>
+        {{/if}}
+      </div>
+    {{/each}}
+  </div>
+  {{/if}}
+
   {{!-- AVAILABLE UPGRADES CATALOG --}}
   <div class="cog-text-warning" style="font-size: 15px; font-weight: bold; margin-bottom: 8px;">
     <i class="fa-solid fa-cart-shopping"></i> UPGRADES CATALOG
@@ -38,8 +94,8 @@
           </div>
           <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">{{up.description}}</div>
         </div>
-        <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="installUpgrade" data-upgrade-id="{{up.id}}" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif; white-space: nowrap;">
-          Install ({{up.cost}} GC)
+        <button class="cog-bg-success-fill cog-text-on-fill" type="button" data-action="buyUpgrade" data-upgrade-id="{{up.id}}" style="border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-family: 'Oswald', sans-serif; white-space: nowrap;">
+          {{up.buyLabel}}
         </button>
       </div>
     {{/each}}

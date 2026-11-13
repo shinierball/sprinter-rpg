@@ -8,6 +8,7 @@ import { identityTags } from './roll-context.mjs';
 import { getCurrentFloor } from '../floor/current-floor.mjs';
 import { getRowKind, kindOf } from '../row-kinds.mjs';
 import { isMarkerActor } from '../area/marker.mjs';
+import { giftWorshipTier, highestWorshipTier } from '../deity/worship-state.mjs';
 
 /**
  * Scalars: a row's "this much per something". A scalar is a registered
@@ -18,6 +19,17 @@ import { isMarkerActor } from '../area/marker.mjs';
 
 /** @type {Record<string, ScalarDef>} The registry. `CONFIG.COG.scalars === SCALARS`. */
 export const SCALARS = {};
+
+const storedMove = (actor) => Number(actor?.system?.attributes?.speed?.move) || 0;
+let moveReader = storedMove;
+/**
+ * Where the `move` scalar reads the actor's Move now. The reader (`creatureMoveOf`, which folds the Move rows) lives in
+ * `documents/actor/actor-move.mjs` and registers itself here when it loads, so this file imports nothing from `documents/actor/`.
+ * @param {(actor: object) => number} reader
+ */
+export function setMoveScalarReader(reader) {
+  if (typeof reader === 'function') moveReader = reader;
+}
 
 /**
  * @typedef {object} ScalarDef
@@ -616,8 +628,18 @@ function registerBuiltIns() {
   registerScalar({
     id: 'move', label: 'COG.Rows.Scalar.move.Label', hint: 'COG.Rows.Scalar.move.Hint',
     needs: ['actor'],
-    resolve: ({ actor }) => Number(actor?.system?.attributes?.speed?.move) || 0,
+    resolve: ({ actor }) => moveReader(actor),
     describe: () => 'per foot of Move'
+  }, core);
+
+  registerScalar({
+    id: 'worshipTier', label: 'COG.Rows.Scalar.worshipTier.Label', hint: 'COG.Rows.Scalar.worshipTier.Hint',
+    needs: ['actor', 'source'],
+    params: {
+      scope: { choices: ['source', 'highest'], default: 'source', labels: { source: 'COG.Rows.Scalar.worshipTier.Scope.source', highest: 'COG.Rows.Scalar.worshipTier.Scope.highest' } }
+    },
+    resolve: ({ actor, carrier }, spec) => (spec.scope === 'highest' ? highestWorshipTier(actor) : giftWorshipTier(actor, carrier)),
+    describe: (spec) => (spec.scope === 'highest' ? 'per worship Tier' : 'per Tier of Devotion')
   }, core);
 }
 

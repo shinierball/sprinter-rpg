@@ -30,7 +30,7 @@ export const FLOOR_ARRIVALS = Object.freeze({
       { id: 'loot', kind: 'startingLoot', table: 'floor.loot.starting', tiers: null,
         slots: ['weapon', 'armor', 'item', 'consumable'], spellSlots: ['weapon', 'armor', 'item'] },
       { id: 'stats', kind: 'stats' },
-      { id: 'aiFavor', kind: 'aiFavor', formula: '1d2', byRating: { 1: '1d2', 2: '2d2' }, mode: 'max' },
+      { id: 'aiFavor', kind: 'aiFavor', formula: '1d2', byRating: { 1: '1d2', 2: '2d2' } },
       { id: 'popularity', kind: 'popularity', multiplier: 2, mode: 'set' },
       { id: 'raceClass', kind: 'raceClass' }
     ]

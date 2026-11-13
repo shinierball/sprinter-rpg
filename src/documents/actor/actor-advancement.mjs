@@ -12,6 +12,8 @@ import { buildRollContext, resolveRowAdvantage } from '../../utils/roll/roll-con
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { getRankCap } from '../../utils/skill/rank-cap.mjs';
 import { isFloorRanked } from '../../utils/skill/rank-source.mjs';
+import { ADVANCEMENT_ROUTES, routeAllowsGain, routeOfSource } from '../../utils/skill/advancement-routes.mjs';
+import { clearRouteStamp, confirmRouteGain, hasRouteStamp, routeLimitPhrase } from './advancement-gates.mjs';
 import { advancementTarget, grindLevelProgress } from '../../utils/skill/skill-advancement.mjs';
 import { openWindow, isWithinWindow, formatWindow } from '../../utils/time/time-window.mjs';
 import { currentTimeContext } from './dungeon-time.mjs';
@@ -29,7 +31,8 @@ const signed = (n) => (n > 0 ? ` + ${n}` : n < 0 ? ` - ${Math.abs(n)}` : '');
 /**
  * Mark a skill as used in play, so the next advancement check rolls it. The one writer of
  * `system.checked = true`.
- * No-op for passive skills, an already-marked skill, or something that cannot be updated.
+ * No-op for passive skills, an already-marked skill, a skill whose use route is closed at its Rank (the sheet's lock badge
+ * says how it does advance), or something that cannot be updated.
  * @param {Item} skillItem
  * @param {object} [params]
  * @param {string} [params.reason] Why the skill is marked ('roll', 'attack', 'damage-effect'); informational
@@ -42,6 +45,7 @@ export async function markSkillUsed(actor, skillItem, { reason, allowPassive = f
   if (skillItem.system?.checked) return false;
   if (hasRuleFlag(skillItem, RULE_FLAGS.noRanks)) return false;
   if (!allowPassive && isPassiveSkill(skillItem)) return false;
+  if (!routeAllowsGain(skillItem, ADVANCEMENT_ROUTES.use)) return false;
   try {
     await skillItem.update({ 'system.checked': true });
     return true;
@@ -108,36 +112,42 @@ export async function rollAdvancementCheck(actor, skill, { bonus = 0, advantage 
 
 /**
  * The one choke point for gaining a Skill Rank, used by checks, grinding, training and untrained
- * training. Past the Rank cap (15) or on a skill with `canGainRanks: false` the gain needs a Rule Break
+ * training. Past the Rank cap or a limit on the gain's route (`system.rankLimits`) the gain needs a Rule Break
  * confirmation; declining leaves the Rank alone. Never hard-blocks.
  * @param {Item} skill
  * @param {object} [params]
- * @param {string} [params.source] 'check' | 'grind' | 'training' | 'untrained' (informational)
+ * @param {string} [params.source] 'check' | 'batch' | 'grind' | 'training' | 'untrained': names the route whose limit applies (see `routeOfSource`)
  * @param {object} [params.options] Passed to confirmRuleBreak (`ruleBreak: true` pre-confirms)
- * @returns {Promise<{gained: boolean, ruleBreak: boolean, newRank: number, reason?: 'declined'|'floor-ranked', limit?: 'cap'|'locked'}>}
+ * @param {boolean} [params.routeChecked=false] A gate already asked about the route limit (a batch, an ad hoc check, training); only the Rank cap is asked here. A skill's
+ *   matching route stamp (grind hours put in as a Rule Break) counts the same and is spent by the gain.
+ * @returns {Promise<{gained: boolean, ruleBreak: boolean, newRank: number, reason?: 'declined'|'floor-ranked', limit?: 'cap'|'limited'}>}
  */
-export async function applyRankGain(actor, skill, { source, options = {} } = {}) {
+export async function applyRankGain(actor, skill, { source, options = {}, routeChecked = false } = {}) {
   const rank = Number(skill?.system?.rank ?? skill?.rank) || 0;
   if (isFloorRanked(skill)) {
     globalThis.ui?.notifications?.info?.(`${skill?.name ?? 'This skill'} has a Rank equal to the Floor number, so it does not advance.`);
     return { gained: false, ruleBreak: false, newRank: rank, reason: 'floor-ranked' };
   }
-  const locked = skill?.system?.canGainRanks === false;
+  const route = routeOfSource(source);
+  const closed = !routeAllowsGain(skill, route, rank);
+  const stamped = closed && !routeChecked && hasRouteStamp(skill, route, rank);
+  const limited = closed && !routeChecked && !stamped;
   const cap = getRankCap(actor, skill);
   const capped = rank >= cap;
-  let ruleBreak = false;
+  // A route Rule Break confirmed upstream (a gate or a stamp) is still a Rule Break on the gain
+  let ruleBreak = closed && !limited;
 
-  if (locked || capped) {
-    const limits = [];
-    if (locked) limits.push('cannot gain Ranks');
-    if (capped) limits.push(`is at its Rank cap (${cap})`);
+  if (limited || capped) {
+    const reasons = [];
+    if (limited) reasons.push(routeLimitPhrase(skill, route, rank));
+    if (capped) reasons.push(`is at its Rank cap (${cap})`);
     const confirm = await confirmRuleBreak({
-      title: locked ? 'Skill Cannot Gain Ranks' : 'Rank Cap Reached',
-      message: `${skill?.name ?? 'This skill'} ${limits.join(' and ')}. Advance anyway as a Rule Break?`,
+      title: limited ? 'Skill Does Not Advance This Way' : 'Rank Cap Reached',
+      message: `${skill?.name ?? 'This skill'} ${reasons.join(' and ')}. Advance anyway as a Rule Break?`,
       options
     });
     if (!confirm.confirmed) {
-      return { gained: false, ruleBreak: false, newRank: rank, reason: 'declined', limit: locked ? 'locked' : 'cap' };
+      return { gained: false, ruleBreak: false, newRank: rank, reason: 'declined', limit: limited ? 'limited' : 'cap' };
     }
     ruleBreak = true;
   }
@@ -150,15 +160,16 @@ export async function applyRankGain(actor, skill, { source, options = {} } = {})
   } else {
     skill.rank = newRank;
   }
+  if (stamped) await clearRouteStamp(skill);
   return { gained: true, ruleBreak, newRank };
 }
 
 /**
  * Roll a check for a skill and apply a gain through applyRankGain. Shared by the ad hoc check and the
  * grind paths. Does not touch the use mark or hours.
- * @returns {Promise<{check: object, outcome: 'gain'|'fail'|'capped'|'locked', gain: object|null, ruleBreak: boolean, newRank: number}>}
+ * @returns {Promise<{check: object, outcome: 'gain'|'fail'|'capped'|'limited', gain: object|null, ruleBreak: boolean, newRank: number}>}
  */
-export async function resolveAdvancementCheck(actor, skill, { rollOptions = {}, source, options = {} } = {}) {
+export async function resolveAdvancementCheck(actor, skill, { rollOptions = {}, source, options = {}, routeChecked = false } = {}) {
   // An End-of-floor roll settles its once-per-floor rows first, unless the batch already did for the whole run
   let floorRuleBreak = Boolean(rollOptions.floorRuleBreak);
   let checkOptions = rollOptions;
@@ -171,8 +182,8 @@ export async function resolveAdvancementCheck(actor, skill, { rollOptions = {}, 
   let outcome = check.passed ? 'gain' : 'fail';
   let gain = null;
   if (check.passed) {
-    gain = await applyRankGain(actor, skill, { source, options });
-    if (!gain.gained) outcome = gain.limit === 'locked' ? 'locked' : 'capped';
+    gain = await applyRankGain(actor, skill, { source, options, routeChecked });
+    if (!gain.gained) outcome = gain.limit === 'limited' ? 'limited' : 'capped';
   }
   return { check, outcome, gain, ruleBreak: Boolean(gain?.ruleBreak) || floorRuleBreak, newRank: gain?.gained ? gain.newRank : check.rank };
 }
@@ -222,7 +233,7 @@ export async function runGrindAdvancement(actor, skill, { invested, options = {}
   }
 
   const { check, outcome, ruleBreak, newRank } = await resolveAdvancementCheck(actor, skill, {
-    rollOptions: { rollResult: options.rollResult },
+    rollOptions: { rollResult: options.rollResult, advantage: options.advantage === true },
     source: 'grind',
     options
   });
@@ -241,7 +252,7 @@ export async function runGrindAdvancement(actor, skill, { invested, options = {}
     passed: outcome === 'gain',
     outcome,
     capped: outcome === 'capped',
-    locked: outcome === 'locked',
+    limited: outcome === 'limited',
     ruleBreak: ruleBreak || dayRuleBreak
   };
 }
@@ -384,8 +395,20 @@ export async function runAdvancementCheck(actor, skillOrId, options = {}) {
     : skillOrId;
   if (!skill || skill.type !== 'skill') return null;
 
+  // The unmarked question and a closed use route are one dialog; the gain then does not ask the route again
+  const unmarked = !skill.system?.checked;
+  const useClosed = !routeAllowsGain(skill, ADVANCEMENT_ROUTES.use);
   let ruleBreak = false;
-  if (!skill.system?.checked) {
+  if (useClosed) {
+    const gate = await confirmRouteGain(actor, skill, ADVANCEMENT_ROUTES.use, {
+      options,
+      verb: 'Roll a Skill Advancement Check',
+      title: unmarked ? 'Skill Not Marked' : undefined,
+      also: unmarked ? ['has not been used since its last check'] : []
+    });
+    if (!gate.ok) return { rolled: false, passed: false, ruleBreak: false, reason: 'declined' };
+    ruleBreak = true;
+  } else if (unmarked) {
     const confirm = await confirmRuleBreak({
       title: 'Skill Not Marked',
       message: `${skill.name} has not been used since its last check. Roll a Skill Advancement Check anyway as a Rule Break?`,
@@ -398,7 +421,8 @@ export async function runAdvancementCheck(actor, skillOrId, options = {}) {
   const { check, outcome, ruleBreak: gainRuleBreak, newRank } = await resolveAdvancementCheck(actor, skill, {
     rollOptions: { rollResult: options.rollResult, floorEnd: options.floorEnd === true },
     source: 'check',
-    options
+    options,
+    routeChecked: useClosed
   });
   ruleBreak = ruleBreak || gainRuleBreak;
 

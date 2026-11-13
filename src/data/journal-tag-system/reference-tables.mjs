@@ -3,9 +3,9 @@ import { TAG_NAMESPACES, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS 
 import { COG_TAGS } from '../tag-catalog.mjs';
 import { CHECK_TAGS, INTERRUPT_TRIGGERS, INTERCEPT_MODE_TAGS, NOT_VS_AREA_TAG, TRIGGER_MOMENTS, OFFER_ROLES } from '../../utils/tag/tag-mechanics.mjs';
 import { RULE_FLAG_DEFS } from '../../utils/tag/tag-behaviour.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
-const esc = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-const code = (id) => `<code>${esc(id)}</code>`;
+const code = (id) => `<code>${escapeAttr(id)}</code>`;
 const labelOf = (id) => COG_TAGS.find((d) => d.id === id)?.label ?? id;
 
 /**
@@ -27,7 +27,7 @@ export const NAMESPACE_GUIDE = Object.freeze({
   favored: { group: 'item', reader: 'The spell Favored check (the +1 MP penalty). Falls back to the matching <code>archetype.&lt;name&gt;</code>.' },
   weapon: { group: 'item', reader: 'The weapon family; weapon skills find their gear by it.' },
   weaponClass: { group: 'item', reader: 'Melee, ranged, unarmed, natural. Unarmed and natural attacks need no wielded weapon.' },
-  weaponGroup: { group: 'item', reader: 'Derived from weapon category and weapon skills; row conditions test it.' },
+  weaponGroup: { group: 'item', reader: 'A weapon family group, typed on a weapon and on its Skill (never derived); technique queries and row conditions test it.' },
   weaponProp: { group: 'item', reader: 'Handling traits such as reach and thrown; range checks.' },
   wield: { group: 'item', reader: 'One-handed or two-handed. Derived for weapons; a flexible two-hander is rewritten at roll time.' },
   skillGroup: { group: 'item', reader: 'Skill pickers and lists (the contest tracker lists movement skills first); the animal-skill lockout.' },
@@ -42,6 +42,9 @@ export const NAMESPACE_GUIDE = Object.freeze({
   role: { group: 'item', reader: 'Crew stations on vehicles and mounts; mercenary roles are descriptive.' },
   space: { group: 'item', reader: 'The kind of personal space a space item is.' },
   upgrade: { group: 'item', reader: 'The kind of upgrade a space upgrade is; the training and rest upgrades read it.' }, scene: { group: 'context', reader: 'Set on a scene by the Safe Room checkbox in Scene Config; a crawler token on such a scene opens loot boxes without a Rule Break.' },
+  worship: { group: 'derived', reader: 'Worship state, derived from a deity bond (<code>worship.active</code>, <code>worship.tier.1</code> to <code>worship.tier.3</code>) and carried by the buffs and debuffs a god gives (<code>worship.boon</code>, <code>worship.smite</code>, <code>worship.benefit</code>, <code>worship.divine</code>, <code>worship.fallen</code>).' },
+  worships: { group: 'derived', reader: '<code>worships.&lt;deity identifier&gt;</code>: the actor worships that god. Derived from a deity bond; typed on a mob or an NPC.' },
+  blessed: { group: 'item', reader: '<code>blessed.&lt;deity identifier&gt;</code>: gear blessed by that god. Registered for every deity that exists.' },
   access: { group: 'item', reader: 'Descriptive: access to a club, guild or facility. The GM adjudicates it (page 17).' },
   school: { group: 'item', reader: 'Descriptive: a spell\'s school or theme (illusion, healing, mind control). It shows as a line on the cast card; no rule reads it, and the GM adjudicates it (page 17).' },
   sense: { group: 'item', reader: 'Descriptive: darkvision, water breathing and the like (page 17).' },
@@ -83,8 +86,8 @@ function namespaceTable(groupKey) {
     .filter(([ns]) => (NAMESPACE_GUIDE[ns]?.group ?? 'module') === groupKey)
     .map(([ns, def]) => {
       const marks = [def.identity ? 'identity' : '', def.partyTag ? 'party' : ''].filter(Boolean).join(', ');
-      const reader = NAMESPACE_GUIDE[ns]?.reader ?? esc(def.description);
-      return `      <tr><td>${code(ns)}</td><td>${esc(def.label)}${marks ? ` <em>(${marks})</em>` : ''}</td><td>${reader}</td></tr>`;
+      const reader = NAMESPACE_GUIDE[ns]?.reader ?? escapeAttr(def.description);
+      return `      <tr><td>${code(ns)}</td><td>${escapeAttr(def.label)}${marks ? ` <em>(${marks})</em>` : ''}</td><td>${reader}</td></tr>`;
     });
   if (!rows.length) return '';
   return `
@@ -115,7 +118,7 @@ ${sections}
 
 export function flagTableHtml() {
   const rows = Object.values(RULE_FLAG_DEFS).map((d) =>
-    `      <tr><td>${code(d.id)}</td><td>${esc(d.label)}</td><td>${esc(d.hint)}</td></tr>`).join('\n');
+    `      <tr><td>${code(d.id)}</td><td>${escapeAttr(d.label)}</td><td>${escapeAttr(d.hint)}</td></tr>`).join('\n');
   return `  <table class="cog-journal-table">
     <thead><tr><th>Flag</th><th>Name</th><th>What the engine does</th></tr></thead>
     <tbody>
@@ -124,7 +127,7 @@ ${rows}
   </table>`;
 }
 
-const idList = (ids) => ids.map((id) => `<li>${code(id)}: ${esc(labelOf(id))}</li>`).join('\n    ');
+const idList = (ids) => ids.map((id) => `<li>${code(id)}: ${escapeAttr(labelOf(id))}</li>`).join('\n    ');
 
 export function checkOutcomeHtml() {
   const contest = COG_TAGS.filter((d) => d.namespace === 'contest').map((d) => d.id);
@@ -215,8 +218,8 @@ export function interruptHtml() {
   const interruptIds = new Set(INTERRUPT_TRIGGERS.map((t) => t.tag));
   const derived = COG_TAGS.filter((d) => d.namespace === 'trigger' && !interruptIds.has(d.id)).map((d) => d.id);
   const rows = INTERRUPT_TRIGGERS.map((t) =>
-    `      <tr><td>${code(t.tag)}</td><td>${esc(labelOf(t.tag))}</td><td>${esc(OFFER_TEXT[t.offerTo] ?? t.offerTo)}</td><td>${esc(MOMENT_TEXT[t.moment] ?? t.moment)}</td><td>${t.requiresHit ? 'only if the attack hit' : 'hit or miss'}</td></tr>`).join('\n');
-  const modes = INTERCEPT_MODE_TAGS.map((m) => `<li>${code(m.tag)}: ${esc(labelOf(m.tag))} (mode <code>${esc(m.mode)}</code>)</li>`).join('\n    ');
+    `      <tr><td>${code(t.tag)}</td><td>${escapeAttr(labelOf(t.tag))}</td><td>${escapeAttr(OFFER_TEXT[t.offerTo] ?? t.offerTo)}</td><td>${escapeAttr(MOMENT_TEXT[t.moment] ?? t.moment)}</td><td>${t.requiresHit ? 'only if the attack hit' : 'hit or miss'}</td></tr>`).join('\n');
+  const modes = INTERCEPT_MODE_TAGS.map((m) => `<li>${code(m.tag)}: ${escapeAttr(labelOf(m.tag))} (mode <code>${escapeAttr(m.mode)}</code>)</li>`).join('\n    ');
   return `
 <div class="cog-journal-page">
   <h2>Interrupts and Triggers</h2>
@@ -246,7 +249,7 @@ ${rows}
   <h3>What an Interrupt Does</h3>
   <ul>
     ${modes}
-    <li>${code(NOT_VS_AREA_TAG)}: ${esc(labelOf(NOT_VS_AREA_TAG))}. The interrupt is not offered against an area attack.</li>
+    <li>${code(NOT_VS_AREA_TAG)}: ${escapeAttr(labelOf(NOT_VS_AREA_TAG))}. The interrupt is not offered against an area attack.</li>
     <li><code>rule.no-redirect</code>: carried by an attack (or its skill), it cannot be redirected or intercepted. It carries the <code>no-redirect</code> flag.</li>
   </ul>
 
@@ -277,7 +280,7 @@ ${rows}
 export function mobsHtml() {
   const tiers = Object.values(globalThis.CONFIG?.COG?.bossTiers ?? BOSS_TIERS)
     .filter((t) => t?.boss !== false)
-    .map((t) => `      <tr><td>${code(t.tag ?? `mob.tier.${t.id}`)}</td><td>${esc(t.label)}</td></tr>`).join('\n');
+    .map((t) => `      <tr><td>${code(t.tag ?? `mob.tier.${t.id}`)}</td><td>${escapeAttr(t.label)}</td></tr>`).join('\n');
   return `
 <div class="cog-journal-page">
   <h2>Mobs and Bosses</h2>

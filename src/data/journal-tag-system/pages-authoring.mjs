@@ -1,3 +1,5 @@
+import { WEAPON_PAGE } from './page-weapon.mjs';
+
 /** Localized lore text, resolved when the page content is read (after i18n is ready), not at import. */
 function localizeGuide(key) {
   return globalThis.game?.i18n?.localize?.(key) ?? key;
@@ -14,7 +16,7 @@ export const AUTHORING_PAGES = [
 <div class="cog-journal-page">
   <h2>Sprinter RPG — Unified Tagging Architecture</h2>
   <p>
-    Welcome to the <strong>Sprinter RPG Tagging System</strong>! In Sprinter RPG, all game mechanics, weapon associations, technique activations, spell mana costs, and character progression are powered by <em>exact, namespaced tags</em> rather than hardcoded text, magic strings, or fragile regular expressions.
+    Welcome to the <strong>Sprinter RPG Tagging System</strong>! In Sprinter RPG, all game mechanics, weapon associations, technique activations, spell mana costs, and character progression are powered by <em>exact, namespaced tags</em> rather than hardcoded text, magic strings, or fragile regular expressions (well almost all of them).
   </p>
 
   <div class="cog-journal-callout cog-journal-callout-info">
@@ -74,11 +76,11 @@ export const AUTHORING_PAGES = [
     Every Item sheet in Sprinter RPG features a dedicated <strong>Tag Editor</strong> tab and a Tag Manager header action:
   </p>
   <ol>
-    <li>Open any Item sheet (Weapon, Armor, Spell, Skill, Class, Race, Buff, Loot).</li>
+    <li>Open any Item sheet (Gear, which covers weapons and armour, Spell, Skill, Class, Race, Buff, Debuff, Loot).</li>
     <li>Click the <strong>Tags</strong> tab on the sheet to view:
       <ul>
         <li><strong>Explicit Tags:</strong> Assigned tags that you can add or remove via input.</li>
-        <li><strong>Derived &amp; Identity Tags:</strong> Read-only tags the engine works out from the item's fields (e.g. <code>element.fire</code> from a Fire damage packet) together with its unique identity tag (e.g. <code>id.gear.boom-stick</code>). Page 13 lists where each comes from. To change one, change the field, not the tag.</li>
+        <li><strong>Derived &amp; Identity Tags:</strong> Read-only tags the engine works out from the item's fields (e.g. <code>element.fire</code> from a Base Damage whose type is Fire, <code>wield.one_handed</code> from a weapon's Hands) together with its unique identity tag (e.g. <code>id.gear.prop-sabre</code>). Page 13 lists where each comes from. To change one, change the field, not the tag.</li>
       </ul>
     </li>
     <li>Click the <strong><i class="fa-solid fa-tags"></i> Manage Tags</strong> button in the Item sheet header:
@@ -97,84 +99,13 @@ export const AUTHORING_PAGES = [
 
   <h3>Which Attacks a Technique Rides (<code>appliesToQuery</code>)</h3>
   <p>
-    A technique carries an <code>appliesToQuery</code>: a tag query (<code>all</code> / <code>any</code> / <code>none</code>) the attack's tags must match for the technique to apply. A technique for edged weapons asks for <code>weaponGroup.edge</code>; one with no query rides any attack. The weapon recommendation list on a technique uses the same query.
+    A technique carries an <code>appliesToQuery</code>: a tag query (<code>all</code> / <code>any</code> / <code>none</code>) the attack's tags must match for the technique to apply. A technique for edged weapons asks for <code>weaponGroup.edge</code>, which a weapon carries when its <em>Weapon group</em> chip is picked (or copied from its Skill with <em>Use the Skill's</em>; page 3). One with no query rides any attack. The weapon recommendation list on a technique uses the same query.
   </p>
 </div>
 `
       }
     },
-    {
-      name: "3. Creating Custom Weapons & Gear",
-      type: "text",
-      title: { show: true, level: 1 },
-      text: {
-        format: 1,
-        content: `
-<div class="cog-journal-page">
-  <h2>Creating Custom Weapons with Tags</h2>
-  <p>
-    When creating a custom weapon in Sprinter RPG, you combine <strong>weapon classification tags</strong>, <strong>damage packets</strong>, and <strong>associated skills</strong> to give the weapon full system automation.
-  </p>
-
-  <h3>Walkthrough: The "Goblin Boom Stick"</h3>
-  <p>
-    Let's create a custom sawed-off incendiary weapon named <em>"Goblin Boom Stick"</em>:
-  </p>
-  <div class="cog-journal-card">
-    <h4>Item Configuration:</h4>
-    <ul>
-      <li><strong>Type:</strong> Gear (Slot: <code>hands</code>, Wield Mode: <code>two_handed</code>)</li>
-      <li><strong>Weapon Category:</strong> <code>ranged</code></li>
-      <li><strong>Weapon Type:</strong> <code>shotgun</code></li>
-      <li><strong>Associated Skills (<code>system.associatedSkills</code>):</strong> <code>shotgun</code> (by identifier; the <code>weapon.shotgun</code> tag below would match it anyway)</li>
-      <li><strong>Damage Parts:</strong>
-        <ul>
-          <li>Part 1: <code>1d6 Fire</code> (Incendiary payload)</li>
-        </ul>
-      </li>
-      <li><strong>Tags:</strong>
-        <code>kind.gear</code>,
-        <code>weaponClass.ranged</code>,
-        <code>weapon.shotgun</code>,
-        <code>element.fire</code>
-      </li>
-    </ul>
-  </div>
-
-  <h3>How the Engine Resolves Weapon Attacks</h3>
-  <p>
-    When a crawler equips the <em>Goblin Boom Stick</em>:
-  </p>
-  <ol>
-    <li>
-      <strong>Primary Skill vs Auxiliary Skill:</strong>
-      Because <em>Shotgun</em> is a combat attack skill (carrying <code>rule.requires-weapon</code> and <code>action.attack</code>), it becomes the <strong>Primary Matching Skill</strong>.
-      <em>Aiming</em> is not an attack: it carries the rule tag <code>rule.aiming-offset</code>, whose modifier rows join any ranged attack the crawler rolls with the Aiming toggle ticked (see page 4).
-    </li>
-    <li>
-      <strong>Strictly Additive Damage Scaling:</strong>
-      Unlike traditional systems that overwrite dice, Sprinter RPG uses <em>strictly additive</em> damage calculation. With Shotgun at Rank 10 and Aiming at Rank 5, Aiming ticked:
-      <pre>
-Total Damage = Shotgun Base Damage (1d10 Piercing)
-             + Shotgun Rank 5 and Rank 10 breaks (+1d10 each, same die: 3d10 Piercing)
-             + Weapon Item Damage (Boom Stick: 1d6 Fire)
-             + Aiming rows, when ticked (Rank 5+: +2d4 Piercing)
-      </pre>
-      The chat card rolls <code>3d10 Piercing + 1d6 Fire + 2d4 Piercing</code>, each packet with its own damage type. Two things are absent on purpose:
-      <ul>
-        <li><strong>No stat modifier:</strong> Shotgun's Base Damage names no stat (<code>none</code>). A skill whose Base Damage names a stat adds that modifier; a blank one falls back to the skill's own stat. Once a skill supplies the Base Damage, the weapon's parts add dice only, never a stat.</li>
-        <li><strong>No automatic Rank damage die:</strong> a Rank die is never a default term. It joins only when a reached rank break grants one (its <code>rankDamageDice</code>) or a damage effect does, and an <code>add</code> row can add one (page 10). Shotgun's breaks add base dice instead.</li>
-      </ul>
-    </li>
-    <li>
-      <strong>To-Hit Formula Display:</strong>
-      The crawler sheet displays the full formula: <code>1d20 + 14</code> (DEX Mod +4 + Shotgun Rank 10).
-    </li>
-  </ol>
-</div>
-`
-      }
-    },
+    WEAPON_PAGE,
     {
       name: "4. Secondary Skills & Disadvantage Offsets",
       type: "text",
@@ -219,9 +150,9 @@ Disadvantage Attack: 2d20kl + 12 (DEX +4 + Bow Rank 5 + Aiming Rank 3)
     To prevent character sheets from cluttering with dozens of attack buttons for weapons the character is not carrying:
   </p>
   <ul>
-    <li>All weapon skills (e.g., <em>Rapier</em>, <em>Shotgun</em>, <em>Crossbow</em>) are tagged with <code>rule.requires-weapon</code>.</li>
-    <li>If a crawler has Rank 15 in <em>Shotgun</em> but has no shotgun equipped (or has it stowed in their backpack), <strong>no shotgun attack is synthesized</strong> on the sheet.</li>
-    <li><strong>Unarmed & Natural Attacks:</strong> Skills tagged with <code>weaponClass.unarmed</code> or <code>weaponClass.natural</code> (like <em>Pugilism</em>, <em>Bite</em>, <em>Claws</em>) do NOT require an equipped weapon and remain available at all times.</li>
+    <li>A weapon Skill attacks only through a weapon. A Skill is a weapon Skill when it carries a <code>weapon.*</code> type tag (as <em>Prop Sabre Fencing</em> carries <code>weapon.rapier</code>) or the rule tag <code>rule.requires-weapon</code>.</li>
+    <li>If a crawler has Prop Sabre Fencing at Rank 15 but no weapon that uses it equipped (the Prop Sabre is stowed in their backpack), <strong>no attack is listed for the Skill</strong> on the sheet. Equip the sabre and its attack appears, rolled with the Skill (page 3).</li>
+    <li><strong>Unarmed & Natural Attacks:</strong> Skills tagged with <code>weaponClass.unarmed</code> or <code>weaponClass.natural</code> (like <em>Knuckle Sandwich</em>, <em>Claw Swipe</em>, <em>Chomp</em>) need no equipped weapon and remain available at all times. Both tags carry the no-hands flag, so these attacks take no hand.</li>
   </ul>
 
   <h3>Items with Special Cooldown Grants</h3>
@@ -362,6 +293,11 @@ Disadvantage Attack: 2d20kl + 12 (DEX +4 + Bow Rank 5 + Aiming Rank 3)
         <td><strong>rank_cap</strong></td>
         <td><code>{ "kind": "rank_cap", "identifier": "aiming", "value": 8 }</code></td>
         <td>Lets the named skill advance up to rank <code>value</code>, if that is higher than its current cap. A <code>tag</code> can replace the <code>identifier</code> to cover every skill carrying the tag.</td>
+      </tr>
+      <tr>
+        <td><strong>rank_raise</strong></td>
+        <td><code>{ "kind": "rank_raise", "identifier": "aiming", "floor": 10, "value": 2 }</code></td>
+        <td>A fixed row only. A rank below <code>floor</code> (N) acts as N; a rank at or above N is raised by <code>value</code> (M). It reads the rank after gear and other bonuses. A <code>tag</code> or a <code>query</code> can replace the <code>identifier</code>. Use it on a buff or gear; the row applies to a skill or spell the character owns, or to one a <code>skill</code> or <code>spell</code> row of the same source grants.</td>
       </tr>
     </tbody>
   </table>

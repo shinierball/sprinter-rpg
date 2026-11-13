@@ -14,6 +14,7 @@ import { vehicleCheckDifficulty } from '../../utils/vehicle/vehicle-check.mjs';
 import {
   VEHICLE_CHECK_RESULTS, resultApplies, resultEffect, attackDifficulty, occupantEvadeBuff, boardDifficulty, decelerateDifficulty, ramDice
 } from '../../data/rules/vehicle-rules.mjs';
+import { isGmActor } from '../../utils/document-types.mjs';
 
 const say = (key, fallback, data) => {
   const i18n = globalThis.game?.i18n;
@@ -47,7 +48,7 @@ function resultBadge(vehicle, move = vehicleMoveOf(vehicle)) {
  * @returns {{ total: number, dc: number, outcome: string }|null} null for a driver who rolls (a crawler) or nobody
  */
 function fixedDriverResult(vehicle, driver) {
-  if (!driver || !['mob', 'npc'].includes(driver.type)) return null;
+  if (!driver || !isGmActor(driver)) return null;
   const floor = getCurrentFloor();
   const dc = vehicleCheckDifficulty('performance', { currentMove: Number(vehicle.system?.drive?.currentMove) || 0, floor });
   if (!Number.isFinite(dc)) return null;

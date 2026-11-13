@@ -15,6 +15,8 @@ import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
 import { buildRollContext, extendContext } from '../../utils/roll/roll-context.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { gateItemCooldown, gateGrantedSpellCooldown } from './cooldown-gate.mjs';
+import { confirmHealing, settleHealed } from './healing.mjs';
+import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from './action-block.mjs';
 import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from './zero-zone-gate.mjs';
 import { computeManaCost, resolveManaCostSituations } from '../../utils/roll/narrow-modifiers.mjs';
 import { isAuraItem, isAreaTagSet, isHealingItem } from '../../utils/tag/tag-mechanics.mjs';
@@ -24,6 +26,7 @@ import { spellFailedCardHtml } from './spell-cast-card.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import { restoredValue } from '../../utils/damage/resource-restore.mjs';
 import { attackTargetEntries } from './attack-targets.mjs';
+import { spendActivationUses } from './buff-activation.mjs';
 import { getItemInflictedConditions } from './inflicted-conditions.mjs';
 
 /**
@@ -68,7 +71,7 @@ async function putOutLight(actor, spell) {
  * @param {Actor} actor
  * @param {Item} spell
  * @param {object} opts
- * @returns {Promise<{ isAura: boolean, isSelfLight: boolean, isGrantedSpell: boolean, zeroZoneGate: object, cooldownGate: object, castRange: object }|null>}
+ * @returns {Promise<{ isAura: boolean, isSelfLight: boolean, isGrantedSpell: boolean, zeroZoneGate: object, actionBlockGate: object, cooldownGate: object, castRange: object }|null>}
  *   null when the caster declined a gate
  */
 export async function gateSpellCast(actor, spell, opts) {
@@ -80,6 +83,10 @@ export async function gateSpellCast(actor, spell, opts) {
 
   // A scroll or gear that casts the spell carries its limits itself (`useLoot` asked the zero-zone Rule Break and the cooldown).
   const carriedByItem = Boolean(opts.originItem || opts.isConsumable || opts.isItemEffect);
+  const actionBlockGate = carriedByItem || !actionBlockApplies(actor, 'cast', opts)
+    ? ACTION_BLOCK_CLEAR
+    : await gateActionBlock(actor, 'cast', { options: opts });
+  if (!actionBlockGate.proceed) return null;
   const zeroZoneGate = !carriedByItem && zeroZoneApplies(actor, opts)
     ? await gateZeroZone(actor, spell, { verb: 'Cast', options: opts })
     : ZERO_ZONE_CLEAR;
@@ -100,7 +107,8 @@ export async function gateSpellCast(actor, spell, opts) {
     : { proceed: true, ruleBreak: false, outOfRange: [], flags: {} };
   if (!castRange.proceed) return null;
 
-  return { isAura, isSelfLight, isGrantedSpell, zeroZoneGate, cooldownGate, castRange };
+  await spendActivationUses(actor, [spell]);
+  return { isAura, isSelfLight, isGrantedSpell, zeroZoneGate, actionBlockGate, cooldownGate, castRange };
 }
 
 /**
@@ -268,13 +276,17 @@ export async function applySpellHealing(actor, spell, opts, updates) {
     if (isHoT) {
       await actor.applyHoT({ name: `${spell.name} (HoT)`, healBars: barsToHeal, rounds: hotRounds });
     } else {
-      const healAmt = barsToHeal * hpPerBar;
-      newHp = restoredValue(currentHp, healAmt, maxHp);
-      actualHealed = Math.max(0, newHp - currentHp);
-      newPct = maxHp > 0 ? Math.min(100, Math.max(0, Math.round((newHp / maxHp) * 100))) : 100;
-      if (actor.system?.attributes?.hp) {
-        updates['system.attributes.hp.value'] = newHp;
-        updates['system.attributes.hp.pct'] = newPct;
+      const gate = await confirmHealing(actor, { interactive: opts.interactive });
+      if (gate.proceed) {
+        const healAmt = barsToHeal * hpPerBar;
+        newHp = restoredValue(currentHp, healAmt, maxHp);
+        actualHealed = Math.max(0, newHp - currentHp);
+        newPct = maxHp > 0 ? Math.min(100, Math.max(0, Math.round((newHp / maxHp) * 100))) : 100;
+        if (actor.system?.attributes?.hp) {
+          updates['system.attributes.hp.value'] = newHp;
+          updates['system.attributes.hp.pct'] = newPct;
+        }
+        await settleHealed(actor, { before: currentHp, after: newHp });
       }
     }
     for (const deb of debuffsToCleanse) {

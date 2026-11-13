@@ -92,6 +92,19 @@ export function getStarterWeaponDefinition(ref) {
 }
 
 /**
+ * A weapon's type tags (`weapon.*`, `weaponClass.*`) for the Skill it uses: the starter weapon loadout's own `tags` (system
+ * data, so a pack build with no catalog has them too), else the tags of the catalog Skill with that identifier.
+ * @param {string} identifier
+ * @returns {string[]} empty when neither knows the Skill
+ */
+export function weaponTagsForSkill(identifier) {
+  if (!identifier) return [];
+  const loadout = loadoutOptions('weapon').find(entry => entry.skillIdentifier === identifier && Array.isArray(entry.tags));
+  const tags = loadout?.tags ?? findCatalogEntry('skills', identifier)?.system?.tags;
+  return Array.isArray(tags) ? tags.filter(tag => tag.startsWith('weapon.') || tag.startsWith('weaponClass.')) : [];
+}
+
+/**
  * The text a loadout option shows. An entry's own `label` wins; a spell entry shows the name of the catalog spell it references;
  * an unarmed package with an empty label shows the names of the catalog skill and Damage Effect it references (found by
  * identifier or `_id`, never by name; the bundled placeholder names before a Sourcery import, the imported names after);

@@ -1,0 +1,131 @@
+{{!-- One rank-break card. Context: an entry of buildRankBreakCards(). --}}
+    <div class="cog-rank-break-card cog-bg-surface" style="margin-bottom: 8px; border: 1px solid var(--cog-divider); border-left: 4px solid var(--cog-{{tone}}); padding: 6px; border-radius: 3px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <div class="cog-text-{{tone}}" style="font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid {{icon}}"></i> {{localize "COG.AbilitySheet.RankBreaks.Milestone"}}
+          <label class="cog-text" style="display: inline-flex; align-items: center; gap: 4px; font-weight: normal;">
+            <span style="font-size: 11px;">{{localize "COG.AbilitySheet.RankBreaks.Rank"}}</span>
+            <select class="cog-text-{{tone}}" name="system.rankBreaks.{{key}}.rank" style="font-size: 11px; font-weight: bold; padding: 1px 4px; border: 1px solid var(--cog-{{tone}}); border-radius: 3px;">
+              {{#each rankOptions}}
+                <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+              {{/each}}
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.DamageDice"}}</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.{{key}}.damageDice" value="{{data.damageDice}}" placeholder="{{damageDicePlaceholder}}" style="font-size: 11px;" />
+          <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.AbilitySheet.RankBreaks.DamageDiceHint"}}</p>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.DamageType"}}</span>
+          <select class="cog-field-input" name="system.rankBreaks.{{key}}.damageType" style="font-size: 11px;">
+            <option value="">{{localize damageTypeBlankKey}}</option>
+            {{#each view.damageTypeOptions}}
+              <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.RankDamageDice"}}</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.rankDamageDice" value="{{data.rankDamageDice}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.DiceSource"}}</span>
+          <select class="cog-field-input" name="system.rankBreaks.{{key}}.rankDiceSource" style="font-size: 11px;">
+            {{#each diceSourceOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+          </select>
+          <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.AbilitySheet.RankBreaks.DiceSourceHint"}}</p>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-burst cog-text-accent"></i> {{localize "COG.AbilitySheet.RankBreaks.Crit"}}</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.critMultiplier" value="{{#if data.critMultiplier}}{{data.critMultiplier}}{{else}}1{{/if}}" placeholder="1" min="1" style="font-size: 11px;" title="{{localize "COG.AbilitySheet.RankBreaks.CritTitle"}}" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.CardNote"}}</span>
+          <input class="cog-field-input" type="text" name="system.rankBreaks.{{key}}.buffsResistances" value="{{data.buffsResistances}}" placeholder="{{buffsPlaceholder}}" style="font-size: 11px;" />
+          <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.AbilitySheet.RankBreaks.CardNoteHint"}}</p>
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.OnHitDebuff"}}</span>
+          <select class="cog-field-input" name="system.rankBreaks.{{key}}.debuff" style="font-size: 11px;">
+            <option value="">{{localize "COG.AbilitySheet.RankBreaks.None"}}</option>
+            {{#each @root.availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../data.debuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-circle-notch"></i> {{localize "COG.AbilitySheet.RankBreaks.RadiusBonus"}}</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.area.radiusBonus" value="{{data.area.radiusBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> {{localize "COG.AbilitySheet.RankBreaks.TempHp"}}</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.tempBars.hpPerSlot" value="{{data.tempBars.hpPerSlot}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-shield-halved"></i> {{localize "COG.AbilitySheet.RankBreaks.TempBars"}}</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.tempBars.barsGranted" value="{{data.tempBars.barsGranted}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-heart-pulse cog-text-success"></i> {{localize "COG.AbilitySheet.RankBreaks.HealingBars"}}</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.healing.barsBonus" value="{{data.healing.barsBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-sparkles cog-text-success"></i> {{localize "COG.AbilitySheet.RankBreaks.CleanseDebuff"}}</span>
+          <select class="cog-field-input" name="system.rankBreaks.{{key}}.healing.cleanseDebuff" style="font-size: 11px;">
+            <option value="">{{localize "COG.AbilitySheet.RankBreaks.None"}}</option>
+            {{#each @root.availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../data.healing.cleanseDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 10px;">
+          <input type="checkbox" name="system.rankBreaks.{{key}}.isArmorPiercing" {{#if data.isArmorPiercing}}checked{{/if}} />
+          <span>{{localize "COG.AbilitySheet.RankBreaks.ArmorPiercing"}}</span>
+        </label>
+      </div>
+      <div class="cog-field-row" style="margin-bottom: 4px; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label"><i class="fa-solid fa-scale-balanced cog-text-magic"></i> {{localize "COG.AbilitySheet.RankBreaks.ContestDc"}}</span>
+          <input class="cog-field-input" type="number" name="system.rankBreaks.{{key}}.contest.dcBonus" value="{{data.contest.dcBonus}}" placeholder="0" min="0" style="font-size: 11px;" />
+        </div>
+        <div class="cog-field-group" style="flex: 1.5;">
+          <span class="cog-field-label"><i class="fa-solid fa-skull cog-text-magic"></i> {{localize "COG.AbilitySheet.RankBreaks.FailDebuff"}}</span>
+          <select class="cog-field-input" name="system.rankBreaks.{{key}}.contest.onFailDebuff" style="font-size: 11px;">
+            <option value="">{{localize "COG.AbilitySheet.RankBreaks.KeepBase"}}</option>
+            {{#each @root.availableDebuffs as |deb|}}
+              <option value="{{deb.system.identifier}}" {{#if (sameDebuff ../data.contest.onFailDebuff deb.system.identifier)}}selected{{/if}}>{{deb.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.Notes"}}</span>
+        <input class="cog-field-input" type="text" name="system.rankBreaks.{{key}}.notes" value="{{data.notes}}" placeholder="{{localize notesPlaceholderKey}}" style="font-size: 11px;" />
+      </div>
+      {{> "systems/sprinter-rpg/templates/items/parts/rank-break-extras.hbs" key=key data=data view=view withBaseDiceCountMod=true checkBonusKey=checkBonusKey}}
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.Tags"}}</span>
+        <input class="cog-field-input" data-change-action="setRankBreakTags" type="text" data-rank-break="{{key}}" value="{{tagText}}" placeholder="{{localize "COG.AbilitySheet.RankBreaks.TagsPlaceholder"}}" style="font-size: 11px;" />
+        <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.AbilitySheet.RankBreaks.TagsHint"}}</p>
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.InterruptRange"}}</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.interrupt.rangeBonus" value="{{data.interrupt.rangeBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <span class="cog-field-label">{{localize "COG.AbilitySheet.RankBreaks.InterruptDr"}}</span>
+        <input class="cog-field-input" type="number" min="0" name="system.rankBreaks.{{key}}.interrupt.drBonus" value="{{data.interrupt.drBonus}}" style="font-size: 11px;" />
+      </div>
+      <div class="cog-field-group" style="margin-bottom: 0;">
+        <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">
+          <input type="checkbox" name="system.rankBreaks.{{key}}.interrupt.ignoreDebuffs" {{#if data.interrupt.ignoreDebuffs}}checked{{/if}} />
+          <span>{{localize "COG.AbilitySheet.RankBreaks.InterruptIgnore"}}</span>
+        </label>
+      </div>
+    </div>

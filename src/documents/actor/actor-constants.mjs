@@ -33,7 +33,7 @@ export function getCOGStatModifier(statValue) {
 /** Stat points granted for each Level gained. */
 export const STAT_POINTS_PER_LEVEL = 3;
 
-/** Default critical hit multiplier when none is configured (a stored multiplier of 1 or less means "not configured"). */
+/** How many times the base dice are rolled on a Critical Hit when none is configured (a stored multiplier of 1 or less means "not configured"). */
 export const DEFAULT_CRIT_MULTIPLIER = 2;
 
 /**

@@ -5,6 +5,7 @@
  */
 import { resolveReachedRankBreaks } from '../skill/rank-breaks.mjs';
 import { EVADE_FAIL_DEGREES } from './evade-degrees.mjs';
+import { jsonAttr } from '../escape-attr.mjs';
 
 const clean = (v) => {
   let val = v ?? '';
@@ -132,9 +133,6 @@ export function hasOnHitEffect(system) {
   return hasOnHitDebuff(system) || hasLifesteal(system) || hasDispel(system);
 }
 
-/** JSON for a single-quoted `data-*` attribute: an apostrophe in a name must not end the attribute. */
-const attrJson = (value) => JSON.stringify(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll("'", '&#39;');
-
 /**
  * The damage card attributes for the lifesteal, dispel and gated-debuff parts (empty string when there are none).
  * @param {object} effects from `collectOnHitEffects`
@@ -142,11 +140,11 @@ const attrJson = (value) => JSON.stringify(value).replaceAll('&', '&amp;').repla
  */
 export function onHitCardAttrs(effects) {
   let out = '';
-  if (effects?.lifesteal?.length) out += `\n      data-lifesteal='${attrJson(effects.lifesteal)}'`;
-  if (effects?.dispel?.length) out += `\n      data-dispel='${attrJson(effects.dispel)}'`;
-  if (effects?.debuffPick?.length) out += `\n      data-debuff-pick='${attrJson(effects.debuffPick)}'`;
-  if (effects?.evadeFail?.length) out += `\n      data-evade-fail='${attrJson(effects.evadeFail)}'`;
-  if (effects?.slotLoss?.length) out += `\n      data-slot-loss='${attrJson(effects.slotLoss)}'`;
+  if (effects?.lifesteal?.length) out += `\n      data-lifesteal='${jsonAttr(effects.lifesteal)}'`;
+  if (effects?.dispel?.length) out += `\n      data-dispel='${jsonAttr(effects.dispel)}'`;
+  if (effects?.debuffPick?.length) out += `\n      data-debuff-pick='${jsonAttr(effects.debuffPick)}'`;
+  if (effects?.evadeFail?.length) out += `\n      data-evade-fail='${jsonAttr(effects.evadeFail)}'`;
+  if (effects?.slotLoss?.length) out += `\n      data-slot-loss='${jsonAttr(effects.slotLoss)}'`;
   return out;
 }
 

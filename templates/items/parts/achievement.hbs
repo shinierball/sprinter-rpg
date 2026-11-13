@@ -4,21 +4,21 @@
   {{!-- TIER & LOCATION ROW --}}
   <div class="cog-field-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
     <div class="cog-field-group flex-1">
-      <span class="cog-field-label" style="font-weight: bold;">Trophy Tier</span>
+      <span class="cog-field-label" style="font-weight: bold;">{{localize "COG.Achievement.Sheet.Tier"}}</span>
       <select class="cog-field-input" name="system.tier" style="font-family: 'Oswald', sans-serif;">
         {{#each achievementTierOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
       </select>
     </div>
 
     <div class="cog-field-group flex-1">
-      <span class="cog-field-label" style="font-weight: bold;">Category</span>
-      <input class="cog-field-input" type="text" name="system.category" value="{{system.category}}" placeholder="e.g. Attendance" />
+      <span class="cog-field-label" style="font-weight: bold;">{{localize "COG.Achievement.Sheet.Category"}}</span>
+      <input class="cog-field-input" type="text" name="system.category" value="{{system.category}}" placeholder="{{localize "COG.Achievement.Sheet.CategoryPlaceholder"}}" />
     </div>
 
     <div class="cog-field-group flex-1">
-      <span class="cog-field-label" style="font-weight: bold;">Floor Unlocked</span>
+      <span class="cog-field-label" style="font-weight: bold;">{{localize "COG.Achievement.Sheet.Floor"}}</span>
       <select class="cog-field-input" name="system.floor">
-        <option value="">-- None / Any --</option>
+        <option value="">{{localize "COG.Achievement.Sheet.FloorNone"}}</option>
         {{#each floorOptions as |fOpt|}}
           <option value="{{fOpt.value}}" {{#if fOpt.selected}}selected{{/if}}>{{fOpt.label}}</option>
         {{/each}}
@@ -26,15 +26,15 @@
     </div>
 
     <div class="cog-field-group flex-1">
-      <span class="cog-field-label" style="font-weight: bold;">Date / Session</span>
-      <input class="cog-field-input" type="text" name="system.dateEarned" value="{{system.dateEarned}}" placeholder="e.g. Session 3" />
+      <span class="cog-field-label" style="font-weight: bold;">{{localize "COG.Achievement.Sheet.DateEarned"}}</span>
+      <input class="cog-field-input" type="text" name="system.dateEarned" value="{{system.dateEarned}}" placeholder="{{localize "COG.Achievement.Sheet.DatePlaceholder"}}" />
     </div>
   </div>
 
   {{!-- DUNGEON AI QUOTE --}}
   <div class="cog-field-group" style="margin-bottom: 10px;">
     <span class="cog-field-label cog-text-accent" style="font-weight: bold;">
-      <i class="fa-solid fa-bullhorn"></i> Dungeon AI Announcement Quote
+      <i class="fa-solid fa-bullhorn"></i> {{localize "COG.Achievement.Sheet.Quote"}}
     </span>
     <textarea class="cog-field-input cog-bg-surface-alt" name="system.quote" rows="3" placeholder="“Congratulations on the ceremonial first step. The staircase thanks you for your service.”" style="font-style: italic;">{{system.quote}}</textarea>
   </div>
@@ -43,44 +43,47 @@
   <div class="cog-field-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
     <div class="cog-field-group flex-2">
       <span class="cog-field-label cog-text-success" style="font-weight: bold;">
-        <i class="fa-solid fa-gift"></i> Reward Granted
+        <i class="fa-solid fa-gift"></i> {{localize "COG.Achievement.Sheet.Reward"}}
       </span>
-      <input class="cog-field-input" type="text" name="system.reward" value="{{system.reward}}" placeholder="e.g. Bronze Box" />
+      <input class="cog-field-input" type="text" name="system.reward" value="{{system.reward}}" placeholder="{{localize "COG.Achievement.Sheet.RewardPlaceholder"}}" />
+      <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Achievement.Sheet.RewardHint"}}</p>
     </div>
 
     <div class="cog-field-group flex-1">
       <span class="cog-field-label cog-text-gold" style="font-weight: bold;">
-        <i class="fa-solid fa-hand-sparkles"></i> AI Favor
+        <i class="fa-solid fa-hand-sparkles"></i> {{localize "COG.Achievement.Sheet.Favor"}}
       </span>
       <input class="cog-field-input" type="number" name="system.favor" value="{{system.favor}}" placeholder="0" />
     </div>
 
     <div class="cog-field-group flex-1">
       <span class="cog-field-label cog-text-info" style="font-weight: bold;">
-        <i class="fa-solid fa-bolt"></i> XP
+        <i class="fa-solid fa-bolt"></i> {{localize "COG.Achievement.Sheet.Xp"}}
       </span>
       <input class="cog-field-input" type="number" name="system.xp" value="{{system.xp}}" placeholder="0" />
     </div>
   </div>
 
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Achievement.Sheet.FavorXpHint"}}</p>
+
   {{!-- REWARD CONTENTS --}}
   <div class="cog-field-group" style="margin-bottom: 10px;">
-    <span class="cog-field-label" style="font-weight: bold;">Reward Contents / Loot Box Details</span>
-    <textarea class="cog-field-input" name="system.rewardContents" rows="2" placeholder="e.g. A novelty hat, a coupon, or another small prize.">{{system.rewardContents}}</textarea>
+    <span class="cog-field-label" style="font-weight: bold;">{{localize "COG.Achievement.Sheet.RewardContents"}}</span>
+    <textarea class="cog-field-input" name="system.rewardContents" rows="2" placeholder="{{localize "COG.Achievement.Sheet.RewardContentsPlaceholder"}}">{{system.rewardContents}}</textarea>
   </div>
 
   {{> "systems/sprinter-rpg/templates/items/parts/reward-boxes.hbs"}}
 
   {{!-- DESCRIPTION / BACKGROUND --}}
   <div class="cog-field-group" style="margin-bottom: 12px;">
-    <span class="cog-field-label" style="font-weight: bold;">Achievement Description / Unlock Condition</span>
+    <span class="cog-field-label" style="font-weight: bold;">{{localize "COG.Achievement.Sheet.Description"}}</span>
     {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
   </div>
 
   {{!-- BROADCAST ACTION BUTTON --}}
   <div style="border-top: 2px solid var(--cog-divider); padding-top: 10px; text-align: center;">
     <button class="cog-bg-accent-fill cog-text-on-fill" type="button" data-action="broadcastAchievement" style="border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 8px 16px; font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: bold; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-      <i class="fa-solid fa-bullhorn"></i> Broadcast Announcement to Chat
+      <i class="fa-solid fa-bullhorn"></i> {{localize "COG.Achievement.Sheet.Broadcast"}}
     </button>
   </div>
 

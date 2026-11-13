@@ -1,11 +1,10 @@
 /**
  * Misc. Junk (3.15 S3). Junk is the loot tagged `material.misc_junk` that used-up consumables leave behind. A point of it is
- * one unit. `planJunkSpend` (crafting-engine) decides which stacks pay; this module asks a Rule Break when the crawler has
+ * one unit. `planJunkSpend` (craft-materials) decides which stacks pay; this module asks a Rule Break when the crawler has
  * fewer points than needed, then lowers the stacks. "Pull out a common item" turns one point into a plain named loot item.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { planJunkSpend, junkPoints } from '../../utils/crafting/crafting-engine.mjs';
+import { confirmRuleBreak, withRuleBreak } from '../../utils/rule-break.mjs';
+import { planJunkSpend, junkPoints } from '../../utils/crafting/craft-materials.mjs';
 import { buildPayload } from '../../data/builders/item-payload.mjs';
 
 /**
@@ -71,7 +70,7 @@ export async function pullOutCommonItem(actor, options = {}) {
     name,
     system: { lootType: 'crafting', quantity: 1, outcomes: [] }
   }, { warnings: [] });
-  if (reserved.ruleBreak) payload.flags = { ...payload.flags, [SYSTEM_ID]: { ...payload.flags?.[SYSTEM_ID], ruleBreak: true } };
+  if (reserved.ruleBreak) payload.flags = withRuleBreak(payload).flags;
   const [item] = await actor.createEmbeddedDocuments('Item', [payload]);
   await applyJunkPlan(actor, reserved.plan);
   return { ok: true, ruleBreak: reserved.ruleBreak, item };

@@ -1,17 +1,17 @@
 <section class="tab {{tab.cssClass}}" data-group="primary" data-tab="settings">
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
     <div class="cog-field-group">
-      <span class="cog-field-label">Space Classification</span>
-      <select name="system.spaceType" class="cog-field-input cog-bg-window cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
-        {{#each spaceTypes as |t|}}
-          <option value="{{t.value}}" {{#if t.selected}}selected{{/if}}>{{t.label}}</option>
-        {{/each}}
-      </select>
+      <span class="cog-field-label">Space Type</span>
+      <strong class="cog-text-strong">{{system.typeLabel}}</strong>
     </div>
 
     <div class="cog-field-group">
-      <span class="cog-field-label">Space Size Label</span>
-      <input name="system.size" type="text" value="{{system.size}}" class="cog-field-input cog-bg-window cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+      <span class="cog-field-label">Rank</span>
+      {{#if isGM}}
+        <input name="system.rank" type="number" min="1" step="1" value="{{system.rank}}" class="cog-field-input cog-bg-window cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;" />
+      {{else}}
+        <strong class="cog-text-strong">{{system.rank}}</strong>
+      {{/if}}
     </div>
   </div>
 
@@ -57,4 +57,40 @@
       <button type="button" data-action="addOccupant"><i class="fa-solid fa-user-plus"></i> Add Occupant</button>
     </div>
   {{/if}}
+
+  <div class="cog-space-occupants-title">
+    <i class="fa-solid fa-link"></i> {{localize "COG.SpaceJoin.Title"}}
+  </div>
+  <div class="cog-text-secondary" style="font-size: 11px; margin-bottom: 6px;">{{localize "COG.SpaceJoin.Hint"}}</div>
+  <div class="cog-space-occupants cog-space-joined">
+    {{#each joining.linked as |link|}}
+      <div class="cog-space-occupant" data-space-uuid="{{link.uuid}}">
+        <div class="cog-space-occupant-who">
+          <span class="cog-space-occupant-name">{{link.name}} (Rank {{link.rank}})</span>
+        </div>
+        <div class="cog-space-occupant-actions">
+          {{#if link.canDetach}}
+            <button type="button" data-action="detachSpace" data-space-uuid="{{link.uuid}}"><i class="fa-solid fa-link-slash"></i> {{localize "COG.SpaceJoin.Detach"}}</button>
+          {{/if}}
+        </div>
+      </div>
+    {{else}}
+      <div class="cog-space-empty">{{localize "COG.SpaceJoin.None"}}</div>
+    {{/each}}
+  </div>
+  {{#if joining.canJoin}}{{#if joining.options.length}}
+    <div class="cog-space-occupant-add">
+      {{#if purchase.canPurchase}}
+        <select class="cog-space-payer" data-change-action="setPayer">
+          {{#each purchase.payers as |p|}}<option value="{{p.uuid}}" {{#if p.selected}}selected{{/if}}>{{p.name}}</option>{{/each}}
+        </select>
+      {{/if}}
+      <select class="cog-join-target cog-field-input">
+        {{#each joining.options as |o|}}
+          <option value="{{o.uuid}}">{{o.name}}{{#if o.note}} ({{o.note}}){{/if}}</option>
+        {{/each}}
+      </select>
+      <button type="button" data-action="joinSpace"><i class="fa-solid fa-link"></i> {{localize "COG.SpaceJoin.Join"}} &middot; {{joining.priceLabel}}</button>
+    </div>
+  {{/if}}{{/if}}
 </section>

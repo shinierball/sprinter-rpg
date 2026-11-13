@@ -6,7 +6,7 @@
 import { firstScalar } from '../../utils/first-scalar.mjs';
 import { hotlistSlotId, resolveHotlistItem, isActivatableGear } from '../../utils/ui/hotlist.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
-import { primaryDamagePart, formatDamagePart } from '../../utils/damage/damage-parts.mjs';
+import { attackDamageDisplay } from '../../utils/damage/damage-parts.mjs';
 import { classifyBuff } from '../../utils/effects/buff-classify.mjs';
 import { describeItem, summaryText } from '../../utils/item-describer/index.mjs';
 import { spellRole, spellRoleLabel } from '../../utils/tag/tag-mechanics.mjs';
@@ -50,7 +50,7 @@ function hotlistSlotDisplay(resolved, actor) {
     case 'attack': {
       display.isAttack = true;
       display.badge = 'ATTACK';
-      display.detail = formatDamagePart(primaryDamagePart(resolved.system));
+      display.detail = attackDamageDisplay(resolved, actor);
       break;
     }
     case 'skill': {
@@ -69,7 +69,7 @@ function hotlistSlotDisplay(resolved, actor) {
   return display;
 }
 
-function hotlistGroups(context, valStr, resolved) {
+function hotlistGroups(context, valStr, resolved, actor) {
   const isSelected = (entry) => entry.id === valStr || entry.id === resolved?.id;
   const group = (label, list, labelFn) => (list.length
     ? [{ label, items: list.map(entry => ({ id: entry.id, label: labelFn(entry), selected: isSelected(entry) })) }]
@@ -77,8 +77,8 @@ function hotlistGroups(context, valStr, resolved) {
   return [
     ...group('Spells', context.spells, s => `⚡ ${s.name} (${s.system?.manaCost ?? 0} MP)`),
     ...group('Attacks', context.attacks, a => {
-      const dice = primaryDamagePart(a.system).dice;
-      return `⚔️ ${a.name}${dice ? ` (${dice})` : ''}`;
+      const damage = attackDamageDisplay(a, actor);
+      return `⚔️ ${a.name}${damage ? ` (${damage})` : ''}`;
     }),
     ...group('Skills', context.skills, sk => `🎯 ${sk.name} (Rank ${sk.system?.modifiedRank ?? sk.system?.rank ?? 1})`),
     ...group('Gear (Equipment)', context.gear, g => `🛡️ ${g.name} [${(g.system?.slot || 'gear').toUpperCase()}]${g.system?.equipped ? ' (Equipped)' : ''}`),
@@ -118,7 +118,7 @@ export function prepareHotlist(context, actor) {
       name,
       img: resolved ? (resolved.img || 'icons/svg/item-bag.svg') : '',
       ...display,
-      groups: hotlistGroups(context, valStr, resolved),
+      groups: hotlistGroups(context, valStr, resolved, actor),
       isCustom: Boolean(valStr && !resolved)
     });
   }

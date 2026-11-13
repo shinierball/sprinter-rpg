@@ -74,7 +74,7 @@ export class MountVehicleDataModel extends BaseActorDataModel {
         cargoOccupancy: new fields.NumberField({ integer: true, min: 0, initial: 0 })
       }),
       details: new fields.SchemaField({
-        notes: new fields.HTMLField({ initial: '' })
+        notes: new fields.StringField({ initial: '' })
       })
     };
   }

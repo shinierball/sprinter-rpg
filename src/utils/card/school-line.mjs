@@ -5,8 +5,8 @@
  */
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { SCHOOL_TAG_PREFIX } from '../../data/tag-vocabulary.mjs';
+import { escapeAttr } from '../escape-attr.mjs';
 
-const escapeHtml = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 
 /**
  * The labels of an item's explicit `school.*` tags, in tag order.
@@ -35,5 +35,5 @@ export function schoolLineHtml(item) {
   if (!labels.length) return '';
   const heading = globalThis.game?.i18n?.localize?.('COG.Tags.School');
   const word = heading && heading !== 'COG.Tags.School' ? heading : 'School';
-  return `<div class="cog-text-muted cog-school-line" style="margin-bottom: 6px; font-size: 11px;">${escapeHtml(word)}: ${labels.map(escapeHtml).join(', ')}</div>`;
+  return `<div class="cog-text-muted cog-school-line" style="margin-bottom: 6px; font-size: 11px;">${escapeAttr(word)}: ${labels.map(escapeAttr).join(', ')}</div>`;
 }

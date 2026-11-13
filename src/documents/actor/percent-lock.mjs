@@ -6,9 +6,10 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { resolveBaseScore } from '../../models/actors/actor-derivation.mjs';
 import { PERCENT_STAT_MODES, percentStatMode, roundPercent } from '../../utils/character/stat-percent.mjs';
+import { EFFECT_ITEM_TYPES } from '../../utils/document-types.mjs';
 
 /** Item types whose percent is always live and so never locks. */
-const ALWAYS_LIVE_TYPES = new Set(['buff', 'debuff']);
+const ALWAYS_LIVE_TYPES = new Set(EFFECT_ITEM_TYPES);
 
 const isPercentRow = (g) => g?.kind === 'stat' && (!g.mode || g.mode === 'fixed') && Number(g.percent) !== 0 && Number.isFinite(Number(g.percent));
 const isEmptyLock = (g) => g?.locked === null || g.locked === undefined || g.locked === '';

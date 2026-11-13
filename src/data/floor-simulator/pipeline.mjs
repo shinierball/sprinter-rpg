@@ -19,6 +19,8 @@ import { getStatCaps } from '../../utils/character/stat-caps.mjs';
 import { simulateFloorArrival } from './compile.mjs';
 import { planRaceClass, applyKindPlan } from '../race-class-plan.mjs';
 import { snapshotFromPayload, derivedStatsFromPayload, buildFloorSimContext } from './snapshot.mjs';
+import { RACE_CLASS_TYPES } from '../../utils/document-types.mjs';
+import { withRuleBreak } from '../../utils/rule-break.mjs';
 
 const cloneData = (value) => structuredClone(value);
 const FLOOR_RUN_PATH = `flags.${SYSTEM_ID}.floorRun`;
@@ -73,7 +75,7 @@ export function mergeArrivalIntoPayload(payload, result, { ids } = {}) {
 
   const flags = flagsOf(out);
   if (result.history?.length) flags.floorHistory = [...(Array.isArray(flags.floorHistory) ? flags.floorHistory : []), ...cloneData(result.history)];
-  if ((result.ruleBreaks?.confirmed?.length ?? 0) > 0) flags.ruleBreak = true;
+  if ((result.ruleBreaks?.confirmed?.length ?? 0) > 0) out.flags = withRuleBreak(out).flags;
   return out;
 }
 
@@ -105,7 +107,7 @@ function fillResources(payload) {
  * @param {Function} [options.lookup] sync grant document lookup for the planner (default: world items, then the catalog)
  * @param {Object<string, object>} [options.tables] table snapshots by key (`context.tables`)
  * @param {{ race?: Function, class?: Function }} [options.definitions] Race and Class definition finders, tried before the catalog
- * @returns {{ payload: object, results: {floor: number, result: object}[], raceClass: (object|null), ruleBreaks: {pending: object[], confirmed: string[]}, choicesNeeded: object[], warnings: (string|object)[] }}
+ * @returns {{ payload: object, results: {floor: number, result: object}[], raceClass: (object|null), raceClassBase: (object|undefined), ruleBreaks: {pending: object[], confirmed: string[]}, choicesNeeded: object[], warnings: (string|object)[] }}
  */
 export function compileFloorStart(payload, floorStart, options = {}) {
   const spec = floorStart && typeof floorStart === 'object' ? floorStart : {};
@@ -150,6 +152,7 @@ export function compileFloorStart(payload, floorStart, options = {}) {
 
     // Race and Class come at the end of the first arrival, before the later floors read the crawler
     if (index === 0) {
+      out.raceClassBase = current; // the crawler Race and Class are judged on (the creator's requirement badges read it)
       const picks = {
         race: spec.raceClass?.race ?? result.raceClass?.race ?? '',
         class: spec.raceClass?.class ?? result.raceClass?.class ?? ''
@@ -158,13 +161,13 @@ export function compileFloorStart(payload, floorStart, options = {}) {
         const plan = planRaceClass(current, picks, spec.raceClass?.selections ?? {}, {
           ids: nextId, ...(options.lookup ? { lookup: options.lookup } : {}), ...(options.definitions ? { definitions: options.definitions } : {}), worldFloor: 0, confirmed: confirmedRuleBreaks, startingItems: true
         });
-        for (const kind of ['race', 'class']) if (plan[kind]) current = applyKindPlan(current, plan[kind]);
+        for (const kind of RACE_CLASS_TYPES) if (plan[kind]) current = applyKindPlan(current, plan[kind]);
         out.raceClass = plan;
         out.ruleBreaks.pending.push(...plan.ruleBreaks.pending);
         out.ruleBreaks.confirmed.push(...plan.ruleBreaks.confirmed);
         out.choicesNeeded.push(...plan.choicesNeeded);
         warnings.push(...plan.warnings);
-        if (plan.ruleBreaks.confirmed.length) flagsOf(current).ruleBreak = true;
+        if (plan.ruleBreaks.confirmed.length) current.flags = withRuleBreak(current).flags;
       }
     }
   }

@@ -4,6 +4,9 @@ import { recordedPicks } from '../utils/character/recorded-picks.mjs';
 import { readSourceStamp } from '../utils/content-source.mjs';
 import { isRedacted, emptiedPaths } from '../sourcery/redacted.mjs';
 import { firstScalar } from '../utils/first-scalar.mjs';
+import { catalogKindOfItemType } from '../content/registry/catalogs.mjs';
+import { RACE_CLASS_TYPES } from '../utils/document-types.mjs';
+import { tokenMustBeLinked } from '../documents/actor/token-link.mjs';
 /**
  * Sprinter RPG - Compendium Synchronization Engine
  * Handles globally unique item/spell/class/race/buff/debuff idempotence and
@@ -255,7 +258,7 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
     });
 
     // The picks the crawler made when this race or class was applied, read before the sync overwrites the embedded item
-    const appliedFlag = type === 'race' || type === 'class'
+    const appliedFlag = RACE_CLASS_TYPES.includes(type)
       ? actor.getFlag?.(SYSTEM_ID, type === 'race' ? 'appliedRace' : 'appliedClass') : null;
     const appliedItem = appliedFlag?.itemId ? matchingItems.find(item => (item.id || item._id) === appliedFlag.itemId) : null;
     const embeddedBefore = appliedItem ? structuredCloneSafe(appliedItem.system?.toObject?.() ?? appliedItem.system) : null;
@@ -282,7 +285,7 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
 
     // A synced race or class is re-applied only to an actor whose applier flag points at one of the matched
     // embedded items, never by the `details.race` / `details.class` text
-    if (type === 'race' || type === 'class') {
+    if (RACE_CLASS_TYPES.includes(type)) {
       const applied = actor.getFlag?.(SYSTEM_ID, type === 'race' ? 'appliedRace' : 'appliedClass');
       const isApplied = Boolean(applied?.itemId) && matchingItems.some(item => (item.id || item._id) === applied.itemId);
       const apply = type === 'race' ? actor.applyRace : actor.applyClass;
@@ -341,7 +344,7 @@ function refreshCatalogEntry(compendiumItem) {
   const id = compendiumItem.id || compendiumItem._id;
   if (!id) return;
   const type = compendiumItem.type;
-  const kind = type === 'loot' || type === 'gear' ? 'items' : type === 'class' ? 'classes' : `${type}s`;
+  const kind = catalogKindOfItemType(type);
   const views = [globalThis.CONFIG?.COG?.[kind], globalThis.game?.cog?.[kind], contentRegistry.getCatalog(kind)];
   for (const view of views) {
     if (!Array.isArray(view)) continue;
@@ -376,13 +379,14 @@ export function registerCompendiumSyncHooks() {
   // When any item is updated, check if it's a compendium document and sync
   globalThis.Hooks.on('updateItem', onUpdateItemSync);
 
-  // Guard against unlinking crawler or pet tokens on scene update
-  globalThis.Hooks.on('preUpdateToken', (tokenDoc, changes, options, userId) => {
-    const actor = tokenDoc.actor || globalThis.game?.actors?.get?.(tokenDoc.actorId);
-    if (actor && (actor.type === 'crawler' || actor.type === 'pet')) {
-      if (changes.actorLink === false) {
-        changes.actorLink = true;
-      }
-    }
-  });
+  // Guard against unlinking a crawler, pet or mercenary token on scene update
+  globalThis.Hooks.on('preUpdateToken', guardLinkAfterUpdate);
+}
+
+/** The link guard: decides from the actor the token will have after the update. */
+function guardLinkAfterUpdate(tokenDoc, changes) {
+  const actor = changes.actorId !== undefined
+    ? globalThis.game?.actors?.get?.(changes.actorId)
+    : (tokenDoc.actor || globalThis.game?.actors?.get?.(tokenDoc.actorId));
+  if (tokenMustBeLinked(actor, changes.actorLink ?? tokenDoc.actorLink)) changes.actorLink = true;
 }

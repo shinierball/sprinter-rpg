@@ -1,6 +1,7 @@
 import { tagQueryField, enchantmentRef } from './tag-fields.mjs';
 import { cooldownField } from './timing-fields.mjs';
-import { GRANT_KINDS, GRANT_MODES, grantRowErrors, GRANTED_EFFECT_TYPES, grantedEffectErrors } from '../items/grant-validation.mjs';
+import { GRANT_KINDS, GRANT_MODES, grantRowErrors, grantedEffectErrors } from '../items/grant-validation.mjs';
+import { EFFECT_ITEM_TYPES } from '../../utils/document-types.mjs';
 
 /**
  * Typed grant schema field for structural/identity grants. A real validator: a row that fails
@@ -65,8 +66,9 @@ export function grantsField(fields) {
  * the race or class grants. `system` is an ObjectField because it holds another item type's data; that data is validated
  * by `buildPayload` and by Foundry when the applier creates the item. A real validator, as {@link grantField} is.
  * @param {object} fields foundry.data.fields
+ * @param {{ tier?: boolean }} [options] `tier: true` adds the worship tier (1-3) each entry belongs to (a deity's `tierEffects`)
  */
-export function grantedEffectsField(fields) {
+export function grantedEffectsField(fields, { tier = false } = {}) {
   class GrantedEffectField extends fields.SchemaField {
     /** @override */
     _validateType(value, options) {
@@ -78,10 +80,11 @@ export function grantedEffectsField(fields) {
     }
   }
   return new fields.ArrayField(new GrantedEffectField({
-    type:   new fields.StringField({ initial: 'buff', choices: GRANTED_EFFECT_TYPES }),
+    type:   new fields.StringField({ initial: 'buff', choices: EFFECT_ITEM_TYPES }),
     name:   new fields.StringField({ initial: '' }),
     img:    new fields.StringField({ initial: '' }),
-    system: new fields.ObjectField()
+    system: new fields.ObjectField(),
+    ...(tier ? { tier: new fields.NumberField({ integer: true, min: 1, max: 3, initial: 1 }) } : {})
   }), { initial: [] });
 }
 

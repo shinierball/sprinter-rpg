@@ -99,10 +99,11 @@ export const EXAMPLE_SKILL_SPECS = Object.freeze([
       identifier: 'novelty-mallet-handling',
       stat: 'str',
       rank: 1,
-      description: '<p>Certified on every oversized prop the studio insures. Attacks with a warhammer-type weapon use this skill; without one you cannot attack with it, and no Damage Effect can prime it. From higher ground, +2 damage.</p>',
+      description: '<p>Certified on every oversized prop the studio insures. Attacks with a warhammer-type weapon use this skill; without one you cannot attack with it, and no Damage Effect can prime it. Base Damage: 1d8 + Strength Bludgeoning. From higher ground, +2 damage.</p>',
       tags: ['skillGroup.weapon', 'weapon.warhammer', 'action.attack', 'rule.requires-weapon', 'rule.no-damage-effects', 'skillGroup.combat'],
       isAttack: true,
       hasDamage: true,
+      baseDamage: { dice: '1d8', stat: 'str', damageType: 'Bludgeoning' },
       damageModifiers: [
         { label: 'Swinging down from the set piece', mode: 'add', value: 2, condition: q(['situation.higher_ground']) }
       ]
@@ -139,7 +140,7 @@ export const EXAMPLE_SKILL_SPECS = Object.freeze([
       rank: 1,
       description: '<p>Heals your teammates in a tidy radius, strictly within contracted hours: every ally within 10 feet regains 1 Health Bar and stops bleeding. The union handbook adds your Intelligence modifier to the check.</p>',
       tags: ['action.heal', 'shape.burst', 'skillGroup.utility'],
-      healing: { hasHealing: true, barsFormula: '1', targetFilter: 'allies', cleanseDebuffs: ['condition.bleeding'] },
+      healing: { hasHealing: true, barsFormula: '1', targetFilter: 'allies', cleanseDebuffs: ['condition.blood_trail', 'condition.squib_malfunction'] },
       area: { hasArea: true, shape: 'burst', radius: 10, targetFilter: 'allies' },
       checkModifiers: [{ kind: 'bonus', label: 'Union handbook', stat: 'int' }],
       rankBreaks: {
@@ -159,10 +160,10 @@ export const EXAMPLE_SKILL_SPECS = Object.freeze([
       rank: 1,
       checkType: 'passive',
       checkNote: 'Passive',
-      description: '<p>Years of being chased by a camera crew taught you to shoot while backing up. Passive: its Rank is the floor you are on, and it never gains Ranks on its own. While you aim a ranged weapon, the aiming rules of the Aiming Offset tag apply.</p>',
+      description: '<p>Years of being chased by a camera crew taught you to shoot while backing up. Passive: its Rank is the floor you are on, and it never gains Ranks on its own. While you aim a ranged weapon (the Aiming toggle), the attack has Disadvantage, you add the Skill\'s Rank to hit, and you add 1d4 damage at Rank 1, another 1d4 at Rank 5, another at Rank 10 and another at Rank 15.</p>',
       tags: ['action.passive', 'rule.aiming-offset'],
       rankSource: 'floor',
-      canGainRanks: false
+      rankLimits: [{ route: 'use', maxRank: 0 }, { route: 'grind', maxRank: 0 }, { route: 'training', maxRank: 0 }]
     }
   },
   {
@@ -174,7 +175,7 @@ export const EXAMPLE_SKILL_SPECS = Object.freeze([
       identifier: 'curtain-call',
       stat: 'dex',
       rank: 1,
-      description: '<p>Take your bow on a foe who is already failing. Each Health Bar slot the target has lost adds 2 damage.</p>',
+      description: '<p>Take your bow on a foe who is already failing: 1d4 Bludgeoning. Each Health Bar slot the target has lost adds 2 damage.</p>',
       tags: ['action.attack', 'weaponGroup.hand_to_hand', 'skillGroup.combat'],
       isAttack: true,
       hasDamage: true,

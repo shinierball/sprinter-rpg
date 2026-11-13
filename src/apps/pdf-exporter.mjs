@@ -2,9 +2,10 @@ import { PDFDocument as importedPDFDocument } from '../../lib/pdf-lib.mjs';
 import { findCatalogEntry } from '../content/catalog-lookup.mjs';
 import { isWeaponGear } from '../documents/actor.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
+import { SHEET_PDF_SETTING } from '../utils/ui/sheet-pdf-setting.mjs';
 import { checkTypeLabel } from '../data/rules/check-types.mjs';
 import { normalizeBaseDamage, baseDamageText } from '../utils/damage/base-damage.mjs';
-import { primaryDamagePart } from '../utils/damage/damage-parts.mjs';
+import { primaryDamagePart, attackDamageDisplay } from '../utils/damage/damage-parts.mjs';
 import { toHitBonusText } from '../utils/attack/to-hit-display.mjs';
 import { describeItem, summaryText } from '../utils/item-describer/index.mjs';
 import { contentRegistry } from '../content/registry.mjs';
@@ -12,6 +13,8 @@ import { DEFAULT_SIZE, sizeName } from '../data/sizes.mjs';
 import { spellRole, spellRoleLabel } from '../utils/tag/tag-mechanics.mjs';
 import { effectiveRace, overlayOf } from '../utils/character/overlay-state.mjs';
 import { firstScalar } from '../utils/first-scalar.mjs';
+import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
+import { isWorshipBond } from '../utils/deity/worship-state.mjs';
 
 function getPDFDocument() {
   return globalThis.PDFLib?.PDFDocument || importedPDFDocument;
@@ -64,7 +67,15 @@ function setCheckBox(form, fieldName, checked) {
 async function featureLinesForPdf(item, maxLines) {
   const features = await describeItem(item);
   if (features.length) return features.map(f => f.text).slice(0, maxLines);
-  return item.system?.description ? splitToLines(item.system.description, maxLines) : [];
+  return item.system?.description ? splitToLines(descriptionLines(item.system.description), maxLines) : [];
+}
+
+/**
+ * An item description for a PDF text field: the words without the editor's markup, a paragraph or line break
+ * becoming a new line.
+ */
+function descriptionLines(html) {
+  return String(html ?? '').split('</p>').join('\n').split('<br>').join('\n').split('\n').map(htmlSnippet).filter(Boolean).join('\n');
 }
 
 /**
@@ -137,8 +148,8 @@ export async function resolveHotlistDisplay(actor, rawVal, items = []) {
       const cost = matchedItem.system?.manaCost ?? 0;
       return `${matchedItem.name} (${cost} MP)`;
     } else if (matchedItem.type === 'attack') {
-      const dice = primaryDamagePart(matchedItem.system).dice;
-      return dice ? `${matchedItem.name} [${dice}]` : matchedItem.name;
+      const damage = attackDamageDisplay(matchedItem, actor);
+      return damage ? `${matchedItem.name} [${damage}]` : matchedItem.name;
     } else if (matchedItem.type === 'buff') {
       return await resolveBuffDescription(actor, matchedItem._id || matchedItem.id || matchedItem.name);
     }
@@ -160,9 +171,6 @@ export function resolveAssetUrl(path) {
   const getRoute = globalThis.foundry?.utils?.getRoute;
   return typeof getRoute === 'function' ? getRoute(path) : path;
 }
-
-/** World setting that holds the GM's own copy of the fillable character sheet (a file path). */
-export const SHEET_PDF_SETTING = 'characterSheetPdfPath';
 
 /**
  * Where the sheet PDF template comes from, in order: an explicit `options.url`, the world setting the GM filled in,
@@ -250,7 +258,7 @@ export async function exportCrawlerToPdf(actor, options = {}) {
   const skills = items.filter(i => i.type === 'skill');
   const spells = items.filter(i => i.type === 'spell');
   const gear = items.filter(i => i.type === 'gear');
-  const loot = items.filter(i => i.type === 'loot' || i.type === 'consumable');
+  const loot = items.filter(i => i.type === 'loot');
   // The race in force: a transformation's form while one is laid over the crawler, else the original
   const raceInUse = effectiveRace(items);
   const classes = items.filter(i => i.type === 'class');
@@ -481,7 +489,7 @@ export async function exportCrawlerToPdf(actor, options = {}) {
           notesParts.push(`Dur: ${sys.duration}`);
         }
         if (sys.description) {
-          notesParts.push(sys.description);
+          notesParts.push(descriptionLines(sys.description));
         }
         const notesText = notesParts.join(' | ') || sys.quote || sys.notes || '';
         setTextField(form, notesField, notesText);
@@ -495,7 +503,7 @@ export async function exportCrawlerToPdf(actor, options = {}) {
         const statDisplay = govStat && statMod ? `${govStat} ${statMod}` : (govStat || statMod);
         setTextField(form, statField, statDisplay);
         setTextField(form, checkTypeField, sys.checkNote || (sys.checkType ? checkTypeLabel(sys.checkType) : '') || '');
-        setTextField(form, notesField, sys.description || sys.notes || '');
+        setTextField(form, notesField, descriptionLines(sys.description) || sys.notes || '');
         setCheckBox(form, checkBox, (Number(sys.rank) || 0) > 0);
       }
     }
@@ -514,7 +522,7 @@ export async function exportCrawlerToPdf(actor, options = {}) {
       setTextField(form, itemField, it.name);
       const qty = it.system?.quantity != null ? it.system.quantity : 1;
       setTextField(form, qtyField, qty);
-      const notes = it.system?.description || it.system?.notes || '';
+      const notes = descriptionLines(it.system?.description) || it.system?.notes || '';
       setTextField(form, notesField, notes);
     }
   }
@@ -587,7 +595,8 @@ export async function exportCrawlerToPdf(actor, options = {}) {
   }
 
   // Deity
-  const deityText = details.deity || (deities[0] ? `${deities[0].name}: ${deities[0].system?.description || ''}` : '');
+  const worshipped = deities.find(isWorshipBond);
+  const deityText = worshipped ? [worshipped.name, worshipped.system?.title].filter(Boolean).join(': ') : '';
   setTextField(form, 'Text Field 301035', deityText);
 
   // =========================================================================
@@ -614,7 +623,7 @@ export async function exportCrawlerToPdf(actor, options = {}) {
   for (let i = 0; i < 3; i++) {
     const sp = sponsors[i];
     if (sp) {
-      const desc = sp.system?.description ? `\n${sp.system.description}` : '';
+      const desc = sp.system?.description ? `\n${descriptionLines(sp.system.description)}` : '';
       setTextField(form, sponsorFields[i], `${sp.name}${desc}`);
     }
   }

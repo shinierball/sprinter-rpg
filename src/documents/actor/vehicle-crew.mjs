@@ -27,7 +27,6 @@ import { confirmRuleBreak, getRuleBreakMode, RULE_BREAK_MODES, RULE_BREAK_REFUSA
 import { readCheckRecord, effectiveCheck, isSuccessOutcome } from '../../utils/roll/check-assists.mjs';
 import { hasRecordedAccess, reconcileRecordedAccess, syncActorOwnership } from './ownership-relay.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import {
   CREW_OPS, crewCapacity, planCrewChange, readCrew, sanitizeVehicleRole, vehicleRoleInfo, wouldOverfill
 } from '../../data/rules/vehicle-crew-rules.mjs';
@@ -44,6 +43,7 @@ export const REFUSED_TYPES = Object.freeze({ mount_vehicle: 'vehicle', personal_
 const asString = (v) => (typeof v === 'string' ? v.trim() : '');
 
 import { allVehicles, crewEntryOf, vehicleOf, vehicleUuidOf, vehiclesCarrying } from '../../utils/vehicle/vehicle-lookup.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 export { crewEntryOf, vehicleOf, vehicleUuidOf, vehiclesCarrying };
 
@@ -106,7 +106,7 @@ async function askBoardChoice(vehicle, actor, speed, dc, preset) {
   try {
     const answer = await DialogV2.wait({
       window: { title: text('COG.VehicleBoard.Title', 'Board a moving vehicle') },
-      content: `<p>${esc(text('COG.VehicleBoard.Message', `${vehicle.name} is moving (${speed} ft). Board with a Dex check (Difficulty ${dc})?`, { name: vehicle.name, speed, dc }))}</p>`,
+      content: `<p>${escapeAttr(text('COG.VehicleBoard.Message', `${vehicle.name} is moving (${speed} ft). Board with a Dex check (Difficulty ${dc})?`, { name: vehicle.name, speed, dc }))}</p>`,
       buttons: [
         { action: 'roll', label: text('COG.VehicleBoard.Roll', 'Roll Dex'), default: true },
         { action: 'waive', label: text('COG.VehicleBoard.Waive', 'Board without a check (Rule Break)') },
@@ -251,11 +251,9 @@ function accessChanges(vehicle, crew, plan, ref, actor, left) {
 /*  GM relay                                    */
 /* -------------------------------------------- */
 
-const esc = (text) => (globalThis.foundry?.utils?.escapeHTML ? globalThis.foundry.utils.escapeHTML(String(text)) : String(text));
 
 async function postLine(vehicle, content, ruleBreak) {
   const data = { speaker: globalThis.ChatMessage?.getSpeaker?.({ actor: vehicle }), content: `<p>${content}</p>` };
-  if (ruleBreak) data.flags = { [SYSTEM_ID]: { ruleBreak: true } };
   try {
     await globalThis.ChatMessage?.create?.(ruleBreak ? ruleBreakMessageData(data) : data);
   } catch (err) {
@@ -324,7 +322,7 @@ async function applyCrewChange(payload) {
 
     const who = actor?.name ?? 'Someone';
     if (overCapacity) {
-      await postLine(vehicle, `${esc(who)} boards ${esc(vehicle.name)} past its occupancy (${plan.aboard}/${plan.total}). Rule Break.`, true);
+      await postLine(vehicle, `${escapeAttr(who)} boards ${escapeAttr(vehicle.name)} past its occupancy (${plan.aboard}/${plan.total}). Rule Break.`, true);
     }
     // A moving vehicle (the GM reads its speed from the document) and a boarder as large as the vehicle get a line of their own.
     const speed = Number(vehicle.system?.drive?.currentMove) || 0;
@@ -332,16 +330,16 @@ async function applyCrewChange(payload) {
     if (plan.added && (speed > 0 || tight)) {
       const parts = [];
       if (speed > 0) {
-        parts.push(`${esc(who)} boards ${esc(vehicle.name)} while it is moving (${speed} ft).`);
+        parts.push(`${escapeAttr(who)} boards ${escapeAttr(vehicle.name)} while it is moving (${speed} ft).`);
         if (globalThis.game?.combat?.started) parts.push('Boarding uses 10 ft of Move (a Step will do).');
         if (payload.boardRuleBreak === true) parts.push('Boarded without a passing check. Rule Break.');
       }
-      if (tight) parts.push(`${esc(who)} is as large as ${esc(vehicle.name)}: it is going to be a tight fit.`);
+      if (tight) parts.push(`${escapeAttr(who)} is as large as ${escapeAttr(vehicle.name)}: it is going to be a tight fit.`);
       await postLine(vehicle, parts.join(' '), speed > 0 && payload.boardRuleBreak === true);
     }
     if (plan.replacedPilot) {
       const old = resolveActorByUuid(plan.replacedPilot)?.name ?? 'the previous driver';
-      await postLine(vehicle, `${esc(who)} takes the wheel of ${esc(vehicle.name)} from ${esc(old)}.`, false);
+      await postLine(vehicle, `${escapeAttr(who)} takes the wheel of ${escapeAttr(vehicle.name)} from ${escapeAttr(old)}.`, false);
     }
   } finally {
     if (wroteTarget) {

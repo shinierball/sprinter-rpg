@@ -45,7 +45,10 @@ export const TAG_NAMESPACES = {
   upgrade:      { label: 'Space Upgrade Module', description: 'Personal space amenities, modules, and facilities' },
   id:           { label: 'Identity Tag', description: 'Stable unique item identity: id.<type>.<slug>' },
   school:       { label: 'Spell School', description: 'A spell\'s school or theme (illusion, healing, mind control); descriptive, the engine never reads it' },
-  access:       { label: 'Access', description: 'Access to a club, guild or facility (descriptive, adjudicated by the GM)' },
+  access:       { label: 'Access', description: 'Access to a club, guild or facility' },
+  worship:      { label: 'Worship', description: 'Worship state and worship gifts (derived from a deity bond, or carried by boons and smites)' },
+  worships:     { label: 'Worships', description: 'Worships the deity with this identifier (derived from a bond, or authored on a mob or NPC)' },
+  blessed:      { label: 'Blessed By', description: 'Gear blessed by the deity with this identifier' },
   outcome:      { label: 'Roll Outcome', description: 'The degree of a d20 check against its Difficulty (near_miss, failure, success...); card condition tags only, never carried by items' },
   check:        { label: 'Check Type', description: 'What kind of roll is being made (skill, stat, evade, advancement, resist)' },
   situation:    { label: 'Situation', description: 'Circumstance the engine cannot observe; offered as a roll-dialog toggle when a row on the actor references it' },
@@ -72,6 +75,16 @@ export const TAG_NAMESPACES = {
  */
 export function isIdentityNamespace(namespace) {
   return TAG_NAMESPACES[namespace]?.identity === true;
+}
+
+/**
+ * True when the tag sits in a party namespace (`creature.*`, `mob.*`, `species.*`): it describes a creature, and a roll only
+ * ever carries a creature's tags under a role prefix (`subject.`, `attacker.`, `self.`), so a bare one never matches.
+ * @param {string} tagId
+ * @returns {boolean}
+ */
+export function isPartyTag(tagId) {
+  return TAG_NAMESPACES[String(tagId).split('.')[0]]?.partyTag === true;
 }
 
 /**
@@ -110,7 +123,8 @@ export const ENGINE_SITUATIONS = Object.freeze({
   criticalHit: 'situation.critical_hit',
   amazingSuccess: 'situation.amazing_success',
   damageEffect: 'situation.damage_effect',
-  specialty: 'situation.specialty'
+  specialty: 'situation.specialty',
+  intercepting: 'situation.intercepting'
 });
 
 /**
@@ -260,7 +274,8 @@ const DAMAGE_TYPE_TO_ELEMENT = {
   psychic: 'element.psychic',
   bludgeoning: 'element.bludgeoning',
   piercing: 'element.piercing',
-  slashing: 'element.slashing'
+  slashing: 'element.slashing',
+  brimstone: 'element.brimstone'
 };
 
 /** Element tag to canonical display damage type */
@@ -277,7 +292,8 @@ const ELEMENT_TO_DAMAGE_TYPE = {
   'element.psychic': 'Psychic',
   'element.bludgeoning': 'Bludgeoning',
   'element.piercing': 'Piercing',
-  'element.slashing': 'Slashing'
+  'element.slashing': 'Slashing',
+  'element.brimstone': 'Brimstone'
 };
 
 /** Stat slug to stat tag */
@@ -304,6 +320,34 @@ export const ARCHETYPE_TO_TAG = {
   paladin: 'archetype.paladin',
   rogue: 'archetype.rogue'
 };
+
+/** Only these archetypes rise above Devotee when worshipping (core rulebook p. 163). */
+export const CLERGY_ARCHETYPE_TAGS = Object.freeze([ARCHETYPE_TO_TAG.cleric, ARCHETYPE_TO_TAG.paladin]);
+
+/** Worship tags (core rulebook pp. 163-164, 312-314). The engine derives `active` and the tier tags from a deity bond. */
+export const WORSHIP_TAGS = Object.freeze({
+  active: 'worship.active', boon: 'worship.boon', smite: 'worship.smite',
+  benefit: 'worship.benefit', divine: 'worship.divine', fallen: 'worship.fallen'
+});
+export const WORSHIP_TIER_TAG_PREFIX = 'worship.tier.';
+export const WORSHIPS_TAG_PREFIX = 'worships.';
+export const BLESSED_TAG_PREFIX = 'blessed.';
+export const TEMPLE_ACCESS_TAG_PREFIX = 'access.temple.';
+/** Access to the Champions' Club (p. 164): a worshipper's standing gift carries it. */
+export const CHAMPIONS_CLUB_ACCESS_TAG = 'access.club.champions';
+/** Bard patronage (core rulebook pp. 145-146, 315). */
+export const PATRON_TAGS = Object.freeze({ eligible: 'access.patron', required: 'rule.patron-required' });
+/** The access a would-be patron needs (p. 315): the two clubs the book names (the archive's neutral ids), membership of
+ *  every club (which includes both), a guild with outreach centres, and an outreach PR agent. */
+export const PATRON_ACCESS_TAGS = Object.freeze([
+  CHAMPIONS_CLUB_ACCESS_TAG, 'access.club.outlaws', 'access.club.all_memberships', 'access.guild.outreach', 'access.agency.outreach_pr'
+]);
+/** Per-god tag families: one tag per deity identifier, registered when a deity exists (`hooks/deity-tags.mjs`). */
+export const DEITY_TAG_FAMILIES = Object.freeze([
+  { prefix: WORSHIPS_TAG_PREFIX, namespace: 'worships', label: 'Worships' },
+  { prefix: BLESSED_TAG_PREFIX, namespace: 'blessed', label: 'Blessed by' },
+  { prefix: TEMPLE_ACCESS_TAG_PREFIX, namespace: 'access', label: 'Temple of' }
+]);
 
 /**
  * Convert damage type string to element tag.
@@ -343,18 +387,6 @@ export function elementToDamageType(elementTag) {
 
 /** The tag of a skill that attacks with a wielded weapon (every weapon entry is its own skill). */
 export const WEAPON_SKILL_TAG = 'skillGroup.weapon';
-
-/** weaponCategory (exact match, lowercased + trimmed) -> derived weaponGroup tag */
-export const WEAPON_CATEGORY_TAGS = Object.freeze({
-  'power weapons': 'weaponGroup.power',
-  'edge': 'weaponGroup.edge',
-  'bashing': 'weaponGroup.bashing',
-  'reach': 'weaponGroup.reach',
-  'ranged': 'weaponGroup.ranged',
-  'hand to hand': 'weaponGroup.hand_to_hand',
-  'utility': 'weaponGroup.utility',
-  'exotic': 'weaponGroup.exotic'
-});
 
 /** Default thresholds for the fixed rank-break slots (used when rb.rank is unset) */
 export const RANK_BREAK_THRESHOLDS = Object.freeze({ rank5: 5, rank10: 10, rank15: 15, rank20: 20 });

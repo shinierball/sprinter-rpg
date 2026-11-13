@@ -36,7 +36,6 @@ export const say = (key, fallback, data = {}) => {
   }
   return Object.entries(data).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), fallback);
 };
-export const esc = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 export const speakerOf = (actor) => globalThis.ChatMessage?.getSpeaker?.({ actor }) ?? {};
 export const gmWhisper = () => (globalThis.ChatMessage?.getWhisperRecipients?.('GM') ?? []).map((u) => u.id).filter(Boolean);
 

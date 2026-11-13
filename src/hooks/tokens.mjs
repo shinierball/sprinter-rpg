@@ -1,13 +1,18 @@
 /**
- * Token placement hooks.
+ * Token placement hooks: crawler, pet, mercenary and mount tokens are placed linked to their actor, and mob tokens
+ * are placed unlinked with a numbered name.
  */
+
+import { LINKED_ACTOR_TYPES } from '../utils/document-types.mjs';
+import { relinkCharacterTokens } from '../documents/actor/token-link.mjs';
+
 /**
- * Enforce linked actor data for player characters (crawlers) and companion pets,
- * and handle unlinked independent tokens with sequential naming for mobs.
+ * Link the token of a crawler, pet, mercenary or mount (`LINKED_ACTOR_TYPES`) to its actor,
+ * and place a mob's token unlinked with a sequential name.
  */
 function onPreCreateToken(tokenDoc, createData, options, userId) {
   const actor = tokenDoc.actor || game.actors?.get(tokenDoc.actorId);
-  if (actor && ['crawler', 'pet', 'mercenary', 'mount_vehicle'].includes(actor.type)) {
+  if (actor && LINKED_ACTOR_TYPES.includes(actor.type)) {
     tokenDoc.updateSource({ actorLink: true });
   } else if (actor && actor.type === 'mob') {
     const updates = { actorLink: false };
@@ -41,6 +46,27 @@ function onPreCreateToken(tokenDoc, createData, options, userId) {
   }
 }
 
+/**
+ * A scene was created (an import, an adventure, a module): the active GM links any crawler, pet or mercenary token that
+ * arrived unlinked inside it.
+ * @param {Scene} scene
+ */
+async function onCreateSceneRelink(scene) {
+  if (scene?.pack) return [];
+  try {
+    return await relinkCharacterTokens([scene]);
+  } catch (err) {
+    console.warn('Sprinter RPG | Token relink of a created scene failed:', err);
+    return [];
+  }
+}
+
+/** On `ready` the active GM does the same for every scene the world already holds. */
+export async function relinkAtReady() {
+  return relinkCharacterTokens();
+}
+
 export function registerTokenHooks() {
   Hooks.on('preCreateToken', onPreCreateToken);
+  Hooks.on('createScene', onCreateSceneRelink);
 }

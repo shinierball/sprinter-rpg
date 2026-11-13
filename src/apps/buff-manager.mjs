@@ -8,7 +8,7 @@ import { SYSTEM_PATH } from '../constants.mjs';
 import { searchRows } from '../content/unified-catalog.mjs';
 import { classifyBuff } from '../utils/effects/buff-classify.mjs';
 import { describeItem, summaryText } from '../utils/item-describer/index.mjs';
-import { htmlSnippet } from './item-manager.mjs';
+import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
 
 /** Whether an entry belongs on the Stat or Defense tab, by its structured kinds (`classifyBuff`). */
 const TAB_KINDS = { stat: ['stat'], defense: ['resistance', 'immunity', 'tempHp'] };

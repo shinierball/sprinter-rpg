@@ -1,8 +1,8 @@
 {{!--
-  The race and class single-value editors: senses, movement and stat caps as number inputs and a checkbox,
-  and the `requires` tag query. Parameter: identityRows = buildIdentityRowsContext(...)
+  The race and class single-value editors: senses, movement and stat caps as number inputs and a checkbox.
+  Parameter: identityRows = buildIdentityRowsContext(...)
   (src/sheets/item/context-identity-rows.mjs). A blank number stores nothing. Inputs are named `system.<group>.<key>` by
-  the context (a window renames them); the `requires` query is an action delegate without a `name`.
+  the context (a window renames them).
 --}}
 <div class="cog-modifier-block cog-identity-scalars">
   {{#each identityRows.scalars as |g|}}
@@ -22,8 +22,4 @@
       </div>
     </div>
   {{/each}}
-  <div class="cog-modifier-body" data-identity-group="requires">
-    <span class="cog-field-label"><strong>{{localize "COG.Rows.Identity.requires.Title"}}</strong> <span class="cog-modifier-hint">{{localize "COG.Rows.Identity.requires.Hint"}}</span></span>
-    {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=identityRows.requires.query tagOptions=identityRows.requires.tagOptions}}
-  </div>
 </div>

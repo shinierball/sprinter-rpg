@@ -10,6 +10,8 @@
 import { SYSTEM_ID } from '../constants.mjs';
 import { COGCombatMetrics } from './combat-metrics.mjs';
 import { getCurrentFloor } from './actor/actor-environment.mjs';
+import { zeroHealthOutcome, ZERO_HEALTH } from './actor/dying.mjs';
+import { confirmHealing, settleHealed } from './actor/healing.mjs';
 import { buildRollContext, serializeRollContext, actionTagsOf } from '../utils/roll/roll-context.mjs';
 import { isBuffSuppressed } from '../utils/effects/dispel.mjs';
 import { debuffInForce } from '../utils/effects/debuff-force.mjs';
@@ -45,6 +47,8 @@ export function fatalDebuffPreview(actor, damageType, damageVal, rollContext) {
     if (red.flat > 0) {
       adjustedDamage = Math.max(0, adjustedDamage - red.flat);
     }
+    // Health Bars ×N (p. 165): the same division the damage pipeline makes before the slot arithmetic
+    adjustedDamage = Math.floor(adjustedDamage / (Number(red.hbFactor) || 1));
   }
 
   const damageAfterTemp = Math.max(0, adjustedDamage - tempHp);
@@ -79,7 +83,7 @@ export async function roundEndDebuffEffects(actor, combatant, ctx) {
       const { damageToHp, wouldDropToZero } = fatalDebuffPreview(actor, damageType, damageVal, rollContext);
 
       let conCheckRes;
-      if (actor.type === 'crawler' && wouldDropToZero && damageToHp > 0) {
+      if (zeroHealthOutcome(actor) === ZERO_HEALTH.DYING && hpBefore > 0 && wouldDropToZero && damageToHp > 0) {
         conCheckRes = await actor.checkFatalDebuffProtection(debuff, damageVal, { floor: ctx.floor });
         if (conCheckRes?.avoided) {
           rows.push({
@@ -184,10 +188,13 @@ async function roundEndBuffHealing(actor, combatant, ctx) {
       const hpBefore = Number(actor.system?.attributes?.hp?.value ?? actor.system?.attributes?.hp?.max ?? 0);
       const maxHp = Number(actor.system?.attributes?.hp?.max) || (10 * hpPerBar);
       const newHp = restoredValue(hpBefore, healVal, maxHp);
-      const actualHealed = Math.max(0, newHp - hpBefore);
+      // Nobody is there to confirm a heal at Clean Up: a bearer of `no-healing` is skipped and the row says so
+      const gate = await confirmHealing(actor, { interactive: false });
+      const actualHealed = gate.proceed ? Math.max(0, newHp - hpBefore) : 0;
 
       if (actualHealed > 0) {
         await actor.update({ 'system.attributes.hp.value': newHp });
+        await settleHealed(actor, { before: hpBefore, after: newHp });
       }
 
       rows.push({
@@ -202,9 +209,10 @@ async function roundEndBuffHealing(actor, combatant, ctx) {
         rolledValue: healVal,
         actualHealed,
         hpBefore,
-        hpAfter: newHp,
+        hpAfter: gate.proceed ? newHp : hpBefore,
         maxHp,
-        round: ctx.round
+        round: ctx.round,
+        ...(gate.proceed ? {} : { blocked: true })
       });
     }
   }
@@ -223,7 +231,7 @@ export async function roundEndGearEffects(actor, combatant, ctx) {
     if (!healingCfg) continue;
     const barsPerRound = Number(healingCfg.barsPerRound) || (healingCfg.hasHealing ? 1 : 0);
     if (barsPerRound > 0) {
-      const healRes = await actor.applyHealingBars(barsPerRound);
+      const healRes = await actor.applyHealingBars(barsPerRound, { interactive: false });
 
       rows.push({
         type: 'gearHealing',
@@ -236,6 +244,7 @@ export async function roundEndGearEffects(actor, combatant, ctx) {
         formula: `${barsPerRound} bars`,
         actualHealed: healRes?.actualHealed ?? 0,
         hpAfter: actor.system?.attributes?.hp?.value,
+        ...(healRes?.blocked ? { blocked: true } : {}),
         round: ctx.round
       });
     }
@@ -374,7 +383,7 @@ export async function postRoundEndEffectsChatCard(results, round) {
             <span class="cog-text"> &rarr; <strong>${res.actorName}</strong></span>
           </div>
           <div style="text-align: right;">
-            <span class="cog-text-success" style="font-weight: bold; font-size: 12px;">+${res.actualHealed} HP</span>
+            <span class="cog-text-success" style="font-weight: bold; font-size: 12px;">${res.blocked ? 'Cannot be healed' : `+${res.actualHealed} HP`}</span>
             <span class="cog-text-muted" style="font-size: 10px;"> (${res.hpAfter}/${res.maxHp} HP)</span>
           </div>
         </div>

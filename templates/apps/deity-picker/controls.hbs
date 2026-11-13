@@ -1,0 +1,9 @@
+<div class="cog-sm-controls">
+  <div class="cog-sm-search-row">
+    <div class="cog-sm-search-wrapper">
+      <i class="fa-solid fa-magnifying-glass cog-sm-search-icon"></i>
+      <input type="text" name="search" data-input-action="setSearch" class="cog-sm-search" placeholder="{{localize 'COG.Deity.Picker.SearchPlaceholder'}}" value="{{searchQuery}}" autofocus />
+      <a class="cog-sm-search-clear cog-deity-picker-clear cog-text-secondary" data-action="clearSearch" {{#unless searchQuery}}hidden{{/unless}} title="{{localize 'COG.Deity.Picker.Clear'}}"><i class="fa-solid fa-xmark"></i></a>
+    </div>
+  </div>
+</div>

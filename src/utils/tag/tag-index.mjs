@@ -15,7 +15,7 @@ import { catalogEntries } from '../../content/catalog-lookup.mjs';
  * fields the index entry itself carries.
  */
 export const TAG_INDEX_FIELDS = Object.freeze([...new Set([
-  ...DERIVED_TAG_FIELDS, 'system.element', 'system.requires', 'system.manaCost'
+  ...DERIVED_TAG_FIELDS, 'system.element', 'system.requirements', 'system.manaCost'
 ])]);
 
 export class TagIndex {

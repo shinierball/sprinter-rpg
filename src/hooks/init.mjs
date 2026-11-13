@@ -17,6 +17,11 @@ import '../documents/actor/light-marker.mjs'; // registers the marker payload de
 import { COGItemSheet } from '../sheets/item-sheet.mjs';
 import { BaseActorSheet, BaseItemSheet } from '../compat.mjs';
 import { COGCombatTracker } from '../apps/combat-tracker.mjs';
+import { COGThemeCleanupLauncher } from '../apps/theme-cleanup.mjs';
+import { COGSpacePricesLauncher } from '../apps/space-prices-app.mjs';
+import { COGSourceryImporterLauncher } from '../apps/sourcery-importer.mjs';
+import { registerLootBoxShowSettings } from '../apps/loot-box-show.mjs';
+import { onAiContentChange } from './ai-content.mjs';
 import {
   SkillDataModel,
   AttackDataModel,
@@ -29,6 +34,7 @@ import {
   RaceDataModel,
   ClassDataModel,
   DeityDataModel,
+  PatronDataModel,
   SponsorDataModel,
   SpaceUpgradeDataModel,
   CrawlerDataModel,
@@ -94,7 +100,12 @@ export async function onInit() {
   globalThis.Hooks?.callAll?.('sprinter-rpg.registerContent', contentRegistry);
 
   // Register System Settings
-  registerSettings();
+  registerSettings({
+    launchers: { themeCleanup: COGThemeCleanupLauncher, spacePrices: COGSpacePricesLauncher, sourceryImporter: COGSourceryImporterLauncher },
+    onAiContentChange
+  });
+  // The Loot Box Showcase (7.3e): client settings `lootBoxShow` (full / reduced / summary) and `lootBoxShowSound`.
+  registerLootBoxShowSettings(game.settings);
   registerKeybindings();
   syncRegistryConfig();
   setIdentityNameResolver(resolveIdentityName);
@@ -196,7 +207,7 @@ export function registerDocumentClasses() {
     },
     personal_space: {
       bar: ['defenseRating', 'stashCapacity'],
-      value: ['tier', 'size']
+      value: ['rank']
     },
     npc: {
       bar: ['attributes.hp', 'attributes.mana'],
@@ -225,6 +236,7 @@ export function registerDocumentClasses() {
     race: RaceDataModel,
     class: ClassDataModel,
     deity: DeityDataModel,
+    patron: PatronDataModel,
     sponsor: SponsorDataModel,
     space_upgrade: SpaceUpgradeDataModel
   };
@@ -287,7 +299,7 @@ function registerSheets() {
   if (ItemsClass) {
     ItemsClass.unregisterSheet('core', BaseItemSheet);
     ItemsClass.registerSheet(SYSTEM_ID, COGItemSheet, {
-      types: ['skill', 'attack', 'spell', 'gear', 'race', 'class', 'deity', 'sponsor', 'loot', 'buff', 'debuff', 'achievement', 'space_upgrade'],
+      types: ['skill', 'attack', 'spell', 'gear', 'race', 'class', 'deity', 'patron', 'sponsor', 'loot', 'buff', 'debuff', 'achievement', 'space_upgrade'],
       makeDefault: true,
       label: 'COG.ItemSheet'
     });

@@ -26,11 +26,11 @@ export const SPECS = Object.freeze([
     name: 'The Prop Shop',
     img: 'icons/svg/house.svg',
     owner: { crawlerUuid: exampleActorUuid('contestant-zero'), crawlerName: 'Contestant Zero' },
-    spaceType: 'space.safe_room',
+    rank: 1,
     quests: [],
     outsideFeed: [],
     amenities: 'A folding table, a glue gun, and a smell.',
-    notes: '<p>A room where props are made and nothing is returned. The Prop Shop Workbench and the Hot Glue Holster are installed, and the stash holds Suspicious Glitter and some Misc. Junk. Open the Crafting app from a blueprint.</p>',
+    notes: 'A room where props are made and nothing is returned. The Prop Shop Workbench and the Hot Glue Holster are installed, and the stash holds Suspicious Glitter and some Misc. Junk. Open the Crafting app from a blueprint.',
     items: [
       embedded(CRAFTING_ITEMS, exampleId('cf', 'i', 1)),
       embedded(CRAFTING_ITEMS, exampleId('cf', 'i', 2)),

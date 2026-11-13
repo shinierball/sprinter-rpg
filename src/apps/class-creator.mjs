@@ -63,8 +63,6 @@ export class COGClassCreatorApp extends COGBasePointBuilderApp {
       builderType: 'class',
       baseBudget: 30
     });
-
-    this.targetActorId = options.targetActorId || null;
   }
 
   // =========================================================================
@@ -110,6 +108,7 @@ export class COGClassCreatorApp extends COGBasePointBuilderApp {
       this.spec.stats = { ...granted.stats };
       this.setDRBonus(granted.drBonus);
       this.loadGrantRows(canonicalClass);
+      this.loadRequirements(canonicalClass);
       for (const sk of granted.skills) {
         this.addSkill({ name: sk.name, rank: sk.rank });
       }
@@ -190,17 +189,6 @@ export class COGClassCreatorApp extends COGBasePointBuilderApp {
       });
     }
 
-    // Crawlers in the world for direct application
-    const crawlers = globalThis.game?.actors
-      ? Array.from(globalThis.game.actors.values())
-          .filter(a => a.type === 'crawler')
-          .map(a => ({
-            id: a.id,
-            name: a.name,
-            isSelected: a.id === this.targetActorId
-          }))
-      : [];
-
     // Presets list: the point-build presets plus every class in the catalog
     const presets = [
       ...pointBuildPresets('class').map(p => ({
@@ -259,7 +247,6 @@ export class COGClassCreatorApp extends COGBasePointBuilderApp {
       customCost: ledger.customCost,
       detrimentExtraPoints: ledger.detrimentExtraPoints,
       rawDetrimentPoints: ledger.rawDetrimentPoints,
-      crawlers,
       presets,
       searchQuery: this.searchQuery,
       activeTierFilter: this.activeTierFilter
@@ -271,6 +258,7 @@ export class COGClassCreatorApp extends COGBasePointBuilderApp {
     this.spec.name = '';
     this.spec.description = '';
     this.spec.prerequisites = '';
+    this.spec.requirements = [];
     this.spec.stats = { str: 0, dex: 0, con: 0, int: 0, cha: 0 };
     this.spec.drBonus = 0;
     this.spec.skills = [];

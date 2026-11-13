@@ -10,7 +10,7 @@
  * user content (CONTRIBUTING rule 4).
  */
 import { SYSTEM_ID } from '../constants.mjs';
-import { escapeHtml, plainText, titleCaseHeading } from './text.mjs';
+import { escapeHtml, plainText, stripControls, titleCaseHeading } from './text.mjs';
 import { textCheck } from './hash.mjs';
 import { sizesInOrder } from '../data/sizes.mjs';
 import { sanitizeVehicleKind } from '../data/rules/vehicle-rules.mjs';
@@ -29,7 +29,8 @@ export const defaultDocUuid = (link) => `Compendium.${SYSTEM_ID}.${link.pack}.${
 
 /** `Table 76: Title`, or `Table 76` while the title is unhydrated. */
 export function tableName(hydrated) {
-  const title = plainText(titleCaseHeading(hydrated.title ?? '')).trim();
+  // A RollTable name is a StringField: the book's characters as they are.
+  const title = stripControls(titleCaseHeading(hydrated.title ?? '')).trim();
   return title ? `Table ${hydrated.number}: ${title}` : `Table ${hydrated.number}`;
 }
 
@@ -70,23 +71,27 @@ export function rollTableSpec(recipe, hydrated, options = {}) {
   const rows = [];
   hydrated.rows.forEach((row) => {
     if (!row.range) return;
+    // The description is an HTMLField (escaped); a result's name is a StringField (the book's characters as they are).
     const cells = row.cells.map(c => plainText(c).trim());
+    const rawCells = row.cells.map(c => stripControls(c).trim());
     const docLinks = (row.links ?? []).filter(l => l.kind === 'doc');
     const wholeCols = new Set(docLinks.filter(l => l.whole).map(l => l.col));
     // A list column (links with an `item`, no `whole`) is carried by its option results; its text is not repeated in the narrative.
     const listCols = new Set(docLinks.filter(l => !l.whole && Number.isInteger(l.item)).map(l => l.col));
-    const rest = cells.filter((c, i) => c && !wholeCols.has(i) && !listCols.has(i));
+    const keep = (c, i) => c && !wholeCols.has(i) && !listCols.has(i);
+    const rest = cells.filter(keep);
+    const restNames = rawCells.filter(keep);
     const spec = { range: [...row.range] };
     // Several text columns: the first becomes the result's name, the others its description. One column: description only,
     // except beside a list column, where the one column is the row's name (the matrix row's display name).
-    if (rest.length > 1 || (listCols.size && rest.length === 1)) spec.name = rest[0];
+    if (rest.length > 1 || (listCols.size && rest.length === 1)) spec.name = restNames[0];
     const narrative = (rest.length > 1 ? rest.slice(1) : (listCols.size ? [] : rest)).join(CELL_JOIN);
     if (narrative) spec.narrative = narrative;
     else if (!docLinks.length && !row.nextTable && !(row.links ?? []).some(l => l.kind === 'table')) spec.narrative = PLACEHOLDER(row.range);
     if (docLinks.length) {
       // A list link (no `whole`) is one skill option of a matrix row: its catalog ref, stat and position in the book's list.
       spec.options = docLinks.map(l => (l.whole || !Number.isInteger(l.item)
-        ? { kind: 'named', docKind: DOC_KIND[l.pack] ?? 'item', uuid: uuidFor(l), name: cells[l.col] || `Document ${l.id}` }
+        ? { kind: 'named', docKind: DOC_KIND[l.pack] ?? 'item', uuid: uuidFor(l), name: rawCells[l.col] || `Document ${l.id}` }
         : { kind: 'named', docKind: DOC_KIND[l.pack] ?? 'item', uuid: uuidFor(l), ref: l.id, stat: l.stat, order: l.item, name: options.nameFor?.(l) ?? '' }));
     }
     // A hinted row (the Scroll of Upgrade table) is an Amazing Success trigger: the hint names a debuff and tags, the words are the book's cells.
@@ -155,7 +160,8 @@ export function vehicleSpecs(recipe, hydrated, options = {}) {
   const specs = [];
   hydrated.rows.forEach((row, i) => {
     const cell = (field) => (at(field) >= 0 ? row.cells[at(field)] : undefined);
-    const name = plainText(cell('name') ?? '').trim();
+    // An Actor name is a StringField: the book's characters as they are.
+    const name = stripControls(cell('name') ?? '').trim();
     const move = numberOf(cell('move'));
     if (!name || move === null) return;
     const attributes = { move };

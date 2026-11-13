@@ -1,13 +1,15 @@
-import { contentRegistry } from '../../content/registry.mjs';
 import { resolveActor } from '../../documents/actor/actor-constants.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { userOwnsActor } from '../../documents/actor/personal-space-links.mjs';
-import { getSpaceTypeInfo, getSpaceUpgrade, spaceUpgradeItemData } from '../../data/rules/personal-space-rules.mjs';
+import { getSpaceUpgrade, spaceUpgradeItemData } from '../../data/rules/personal-space-rules.mjs';
+import { couponPriceFor, rankPoints, spaceRules, spaceTypeForRank, tableSpacesFor } from '../../data/rules/space-rank-rules.mjs';
+import { isCraftingTable } from '../../documents/actor/crafting-tables.mjs';
+import { withRuleBreak } from '../../utils/rule-break.mjs';
 
 /**
  * TypeDataModel for Personal Spaces in Sprinter RPG.
- * Encapsulates ownership, co-occupants/tenants, space tier/type,
+ * Encapsulates ownership, co-occupants/tenants, space rank (which sets its type),
  * defense rating, stash storage capacity, rest duration reductions,
  * training facility perks, active upgrade modules, quests/bounties,
  * and outside world communication feeds.
@@ -29,9 +31,10 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
       // UUIDs of the world crawler actors. The owner is also listed in occupantUuids.
       ownerUuid: new fields.StringField({ initial: '' }),
       occupantUuids: new fields.ArrayField(new fields.StringField(), { initial: [] }),
-      spaceType: new fields.StringField({ initial: () => contentRegistry.getDefaultSpaceTypeTag() }),
-      tier: new fields.NumberField({ integer: true, initial: 1, min: 1 }),
-      size: new fields.StringField({ initial: 'Single Room' }),
+      // The space's rank; its type (stash, defence, mercenary housing) follows the rank (see `spaceTypeForRank`)
+      rank: new fields.NumberField({ integer: true, initial: 1, min: 1 }),
+      // The spaces this one joined (a group is the connected set over these links in both directions; see `spaceGroup`)
+      joinedToUuids: new fields.ArrayField(new fields.StringField(), { initial: [] }),
       defenseRating: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null }),
       stashCapacity: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null }),
       restHoursReduction: new fields.NumberField({ integer: true, initial: 0, min: 0 }),
@@ -41,7 +44,7 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
       quests: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
       outsideFeed: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
       details: new fields.SchemaField({
-        notes: new fields.HTMLField({ initial: '' }),
+        notes: new fields.StringField({ initial: '' }),
         amenities: new fields.StringField({ initial: '' }),
         security: new fields.StringField({ initial: '' })
       })
@@ -74,8 +77,10 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
 
   /** @override */
   prepareDerivedData() {
-    const typeDef = globalThis.CONFIG?.COG?.content?.getSpaceType?.(this.spaceType) || getSpaceTypeInfo(this.spaceType);
+    const { tag: typeTag, def: typeDef } = spaceTypeForRank(this.rank);
     this.typeInfo = typeDef;
+    this.spaceType = typeTag;
+    this.typeLabel = typeDef?.label ?? '';
 
     const rawCap = this._rawStashCapacity !== undefined
       ? this._rawStashCapacity
@@ -166,16 +171,24 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
     // Stash item counts (space_upgrade items are excluded from stash count)
     const stashItems = actorItems.filter(i => i && i.type !== 'space_upgrade');
     this.stashCount = stashItems.length;
+    // This space's own tables; the group's room (`roomOf`) is never derived here because it walks other actors
+    this.ownTablesUsed = actorItems.filter(i => isCraftingTable(i) && i.system?.purchased !== false).length;
+    const rules = spaceRules();
+    this.ownTableSpaces = tableSpacesFor(this.rank, rules);
+    // What the next rank costs in gold, and what this space is worth when spaces join
+    this.rankUpPrice = couponPriceFor(this.rank + 1, rules);
+    this.joinPoints = rankPoints(this.rank);
     this.stashFull = this.stashCount >= this.effectiveStashCapacity;
     this.stashPct = Math.min(100, Math.round((this.stashCount / Math.max(1, this.effectiveStashCapacity)) * 100));
   }
 
   /**
-   * Install or activate an upgrade module in this personal space
+   * The free write of a purchase (`buySpaceUpgrade` pays first): install or activate an upgrade module in this personal space
    * @param {object|string} upgrade - Upgrade definition or upgrade ID
+   * @param {{ ruleBreak?: boolean }} [options] `ruleBreak`: a confirmed Rule Break (too many tables, a short purse) is recorded on the item
    * @returns {Promise<Actor>}
    */
-  async installUpgrade(upgrade) {
+  async installUpgrade(upgrade, { ruleBreak = false } = {}) {
     if (!this.actor) return null;
     const upData = typeof upgrade === 'string' ? getSpaceUpgrade(upgrade) : upgrade;
     if (!upData?.id) return null;
@@ -185,7 +198,9 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
       if (existing.system?.purchased === false) await existing.update({ 'system.purchased': true });
       return this.actor;
     }
-    await this.actor.createEmbeddedDocuments('Item', [spaceUpgradeItemData(upData)]);
+    const data = spaceUpgradeItemData(upData);
+    if (ruleBreak) data.flags = withRuleBreak(data).flags;
+    await this.actor.createEmbeddedDocuments('Item', [data]);
     return this.actor;
   }
 
@@ -219,6 +234,7 @@ export class PersonalSpaceDataModel extends (globalThis.foundry?.abstract?.TypeD
       source: questData.source || 'Floor Job Board',
       reward: questData.reward || '100 Gold',
       description: questData.description || '',
+      patron: String(questData.patron ?? ''),
       completed: Boolean(questData.completed),
       createdAt: new Date().toISOString()
     };

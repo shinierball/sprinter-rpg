@@ -17,6 +17,7 @@ import { popularityTokens, usedKeys, recordUsage } from './popularity.mjs';
 import { confirmRuleBreak } from '../rule-break.mjs';
 import { getCurrentFloor } from '../../documents/actor/actor-environment.mjs';
 import { ADVANCEMENT_USAGE_FLAG } from './floor-row-usage.mjs';
+import { escapeAttr } from '../escape-attr.mjs';
 
 const TEMPLATES = {
   'COG.Advancement.FloorRowTitle': 'Once Per Floor',
@@ -31,7 +32,6 @@ function t(key, data = {}) {
   return TEMPLATES[key].replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
 }
 
-const escapeHtml = (v) => String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 /** The `advancement` context an End-of-floor roll for `skill` is matched against. */
 function floorEndTags(actor, skill) {
@@ -63,11 +63,11 @@ function findFloorLimitedRows(actor, skills) {
 async function askWhichSkill(label, skills) {
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
   if (typeof DialogV2?.prompt !== 'function') return null;
-  const options = skills.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+  const options = skills.map(s => `<option value="${escapeAttr(s.id)}">${escapeAttr(s.name)}</option>`).join('');
   try {
     const picked = await DialogV2.prompt({
       window: { title: t('COG.Advancement.FloorRowTitle') },
-      content: `<p>${escapeHtml(t('COG.Advancement.FloorRowPrompt', { label }))}</p><select name="skill">${options}</select>`,
+      content: `<p>${escapeAttr(t('COG.Advancement.FloorRowPrompt', { label }))}</p><select name="skill">${options}</select>`,
       ok: {
         label: t('COG.Advancement.FloorRowPick'),
         callback: (_event, button) => button?.form?.elements?.skill?.value ?? null
@@ -109,7 +109,7 @@ export async function resolveFloorRows(actor, skills, options = {}) {
     if (used.has(entry.key)) {
       const res = await confirmRuleBreak({
         title: t('COG.Advancement.FloorRowTitle'),
-        message: escapeHtml(t('COG.Advancement.FloorRowUsed', { label: entry.label })),
+        message: escapeAttr(t('COG.Advancement.FloorRowUsed', { label: entry.label })),
         options
       });
       if (!res.confirmed) continue;

@@ -1,13 +1,44 @@
 import { COGToolApp } from '../tool-app.mjs';
 import { getCurrentFloor, setCurrentFloor } from '../../documents/actor/actor-environment.mjs';
-import { SYSTEM_PATH } from '../../constants.mjs';
+import { SYSTEM_ID, SYSTEM_PATH } from '../../constants.mjs';
 import { COG_OUTCOME_CONFIG } from '../../documents/session/roll-outcomes.mjs';
 import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { sessionRosterDialogsMixin } from './app-roster-dialogs.mjs';
 import { buildAdvancementControls, runAdvancementControl } from '../advancement-batch.mjs';
 import { openAwardLevels } from '../award-levels-app.mjs';
 import { buildSecretRows, openRowActor, revealRow, changeRow, cureRow, saveRowNote } from './secrets-tab.mjs';
+import { findCheckMessageByRollId, setCheckDifficulty, askOpposed } from '../../chat/actions/check-difficulty.mjs';
+import { difficultyText, readStandingDifficulty, standingLineText, STANDING_DIFFICULTY_SETTING } from '../../utils/roll/check-difficulty.mjs';
 import { sessionEventDialogMixin, sessionEventDialogMixinStatic } from './app-event-dialog.mjs';
+
+/** Ledger entry types whose chat card can be given a Difficulty from the row. */
+const DIFFICULTY_ENTRY_TYPES = Object.freeze(['skill', 'untrained_skill', 'stat']);
+const DIFFICULTY_BUTTON_MODES = Object.freeze([['unopposed', 'Unopposed'], ['stat', 'StatCheck'], ['opposed', 'Opposed']]);
+
+/** The three formula buttons of a ledger row (GM only, entries linked to a card), labelled, the current mode marked. */
+function difficultyButtonsFor(entry) {
+  if (!game.user?.isGM || !entry.rollId || !DIFFICULTY_ENTRY_TYPES.includes(entry.type)) return [];
+  return DIFFICULTY_BUTTON_MODES.map(([mode, key]) => ({ mode, label: difficultyText(key), selected: entry.difficultyMode === mode }));
+}
+
+const STANDING_CHOICES = Object.freeze([['', 'StandingNone'], ['unopposed', 'Unopposed'], ['stat', 'StatCheck'], ['opposed', 'ButtonOpposedAsk'], ['typed', 'StandingNumber']]);
+
+/** The standing Difficulty strip above the ledger (GM only): the select, the number box, the line and Clear. */
+function standingStripFor() {
+  if (!game.user?.isGM) return null;
+  const standing = readStandingDifficulty();
+  const mode = standing?.mode ?? '';
+  return {
+    title: difficultyText('StandingTitle'),
+    options: STANDING_CHOICES.map(([value, key]) => ({ value, label: difficultyText(key), selected: value === mode })),
+    showNumber: mode === 'typed',
+    value: standing?.mode === 'typed' ? standing.value : '',
+    numberLabel: difficultyText('NumberLabel'),
+    line: standingLineText(standing),
+    active: Boolean(standing),
+    clearLabel: difficultyText('Clear')
+  };
+}
 
 /**
  * Dedicated Party Progression & Session Manager Application UI
@@ -51,6 +82,9 @@ export class COGSessionManagerApp extends COGToolApp {
       setFilterOutcome: COGSessionManagerApp.#onSetFilterOutcome,
       setLedgerSearch: COGSessionManagerApp.#onSetLedgerSearch,
       setEntryDC: COGSessionManagerApp.#onSetEntryDC,
+      setEntryDifficulty: COGSessionManagerApp.#onSetEntryDifficulty,
+      setStandingDifficulty: COGSessionManagerApp.#onSetStandingDifficulty,
+      clearStandingDifficulty: COGSessionManagerApp.#onClearStandingDifficulty,
       setEntryOutcome: COGSessionManagerApp.#onSetEntryOutcome,
       editEntry: COGSessionManagerApp.#onEditEntry,
       deleteEntry: COGSessionManagerApp.#onDeleteEntry,
@@ -198,6 +232,7 @@ export class COGSessionManagerApp extends COGToolApp {
         outcomeLabel: outcomeCfg.label,
         outcomeBadge: outcomeCfg.badge,
         outcomeClass: outcomeCfg.class,
+        difficultyButtons: difficultyButtonsFor(entry),
         playerEditLabel: entry.playerEdit
           ? `Player edit: ${entry.playerEdit.userName || 'a player'}, ${new Date(entry.playerEdit.at).toLocaleString()}`
           : '',
@@ -286,6 +321,7 @@ export class COGSessionManagerApp extends COGToolApp {
       trackedOnly: this.trackedOnly,
       partyOptions,
       ledger,
+      standingStrip: standingStripFor(),
       untrainedSkillsReview,
       filterCrawlerId: this.filterCrawlerId,
       filterType: this.filterType,
@@ -419,10 +455,64 @@ export class COGSessionManagerApp extends COGToolApp {
     this._applyLedgerFilter();
   }
 
-  /** Inline edit of a ledger entry's target DC. */
+  /**
+   * Inline edit of a ledger entry's target DC. The GM's edit on an entry whose card is still in chat goes through the
+   * card (which writes the ledger back); otherwise only the entry changes.
+   */
   static async #onSetEntryDC(event, target) {
-    await COGSessionEngine.updateLedgerEntry(this.#sessionId(), target.dataset.entryId, { targetDC: target.value });
+    const entryId = target.dataset.entryId;
+    const message = game.user?.isGM ? findCheckMessageByRollId(this.#entry(entryId)?.rollId) : null;
+    const raw = target.value;
+    const blank = raw === '' || raw === null || raw === undefined;
+    const res = message ? await setCheckDifficulty(message, blank ? { mode: '' } : { mode: 'typed', value: raw }) : null;
+    if (!res?.ok) await COGSessionEngine.updateLedgerEntry(this.#sessionId(), entryId, { targetDC: raw });
     this.render();
+  }
+
+  /** The Unopposed / Stat Check / Opposed buttons of a ledger row: set the Difficulty on the entry's card. */
+  static async #onSetEntryDifficulty(event, target) {
+    const message = findCheckMessageByRollId(this.#entry(target.dataset.entryId)?.rollId);
+    if (!message) return ui.notifications?.warn?.(difficultyText('LedgerHint'));
+    const res = await setCheckDifficulty(message, { mode: target.dataset.mode });
+    if (res.reason === 'no-foe') {
+      const asked = await askOpposed(message);
+      if (asked) await setCheckDifficulty(message, asked);
+    }
+    this.render();
+  }
+
+  /** The strip's select or number box: put up (or replace) the standing Difficulty. None clears it. */
+  static async #onSetStandingDifficulty(event, target) {
+    const strip = target.closest?.('.cog-standing-difficulty');
+    const mode = strip?.querySelector?.('select')?.value ?? '';
+    const box = strip?.querySelector?.('input[type="number"]');
+    const base = { mode, value: 0, foeUuid: '', foeName: '', stat: '', mod: 0, label: '', setAt: Date.now(), stamped: 0 };
+    let next = null;
+    if (mode === 'unopposed' || mode === 'stat') next = base;
+    else if (mode === 'typed') {
+      const n = Number(box?.value);
+      if (box?.value !== '' && Number.isFinite(n)) next = { ...base, value: Math.max(0, Math.trunc(n)) };
+    } else if (mode === 'opposed') {
+      const asked = await askOpposed(null, { targets: [], rollerUuid: '', stat: '' });
+      if (asked) next = { ...base, stat: asked.stat, foeUuid: asked.foe.uuid ?? '', foeName: asked.foe.name ?? '', mod: asked.foe.mod ?? 0 };
+    }
+    if (next) {
+      const same = readStandingDifficulty();
+      // Putting the same Difficulty up again keeps its count; a different one starts at 0.
+      if (same && same.mode === next.mode && same.value === next.value && same.foeUuid === next.foeUuid && same.stat === next.stat && same.mod === next.mod) next.stamped = same.stamped;
+      await game.settings.set(SYSTEM_ID, STANDING_DIFFICULTY_SETTING, next);
+    } else if (mode === '') await game.settings.set(SYSTEM_ID, STANDING_DIFFICULTY_SETTING, null);
+    this.render();
+  }
+
+  static async #onClearStandingDifficulty() {
+    await game.settings.set(SYSTEM_ID, STANDING_DIFFICULTY_SETTING, null);
+    this.render();
+  }
+
+  #entry(entryId) {
+    const session = COGSessionEngine.getAllSessions().find(s => s.id === this.#sessionId());
+    return session?.ledger?.find(e => e.id === entryId);
   }
 
   /** Inline edit of a ledger entry's outcome. */
@@ -456,12 +546,9 @@ export class COGSessionManagerApp extends COGToolApp {
   static async #onTrainSkill(event, target) {
     const res = await COGSessionEngine.trainUntrainedSkill(target.dataset.actorId, target.dataset.skillIdentifier, target.dataset.skillName);
     if (res.success) {
-      if (ui.notifications?.info) ui.notifications.info(`Sprinter RPG | ${res.actorName} trained ${res.skillName} to Rank 1!`);
-      const done = document.createElement('span');
-      done.className = 'cog-text-success';
-      done.style.fontWeight = 'bold';
-      done.innerHTML = '<i class="fa-solid fa-check"></i> Trained (Rank 1)';
-      target.replaceWith(done);
+      if (ui.notifications?.info) ui.notifications.info(`Sprinter RPG | ${res.actorName} trained ${res.skillName} to Rank ${res.newRank}!`);
+      // Training one erases the crawler's other untrained entries, so the whole list is redrawn.
+      this.render();
     }
   }
 

@@ -3,33 +3,31 @@
  * A stored value outside a list is kept as an extra "(Custom)" option so authors never lose it.
  */
 
+import { COG_DAMAGE_TYPES } from '../../data/damage-types.mjs';
 import { COG_TAGS } from '../../data/tag-catalog.mjs';
+import { toStringList } from '../first-scalar.mjs';
 import { getCustomTags } from '../../data/tag-definitions.mjs';
 
 export const ABILITIES = Object.freeze({ str: 'Strength', int: 'Intelligence', con: 'Constitution', dex: 'Dexterity', cha: 'Charisma' });
 
-export const DEFAULT_DAMAGE_TYPES = Object.freeze([
-  'Acid', 'Bludgeoning', 'Electric', 'Fire', 'Force', 'Holy', 'Ice', 'Necrotic', 'Piercing', 'Poison', 'Psychic', 'Slashing', 'Sonic'
-]);
+export const DEFAULT_DAMAGE_TYPES = COG_DAMAGE_TYPES;
+
+/**
+ * The damage types in force: the registry's (`CONFIG.COG.damageTypes`, so a module's types are included), else the built-in
+ * list. The one list the item sheets' typed entries and the item-from-words vocabulary read.
+ * @returns {string[]}
+ */
+export function configuredDamageTypes() {
+  return toStringList(globalThis.CONFIG?.COG?.damageTypes ?? DEFAULT_DAMAGE_TYPES);
+}
 
 export const ARCHETYPES = Object.freeze(['Fighter', 'Mage', 'Cleric', 'Rogue', 'Bard', 'Monk', 'Paladin', 'Ranger', 'Druid', 'Warlock', 'Sorcerer', 'Barbarian']);
-export const WEAPON_CATEGORIES = Object.freeze(['Power Weapons', 'Edge', 'Bashing', 'Reach', 'Ranged', 'Hand to Hand', 'Utility', 'Exotic']);
-export const WEAPON_TYPES = Object.freeze([
-  'Chainsaw', 'Broadsword', 'Longsword', 'Shortsword', 'Dagger', 'Battleaxe', 'Axe',
-  'Warhammer', 'Mace', 'Club', 'Spear', 'Halberd', 'Polearm', 'Quarterstaff',
-  'Crossbow', 'Heavy Crossbow', 'Light Crossbow', 'Longbow', 'Shortbow',
-  'Pistol', 'Rifle', 'Shotgun', 'Blaster', 'Fist / Unarmed', 'Brass Knuckles', 'Pugilism', 'Exotic'
-]);
 export const FLOORS = Object.freeze([
   'Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6', 'Floor 7', 'Floor 8', 'Floor 9',
   'Floor 10', 'Floor 11', 'Floor 12', 'Floor 13', 'Floor 14', 'Floor 15', 'Floor 16', 'Floor 17', 'Floor 18',
   'Overworld', 'Celestial'
 ]);
 
-export const PROFICIENCY_MODES = Object.freeze([
-  { id: 'highest', label: 'Highest Precedence (Specialization)' },
-  { id: 'manual', label: 'Manual Selection' }
-]);
 export const WIELD_MODES = Object.freeze([
   { id: 'one_handed', label: 'One-Handed' },
   { id: 'two_handed', label: 'Two-Handed' },

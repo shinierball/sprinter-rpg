@@ -29,7 +29,7 @@ export const PERK_ROW_PATHS = Object.freeze({
   'system.statCaps': 'merge',
   'system.senses': 'merge',
   'system.movement': 'merge',
-  'system.requires': 'query'
+  'system.requirements': 'append'
 });
 
 /** Stable JSON text of a value (object keys sorted), for equality of rows. */
@@ -63,8 +63,6 @@ export function fieldOf(path) {
   return Object.hasOwn(PERK_ROW_PATHS, path) ? path.slice('system.'.length) : '';
 }
 
-const unique = (list) => [...new Set(list)];
-
 /**
  * Apply rows to a `system` object, in place, and return it. An appended row that already exists is skipped, so
  * applying the same proposal twice changes nothing. An unsupported path throws: it would be silently lost otherwise.
@@ -88,12 +86,6 @@ export function applyPerkRows(system, rows) {
       for (const [key, value] of Object.entries(row)) {
         // A stat cap keeps the lower cap; every other merged value is set.
         target[key] = field === 'statCaps' && Number.isFinite(target[key]) ? Math.min(target[key], value) : value;
-      }
-    } else if (how === 'query') {
-      const target = system[field] && typeof system[field] === 'object' ? system[field] : (system[field] = {});
-      for (const key of ['all', 'any', 'none']) {
-        const merged = unique([...(Array.isArray(target[key]) ? target[key] : []), ...(Array.isArray(row[key]) ? row[key] : [])]);
-        if (merged.length) target[key] = merged;
       }
     }
   }

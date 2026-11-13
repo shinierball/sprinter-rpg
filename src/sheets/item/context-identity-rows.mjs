@@ -1,7 +1,7 @@
 /**
  * Context for the identity row editors of a race or class: the rows the modifier editor does not cover.
  * Built like the item sheet's other editors, so a live sheet can adopt them later by calling this and including the
- * `identity-rows` partial. The Race and Class Creators use it through a `PerkRowsHost`. The grant rows, starting items, senses, movement, stat caps and `requires`.
+ * `identity-rows` partial. The Race and Class Creators use it through a `PerkRowsHost`. The grant rows, starting items, senses, movement, stat caps.
  */
 import { offeredEntries } from '../../utils/content-source.mjs';
 import { tagPickerOptions } from './row-host.mjs';
@@ -14,6 +14,23 @@ import { startingItemErrors } from '../../models/items/grant-validation.mjs';
 /** The Add chips of the grant rows, one per kind and mode (`kind:mode`), with their label keys. */
 export function grantAddBar() {
   return Object.keys(GRANT_ROW_FIELDS).map((kindKey) => ({ kindKey, labelKey: `COG.Rows.Grant.Add.${kindKey.replace(':', '_')}` }));
+}
+
+/**
+ * The grant rows of some kinds on a live item sheet (a buff's skill and rank-raise rows): each stored row of those kinds
+ * with its index into `grants` (the inputs are named by that index), kind and mode fixed, and an Add chip per
+ * `kind:mode` key in `addKeys`. The rows of other kinds (the stat table's) are not here, so no index is rendered twice.
+ * @param {Array|object} grants the item's `system.grants`
+ * @param {object} item the row host (for the query editor's buckets)
+ * @param {{ kinds: string[], addKeys: string[], tagOptions?: object[], skills?: object[], spells?: object[], fieldsByKey?: object }} `skills` / `spells`: the entries the identifier selects offer, `fieldsByKey`: see `grantRowView` opts
+ * @returns {{ rows: object[], addBar: object[] }} the `grants` parameter of the `grant-rows` partial
+ */
+export function kindGrantRows(grants, item, { kinds, addKeys, tagOptions, skills, spells, fieldsByKey }) {
+  const ctx = { item, tagOptions: tagOptions ?? tagPickerOptions(), skills, spells, locked: true, fieldsByKey };
+  const rows = toArray(grants).flatMap((row, index) => (kinds.includes(row?.kind)
+    ? [grantRowView(row, `system.grants.${index}`, { ...ctx, index })]
+    : []));
+  return { rows, addBar: grantAddBar().filter((chip) => addKeys.includes(chip.kindKey)) };
 }
 
 /** Item types a starting item can name: every builder item type except the lore types, plus the two companion actors. */
@@ -139,10 +156,6 @@ export function buildIdentityRowsContext(context, item, { skills, spells, locked
       addKey: 'startingItem'
     },
     scalars: ['senses', 'movement', 'statCaps'].map((group) => scalarGroup(group, context.system?.[group] ?? item?.system?.[group])),
-    requires: {
-      query: buildQueryView(context.system?.requires ?? item?.system?.requires, 'system.requires', (item && queryBucketsAt(item, 'system.requires')) || ['all', 'any', 'none']),
-      tagOptions
-    },
     tagOptions
   };
 }

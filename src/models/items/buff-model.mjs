@@ -2,7 +2,8 @@ import { BaseItemDataModel } from './base-item-model.mjs';
 import { damageModifiersField, defenseModifiersField, rollModifiersField, vehicleModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, sensesField } from '../fields/modifier-fields.mjs';
 import { grantsField } from '../fields/grant-fields.mjs';
 import { lightSchemaField } from '../fields/effect-fields.mjs';
-import { durationConfigField } from '../fields/timing-fields.mjs';
+import { durationConfigField, useRecordsField } from '../fields/timing-fields.mjs';
+import { activationField } from '../fields/activation-fields.mjs';
 
 /**
  * Data Model for Sprinter RPG Buff Items.
@@ -35,6 +36,8 @@ export class BuffDataModel extends BaseItemDataModel {
       description: new fields.HTMLField({ initial: '' }),
       durationConfig: durationConfigField(fields, { type: 'hours', value: 1 }),
       light: lightSchemaField(fields),
+      activation: activationField(fields),
+      useRecords: useRecordsField(fields),
       active: new fields.BooleanField({ initial: false })
     };
   }

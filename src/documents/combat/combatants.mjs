@@ -36,6 +36,15 @@ export function findCombatant(combat, combatantOrId) {
   return (combat?.combatants || []).find(con => con?.id === id) || null;
 }
 
+/** The combatant of `actor` in `combat` (uuid first, since unlinked tokens share an actor id). */
+export function combatantOfActor(combat, actor) {
+  if (!combat || !actor) return null;
+  const list = Array.from(combat.combatants?.values?.() ?? combat.combatants ?? []);
+  return list.find(c => c?.actor?.uuid && c.actor.uuid === actor.uuid)
+    ?? list.find(c => c?.actorId === actor.id || c?.actor?.id === actor.id)
+    ?? null;
+}
+
 /**
  * Determine if a combatant belongs to the Mob side (NPCs / Hostiles)
  * or the Crawler side (Crawlers, companion pets, allied vehicles).

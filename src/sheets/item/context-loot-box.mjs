@@ -6,12 +6,12 @@
 import { lootBoxTierDef, lootBoxTierOptions, resolveLootBoxTier } from '../../data/loot-box-tiers.mjs';
 import { isLootBoxType } from '../../models/items/loot-model.mjs';
 import { COG_ACHIEVEMENT_TIERS } from '../../data/rules/achievement-tiers.mjs';
-import { BOX_CHOICE_INVENTORY_TYPES } from '../../utils/row-kinds.mjs';
 import { BOX_TABLE_AS } from '../../data/loot-box-rows.mjs';
 import { choiceCandidates } from '../../documents/actor/loot-box-open.mjs';
 import { buildQueryView } from './context-query.mjs';
 import { pickOptions } from '../../utils/ui/field-options.mjs';
 import { toArray } from './util.mjs';
+import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES } from '../../utils/document-types.mjs';
 
 const KIND_LABELS = Object.freeze({
   item: 'Item', spell: 'Spell tome', gold: 'Gold', table: 'Table', magicItem: 'Generated magic item', choice: 'Choice'
@@ -38,7 +38,7 @@ const tableChoices = (tables) => tables.map((t) => ({ id: t.uuid, label: t.group
 
 /** The candidate type options of a choice row: any inventory item, each inventory type, a skill potion, a spell tome. */
 function choiceTypeOptions(selected) {
-  const ids = ['', ...BOX_CHOICE_INVENTORY_TYPES, 'skill', 'spell'];
+  const ids = ['', ...INVENTORY_ITEM_TYPES, ...RANKED_ITEM_TYPES];
   const fallbacks = { '': 'Any item', gear: 'Gear', loot: 'Loot', skill: 'Skill (potion)', spell: 'Spell (tome)' };
   return ids.map((id) => ({ value: id, label: loc(`COG.LootBoxSheet.ChoiceType.${id || 'any'}`, fallbacks[id]), selected: id === selected }));
 }
@@ -76,7 +76,7 @@ function rowView(row, index, { boxTier, tables, tagOptions }) {
   if (view.isChoice) {
     const itemType = String(row?.itemType ?? '');
     view.itemTypeOptions = choiceTypeOptions(itemType);
-    view.hasRank = itemType === 'skill' || itemType === 'spell';
+    view.hasRank = RANKED_ITEM_TYPES.includes(itemType);
     view.hasStem = itemType === 'skill';
     view.query = buildQueryView(row?.query, `system.box.contents.${index}.query`, ['all', 'any', 'none'], { gm: false });
     view.tagOptions = tagOptions;

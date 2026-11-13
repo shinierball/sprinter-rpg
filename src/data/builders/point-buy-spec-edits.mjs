@@ -9,6 +9,7 @@ import { sanitizeHeritageId } from '../rules/heritages.mjs';
 import { COG_BENEFIT_TIERS, COG_DETRIMENT_TIERS } from '../rules/point-build-tiers.mjs';
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
 import { normalizeTiming } from '../../utils/time/timing.mjs';
+import { cleanRankLimits } from '../../utils/skill/advancement-routes.mjs';
 import { cleanParamValue } from '../../utils/character/point-build-params.mjs';
 import { descriptionToPlainText } from '../../utils/ui/plain-paragraphs.mjs';
 import { isFormRace } from '../../utils/character/transform-rules.mjs';
@@ -54,7 +55,7 @@ export function setDRBonus(spec, val) {
   }
 }
 
-export function addSkill(spec, { name, identifier = '', rank = 1, isPassive = false, type = 'active', stat = '', checkType = 'stat', checkNote = '', baseDamage = null, canGainRanks = true, cooldown = { value: 0, unit: '' }, notes = '', choice = false, category = '' } = {}) {
+export function addSkill(spec, { name, identifier = '', rank = 1, isPassive = false, type = 'active', stat = '', checkType = 'stat', checkNote = '', baseDamage = null, rankLimits = [], cooldown = { value: 0, unit: '' }, notes = '', choice = false, category = '' } = {}) {
   const passive = Boolean(isPassive || type === 'passive');
   const r = Math.max(0, Number(rank) || 1);
   spec.skills.push({
@@ -67,7 +68,7 @@ export function addSkill(spec, { name, identifier = '', rank = 1, isPassive = fa
     checkType,
     checkNote,
     baseDamage: normalizeBaseDamage(baseDamage),
-    canGainRanks: Boolean(canGainRanks),
+    rankLimits: cleanRankLimits(rankLimits),
     cooldown: normalizeTiming(cooldown),
     notes,
     ...(choice ? { choice: true, category } : {}),
@@ -203,6 +204,7 @@ export function resetPointBuySpec(spec) {
   spec.name = spec.builderType === 'race' ? 'Unnamed Custom Race' : 'Custom Class';
   spec.description = '';
   spec.prerequisites = '';
+  spec.requirements = [];
   spec.stats = { str: 0, dex: 0, con: 0, int: 0, cha: 0 };
   spec.drBonus = 0;
   spec.skills = [];
@@ -243,6 +245,14 @@ export function loadGrantRows(spec, entry) {
   spec.rankBonuses = rankBonuses;
 }
 
+/** Fill the requirement rows from a canonical race or class item (`system.requirements`); the rows are copied. */
+export function loadRequirements(spec, entry) {
+  spec.requirements = requirementRowsOf(entry?.system?.requirements);
+}
+
+/** The object rows of a list, copied (anything else is not a row). */
+const requirementRowsOf = (rows) => (Array.isArray(rows) ? rows.filter(r => r && typeof r === 'object' && !Array.isArray(r)).map(r => structuredClone(r)) : []);
+
 export function importPointBuyJSON(spec, jsonStr) {
   const data = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
   if (data.name) spec.name = data.name;
@@ -251,6 +261,8 @@ export function importPointBuyJSON(spec, jsonStr) {
   if (typeof data.description === 'string' && data.system) spec.description = data.description;
   else if (data.system?.description || data.description) spec.description = descriptionToPlainText(data.system?.description || data.description);
   if (data.system?.prerequisites || data.prerequisites) spec.prerequisites = data.system?.prerequisites || data.prerequisites;
+  const importedRequirements = data.requirements ?? data.system?.requirements;
+  if (Array.isArray(importedRequirements)) spec.requirements = requirementRowsOf(importedRequirements);
   if (spec.builderType === 'race' && (data.form === true || isFormRace(data))) spec.form = true;
   // Rows first (the item's own form), then the builder's own export keys.
   const importedGrants = Array.isArray(data.system?.grants) ? data.system.grants : (Array.isArray(data.grants) ? data.grants : []);
@@ -273,7 +285,7 @@ export function importPointBuyJSON(spec, jsonStr) {
     // `choice` and `category` all come back as exported.
     spec.skills = [];
     for (const sk of skillEntries) {
-      addSkill(spec, { ...sk, canGainRanks: sk.canGainRanks !== undefined ? Boolean(sk.canGainRanks) : true, type: sk.type || (sk.isPassive ? 'passive' : 'active') });
+      addSkill(spec, { ...sk, type: sk.type || (sk.isPassive ? 'passive' : 'active') });
     }
   }
   const spellEntries = Array.isArray(data.spells) ? data.spells : fixedRows('spell').map(g => ({ name: g.label || g.identifier, rank: g.rank }));
@@ -328,6 +340,7 @@ export function loadPointBuyPreset(spec, presetId) {
   spec.name = preset.name;
   spec.description = preset.description || '';
   spec.prerequisites = preset.prerequisites || '';
+  spec.requirements = requirementRowsOf(preset.requirements);
   if (preset.stats) spec.stats = { ...preset.stats };
   if (preset.skills) spec.skills = preset.skills.map(s => ({ ...s }));
   if (preset.spells) spec.spells = preset.spells.map(sp => ({ ...sp }));

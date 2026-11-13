@@ -5,8 +5,8 @@
  */
 import { getItemAllTags } from '../../documents/active-tags.mjs';
 import { getActiveModifierSources } from '../roll/damage-modifiers.mjs';
-
-export const SKILL_SOFT_CAP = 15;
+import { isRaceClassLocked } from '../character/race-class-floor.mjs';
+import { SKILL_SOFT_CAP, PRE_RACE_CLASS_RANK_LIMIT } from './rank-limits.mjs';
 
 const finite = (v) => {
   const n = Number(v);
@@ -29,7 +29,7 @@ function capRowMatches(grant, item, tagSet) {
 }
 
 /**
- * The highest Rank a skill can reach through advancement: the maximum of the skill's own `maxRank`
+ * The highest Rank a skill can reach through advancement: `PRE_RACE_CLASS_RANK_LIMIT` for a crawler below the Race and Class unlock floor; otherwise the maximum of the skill's own `maxRank`
  * (when set), the soft cap, and every matching `rank_cap` grant on the actor's active sources (equipped
  * gear, active buffs, race, class, owned skills).
  * @param {object} [actor]
@@ -37,6 +37,8 @@ function capRowMatches(grant, item, tagSet) {
  * @returns {number}
  */
 export function getRankCap(actor, item) {
+  // Race and Class selection is not over until the unlock floor: Rank 10, whatever the skill or gear allows
+  if (isRaceClassLocked(actor)) return PRE_RACE_CLASS_RANK_LIMIT;
   let cap = SKILL_SOFT_CAP;
   cap = Math.max(cap, finite(item?.system?.maxRank) ?? 0);
   if (!actor || !item) return cap;

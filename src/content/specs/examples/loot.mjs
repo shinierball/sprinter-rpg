@@ -34,7 +34,7 @@ export const EXAMPLE_LOOT_SPECS = Object.freeze([
     img: 'icons/svg/item-bag.svg',
     system: {
       identifier: 'grab-bag-of-regret',
-      description: '<p>Contents may vary. Contents will be regretted. One random outcome per bag.</p>',
+      description: '<p>Contents may vary. Contents will be regretted. One random outcome per bag; a quarter of the time it is a snake, which deals 1d6 Piercing damage.</p>',
       lootType: 'consumable',
       quantity: 1,
       executionMode: 'random',

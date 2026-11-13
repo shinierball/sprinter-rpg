@@ -8,7 +8,7 @@
 import { COGToolApp } from './tool-app.mjs';
 import { COG_TAGS } from '../data/tag-catalog.mjs';
 import { TAG_NAMESPACES, isIdentityNamespace } from '../data/tag-vocabulary.mjs';
-import { registerCustomTag, isDescriptiveTag } from '../data/tag-definitions.mjs';
+import { registerCustomTag, isDescriptiveTag, CUSTOM_TAGS_SETTING } from '../data/tag-definitions.mjs';
 import { tagIndex } from '../utils/tag/tag-index.mjs';
 import { openTagSystemJournal } from '../data/journal-tag-system.mjs';
 import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
@@ -74,7 +74,7 @@ export class COGTagManager extends COGToolApp {
     let savedCustomTags = [];
     if (globalThis.game?.settings) {
       try {
-        savedCustomTags = globalThis.game.settings.get(SYSTEM_ID, 'customTags') || [];
+        savedCustomTags = globalThis.game.settings.get(SYSTEM_ID, CUSTOM_TAGS_SETTING) || [];
       } catch {
         savedCustomTags = [];
       }
@@ -277,9 +277,9 @@ export class COGTagManager extends COGToolApp {
         globalThis.ui?.notifications?.warn?.('Sprinter RPG | Only a GM can save world custom tags.');
       } else {
         try {
-          const cur = globalThis.game.settings.get(SYSTEM_ID, 'customTags') || [];
+          const cur = globalThis.game.settings.get(SYSTEM_ID, CUSTOM_TAGS_SETTING) || [];
           if (!cur.some(t => t.id === cleanId)) {
-            await globalThis.game.settings.set(SYSTEM_ID, 'customTags', [...cur, newTag]);
+            await globalThis.game.settings.set(SYSTEM_ID, CUSTOM_TAGS_SETTING, [...cur, newTag]);
           }
         } catch (err) {
           console.warn('Sprinter RPG | Could not save custom tag to settings', err);
@@ -313,9 +313,9 @@ export class COGTagManager extends COGToolApp {
         globalThis.ui?.notifications?.warn?.('Sprinter RPG | Only a GM can delete world custom tags.');
       } else {
         try {
-          const cur = globalThis.game.settings.get(SYSTEM_ID, 'customTags') || [];
+          const cur = globalThis.game.settings.get(SYSTEM_ID, CUSTOM_TAGS_SETTING) || [];
           const updated = cur.filter(t => t.id !== tagId);
-          await globalThis.game.settings.set(SYSTEM_ID, 'customTags', updated);
+          await globalThis.game.settings.set(SYSTEM_ID, CUSTOM_TAGS_SETTING, updated);
         } catch (err) {
           console.warn('Sprinter RPG | Could not delete custom tag from settings', err);
         }

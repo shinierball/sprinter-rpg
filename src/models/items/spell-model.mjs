@@ -52,7 +52,7 @@ export class SpellDataModel extends BaseItemDataModel {
       attackModifiers: rollModifiersField(fields),
       checkModifiers: rollModifiersField(fields),
       quote: new fields.StringField({ initial: '' }),
-      notes: new fields.HTMLField({ initial: '' }),
+      notes: new fields.StringField({ initial: '' }),
       description: new fields.HTMLField({ initial: '' }),
       upgrades: new fields.SchemaField({
         rank5: new fields.StringField({ initial: '' }),

@@ -17,6 +17,7 @@ import {
 } from './shared.mjs';
 import { describeAttackLines } from './attack-lines.mjs';
 import { hotRoundsOf } from '../time/hot-rounds.mjs';
+import { ADVANCEMENT_ROUTE_DEFS, routeLimit } from '../skill/advancement-routes.mjs';
 import { specialtyLabel } from '../skill/skill-specialty-options.mjs';
 import { rankBreakLine } from './rank-break-text.mjs';
 import { getItemAllTags } from '../../documents/active-tags.mjs';
@@ -41,7 +42,10 @@ defineItemSummaryTemplates({
   [`${KEY}.RankCeiling`]: 'Rank {n} (ceiling {max})',
   [`${KEY}.CeilingOnly`]: 'Rank ceiling {max}',
   [`${KEY}.BoonBonus`]: '{n} Rank from boons',
-  [`${KEY}.NoRankGain`]: 'Cannot gain Ranks by training',
+  [`${KEY}.AdvancesBy`]: 'Advances by {routes}',
+  [`${KEY}.AdvancesOnly`]: 'Advances only by {routes}',
+  [`${KEY}.UpToRank`]: 'up to Rank {n}',
+  [`${KEY}.Always`]: 'always',
   [`${KEY}.SpellRole`]: '{type} spell',
   [`${KEY}.SkillGroup`]: 'Group: {group}',
   [`${KEY}.Specialty`]: 'Specialty: {label}',
@@ -53,7 +57,7 @@ defineItemSummaryTemplates({
   [`${KEY}.DamageTyped`]: 'Damage {formula} {type}',
   [`${KEY}.DamageParts`]: 'Plus {parts} damage',
   [`${KEY}.IgnoresDr`]: 'Ignores DR',
-  [`${KEY}.CritFromRank`]: 'Critical hits x{n} from Rank {rank}',
+  [`${KEY}.CritFromRank`]: 'Critical Hit: {n}x base dice from Rank {rank}',
   [`${KEY}.Heal`]: 'Heals {bars} ({targets})',
   [`${KEY}.HealOverTime`]: 'Heals {bars} each round for {rounds} rounds ({targets})',
   [`${KEY}.Cleanse`]: 'Cleanses {list}',
@@ -116,6 +120,27 @@ const isSpell = (item) => item?.type === 'spell';
 const isSkill = (item) => item?.type === 'skill';
 const L = (key, data) => t(`${KEY}.${key}`, data);
 
+/**
+ * How a skill with route limits advances ("use and grinding up to Rank 5; training and magic always"), or '' when it has none.
+ * Routes with a limit of 0 are left out; a skill that only magic raises reads "Advances only by Magic".
+ */
+function advancementText(item) {
+  if (!Array.isArray(sysOf(item).rankLimits) || !sysOf(item).rankLimits.length) return '';
+  const groups = new Map();
+  for (const id of Object.keys(ADVANCEMENT_ROUTE_DEFS)) {
+    const limit = routeLimit(item, id);
+    if (limit === 0) continue;
+    const names = groups.get(limit) ?? [];
+    names.push(ADVANCEMENT_ROUTE_DEFS[id].label.toLowerCase());
+    groups.set(limit, names);
+  }
+  if (groups.size === 0) return '';
+  const join = (names) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0]);
+  const parts = [...groups].map(([limit, names]) => `${join(names)} ${limit === null ? L('Always') : L('UpToRank', { n: limit })}`);
+  const alwaysOnly = groups.size === 1 && groups.has(null);
+  return alwaysOnly ? L('AdvancesOnly', { routes: join(groups.get(null)) }) : L('AdvancesBy', { routes: parts.join('; by ') });
+}
+
 /** Whether the item belongs to a character (`ctx.actor`): described at the owner's Rank, with the owner's numbers. */
 const owner = (ctx) => (ctx?.actor && typeof ctx.actor === 'object' ? ctx.actor : null);
 
@@ -173,7 +198,8 @@ function describeCast(item, ctx) {
 
   const boon = Math.trunc(Number(sys.boonBonus) || 0);
   if (isSkill(item) && boon) out.push(itemLine('mod', L('BoonBonus', { n: signed(boon) }), 'system.boonBonus'));
-  if (isSkill(item) && sys.canGainRanks === false) out.push(itemLine('skill', L('NoRankGain'), 'system.canGainRanks'));
+  const advances = isSkill(item) ? advancementText(item) : '';
+  if (advances) out.push(itemLine('skill', advances, 'system.rankLimits'));
 
   if (isSpell(item)) {
     const role = spellRole(item);

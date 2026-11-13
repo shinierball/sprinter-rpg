@@ -19,6 +19,7 @@ export const CRAFT_TEXT = Object.freeze({
   'COG.CraftWarn.notBatchable': 'This blueprint does not make batches.',
   'COG.CraftWarn.overSkillCap': 'That is above bonus {cap}, the most this skill can craft.',
   'COG.CraftWarn.clockShort': 'This takes {hours} hours and {left} are left on the floor.',
+  'COG.CraftWarn.recipeLocked': '{list} marks a locked recipe, and nothing here unlocks it.',
   'COG.CraftWarn.noSteps': 'This blueprint has no size and no enchantments, so there is nothing to roll for.',
   'COG.CraftWarn.hazard': 'This item has 3 or more enchantments: applying another rolls 1d10, and 5 or less breaks it for good.',
   'COG.Craft.BonusRaised': '+{n} bonus value ({source})',

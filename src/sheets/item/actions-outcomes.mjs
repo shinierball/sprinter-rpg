@@ -6,6 +6,7 @@ import { getAvailableBuffs, getAvailableDebuffs, getAvailableRollTables, getAvai
 import { ENCHANT_ITEM_OUTCOME } from '../../utils/loot/outcome-defaults.mjs';
 import { rollsNoDamage } from '../../utils/damage/base-damage.mjs';
 import { balanceWeights, digitsOnly, rowIndex, toArray } from './util.mjs';
+import { htmlSnippet } from '../../utils/ui/html-snippet.mjs';
 
 const readOutcomes = (item) => toArray(item.system?.outcomes).map((o) => ({ ...o }));
 const saveOutcomes = (item, outcomes) => item.update({ 'system.outcomes': outcomes });
@@ -81,7 +82,7 @@ export const OUTCOME_ACTIONS = {
     const value = String(target.value ?? '').trim();
     const matched = (await getAvailableBuffs()).find((b) => b.system?.identifier === value);
     await patchOutcome(this, target, (row) => (matched
-      ? { ...row, buffIdentifier: value, name: matched.name, description: matched.system?.description || row.description || '', damage: '', damageType: '' }
+      ? { ...row, buffIdentifier: value, name: matched.name, description: htmlSnippet(matched.system?.description) || row.description || '', damage: '', damageType: '' }
       : { ...row, buffIdentifier: value, damage: '', damageType: '' }));
   },
 
@@ -91,7 +92,7 @@ export const OUTCOME_ACTIONS = {
     const value = String(target.value ?? '').trim();
     const matched = (await getAvailableDebuffs()).find((d) => d.system?.identifier === value);
     await patchOutcome(this, target, (row) => (matched
-      ? { ...row, debuffIdentifier: value, name: matched.name, description: matched.system?.description || row.description || '', damage: '', damageType: '' }
+      ? { ...row, debuffIdentifier: value, name: matched.name, description: htmlSnippet(matched.system?.description) || row.description || '', damage: '', damageType: '' }
       : { ...row, debuffIdentifier: value, damage: '', damageType: '' }));
   },
 
@@ -101,7 +102,7 @@ export const OUTCOME_ACTIONS = {
     const value = String(target.value ?? '').trim();
     const matched = (await getAvailableSpells()).find((s) => s.system?.identifier === value);
     await patchOutcome(this, target, (row) => (matched
-      ? { ...row, spellIdentifier: value, spellName: matched.name, name: matched.name, description: matched.system?.description || row.description || '' }
+      ? { ...row, spellIdentifier: value, spellName: matched.name, name: matched.name, description: htmlSnippet(matched.system?.description) || row.description || '' }
       : { ...row, spellIdentifier: value }));
   },
 

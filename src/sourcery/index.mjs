@@ -18,6 +18,7 @@ export { readAnchor, readAnchorsEntry, readPicks, readNameEdits } from './anchor
 export { fetchBlock, candidatesFor, pickCandidate, blockForHit, prefixSource, sourceText, blockPrefixHash, findLine, applyPicks, keepOnly } from './resolver.mjs';
 export { FIELD_MAPS, fieldMapFor } from './field-maps.mjs';
 export { hydrate, hydrateWithReport, FLAG_SCOPE } from './hydrator.mjs';
-export { sliceTable, hydrateTable, similarity } from './tables.mjs';
+export { sliceTable } from './table-slicer.mjs';
+export { hydrateTable, similarity } from './tables.mjs';
 export { readTableRecipe } from './table-recipes.mjs';
 export { rollTableSpec, vehicleSpecs, vehicleDocId, journalSpec, tablePageHtml, tableName } from './table-builders.mjs';

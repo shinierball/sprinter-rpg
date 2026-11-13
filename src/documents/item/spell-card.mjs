@@ -43,7 +43,7 @@ export async function rollSpellCard(spellItem, options = {}) {
           <span class="cog-text-danger" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">${spellRoleLabel(spellRole(spellItem))}${sys.baseDamage?.damageType ? ` • ${sys.baseDamage.damageType}` : ''}${isFreeCast ? ' • FREE CAST' : ''}</span>
         </div>
       </div>
-      ${sys.quote ? `<div class="cog-text-secondary" style="font-style: italic; font-size: 12px; margin-bottom: 8px; border-left: 3px solid var(--cog-gold); padding-left: 6px;">“${sys.quote}”</div>` : ''}
+      ${sys.quote ? `<div class="cog-text-secondary" style="font-style: italic; font-size: 12px; margin-bottom: 8px; border-left: 3px solid var(--cog-gold); padding-left: 6px;">“${escapeAttr(sys.quote)}”</div>` : ''}
       <div class="cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; margin-bottom: 8px; border: 1px solid var(--cog-divider); padding: 4px 6px; border-radius: 3px;">
         <div><strong>Mana:</strong> ${manaDisplay}</div>
         ${sourceBadge}

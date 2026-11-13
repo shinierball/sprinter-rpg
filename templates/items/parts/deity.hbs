@@ -1,0 +1,139 @@
+{{!--
+  Deity item sheet part. Every `name="system.*"` path appears once (Principle 5). The pick lists, the effect lists and
+  the consumed-item query have no `name`: they are action delegates (`data-action`), handled in
+  src/sheets/item/actions-lists.mjs, actions-tags.mjs and deity-effects.mjs. A buff or debuff dropped on a
+  `data-deity-drop` zone is added to that list (item-sheet.mjs `_onDropItem`).
+--}}
+<section class="cog-item-body cog-item-body-deity">
+  <div class="cog-field-row">
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.Deity.Sheet.Title"}}</span>
+      <input class="cog-field-input" type="text" name="system.title" value="{{system.title}}" />
+      <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Deity.Sheet.TitleHint"}}</p>
+    </div>
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.Deity.Sheet.Temple"}}</span>
+      <input class="cog-field-input" type="text" name="system.temple" value="{{system.temple}}" />
+    </div>
+  </div>
+  <div class="cog-field-row">
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.Deity.Sheet.HighCleric"}}</span>
+      <input class="cog-field-input" type="text" name="system.highCleric" value="{{system.highCleric}}" />
+    </div>
+    <div class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.Deity.Sheet.Sponsor"}}</span>
+      <input class="cog-field-input" type="text" name="system.sponsor" value="{{system.sponsor}}" />
+    </div>
+  </div>
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Deity.Sheet.Symbol"}}</span>
+    <input class="cog-field-input" type="text" name="system.symbol" value="{{system.symbol}}" />
+  </div>
+  <label class="cog-field-group cog-checkbox-label">
+    <input type="checkbox" name="system.patronage" {{#if system.patronage}}checked{{/if}} />
+    <span>{{localize "COG.Deity.Sheet.Patronage"}}</span>
+  </label>
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Deity.Sheet.PatronageHint"}}</p>
+
+  {{!-- OFFERING --}}
+  <div class="cog-modifier-block cog-deity-offering">
+    <div class="cog-banner-header cog-modifier-header"><span><i class="fa-solid fa-hand-holding-heart"></i> {{localize "COG.Deity.Sheet.Offering"}}</span></div>
+    <div class="cog-modifier-body">
+      <label class="cog-field-group cog-checkbox-label">
+        <input type="checkbox" name="system.offering.required" {{#if system.offering.required}}checked{{/if}} />
+        <span>{{localize "COG.Deity.Sheet.OfferingRequired"}}</span>
+      </label>
+      <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Deity.Sheet.OfferingRequiredHint"}}</p>
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.Deity.Sheet.OfferingText"}}</span>
+        <input class="cog-field-input" type="text" name="system.offering.text" value="{{system.offering.text}}" />
+      </div>
+      <div class="cog-field-row">
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.Deity.Sheet.OfferingGold"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="1" name="system.offering.gold" value="{{system.offering.gold}}" />
+          <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Deity.Sheet.OfferingGoldHint"}}</p>
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.Deity.Sheet.OfferingQuantity"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="1" name="system.offering.consume.quantity" value="{{system.offering.consume.quantity}}" />
+        </div>
+      </div>
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.Deity.Sheet.OfferingConsumes"}}</span>
+        <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Deity.Sheet.OfferingConsumesHint"}}</p>
+        {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=deityConsumeQuery tagOptions=techniqueTagOptions}}
+      </div>
+    </div>
+  </div>
+
+  {{!-- RIVALS AND SIGNATURE --}}
+  {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=deityRivals}}
+  <div class="cog-field-group small">
+    <span class="cog-field-label">{{localize "COG.Deity.Sheet.SignatureStat"}}</span>
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Deity.Sheet.SignatureStatHint"}}</p>
+    <select class="cog-field-input" name="system.signature.stat">
+      {{#each deityStatOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+    </select>
+  </div>
+  {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=deitySignatureSkills}}
+
+  {{!-- SIGNATURE EFFECTS --}}
+  <div class="cog-modifier-block cog-deity-zone" data-deity-drop="signature">
+    <div class="cog-banner-header cog-modifier-header"><span><i class="fa-solid fa-star"></i> {{localize "COG.Deity.Sheet.SignatureEffects"}}</span></div>
+    <div class="cog-modifier-body">
+      <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Deity.Sheet.SignatureEffectsHint"}}</p>
+      {{#each deitySignatureEffects as |e|}}
+        <div class="cog-modifier-card cog-deity-effect">
+          <img class="cog-bg-icon-box" src="{{e.img}}" width="20" height="20" alt="" />
+          <span class="cog-badge">[{{#if (eq e.type "debuff")}}DEBUFF{{else}}BUFF{{/if}}]</span>
+          <span>{{e.name}}</span>
+          <span class="cog-modifier-controls">
+            <a class="cog-modifier-delete" data-action="removeDeityEffect" data-list="signature" data-index="{{e.index}}" data-tooltip="{{localize 'COG.Deity.Sheet.Remove'}}"><i class="fa-solid fa-trash"></i></a>
+          </span>
+        </div>
+      {{else}}
+        <span class="cog-text-muted">{{localize "COG.Deity.Sheet.DropEffect"}}</span>
+      {{/each}}
+      <select class="cog-field-input" data-change-action="addDeityEffect" data-zone="signature">
+        <option value="">{{localize "COG.Deity.Sheet.AddEffect"}}</option>
+        <optgroup label="{{localize 'COG.Deity.Sheet.Buffs'}}">{{#each availableBuffs as |b|}}<option value="buff:{{b.id}}">{{b.name}}</option>{{/each}}</optgroup>
+        <optgroup label="{{localize 'COG.Deity.Sheet.Debuffs'}}">{{#each availableDebuffs as |d|}}<option value="debuff:{{d.id}}">{{d.name}}</option>{{/each}}</optgroup>
+      </select>
+    </div>
+  </div>
+
+  {{!-- TIER EFFECTS --}}
+  {{#each deityTiers as |tier|}}
+    <div class="cog-modifier-block cog-deity-zone" data-deity-drop="{{tier.tier}}">
+      <div class="cog-banner-header cog-modifier-header"><span><i class="fa-solid fa-hands-praying"></i> {{tier.label}}</span></div>
+      <div class="cog-modifier-body">
+        {{#each tier.entries as |e|}}
+          <div class="cog-modifier-card cog-deity-effect">
+            <img class="cog-bg-icon-box" src="{{e.img}}" width="20" height="20" alt="" />
+            <span class="cog-badge">[{{#if (eq e.type "debuff")}}DEBUFF{{else}}BUFF{{/if}}]</span>
+            <span>{{e.name}}</span>
+            <span class="cog-modifier-controls">
+              {{#if e.canTierUp}}<a data-action="deityEffectTierUp" data-index="{{e.index}}" data-tooltip="{{localize 'COG.Deity.Sheet.TierUp'}}"><i class="fa-solid fa-arrow-up"></i></a>{{/if}}
+              {{#if e.canTierDown}}<a data-action="deityEffectTierDown" data-index="{{e.index}}" data-tooltip="{{localize 'COG.Deity.Sheet.TierDown'}}"><i class="fa-solid fa-arrow-down"></i></a>{{/if}}
+              <a class="cog-modifier-delete" data-action="removeDeityEffect" data-list="tier" data-index="{{e.index}}" data-tooltip="{{localize 'COG.Deity.Sheet.Remove'}}"><i class="fa-solid fa-trash"></i></a>
+            </span>
+          </div>
+        {{else}}
+          <span class="cog-text-muted">{{localize "COG.Deity.Sheet.DropEffect"}}</span>
+        {{/each}}
+        <select class="cog-field-input" data-change-action="addDeityEffect" data-zone="{{tier.tier}}">
+          <option value="">{{localize "COG.Deity.Sheet.AddEffect"}}</option>
+          <optgroup label="{{localize 'COG.Deity.Sheet.Buffs'}}">{{#each ../availableBuffs as |b|}}<option value="buff:{{b.id}}">{{b.name}}</option>{{/each}}</optgroup>
+          <optgroup label="{{localize 'COG.Deity.Sheet.Debuffs'}}">{{#each ../availableDebuffs as |d|}}<option value="debuff:{{d.id}}">{{d.name}}</option>{{/each}}</optgroup>
+        </select>
+      </div>
+    </div>
+  {{/each}}
+
+  <div class="cog-field-group">
+    <span class="cog-field-label">{{localize "COG.Deity.Sheet.Description"}}</span>
+    {{editor descriptionHtml target="system.description" button=true editable=editable engine="prosemirror" collaborate=false}}
+  </div>
+</section>

@@ -13,7 +13,8 @@ import { itemIdentifier } from '../utils/identifier.mjs';
  * One browser list per kind. `types` are the item types a world or actor document must have to be listed; `catalog`
  * the registry kind(s) `offeredEntries` reads (index-matched to `types` when both have the same length); `pack` the pack
  * category `getCompendiumEntries` walks (null: no pack half); `policy` the merge and owned-mark rule; `catalogSource` the `source`
- * label of a registered-definition row (kept per kind as the tests pin it); `img` the default image per type.
+ * label of a registered-definition row (kept per kind as the tests pin it); `img` the default image per type; `strictTypes`
+ * drops every row whose type is not in `types` (a pack the kind shares with other item types).
  */
 const CATALOG_KINDS = Object.freeze({
   skill: { types: ['skill'], catalog: ['skills'], pack: 'skills', policy: 'reference', catalogSource: 'compendium', img: { skill: 'icons/svg/book.svg' } },
@@ -23,6 +24,8 @@ const CATALOG_KINDS = Object.freeze({
     img: { buff: 'icons/svg/aura.svg', debuff: 'icons/svg/skull.svg' }, actorRows: true, sort: 'type'
   },
   item: { types: ['gear', 'loot'], catalog: ['items'], pack: 'items', policy: 'sourceLink', catalogSource: 'canonical', img: { gear: 'icons/svg/shield.svg', loot: 'icons/svg/item-bag.svg' } },
+  deity: { types: ['deity'], catalog: ['items'], pack: 'items', policy: 'sourceLink', catalogSource: 'canonical', img: { deity: 'icons/svg/sun.svg' }, strictTypes: true },
+  patron: { types: ['patron', 'deity'], catalog: ['items'], pack: 'items', policy: 'sourceLink', catalogSource: 'canonical', img: { patron: 'icons/svg/mystery-man.svg', deity: 'icons/svg/sun.svg' }, strictTypes: true },
   achievement: { types: ['achievement'], catalog: ['achievements'], pack: null, policy: 'worldWins', catalogSource: 'catalog', img: { achievement: 'icons/svg/upgrade.svg' }, sort: 'none' }
 });
 
@@ -225,8 +228,9 @@ export function unifiedCatalogSync(kind, { actor = null } = {}) {
 }
 
 /** Mark what the actor owns, then sort. */
-function finishRows(cfg, actor, rows) {
+function finishRows(cfg, actor, allRows) {
   const policy = POLICIES[cfg.policy];
+  const rows = cfg.strictTypes ? allRows.filter((row) => cfg.types.includes(row.type)) : allRows;
   if (actor && policy.owned) {
     for (const row of rows) {
       const match = policy.owned(cfg, actor, row);

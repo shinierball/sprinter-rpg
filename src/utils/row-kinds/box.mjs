@@ -1,6 +1,7 @@
 /** Core kinds of `boxContents` (the prizes of a loot box), registered at import. */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { registerCoreKind } from './registry.mjs';
+import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES } from '../document-types.mjs';
 
 // --- boxContents (discriminator `kind`; 7.3a descriptors, 7.3c handlers) ---------------------------------------------
 
@@ -236,9 +237,6 @@ registerCoreKind('boxContents', {
   }
 });
 
-/** The item types a `choice` row with no `itemType` may offer and give: the ones that sit in an inventory. */
-export const BOX_CHOICE_INVENTORY_TYPES = Object.freeze(['gear', 'loot']);
-
 registerCoreKind('boxContents', {
   id: 'choice',
   label: 'COG.Rows.Kind.BoxContents.choice.Label',
@@ -259,13 +257,13 @@ registerCoreKind('boxContents', {
       const type = String(row.itemType ?? '');
       const doc = await svc(ctx).resolveDocument({ uuid }, type);
       if (!doc) return missingPrize(acc, ctx, 'COG.LootBoxOpen.PrizeMissing', { name: uuid });
-      if (type === 'spell' || type === 'skill') {
+      if (RANKED_ITEM_TYPES.includes(type)) {
         if (doc.type !== type) return missingPrize(acc, ctx, 'COG.LootBoxOpen.ChoiceWrongType', { name: doc.name ?? uuid, type });
         const prize = type === 'spell' ? svc(ctx).tomePrize(doc, row.rank ?? 1) : svc(ctx).skillPotionPrize(doc, row.rank ?? 1, row.name || '');
         acc.prizes.push({ ...withLabel(prize, row.label), chosen: true });
         return true;
       }
-      const allowed = type ? [type] : BOX_CHOICE_INVENTORY_TYPES;
+      const allowed = type ? [type] : INVENTORY_ITEM_TYPES; // a choice row with no item type offers what sits in an inventory
       if (!allowed.includes(doc.type)) return missingPrize(acc, ctx, 'COG.LootBoxOpen.ChoiceWrongType', { name: doc.name ?? uuid, type: type || 'gear, loot' });
       acc.prizes.push(...svc(ctx).itemPrizes(doc, row.quantity).map((p) => ({ ...withLabel(p, row.label), chosen: true })));
       return true;

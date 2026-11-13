@@ -14,6 +14,7 @@ export async function handleRollContest(event, button, message) {
   const initiatorId = initiatorActor?.id ?? '';
   const initiatorName = button.dataset?.initiatorName || 'Initiator';
   const itemName = button.dataset?.itemName || 'Ability';
+  const itemId = button.dataset?.itemId || '';
   const contestType = button.dataset?.contestType || 'dc';
   const targetStat = button.dataset?.targetStat || 'dex';
   const targetSkill = button.dataset?.targetSkill || '';
@@ -48,6 +49,7 @@ export async function handleRollContest(event, button, message) {
         initiator: initiatorActor,
         initiatorName,
         itemName,
+        itemId,
         contestType,
         targetStat,
         targetSkill,

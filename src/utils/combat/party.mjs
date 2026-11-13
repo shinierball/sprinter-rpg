@@ -8,6 +8,12 @@ function partyKey(actor) {
   return typeof raw === 'string' ? raw.trim().toLowerCase() : '';
 }
 
+/** Whether two actors are in the same party: both party keys non-empty and equal. */
+export function sameParty(a, b) {
+  const key = partyKey(a);
+  return key !== '' && key === partyKey(b);
+}
+
 const idOf = (actor) => actor?.uuid ?? actor?.id ?? null;
 
 /** The world actors as an array (`game.actors` is a Collection). */

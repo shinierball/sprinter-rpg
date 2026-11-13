@@ -11,7 +11,7 @@
  */
 import { damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, sensesField, statCapsField } from '../models/fields/modifier-fields.mjs';
 import { grantsField, startingItemsField } from '../models/fields/grant-fields.mjs';
-import { tagQueryField } from '../models/fields/tag-fields.mjs';
+import { requirementsField } from '../models/fields/requirement-fields.mjs';
 import { buildRowEditorContext } from '../sheets/item/context-rows.mjs';
 import { ROW_ACTIONS } from '../sheets/item/actions-rows.mjs';
 import { TAG_ACTIONS } from '../sheets/item/actions-tags.mjs';
@@ -19,6 +19,7 @@ import { PICK_LIST_ACTIONS } from '../sheets/item/actions-lists.mjs';
 import { renameRowPaths, retargetRow, tagPickerOptions } from '../sheets/item/row-host.mjs';
 import { buildIdentityRowsContext } from '../sheets/item/context-identity-rows.mjs';
 import { trimGrantRow } from '../sheets/item/grant-row-fields.mjs';
+import { buildRequirementRowsContext, trimRequirementRow } from '../sheets/item/context-requirements.mjs';
 import { buildTagPills } from '../sheets/base/tag-editor.mjs';
 import { PERK_ROW_PATHS, applyPerkRows, fieldOf } from '../utils/character/perk-rows.mjs';
 
@@ -32,7 +33,7 @@ const MODIFIER_KEYS = Object.freeze([
 ]);
 
 /** Every `system` key the host presents and the rows form may write. */
-export const EDITABLE_KEYS = Object.freeze([...MODIFIER_KEYS, 'tags', 'grants', 'startingItems', 'senses', 'movement', 'statCaps', 'requires']);
+export const EDITABLE_KEYS = Object.freeze([...MODIFIER_KEYS, 'tags', 'grants', 'startingItems', 'senses', 'movement', 'statCaps', 'requirements']);
 
 /** The perk-row paths that have an editor in the creators. */
 export const EDITABLE_PATHS = Object.freeze(EDITABLE_KEYS.map((key) => `system.${key}`));
@@ -47,11 +48,11 @@ export const MERGE_INITIALS = Object.freeze({
 /** The tag-query buckets, in order. */
 const BUCKETS = Object.freeze(['all', 'any', 'none']);
 
-/** What an object key of `system` holds when it is untouched (the merge keys' initials, and an empty `requires`). */
-const objectInitial = (key) => (key === 'requires' ? { all: [], any: [], none: [] } : { ...MERGE_INITIALS[key] });
+/** What an object key of `system` holds when it is untouched (the merge keys' initials). */
+const objectInitial = (key) => ({ ...MERGE_INITIALS[key] });
 
-/** The `system` keys that are objects (a merge path or the `requires` query) rather than arrays. */
-const OBJECT_KEYS = Object.freeze(['senses', 'movement', 'statCaps', 'requires']);
+/** The `system` keys that are objects (a merge path) rather than arrays. */
+const OBJECT_KEYS = Object.freeze(['senses', 'movement', 'statCaps']);
 
 /**
  * The creators' own row lists that edit `grants` rows of one kind and mode. A spec row is the grant row
@@ -62,8 +63,14 @@ export const SPEC_GRANT_LISTS = Object.freeze({
   rankBonuses: Object.freeze({ kind: 'rank_bonus', mode: 'fixed', ledgerKeys: Object.freeze(['cost']) })
 });
 
-/** The input-name root of one perk's rows form, or of a spec grant list's (which has no index). */
-const perkRowsRoot = (list, index) => (Object.hasOwn(SPEC_GRANT_LISTS, list) ? `perkRows.${list}` : `perkRows.${list}.${index}`);
+/** The creators' own list of requirement rows: `spec.requirements`, one rows form with no perk index. */
+export const SPEC_REQUIREMENTS_LIST = 'requirements';
+
+/** Whether `list` is one of the creators' own row lists (a form with no perk index) rather than a perk list. */
+const isSpecList = (list) => Object.hasOwn(SPEC_GRANT_LISTS, list) || list === SPEC_REQUIREMENTS_LIST;
+
+/** The input-name root of one perk's rows form, or of a spec list's (which has no index). */
+const perkRowsRoot = (list, index) => (isSpecList(list) ? `perkRows.${list}` : `perkRows.${list}.${index}`);
 
 /**
  * Perk rows to a `system` object (pure). Like `applyPerkRows`, except that an appended row is never skipped for being
@@ -91,7 +98,7 @@ export function systemFromRows(rows) {
 /**
  * A `system` object back to perk rows (pure), in `PERK_ROW_PATHS` order. `append` and `union` paths give one row per
  * entry. A `merge` path gives one row holding only the keys that differ from the field's initial value (a full object
- * would overwrite another perk's `fly: 30` with `fly: 0`). A `query` path gives one row holding its non-empty buckets.
+ * would overwrite another perk's `fly: 30` with `fly: 0`).
  * @param {object} system
  * @returns {{path: string, row: *}[]}
  */
@@ -116,12 +123,6 @@ export function rowsFromSystem(system) {
         if (entry !== undefined && entry !== initial[key]) row[key] = entry;
       }
       if (Object.keys(row).length) out.push({ path, row });
-    } else if (how === 'query') {
-      const row = {};
-      for (const bucket of ['all', 'any', 'none']) {
-        if (Array.isArray(value?.[bucket]) && value[bucket].length) row[bucket] = [...value[bucket]];
-      }
-      if (Object.keys(row).length) out.push({ path, row });
     }
   }
   return out;
@@ -144,6 +145,7 @@ function hostFields() {
     popularityTriggers: popularityTriggersField(fields),
     tags: new fields.ArrayField(new fields.StringField(), { initial: [] }),
     grants: grantsField(fields),
+    requirements: requirementsField(fields),
     startingItems: startingItemsField(fields),
     senses: sensesField(fields),
     // The same fields as the race and class models' `movement` (MERGE_INITIALS is tested against them).
@@ -155,7 +157,6 @@ function hostFields() {
       burrow: new fields.NumberField({ integer: true, initial: 0 })
     }),
     statCaps: statCapsField(fields),
-    requires: tagQueryField(fields),
     rank: new fields.NumberField({ integer: true, initial: 0 })
   };
   return hostSchema;
@@ -189,7 +190,7 @@ function trimStartingItem(row) {
 }
 
 /**
- * An object key (senses, movement, stat caps, requires) laid over what it held, with every number cleaned: a blank or
+ * An object key (senses, movement, stat caps) laid over what it held, with every number cleaned: a blank or
  * non-numeric input stores nothing (the key's initial value), so the row keeps only what the author set.
  */
 function cleanObjectKey(key, value, current) {
@@ -198,8 +199,7 @@ function cleanObjectKey(key, value, current) {
   const out = {};
   for (const name of Object.keys(initial)) {
     const entry = merged[name];
-    if (key === 'requires') out[name] = (Array.isArray(entry) ? entry : []).map((tag) => String(tag ?? '').trim()).filter(Boolean);
-    else if (name === 'darkvisionUnlimited') out[name] = entry === true || entry === 'true';
+    if (name === 'darkvisionUnlimited') out[name] = entry === true || entry === 'true';
     else {
       const n = number(entry);
       if (!Number.isFinite(n)) out[name] = initial[name];
@@ -226,6 +226,7 @@ function cleanKey(key, value, current) {
   if (key === 'tags') return [...new Set(list.map((tag) => String(tag ?? '').trim()).filter(Boolean))];
   const rows = hostFields()[key].clean(clone(list.filter(isPlain)));
   // A grant row keeps only the fields its kind and mode show (so a kind change leaves no stale stat behind).
+  if (key === 'requirements') return rows.map((row) => hostFields().requirements.element.clean(trimRequirementRow(row)));
   return key === 'grants' ? rows.map(trimGrantRow) : rows;
 }
 
@@ -261,6 +262,8 @@ export class PerkRowsHost {
   constructor(builderType, rows, { save } = {}) {
     this.id = `perk-rows-${builderType}`;
     this.type = builderType === 'race' ? 'race' : 'class';
+    /** A creator's draft, checked at Save: new grant rows start blank (`startGrantRow`). */
+    this.holdsDraft = true;
     const all = (Array.isArray(rows) ? rows : []).filter((entry) => entry && Object.hasOwn(PERK_ROW_PATHS, entry.path));
     const mine = all.filter((entry) => EDITABLE_PATHS.includes(entry.path));
     this._others = all.filter((entry) => !EDITABLE_PATHS.includes(entry.path)).map((entry) => clone(entry));
@@ -326,6 +329,7 @@ export class SpecGrantRowsHost {
   constructor(list, rows, { save } = {}) {
     this.id = `spec-grants-${list}`;
     this.type = 'race';
+    this.holdsDraft = true;
     this.list = list;
     this.system = blankSystem();
     this.system.grants = (Array.isArray(rows) ? rows : []).map((row) => grantRowFromSpec(list, row));
@@ -338,6 +342,53 @@ export class SpecGrantRowsHost {
 }
 
 /**
+ * An item-shaped view of the creator's own `spec.requirements`: `system.requirements` holds the spec rows, so the
+ * requirement row editor and the item sheet's row, tag and pick-list actions run unchanged. `update` hands the cleaned rows
+ * (each trimmed to the fields its kind shows) to `save`.
+ */
+export class SpecRequirementsHost {
+  /**
+   * @param {'race'|'class'} builderType
+   * @param {object[]} rows the spec rows
+   * @param {{ save?: (rows: object[]) => any }} [options]
+   */
+  constructor(builderType, rows, { save } = {}) {
+    this.id = `spec-requirements-${builderType}`;
+    this.type = builderType === 'race' ? 'race' : 'class';
+    this.system = blankSystem();
+    this.system.requirements = (Array.isArray(rows) ? rows : []).filter(isPlain).map((row) => clone(row));
+    this._save = save;
+  }
+
+  async update(changes) {
+    return applyChanges(this.system, changes) ? this._save?.(clone(this.system.requirements)) : undefined;
+  }
+}
+
+/**
+ * The Requirements accordion of the creator itself: the rows of `spec.requirements` and the free-text prerequisites below
+ * them, every input named `perkRows.requirements.requirements.<i>.<field>` (the prerequisites text keeps its own name and
+ * `setField` action).
+ * @param {'race'|'class'} builderType
+ * @param {{ requirements?: object[], prerequisites?: string }} spec
+ * @param {boolean} open whether the accordion is open (the viewer's state)
+ * @returns {object} `context.requirementRows` for `requirement-rows.hbs`
+ */
+export function buildSpecRequirements(builderType, spec, open) {
+  const host = new SpecRequirementsHost(builderType, spec.requirements);
+  const context = {};
+  buildRequirementRowsContext(context, host.system.requirements, {
+    path: `${perkRowsRoot(SPEC_REQUIREMENTS_LIST)}.requirements`,
+    item: host,
+    open,
+    prerequisitesName: 'prerequisites',
+    prerequisites: spec.prerequisites,
+    prerequisitesChange: { action: 'setField', field: 'prerequisites' }
+  });
+  return context.requirementRows;
+}
+
+/**
  * What the Mechanics part of one custom perk shows. Closed, only the row count. Open, the item sheet's modifier row
  * editor, the grant rows and the tag pills for this perk, with every input named
  * `perkRows.<list>.<index>.<key>.<n>.<field>`.
@@ -347,8 +398,9 @@ export class SpecGrantRowsHost {
  * @param {{ rows?: {path: string, row: *}[] }} perk
  * @param {boolean} open
  * @param {{ skills?: object[], spells?: object[] }} [catalogs] the skill and spell entries the grant rows offer
+ * @param {boolean} [requirementsOpen] whether the perk's Requirements accordion is open
  */
-export function buildPerkMechanics(builderType, list, index, perk, open, catalogs = {}) {
+export function buildPerkMechanics(builderType, list, index, perk, open, catalogs = {}, requirementsOpen = false) {
   const rows = Array.isArray(perk?.rows) ? perk.rows : [];
   const view = { open: Boolean(open), count: rows.length, list, index, root: perkRowsRoot(list, index) };
   if (!open) return view;
@@ -359,11 +411,13 @@ export function buildPerkMechanics(builderType, list, index, perk, open, catalog
   const identity = { system: host.system };
   buildIdentityRowsContext(identity, host, catalogs);
   const identityRows = renameRowPaths(identity.identityRows, EDITABLE_KEYS, view.root);
-  // `renameRowPaths` renames `system.<key>.…`; the requires query sits at `system.requires` itself.
-  identityRows.requires.query.path = `${view.root}.requires`;
-  for (const bucket of identityRows.requires.query.buckets) bucket.path = `${view.root}.requires`;
+  const requirements = {};
+  buildRequirementRowsContext(requirements, host.system.requirements, {
+    path: `${view.root}.requirements`, item: host, open: requirementsOpen, prerequisitesName: null
+  });
   return {
     ...view,
+    requirementRows: requirements.requirementRows,
     blocks: editors.blocks,
     addBar: editors.addBar,
     identityRows,
@@ -400,7 +454,7 @@ export function buildSpecGrantViews(list, rows, counts, catalogs = {}) {
 export function toItemPath(path) {
   const parts = String(path ?? '').split('.');
   if (parts[0] !== 'perkRows') return String(path ?? '');
-  const skip = Object.hasOwn(SPEC_GRANT_LISTS, parts[1]) ? 2 : 3;
+  const skip = isSpecList(parts[1]) ? 2 : 3;
   return parts.length > skip ? `system.${parts.slice(skip).join('.')}` : String(path ?? '');
 }
 

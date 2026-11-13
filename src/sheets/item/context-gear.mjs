@@ -1,14 +1,16 @@
 /** Gear-only context: list display strings, outcome table and disclosure flags. */
-import { buildOutcomesContext } from './context-outcomes.mjs';
+import { buildOutcomesContext, executionModeOptions } from './context-outcomes.mjs';
 import { gearGrantRows } from './gear-grants.mjs';
 import { buildAsTriggerContext } from './context-as-triggers.mjs';
 import { buildOnHitContext } from './context-on-hit.mjs';
 import { buildEnchantmentLedgerContext } from './context-blueprint.mjs';
 import { brokenStateOf } from '../../documents/item/enchantments.mjs';
-import { pickOptions, statOptions } from '../../utils/ui/field-options.mjs';
+import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
+import { buildBaseDamageContext } from './context-common.mjs';
 import { isWeaponFlagShown } from '../../utils/gear/wield-mode.mjs';
 import { gearSlotOptions } from '../../utils/gear/gear-slots.mjs';
 import { buildPickList, identifierEntries } from './context-pick-list.mjs';
+import { buildWeaponContext } from './context-weapon.mjs';
 
 /** Gear row arrays whose rows a cooldown can gate (a once-per-scene modifier). */
 const COOLDOWN_ROW_FIELDS = Object.freeze([
@@ -54,22 +56,16 @@ export function buildGearContext(context, item) {
   context.cleanseDebuffsString = listString(sys.healing?.cleanseDebuffs);
 
   context.gearGrantRows = gearGrantRows(sys.grants, { skills: context.availableSkills, spells: context.availableSpells });
+  context.executionModeOptions = executionModeOptions(sys.executionMode);
   buildOutcomesContext(context);
-  context.toHitStatOptions = statOptions(sys.toHitStat, { blankLabel: 'Auto' });
-  // Damage-part rows carry their own select options (render-only copy of the rows).
-  for (const part of Array.isArray(sys.damageParts) ? sys.damageParts : []) {
-    if (!part) continue;
-    part.statOptions = statOptions(part.stat, { blankLabel: 'None' });
-    part.typeOptions = pickOptions(context.damageTypes, part.type, { blankLabel: 'Physical' });
-  }
+  buildBaseDamageContext(context, { ownStatLabel: "Skill's stat" });
   buildAsTriggerContext(context);
   buildOnHitContext(context);
   buildEnchantmentLedgerContext(context, context.item);
 
-  context.hasArmorPiercingConfigured = Boolean(sys.ignoreDR);
   context.hasGearGrantsConfigured = context.gearGrantRows.length > 0;
-  context.hasDamagePartsConfigured = sys.damageParts?.length > 0;
+  context.hasBaseDamageConfigured = Object.values(normalizeBaseDamage(sys.baseDamage)).some(Boolean);
   context.hasAuraConfigured = Boolean(sys.area?.hasArea);
   context.hasActivatedAbilityConfigured = Boolean(sys.hasActivatedAbility || sys.outcomes?.length > 0);
-  context.hasProficiencyConfigured = Boolean(sys.weaponCategory || sys.weaponType || context.associatedSkillsList.length > 0);
+  if (context.isWeaponChecked) buildWeaponContext(context, item);
 }

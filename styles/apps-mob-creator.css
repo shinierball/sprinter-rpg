@@ -521,7 +521,7 @@
 
 .loot-builder-item .remove-loot-btn {
   width: 34px;
-  height: 32px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;

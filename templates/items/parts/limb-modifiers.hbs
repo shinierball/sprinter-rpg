@@ -1,0 +1,23 @@
+{{!-- Arms, legs and hands: shared by the buff and debuff sheets. noteKey is the lang key of the closing note. --}}
+<div class="cog-stat-block" style="margin-bottom: 10px;">
+  <div class="cog-banner-header cog-bg-info-fill" style="font-size: 11px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center;">
+    <span><i class="fa-solid fa-person-walking"></i> {{localize "COG.LimbModifiers.Heading"}}</span>
+  </div>
+  <div class="cog-bg-surface-alt" style="padding: 6px; border: 1px solid var(--cog-divider);">
+    <div class="cog-field-row" style="margin-bottom: 4px; align-items: center; gap: 12px;">
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.LimbModifiers.Hands"}}</span>
+        <input class="cog-field-input" type="number" name="system.limbModifiers.hands" value="{{system.limbModifiers.hands}}" placeholder="0" title="{{localize 'COG.LimbModifiers.Hint'}}" style="font-size: 11px; text-align: center;" />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.LimbModifiers.Arms"}}</span>
+        <input class="cog-field-input" type="number" name="system.limbModifiers.arms" value="{{system.limbModifiers.arms}}" placeholder="0" title="{{localize 'COG.LimbModifiers.Hint'}}" style="font-size: 11px; text-align: center;" />
+      </div>
+      <div class="cog-field-group small">
+        <span class="cog-field-label">{{localize "COG.LimbModifiers.Legs"}}</span>
+        <input class="cog-field-input" type="number" name="system.limbModifiers.legs" value="{{system.limbModifiers.legs}}" placeholder="0" title="{{localize 'COG.LimbModifiers.Hint'}}" style="font-size: 11px; text-align: center;" />
+      </div>
+    </div>
+    <div class="cog-text-secondary" style="font-size: 10px; font-style: italic;">{{localize noteKey}}</div>
+  </div>
+</div>

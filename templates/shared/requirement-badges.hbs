@@ -1,0 +1,8 @@
+{{!-- A race or class's requirements, one badge per row. Display only (no input names). Pass `rows`: judged rows ({ status: 'met'|'unmet'|'unchecked', line, have?, shortfall?, moved? }); `moved` is the Stat points the creator holds for a Stat row. --}}
+{{#if rows.length}}
+<ul class="cog-req-badges">
+  {{#each rows as |row|}}
+    <li class="cog-req-badge cog-req-{{row.status}}" title="{{row.status}}">{{#if (eq row.status "met")}}<i class="fa-solid fa-check"></i>{{else if (eq row.status "unmet")}}<i class="fa-solid fa-xmark"></i>{{else}}<i class="fa-solid fa-circle-question"></i>{{/if}} {{row.line}}{{#if row.shortfall}} (has {{row.have}}){{/if}}{{#if row.moved}} · {{localize 'COG.CrawlerCreator.RaceClass.Moved' n=row.moved}}{{/if}}</li>
+  {{/each}}
+</ul>
+{{/if}}

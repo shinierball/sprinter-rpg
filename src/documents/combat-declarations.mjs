@@ -15,9 +15,11 @@ import { registerRelayAction, requestRelay, isNoGmReason } from '../utils/gm-rel
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { readEvadeRecord, findEvadeFor, appliedBeforeEvade } from '../utils/attack/evade-link.mjs';
 import { isMobSide } from '../utils/combat/combat-sides.mjs';
-import { confirmRuleBreak } from '../utils/rule-break.mjs';
+import { confirmRuleBreak, isRuleBreak } from '../utils/rule-break.mjs';
 import { messageAuthorId, parseMessageContent, applyCardEffect, isGmAuthored } from '../chat/chat-relay.mjs';
 import { getDamageApplications } from '../chat/damage-applications.mjs';
+import { hasEvadeAction } from './combat/action-ledger.mjs';
+import { combatantOfActor } from './combat/combatants.mjs';
 import {
   DECLARED_ATTACKS_FLAG, DECLARATION_STATUS, TARGET_VIA, SKIP_REASONS,
   declarationFromMessage, listDeclarations, sanitizeDeclaration, findDeclarationTarget, evadeSummaryOf,
@@ -71,15 +73,6 @@ function verifyMobAttackMessage(message) {
   return { ok: true, attacker, message };
 }
 
-/** The combatant of `actor` in `combat` (uuid first, since unlinked tokens share an actor id). */
-export function combatantOfActor(combat, actor) {
-  if (!combat || !actor) return null;
-  const list = toArray(combat.combatants);
-  return list.find(c => c?.actor?.uuid && c.actor.uuid === actor.uuid)
-    ?? list.find(c => c?.actorId === actor.id || c?.actor?.id === actor.id)
-    ?? null;
-}
-
 // -- GM-side writes ---------------------------------------------------------------------------------------------
 
 async function writeDeclaration(combat, message) {
@@ -96,8 +89,8 @@ async function writeEvade(combat, { declarationId, evadeMessage, ruleBreak }) {
   if (!decl || !record || record.attackMessageId !== declarationId) return null;
   const target = findDeclarationTarget(decl, { uuid: record.evaderUuid });
   if (!target) return null;
-  const isRuleBreak = ruleBreak === true || evadeMessage?.flags?.[SYSTEM_ID]?.ruleBreak === true;
-  const evade = evadeSummaryOf(record, { ruleBreak: isRuleBreak });
+  const broke = ruleBreak === true || isRuleBreak(evadeMessage);
+  const evade = evadeSummaryOf(record, { ruleBreak: broke });
   await combat.update({ [`${flagPath(declarationId)}.targets.${target.key}.evade`]: evade });
   return { declarationId, targetKey: target.key, evade };
 }
@@ -339,20 +332,20 @@ export const combatDeclarationsMixin = {
       .filter(d => !wanted || wanted.includes(d.messageId));
     if (!open.length) return { resolved: [], ruleBreak: false };
 
-    let isRuleBreak = ruleBreak === true;
-    if (!isRuleBreak && typeof this._interruptWindowOpen === 'function' && this._interruptWindowOpen()) {
+    let broke = ruleBreak === true;
+    if (!broke && typeof this._interruptWindowOpen === 'function' && this._interruptWindowOpen()) {
       const verdict = await confirmRuleBreak({
         title: mobAttackText('COG.MobAttack.RuleBreakTitle'),
         message: mobAttackText('COG.MobAttack.ResolvePending', { step: this.currentStep })
       });
       if (!verdict.confirmed) return { resolved: [], ruleBreak: false, refused: verdict.refusal };
-      isRuleBreak = true;
+      broke = true;
     }
 
     const resolved = [];
-    for (const decl of open) resolved.push(await resolveOne(this, decl, { ruleBreak: isRuleBreak }));
+    for (const decl of open) resolved.push(await resolveOne(this, decl, { ruleBreak: broke }));
     globalThis.ui?.notifications?.info?.(mobAttackText('COG.MobAttack.ResolvedCount', { count: resolved.length }));
-    return { resolved, ruleBreak: isRuleBreak };
+    return { resolved, ruleBreak: broke };
   }
 };
 
@@ -381,6 +374,19 @@ export async function declareMobAttack(attacker, message) {
 }
 
 /**
+ * True when `evader` already spent the Evade Action this round in the active combat that holds declaration
+ * `attackMessageId`. False with no combat, no such declaration, or an evader who is not a combatant.
+ * @param {object} evader
+ * @param {string|null} attackMessageId
+ */
+export function evadeCoveredFor(evader, attackMessageId) {
+  const combat = globalThis.game?.combat;
+  if (!combat?.getDeclaredAttack?.(attackMessageId)) return false;
+  const c = combatantOfActor(combat, evader);
+  return Boolean(c) && hasEvadeAction(combat, c);
+}
+
+/**
  * Step 2 from an Evade roll on a declared attack: spend the evader's Interrupt Action and record the Evade on the
  * declaration. Outside a declaration (no combat, a rolled attack) nothing is recorded.
  * @param {object} evader
@@ -393,7 +399,8 @@ export async function recordEvadeOnDeclaration(evader, evadeMessage, attackMessa
   if (!combat?.getDeclaredAttack?.(attackMessageId)) return null;
   try {
     const c = combatantOfActor(combat, evader);
-    if (c && interrupt && typeof combat.recordInterruptAction === 'function') {
+    // One Evade Action covers the round (9.17): a covered crawler records no second slot.
+    if (c && interrupt && typeof combat.recordInterruptAction === 'function' && !hasEvadeAction(combat, c)) {
       const recorded = await combat.recordInterruptAction(c, interrupt, { type: interrupt.id, ruleBreak });
       if (recorded?.declined) return null;
     }

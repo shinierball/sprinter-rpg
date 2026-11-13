@@ -2,10 +2,10 @@
   "id": "sprinter-rpg",
   "title": "Sprinter RPG",
   "description": "A Foundry VTT system for crawler-style dungeon roleplaying games.",
-  "version": "7.0.0",
+  "version": "8.0.0",
   "url": "https://github.com/shinierball/sprinter-rpg",
   "manifest": "https://github.com/shinierball/sprinter-rpg/releases/latest/download/system.json",
-  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v7.0.0/sprinter-rpg.zip",
+  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v8.0.0/sprinter-rpg.zip",
   "socket": true,
   "relationships": {
     "requires": [
@@ -26,99 +26,59 @@
   },
   "documentTypes": {
     "Actor": {
-      "crawler": {
-        "htmlFields": [
-          "details.notes",
-          "details.pastTrauma",
-          "details.looseEnds",
-          "details.regrets"
-        ]
-      },
-      "pet": {
-        "htmlFields": [
-          "special"
-        ]
-      },
-      "mercenary": {
-        "htmlFields": [
-          "details.notes",
-          "details.special"
-        ]
-      },
+      "crawler": {},
+      "pet": {},
+      "mercenary": {},
       "mount_vehicle": {},
       "marker": {},
-      "personal_space": {
-        "htmlFields": [
-          "details.notes"
-        ]
-      },
-      "npc": {
-        "htmlFields": [
-          "details.notes",
-          "details.special"
-        ]
-      },
-      "mob": {
-        "htmlFields": [
-          "details.notes",
-          "details.special",
-          "details.description",
-          "details.aiDescription",
-          "attributes.treasure"
-        ]
-      }
+      "personal_space": {},
+      "npc": {},
+      "mob": {}
     },
     "Item": {
       "skill": {
         "htmlFields": [
-          "notes",
           "description"
         ]
       },
-      "attack": {
-        "htmlFields": [
-          "effects"
-        ]
-      },
+      "attack": {},
       "spell": {
         "htmlFields": [
-          "description",
-          "quote"
+          "description"
         ]
       },
       "gear": {
         "htmlFields": [
-          "notes",
           "description"
         ]
       },
       "race": {
         "htmlFields": [
-          "abilities",
           "description"
         ]
       },
       "class": {
         "htmlFields": [
-          "abilities",
           "description"
         ]
       },
       "deity": {
         "htmlFields": [
-          "boons",
+          "description"
+        ]
+      },
+      "patron": {
+        "htmlFields": [
           "description"
         ]
       },
       "sponsor": {
         "htmlFields": [
-          "gifts",
-          "notes"
+          "description"
         ]
       },
       "loot": {
         "htmlFields": [
-          "notes",
           "description"
         ]
       },
@@ -134,12 +94,14 @@
       },
       "achievement": {
         "htmlFields": [
-          "description",
-          "quote",
-          "rewardContents"
+          "description"
         ]
       },
-      "space_upgrade": {}
+      "space_upgrade": {
+        "htmlFields": [
+          "description"
+        ]
+      }
     },
     "RegionBehavior": {
       "zeroZone": {}

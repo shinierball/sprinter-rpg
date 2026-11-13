@@ -5,6 +5,44 @@
  * "Rules Will Be Broken by Players, Not You"
  */
 import { SYSTEM_ID } from '../constants.mjs';
+import { readFlag, flagPath, withFlags } from './flags.mjs';
+
+const RULE_BREAK_FLAG = 'ruleBreak';
+const RULE_BREAK_REASON_FLAG = 'ruleBreakReason';
+const CONTRACT_RULE_BREAK_FLAG = 'contractRuleBreak';
+
+/** Whether a document (or plain data) is stamped as acquired or produced by a Rule Break. */
+export function isRuleBreak(doc) {
+  return readFlag(doc, RULE_BREAK_FLAG) === true;
+}
+
+/** The reason stored with a Rule Break stamp (a personal space), or `undefined`. */
+export function ruleBreakReasonOf(doc) {
+  return readFlag(doc, RULE_BREAK_REASON_FLAG);
+}
+
+/** The update fragment that stamps a Rule Break (and its reason, when given): `doc.update(ruleBreakUpdate())`. */
+export function ruleBreakUpdate(reason) {
+  return { [flagPath(RULE_BREAK_FLAG)]: true, ...(reason === undefined ? {} : { [flagPath(RULE_BREAK_REASON_FLAG)]: reason }) };
+}
+
+/** Creation data or chat message data stamped as a Rule Break (a copy). */
+export function withRuleBreak(data, reason) {
+  return withFlags(data, { [RULE_BREAK_FLAG]: true, ...(reason === undefined ? {} : { [RULE_BREAK_REASON_FLAG]: reason }) });
+}
+
+/** Stamp an existing document as a Rule Break. */
+export function markRuleBreak(doc, reason) {
+  return doc?.update?.(ruleBreakUpdate(reason));
+}
+
+/** Stamp a hired mercenary's contract as made through a Rule Break. */
+export function markContractRuleBreak(doc) {
+  return doc?.update?.({ [flagPath(CONTRACT_RULE_BREAK_FLAG)]: true });
+}
+
+/** World setting: how a broken rule is handled (RULE_BREAK_MODES). */
+export const RULE_BREAK_MODE_SETTING = 'ruleBreakMode';
 
 /** Values of the world setting `ruleBreakMode`. */
 export const RULE_BREAK_MODES = Object.freeze({
@@ -27,7 +65,7 @@ export const RULE_BREAK_REFUSALS = Object.freeze({
 export function getRuleBreakMode() {
   let mode;
   try {
-    mode = globalThis.game?.settings?.get?.(SYSTEM_ID, 'ruleBreakMode');
+    mode = globalThis.game?.settings?.get?.(SYSTEM_ID, RULE_BREAK_MODE_SETTING);
   } catch {
     mode = undefined;
   }
@@ -55,6 +93,7 @@ export function getRuleBreakMode() {
  * @param {string} [params.title='Rule Break Confirmation']
  * @param {string} [params.message='Exceed official rule limits and proceed as a Rule Break?'] The dialog question
  * @param {string} [params.reason] What limit was exceeded, as a plain statement (defaults to `message`)
+ * @param {string} [params.detail] HTML shown under the question (a list the question refers to); the caller escapes it
  * @param {object} [params.options={}]
  * @returns {Promise<{ confirmed: boolean, ruleBreak: boolean, refusal?: string, reason?: string }>}
  */
@@ -62,6 +101,7 @@ export async function confirmRuleBreak({
   title = 'Rule Break Confirmation',
   message = 'Exceed official rule limits and proceed as a Rule Break?',
   reason,
+  detail = '',
   options = {}
 } = {}) {
   const safeOptions = options || {};
@@ -88,7 +128,7 @@ export async function confirmRuleBreak({
   try {
     const confirmed = await DialogV2.confirm({
       window: { title },
-      content: `<p>${message}</p>`,
+      content: `<p>${message}</p>${detail}`,
       modal: true
     });
     return confirmed ? { confirmed: true, ruleBreak: true } : refuse(RULE_BREAK_REFUSALS.CANCELLED);

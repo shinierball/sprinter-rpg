@@ -15,7 +15,6 @@ import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { castLinkFlags } from '../../utils/attack/spell-cast-link.mjs';
 import { spellConditionActionsHtml, targetFilterLabel } from './spell-card-parts.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { outOfRangeLineHtml } from '../../utils/attack/attack-range.mjs';
@@ -29,6 +28,7 @@ import {
 } from './use-card-parts.mjs';
 import { getAttackDifficulty } from './attack-targets.mjs';
 import { getContestData, renderContestChallengeBlock } from './contest-blocks.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 
 /** The spell's rank for display and rank breaks. */
 const rankOf = (sys) => Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
@@ -101,7 +101,7 @@ function castHeaderHtml(spell, sys, isFreeCast, itemRuleBreak = false) {
     `;
 
   if (sys.quote) {
-    content += `<div class="cog-text-secondary" style="font-style: italic; font-size: 12px; margin-bottom: 8px; border-left: 3px solid var(--cog-gold); padding-left: 6px;">“${sys.quote}”</div>`;
+    content += `<div class="cog-text-secondary" style="font-style: italic; font-size: 12px; margin-bottom: 8px; border-left: 3px solid var(--cog-gold); padding-left: 6px;">“${escapeAttr(sys.quote)}”</div>`;
   }
   return content;
 }
@@ -294,37 +294,36 @@ export function spellCastCard(actor, spell, opts, cast) {
  */
 export function spellCastFlags(actor, spell, opts, cast, contestData) {
   const { cost, cooldownGate, castRange, manaRuleBreak, healInfo, isAura, auraData, offersAttack } = cast;
-  const zeroZoneFlags = cast.zeroZoneGate?.flags ?? {};
-  return {
-    [SYSTEM_ID]: {
-      isSpellCast: true,
-      spellSuccess: true,
-      manaCost: cost.manaCost,
-      baseManaCost: cost.baseManaCost,
-      favoredPenalty: cost.favoredPenalty,
-      manaModifiers: cost.manaMods.breakdown,
-      ruleBreak: manaRuleBreak || Boolean(cooldownGate.flags.ruleBreak) || castRange.ruleBreak || zeroZoneFlags.ruleBreak === true || opts.itemRuleBreak === true,
-      ...(castRange.flags.rangeRuleBreak ? { rangeRuleBreak: true } : {}),
-      ...(castRange.flags.outOfRange ? { outOfRange: castRange.flags.outOfRange } : {}),
-      ...(cooldownGate.flags.cooldownRuleBreak ? { cooldownRuleBreak: true } : {}),
-      ...(zeroZoneFlags.zeroZoneRuleBreak ? { zeroZoneRuleBreak: true } : {}),
-      isFavored: cost.isFavored,
-      freeCast: cost.isFreeCast,
-      remainingMana: cost.isFreeCast ? cost.currentMana : cast.newMana,
-      isHeal: Boolean(healInfo),
-      healInfo: healInfo || null,
-      isAura: Boolean(isAura),
-      auraData: auraData || null,
-      originItemName: opts.originItem?.name || null,
-      isItemEffect: Boolean(opts.isItemEffect || opts.isConsumable || opts.originItem),
-      contest: offersAttack ? null : (contestData || null),
-      conditionTags: cast.conditionTags,
-      appliedTargets: cast.appliedConditionTargets.map(a => a.id),
-      // The GM relay for conditions on targets the caster does not own reads these to trust the card (3.56a).
-      conditionSpellId: spell?.id ?? null,
-      conditionCasterId: actor?.id ?? null,
-      conditionTargetUuids: cast.conditionTargetUuids ?? [],
-      ...(offersAttack ? castLinkFlags(actor, spell) : {})
-    }
-  };
+  const zeroZoneFlags = { ...cast.zeroZoneGate?.flags, ...cast.actionBlockGate?.flags };
+  return withFlags({}, {
+    isSpellCast: true,
+    spellSuccess: true,
+    manaCost: cost.manaCost,
+    baseManaCost: cost.baseManaCost,
+    favoredPenalty: cost.favoredPenalty,
+    manaModifiers: cost.manaMods.breakdown,
+    ruleBreak: manaRuleBreak || Boolean(cooldownGate.flags.ruleBreak) || castRange.ruleBreak || zeroZoneFlags.ruleBreak === true || opts.itemRuleBreak === true,
+    ...(castRange.flags.rangeRuleBreak ? { rangeRuleBreak: true } : {}),
+    ...(castRange.flags.outOfRange ? { outOfRange: castRange.flags.outOfRange } : {}),
+    ...(cooldownGate.flags.cooldownRuleBreak ? { cooldownRuleBreak: true } : {}),
+    ...(zeroZoneFlags.zeroZoneRuleBreak ? { zeroZoneRuleBreak: true } : {}),
+    ...(zeroZoneFlags.actionBlockRuleBreak ? { actionBlockRuleBreak: true } : {}),
+    isFavored: cost.isFavored,
+    freeCast: cost.isFreeCast,
+    remainingMana: cost.isFreeCast ? cost.currentMana : cast.newMana,
+    isHeal: Boolean(healInfo),
+    healInfo: healInfo || null,
+    isAura: Boolean(isAura),
+    auraData: auraData || null,
+    originItemName: opts.originItem?.name || null,
+    isItemEffect: Boolean(opts.isItemEffect || opts.isConsumable || opts.originItem),
+    contest: offersAttack ? null : (contestData || null),
+    conditionTags: cast.conditionTags,
+    appliedTargets: cast.appliedConditionTargets.map(a => a.id),
+    // The GM relay for conditions on targets the caster does not own reads these to trust the card (3.56a).
+    conditionSpellId: spell?.id ?? null,
+    conditionCasterId: actor?.id ?? null,
+    conditionTargetUuids: cast.conditionTargetUuids ?? [],
+    ...(offersAttack ? castLinkFlags(actor, spell) : {})
+  }).flags;
 }
