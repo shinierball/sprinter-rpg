@@ -84,10 +84,14 @@ function vocabularyLines(vocabulary) {
  */
 const PROMPT_TAG_DESCRIPTION_NAMESPACES = Object.freeze(['weapon', 'weaponClass', 'weaponGroup', 'kind']);
 
-/** `id`, then `[Label: description]` where either says more than the id, then `[engine]`. */
+/**
+ * `id`, then `[Label: description]` where either says more than the id, then `[engine]`. A label that is only a heading
+ * and the leaf ("Injury Severity: Minor" for `injury.minor`) says no more than the id on its namespace's line.
+ */
 function tagItem(tag, described) {
   const leaf = tag.id.split('.').pop().split('_').join(' ').toLowerCase();
-  const label = tag.label && tag.label.toLowerCase() !== leaf ? tag.label : '';
+  const lower = String(tag.label ?? '').toLowerCase();
+  const label = lower && lower !== leaf && !lower.endsWith(`: ${leaf}`) ? tag.label : '';
   const description = described && tag.description ? tag.description : '';
   const note = [label, description].filter(Boolean).join(': ');
   return `${tag.id}${note ? ` [${note}]` : ''}${tag.engine ? ' [engine]' : ''}`;

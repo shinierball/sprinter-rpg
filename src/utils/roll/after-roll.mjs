@@ -10,7 +10,7 @@
  */
 import { evaluateRows } from './damage-modifiers.mjs';
 import { applyRowKind, getRowKind } from '../row-kinds.mjs';
-import { shiftDegree } from '../../data/rules/vehicle-rules.mjs';
+import { shiftDegree } from '../../documents/session/roll-outcomes.mjs';
 
 /**
  * @typedef {object} AfterRollOffer

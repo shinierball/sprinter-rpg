@@ -2,7 +2,7 @@
  * Vehicle check card buttons (3.44d). Each handler re-reads the card (nothing is trusted from the DOM) and calls the
  * vehicle-drive functions, which gate cooldowns, ask for Rule Breaks and go through the GM relay where the user cannot write.
  */
-import { vehicleCardInfo, useAfterRollOffer } from '../../documents/actor/vehicle-after-roll.mjs';
+import { vehicleCardInfo } from '../../documents/actor/vehicle-after-roll.mjs';
 import { chooseVehicleResult, requestVehicleDrive } from '../../documents/actor/vehicle-drive-common.mjs';
 import { rollRamDamageFromCard } from '../../documents/actor/vehicle-ram.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
@@ -13,11 +13,6 @@ export async function handleVehicleChoose(event, button, message) {
   const info = vehicleCardInfo(message);
   if (!info) return;
   await chooseVehicleResult(info.vehicle, message.id, button.dataset?.choice ?? '');
-}
-
-/** A reroll or degree-shift offer. */
-export async function handleVehicleOffer(event, button, message) {
-  await useAfterRollOffer(message, button.dataset?.rowKey ?? '');
 }
 
 /** The GM waves a failed boarder aboard: a Rule Break on the boarding line. */

@@ -7,7 +7,7 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
-import { tempBarBaseSlots } from '../../utils/damage/temp-bars.mjs';
+import { tempBarBaseSlots, tempBarHpPerSlot, tempBarPassTag } from '../../utils/damage/temp-bars.mjs';
 import { normalizeElementTag } from '../../data/tag-vocabulary.mjs';
 import { conditionItemData } from './condition-data.mjs';
 import { getSpellRank } from './spell-rank.mjs';
@@ -32,13 +32,13 @@ export function absorbElementOf(item) {
  * Temporary health bars an aura grants: slot count from the holder's ability mods, hit points per slot
  * from the config and the highest rank break reached. Zeros when the aura grants no temp bars.
  * `element` is the `element.<type>` tag the bars are limited to (the item's `area.absorbElement`), empty for any damage.
- * @returns {{ slots: number, hpPerSlot: number, totalTempHp: number, element: string }}
+ * @returns {{ slots: number, hpPerSlot: number, totalTempHp: number, element: string, passTag: string }}
  */
 export function computeAuraTempBars(holder, item) {
   // The aura's own config only (an item with incomplete config is not matched against a catalog; fix the item).
   const sys = item?.system || {};
   const tempBarsConfig = sys.tempBars;
-  const none = { slots: 0, hpPerSlot: 0, totalTempHp: 0, element: '' };
+  const none = { slots: 0, hpPerSlot: 0, totalTempHp: 0, element: '', passTag: '' };
   if (!tempBarsConfig?.hasTempBars) return none;
 
   const rank = auraRank(holder, item);
@@ -47,9 +47,9 @@ export function computeAuraTempBars(holder, item) {
   slots = Math.max(1, slots) + (resolvedBreaks.tempBars?.barsGranted || 0);
 
   // Reached breaks add to the base hit points per slot (cumulative, like every other rank-break field).
-  const hpPerSlot = (Number(tempBarsConfig.hpPerSlot) || 2) + (resolvedBreaks.tempBars?.hpPerSlot || 0);
+  const hpPerSlot = tempBarHpPerSlot(tempBarsConfig, holder?.system?.abilities, resolvedBreaks.tempBars?.hpPerSlot);
 
-  return { slots, hpPerSlot, totalTempHp: slots * hpPerSlot, element: absorbElementOf(item) };
+  return { slots, hpPerSlot, totalTempHp: slots * hpPerSlot, element: absorbElementOf(item), passTag: tempBarPassTag(tempBarsConfig) };
 }
 
 /**

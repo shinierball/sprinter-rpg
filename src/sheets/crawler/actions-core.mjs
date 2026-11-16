@@ -5,6 +5,7 @@
  */
 
 import { nextCameraChoice, armedCamera } from '../../utils/roll/cameras.mjs';
+import { rollSheetEvade } from '../../chat/actions/roll-evade.mjs';
 
 /** Limb fields only a GM may change. */
 export const GM_ONLY_LIMB_FIELDS = Object.freeze([
@@ -45,9 +46,10 @@ export const coreActions = {
     return this.actor.armCameras(nextCameraChoice(armedCamera(this.actor)));
   },
 
+  /** Roll Evade; in combat it spends the round's Evade Action in the tracker. */
   rollEvade() {
     if (!this.isEditable) return;
-    return this.actor.rollEvade();
+    return rollSheetEvade(this.actor);
   },
 
   async rest(event, target) {

@@ -1,5 +1,6 @@
 import { EVADE_FAIL_DEGREES } from '../../utils/attack/evade-degrees.mjs';
 import { tagQueryField } from './tag-fields.mjs';
+import { SELF_TARGET_TAG } from '../../data/tag-vocabulary.mjs';
 import { durationSpecField } from './timing-fields.mjs';
 
 /**
@@ -17,6 +18,23 @@ export function interruptSchemaField(fields) {
     // interrupt resolves against that one attack, never afterwards. Reached rank-break tiers add to / switch these on.
     drBonus: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
     ignoreDebuffs: new fields.BooleanField({ initial: false })
+  });
+}
+
+/**
+ * An item's temporary health bars, shared by spell, skill and gear. `slotsFormula` is one ability key or a fixed count;
+ * `hpPerSlot` is a fixed number and `hpPerSlotStat` (an ability key, '' = use the number) makes that ability's Mod the
+ * Health per slot; `passTag` is a tag whose damage passes the bars by ('' = the bars take every hit).
+ * @param {object} fields foundry.data.fields
+ * @param {{ slotsFormula?: string, hpPerSlot?: number, integer?: boolean }} [initials] what the item type started with
+ */
+export function itemTempBarsField(fields, { slotsFormula = '', hpPerSlot = 0, integer = true } = {}) {
+  return new fields.SchemaField({
+    hasTempBars: new fields.BooleanField({ initial: false }),
+    slotsFormula: new fields.StringField({ initial: slotsFormula }),
+    hpPerSlot: new fields.NumberField({ ...(integer ? { integer: true } : {}), min: 0, initial: hpPerSlot }),
+    hpPerSlotStat: new fields.StringField({ initial: '' }),
+    passTag: new fields.StringField({ initial: '' })
   });
 }
 
@@ -42,7 +60,8 @@ export function auraStateField(fields) {
       maxCount: count(),
       hpPerSlot: count(),
       currentSlotHp: count(),
-      element: new fields.StringField({ initial: '' })
+      element: new fields.StringField({ initial: '' }),
+      passTag: new fields.StringField({ initial: '' })
     }), { initial: [] }),
     pulseCombatId: new fields.StringField({ initial: '' }),
     pulseRound: count()
@@ -232,4 +251,24 @@ export function areaSchemaField(fields) {
     damageBonus: new fields.NumberField({ integer: true, initial: 0 }),
     grantedBuffs: new fields.ArrayField(new fields.StringField(), { initial: [] })
   });
+}
+
+/**
+ * The buffs a Skill or spell puts on people when its card's Apply button is clicked: one row per buff, each in force
+ * from `minRank` to `maxRank` of the item. `buff` is a catalog buff identifier, never a name; `target` is a `target.*`
+ * tag id whose definition carries a `recipients` block (an unknown tag behaves as `target.self`); `range` is feet
+ * (0 = the item's own Range for one creature, no limit for the party); `rank` is the Rank the copy carries (0 = work it
+ * out) and `rankSkill` a skill identifier whose Rank on the caster is that Rank.
+ * @param {object} fields foundry.data.fields
+ */
+export function appliedBuffsField(fields) {
+  return new fields.ArrayField(new fields.SchemaField({
+    buff: new fields.StringField({ initial: '' }),
+    target: new fields.StringField({ initial: SELF_TARGET_TAG }),
+    range: new fields.NumberField({ min: 0, initial: 0 }),
+    minRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+    maxRank: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null }),
+    rank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+    rankSkill: new fields.StringField({ initial: '' })
+  }), { initial: [] });
 }

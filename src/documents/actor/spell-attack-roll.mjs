@@ -8,6 +8,7 @@ import { confirmFellowWorshipperAttack } from './worship-obligations.mjs';
 import { isAreaAttack } from '../../utils/area/area-attack.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
 import { buildCheckRecord, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
+import { checkRerollStamp } from './check-reroll-stamp.mjs';
 import { newRollId } from '../../utils/roll/check-difficulty.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { isAmazingOutcome } from '../../utils/roll/amazing-success.mjs';
@@ -32,10 +33,13 @@ import { activeCombatFor, declareMobAttack } from '../combat-declarations.mjs';
 import { cameraParts, cameraDisadvantages, resolveCameraChoice, consumeArmedCamera } from '../../utils/roll/cameras.mjs';
 import { findDamageEffectSkill, getAiFavorRating } from './actor-techniques.mjs';
 import { getItemInflictedConditions } from './inflicted-conditions.mjs';
+import { readAttackFacts } from '../../utils/attack/attack-facts.mjs';
 import { attackTargetEntries, getAttackDifficultyState, resolveAttackTargets, evadeButtonHtml } from './attack-targets.mjs';
 import { getContestData, renderContestChallengeBlock } from './contest-blocks.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
+import { evadeAdvantageLine, evadeLineUnticked } from './evade-aftermath.mjs';
 import { getSpellDamageData } from './actor-spells.mjs';
+import { castTakesMark } from '../../utils/skill/advancing-items.mjs';
 import { withFlags } from '../../utils/flags.mjs';
 
 /**
@@ -62,7 +66,8 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
   if (actor.type === 'mob') {
     // Mobs never roll (3.22-11): the same declared choices, cooldown gates and Rule Break prompt as a mob weapon attack.
     const mobContext = buildRollContext({ actor, phase: 'toHit', item: spellItem, check: ['attack', 'spell'], wieldedOneHanded: options.wieldedOneHanded });
-    const mobModel = buildAttackOptions(actor, spellItem, mobContext, { mode: 'hit' });
+    const mobFacts = readAttackFacts(actor, spellItem, mobContext, attackTargetEntries(actor, options), { attackerToken: options.attackerToken });
+    const mobModel = buildAttackOptions(actor, spellItem, mobContext, { mode: 'hit', facts: mobFacts });
     const mobResolved = await resolveAttackChoices(actor, spellItem, mobModel, options, { context: mobContext });
     if (!mobResolved) return null; // the pop-up was cancelled: nothing is rolled or written
     const { choices: mobChoices } = mobResolved;
@@ -190,14 +195,17 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
   const calledEntries = pendingCalledPlaysFor(actor, baseContext);
   // 3.22: the same Attack Options pop-up as a weapon attack (maneuvers such as Aiming, situations, Called Plays).
   // `cameraId` is the Playing to the Cameras choice (E6.10); before the pop-up answers, the armed or macro one stands in.
+  let evadeUnticked = false;
   const advantageWith = (picked, cameraId = resolveCameraChoice(actor, options)) => getRollAdvantageState(actor, {
-    rollType: 'spell', stat: statKey, item: spellItem, options, extraDisadvantages: cameraDisadvantages(cameraId),
+    rollType: 'spell', skipEvadeAdvantage: evadeUnticked, stat: statKey, item: spellItem, options, extraDisadvantages: cameraDisadvantages(cameraId),
     rollContext: extendContext(baseContext, { situations: picked })
   });
-  const model = buildAttackOptions(actor, spellItem, baseContext, { mode: 'hit', calledPlays: calledEntries, advantageFor: advantageWith, options });
+  const facts = readAttackFacts(actor, spellItem, baseContext, attackTargetEntries(actor, options), { attackerToken: options.attackerToken });
+  const model = buildAttackOptions(actor, spellItem, baseContext, { mode: 'hit', calledPlays: calledEntries, advantageFor: advantageWith, options, facts, extraSituations: [evadeAdvantageLine(actor, baseContext.other)].filter(Boolean) });
   const resolved = await resolveAttackChoices(actor, spellItem, model, options, { context: baseContext });
   if (!resolved) return null; // the pop-up was cancelled: nothing is rolled or written
   const { choices } = resolved;
+  evadeUnticked = evadeLineUnticked(model, choices, options);
   const choiceReasons = [...castLink.reasons, ...ruleBreakReasons(model, choices)];
   const choiceRuleBreak = await confirmChoiceRuleBreaks(choiceReasons, options);
   if (!choiceRuleBreak.proceed) return null;
@@ -230,6 +238,7 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
   const camera = cameraParts(actor, choices.cameras, getCurrentFloor());
   const advState = getRollAdvantageState(actor, {
     rollType: 'spell',
+    skipEvadeAdvantage: evadeUnticked,
     stat: statKey,
     item: spellItem,
     options,
@@ -273,6 +282,8 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     rollId
   }).catch(() => {});
   actor.awardPopularityForRoll(roll, { context: rollContext, options }).catch(() => {});
+  // The Attack Check is made, hit or miss: the spell takes the Used mark (an auto-hit rolls nothing and is handled above)
+  if (castTakesMark(spellItem, options)) await actor.markSkillUsed(spellItem, { reason: 'spell-attack' });
 
   const { targetResults, targetResultsHtml, currentFloor, interruptPromptsHtml } = resolveAttackTargets(actor, roll, {
     ...options,
@@ -281,6 +292,8 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     toHitContext: rollContext,
     outOfRange: rangeGate.outOfRange
   });
+  // An Amazing Success on the first target pays an `amazing` Popularity row, once per roll
+  actor.awardPopularityForOutcome(targetResults[0]?.outcomeId, { context: rollContext, options }).catch(() => {});
   const isArea = isAreaAttack(spellItem, options);
   const evadeBtnHtml = evadeButtonHtml(actor, roll, currentFloor, { rollContext, isArea });
 
@@ -350,6 +363,7 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     unassisted: { total: roll.total, d20: extractD20Result(roll), firstTarget: targetResults[0] ? { dc: targetResults[0].targetDC, bonus: targetResults[0].toHitBonus ?? 0 } : null },
     hasDamage: Boolean(dmgData?.hasDamage)
   });
+  const rerollStamp = checkRerollStamp(rollContext, spellItem);
   const message = await roll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor: `${flavorText}${camera.noteHtml}`,
@@ -370,8 +384,10 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     attackerId: actor.id,
     attackerType: actor.type,
     attackTotal: roll.total,
+    ...rerollStamp.flags,
     [CHECK_RECORD_FLAG]: buildCheckRecord({
       kind: 'spell',
+      itemUuid: rerollStamp.itemUuid,
       roller: actor,
       rollerTokenId: rollerTokenIdOf(actor),
       roll,

@@ -6,6 +6,7 @@
  * Imports only SYSTEM_ID: combat-metrics.mjs imports this module, so it must not import documents or apps.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { writeFlag } from '../flags.mjs';
 
 const DAMAGE_UNDO_FLAG = 'damageUndo';
 export const MAX_DAMAGE_UNDO_RECORDS = 20;
@@ -60,7 +61,8 @@ export function snapshotHpPools(actor) {
         hpPerSlot: num(tb.hpPerSlot),
         source: String(tb.source ?? ''),
         sourceUuid: String(tb.sourceUuid ?? ''),
-        element: String(tb.element ?? '')
+        element: String(tb.element ?? ''),
+        passTag: String(tb.passTag ?? '')
       }
       : null
   };
@@ -96,14 +98,17 @@ export async function markDamageUndoRecord(actor, applicationId, { undoneAt, und
   return true;
 }
 
-/** Mark (or, with `used` false, unmark) one earned reflection (by index) on a record and setFlag. Returns false if the record is absent or has none. */
-export async function markDamageUndoReflected(actor, applicationId, index, used = true) {
+/**
+ * Mark (or, with `used` false, unmark) one earned offer (by index) on a record and setFlag: a reflection (`field` 'reflect', the
+ * default) or a retaliation (`field` 'retaliate'). Returns false if the record is absent or has none.
+ */
+export async function markDamageUndoReflected(actor, applicationId, index, used = true, field = 'reflect') {
   const records = getDamageUndoRecords(actor);
   const rec = records.find(r => r.applicationId === applicationId);
-  if (!rec?.reflect || typeof rec.reflect !== 'object') return false;
-  const list = (Array.isArray(rec.reflect.used) ? rec.reflect.used : []).filter(i => Number.isInteger(i) && i !== index);
+  if (!rec?.[field] || typeof rec[field] !== 'object') return false;
+  const list = (Array.isArray(rec[field].used) ? rec[field].used : []).filter(i => Number.isInteger(i) && i !== index);
   if (used) list.push(index);
-  const next = records.map(r => (r === rec ? { ...r, reflect: { ...r.reflect, used: list } } : r));
+  const next = records.map(r => (r === rec ? { ...r, [field]: { ...r[field], used: list } } : r));
   await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, next);
   return true;
 }
@@ -115,6 +120,16 @@ export async function markDamageUndoKillAwarded(actor, applicationId) {
   if (!rec) return false;
   const next = records.map(r => (r === rec ? { ...r, killAwarded: true } : r));
   await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, next);
+  return true;
+}
+
+/** Mark one record's kill event triggers as fired and setFlag. Returns false if the record is absent. */
+export async function markDamageUndoTriggersFired(actor, applicationId) {
+  const records = getDamageUndoRecords(actor);
+  const rec = records.find(r => r.applicationId === applicationId);
+  if (!rec) return false;
+  const next = records.map(r => (r === rec ? { ...r, triggersFired: true } : r));
+  await writeFlag(actor, DAMAGE_UNDO_FLAG, next);
   return true;
 }
 
@@ -192,6 +207,7 @@ export function computeUndoUpdates(record, actor) {
             updates[`${HP_PATH}.tempBars.source`] = b.tempBars.source ?? '';
             updates[`${HP_PATH}.tempBars.sourceUuid`] = b.tempBars.sourceUuid ?? '';
             updates[`${HP_PATH}.tempBars.element`] = b.tempBars.element ?? '';
+            updates[`${HP_PATH}.tempBars.passTag`] = b.tempBars.passTag ?? '';
           }
           tempRestored = newPool - curPool;
         }

@@ -734,6 +734,367 @@ export const COG_BUFFS = [
         "value": 3
       }
     }
+  },
+  {
+    "_id": "dccbuf1000000001",
+    "name": "Cooked Meal",
+    "type": "buff",
+    "img": "icons/svg/aura.svg",
+    "system": {
+      "identifier": "cooked-meal",
+      "checkModifiers": [
+        {
+          "kind": "bonus",
+          "value": 1,
+          "label": "Cooked Meal",
+          "condition": {
+            "all": [
+              "check.skill"
+            ]
+          }
+        }
+      ],
+      "durationConfig": {
+        "type": "hours",
+        "value": 1
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000002",
+    "name": "Party DR",
+    "type": "buff",
+    "img": "icons/svg/shield.svg",
+    "system": {
+      "identifier": "party-dr",
+      "defenseModifiers": [
+        {
+          "kind": "dr",
+          "value": 1,
+          "label": "Party DR"
+        }
+      ],
+      "durationConfig": {
+        "type": "scene",
+        "value": 0
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000003",
+    "name": "Party Regeneration",
+    "type": "buff",
+    "img": "icons/svg/regen.svg",
+    "system": {
+      "identifier": "party-regeneration",
+      "grants": [
+        {
+          "kind": "rank_raise",
+          "identifier": "regeneration",
+          "floor": 1,
+          "floorFrom": "rank",
+          "value": 0
+        }
+      ],
+      "durationConfig": {
+        "type": "minutes",
+        "value": 10
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000004",
+    "name": "Scene Boon",
+    "type": "buff",
+    "img": "icons/svg/aura.svg",
+    "system": {
+      "identifier": "scene-boon",
+      "defenseModifiers": [
+        {
+          "kind": "dr",
+          "value": 1,
+          "label": "Scene Boon"
+        }
+      ],
+      "attackModifiers": [
+        {
+          "kind": "bonus",
+          "value": 1,
+          "label": "Scene Boon",
+          "condition": {
+            "any": [
+              "skillGroup.weapon",
+              "kind.spell"
+            ]
+          }
+        }
+      ],
+      "damageModifiers": [
+        {
+          "mode": "add",
+          "dice": "1d4",
+          "label": "Scene Boon"
+        }
+      ],
+      "grants": [
+        {
+          "kind": "rank_raise",
+          "identifier": "regeneration",
+          "floor": 1,
+          "floorFrom": "rank",
+          "value": 0
+        }
+      ],
+      "durationConfig": {
+        "type": "scene",
+        "value": 0
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000005",
+    "name": "Charged Weapon",
+    "type": "buff",
+    "img": "icons/svg/fire.svg",
+    "system": {
+      "identifier": "charged-weapon",
+      "damageModifiers": [
+        {
+          "mode": "add",
+          "value": 2,
+          "damageType": "Fire",
+          "label": "Charged Weapon",
+          "condition": {
+            "any": [
+              "kind.weapon"
+            ]
+          }
+        },
+        {
+          "mode": "add",
+          "dice": "1d6",
+          "damageType": "Fire",
+          "minRank": 5,
+          "label": "Charged Weapon",
+          "condition": {
+            "any": [
+              "kind.weapon"
+            ]
+          }
+        },
+        {
+          "mode": "add",
+          "dice": "1d6",
+          "damageType": "Fire",
+          "minRank": 10,
+          "label": "Charged Weapon",
+          "condition": {
+            "any": [
+              "kind.weapon"
+            ]
+          }
+        },
+        {
+          "mode": "add",
+          "dice": "1d6",
+          "damageType": "Fire",
+          "minRank": 15,
+          "label": "Charged Weapon",
+          "condition": {
+            "any": [
+              "kind.weapon"
+            ]
+          }
+        }
+      ],
+      "asTriggers": [
+        {
+          "type": "debuff",
+          "identifier": "burned",
+          "minRank": 10
+        },
+        {
+          "type": "debuff",
+          "identifier": "shocked",
+          "minRank": 15
+        }
+      ],
+      "durationConfig": {
+        "type": "minutes",
+        "value": 6
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000006",
+    "name": "Wooden Skin",
+    "type": "buff",
+    "img": "icons/svg/shield.svg",
+    "system": {
+      "identifier": "wooden-skin",
+      "defenseModifiers": [
+        {
+          "kind": "dr",
+          "value": 2,
+          "minRank": 0,
+          "label": "Wooden Skin"
+        },
+        {
+          "kind": "dr",
+          "value": 2,
+          "minRank": 5,
+          "label": "Wooden Skin"
+        },
+        {
+          "kind": "dr",
+          "value": 2,
+          "minRank": 10,
+          "label": "Wooden Skin"
+        },
+        {
+          "kind": "dr",
+          "value": 2,
+          "minRank": 15,
+          "label": "Wooden Skin"
+        }
+      ],
+      "durationConfig": {
+        "type": "minutes",
+        "value": 2
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000007",
+    "name": "Quickened Pet",
+    "type": "buff",
+    "img": "icons/svg/wingfoot.svg",
+    "system": {
+      "identifier": "quickened-pet",
+      "vehicleModifiers": [
+        {
+          "kind": "moveMultiply",
+          "label": "Quickened Pet",
+          "multiplier": 2,
+          "maxRank": 4
+        },
+        {
+          "kind": "moveMultiply",
+          "label": "Quickened Pet",
+          "multiplier": 3,
+          "minRank": 5,
+          "maxRank": 9
+        },
+        {
+          "kind": "moveMultiply",
+          "label": "Quickened Pet",
+          "multiplier": 4,
+          "minRank": 10,
+          "maxRank": 14
+        },
+        {
+          "kind": "moveMultiply",
+          "label": "Quickened Pet",
+          "multiplier": 5,
+          "minRank": 15
+        }
+      ],
+      "durationConfig": {
+        "type": "seconds",
+        "value": 10
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000008",
+    "name": "Water Lungs",
+    "type": "buff",
+    "img": "icons/svg/waterfall.svg",
+    "system": {
+      "identifier": "water-lungs",
+      "tags": [
+        "sense.water_breathing"
+      ],
+      "checkModifiers": [
+        {
+          "kind": "advantage",
+          "advantage": "advantage",
+          "minRank": 10,
+          "label": "Water Lungs",
+          "condition": {
+            "any": [
+              "id.skill.swimming"
+            ]
+          }
+        }
+      ],
+      "durationConfig": {
+        "type": "seconds",
+        "value": 30
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000009",
+    "name": "Clear Head",
+    "type": "buff",
+    "img": "icons/svg/aura.svg",
+    "system": {
+      "identifier": "clear-head",
+      "defenseModifiers": [
+        {
+          "kind": "effectImmunity",
+          "label": "Clear Head",
+          "condition": {
+            "any": [
+              "rule.mind-control-effect"
+            ]
+          }
+        },
+        {
+          "kind": "spellBaseCap",
+          "label": "Clear Head",
+          "condition": {
+            "any": [
+              "kind.spell"
+            ]
+          }
+        }
+      ],
+      "durationConfig": {
+        "type": "minutes",
+        "value": 5
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000010",
+    "name": "Kill Bonus",
+    "type": "buff",
+    "img": "icons/svg/skull.svg",
+    "system": {
+      "identifier": "kill-bonus",
+      "repeat": {
+        "mode": "stack",
+        "maxFromRank": true
+      },
+      "damageModifiers": [
+        {
+          "mode": "add",
+          "value": 1,
+          "label": "Kill Bonus",
+          "condition": {
+            "any": [
+              "id.spell.dccspl0000000042"
+            ]
+          }
+        }
+      ],
+      "durationConfig": {
+        "type": "long_rest",
+        "value": 0
+      }
+    }
   }
 ];
 
@@ -852,6 +1213,9 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "held",
+      "tags": [
+        "rule.no-move"
+      ],
       "severity": "Major",
       "damageType": "",
       "damageModifiers": [],
@@ -1128,6 +1492,9 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "muted",
+      "tags": [
+        "rule.no-cast"
+      ],
       "severity": "Minor",
       "damageType": "",
       "damageModifiers": [],
@@ -1398,6 +1765,9 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "enraged",
+      "tags": [
+        "rule.attack-and-move-only"
+      ],
       "severity": "Minor",
       "damageType": "",
       "damageModifiers": [],
@@ -1668,6 +2038,9 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "staggered",
+      "tags": [
+        "rule.no-move"
+      ],
       "severity": "Minor",
       "damageType": "",
       "checkModifiers": [
@@ -1750,6 +2123,9 @@ export const COG_DEBUFFS = [
     "description": "",
     "system": {
       "identifier": "terrified",
+      "tags": [
+        "rule.no-move"
+      ],
       "severity": "Major",
       "damageType": "",
       "checkModifiers": [

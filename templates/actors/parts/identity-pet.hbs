@@ -35,19 +35,11 @@
           <input class="cog-field-input" name="system.details.level" type="number" value="{{system.details.level}}" placeholder="1" />
         </div>
         <div class="cog-field-group flex-1">
-          <span class="cog-field-label">Combat Mount</span>
+          <span class="cog-field-label">Mount</span>
           <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; height: 26px;">
             <input type="checkbox" name="system.details.isMount" {{checked system.details.isMount}} />
-            <span class="cog-text-info" style="font-size: 11px; font-weight: bold;">Rideable</span>
+            <span class="cog-text-info" style="font-size: 11px; font-weight: bold;" title="One Action a round and no Levels">Dedicated mount (does not level)</span>
           </label>
-        </div>
-        <div class="cog-field-group flex-1">
-          <span class="cog-field-label">Floor</span>
-          <select class="cog-field-input" name="system.details.floor">
-            {{#each floorOptions as |opt|}}
-              <option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
-            {{/each}}
-          </select>
         </div>
       </div>
 
@@ -76,13 +68,42 @@
               <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="petDismountRider" title="Dismount Rider" style="padding: 1px 6px; border: none; border-radius: 3px; cursor: pointer;">
                 Dismount
               </button>
+              {{#if canRideCheck}}
+              <button type="button" class="cog-btn-xs cog-bg-info-fill cog-text-on-fill" data-action="petRideCheck" title="The rider rolls an Unopposed Riding check to stay on" style="padding: 1px 6px; border: none; border-radius: 3px; cursor: pointer;">
+                Ride check
+              </button>
+              {{/if}}
             {{else}}
               <span class="cog-text-muted" style="font-style: italic; font-size: 12px;">None Mounted</span>
             {{/if}}
           </div>
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Attitude</span>
+          <select class="cog-field-input" name="system.details.attitude" title="Toward its handler">
+            {{#each attitudeOptions}}
+              <option value="{{id}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+          {{#if taming}}
+            <button type="button" class="cog-btn-xs cog-bg-success-fill cog-text-on-fill" data-action="petTame" title="Roll an Int-Opposed taming check: 20 minutes of direct contact" style="padding: 1px 6px; border: none; border-radius: 3px; cursor: pointer; margin-top: 2px;">
+              <i class="fa-solid fa-hand-holding-heart"></i> Tame
+            </button>
+            {{#if taming.locked}}<span class="cog-text-warning" style="font-size: 10px;">{{taming.lockoutText}}</span>{{/if}}
+            {{#if taming.waiting}}<span class="cog-text-muted" style="font-size: 10px;">{{taming.attemptText}}</span>{{/if}}
+          {{/if}}
+        </div>
+        <div class="cog-field-group flex-1">
+          <span class="cog-field-label">Origin</span>
+          <select class="cog-field-input" name="system.details.origin">
+            {{#each originOptions}}
+              <option value="{{id}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
         </div>
         <div class="cog-field-group flex-2">
           <span class="cog-field-label">Special Trait / Attack</span>
           <input class="cog-field-input" name="system.details.special" type="text" value="{{system.details.special}}" placeholder="Signature Trait..." />
         </div>
       </div>
+      {{> "systems/sprinter-rpg/templates/actors/parts/pet-role.hbs"}}

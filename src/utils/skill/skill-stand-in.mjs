@@ -4,7 +4,7 @@
  *
  * An actor may be asked to roll a skill it does not own: a race leg that names Running, or a gear-granted skill on
  * the crawler sheet. `skillStandIn` answers with the owned skill if there is one; else a plain object built from the
- * catalog entry whose rank is the bonus equipped gear grants (a gear-granted skill); else the same object at rank 0,
+ * catalog entry whose rank is the bonus equipped gear grants (a gear-granted skill; a pet's role buff adds the Floor); else the same object at rank 0,
  * which `rollSkill` rolls untrained (stat Mod only, at Disadvantage). The object has no `update`, so `markSkillUsed`
  * skips it. Skills are matched by `system.identifier` only, never by name.
  */
@@ -14,6 +14,8 @@ import { SKILL_GROUP_TAGS } from '../tag/tag-mechanics.mjs';
 import { matchesTagQuery } from '../tag/tag-query.mjs';
 import { workingGear } from '../effects/gear-suppression.mjs';
 import { rankGrantSources } from './rank-grant-sources.mjs';
+import { getCurrentFloor } from '../floor/current-floor.mjs';
+import { roleIdFromTags } from '../../data/rules/pet-rules.mjs';
 
 const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -23,6 +25,17 @@ function gearEntryFor(actor, identifier) {
   if (!items || typeof items.filter !== 'function') return null;
   const equipped = items.filter((i) => i?.type === 'gear' && i.system?.equipped);
   return collectGearSkillBonuses(rankGrantSources(actor, equipped)).get(gearGrantKey('skill', identifier)) ?? null;
+}
+
+/**
+ * What a pet's role buff adds to a Skill the pet does not own: the Floor, so the granted attack starts at Rank = Floor + grant.
+ * Only a buff tagged `pet.role.<id>` that grants the Skill counts; any other buff's grant stays the bare value.
+ * @returns {number} the current Floor, or 0
+ */
+function roleFloorStart(actor, identifier) {
+  if (actor?.type !== 'pet') return 0;
+  const roleBuffs = (actor.getActiveBuffs?.() ?? []).filter((buff) => roleIdFromTags(buff?.system?.tags));
+  return collectGearSkillBonuses(roleBuffs).has(gearGrantKey('skill', identifier)) ? getCurrentFloor() : 0;
 }
 
 /**
@@ -92,7 +105,7 @@ export function buildSkillStandIn(actor, identifier, entry = null, definition = 
       modifiedRank,
       totalSkill,
       stat,
-      checkType: official ? official.system.checkType : 'stat',
+      checkType: official ? official.system.checkType : 'skill',
       // The official's tags carry its weaponGroup.* and skillGroup.* groups; with no official the stand-in is a combat skill
       tags,
       // A weapon attack with the stand-in deals the official's Base Damage and reaches its rank breaks
@@ -111,14 +124,17 @@ export function buildSkillStandIn(actor, identifier, entry = null, definition = 
  * @param {object} actor
  * @param {string} identifier
  * @param {object|null} [definition] the Skill's own definition (a world Skill item), read before the catalog
+ * @param {{ bonus?: number, sources?: string[] }|null} [grant] a grant that stands in for the gear's (an attack's `toHitRank`); a role's Floor start still applies
  * @returns {object|null}
  */
-export function skillStandIn(actor, identifier, definition = null) {
+export function skillStandIn(actor, identifier, definition = null, grant = null) {
   const id = typeof identifier === 'string' ? identifier.trim() : '';
   if (!id) return null;
   const owned = typeof actor?.getSkillByIdentifier === 'function' ? actor.getSkillByIdentifier(id) : null;
   if (owned) return owned;
-  const stand = buildSkillStandIn(actor, id, gearEntryFor(actor, id), definition);
+  const entry = grant ?? gearEntryFor(actor, id);
+  const floorStart = entry ? roleFloorStart(actor, id) : 0;
+  const stand = buildSkillStandIn(actor, id, floorStart ? { ...entry, bonus: (Number(entry.bonus) || 0) + floorStart } : entry, definition);
   if (isGearOnlySkillOffline(actor, id)) stand.offline = true;
   return stand;
 }

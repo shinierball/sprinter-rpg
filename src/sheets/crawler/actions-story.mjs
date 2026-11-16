@@ -13,6 +13,7 @@ import { changeVehicleCrew, vehicleOf } from '../../documents/actor/vehicle-crew
 import { resolveSpace } from '../../documents/actor/personal-space-links.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { driveActions } from '../vehicle/drive-actions.mjs';
+import { rollPetCheck } from '../../documents/actor/pet-checks.mjs';
 
 const worldActor = (id) => (id ? globalThis.game?.actors?.get?.(id) ?? null : null);
 
@@ -87,6 +88,15 @@ export const storyActions = {
     const id = target.dataset.companionId;
     if (!id) return;
     await this.actor.unbondCompanion(id);
+    return this.render();
+  },
+
+  /** Roll a taming check for a bonded pet (`data-pet-id`) with this crawler as the roller; never disabled (a Rule Break is asked inside the timers). */
+  async tamePet(event, target) {
+    if (!this.isEditable) return;
+    const pet = worldActor(target.dataset.petId);
+    if (!pet) return;
+    await rollPetCheck(pet, this.actor);
     return this.render();
   },
 

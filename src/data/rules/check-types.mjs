@@ -4,7 +4,8 @@
  * original wording ("Melee Attack, Str") lives in the human-only `system.checkNote`, which no mechanic reads.
  * `CONFIG.COG.checkTypes === CHECK_TYPES`. Pure: no Foundry globals except the optional i18n lookup.
  *
- * - stat     a roll against a stat and a difficulty
+ * - skill    a Skill Check: 1d20 + Stat Mod + Rank, against a difficulty
+ * - statOnly a Stat Check: 1d20 + Stat Mod, no Rank, against the Stat Check Difficulty (core p. 59)
  * - opposed  a contest against another roll
  * - attack   an attack roll (the foe evades)
  * - evade    an evade roll
@@ -13,8 +14,9 @@
  * - none     no check
  */
 import { firstScalar } from '../../utils/first-scalar.mjs';
+import './migrate-check-type-skill.mjs';
 
-const DEFAULT_CHECK_TYPE = 'stat';
+const DEFAULT_CHECK_TYPE = 'skill';
 
 /** @typedef {{ id: string, label: string }} CheckTypeDef `label`: a `lang/` key, or plain text from a module */
 
@@ -39,7 +41,7 @@ export function registerCheckType(def) {
   return true;
 }
 
-for (const id of ['stat', 'opposed', 'attack', 'evade', 'passive', 'tool', 'none']) registerCheckType({ id, label: `COG.CheckType.${id}` });
+for (const id of ['skill', 'statOnly', 'opposed', 'attack', 'evade', 'passive', 'tool', 'none']) registerCheckType({ id, label: `COG.CheckType.${id}` });
 
 const localize = (key) => globalThis.game?.i18n?.localize?.(key) ?? key;
 
@@ -54,6 +56,11 @@ export function sanitizeCheckType(raw) {
   const val = firstScalar(raw);
   if (typeof val !== 'string') return DEFAULT_CHECK_TYPE;
   return val.trim() || DEFAULT_CHECK_TYPE;
+}
+
+/** Whether an item's check is a Stat Check: 1d20 + Stat Mod, no Rank (core p. 59). */
+export function rollsStatOnly(item) {
+  return sanitizeCheckType(item?.system?.checkType) === 'statOnly';
 }
 
 /**

@@ -46,10 +46,17 @@ export const RULE_FLAGS = Object.freeze({
   zone: 'zone',
   maneuver: 'maneuver',
   mountedOnly: 'mounted-only',
+  extraPet: 'extra-pet',
   worksInZeroZone: 'works-in-zero-zone',
   noActions: 'no-actions',
   forfeitsAction: 'forfeits-action',
-  noHealing: 'no-healing'
+  noHealing: 'no-healing',
+  noMove: 'no-move',
+  noCast: 'no-cast',
+  onlyAttackMove: 'only-attack-move',
+  universal: 'universal',
+  unseen: 'unseen',
+  mindControl: 'mind-control'
 });
 
 /** @type {Record<string, { id: string, label: string, hint: string }>} `CONFIG.COG.ruleFlags` is this same object. */
@@ -98,7 +105,14 @@ function seedFlags() {
   registerRuleFlag({ id: RULE_FLAGS.noActions, label: 'Cannot take Actions', hint: 'Acting while carrying this is a Rule Break confirm.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.forfeitsAction, label: 'Forfeits the next Action', hint: 'A bearer with an Action left loses it (a slot is recorded) and the debuff ends; acting before it is forfeited is a Rule Break confirm.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.noHealing, label: 'Cannot be healed', hint: 'Healing the bearer is a Rule Break confirm; an automatic heal is skipped.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.noMove, label: 'Cannot take Move Actions', hint: 'A Move Action while carrying this is a Rule Break confirm (Evade and other Actions are unaffected).' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.noCast, label: 'Cannot cast Spells', hint: 'Casting a Spell while carrying this is a Rule Break confirm.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.onlyAttackMove, label: 'Only Attack and Move Actions', hint: 'Any Action other than an Attack or a Move while carrying this is a Rule Break confirm.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.mindControl, label: 'Mind control', hint: 'A spell carrying this takes control of its target; a buff whose immunity row names the tag (Clear Head) refuses it.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.mountedOnly, label: 'Mounted use only', hint: 'A weapon made for use while mounted or driving; a vehicle\'s driver uses it without Disadvantage.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.extraPet, label: 'Keeps one more pet', hint: 'A crawler with this keeps one more pet than the usual limit (the limit is asked as a Rule Break when bonding past it).' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.universal, label: 'Applies to everyone', hint: "The tag's rows apply to every creature's rolls, whether or not the creature carries the tag (a stock situation such as cover)." }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.unseen, label: 'Unseen', hint: "Others cannot see the bearer: its attacks are offered 'Target cannot see you', attacks on it 'You cannot see the target'." }, { priority: 0 });
 }
 seedFlags();
 bindGearFlagReader(hasRuleFlag);
@@ -227,7 +241,8 @@ function index() {
     const map = build();
     cache = {
       version, size: TAG_MAP.size, custom, customLength: custom.length, overrides, map,
-      hasRows: [...map.values()].some((e) => Object.keys(e.rows).length > 0)
+      hasRows: [...map.values()].some((e) => Object.keys(e.rows).length > 0),
+      universal: [...map.values()].filter((e) => Object.keys(e.rows).length > 0 && e.flags.includes(RULE_FLAGS.universal)).map((e) => e.id).sort()
     };
   }
   return cache;
@@ -324,7 +339,7 @@ export function collectItemSources(actor, ctxItem = null) {
 const identityCarrier = (item) => item?.type === 'sponsor' || isWorshipBond(item);
 
 /**
- * Append one synthetic source per row-carrying tag the actor carries (spec §4.1). The tags counted are those of the
+ * Append one synthetic source per row-carrying tag the actor carries, and per `universal` tag whether carried or not (spec §4.1). The tags counted are those of the
  * active sources (as if on the item) plus the actor's identity tags. One source per tag (R5): the carrier is the
  * highest-rank item carrying it, else the actor; `carriers` lists all. Flags-only tags never make a source.
  * @param {object} actor
@@ -353,6 +368,8 @@ export function appendTagSources(actor, sources) {
   for (const t of collectActorTags(actor, { identityOnly: true })) {
     if (!carriersByTag.has(t)) note(t, actor);
   }
+  // A universal tag's rows apply to every creature, carried or not: the actor is its carrier.
+  for (const tag of idx.universal) if (!carriersByTag.has(tag)) note(tag, actor);
   for (const tag of [...carriersByTag.keys()].sort()) {
     const carriers = carriersByTag.get(tag);
     let carrier = null;
@@ -370,6 +387,16 @@ export function appendTagSources(actor, sources) {
     });
   }
   return sources;
+}
+
+/**
+ * Whether a source `appendTagSources` built is a `universal` tag's (a stock reason that applies to everyone), not one the
+ * actor or an item carries or one an item's own row offers.
+ * @param {object|null|undefined} source
+ * @returns {boolean}
+ */
+export function isUniversalTagSource(source) {
+  return typeof source?.tag === 'string' && source.id === `tag:${source.tag}` && index().universal.includes(source.tag);
 }
 
 /** The tags an actor carries for behaviour purposes (R7): active sources' tags plus identity tags, computed live. */

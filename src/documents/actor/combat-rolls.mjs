@@ -6,6 +6,7 @@ import { COGSessionEngine } from '../session/session-engine.mjs';
 import { isAreaAttack } from '../../utils/area/area-attack.mjs';
 import { collectRollAdvantage } from '../../utils/roll/damage-modifiers.mjs';
 import { gateDriverHands, foreignItemAttr } from '../../utils/vehicle/vehicle-combat.mjs';
+import { gateMountedOnly } from '../../utils/pet/pet-combat.mjs';
 import { collectAttackToHit, rollTargetToHitDice } from '../../utils/attack/per-target-to-hit.mjs';
 import { floorRuleBreakCard } from '../../utils/floor/floor-rule-break.mjs';
 import { buildRollContext, extendContext, resolveRowAdvantage, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
@@ -26,8 +27,8 @@ import { newRollId } from '../../utils/roll/check-difficulty.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { cameraParts, cameraDisadvantages, resolveCameraChoice, consumeArmedCamera } from '../../utils/roll/cameras.mjs';
 import { isAmazingOutcome } from '../../utils/roll/amazing-success.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { buildCheckRecord, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
+import { checkRerollStamp } from './check-reroll-stamp.mjs';
 import { formatDamageFormula } from '../../utils/damage/damage-parts.mjs';
 import { attackToHitStat } from '../../utils/attack/to-hit-display.mjs';
 import { hasOnHitDebuff } from '../../utils/attack/on-hit.mjs';
@@ -41,10 +42,13 @@ import { attackOptionsLineHtml, damageButtonLabel } from '../../utils/attack/att
 import { attackText } from '../../utils/attack/attack-text.mjs';
 import { resolveWeaponSkills } from './weapon-skills.mjs';
 import { spendActivationUses } from './buff-activation.mjs';
+import { readAttackFacts } from '../../utils/attack/attack-facts.mjs';
 import { attackTargetEntries, getAttackDifficultyState, incomingAdvantageOf, resolveAttackTargets, evadeButtonHtml } from './attack-targets.mjs';
 import { getSkillDamageData } from './combat-skill-damage.mjs';
 import { renderAttackContestBlock } from './contest-blocks.mjs';
 import { withFlags } from '../../utils/flags.mjs';
+import { fireUseTriggers } from './event-triggers.mjs';
+import { evadeAdvantageReason, evadeAdvantageLine, evadeLineUnticked } from './evade-aftermath.mjs';
 
 /**
  * Evaluate Advantage and Disadvantage state for a given roll.
@@ -60,6 +64,7 @@ import { withFlags } from '../../utils/flags.mjs';
  * @param {object} context.rollContext the roll's RollContext: what `checkModifiers`/`attackModifiers` row
  *   conditions are matched against (`check.skill`, `stat.dex`, ticked `situation.*`, the item's tags, `self.*`, `subject.*`).
  * @param {string[]} [context.extraDisadvantages] further Disadvantage reasons (the camera choice, E6.10)
+ * @param {boolean} [context.skipEvadeAdvantage] the attacker took the owed Evade Advantage's line off in the Attack Options window
  * @param {boolean} [context.isAttack] also read `attackModifiers` rows (always true for attack/spell rolls)
  * @returns {{ mode: 'advantage'|'disadvantage'|'cancelled'|'normal', formula: string, label: string|null, reasons: Array<string> }}
  */
@@ -103,6 +108,11 @@ export function getRollAdvantageState(actor, context = {}) {
       const incoming = incomingAdvantageOf(actor, context.rollContext?.other, context.rollContext);
       advantages.push(...incoming.advantages);
       disadvantages.push(...incoming.disadvantages);
+      // An Evade Natural 20 or Amazing Success against this mob (p. 79).
+      if (context.skipEvadeAdvantage !== true) {
+        const owed = evadeAdvantageReason(actor, context.rollContext?.other ?? null);
+        if (owed) advantages.push(owed);
+      }
     }
   }
 
@@ -188,9 +198,10 @@ async function rollMobAttackAutoHit(actor, attackItem, options = {}, picked = nu
     let effectBtnTag = '';
     if (favorBonus > 0) effectBtnTag += ` [AI Favor rating ${favorBonus}]`;
     // An auto-hit has no d20 (never a crit); the damage roll inherits this context's situations and subject.
-    const autoHitContext = picked?.context ?? buildRollContext({
+    // A Disadvantaged mob attack carries `situation.disadvantaged`, as a crawler's card does, so rows that need it (the size damage) match.
+    const autoHitContext = extendContext(picked?.context ?? buildRollContext({
       actor: actor, phase: 'toHit', item: attackItem, check: 'attack', wieldedOneHanded: options.wieldedOneHanded
-    });
+    }), { disadvantaged: diff.mode === 'disadvantage' });
     dmgBtnHtml = `
       <div style="margin-top: 6px;">
         <button type="button" class="cog-attack-roll-btn roll-attack-dmg-from-card roll-skill-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollItemDamage" data-actor-uuid="${actor.uuid}" data-item-id="${attackItem.id}" data-skill-id="${attackItem.id}" data-item-type="${attackItem.type || 'attack'}"${rollContextDataAttr(autoHitContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
@@ -319,8 +330,10 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
 
   // Advantage rows read the context before `situation.disadvantaged` exists; flat and dice rows read it after.
   // `cameraId` is the Playing to the Cameras choice (E6.10); before the pop-up answers, the armed or macro one stands in.
+  let evadeUnticked = false;
   const advantageWith = (situations, rollContext = extendContext(baseContext, { situations }), cameraId = resolveCameraChoice(actor, options)) => getRollAdvantageState(actor, {
     rollType: 'attack',
+    skipEvadeAdvantage: evadeUnticked,
     stat: toHitStat,
     item: attackItem,
     isUntrained,
@@ -332,7 +345,8 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   });
 
   // One model of what this attack may add; the choices come from a macro, the last pick or the pop-up (3.22, D3).
-  const model = buildAttackOptions(actor, attackItem, baseContext, { mode: 'hit', calledPlays: calledEntries, advantageFor: isMob ? null : (s) => advantageWith(s), options, skillOptions: weaponResolve?.options ?? [], defaultSkill: weaponResolve?.option?.identifier ?? '' });
+  const facts = readAttackFacts(actor, attackItem, baseContext, attackTargetEntries(actor, options), { attackerToken: options.attackerToken });
+  const model = buildAttackOptions(actor, attackItem, baseContext, { mode: 'hit', calledPlays: calledEntries, advantageFor: isMob ? null : (s) => advantageWith(s), options, skillOptions: weaponResolve?.options ?? [], defaultSkill: weaponResolve?.option?.identifier ?? '', facts, extraSituations: [evadeAdvantageLine(actor, baseContext.other)].filter(Boolean) });
   const resolved = await resolveAttackChoices(actor, attackItem, model, options, { context: baseContext });
   if (!resolved) return null; // the pop-up was cancelled: nothing is rolled, written or marked
   // The attacker may pick another of the weapon's Skills (7.51): Rank, Stat, rank breaks, marks and the damage path read that Skill from here on.
@@ -348,6 +362,7 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   // The Skill the card names and the damage roll from it reads (carried on the card, never picked again).
   const usedSkill = weaponResolve?.option?.identifier ?? '';
   const choices = { ...resolved.choices, skill: usedSkill };
+  evadeUnticked = evadeLineUnticked(model, choices, options);
 
   // Every choice that breaks a rule is listed in one confirmation (never a block, CONTRIBUTING rule 2).
   // The window lists the default Skill's Damage Effects; one the Skill actually used does not allow is a Rule Break reason too (Q1087)
@@ -387,13 +402,16 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   // 3.44e: a two-handed attack by the driver of a one-handed kind asks a Rule Break (never a block).
   const handsGate = isMob ? { proceed: true, flags: {} } : await gateDriverHands(actor, attackItem, { options });
   if (!handsGate.proceed) return null;
+  // A mounted-only weapon used by someone neither riding nor aboard a vehicle asks a Rule Break (never a block).
+  const mountedGate = isMob ? { proceed: true, flags: {} } : await gateMountedOnly(actor, attackItem, { options });
+  if (!mountedGate.proceed) return null;
   await commitPick(actor, attackItem, resolved);
   await attackGate?.commit();
   await spendActivationUses(actor, [attackItem, hitSkill]);
   for (const gate of effectGates) await gate.commit();
   // A passenger who fired a mounted weapon after the Rule Break confirm is recorded on the card.
   const mountedFlags = options.vehicle?.ruleBreak === true ? { ruleBreak: true } : {};
-  const cooldownFlags = { ...attackGate?.flags, ...Object.assign({}, ...effectGates.map(g => g.flags)), ...rangeGate.flags, ...handsGate.flags, ...mountedFlags };
+  const cooldownFlags = { ...attackGate?.flags, ...Object.assign({}, ...effectGates.map(g => g.flags)), ...rangeGate.flags, ...handsGate.flags, ...mountedGate.flags, ...mountedFlags };
 
   if (isMob) {
     // Mobs earn no AI Favor, make no check and mark nothing, but they respect cooldowns (3.22-8, Q225 (a)).
@@ -516,6 +534,8 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
     toHitContext: rollContext,
     outOfRange: rangeGate.outOfRange
   });
+  // An Amazing Success on the first target pays an `amazing` Popularity row, once per roll
+  actor.awardPopularityForOutcome(targetResults[0]?.outcomeId, { context: rollContext, options: currentOptions }).catch(() => {});
 
   const attackChoicesFlag = choicesFlag(choices, model, { ruleBreak: choiceRuleBreak.ruleBreak, reasons });
   const resolveVariant = replacingVariant(choices, model);
@@ -549,57 +569,58 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
     unassisted: { total: roll.total, d20: extractD20Result(roll), firstTarget: targetResults[0] ? { dc: targetResults[0].targetDC, bonus: targetResults[0].toHitBonus ?? 0 } : null },
     hasDamage: Boolean(dmgFormula)
   });
-  const message = await roll.toMessage({
+  const rerollStamp = checkRerollStamp(rollContext, attackItem);
+  const message = await roll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor: actor }),
     flavor: `${flavorText}${camera.noteHtml}`,
-    content,
-    flags: {
-      [SYSTEM_ID]: {
-        isAttackRoll: true,
-        ...camera.flags,
-        ...(attackIsArea ? { isArea: true } : {}),
-        ...unusableFlag,
-        ...zeroZoneGate.flags,
-        ...actionBlockGate.flags,
-        ...choiceFlags,
-        ...cooldownFlags,
-        ...floorRuleBreak.flags,
-        attackerId: actor.id,
-        attackerType: actor.type,
-        attackTotal: roll.total,
-        [CHECK_RECORD_FLAG]: buildCheckRecord({
-          kind: 'attack',
-          roller: actor,
-          rollerTokenId: rollerTokenIdOf(actor),
-          roll,
-          combat: combatRefFor(actor),
-          tags: [...rollContext.tags],
-          targets: targetResults.map(tr => ({ actorId: tr.actorId, actorUuid: tr.actor?.uuid, name: tr.actorName, dc: tr.targetDC, bonus: tr.toHitBonus ?? 0 })),
-          hasDamage: Boolean(dmgFormula),
-          assists,
-          rollId,
-          stat: toHitStat,
-          floor: currentFloor
-        }),
-        currentFloor,
-        attackChoices: attackChoicesFlag,
-        aiFavorBonus: favorBonus,
-        attackItemId: attackItem.id ?? null,
-        attackItemUuid: attackItem.uuid ?? null,
-        targetResults: targetResults.map(tr => ({
-          actorId: tr.actorId,
-          actorName: tr.actorName,
-          targetDC: tr.targetDC,
-          isHit: tr.isHit,
-          diff: tr.diff,
-          toHitBonus: tr.toHitBonus ?? 0,
-          outcome: tr.outcome
-        }))
-      }
-    }
-  });
+    content
+  }, {
+    isAttackRoll: true,
+    ...camera.flags,
+    ...(attackIsArea ? { isArea: true } : {}),
+    ...unusableFlag,
+    ...zeroZoneGate.flags,
+    ...actionBlockGate.flags,
+    ...choiceFlags,
+    ...cooldownFlags,
+    ...floorRuleBreak.flags,
+    attackerId: actor.id,
+    attackerType: actor.type,
+    attackTotal: roll.total,
+    ...rerollStamp.flags,
+    [CHECK_RECORD_FLAG]: buildCheckRecord({
+      kind: 'attack',
+      itemUuid: rerollStamp.itemUuid,
+      roller: actor,
+      rollerTokenId: rollerTokenIdOf(actor),
+      roll,
+      combat: combatRefFor(actor),
+      tags: [...rollContext.tags],
+      targets: targetResults.map(tr => ({ actorId: tr.actorId, actorUuid: tr.actor?.uuid, name: tr.actorName, dc: tr.targetDC, bonus: tr.toHitBonus ?? 0 })),
+      hasDamage: Boolean(dmgFormula),
+      assists,
+      rollId,
+      stat: toHitStat,
+      floor: currentFloor
+    }),
+    currentFloor,
+    attackChoices: attackChoicesFlag,
+    aiFavorBonus: favorBonus,
+    attackItemId: attackItem.id ?? null,
+    attackItemUuid: attackItem.uuid ?? null,
+    targetResults: targetResults.map(tr => ({
+      actorId: tr.actorId,
+      actorName: tr.actorName,
+      targetDC: tr.targetDC,
+      isHit: tr.isHit,
+      diff: tr.diff,
+      toHitBonus: tr.toHitBonus ?? 0,
+      outcome: tr.outcome
+    }))
+  }));
   await consumeCalledPlays(actor, message, assists);
   await consumeArmedCamera(actor);
+  await fireUseTriggers(actor, attackItem, { context: rollContext, roll, options });
   return message;
 }
 

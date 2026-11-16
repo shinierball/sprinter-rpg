@@ -636,7 +636,28 @@ export const COG_CLASSES = [
         "archetype.barbarian",
         "archetype.bard",
         "kind.class",
-        "rule.popularity.performance_after_kill"
+        "perk.popularity.performance_after_kill"
+      ],
+      "popularityTriggers": [
+        {
+          "label": "Crowd Work",
+          "event": "amazing",
+          "value": 1,
+          "condition": {
+            "all": [
+              "situation.after_kill"
+            ]
+          }
+        }
+      ],
+      "eventTriggers": [
+        {
+          "label": "Victory Lap",
+          "event": "kill",
+          "kind": "check",
+          "skill": "performance",
+          "oncePer": "combat"
+        }
       ],
       "grants": [
         {
@@ -1249,8 +1270,8 @@ export const COG_CLASSES = [
         "archetype.bard",
         "archetype.merchant",
         "kind.class",
-        "rule.store_discount",
-        "rule.coin_interest"
+        "perk.store_discount",
+        "perk.coin_interest"
       ],
       "grants": [
         {
@@ -1350,8 +1371,8 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.bard",
         "kind.class",
-        "rule.immunity_disease",
-        "rule.manager_benefit"
+        "perk.immunity_disease",
+        "perk.manager_benefit"
       ],
       "grants": [
         {
@@ -1636,7 +1657,31 @@ export const COG_CLASSES = [
         "archetype.bard",
         "archetype.rogue",
         "kind.class",
-        "rule.cog.declare_sonic_damage"
+        "perk.cog.declare_sonic_damage"
+      ],
+      "grantedEffects": [
+        {
+          "type": "buff",
+          "name": "Sonic Set",
+          "img": "icons/svg/aura.svg",
+          "system": {
+            "identifier": "sonic-set",
+            "activation": {
+              "enabled": true,
+              "window": {
+                "unit": "combat",
+                "value": 1
+              }
+            },
+            "damageModifiers": [
+              {
+                "mode": "retype",
+                "label": "Sonic Set",
+                "damageType": "Sonic"
+              }
+            ]
+          }
+        }
       ],
       "grants": [
         {
@@ -2342,7 +2387,7 @@ export const COG_CLASSES = [
           "kind": "skill",
           "mode": "fixed",
           "identifier": "party-regeneration",
-          "label": "",
+          "label": "Party Regeneration",
           "rank": 1
         }
       ]
@@ -2476,8 +2521,8 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.druid",
         "kind.class",
-        "rule.cog.herding_tools_only",
-        "rule.cog.shepherd_herd_dr"
+        "perk.cog.herding_tools_only",
+        "perk.cog.shepherd_herd_dr"
       ],
       "grants": [
         {
@@ -2591,7 +2636,7 @@ export const COG_CLASSES = [
         "archetype.fighter",
         "kind.class",
         "access.guild.weapon_training",
-        "rule.floor_coupon.weapon_training"
+        "perk.floor_coupon.weapon_training"
       ],
       "grants": [
         {
@@ -2768,7 +2813,7 @@ export const COG_CLASSES = [
         "archetype.fighter",
         "kind.class",
         "access.guild.weapon_training",
-        "rule.floor_coupon.weapon_training",
+        "perk.floor_coupon.weapon_training",
         "access.club.outlaws"
       ],
       "grants": [
@@ -2869,8 +2914,8 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.fighter",
         "kind.class",
-        "rule.no_fall_damage",
-        "rule.manager_benefit"
+        "perk.no_fall_damage",
+        "perk.manager_benefit"
       ],
       "grants": [
         {
@@ -3071,8 +3116,36 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.fighter",
         "kind.class",
-        "rule.cog.monster_truck_momentum",
-        "rule.cog.monster_truck_payback"
+        "perk.cog.monster_truck_momentum",
+        "perk.cog.monster_truck_payback"
+      ],
+      "grantedEffects": [
+        {
+          "type": "buff",
+          "name": "Momentum",
+          "img": "icons/svg/aura.svg",
+          "system": {
+            "identifier": "momentum",
+            "activation": {
+              "enabled": true,
+              "window": {
+                "unit": "combat",
+                "value": 1
+              }
+            },
+            "defenseModifiers": [
+              {
+                "kind": "healthBarAdd",
+                "label": "Momentum",
+                "value": 1,
+                "scaleBy": {
+                  "source": "move",
+                  "per": 0.1
+                }
+              }
+            ]
+          }
+        }
       ],
       "grants": [
         {
@@ -3128,6 +3201,14 @@ export const COG_CLASSES = [
         {
           "kind": "resistance",
           "damageType": "Force"
+        },
+        {
+          "kind": "reflect",
+          "label": "Payback",
+          "value": 2,
+          "flat": 1,
+          "dice": "1d2",
+          "oncePer": "combat"
         }
       ],
       "startingItems": [
@@ -3433,7 +3514,7 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.mage",
         "kind.class",
-        "rule.cog.aiming_for_ice_spells"
+        "perk.cog.aiming_for_ice_spells"
       ],
       "grants": [
         {
@@ -3709,8 +3790,8 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.mage",
         "kind.class",
-        "rule.cog.extended_spell_duration",
-        "rule.cog.unnoticed_spells"
+        "perk.cog.extended_spell_duration",
+        "perk.cog.unnoticed_spells"
       ],
       "grants": [
         {
@@ -3796,8 +3877,24 @@ export const COG_CLASSES = [
         "archetype.mage",
         "archetype.necromancer",
         "kind.class",
-        "rule.cog.question_corpse",
-        "rule.cog.undead_kill_heal"
+        "perk.cog.question_corpse",
+        "perk.cog.undead_kill_heal"
+      ],
+      "eventTriggers": [
+        {
+          "label": "Heal on Undead Kill",
+          "event": "kill",
+          "kind": "heal",
+          "value": 1,
+          "oncePer": "combat",
+          "limit": 5,
+          "condition": {
+            "all": [
+              "subject.kind.mob",
+              "subject.creature.undead"
+            ]
+          }
+        }
       ],
       "grants": [
         {
@@ -4115,7 +4212,27 @@ export const COG_CLASSES = [
         "archetype.bard",
         "archetype.monk",
         "kind.class",
-        "rule.kill_bounty"
+        "perk.kill_bounty"
+      ],
+      "eventTriggers": [
+        {
+          "label": "Kill Bounty",
+          "event": "kill",
+          "kind": "gold",
+          "value": 1,
+          "scaleBy": {
+            "source": "floor"
+          },
+          "condition": {
+            "all": [
+              "subject.kind.mob"
+            ],
+            "any": [
+              "id.skill.pugilism",
+              "id.skill.unarmed-combat"
+            ]
+          }
+        }
       ],
       "grants": [
         {
@@ -4219,8 +4336,20 @@ export const COG_CLASSES = [
         "archetype.druid",
         "archetype.monk",
         "kind.class",
-        "rule.cog.focused_healing",
+        "perk.cog.focused_healing",
         "access.club.champions"
+      ],
+      "damageModifiers": [
+        {
+          "mode": "healAdd",
+          "label": "Focused Healing",
+          "value": 1,
+          "condition": {
+            "all": [
+              "situation.single_target"
+            ]
+          }
+        }
       ],
       "grants": [
         {
@@ -4530,8 +4659,8 @@ export const COG_CLASSES = [
         "archetype.fighter",
         "archetype.paladin",
         "kind.class",
-        "rule.cog.cavalier_code_catcher",
-        "rule.cog.cavalier_mount_redirect",
+        "perk.cog.cavalier_code_catcher",
+        "perk.cog.cavalier_mount_redirect",
         "access.club.champions"
       ],
       "grants": [
@@ -4736,8 +4865,25 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.rogue",
         "kind.class",
-        "rule.kill_bounty",
+        "perk.kill_bounty",
         "access.club.outlaws"
+      ],
+      "eventTriggers": [
+        {
+          "label": "Kill Bounty",
+          "event": "kill",
+          "kind": "gold",
+          "value": 1,
+          "scaleBy": {
+            "source": "floor"
+          },
+          "condition": {
+            "all": [
+              "subject.kind.mob",
+              "weaponClass.melee"
+            ]
+          }
+        }
       ],
       "grants": [
         {
@@ -4851,7 +4997,7 @@ export const COG_CLASSES = [
       "tags": [
         "archetype.rogue",
         "kind.class",
-        "rule.limb_regeneration"
+        "perk.limb_regeneration"
       ],
       "grants": [
         {
@@ -5329,7 +5475,28 @@ export const COG_CLASSES = [
         "archetype.fighter",
         "archetype.rogue",
         "kind.class",
-        "rule.popularity.performance_after_kill"
+        "perk.popularity.performance_after_kill"
+      ],
+      "popularityTriggers": [
+        {
+          "label": "Crowd Work",
+          "event": "amazing",
+          "value": 1,
+          "condition": {
+            "all": [
+              "situation.after_kill"
+            ]
+          }
+        }
+      ],
+      "eventTriggers": [
+        {
+          "label": "Victory Lap",
+          "event": "kill",
+          "kind": "check",
+          "skill": "performance",
+          "oncePer": "combat"
+        }
       ],
       "grants": [
         {
@@ -5449,8 +5616,7 @@ export const COG_CLASSES = [
         "archetype.bard",
         "archetype.fighter",
         "kind.class",
-        "rule.cog.cooked_meal_buff",
-        "rule.cog.help_bonus_die"
+        "perk.cog.cooked_meal_buff"
       ],
       "grants": [
         {
@@ -5514,6 +5680,19 @@ export const COG_CLASSES = [
           },
           "category": "weapon",
           "label": "Weapon Skill 1 (Rank 2)"
+        }
+      ],
+      "checkModifiers": [
+        {
+          "kind": "assist",
+          "option": "add",
+          "dice": "1d4",
+          "label": "Helpful Advice",
+          "condition": {
+            "all": [
+              "id.skill.intervene"
+            ]
+          }
         }
       ],
       "defenseModifiers": [

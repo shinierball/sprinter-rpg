@@ -11,6 +11,8 @@ import { cooldownField } from './timing-fields.mjs';
 export function activationField(fields) {
   return new fields.SchemaField({
     enabled: new fields.BooleanField({ initial: false }),
+    // A `hit` window that opens by itself at the first hit once its cooldown is ready (never asks)
+    auto: new fields.BooleanField({ initial: false }),
     cooldown: cooldownField(fields),
     window: new fields.SchemaField({
       unit: new fields.StringField({ initial: 'use' }),

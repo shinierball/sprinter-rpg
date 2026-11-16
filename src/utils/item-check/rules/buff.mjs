@@ -8,7 +8,7 @@ import { rowFindings } from '../rows.mjs';
 import { classifyBuff } from '../../effects/buff-classify.mjs';
 import { liveRows } from '../read.mjs';
 
-const OTHER_ROW_ARRAYS = ['vehicleModifiers', 'manaCostModifiers', 'recoveryModifiers', 'statSubstitutions', 'popularityTriggers', 'senses', 'craftModifiers'];
+const OTHER_ROW_ARRAYS = ['vehicleModifiers', 'manaCostModifiers', 'recoveryModifiers', 'statSubstitutions', 'popularityTriggers', 'eventTriggers', 'senses', 'craftModifiers'];
 
 /** Whether a buff does anything besides the rows `classifyBuff` reads. */
 function hasOtherEffect(item) {
@@ -19,6 +19,13 @@ function hasOtherEffect(item) {
     || ['arms', 'legs', 'hands'].some((limb) => Number(limbs[limb]) !== 0 && limbs[limb] !== undefined)
     || Boolean(sys.light?.bright > 0 || sys.light?.dim > 0);
 }
+
+/** A Rank raise row that reads the Rank of its carrier does nothing on an item that is not a buff (a buff alone has a Rank). */
+registerItemRule('*', (item) => {
+  if (item.type === 'buff') return [];
+  const rows = Array.isArray(item.system?.grants) ? item.system.grants : [];
+  return rows.some((g) => g?.kind === 'rank_raise' && g.floorFrom === 'rank') ? [finding('grant.floor-from-rank', 'warning', 'system.grants')] : [];
+});
 
 registerItemRule('buff', (item, ctx) => {
   const out = [];

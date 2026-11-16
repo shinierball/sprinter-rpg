@@ -3,6 +3,7 @@
  * dialogs and the redraws to `applyAiContentChange`; the logic is in `src/content/ai-content.mjs`.
  */
 import { SYSTEM_ID } from '../constants.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { applyAiContentChange, noteAppliedAiLevel } from '../content/ai-content.mjs';
 import { maybePromptCleanup } from '../content/theme-cleanup.mjs';
@@ -27,7 +28,9 @@ async function confirmEmpty(empty) {
 }
 
 /** The `onChange` of the `aiContent` setting. `userId` is the user who changed it; only that client asks and offers the cleanup. */
-export async function onAiContentChange(value, _options, userId) {
+export async function onAiContentChange(value, options, userId) {
+  // A migration that converts the stored level asks nothing and offers no cleanup.
+  if (isMigrationWrite(options)) return;
   const mine = !userId || userId === globalThis.game?.user?.id;
   await applyAiContentChange({
     level: value,

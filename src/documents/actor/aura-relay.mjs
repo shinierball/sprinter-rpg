@@ -55,8 +55,8 @@ export function findAuraEffects(actor, auraUuid) {
   return { hasBars, itemIds };
 }
 
-async function applyGrantTempBars(actor, { count, hpPerSlot, source, sourceItemUuid, element = '' }) {
-  await actor.grantTempBars({ count, hpPerSlot, source, sourceUuid: sourceItemUuid, element });
+async function applyGrantTempBars(actor, { count, hpPerSlot, source, sourceItemUuid, element = '', passTag = '' }) {
+  await actor.grantTempBars({ count, hpPerSlot, source, sourceUuid: sourceItemUuid, element, passTag });
 }
 
 async function applyCreateEffects(actor, items) {
@@ -74,6 +74,7 @@ async function applyClearEffects(actor, auraUuid) {
         'system.attributes.hp.tempBars.currentSlotHp': 0,
         'system.attributes.hp.tempBars.source': '',
         'system.attributes.hp.tempBars.sourceUuid': '',
+        'system.attributes.hp.tempBars.passTag': '',
         'system.attributes.hp.temp': 0
       });
     }
@@ -106,8 +107,8 @@ registerRelayAction(AURA_GRANT_TEMP_BARS, {
     const actor = resolveActorByUuid(p.actorUuid);
     if (!actor) throw new Error(`Aura relay: actor ${p.actorUuid} not found.`);
     const { source } = auraConfigOf(p.sourceItemUuid);
-    const { slots, hpPerSlot, element } = computeAuraTempBars(source.parent, source);
-    await applyGrantTempBars(actor, { count: slots, hpPerSlot, source: source.name, sourceItemUuid: source.uuid, element });
+    const { slots, hpPerSlot, element, passTag } = computeAuraTempBars(source.parent, source);
+    await applyGrantTempBars(actor, { count: slots, hpPerSlot, source: source.name, sourceItemUuid: source.uuid, element, passTag });
   }
 });
 
@@ -154,9 +155,9 @@ registerRelayAction(AURA_CLEAR_EFFECTS, {
  * @returns {Promise<boolean>} false when a non-owner could not reach a GM
  */
 export async function grantAllyTempBars(actor, sourceItem) {
-  const { slots, hpPerSlot, element } = computeAuraTempBars(sourceItem.parent, sourceItem);
+  const { slots, hpPerSlot, element, passTag } = computeAuraTempBars(sourceItem.parent, sourceItem);
   if (slots <= 0 || hpPerSlot <= 0) return true;
-  const params = { count: slots, hpPerSlot, source: sourceItem.name, sourceItemUuid: sourceItem.uuid || '', element };
+  const params = { count: slots, hpPerSlot, source: sourceItem.name, sourceItemUuid: sourceItem.uuid || '', element, passTag };
   if (canWriteActor(actor) || !actor.uuid) {
     await applyGrantTempBars(actor, params);
     return true;

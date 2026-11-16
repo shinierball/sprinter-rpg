@@ -90,16 +90,16 @@ export function difficultyFor(spec, { floor = 0 } = {}) {
   };
 }
 
-/** The formula button a card puts first: a stat card a Stat Check, a skill card Opposed when it has a target, else Unopposed. */
+/** The formula button a card puts first: a stat card (or a Stat Check skill's) a Stat Check, a skill card Opposed when it has a target, else Unopposed. */
 export function defaultModeFor(record) {
-  if (record?.kind === 'stat') return 'stat';
+  if (record?.kind === 'stat' || record?.statOnly === true) return 'stat';
   return Array.isArray(record?.targets) && record.targets.length ? 'opposed' : 'unopposed';
 }
 
-/** Whether the GM may put a Difficulty on this card: not a contest leg, vehicle, patron or Evade card, nor a crafting check. */
+/** Whether the GM may put a Difficulty on this card: not a contest leg, vehicle, patron, pet or Evade card, nor a crafting check. */
 export function canSetDifficulty(record, flags = {}) {
   if (!record || !['skill', 'stat', 'attack', 'spell'].includes(record.kind)) return false;
-  if (record.contest || record.vehicle || record.patron || record.evade) return false;
+  if (record.contest || record.vehicle || record.patron || record.pet || record.evade) return false;
   return !flags?.craft;
 }
 
@@ -174,6 +174,18 @@ export function standingStampFor({ kind, rollerType, hasOwnDc = false, floor = 0
   const worked = difficultyFor({ mode: standing.mode, value: standing.value, stat: standing.stat, foe: { uuid: standing.foeUuid, name: standing.foeName, mod: standing.mod } }, { floor });
   if (!worked) return null;
   return { difficulty: { ...worked, standing: true, by: globalThis.game?.user?.id ?? '', at: Date.now() }, dc: worked.value };
+}
+
+/**
+ * What a roll asked to be born with a Difficulty is given (`options.difficulty`, a spec as `difficultyFor` reads it: an
+ * after-kill check asks for Unopposed): the `difficulty` record and its number on the Floor of the roll, or null for no spec
+ * or one that works out to nothing. Not flagged `standing`.
+ * @returns {{ difficulty: object, dc: number }|null}
+ */
+export function requestedStampFor(spec, { floor = 0 } = {}) {
+  const worked = spec && typeof spec === 'object' ? difficultyFor(spec, { floor }) : null;
+  if (!worked) return null;
+  return { difficulty: { ...worked, standing: false, by: globalThis.game?.user?.id ?? '', at: Date.now() }, dc: worked.value };
 }
 
 /** Count one more card under the standing Difficulty (a display number: only a GM's client writes it). */

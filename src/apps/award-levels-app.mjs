@@ -5,6 +5,8 @@
 import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { getLevelAwardPresets, levelsForPreset } from '../data/level-awards.mjs';
+import { petLevelsFor } from '../data/rules/pet-rules.mjs';
+import { petsOwnedBy } from '../utils/pet/pet-lookup.mjs';
 import { runAwardLevels } from './advancement-batch.mjs';
 
 const CUSTOM = 'custom';
@@ -83,6 +85,17 @@ export class COGAwardLevelsApp extends COGToolApp {
     return Math.max(0, int(this.amount) ?? 0);
   }
 
+  /** The crawler's pets that follow these Levels (a dedicated mount never levels), with their Level before and after. */
+  #petsFollowing(actor, crawlerLevels) {
+    return petsOwnedBy(actor)
+      .filter(p => !p.system?.details?.isMount)
+      .map(p => {
+        const from = Number(p.system?.details?.level) || 1;
+        return { id: p.id, name: p.name, from, to: petLevelsFor({ petLevel: from, crawlerLevels }).newLevel };
+      })
+      .filter(p => p.to > p.from);
+  }
+
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const preset = this.preset;
@@ -103,7 +116,8 @@ export class COGAwardLevelsApp extends COGToolApp {
         name: a.name,
         level: Number(a.system?.details?.level) || 1,
         checked: this.selectedIds.has(a.id),
-        gain: levels === null ? '?' : `+${levels}`
+        gain: levels === null ? '?' : `+${levels}`,
+        pets: levels ? this.#petsFollowing(a, levels) : []
       };
     });
     context.selectedCount = this.selectedIds.size;

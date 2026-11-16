@@ -1,4 +1,5 @@
 import { resolveScalar, scaledNumber, describeScale } from '../roll/scalars.mjs';
+import { SECONDS_PER_HOUR, DAY_HOURS } from './day-clock.mjs';
 
 /**
  * Timing: the one shape cooldowns and durations share,
@@ -16,9 +17,7 @@ export const NEXT_ACTION_UNIT = 'next_action';
 
 /** A round is 10 seconds (a combat round, or 10 seconds outside combat). */
 export const SECONDS_PER_ROUND = 10;
-export const SECONDS_PER_HOUR = 3600;
-/** A day is 30 floor-clock hours, not 24 (user decision; the grind day). */
-export const DAY_HOURS = 30;
+export { SECONDS_PER_HOUR, DAY_HOURS };
 
 /** The index of the day a world time (seconds) falls in; the AI Favor bar lasts while it stays the same (E6.10 D-C7). */
 export function dayIndex(seconds) {
@@ -79,8 +78,8 @@ for (const def of [
   { id: 'minutes', label: 'minutes', kind: 'time', seconds: 60, use: BOTH },
   { id: 'hours', label: 'hours', kind: 'time', seconds: SECONDS_PER_HOUR, use: BOTH },
   { id: 'day', label: 'days', kind: 'time', seconds: DAY_HOURS * SECONDS_PER_HOUR, use: BOTH },
-  { id: 'scene', label: 'scene (combat)', kind: 'period', token: 'scene', use: ['cooldown'] },
-  { id: 'floor', label: 'floor', kind: 'period', token: 'floor', use: ['cooldown'] },
+  { id: 'scene', label: 'scene (combat)', kind: 'period', token: 'scene', use: BOTH },
+  { id: 'floor', label: 'floor', kind: 'period', token: 'floor', use: BOTH },
   { id: 'short_rest', label: 'short rest', kind: 'rest', level: 1, use: BOTH },
   { id: 'long_rest', label: 'long rest', kind: 'rest', level: 2, use: BOTH },
   { id: 'full_day_rest', label: "full day's rest", kind: 'rest', level: 3, use: BOTH },

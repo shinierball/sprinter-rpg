@@ -68,10 +68,11 @@ function typeChips(selected) {
  * and the weapon builder's damage step both read it from here.
  * @param {object} weaponSystem the weapon's `system`
  * @param {object} [resolver] the Skill catalogs (default: this world's)
+ * @param {object} [pick] the listed-Skill entry to read (a mob holder's own pick); default the first this world has
  * @returns {{ readout: Array<{ rank: number, untrained: boolean, text: string, label: string }>, readoutEmpty: boolean }}
  */
-export function weaponReadoutContext(weaponSystem, resolver = worldSkillResolver()) {
-  const lines = rankReadout(weaponSystem, resolver);
+export function weaponReadoutContext(weaponSystem, resolver = worldSkillResolver(), pick = undefined) {
+  const lines = rankReadout(weaponSystem, resolver, undefined, pick);
   return {
     readoutEmpty: lines.every((line) => !line.text),
     readout: lines.map((line) => ({ ...line, label: format('COG.WeaponBuilder.Readout.Rank', { rank: line.rank }) }))
@@ -107,7 +108,9 @@ export function buildWeaponContext(context, item, { resolver = worldSkillResolve
   const chips = typeChips(selectedTags);
   const skillTags = skillWeaponTags(sys, resolver, tags);
 
-  Object.assign(context, weaponReadoutContext(sys, resolver));
+  // The Rank ladder is the Skill's: a mob that does not own a listed Skill has no ladder to show
+  Object.assign(context, weaponReadoutContext(sys, resolver, holder ? found ?? undefined : undefined));
+  context.readoutHidden = Boolean(mobLacks);
   context.weapon = {
     title: localize(isAttack ? 'COG.Attack.Sheet.Title' : 'COG.GearSheet.Weapon.Title'),
     typeOptional: isAttack,

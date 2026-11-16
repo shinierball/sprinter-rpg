@@ -50,11 +50,16 @@ function rollSummaryOf(arrayKey) {
   return (row) => (isSentenceRollKind(arrayKey, row) ? getRowKind(arrayKey, kindOf(arrayKey, row)).summarize(row) : rollSummary(row));
 }
 
-const SUMMARIES = Object.freeze({ damageModifiers: damageSummary, defenseModifiers: defenseSummary, attackModifiers: rollSummaryOf('attackModifiers'), checkModifiers: rollSummaryOf('checkModifiers'), craftModifiers: craftSummary, vehicleModifiers: vehicleSummary });
+/** An event trigger row's summary: its kind's `summarize` ("Heal 1 slot on kill, up to 5 a combat"), else its label. */
+function eventSummary(row) {
+  return getRowKind('eventTriggers', kindOf('eventTriggers', row))?.summarize?.(row) || row.label || 'Event trigger';
+}
+
+const SUMMARIES = Object.freeze({ eventTriggers: eventSummary, damageModifiers: damageSummary, defenseModifiers: defenseSummary, attackModifiers: rollSummaryOf('attackModifiers'), checkModifiers: rollSummaryOf('checkModifiers'), craftModifiers: craftSummary, vehicleModifiers: vehicleSummary });
 
 /**
  * One row's summary whether or not it is disabled (the row editor's "Reads as" line explains a disabled row too).
- * @param {'damageModifiers'|'defenseModifiers'|'attackModifiers'|'checkModifiers'|'craftModifiers'|'vehicleModifiers'} arrayKey
+ * @param {'damageModifiers'|'defenseModifiers'|'attackModifiers'|'checkModifiers'|'craftModifiers'|'vehicleModifiers'|'eventTriggers'} arrayKey
  * @param {object} row
  * @returns {string}
  */

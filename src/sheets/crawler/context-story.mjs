@@ -10,6 +10,8 @@ import { STORY_TRAITS, storyTableView } from '../../data/rules/background-table-
 import { DEFAULT_SIZE, sizeName } from '../../data/sizes.mjs';
 import { vehicleKindInfo } from '../../data/rules/vehicle-rules.mjs';
 import { driveContext } from '../vehicle/drive-context.mjs';
+import { PET_ATTITUDES, sanitizePetAttitude } from '../../data/rules/pet-rules.mjs';
+import { petLimitFor, tamingReadout } from '../../documents/actor/pet-checks.mjs';
 
 /** A vehicle kind's label, localized when the i18n service is up. */
 const vehicleKindLabel = (id) => {
@@ -70,8 +72,13 @@ export function prepareStory(context, actor) {
     isRideable: typeof p.canBeRiddenBy === 'function' ? p.canBeRiddenBy(actor) : false,
     isRidden: p.system?.details?.riderId === actor.id,
     riderName: p.getRiderActor?.()?.name || '',
+    attitudeLabel: PET_ATTITUDES[sanitizePetAttitude(p.system?.details?.attitude)].label,
+    taming: tamingReadout(p),
     actor: p
   }));
+
+  // "Pets 1/1": the pets counted against the limit (a dedicated mount is not one).
+  context.petCountLabel = `Pets ${context.bondedPets.filter((p) => p.actor?.system?.details?.isMount !== true).length}/${petLimitFor(actor)}`;
 
   // The vehicle this actor is aboard (bonded or not) and the state of each bonded vehicle's row.
   const current = vehicleOf(actor);

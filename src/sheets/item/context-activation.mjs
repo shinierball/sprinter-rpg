@@ -37,6 +37,9 @@ export function buildActivationContext(context, item) {
   const stored = item.system?.activation ?? {};
   context.activationView = {
     enabled: activation.enabled,
+    // only a `hit` window can open by itself
+    showAuto: activation.window.unit === 'hit',
+    auto: activation.auto,
     unit: {
       name: 'system.activation.window.unit',
       options: ACTIVATION_WINDOW_UNITS.map((value) => ({ value, label: unitLabel(value), selected: value === activation.window.unit }))

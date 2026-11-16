@@ -55,7 +55,9 @@ export function buildDialogContext(model, prefilled) {
     checked: ticked.has(o.tag),
     used: o.used === true,
     fromText: o.source && o.source !== o.label ? t('From', { source: o.source }) : '',
-    readsText: o.reads ? t('ReadsAs', { text: o.reads }) : ''
+    readsText: o.reads ? t('ReadsAs', { text: o.reads }) : '',
+    suggested: o.detected === 'yes',
+    detectedText: typeof o.note === 'string' ? o.note : ''
   });
   const isDamage = model.mode === 'damage';
   // The weapon's Skills in list order; the remembered (else the default) one is selected. Shown from two up.
@@ -92,7 +94,7 @@ export function buildDialogContext(model, prefilled) {
       none: t('None'), noneDesc: t('NoneDesc'), aiFavor: t('AiFavor', { n: model.aiFavorIfNone }),
       untrained: t('Untrained'), addAnother: t('AddAnother'), variantNormal: t('VariantNormal'), used: t('Used'),
       skill: attackText('COG.Attack.Skill.Label'), skillHint: attackText('COG.Attack.Skill.Hint'), skillChanged: attackText('COG.Attack.Skill.Changed'),
-      skipHint: t('SkipHint'), cameras: cameraText('COG.Cameras.Title'), camerasHint: cameraText('COG.Cameras.Hint')
+      skipHint: t('SkipHint'), suggested: attackText('COG.AttackSituation.Suggested'), cameras: cameraText('COG.Cameras.Title'), camerasHint: cameraText('COG.Cameras.Hint')
     }
   };
 }

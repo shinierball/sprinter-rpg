@@ -58,6 +58,25 @@ function advanceView(skill, rank) {
 }
 
 /**
+ * The grind-progress fields of a skill or spell row (hours invested against the Rank's requirement, the pool buttons'
+ * enabled states). One function for both row kinds; the strip partial reads them.
+ */
+function grindView(item, rank, context) {
+  const reqHours = getRequiredGrindingHours(rank);
+  const investedHours = Number(item.system?.investedHours ?? item.system?.grindHours) || 0;
+  return {
+    requiredGrindHours: reqHours,
+    advancementTarget: getAdvancementTarget(rank),
+    investedHours,
+    neededHours: Math.max(0, reqHours - investedHours),
+    canAdvance: investedHours >= reqHours,
+    canAddHour: context.bankedGrindHours > 0 && investedHours < reqHours,
+    canSubHour: investedHours > 0,
+    progressPct: Math.min(100, Math.round((investedHours / Math.max(1, reqHours)) * 100))
+  };
+}
+
+/**
  * Sheet-only fields on an owned skill (grinding progress, damage formula). Ranks come from
  * `BaseActorDataModel.prepareDerivedItemRanks`; nothing here writes `skill.system`.
  */
@@ -73,24 +92,15 @@ function decorateOwnedSkill(skill, actor, context) {
     return;
   }
   const baseRank = Number(skill.system?.rank) || 0;
-  const reqHours = getRequiredGrindingHours(baseRank);
   // A stored Rank above what acts (derived in `deriveSkillRanks`) is shown with a badge saying when it comes online
   const inactiveHighRank = (Number(skill.storedRank) || 0) > (Number(skill.baseRank) || 0);
-  const investedHours = Number(skill.system?.investedHours ?? skill.system?.grindHours) || 0;
   Object.assign(skill, {
     isChecked: Boolean(skill.system?.checked),
     highRankBadge: inactiveHighRank ? skillText('COG.Skill.HighRankBadge', {}) : '',
     highRankTip: inactiveHighRank ? skillText('COG.Skill.HighRankTip', { rank: skill.storedRank, floor: HIGH_RANK_FLOOR }) : '',
     isUnusable: isSkillUnusable(skill),
     ...advanceView(skill, baseRank),
-    requiredGrindHours: reqHours,
-    advancementTarget: getAdvancementTarget(baseRank),
-    investedHours,
-    neededHours: Math.max(0, reqHours - investedHours),
-    canAdvance: investedHours >= reqHours,
-    canAddHour: context.bankedGrindHours > 0 && investedHours < reqHours,
-    canSubHour: investedHours > 0,
-    progressPct: Math.min(100, Math.round((investedHours / Math.max(1, reqHours)) * 100))
+    ...grindView(skill, baseRank, context)
   });
   const dmg = actor.getSkillDamageData(skill);
   skill.hasDamage = dmg.hasDamage;
@@ -236,6 +246,11 @@ export function prepareSkillsAndSpells(context, actor) {
   }
 
   for (const spell of context.spells) {
+    if (!spell.isGranted) {
+      const rank = Number(spell.system?.rank) || 0;
+      spell.isChecked = Boolean(spell.system?.checked);
+      Object.assign(spell, advanceView(spell, rank), grindView(spell, rank, context));
+    }
     if (spell.isGranted) {
       const mod = context.system.abilities?.[spell.system?.stat || 'int']?.mod ?? 0;
       spell.statMod = mod;

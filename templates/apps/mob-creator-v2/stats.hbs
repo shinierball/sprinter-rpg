@@ -1,0 +1,39 @@
+{{!-- Stats stage. Steppers and Fill are actions without a `name`.  The part root is hidden unless this is the active stage (parts: stage ids in app.mjs). --}}
+<section class="cog-creator-section cog-mobv2-panel" data-stage="stats"{{#unless active}} hidden{{/unless}}>
+  <h3 class="cog-mobv2-title">{{localize titleKey}}</h3>
+  {{#if active}}
+    <div class="cog-mobv2-budget">
+    <span>{{localize 'COG.MobCreator.Stats.Base'}}: <strong>{{budget.base}}</strong></span>
+    <span>{{localize 'COG.MobCreator.Stats.Budget'}}: <strong>{{budget.points}}</strong></span>
+    <span>{{localize 'COG.MobCreator.Stats.Spent'}}: <strong>{{spent}}</strong></span>
+    <span>{{localize 'COG.MobCreator.Stats.Remaining'}}: <strong>{{remaining}}</strong></span>
+    {{#if over}}
+      <span class="cog-badge cog-mobv2-over"><i class="fa-solid fa-triangle-exclamation"></i> {{localize 'COG.MobCreator.Stats.OverBudget'}} (+{{overBy}})</span>
+    {{else}}
+      <span class="cog-badge cog-mobv2-legal"><i class="fa-solid fa-check"></i> {{localize 'COG.MobCreator.Stats.Legal'}}</span>
+    {{/if}}
+  </div>
+  <p class="cog-rule-hint">{{help}}</p>
+  {{#if unspentNote}}<p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{unspentNote}}</p>{{/if}}
+  <div class="cog-mobv2-stats">
+    {{#each stats}}
+      <div class="cog-mobv2-stat">
+        <label for="{{../rootId}}-stat-{{key}}">{{label}}</label>
+        <div class="cog-fsim-stepper">
+          <button type="button" data-action="adjustStat" data-path="{{path}}" data-delta="-1" aria-label="-1">-</button>
+          <input type="number" id="{{../rootId}}-stat-{{key}}" min="1" data-change-action="setField" data-path="{{path}}" data-type="int" value="{{value}}" />
+          <button type="button" data-action="adjustStat" data-path="{{path}}" data-delta="1" aria-label="+1">+</button>
+        </div>
+        <span class="cog-mobv2-mod">{{mod}}</span>
+      </div>
+    {{/each}}
+  </div>
+  <div class="cog-mobv2-fill">
+    <label for="{{rootId}}-fill-focus">{{localize 'COG.MobCreator.Stats.FillFocus'}}</label>
+    <select id="{{rootId}}-fill-focus" data-change-action="setFillFocus">
+      {{#each focusOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+    </select>
+    <button type="button" class="cog-fsim-btn" data-action="fillBudget"><i class="fa-solid fa-scale-balanced"></i> {{localize 'COG.MobCreator.Stats.Fill'}}</button>
+  </div>
+  {{/if}}
+</section>

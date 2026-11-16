@@ -29,6 +29,7 @@ import { PRE_RACE_CLASS_RANK_LIMIT } from '../utils/skill/rank-limits.mjs';
 import { RACE_CLASS_TYPES } from '../utils/document-types.mjs';
 import { isRuleBreak, withRuleBreak } from '../utils/rule-break.mjs';
 import { withFlags } from '../utils/flags.mjs';
+import { isAdvancingType } from '../utils/skill/spells-advance.mjs';
 
 const KINDS = RACE_CLASS_TYPES;
 
@@ -310,7 +311,7 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
     const existing = work.items.find(i => i.type === itemType && isSameOwnedEntry(i, data));
     if (existing) {
       const curRank = Number(existing.system?.rank) || 0;
-      const rank = itemType === 'skill' ? limitRank(existing.name, curRank, curRank + row.rank) : curRank + row.rank;
+      const rank = isAdvancingType({ type: itemType }) ? limitRank(existing.name, curRank, curRank + row.rank) : curRank + row.rank;
       existing.system = { ...existing.system, rank };
       const planned = itemCreates.find(c => c._id === existing._id);
       if (planned) planned.system.rank = rank;
@@ -321,7 +322,7 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
       applied[itemType].push({ id: existing._id, name: existing.name, rank: row.rank, preExistingRank: curRank, [profile.createdKey]: false, isChoice: Boolean(row.choiceId), ...(identifier ? { identifier } : {}) });
       continue;
     }
-    if (itemType === 'skill') data.system.rank = limitRank(data.name, 0, Number(data.system.rank) || 0);
+    if (isAdvancingType({ type: itemType })) data.system.rank = limitRank(data.name, 0, Number(data.system.rank) || 0);
     data._id = ids(data);
     itemCreates.push(data);
     work.items.push(cloneData(data));

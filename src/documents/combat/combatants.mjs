@@ -36,13 +36,24 @@ export function findCombatant(combat, combatantOrId) {
   return (combat?.combatants || []).find(con => con?.id === id) || null;
 }
 
-/** The combatant of `actor` in `combat` (uuid first, since unlinked tokens share an actor id). */
+/**
+ * Whether `combatant` is `actor`'s own. The same actor, or the same uuid, always is. An unlinked token actor (`isToken`)
+ * shares its world actor's id with every sibling token, so it matches by its token id only; any other actor (a crawler, pet
+ * or mercenary, or a world actor) matches by actor id.
+ */
+export function isCombatantOfActor(combatant, actor) {
+  if (!combatant || !actor) return false;
+  if (combatant.actor === actor) return true;
+  if (combatant.actor?.uuid && combatant.actor.uuid === actor.uuid) return true;
+  if (actor.isToken) return Boolean(actor.token?.id) && combatant.tokenId === actor.token.id;
+  return Boolean(actor.id) && (combatant.actorId === actor.id || combatant.actor?.id === actor.id);
+}
+
+/** The combatant of `actor` in `combat` (see `isCombatantOfActor`: an unlinked token actor never gets a sibling's). */
 export function combatantOfActor(combat, actor) {
   if (!combat || !actor) return null;
   const list = Array.from(combat.combatants?.values?.() ?? combat.combatants ?? []);
-  return list.find(c => c?.actor?.uuid && c.actor.uuid === actor.uuid)
-    ?? list.find(c => c?.actorId === actor.id || c?.actor?.id === actor.id)
-    ?? null;
+  return list.find(c => isCombatantOfActor(c, actor)) ?? null;
 }
 
 /**
@@ -55,4 +66,16 @@ export function isMobCombatant(combatant) {
   if (!combatant) return true;
   const actor = combatant.actor || (globalThis.game?.actors?.get ? globalThis.game.actors.get(combatant.actorId) : null);
   return isMobSide({ actor, token: combatant.token });
+}
+
+/**
+ * The combat an actor's cooldowns count rounds in: `game.combat` once it has started (`round >= 1`) and `actor` is
+ * one of its combatants (any actor when none is given). Round 0 (created, not started) is not running.
+ * @returns {{ id: string, round: number }|null}
+ */
+export function activeCombatFor(actor) {
+  const combat = globalThis.game?.combat;
+  if (!combat || !(Number(combat.round) >= 1)) return null;
+  if (actor && !combatantOfActor(combat, actor)) return null;
+  return { id: combat.id, round: Number(combat.round) };
 }

@@ -65,7 +65,6 @@ export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
 
   constructor(options = {}) {
     super(options);
-    this.onSelect = options.onSelect || null;
     this.activeCategory = options.activeCategory || options.activeType || 'all';
     this.activeSlot = options.activeSlot || 'all';
   }
@@ -87,6 +86,7 @@ export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
   /** @override */
   async _prepareContext(options = {}) {
     const context = await super._prepareContext(options);
+    context.pickMode = Boolean(this.onPick);
     const rawItems = await this.getUnifiedItems();
     const canSeeValue = this.actor ? (typeof this.actor.canSeeItemValue === 'function' ? this.actor.canSeeItemValue() : true) : true;
 
@@ -109,7 +109,7 @@ export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
       // The owned copy on the current actor
       const match = item.ownedItem;
       const ownedQty = match ? Number(match.system?.quantity) || 1 : 0;
-      const cooldownBadgeView = match ? cooldownBadge(this.actor, match, now) : null;
+      const cooldownBadgeView = match && this.actor ? cooldownBadge(this.actor, match, now) : null;
 
       // Format badges & summaries
       let badgeLabel;

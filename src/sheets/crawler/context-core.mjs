@@ -17,6 +17,7 @@ import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { BOSS_TIERS, bossActionBudget } from '../../data/mob-creation-rules.mjs';
 import { overlayOf, effectiveRace, storedAttributes } from '../../utils/character/overlay-state.mjs';
 import { isRaceClassLocked, raceClassText, raceClassUnlockFloor } from '../../utils/character/race-class-floor.mjs';
+import { LIFETIME_POTION_LIMIT, potionsTakenOf } from '../../data/rules/potion-rules.mjs';
 import { isRaceOrClass } from '../../utils/document-types.mjs';
 
 const FLOOR_OPTIONS = [
@@ -31,6 +32,18 @@ const MOB_CREATURE_TYPES = [
 ];
 
 /** Select options for a fixed list, plus a "(Custom)" entry when the stored value is not in it. */
+/** The lifetime potion readout: one row per kind with the count taken, the limit and whether the count is past it (p. 226). */
+function potionLimitRows(actor) {
+  const taken = potionsTakenOf(actor);
+  return Object.entries(LIFETIME_POTION_LIMIT).map(([kind, limit]) => {
+    const value = taken[kind];
+    return {
+      kind, path: `system.details.potionsTaken.${kind}`, value, limit, over: value > limit,
+      label: kind === 'stat' ? 'Stat potions' : 'Skill potions'
+    };
+  });
+}
+
 function optionsWithCustom(values, current) {
   const options = values.map(v => ({ value: v, label: v, selected: current.toLowerCase() === v.toLowerCase() }));
   if (current && !options.some(o => o.selected)) {
@@ -194,9 +207,11 @@ export function prepareCoreContext(context, actor) {
   context.crawlerCount = COGActor.getCrawlerCount();
   context.formattedCrawlerCount = Number(context.crawlerCount).toLocaleString();
   context.bankedGrindHours = Number(system?.details?.bankedGrindHours ?? system?.bankedGrindHours) || 0;
+  context.potionLimits = actor.type === 'crawler' ? potionLimitRows(actor) : [];
 
   // Health bar segments: crawlers always have 10 bars; mobs set their own count.
-  const numBars = context.isMob ? Math.max(1, Number(system.attributes?.hp?.bars) || 2) : 10;
+  const derivedBars = Number(system.attributes?.hp?.bars) || 0;
+  const numBars = context.isMob ? Math.max(1, derivedBars || 2) : context.isPet ? Math.max(1, derivedBars || 10) : 10;
   context.hpPerBar = getHpPerBar(actor);
   context.healthSegments = healthSegments(numBars, context.hpPerBar);
   context.fiveHpBars = 5 * context.hpPerBar;

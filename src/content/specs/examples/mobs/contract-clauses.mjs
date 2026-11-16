@@ -25,7 +25,7 @@ export const SPECS = Object.freeze([
         name: 'Mandatory Hug',
         toHitStat: 'str',
         damageStat: 'str',
-        damageDice: '1d6',
+        dice: 1, die: 'd6',
         damageType: 'Bludgeoning',
         onHit: { evadeFail: { degree: 'fail', debuffs: ['mascot-clause'] } },
         effects: 'The clause is on page two of the hug.'
@@ -34,12 +34,12 @@ export const SPECS = Object.freeze([
         name: 'Foam Finger Jab',
         toHitStat: 'str',
         damageStat: 'str',
-        damageDice: '1d8',
+        dice: 1, die: 'd8',
         damageType: 'Bludgeoning'
       }
     ],
     loot: [
-      { name: 'Detachable Foam Hand', quantity: 1, notes: '', description: 'Number one at something. It does not say what.' }
+      { name: 'Detachable Foam Hand', quantity: 1, lootType: 'consumable', description: 'Number one at something. It does not say what.' }
     ]
   },
   {
@@ -51,6 +51,7 @@ export const SPECS = Object.freeze([
     designFloor: 3,
     size: 'medium',
     creatureType: 'Undead',
+    tags: ['creature.undead'],
     abilities: { str: 5, dex: 2, con: 7, int: 2, cha: 2 },
     description: 'Hired by the hour and kept on set after the hour ended. Walks into frame and does not leave it.',
     aiDescription: 'In the background, our extras are still shuffling. Their contracts have a clause. You may want to read it before the next scene.',
@@ -59,13 +60,13 @@ export const SPECS = Object.freeze([
         name: 'Shamble Into Frame',
         toHitStat: 'str',
         damageStat: 'str',
-        damageDice: '1d8',
+        dice: 1, die: 'd8',
         damageType: 'Necrotic',
         onHit: { evadeFail: { degree: 'fail', debuffs: ['background-extra-contract'] } }
       }
     ],
     loot: [
-      { name: 'Call Sheet', quantity: 1, notes: '', description: 'Your name is on it. So is a clause.' }
+      { name: 'Call Sheet', quantity: 1, lootType: 'consumable', description: 'Your name is on it. So is a clause.' }
     ]
   },
   {
@@ -85,13 +86,13 @@ export const SPECS = Object.freeze([
         name: 'Splash Zone',
         toHitStat: 'dex',
         damageStat: 'con',
-        damageDice: '1d6',
+        dice: 1, die: 'd6',
         damageType: 'Poison',
         onHit: { evadeFail: { degree: 'fail', debuffs: ['toxic-sludge-exposure'] } }
       }
     ],
     loot: [
-      { name: 'Empty Barrel', quantity: 1, notes: '', description: 'Labelled "non-toxic" in a different font.' }
+      { name: 'Empty Barrel', quantity: 1, lootType: 'consumable', description: 'Labelled "non-toxic" in a different font.' }
     ]
   }
 ]);

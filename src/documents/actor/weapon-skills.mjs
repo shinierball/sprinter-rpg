@@ -3,7 +3,7 @@ import { matchesTagQuery } from '../../utils/tag/tag-query.mjs';
 import { pickRollSkill } from './roll-skill-policy.mjs';
 import { isTechniqueSkill, isPassiveSkill } from '../../utils/tag/tag-mechanics.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
-import { skillStandIn, buildSkillStandIn } from '../../utils/skill/skill-stand-in.mjs';
+import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
 import { actingRank } from '../../utils/skill/rank-source.mjs';
 import { listedSkillEntries, readableSkillName, skillRefSlug, worldSkillResolver } from '../../utils/skill/weapon-skill-options.mjs';
 
@@ -152,7 +152,7 @@ function weaponSkillOptions(actor, attackItem, skillList, ownedMatches = [], ent
     }
     if (isMob) continue;
     const stand = attackItem?.type === 'attack' && toHitRank > 0
-      ? buildSkillStandIn(actor, entry.identifier, { bonus: toHitRank, sources: [attackItem.name] }, entry.definition)
+      ? skillStandIn(actor, entry.identifier, entry.definition, { bonus: toHitRank, sources: [attackItem.name] })
       : skillStandIn(actor, entry.identifier, entry.definition);
     if (!entry.inWorld) stand.name = readableSkillName(entry.identifier);
     if (!isPassiveSkill(stand)) options.push(optionFor(entry.identifier, stand, entry.inWorld, true));

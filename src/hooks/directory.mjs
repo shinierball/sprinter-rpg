@@ -11,7 +11,8 @@ import { COGRaceCreatorApp } from '../apps/race-creator.mjs';
 import { COGGrindApp } from '../apps/grind-app.mjs';
 import { COGContestTrackerApp } from '../apps/contest-tracker.mjs';
 import { COGTagManager } from '../apps/tag-manager.mjs';
-import { COGMobCreatorApp } from '../apps/mob-creator/mob-creator-app.mjs';
+import { COGMobCreatorV2App } from '../apps/mob-creator-v2/app.mjs';
+import { COGPetCreatorApp } from '../apps/pet-creator.mjs';
 import { COGItemSetupApp } from '../apps/item-setup-app.mjs';
 import { canCreateItems } from '../apps/item-create.mjs';
 import { COGWeaponBuilderApp } from '../apps/weapon-builder/weapon-builder-app.mjs';
@@ -154,8 +155,19 @@ export function injectActorDirectoryButtons(app, html) {
         <i class="fa-solid fa-dragon"></i> Mob Creator
       </button>
     `);
-    onClick(mobBtn, () => COGMobCreatorApp.open(), { stop: true });
+    onClick(mobBtn, () => COGMobCreatorV2App.open(), { stop: true });
     root.querySelector(HEADER_ACTIONS)?.append(mobBtn);
+  }
+
+  // GM: the Create Pet modal beside the Mob Creator
+  if (globalThis.game?.user?.isGM && !root.querySelector('.cog-create-pet-btn-sidebar')) {
+    const petBtn = createElement(root, `
+      <button type="button" class="create-entry cog-create-pet-btn-sidebar" title="Create a Pet or a dedicated Mount">
+        <i class="fa-solid fa-paw"></i> Create Pet
+      </button>
+    `);
+    onClick(petBtn, () => COGPetCreatorApp.open(), { stop: true });
+    root.querySelector(HEADER_ACTIONS)?.append(petBtn);
   }
 
   // 2. Party Progression & Session Hub button

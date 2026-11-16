@@ -79,3 +79,38 @@ registerCoreKind('damageModifiers', {
     return { effect: 'no stat', line: `${row.label}: no stat` };
   }
 });
+
+// Declares all of the matching damage one type: every part the row's condition matches takes that type, so Resistance and
+// Vulnerability at apply see the new type. Two rows: the last one in evaluation order wins. A blank type does nothing.
+registerCoreKind('damageModifiers', {
+  id: 'retype',
+  label: 'COG.Rows.Kind.Damage.retype.Label',
+  hint: 'COG.Rows.Kind.Damage.retype.Hint',
+  fields: ['damageType'],
+  apply: {
+    damage(acc, row, ctx) {
+      const type = typeof row.damageType === 'string' ? row.damageType.trim() : '';
+      if (!type) return false;
+      acc.retype = { type, label: ctx.label || ctx.source?.name || 'Modifier' };
+    }
+  },
+  summarize(row) { return `All Dmg becomes ${row.damageType || '(no type)'}`; }
+});
+
+// A bonus to a heal, in Health Bar slots, read only by the heal amount of a Skill or Spell the owner uses (`healBonusSlots`).
+registerCoreKind('damageModifiers', {
+  id: 'healAdd',
+  label: 'COG.Rows.Kind.Damage.healAdd.Label',
+  hint: 'COG.Rows.Kind.Damage.healAdd.Hint',
+  fields: ['value'],
+  scaled: { value: 'whole' },
+  apply: {
+    heal(acc, row, ctx) {
+      const slots = Number(row.value) || 0;
+      if (!slots) return false;
+      acc.slots += slots;
+      acc.sources.push(ctx.label || ctx.source?.name || 'Modifier');
+    }
+  },
+  summarize(row) { return `${signed(Number(row.value) || 0)} slot(s) on a heal`; }
+});

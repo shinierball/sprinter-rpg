@@ -1,7 +1,7 @@
 /**
  * Pure builder engine for Mob and Boss creation in Sprinter RPG.
  * Compiles a structured authoring spec into a complete Foundry Actor creation payload
- * with embedded items (attacks, traits, spells, loot) and canonical tags.
+ * with embedded items (attacks, quick traits, loot and the spec's own `items[]`) and canonical tags.
  * No UI dependencies; pure functional architecture (CONTRIBUTING §3).
  */
 
@@ -16,15 +16,15 @@ import {
   TIER_TAG_PREFIX,
   MOB_SPEC_TAGS
 } from '../mob-creation-rules.mjs';
-import { AURA_TAGS } from '../../utils/tag/tag-mechanics.mjs';
 import { debuffIdentifier } from '../../utils/identifier.mjs';
 import { registerPayloadDelegate } from './item-payload.mjs';
 import { ON_HIT_MODES } from '../../models/fields/effect-fields.mjs';
 import { mobTokenSize, sanitizeSizeId } from '../sizes.mjs';
 import { normalizeElementTag } from '../tag-vocabulary.mjs';
-import { firstScalar } from '../../utils/first-scalar.mjs';
+import { firstScalar, toStringList } from '../../utils/first-scalar.mjs';
 import { EVADE_FAIL_DEGREES } from '../../utils/attack/evade-degrees.mjs';
 import { listAreaShapes } from '../../utils/area/area-geometry.mjs';
+import { withRuleBreak } from '../../utils/rule-break.mjs';
 
 /**
  * Defensive sanitizer for single values against unexpected arrays or comma-delimited strings.
@@ -50,8 +50,7 @@ function sanitizeNumber(rawVal, fallback = 0) {
 
 /** A de-duplicated list of bare debuff identifiers from a spec value (array or comma-delimited string). */
 function refList(raw) {
-  const list = Array.isArray(raw) ? raw : (typeof raw === 'string' ? raw.split(',') : []);
-  return [...new Set(list.map(debuffIdentifier).filter(Boolean))];
+  return [...new Set(toStringList(raw).map(debuffIdentifier).filter(Boolean))];
 }
 
 const onHitMode = (raw) => (ON_HIT_MODES.includes(raw) ? raw : 'all');
@@ -213,16 +212,11 @@ export function buildAttackItem(atkSpec = {}, { mobLevel = 1, isBoss = false, de
 }
 
 /**
- * The trait types `buildTraitItem` has a branch for, plus `custom` (the generic branch: free tags and a description).
- * The Mob Creator's type select offers exactly these.
- */
-export const MOB_TRAIT_TYPES = Object.freeze(['damageMultiplier', 'aura', 'hot', 'resistance', 'immunity', 'custom']);
-
-/**
- * Compile a trait preset specification into an embedded Buff item document data.
- * Supports: damageMultiplier, aura, hot, resistance, immunity, and generic buffs.
+ * Compile a quick trait row (the Mob Creator's `QUICK_TRAIT_TYPES`) into an embedded Buff item document data.
+ * Supports: damageMultiplier, resistance and immunity; any other type yields null (an ability with other effects is an
+ * `items[]` document).
  * @param {object} traitSpec
- * @returns {object}
+ * @returns {object|null}
  */
 export function buildTraitItem(traitSpec = {}) {
   const type = String(traitSpec.type || '').toLowerCase().trim();
@@ -246,34 +240,6 @@ export function buildTraitItem(traitSpec = {}) {
             multiplier
           }
         ]
-      }
-    };
-    if (traitSpec._id) itemData._id = traitSpec._id;
-    return itemData;
-  }
-
-  if (type === 'aura') {
-    const itemData = {
-      name,
-      type: 'buff',
-      img,
-      system: {
-        tags: [...AURA_TAGS],
-        description: String(traitSpec.effects || traitSpec.description || '')
-      }
-    };
-    if (traitSpec._id) itemData._id = traitSpec._id;
-    return itemData;
-  }
-
-  if (type === 'hot') {
-    const itemData = {
-      name,
-      type: 'buff',
-      img,
-      system: {
-        tags: [MOB_SPEC_TAGS.hot],
-        description: String(traitSpec.effects || traitSpec.description || '')
       }
     };
     if (traitSpec._id) itemData._id = traitSpec._id;
@@ -320,54 +286,7 @@ export function buildTraitItem(traitSpec = {}) {
     return itemData;
   }
 
-  const tags = new Set();
-  if (Array.isArray(traitSpec.tags)) {
-    for (const t of traitSpec.tags) if (t) tags.add(String(t).trim());
-  }
-
-  const itemData = {
-    name,
-    type: 'buff',
-    img,
-    system: {
-      tags: [...tags],
-      description: String(traitSpec.effects || traitSpec.description || '')
-    }
-  };
-  if (traitSpec._id) itemData._id = traitSpec._id;
-  return itemData;
-}
-
-/**
- * Compile a spell specification into an embedded Spell item document data.
- * @param {object} spellSpec
- * @returns {object}
- */
-export function buildSpellItem(spellSpec = {}) {
-  const tags = new Set();
-  if (Array.isArray(spellSpec.tags)) {
-    for (const t of spellSpec.tags) if (t) tags.add(String(t).trim());
-  }
-
-  const itemData = {
-    name: String(spellSpec.name || 'Spell').trim(),
-    type: 'spell',
-    img: spellSpec.img || 'icons/svg/aura.svg',
-    system: {
-      rank: sanitizeNumber(spellSpec.rank, 1),
-      stat: String(spellSpec.stat || 'int').toLowerCase(),
-      manaCost: sanitizeNumber(spellSpec.manaCost, 5),
-      range: String(spellSpec.range || '30 feet'),
-      duration: String(spellSpec.duration || 'Instantaneous'),
-      checkType: String(spellSpec.checkType || 'attack'),
-      baseDamage: normalizeBaseDamage(spellSpec.baseDamage),
-      description: String(spellSpec.description || ''),
-      notes: String(spellSpec.notes || ''),
-      tags: [...tags]
-    }
-  };
-  if (spellSpec._id) itemData._id = spellSpec._id;
-  return itemData;
+  return null;
 }
 
 /**
@@ -392,6 +311,9 @@ export function buildLootItem(lootSpec = {}) {
       tags: [...tags]
     }
   };
+  // Only a row that names them writes them; the model's defaults stand otherwise.
+  if (lootSpec.lootType) itemData.system.lootType = String(lootSpec.lootType);
+  if (lootSpec.value !== undefined) itemData.system.value = sanitizeNumber(lootSpec.value, 0);
   if (lootSpec._id) itemData._id = lootSpec._id;
   return itemData;
 }
@@ -517,14 +439,8 @@ export function buildMobActorData(spec = {}) {
   const traitList = spec.traits || [];
   if (Array.isArray(traitList)) {
     for (const tr of traitList) {
-      if (tr) items.push(buildTraitItem(tr));
-    }
-  }
-
-  // Spells
-  if (Array.isArray(spec.spells)) {
-    for (const spl of spec.spells) {
-      if (spl) items.push(buildSpellItem(spl));
+      const trait = tr ? buildTraitItem(tr) : null;
+      if (trait) items.push(trait);
     }
   }
 
@@ -613,6 +529,8 @@ export function buildMobActorData(spec = {}) {
   };
 
   if (spec._id) payload._id = spec._id;
+  // A mob made over a confirmed Rule Break records it, as every other creator does.
+  if (spec.ruleBreak) payload.flags = withRuleBreak({ flags: spec.flags }, spec.ruleBreakReason).flags;
   return payload;
 }
 

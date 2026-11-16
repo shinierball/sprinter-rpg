@@ -28,7 +28,8 @@ export const TAG_NAMESPACES = {
   skillGroup:   { label: 'Skill Discipline', description: 'Discipline grouping for skills' },
   technique:    { label: 'Combat Technique Target', description: 'Skill targeted by combat techniques' },
   contest:      { label: 'Contest / Opposed Check', description: 'Contested check against target stat or skill' },
-  rule:         { label: 'Special Rule Flag', description: 'Engine mechanics and overrides' },
+  rule:         { label: 'Special Rule Flag', description: 'Engine mechanics and overrides: every tag here carries flags or rows, or a named engine rule reads it' },
+  perk:         { label: 'Perk', description: 'A race, class or benefit perk the engine cannot run: a label with its text, no rows or flags; the GM adjudicates it' },
   resource:     { label: 'Resource Type', description: 'Character resource pools (mana, health bars, temporary bars)' },
   interrupt:    { label: 'Interrupt Effect', description: 'What an interrupt does to the attack that triggered it' },
   trigger:      { label: 'Condition Trigger', description: 'Triggers on critical hit, fumble, or combat condition' },
@@ -62,6 +63,7 @@ export const TAG_NAMESPACES = {
   material:     { label: 'Crafting Material', description: 'Crafting reagents on loot (material.crafting, material.misc_junk); what a used-up consumable leaves behind carries them' },
   crafting:     { label: 'Crafting', description: 'Crafting tables and what a craft is doing: crafting.table.<type> on a table, crafting.attachment.<id> on an attachment, crafting.mode.* in a check\'s context, crafting.coupon.table on a table coupon' },
   vehicle:      { label: 'Vehicle', description: 'Vehicle rules: vehicle.skill.driving / vehicle.skill.chopper on the skills that drive, vehicle.kind.<id> derived on a vehicle, vehicle.upgrade.<id> on gear installed on one, vehicle.check.<id> and vehicle.explosion in a roll\'s context' },
+  pet:          { label: 'Pet', description: 'Pet and mount rules: pet.skill.riding on the skill that rides, pet.skill.handling on the skill that tames, rule.extra-pet on a benefit that allows one more pet, pet.check.<kind> in the context of a pet check, pet.attitude.<id> and pet.origin.<id> derived on a pet, pet.role.<id> and pet.ability.<id> on the buffs that give a pet its role and special abilities' },
   item:         { label: 'Item State', description: 'The state of an item: item.broken (repairable) or item.destroyed (permanent)' },
   custom:       { label: 'Custom User Tag', description: 'User-created tags' }
 };
@@ -124,7 +126,8 @@ export const ENGINE_SITUATIONS = Object.freeze({
   amazingSuccess: 'situation.amazing_success',
   damageEffect: 'situation.damage_effect',
   specialty: 'situation.specialty',
-  intercepting: 'situation.intercepting'
+  intercepting: 'situation.intercepting',
+  singleTarget: 'situation.single_target'
 });
 
 /**
@@ -148,18 +151,56 @@ export const VEHICLE_TAGS = Object.freeze({
   explosion: 'vehicle.explosion',
   check: 'check.vehicle',
   driving: 'situation.driving',
+  riding: 'situation.riding',
   headOn: 'situation.head_on',
-  mountedOnly: 'rule.mounted_only',
+  mountedOnly: 'rule.mounted-only',
   rolePrefix: 'role.',
   rolePilot: 'role.pilot'
+});
+
+/** Pet and mount tags. `skillRiding` marks the skill that rides and `skillHandling` the skill that tames and guides; `extraPet` (rule flag `extra-pet`) lets its bearer keep one more pet; `checkRide` is in the context of a riding check; `pet.attitude.<id>` and `pet.origin.<id>` are derived on a pet; `pet.role.<id>` and `pet.ability.<id>` are authored on the buffs that give a pet its role and special abilities. */
+export const PET_TAGS = Object.freeze({
+  skillRiding: 'pet.skill.riding',
+  skillHandling: 'pet.skill.handling',
+  extraPet: 'rule.extra-pet',
+  checkPrefix: 'pet.check.',
+  checkRide: 'pet.check.ride',
+  mount: 'companion.mount',
+  attitudePrefix: 'pet.attitude.',
+  originPrefix: 'pet.origin.',
+  rolePrefix: 'pet.role.',
+  abilityPrefix: 'pet.ability.'
 });
 
 /** Card outcome condition tags, one per `COG_ROLL_OUTCOMES` id (pending excluded): `outcome.<id>`. */
 export const OUTCOME_TAGS = Object.freeze(Object.fromEntries(
   Object.values(COG_ROLL_OUTCOMES).filter((id) => id !== COG_ROLL_OUTCOMES.PENDING).map((id) => [id, `outcome.${id}`])));
 
+/** The Attack Options line of an Advantage the attacker is owed from an earlier Evade; it carries no row, the roll counts the owed Evade itself. */
+export const EVADE_ADVANTAGE_SITUATION = 'situation.evade_advantage';
+
 /** The `situation.*` `buildRollContext` adds when the roll's actor and its other party are the same size (a roll may also tick it by hand). */
 export const SAME_SIZE_SITUATION = 'situation.same_size';
+
+/**
+ * The two siblings of `situation.same_size`: the other party is ANY size larger or smaller than the roller (a perk that reads
+ * "against a larger foe"). They are not the stock attack reasons `situation.target_larger` / `target_smaller`, which a roll window
+ * ticks only for a gap of `SIZE_GAP_FOR_ADVANTAGE` sizes or more and which carry an Advantage row.
+ */
+export const LARGER_FOE_SITUATION = 'situation.larger_foe';
+export const SMALLER_FOE_SITUATION = 'situation.smaller_foe';
+
+/** The situations the engine judges from the two parties' sizes (never offered as a toggle against a target). */
+export const SIZE_SITUATIONS = Object.freeze([SAME_SIZE_SITUATION, LARGER_FOE_SITUATION, SMALLER_FOE_SITUATION]);
+
+/**
+ * The situation a kill context carries when the victim's Level times 2 is at least the killer's Level (a foe of at least half
+ * the killer's Level). Set by `buildKillContext`; a roll dialog never offers it.
+ */
+export const FOE_HALF_LEVEL_SITUATION = 'situation.foe_half_level';
+
+/** The situation an attack's follow-up check carries (`situation.after_kill`): set only by the button that offers the check. */
+export const AFTER_KILL_SITUATION = 'situation.after_kill';
 
 /**
  * Health fraction steps (percent). An actor at or below N% of its Hit Points carries `resource.health_<N>`, for every N
@@ -187,8 +228,29 @@ export function healthFractionTags(actor) {
   return HEALTH_FRACTION_STEPS.filter(n => fraction <= n / 100).map(healthFractionTag);
 }
 
+/** The context tags of a ranged weapon attack (ranged gear derives `weaponGroup.ranged`); use as `condition.any`, spread, never share the array. */
+export const RANGED_ANY = Object.freeze(['weaponClass.ranged', 'weaponGroup.ranged']);
+
 /** Aiming's rows fire on a ranged attack whose roll ticked the Aiming toggle (ranged gear derives `weaponGroup.ranged`). */
-export const AIMING_CONDITION = Object.freeze({ all: ['situation.aiming'], any: ['weaponClass.ranged', 'weaponGroup.ranged'] });
+export const AIMING_CONDITION = Object.freeze({ all: ['situation.aiming'], any: [...RANGED_ANY] });
+
+/**
+ * The stock attack reasons of the rulebook (pp. 83-85): `situation.*` tags a roll window offers on every attack, each
+ * carrying its own rows and the `universal` flag in the tag catalog. Keys name the reason; values are the tag ids.
+ */
+export const STOCK_SITUATIONS = Object.freeze({
+  inMeleeReach: 'situation.in_melee_reach',
+  cover: 'situation.cover',
+  darkness: 'situation.darkness',
+  dimLight: 'situation.dim_light',
+  severeWeather: 'situation.severe_weather',
+  shiftingGround: 'situation.shifting_ground',
+  higherGround: 'situation.higher_ground',
+  targetLarger: 'situation.target_larger',
+  targetSmaller: 'situation.target_smaller',
+  unseenAttacker: 'situation.unseen_attacker',
+  unseenTarget: 'situation.unseen_target'
+});
 
 /** The one place a tag on the ROW OWNER is spelled for a row's condition: `self.condition.fatigued`. */
 export function selfTag(tag) {
@@ -206,14 +268,14 @@ export function attackerTag(tag) {
 
 /**
  * A tag whose truth can change between the damage roll and an apply: the other party's tags, the
- * Critical Hit and `situation.same_size` (the attacker's size against that target's). A damage row whose condition mentions one is a target row, evaluated per target.
+ * Critical Hit and the size situations (`situation.same_size` and its two siblings: the attacker's size against that target's). A damage row whose condition mentions one is a target row, evaluated per target.
  * @param {string} tag
  * @returns {boolean}
  */
 export function isTargetSensitiveTag(tag) {
   if (splitRoleTag(tag)?.role === 'subject') return true;
   const t = typeof tag === 'string' ? tag.trim() : '';
-  return t === ENGINE_SITUATIONS.criticalHit || t === ENGINE_SITUATIONS.amazingSuccess || t === SAME_SIZE_SITUATION;
+  return t === ENGINE_SITUATIONS.criticalHit || t === ENGINE_SITUATIONS.amazingSuccess || SIZE_SITUATIONS.includes(t);
 }
 
 /** The one place a tag on the OTHER PARTY of a check (the targeted creature) is spelled for a row's condition. */
@@ -404,3 +466,12 @@ export function identityTag(type, identifier) {
   const prefix = ['id', type, ''].join('.');
   return id.startsWith(prefix) ? id : `${prefix}${id}`;
 }
+
+/** The `target.*` tag a buff an item applies has until the author picks another: the caster alone. */
+export const SELF_TARGET_TAG = 'target.self';
+
+/** The loot type of a potion (9.8): a potion carries the derived tag `item.potion` and is limited by Potion Sickness and the lifetime Stat and Skill counts. */
+export const POTION_LOOT_TYPE = 'potion';
+
+/** The tag a potion carries, derived from its loot type. */
+export const POTION_TAG = 'item.potion';

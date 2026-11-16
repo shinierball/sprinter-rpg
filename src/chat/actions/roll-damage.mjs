@@ -2,7 +2,22 @@
  * "Roll Spell Damage" / "Roll Attack Damage" / "Roll Skill Damage" chat buttons.
  */
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { parseRollContext } from '../../utils/roll/roll-context.mjs';
+import { parseRollContext, setContextCrit } from '../../utils/roll/roll-context.mjs';
+import { attackRecordOf } from '../../utils/roll/check-assists.mjs';
+import { gateFailedCheckDamage } from '../../documents/actor/check-damage-gate.mjs';
+
+/**
+ * A kept natural 20 on a skill's check crits its damage too (a Stat Check skill's damage is doubled on one), and a card
+ * rerolled away from 20 does not. The context is returned as it came for anything but a skill check card.
+ * @param {object|null} rollContext the button's parsed context
+ * @param {ChatMessage} [message] the check card
+ * @returns {object|null}
+ */
+function skillCheckCrit(rollContext, message) {
+  if (!rollContext) return rollContext;
+  const record = attackRecordOf(message);
+  return record?.kind === 'skill' ? setContextCrit(rollContext, record.d20 === 20) : rollContext;
+}
 
 /**
  * The roll options the attack card's button carries: its parsed `data-roll-context` (the damage roll inherits the
@@ -13,7 +28,13 @@ import { parseRollContext } from '../../utils/roll/roll-context.mjs';
  * @returns {{ rollContext?: object, sourceMessageId?: string }}
  */
 function rollContextOptions(button, message) {
-  const rollContext = parseRollContext(button?.dataset?.rollContext);
+  let rollContext = parseRollContext(button?.dataset?.rollContext);
+  // A rerolled attack's crit follows the card's current d20, not the face baked into the button when it was rolled.
+  if (rollContext) {
+    const record = attackRecordOf(message);
+    if (record) rollContext = setContextCrit(rollContext, record.d20 === 20);
+  }
+  rollContext = skillCheckCrit(rollContext, message);
   // The damage card remembers the attack message it answers, so its apply can find each target's Evade (E6.3).
   const sourceMessageId = typeof message?.id === 'string' && message.id ? message.id : null;
   return { ...(rollContext ? { rollContext } : {}), ...(sourceMessageId ? { sourceMessageId } : {}) };
@@ -58,6 +79,10 @@ export async function handleRollItemDamage(event, button, message) {
     // The damage reads the card's `attackChoices` snapshot through `sourceMessageId`, never a button attribute.
     const rollOpts = rollContextOptions(button, message);
     if (typeof actor.rollSkillDamage === 'function' && item.type === 'skill') {
+      // A non-attack skill's damage follows its check: past a failed one it asks a Rule Break first.
+      const gate = await gateFailedCheckDamage(message, item);
+      if (!gate.proceed) return null;
+      if (gate.ruleBreak) rollOpts.checkRuleBreak = true;
       return actor.rollSkillDamage(item, rollOpts);
     } else if (typeof actor.rollAttack === 'function') {
       return actor.rollAttack(item, 'damage', rollOpts);

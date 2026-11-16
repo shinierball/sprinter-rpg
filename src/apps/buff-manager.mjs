@@ -45,11 +45,15 @@ export class COGBuffDebuffManager extends CatalogBrowserMixin(COGToolApp) {
     super(options);
     this.targetSlot = options.targetSlot ?? null;
     this.activeTab = options.activeTab || 'all';
+    /** Lists only the buffs carrying a tag that starts with this (the pet role and ability pickers: `pet.role.`, `pet.ability.`). */
+    this.tagPrefix = typeof options.tagPrefix === 'string' ? options.tagPrefix : '';
   }
 
   /** Buffs and debuffs from the registered definitions, world items and the bound actor's own, sorted by type then name. */
-  getUnifiedConditions() {
-    return this.catalogRows();
+  async getUnifiedConditions() {
+    const rows = await this.catalogRows();
+    if (!this.tagPrefix) return rows;
+    return rows.filter((row) => row.type === 'buff' && (row.system?.tags ?? []).some((tag) => tag.startsWith(this.tagPrefix)));
   }
 
   /** @override */
@@ -112,8 +116,14 @@ export class COGBuffDebuffManager extends CatalogBrowserMixin(COGToolApp) {
    * @param {object} itemData
    */
   async applyConditionToActor(itemData) {
-    if (!this.actor) {
+    if (!this.actor && !this.onPick) {
       globalThis.ui?.notifications?.warn('No character sheet open to apply this condition.');
+      return;
+    }
+
+    // Pick mode: the document goes to the caller; no buff slots, no actor.
+    if (this.onPick) {
+      await this.#embed(itemData);
       return;
     }
 
@@ -154,7 +164,7 @@ export class COGBuffDebuffManager extends CatalogBrowserMixin(COGToolApp) {
   }
 
   /** Embed the condition on the actor: the full source document with its compendium link, then render. */
-  #embed(row, message) {
+  #embed(row, message = undefined) {
     // A debuff is found in the `debuffs` catalog but packed with the buffs.
     return this.addRowToActor(row, {
       mutate: (payload) => ({ ...payload, type: row.type }),

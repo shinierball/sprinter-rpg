@@ -203,7 +203,7 @@ export function blankPointBuySpec(builderType = 'class', seed = {}) {
           rank: Number(s.rank) || 1,
           isPassive: Boolean(s.isPassive),
           ...(s.stat ? { stat: s.stat } : {}),
-          checkType: s.checkType || 'stat',
+          checkType: s.checkType || 'skill',
           checkNote: s.checkNote || '',
           baseDamage: normalizeBaseDamage(s.baseDamage),
           rankLimits: cleanRankLimits(s.rankLimits),

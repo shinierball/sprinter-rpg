@@ -1,12 +1,29 @@
 import { resolveActor } from './actor-constants.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { getSizeInfo } from '../../data/sizes.mjs';
 import { syncActorOwnership } from './ownership-relay.mjs';
+import { rideProblems } from '../../utils/pet/pet-combat.mjs';
+import { confirmRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
+import { petLimitFor } from './pet-checks.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { combatantOfActor } from '../combat/combatants.mjs';
 
 
 /* -------------------------------------------- */
 /*  Companions, Mounts & Vehicles Management    */
 /* -------------------------------------------- */
+
+/**
+ * The Rule Break question when this crawler already has as many pets as it may (p. 228), else null. Dedicated mounts are not counted.
+ * @param {COGActor} actor
+ * @returns {string|null}
+ */
+function petLimitExceeded(actor) {
+  const ids = Array.isArray(actor.system?.companions?.pets) ? actor.system.companions.pets : [];
+  const have = ids.map((id) => resolveActor(id)).filter((p) => p && p.system?.details?.isMount !== true).length;
+  const limit = petLimitFor(actor);
+  if (have < limit) return null;
+  return `${actor.name || 'This crawler'} already has ${have} pet${have === 1 ? '' : 's'} (limit ${limit}). Bond anyway as a Rule Break?`;
+}
 
 /**
  * Bonds a companion actor (pet or vehicle) to this crawler.
@@ -23,10 +40,17 @@ export async function bondCompanion(actor, companion) {
 
   if (compActor.type === 'pet') {
     const existing = Array.isArray(actor.system?.companions?.pets) ? [...actor.system.companions.pets] : [];
+    // Bonding one pet past the limit (p. 228) asks a Rule Break; a dedicated mount is not counted.
+    const overLimit = !existing.includes(compActor.id) && compActor.system?.details?.isMount !== true
+      ? petLimitExceeded(actor) : null;
+    if (overLimit) {
+      const verdict = await confirmRuleBreak({ title: 'Pet limit', message: escapeAttr(overLimit), reason: overLimit });
+      if (!verdict.confirmed) return false;
+    }
     if (!existing.includes(compActor.id)) existing.push(compActor.id);
     await actor.update({ 'system.companions.pets': existing });
 
-    await compActor.update({ 'system.details.ownerId': actor.id });
+    await compActor.update({ 'system.details.ownerId': actor.id, ...(overLimit ? ruleBreakUpdate('Bonded past the pet limit') : {}) });
     await syncActorOwnership(compActor, actor);
     return true;
   } else if (compActor.type === 'mercenary') {
@@ -166,9 +190,7 @@ export function getEmployerActors(actor) {
 /**
  * Checks whether this actor can be mounted or ridden by a crawler.
  * - Mount/vehicles can always be boarded/ridden.
- * - Pets can be ridden if explicitly marked as isMount, or if the pet's size
- *   is larger than the rider crawler's size (e.g. Size 4 Medium or Size 5 Large pet
- *   ridden by Size 3 Petite or Size 2 Small crawler).
+ * - Pets can be ridden when nothing in `rideProblems` stands in the way (size, saddle, mount marks).
  * @param {COGActor|object} crawlerActor
  * @returns {boolean}
  */
@@ -176,15 +198,28 @@ export function canBeRiddenBy(actor, crawlerActor) {
   if (!crawlerActor) return false;
   if (actor.type === 'mount_vehicle') return true;
   if (actor.type === 'pet') {
-    if (typeof actor.system?.canBeRiddenBy === 'function') {
-      return actor.system.canBeRiddenBy(crawlerActor);
-    }
-    if (actor.system?.details?.isMount) return true;
-    const petSize = actor.system?.attributes?.sizeNumber ?? (getSizeInfo(actor.system?.attributes?.size)?.size || 4);
-    const crawlerSize = crawlerActor.system?.attributes?.sizeNumber ?? (getSizeInfo(crawlerActor.system?.attributes?.size)?.size || 4);
-    return petSize > crawlerSize;
+    // By the book, a pet can be ridden when nothing in `rideProblems` stands in the way.
+    return rideProblems(actor, crawlerActor).length === 0;
   }
   return false;
+}
+
+
+/**
+ * Record the Move Action that mounting or dismounting costs the rider (core book p. 233): on the rider's combatant in the
+ * running combat. Nothing is recorded outside a started combat or for a rider who is not in it. The mount moving its rider
+ * costs nothing, so nothing is ever recorded for the mount. Over budget asks the ledger's Rule Break confirm.
+ * @param {COGActor|null} rider
+ * @param {string} label the ledger line
+ * @returns {Promise<boolean>} false when the Rule Break was declined (the mount or dismount does not happen)
+ */
+async function recordMountAction(rider, label) {
+  const combat = globalThis.game?.combat;
+  if (!rider || !combat || !(combat.started ?? Number(combat.round) > 0)) return true;
+  const combatant = combatantOfActor(combat, rider);
+  if (!combatant) return true;
+  const recorded = await combat.recordCombatantAction(combatant, { type: 'move', label });
+  return recorded?.success === true;
 }
 
 
@@ -197,6 +232,19 @@ export async function assignRider(actor, crawler) {
   if (actor.type !== 'pet') return false;
   const crawlerId = typeof crawler === 'string' ? crawler : crawler?.id;
   if (!crawlerId) return false;
+  // A mount the book says cannot be ridden asks a Rule Break (never a block).
+  const rider = typeof crawler === 'string' ? resolveActor(crawler) : crawler;
+  const problems = rider ? rideProblems(actor, rider) : [];
+  if (problems.length) {
+    const verdict = await confirmRuleBreak({
+      title: 'Ride this pet?',
+      message: `${problems.map(escapeAttr).join(' ')} Ride anyway as a Rule Break?`,
+      reason: `${problems.join(' ')} Ride anyway as a Rule Break?`
+    });
+    if (!verdict.confirmed) return false;
+  }
+  // Mounting costs the crawler a Move Action in a running combat (core book p. 233); over budget asks the ledger's Rule Break.
+  if (!(await recordMountAction(rider, `Mount ${actor.name || 'pet'}`))) return false;
   await actor.update({ 'system.details.riderId': crawlerId });
   return true;
 }
@@ -208,6 +256,8 @@ export async function assignRider(actor, crawler) {
  */
 export async function dismountRider(actor) {
   if (actor.type !== 'pet') return false;
+  // Dismounting costs the rider a Move Action in a running combat (core book p. 233).
+  if (!(await recordMountAction(getRiderActor(actor), `Dismount ${actor.name || 'pet'}`))) return false;
   await actor.update({ 'system.details.riderId': '' });
   return true;
 }

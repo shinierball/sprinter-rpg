@@ -5,10 +5,14 @@
 
 import { SYSTEM_ID } from '../../constants.mjs';
 import { isMobCombatant } from './combatants.mjs';
+import { metricsOf, roundHistoryOf } from './combat-flags.mjs';
 import { COG_ACTION_TYPES } from './action-ledger.mjs';
+import { registerStoredCopy } from '../../utils/migrations/stored-copies.mjs';
 
 /** World setting: the archived combats. */
 export const ARCHIVED_COMBATS_SETTING = 'archivedCombats';
+// Each archived record keeps copies of the combat's round-history and metrics flags.
+registerStoredCopy({ of: 'Combat.base', at: 'setting:archivedCombats' });
 
 /**
  * Snapshot and archive a combat encounter to permanent world storage.
@@ -19,8 +23,8 @@ export const ARCHIVED_COMBATS_SETTING = 'archivedCombats';
 export async function archiveCombat(combat) {
   await combat.snapshotRoundActions(combat.round || 1);
 
-  const metrics = combat.getFlag(SYSTEM_ID, 'metrics') || {};
-  const roundHistory = combat.getFlag(SYSTEM_ID, 'roundHistory') || {};
+  const metrics = metricsOf(combat);
+  const roundHistory = roundHistoryOf(combat);
   const scene = combat.scene || (globalThis.game?.scenes?.get ? globalThis.game.scenes.get(combat.sceneId) : null);
 
   const combatantsData = Array.from(combat.combatants || []).map(c => {

@@ -139,6 +139,17 @@ export function buildAdvancementBatchCard(d) {
 }
 
 /**
+ * One line per pet that followed its crawler's Levels: "Pet name: Level 3 -> 5, +6 Stat points".
+ * @param {Array<{actorName: string, previousLevel: number, newLevel: number, pointsGained: number}>} [pets]
+ * @returns {string} HTML (empty when no pet followed)
+ */
+export function buildPetLevelLines(pets) {
+  return (pets ?? []).map(p =>
+    `<div class="cog-pet-level-line"><i class="fa-solid fa-paw"></i> <strong>${escapeAttr(p.actorName)}</strong>: Level ${escapeAttr(p.previousLevel)} &rarr; ${escapeAttr(p.newLevel)}, +${escapeAttr(p.pointsGained)} Stat points</div>`
+  ).join('');
+}
+
+/**
  * The chat card for a Level award.
  * @param {object} d
  * @param {string} d.label What the award is for
@@ -151,7 +162,7 @@ export function buildLevelAwardCard(d) {
     if (!r.levelsGained) {
       return `<li><strong>${escapeAttr(r.actorName)}</strong>: no Levels gained.${badge}</li>`;
     }
-    return `<li><strong>${escapeAttr(r.actorName)}</strong>: +${escapeAttr(r.levelsGained)} Level${r.levelsGained === 1 ? '' : 's'} <strong class="cog-text-gold">(Level ${escapeAttr(r.previousLevel)} &rarr; ${escapeAttr(r.newLevel)})</strong>, ${escapeAttr(r.pointsGained)} Stat points to spend${badge}</li>`;
+    return `<li><strong>${escapeAttr(r.actorName)}</strong>: +${escapeAttr(r.levelsGained)} Level${r.levelsGained === 1 ? '' : 's'} <strong class="cog-text-gold">(Level ${escapeAttr(r.previousLevel)} &rarr; ${escapeAttr(r.newLevel)})</strong>, ${escapeAttr(r.pointsGained)} Stat points to spend${badge}${buildPetLevelLines(r.pets)}</li>`;
   }).join('');
   return `
     <div class="cog-chat-card cog-level-award-card cog-bg-window cog-text-strong" style="border: 2px solid var(--cog-success); border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif;">

@@ -13,6 +13,8 @@ import { catalogEntries, findCatalogEntry } from './catalog-lookup.mjs';
 import { STARTER_WEAPON_LOADOUTS, STARTER_RANK, STARTER_POTION_COUNT, DEFAULT_STARTER_WEAPON } from '../data/creation-loadouts.mjs';
 import { EXAMPLE_CREATION_LOADOUTS } from './specs/examples/creation-loadouts.mjs';
 import { buildPayload } from '../data/builders/item-payload.mjs';
+import { isHiddenDoc } from './visibility.mjs';
+import { isRedacted, isUnresolved } from '../sourcery/redacted.mjs';
 
 export { STARTER_RANK, STARTER_POTION_COUNT };
 
@@ -79,7 +81,10 @@ export function resolveLoadoutId(slot, ref) {
  */
 export function getStarterWeaponDefinition(ref) {
   const found = findLoadout('weapon', ref);
-  if (found) return found;
+  if (found) {
+    const imported = importedWeaponName(found);
+    return imported ? { ...found, name: imported } : found;
+  }
   return {
     name: ref || 'Weapon',
     toHitStat: 'str',
@@ -105,7 +110,25 @@ export function weaponTagsForSkill(identifier) {
 }
 
 /**
+ * The name an import gave a weapon entry's Skill. A book Skill (a hidden id: no system pack or bundled catalog holds one)
+ * is in the catalog only once an import wrote it, found by its `skillIdentifier`, or by the book id a registered `weaponSkill` entry maps it to (an id or an
+ * identifier, never a name). The bundled example Skill ("<Weapon> Training") is not a book document, so it never answers;
+ * a book Skill still redacted or unresolved has no name of its own.
+ * @param {object} entry a `weapon` loadout entry
+ * @returns {string} '' when no import supplies a name
+ */
+export function importedWeaponName(entry) {
+  const mapped = registeredEntries('weaponSkill').filter(link => link.skillIdentifier === entry?.skillIdentifier).map(link => link.bookSkillId);
+  const refs = [...mapped, entry?.skillIdentifier].filter(ref => typeof ref === 'string' && ref);
+  if (!refs.length) return '';
+  const book = catalogEntries('skills').find(def => isHiddenDoc(def) && !isRedacted(def) && !isUnresolved(def)
+    && refs.some(ref => def._id === ref || def.id === ref || def.system?.identifier === ref));
+  return typeof book?.name === 'string' ? book.name.trim() : '';
+}
+
+/**
  * The text a loadout option shows. An entry's own `label` wins; a spell entry shows the name of the catalog spell it references;
+ * a weapon entry shows the name of the imported book Skill it stands for, else its own name;
  * an unarmed package with an empty label shows the names of the catalog skill and Damage Effect it references (found by
  * identifier or `_id`, never by name; the bundled placeholder names before a Sourcery import, the imported names after);
  * else the entry's `name`.
@@ -115,6 +138,7 @@ export function weaponTagsForSkill(identifier) {
 export function loadoutLabel(entry) {
   const own = typeof entry?.label === 'string' ? entry.label.trim() : '';
   if (own) return own;
+  if (entry?.slot === 'weapon') return importedWeaponName(entry) || entry.name || '';
   if (entry?.slot === 'spell') {
     const spellName = findCatalogEntry('spells', entry.spellIdentifier ?? entry.id)?.name;
     if (spellName) return spellName;

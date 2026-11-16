@@ -1,7 +1,7 @@
 /**
  * src/content/specs/examples/actors.mjs
  * The example actors: a crawler from the creator spec, its personal
- * space, two mobs and a summoned minion from mob-creator specs, a mount pet, a vehicle, a mercenary and a type-only
+ * space, two mobs and a summoned minion from mob-creator specs, a dedicated mount pet, a vehicle, a mercenary and a type-only
  * NPC. Mobs, the crawler and the space go through their budget builders (`buildPayload` delegates); the companions are
  * normalised payload specs, the same path `createCompanion` takes.
  *
@@ -11,9 +11,11 @@
  */
 import '../../../data/builders/mob-payload.mjs'; // registers the `mob` payload delegate (pure)
 import '../../../data/builders/crawler-payload.mjs'; // registers the `crawler` payload delegate (pure)
+import '../../../data/pet-builder.mjs'; // registers the `pet` payload delegate (pure)
 import '../../../documents/actor/personal-space-links.mjs'; // registers the `personal_space` payload delegate
 import { EXAMPLE_ACTOR_IDS as A, EXAMPLE_ITEM_IDS, exampleActorUuid } from './refs.mjs';
 import { EXAMPLE_IDENTITY_SPECS } from './identity.mjs';
+import { copyOf } from './items/creature-feature.mjs';
 
 /** The Rehearsal Room as an embedded copy: the same spec as the example, no `_id` (the pack gives the copy its own). */
 const REHEARSAL_ROOM = (() => {
@@ -68,15 +70,15 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
     level: 2,
     designFloor: 1,
     size: 'small',
-    creatureType: 'Rat-kin',
+    creatureType: 'Rat-Kin',
     tags: ['creature.rat_kin'],
     abilities: { str: 4, dex: 7, con: 4, int: 3, cha: 2 },
     description: 'Carries a clipboard, a coffee and a grudge.',
     attacks: [
-      { name: 'Clipboard Smack', toHitStat: 'dex', damageStat: 'dex', damageDice: '1d6', damageType: 'Bludgeoning' }
+      { name: 'Clipboard Smack', toHitStat: 'dex', damageStat: 'dex', dice: 1, die: 'd6', damageType: 'Bludgeoning' }
     ],
     loot: [
-      { name: 'Half-Finished Coffee', quantity: 1, notes: '', description: 'Still warm. Still terrible.' }
+      { name: 'Half-Finished Coffee', quantity: 1, lootType: 'consumable', description: 'Still warm. Still terrible.' }
     ]
   },
   {
@@ -93,21 +95,22 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
     abilities: { str: 8, dex: 6, con: 9, int: 7, cha: 10 },
     description: 'Runs the floor. The floor runs from them. Summons a Clipboard Intern when the schedule slips.',
     attacks: [
-      { name: 'Schedule Slap', toHitStat: 'str', damageStat: 'str', damageDice: '2d6', damageType: 'Bludgeoning', onHit: { slotLoss: { debuffs: ['held'] } } },
-      { name: 'Feedback Shriek', toHitStat: 'cha', area: { shape: 'burst', radius: 10 }, damageStat: 'str', damageDice: '2d6', damageType: 'Sonic' }
+      { name: 'Schedule Slap', toHitStat: 'str', damageStat: 'str', dice: 2, die: 'd6', damageType: 'Bludgeoning', onHit: { slotLoss: { debuffs: ['held'] } } },
+      { name: 'Feedback Shriek', toHitStat: 'cha', area: { shape: 'burst', radius: 10 }, damageStat: 'str', dice: 2, die: 'd6', damageType: 'Sonic' }
     ],
+    // The embedded `_id`s are the ones the pack has given these documents since release 8.0.0 (a world that imported the mob holds them).
     traits: [
-      { type: 'damageMultiplier', name: 'Final Warning', damageType: 'Sonic', multiplier: 2 },
-      { type: 'aura', name: 'Floor Presence', description: 'Everyone within 10 feet stands up straighter.' },
-      { type: 'hot', name: 'Craft Services Break', description: 'Regains 1 Health Bar at the start of each round.' },
-      { type: 'resistance', name: 'Thick Skin', damageType: 'Bludgeoning' },
-      { type: 'immunity', name: 'Heard It All Before', damageType: 'Psychic' }
+      { _id: 'dccexa0400i00003', type: 'damageMultiplier', name: 'Final Warning', damageType: 'Sonic', multiplier: 2 },
+      { _id: 'dccexa0400i00006', type: 'resistance', name: 'Thick Skin', damageType: 'Bludgeoning' },
+      { _id: 'dccexa0400i00007', type: 'immunity', name: 'Heard It All Before', damageType: 'Psychic' }
     ],
-    spells: [
-      { name: 'Call the Intern', checkType: 'none', manaCost: 3, range: '30 feet', description: 'A Clipboard Intern arrives to take notes and hits.' }
+    items: [
+      copyOf('floor-presence', {}, 'dccexa0400i00004'),
+      copyOf('craft-services-break', {}, 'dccexa0400i00005'),
+      copyOf('call-the-intern', {}, 'dccexa0400i00008')
     ],
     loot: [
-      { name: 'Laminated Run Sheet', quantity: 1, notes: '', description: 'The whole episode, minute by minute. Nobody has ever followed it.' }
+      { _id: 'dccexa0400i00009', name: 'Laminated Run Sheet', quantity: 1, lootType: 'consumable', description: 'The whole episode, minute by minute. Nobody has ever followed it.' }
     ]
   },
   {
@@ -123,30 +126,27 @@ export const EXAMPLE_ACTOR_SPECS = Object.freeze([
     abilities: { str: 2, dex: 4, con: 2, int: 5, cha: 3 },
     description: 'Summoned by the Floor Manager to take notes and hits.',
     attacks: [
-      { name: 'Pen Jab', toHitStat: 'dex', damageStat: 'dex', damageDice: '1d4', damageType: 'Piercing' }
+      { name: 'Pen Jab', toHitStat: 'dex', damageStat: 'dex', dice: 1, die: 'd4', damageType: 'Piercing' }
     ],
     loot: [
-      { name: 'Unpaid Timesheet', quantity: 1, notes: '', description: 'Proof of forty hours of work. Worth nothing.' }
+      { name: 'Unpaid Timesheet', quantity: 1, lootType: 'consumable', description: 'Proof of forty hours of work. Worth nothing.' }
     ]
   },
   {
     type: 'pet',
-    _id: A['applause-llama'],
-    name: 'Applause Llama',
+    _id: A['rental-ostrich'],
+    name: 'Rental Ostrich',
     img: 'icons/svg/pawprint.svg',
-    system: {
-      tags: ['companion.mount', 'rule.mount'],
-      abilities: stats(12, 8, 12, 3, 9),
-      attributes: { hp: { value: 30, max: 30 }, speed: { move: 40, step: 10 }, size: 'large' },
-      details: {
-        level: 2,
-        creatureType: 'Beast',
-        ownerId: A['contestant-zero'],
-        isMount: true,
-        riderId: A['contestant-zero'],
-        notes: 'Rideable, unflappable, and it spits on cue.'
-      }
-    }
+    size: 'large',
+    creatureType: 'Beast',
+    attitude: 'bonded',
+    origin: 'earth',
+    isMount: true,
+    ownerId: A['contestant-zero'],
+    riderId: A['contestant-zero'],
+    // The Stampede Clause: a Move-and-attack against prone foes, one d6 for each point of size (Large is 5). Change the dice when a size is bought.
+    attacks: [{ name: 'Stampede Clause', stat: 'str', damageDice: '5d6', damageType: 'Bludgeoning' }],
+    notes: 'A dedicated mount, rented by the hour and billed by the minute. Large, Move 30 ft, one Action a round. Its Stampede Clause: move and trample a prone foe, 5d6 (one d6 per point of size; change the dice when a size is bought). Unflappable, and it knows exactly what it is worth.'
   },
   {
     type: 'mount_vehicle',

@@ -3,6 +3,9 @@ import { EFFECT_ITEM_TYPES } from '../../utils/document-types.mjs';
 /** Grant kinds. Roll, damage, DR and defense modifiers live in the `*Modifiers[]` fields, not here. */
 export const GRANT_KINDS = ['stat', 'skill', 'spell', 'rank_bonus', 'rank_cap', 'rank_raise'];
 
+/** Where a rank_raise row's Rank N comes from: '' its own `floor`; 'rank' the stored Rank of the buff carrying the row. */
+export const GRANT_FLOOR_SOURCES = Object.freeze(['', 'rank']);
+
 const GRANT_STATS = ['str', 'dex', 'con', 'int', 'cha'];
 
 export const GRANT_MODES = ['fixed', 'choice', 'pool'];
@@ -45,6 +48,13 @@ export function grantRowErrors(grant) {
   const pct = Number(grant.percent);
   if (Number.isFinite(pct) && pct !== 0 && (kind !== 'stat' || (grant.mode !== undefined && grant.mode !== '' && grant.mode !== 'fixed'))) {
     errors.push('percent is only valid on a fixed stat row');
+  }
+  if (grant.beforePercent === true && (kind !== 'stat' || (grant.mode !== undefined && grant.mode !== '' && grant.mode !== 'fixed'))) {
+    errors.push('beforePercent is only valid on a fixed stat row');
+  }
+  if (grant.floorFrom !== undefined && grant.floorFrom !== null) {
+    if (!GRANT_FLOOR_SOURCES.includes(grant.floorFrom)) errors.push(`floorFrom "${grant.floorFrom}" is not one of ${GRANT_FLOOR_SOURCES.map((v) => `"${v}"`).join(', ')}`);
+    else if (grant.floorFrom !== '' && kind !== 'rank_raise') errors.push('floorFrom is only valid on a rank_raise row');
   }
 
   if (grant.mode !== undefined && grant.mode !== '' && !GRANT_MODES.includes(grant.mode)) {

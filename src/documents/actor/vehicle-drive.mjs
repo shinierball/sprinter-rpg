@@ -8,19 +8,21 @@
  * `actor.mjs`.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { isMigrationWrite } from '../migrations/world-migration.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { registerRelayAction } from '../../utils/gm-relay.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
-import { readCheckRecord } from '../../utils/roll/check-assists.mjs';
-import { sanitizeShifts } from '../../utils/vehicle/vehicle-check.mjs';
+import { readCheckRecord, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
+import { flagPath } from '../../utils/flags.mjs';
 import { offerByKey } from '../../utils/roll/after-roll.mjs';
 import { gateItemCooldown } from './cooldown-gate.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
 import { resultEffect, VEHICLE_CHECK_RESULTS } from '../../data/rules/vehicle-rules.mjs';
-import { str, say, speakerOf, gmWhisper, messageById, cardFlag, cardKey, RELAY_ACTION_VEHICLE_DRIVE, VEHICLE_CARD_FLAGS } from './vehicle-drive-common.mjs';
+import { str, say, speakerOf, gmWhisper, messageById, RELAY_ACTION_VEHICLE_DRIVE } from './vehicle-drive-common.mjs';
 import { vehicleNow, writeVehicleSpeed } from './vehicle-move.mjs';
 import { settleVehicleResult, syncCard, ingestVehicleCheck, ingestVehicleCheckNow } from './vehicle-checks.mjs';
-import { vehicleCardInfo, findCarrier } from './vehicle-after-roll.mjs';
+import { vehicleCardInfo } from './vehicle-after-roll.mjs';
+import { findCarrier } from './check-after-roll.mjs';
 import { ramFlag, applyCollision, explodeVehicle } from './vehicle-ram.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 
@@ -32,7 +34,7 @@ export function registerVehicleDriveHooks() {
   hooksRegistered = true;
   const onMessage = (message) => ingestVehicleCheck(message).catch((err) => console.warn('Sprinter RPG | Vehicle check ingest failed', err));
   globalThis.Hooks?.on?.('createChatMessage', onMessage);
-  globalThis.Hooks?.on?.('updateChatMessage', onMessage);
+  globalThis.Hooks?.on?.('updateChatMessage', (message, _changes, options) => (isMigrationWrite(options) ? undefined : onMessage(message)));
 }
 
 /** Tests only. */
@@ -101,8 +103,8 @@ async function applyShift(vehicle, payload) {
     await gate.commit();
     flags = Object.fromEntries(Object.entries(gate.flags).map(([k, v]) => [`flags.${SYSTEM_ID}.${k}`, v]));
   }
-  const shifts = [...sanitizeShifts(cardFlag(message, VEHICLE_CARD_FLAGS.shifts)), { rowKey: offer.rowKey, steps: offer.steps, failOnly: offer.failOnly }];
-  await message.update({ [cardKey(VEHICLE_CARD_FLAGS.shifts)]: shifts, ...flags });
+  const shifts = [...info.record.shifts, { rowKey: offer.rowKey, steps: offer.steps, failOnly: offer.failOnly }];
+  await message.update({ [flagPath(`${CHECK_RECORD_FLAG}.shifts`)]: shifts, ...flags });
   // The card is the truth: settle from it, whether or not the update hook has run yet.
   await ingestVehicleCheckNow(message);
   return { ok: true };
@@ -143,8 +145,7 @@ async function applySpend(vehicle, payload) {
   const rowKey = str(payload.rowKey);
   if (info.spent.includes(rowKey)) return { ok: true };
   if (!offerByKey(info.offers, rowKey)) return { ok: false, reason: 'no-offer' };
-  const used = Array.isArray(cardFlag(message, VEHICLE_CARD_FLAGS.used)) ? cardFlag(message, VEHICLE_CARD_FLAGS.used) : [];
-  await message.update({ [cardKey(VEHICLE_CARD_FLAGS.used)]: [...used, rowKey] });
+  await message.update({ [flagPath(`${CHECK_RECORD_FLAG}.offersUsed`)]: [...info.record.offersUsed, rowKey] });
   return { ok: true };
 }
 

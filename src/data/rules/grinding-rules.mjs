@@ -31,6 +31,25 @@ export const GRIND_MAP_TAGS = Object.freeze([
 ]);
 
 /**
+ * Grinding maps that find loot, by tag (the human's homebrew ruling 1184): a crawler holding an item with the tag finds a box
+ * of `boxTier` per grinding session, however many such maps they hold. These give no grinding hours (`GRIND_MAP_TAGS` does).
+ * Modules can add rows.
+ */
+const GRIND_MAP_FINDS = Object.freeze([
+  { tag: 'rule.grind-map-city', boxTier: 'silver' }
+]);
+
+/**
+ * The first `GRIND_MAP_FINDS` row any of the tag sets holds, or null: one find per holder, whatever the number of maps.
+ * @param {Iterable<Set<string>|string[]>} tagSets the tags of each item the crawler owns
+ * @returns {{ tag: string, boxTier: string }|null}
+ */
+export function grindMapFindFor(tagSets) {
+  const owned = [...(tagSets ?? [])].map((tags) => (tags instanceof Set ? tags : new Set(tags ?? [])));
+  return GRIND_MAP_FINDS.find((row) => owned.some((tags) => tags.has(row.tag))) ?? null;
+}
+
+/**
  * Calculate the safe grinding threshold in hours based on guide insight and map bonuses.
  * Base safe limit = 5 hours.
  * Guide bonus (a helpful guide) = +1 hour.

@@ -67,7 +67,7 @@ export const RUNTIME_ONLY_SYSTEM_KEYS = Object.freeze(['modifiedRank']);
 export function normalizeItemSystemData(type, system) {
   if (!system || typeof system !== 'object') return system;
 
-  if (WEAPON_CAPABLE_TYPES.includes(type) && system.asTriggers !== undefined) {
+  if ((WEAPON_CAPABLE_TYPES.includes(type) || type === 'buff') && system.asTriggers !== undefined) {
     system.asTriggers = toRowArray(system.asTriggers);
   }
 

@@ -6,15 +6,17 @@
  */
 
 import { SYSTEM_ID } from '../../constants.mjs';
+import { flagPath, readFlag, clearFlag } from '../../utils/flags.mjs';
 import { registerRelayAction, dispatchRelay, requestRelay } from '../../utils/gm-relay.mjs';
 import { messageAuthorId } from '../../chat/chat-relay.mjs';
 import { readCheckRecord, getAssistSpec } from '../../utils/roll/check-assists.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { cardCombatIdOf } from '../../utils/combat/card-flags.mjs';
 import { findCombatById, findCombatant, isCombatWriter } from './combatants.mjs';
 
 /** Relay action for every Called Play write; `payload.op` names the write (`store`, `consume`, `discard`). */
 export const CALLED_PLAY_RELAY = 'calledPlay';
-export const CALLED_PLAYS_FLAG = 'calledPlays';
+const CALLED_PLAYS_FLAG = 'calledPlays';
 const MAX_CALLED_PLAYS = 20;
 /** Entry ids are flag keys; anything else (dots, empty) could address another flag path. */
 const CALLED_PLAY_ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -57,6 +59,15 @@ function sanitizeCalledPlay(raw, fallbackId = '') {
   };
 }
 
+/** The stored Called Plays of a combatant as written (`{ [id]: entry }`), unsanitised; undefined when none. */
+export const calledPlaysOf = (combatant) => readFlag(combatant, CALLED_PLAYS_FLAG);
+
+/** Delete every stored Called Play of a combatant. */
+export const clearCalledPlays = (combatant) => clearFlag(combatant, CALLED_PLAYS_FLAG);
+
+/** Delete one stored Called Play of a combatant (the id is a flag key, so it is checked by the callers). */
+const clearCalledPlay = (combatant, calledPlayId) => clearFlag(combatant, `${CALLED_PLAYS_FLAG}.${calledPlayId}`);
+
 /**
  * The Called Plays waiting on a combatant, sanitised and sorted by `at`. Only entries of `round` (default: the
  * combatant's combat's current round); `round: null` returns every stored entry.
@@ -64,7 +75,7 @@ function sanitizeCalledPlay(raw, fallbackId = '') {
  * @param {{ round?: number|null }} [opts]
  */
 export function getCalledPlays(combatant, { round = combatant?.combat?.round ?? combatant?.parent?.round ?? globalThis.game?.combat?.round ?? null } = {}) {
-  const raw = combatant?.getFlag?.(SYSTEM_ID, CALLED_PLAYS_FLAG) ?? combatant?.flags?.[SYSTEM_ID]?.[CALLED_PLAYS_FLAG];
+  const raw = calledPlaysOf(combatant);
   if (!isPlainObject(raw)) return [];
   const wanted = round === null ? null : Number(round);
   const out = [];
@@ -127,7 +138,7 @@ function checkStoreCalledPlay(payload, user) {
   if (!user?.isGM && authorId !== user?.id) return { ok: false, reason: 'not-author' };
   const caller = resolveActorByUuid(flags.fromUuid);
   if (!caller || !userMayActFor(userById(authorId), caller)) return { ok: false, reason: 'untrusted' };
-  const combat = findCombatById(flags.combatId);
+  const combat = findCombatById(cardCombatIdOf(message));
   if (!combat || Number(flags.round) !== Number(combat.round)) return { ok: false, reason: 'stale' };
   const combatant = findCombatant(combat, flags.allyCombatantId);
   if (!combatant) return { ok: false, reason: 'no-ally' };
@@ -180,7 +191,7 @@ const CALLED_PLAY_OPS = {
     async apply(payload, user) {
       const res = checkStoreCalledPlay(payload, user);
       if (!res.ok) return { ok: false, reason: res.reason };
-      await res.combatant.update({ [`flags.${SYSTEM_ID}.${CALLED_PLAYS_FLAG}.${res.entry.id}`]: res.entry });
+      await res.combatant.update({ [flagPath(`${CALLED_PLAYS_FLAG}.${res.entry.id}`)]: res.entry });
       return { ok: true, entry: res.entry };
     }
   },
@@ -189,7 +200,7 @@ const CALLED_PLAY_OPS = {
     async apply(payload, user) {
       const res = checkConsumeCalledPlay(payload, user);
       if (!res.ok) return { ok: false, reason: res.reason };
-      if (!res.gone) await res.combatant.unsetFlag(SYSTEM_ID, `${CALLED_PLAYS_FLAG}.${payload.calledPlayId}`);
+      if (!res.gone) await clearCalledPlay(res.combatant, payload.calledPlayId);
       return { ok: true };
     }
   },
@@ -234,7 +245,7 @@ export async function discardCalledPlay(combat, combatantOrId, calledPlayId) {
   if (!isCalledPlayId(calledPlayId)) return { success: false, error: 'Not a Called Play id.' };
   if (isCombatWriter()) {
     if (!storedCalledPlay(c, calledPlayId)) return { success: false, error: 'No such Called Play.' };
-    await c.unsetFlag(SYSTEM_ID, `${CALLED_PLAYS_FLAG}.${calledPlayId}`);
+    await clearCalledPlay(c, calledPlayId);
     return { success: true };
   }
   const sent = await dispatchRelay(CALLED_PLAY_RELAY, {

@@ -22,7 +22,7 @@ import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mj
 import { canModifyMessage } from '../damage-applications.mjs';
 import { messageAuthorId } from '../chat-relay.mjs';
 import { assistText } from '../render/check-assists.mjs';
-import { findCombatant } from '../../documents/combat/combatants.mjs';
+import { findCombatant, combatantOfActor } from '../../documents/combat/combatants.mjs';
 import { withFlags } from '../../utils/flags.mjs';
 
 /** Relay action for check-card amends; `payload.op` names the write (`apply`; B3 adds `resolve`). */
@@ -183,11 +183,6 @@ export async function applyCheckAssist(payload = {}) {
   const res = await requestRelay(ASSIST_APPLY_RELAY, clean, { direct: false });
   if (!res.ok) return { ok: false, reason: res.reason ?? 'no-gm' };
   return res.result && typeof res.result === 'object' && typeof res.result.ok === 'boolean' ? res.result : { ok: false, reason: 'error' };
-}
-
-/** The assister's own combatant when the button names none (or names one that is gone): the first whose actor is them. */
-function combatantOfActor(combat, actor) {
-  return (combat?.combatants ?? []).find((c) => c?.actorId === actor?.id) ?? null;
 }
 
 async function postAssistCard({ assister, skill, roll, formula, lines, checkMessageId, rollerName, ruleBreak }) {

@@ -1,6 +1,6 @@
 # Sprinter RPG
 
-A Foundry VTT system for crawler-style dungeon roleplaying games. It has crawler, mob, pet, mercenary and vehicle sheets, a combat tracker built around a five-step round, a tag-driven rules engine, content creators, and a set of original example content. Content is built from tags, so a module or a GM can add tiers, damage types and conditions without touching the code.
+A Foundry VTT system for crawler-style dungeon roleplaying games. It has crawler, mob, pet, mercenary and vehicle sheets, a combat tracker built around a five-step round, a tag-driven rules engine, content creators (crawler, race and class, mob, pet, items), and a set of original example content. Content is built from tags, so a module or a GM can add tiers, damage types and conditions without touching the code.
 
 Requires Foundry VTT v14 or later, and the [socketlib](https://github.com/farling42/foundryvtt-socketlib) module (version 1.1.0 or later).
 
@@ -33,6 +33,8 @@ To run on The Forge, see [`docs/hosting-on-the-forge.md`](https://github.com/shi
 3. Review the summary of what was found, then click **Import**. The importer writes world compendiums, and asks before it replaces ones it made earlier.
 4. Optionally, make **Rulebook Content** the **Primary Content Theme** and reload. The imported documents are in the pickers and compendiums either way, each with its book's badge. The primary theme supplies the crawler creator's species, backgrounds and story tables, so this switch makes the creator use the books' tables. The importer offers to switch after an import; if you decline, set it later in Configure Settings.
 5. Optionally, for classic mode, add **Shiny** to **Themes Turned Off** and reload. Its sample skills, spells and items leave the pickers, creators and compendiums, and a Theme Cleanup offers to replace those already on actors.
+
+A world saved on an earlier release (from 8.0.0) is upgraded on load: the system converts its documents once, and a GM can preview the changes with `cog.migrations.run({ dryRun: true })` in the console.
 
 Importing again after an update can refresh the world items you already have, matched by their compendium id; the importer asks first and changes nothing if you decline.
 

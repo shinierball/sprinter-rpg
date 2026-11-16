@@ -126,7 +126,7 @@ export const COG_SPELLS = [
         "target.self",
         "delivery.self",
         "action.displacement",
-        "rule.flight"
+        "action.flight"
       ],
       "ignoreDR": false,
       "healing": {
@@ -277,7 +277,7 @@ export const COG_SPELLS = [
         "stat.int",
         "delivery.target",
         "duration.combat",
-        "rule.disadvantage"
+        "action.disadvantage"
       ],
       "ignoreDR": false,
       "healing": {
@@ -491,18 +491,22 @@ export const COG_SPELLS = [
         "unit": "minutes"
       },
       "checkType": "passive",
+      "appliedBuffs": [
+        {
+          "buff": "charged-weapon",
+          "target": "target.self",
+          "range": 0,
+          "minRank": 0,
+          "maxRank": null,
+          "rank": 0,
+          "rankSkill": ""
+        }
+      ],
       "baseDamage": {
         "dice": "",
         "stat": "none",
         "damageType": ""
       },
-      "rankDamageParts": [
-        {
-          "minRank": 0,
-          "value": 2,
-          "type": "Fire & Electric"
-        }
-      ],
       "aiFavor": 0,
       "limitations": "",
       "quote": "",
@@ -538,7 +542,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "burned",
+          "debuff": "",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -558,7 +562,7 @@ export const COG_SPELLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "shocked",
+          "debuff": "",
           "notes": "",
           "isArmorPiercing": false,
           "healing": {
@@ -763,7 +767,6 @@ export const COG_SPELLS = [
         "stat.int",
         "duration.combat",
         "action.summon",
-        "rule.summon",
         "delivery.target"
       ],
       "ignoreDR": false,
@@ -940,7 +943,7 @@ export const COG_SPELLS = [
         "delivery.placed",
         "duration.rounds",
         "rule.hazard",
-        "rule.disadvantage"
+        "action.disadvantage"
       ],
       "ignoreDR": false,
       "healing": {
@@ -1554,8 +1557,9 @@ export const COG_SPELLS = [
         "stat.int",
         "delivery.target",
         "condition.fear",
-        "rule.mind-control",
-        "school.mind_control"
+        "action.mind_control",
+        "school.mind_control",
+        "rule.mind-control-effect"
       ],
       "ignoreDR": false,
       "healing": {
@@ -2403,7 +2407,7 @@ export const COG_SPELLS = [
         "stat.int",
         "target.self",
         "delivery.self",
-        "resource.hp-bars",
+        "resource.hp_bars",
         "school.healing"
       ],
       "ignoreDR": false,
@@ -2553,7 +2557,7 @@ export const COG_SPELLS = [
         "stat.int",
         "target.pet",
         "delivery.target",
-        "resource.hp-bars",
+        "resource.hp_bars",
         "school.healing"
       ],
       "ignoreDR": false,
@@ -2705,7 +2709,7 @@ export const COG_SPELLS = [
         "favored.cleric",
         "target.allies",
         "delivery.target",
-        "resource.hp-bars",
+        "resource.hp_bars",
         "school.healing"
       ],
       "ignoreDR": false,
@@ -2858,7 +2862,7 @@ export const COG_SPELLS = [
         "stat.int",
         "target.self",
         "delivery.self",
-        "resource.hp-bars",
+        "resource.hp_bars",
         "school.healing"
       ],
       "ignoreDR": false,
@@ -3164,7 +3168,6 @@ export const COG_SPELLS = [
         "element.holy",
         "shape.aoe",
         "shape.burst",
-        "shape.aura",
         "delivery.aura",
         "stat.cha",
         "favored.cleric",
@@ -3353,7 +3356,6 @@ export const COG_SPELLS = [
       "tags": [
         "kind.spell",
         "action.passive",
-        "shape.aura",
         "shape.burst",
         "delivery.aura",
         "target.self",
@@ -3804,7 +3806,7 @@ export const COG_SPELLS = [
         "favored.paladin",
         "target.allies",
         "delivery.target",
-        "resource.hp-bars",
+        "resource.hp_bars",
         "school.healing"
       ],
       "ignoreDR": false,
@@ -4422,12 +4424,12 @@ export const COG_SPELLS = [
         "action.passive",
         "shape.aoe",
         "shape.burst",
-        "rule.mind-control",
+        "action.mind_control",
         "action.summon",
-        "rule.summon",
         "stat.int",
         "delivery.placed",
-        "school.mind_control"
+        "school.mind_control",
+        "rule.mind-control-effect"
       ],
       "ignoreDR": false,
       "healing": {
@@ -4590,7 +4592,7 @@ export const COG_SPELLS = [
         "favored.druid",
         "target.allies",
         "delivery.target",
-        "resource.hp-bars",
+        "resource.hp_bars",
         "school.healing"
       ],
       "ignoreDR": false,
@@ -4636,6 +4638,26 @@ export const COG_SPELLS = [
         "unit": "minutes"
       },
       "checkType": "passive",
+      "appliedBuffs": [
+        {
+          "buff": "wooden-skin",
+          "target": "target.self",
+          "range": 0,
+          "minRank": 0,
+          "maxRank": 9,
+          "rank": 0,
+          "rankSkill": ""
+        },
+        {
+          "buff": "wooden-skin",
+          "target": "target.one",
+          "range": 10,
+          "minRank": 10,
+          "maxRank": null,
+          "rank": 0,
+          "rankSkill": ""
+        }
+      ],
       "baseDamage": {
         "dice": "",
         "stat": "",
@@ -5059,12 +5081,13 @@ export const COG_SPELLS = [
       "tags": [
         "kind.spell",
         "action.passive",
-        "rule.mind-control",
+        "action.mind_control",
         "stat.cha",
         "favored.bard",
         "action.displacement",
         "delivery.target",
-        "school.mind_control"
+        "school.mind_control",
+        "rule.mind-control-effect"
       ],
       "ignoreDR": false,
       "healing": {
@@ -5384,10 +5407,9 @@ export const COG_SPELLS = [
         "action.interrupt",
         "shape.aoe",
         "shape.burst",
-        "shape.aura",
         "stat.int",
         "action.displacement",
-        "rule.barrier",
+        "action.barrier",
         "delivery.aura",
         "trigger.on_damage",
         "school.protection"
@@ -5702,7 +5724,6 @@ export const COG_SPELLS = [
         "favored.necromancer",
         "delivery.target",
         "action.summon",
-        "rule.summon",
         "rule.hazard"
       ],
       "ignoreDR": false,
@@ -6010,7 +6031,6 @@ export const COG_SPELLS = [
         "action.passive",
         "stat.int",
         "action.summon",
-        "rule.summon",
         "delivery.target",
         "school.reanimation"
       ],
@@ -6069,6 +6089,13 @@ export const COG_SPELLS = [
         "damageType": ""
       },
       "aiFavor": 0,
+      "tempBars": {
+        "hasTempBars": true,
+        "slotsFormula": "2",
+        "hpPerSlot": 0,
+        "hpPerSlotStat": "con",
+        "passTag": "kind.spell"
+      },
       "limitations": "You can’t heal a Shield.",
       "quote": "",
       "description": "",
@@ -6085,6 +6112,9 @@ export const COG_SPELLS = [
           "buffsResistances": "",
           "debuff": "",
           "notes": "The Shield has 5 Health Bar slots.",
+          "tempBars": {
+            "barsGranted": 3
+          },
           "isArmorPiercing": false,
           "healing": {
             "barsBonus": 0,
@@ -6105,6 +6135,9 @@ export const COG_SPELLS = [
           "buffsResistances": "",
           "debuff": "",
           "notes": "The Shield has 10 Health Bar slots.",
+          "tempBars": {
+            "barsGranted": 5
+          },
           "isArmorPiercing": false,
           "healing": {
             "barsBonus": 0,
@@ -6125,6 +6158,9 @@ export const COG_SPELLS = [
           "buffsResistances": "",
           "debuff": "",
           "notes": "The Shield has 15 Health Bar slots.",
+          "tempBars": {
+            "barsGranted": 5
+          },
           "isArmorPiercing": false,
           "healing": {
             "barsBonus": 0,
@@ -6170,7 +6206,7 @@ export const COG_SPELLS = [
         "stat.int",
         "target.self",
         "delivery.self",
-        "rule.barrier",
+        "action.barrier",
         "school.force_field"
       ],
       "ignoreDR": false,
@@ -6512,6 +6548,26 @@ export const COG_SPELLS = [
         "value": 0,
         "unit": ""
       },
+      "durationConfig": {
+        "type": "long_rest",
+        "value": 0
+      },
+      "eventTriggers": [
+        {
+          "event": "kill",
+          "kind": "buff",
+          "label": "Kill bonus",
+          "identifier": "kill-bonus",
+          "target": "target.self",
+          "minRank": 5,
+          "condition": {
+            "all": [
+              "id.spell.dccspl0000000042",
+              "situation.foe_half_level"
+            ]
+          }
+        }
+      ],
       "checkType": "attack",
       "baseDamage": {
         "dice": "1d4",
@@ -6549,6 +6605,10 @@ export const COG_SPELLS = [
           }
         },
         "rank10": {
+          "duration": {
+            "type": "day",
+            "value": 7
+          },
           "damageDice": "1d4",
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
@@ -6569,6 +6629,10 @@ export const COG_SPELLS = [
           }
         },
         "rank15": {
+          "duration": {
+            "type": "floor",
+            "value": 0
+          },
           "damageDice": "1d4",
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
@@ -7322,6 +7386,17 @@ export const COG_SPELLS = [
         "unit": ""
       },
       "checkType": "passive",
+      "appliedBuffs": [
+        {
+          "buff": "quickened-pet",
+          "target": "target.pet",
+          "range": 0,
+          "minRank": 0,
+          "maxRank": null,
+          "rank": 0,
+          "rankSkill": ""
+        }
+      ],
       "baseDamage": {
         "dice": "",
         "stat": "",
@@ -7896,7 +7971,7 @@ export const COG_SPELLS = [
         "stat.int",
         "delivery.placed",
         "duration.rounds",
-        "rule.barrier",
+        "action.barrier",
         "rule.hazard"
       ],
       "ignoreDR": false,
@@ -7958,6 +8033,35 @@ export const COG_SPELLS = [
         "unit": ""
       },
       "checkType": "passive",
+      "appliedBuffs": [
+        {
+          "buff": "water-lungs",
+          "target": "target.self",
+          "range": 0,
+          "minRank": 0,
+          "maxRank": 4,
+          "rank": 0,
+          "rankSkill": ""
+        },
+        {
+          "buff": "water-lungs",
+          "target": "target.one",
+          "range": 5,
+          "minRank": 5,
+          "maxRank": 14,
+          "rank": 0,
+          "rankSkill": ""
+        },
+        {
+          "buff": "water-lungs",
+          "target": "target.one",
+          "range": 15,
+          "minRank": 15,
+          "maxRank": null,
+          "rank": 0,
+          "rankSkill": ""
+        }
+      ],
       "baseDamage": {
         "dice": "",
         "stat": "",
@@ -8442,6 +8546,17 @@ export const COG_SPELLS = [
         "unit": "minutes"
       },
       "checkType": "passive",
+      "appliedBuffs": [
+        {
+          "buff": "clear-head",
+          "target": "target.self",
+          "range": 0,
+          "minRank": 0,
+          "maxRank": null,
+          "rank": 0,
+          "rankSkill": ""
+        }
+      ],
       "baseDamage": {
         "dice": "",
         "stat": "",
@@ -8558,7 +8673,7 @@ export const COG_SPELLS = [
         "target.self",
         "delivery.self",
         "duration.minutes",
-        "rule.barrier",
+        "action.barrier",
         "school.defense"
       ],
       "ignoreDR": false,

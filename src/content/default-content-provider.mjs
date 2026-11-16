@@ -24,6 +24,7 @@ import { COG_PERK_TAGS } from '../data/perk-tags.mjs';
 import { COG_CREATION_LOADOUTS } from './specs/creation-loadouts.mjs';
 import { BOOKS } from '../sourcery/canon.mjs';
 import { BUNDLED_SET_ID } from '../utils/content-source.mjs';
+import './migrate-creature-types.mjs';
 
 /** The badge symbol of each book (7.7c). */
 const BOOK_SYMBOLS = Object.freeze({ core: 'CO', toolkit: 'TK', crawlers: 'CW', survival: 'SV', atlas: 'AT' });

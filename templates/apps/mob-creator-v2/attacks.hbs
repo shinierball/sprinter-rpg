@@ -1,0 +1,212 @@
+{{!-- Attacks stage: the mob's own attack cards, its held weapons and the attacks dropped on it.  Controls carry no `name`: an attack control writes one path of its card through data-change-action="setAttackField" (data-path, data-type); the card carries data-attack-card and data-index.  The part root is hidden unless this is the active stage (parts: stage ids in app.mjs). --}}
+<section class="cog-creator-section cog-mobv2-panel" data-stage="attacks"{{#unless active}} hidden{{/unless}}>
+  <h3 class="cog-mobv2-title">{{localize titleKey}}</h3>
+  {{#if active}}
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{guidance}}</p>
+
+  <div class="cog-mobv2-toolbar">
+    <button type="button" class="cog-btn" data-action="addAttack"><i class="fa-solid fa-plus"></i> {{localize 'COG.MobCreator.Attacks.Add'}}</button>
+    <button type="button" class="cog-btn" data-action="addWeapon"><i class="fa-solid fa-gavel"></i> {{localize 'COG.MobCreator.Attacks.AddWeapon'}}</button>
+    <button type="button" class="cog-btn" data-action="newWeapon"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize 'COG.MobCreator.Attacks.NewWeapon'}}</button>
+  </div>
+
+  {{#each attacks}}
+  <article class="cog-mobv2-card" data-attack-card data-index="{{index}}">
+    <header class="cog-mobv2-card-head">
+      <span class="cog-badge">#{{number}}</span>
+      <input type="text" id="{{@root.rootId}}-attack-{{index}}-name" class="cog-mobv2-card-name" data-change-action="setAttackField" data-path="name" value="{{name}}" placeholder="{{localize 'COG.MobCreator.Attacks.NamePlaceholder'}}" />
+      <button type="button" class="cog-btn" data-action="moveAttack" data-step="-1" {{#unless canMoveUp}}disabled{{/unless}} title="{{localize 'COG.MobCreator.Attacks.MoveUp'}}"><i class="fa-solid fa-arrow-up"></i></button>
+      <button type="button" class="cog-btn" data-action="moveAttack" data-step="1" {{#unless canMoveDown}}disabled{{/unless}} title="{{localize 'COG.MobCreator.Attacks.MoveDown'}}"><i class="fa-solid fa-arrow-down"></i></button>
+      <button type="button" class="cog-btn" data-action="removeAttack" title="{{localize 'COG.MobCreator.Attacks.Remove'}}"><i class="fa-solid fa-trash"></i></button>
+    </header>
+
+    <div class="cog-mobv2-grid">
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-tohit">{{localize 'COG.MobCreator.Attacks.ToHitStat'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-tohit" data-change-action="setAttackField" data-path="toHitStat">
+          {{#each toHitStatOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-count">{{localize 'COG.MobCreator.Attacks.DiceCount'}}{{#if dice.custom}} <span class="cog-badge cog-mobv2-custom">{{localize 'COG.MobCreator.Custom'}}</span>{{/if}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-count" data-change-action="setAttackField" data-path="dice" data-type="int">
+          {{#each countOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+        <p class="cog-rule-hint">{{dice.hint}}</p>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-die">{{localize 'COG.MobCreator.Attacks.DieSize'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-die" data-change-action="setAttackField" data-path="die">
+          {{#each dieOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-dmgstat">{{localize 'COG.MobCreator.Attacks.DamageStat'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-dmgstat" data-change-action="setAttackField" data-path="damageStat">
+          {{#each damageStatOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-dmgtype">{{localize 'COG.MobCreator.Attacks.DamageType'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-dmgtype" data-change-action="setAttackField" data-path="damageType">
+          {{#each damageTypeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-hit">{{localize 'COG.MobCreator.Attacks.HitDifficulty'}}</label>
+        <input type="number" min="0" id="{{@root.rootId}}-attack-{{index}}-hit" data-change-action="setAttackField" data-path="hitDifficulty" data-type="int" value="{{hitDifficulty}}" placeholder="{{hitPlaceholder}}" />
+        <p class="cog-rule-hint">{{localize 'COG.MobCreator.Attacks.HitHint'}}</p>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-range">{{localize 'COG.MobCreator.Attacks.Range'}}</label>
+        <input type="number" min="0" id="{{@root.rootId}}-attack-{{index}}-range" data-change-action="setAttackField" data-path="rangeFeet" data-type="int" value="{{rangeFeet}}" />
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-cdv">{{localize 'COG.MobCreator.Attacks.Cooldown'}}</label>
+        <input type="number" min="0" id="{{@root.rootId}}-attack-{{index}}-cdv" data-change-action="setAttackField" data-path="cooldown.value" data-type="int" value="{{cooldownValue}}" />
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-cdu">{{localize 'COG.MobCreator.Attacks.CooldownUnit'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-cdu" data-change-action="setAttackField" data-path="cooldown.unit">
+          {{#each cooldownUnits}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-shape">{{localize 'COG.MobCreator.Attacks.AreaShape'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-shape" data-change-action="setAttackField" data-path="area.shape">
+          {{#each shapeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      {{#if showRadius}}
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-radius">{{localize 'COG.MobCreator.Attacks.Radius'}}</label>
+        <input type="number" min="0" id="{{@root.rootId}}-attack-{{index}}-radius" data-change-action="setAttackField" data-path="area.radius" data-type="int" value="{{area.radius}}" />
+      </div>
+      {{/if}}
+      {{#if showLength}}
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-length">{{localize 'COG.MobCreator.Attacks.Length'}}</label>
+        <input type="number" min="0" id="{{@root.rootId}}-attack-{{index}}-length" data-change-action="setAttackField" data-path="area.lineLength" data-type="int" value="{{area.lineLength}}" />
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-width">{{localize 'COG.MobCreator.Attacks.Width'}}</label>
+        <input type="number" min="0" id="{{@root.rootId}}-attack-{{index}}-width" data-change-action="setAttackField" data-path="area.lineWidth" data-type="int" value="{{area.lineWidth}}" />
+      </div>
+      {{/if}}
+      {{#if hasShape}}
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-splash">{{localize 'COG.MobCreator.Attacks.Splash'}}</label>
+        <input type="number" min="0" id="{{@root.rootId}}-attack-{{index}}-splash" data-change-action="setAttackField" data-path="area.splash" data-type="int" value="{{area.splash}}" />
+      </div>
+      {{/if}}
+    </div>
+
+    <label class="cog-checkbox-label"><input type="checkbox" data-change-action="setAttackField" data-path="ignoreDR" {{#if ignoreDR}}checked{{/if}} /> <span>{{localize 'COG.MobCreator.Attacks.ArmorPiercing'}}</span></label>
+
+    {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=riders.picker}}
+    <div class="cog-mobv2-grid">
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-degree">{{localize 'COG.OnHitRiders.Degree'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-degree" data-change-action="setAttackField" data-path="onHit.evadeFail.degree">
+          {{#each riders.degreeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-minslots">{{localize 'COG.OnHitRiders.MinSlots'}}</label>
+        <input type="number" min="1" id="{{@root.rootId}}-attack-{{index}}-minslots" data-change-action="setAttackField" data-path="onHit.slotLoss.minSlotsLost" data-type="int" value="{{riders.minSlotsLost}}" />
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-modehit">{{localize 'COG.OnHitRiders.ModeHit'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-modehit" data-change-action="setAttackField" data-path="onHit.debuffMode">
+          {{#each riders.hitModeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-modeevade">{{localize 'COG.OnHitRiders.ModeEvade'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-modeevade" data-change-action="setAttackField" data-path="onHit.evadeFail.mode">
+          {{#each riders.evadeModeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-modeslot">{{localize 'COG.OnHitRiders.ModeSlot'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-modeslot" data-change-action="setAttackField" data-path="onHit.slotLoss.mode">
+          {{#each riders.slotModeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+    </div>
+
+    <div class="cog-mobv2-grid">
+      <div class="cog-form-group">
+        <label class="cog-checkbox-label"><input type="checkbox" data-change-action="setAttackField" data-path="contest.hasContest" {{#if contest.has}}checked{{/if}} /> <span>{{localize 'COG.MobCreator.Attacks.Save'}}</span></label>
+        <p class="cog-rule-hint">{{localize 'COG.MobCreator.Attacks.SaveHint'}}</p>
+      </div>
+      {{#if contest.has}}
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-savestat">{{localize 'COG.MobCreator.Attacks.SaveStat'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-savestat" data-change-action="setAttackField" data-path="contest.targetStat">
+          {{#each contest.statOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-savedc">{{localize 'COG.MobCreator.Attacks.SaveDC'}}</label>
+        <input type="number" min="0" id="{{@root.rootId}}-attack-{{index}}-savedc" data-change-action="setAttackField" data-path="contest.customDC" data-type="int" value="{{contest.customDC}}" />
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-attack-{{index}}-savedebuff">{{localize 'COG.MobCreator.Attacks.SaveDebuff'}}</label>
+        <select id="{{@root.rootId}}-attack-{{index}}-savedebuff" data-change-action="setAttackField" data-path="contest.onFailDebuff">
+          {{#each contest.debuffOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      {{/if}}
+    </div>
+
+    {{#if readsAs}}<p class="cog-rule-hint" data-reads-as><b>{{localize 'COG.MobCreator.Attacks.ReadsAs'}}</b> {{readsAs}}</p>{{/if}}
+    <details class="cog-mobv2-notes">
+      <summary>{{localize 'COG.MobCreator.Attacks.Notes'}}</summary>
+      <textarea id="{{@root.rootId}}-attack-{{index}}-effects" rows="2" data-change-action="setAttackField" data-path="effects" placeholder="{{localize 'COG.MobCreator.Attacks.NotesPlaceholder'}}">{{effects}}</textarea>
+    </details>
+  </article>
+  {{/each}}
+
+  {{#if weapons.length}}
+  <h4 class="cog-mobv2-subtitle">{{localize 'COG.MobCreator.Attacks.Weapons'}}</h4>
+  {{#each weapons}}
+  <article class="cog-mobv2-card" data-weapon-card data-index="{{index}}">
+    <header class="cog-mobv2-card-head">
+      <img src="{{img}}" alt="" class="cog-mobv2-icon cog-bg-icon-box" />
+      <b>{{name}}</b>
+      {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=badge}}
+      <button type="button" class="cog-btn" data-action="removeItem" data-index="{{index}}" title="{{localize 'COG.MobCreator.Attacks.Remove'}}"><i class="fa-solid fa-trash"></i></button>
+    </header>
+    {{#if rolls}}<p class="cog-mobv2-readout" data-weapon-rolls>{{rolls}}</p>{{/if}}
+    {{#each skills}}
+    <div class="cog-form-group cog-mobv2-inline">
+      <label for="{{@root.rootId}}-weapon-skill-{{index}}">{{localize 'COG.MobCreator.Attacks.WeaponSkill'}}: {{name}}</label>
+      <select id="{{@root.rootId}}-weapon-skill-{{index}}" data-change-action="setItemRank" data-index="{{index}}" data-type="int">
+        {{#each rankOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{localize 'COG.MobCreator.Attacks.Rank'}} {{label}}</option>{{/each}}
+      </select>
+      {{#if follows}}<span class="cog-rule-hint">{{localize 'COG.MobCreator.Attacks.RankFollows'}}</span>{{/if}}
+    </div>
+    {{/each}}
+    {{#if warning}}<p class="status-not-ready"><i class="fa-solid fa-triangle-exclamation"></i> {{warning}}</p>{{/if}}
+  </article>
+  {{/each}}
+  {{/if}}
+
+  {{#if dropped.length}}
+  <h4 class="cog-mobv2-subtitle">{{localize 'COG.MobCreator.Attacks.Dropped'}}</h4>
+  {{#each dropped}}
+  <article class="cog-mobv2-card" data-dropped-card data-index="{{index}}">
+    <header class="cog-mobv2-card-head">
+      <img src="{{img}}" alt="" class="cog-mobv2-icon cog-bg-icon-box" />
+      <b>{{name}}</b>
+      {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=badge}}
+      <button type="button" class="cog-btn" data-action="removeItem" data-index="{{index}}" title="{{localize 'COG.MobCreator.Attacks.Remove'}}"><i class="fa-solid fa-trash"></i></button>
+    </header>
+    {{#if readsAs}}<p class="cog-rule-hint">{{readsAs}}</p>{{/if}}
+  </article>
+  {{/each}}
+  {{/if}}
+  <p class="cog-rule-hint"><i class="fa-solid fa-hand"></i> {{localize 'COG.MobCreator.Attacks.DropHint'}}</p>
+  {{/if}}
+</section>

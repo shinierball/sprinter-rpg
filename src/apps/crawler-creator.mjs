@@ -333,7 +333,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
 
     const optionRows = (slot, selectedId, extra = () => ({})) => loadoutOptions(slot).map(o => ({
       id: o.id,
-      name: slot === 'spell' ? loadoutLabel(o) : o.name,
+      name: slot === 'unarmed' ? o.name : loadoutLabel(o),
       selected: o.id === selectedId,
       baseline: Boolean(o.baseline),
       sourceBadge: loadoutSourceBadge(slot, o),

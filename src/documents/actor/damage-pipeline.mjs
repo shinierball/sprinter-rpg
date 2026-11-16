@@ -9,14 +9,16 @@
 import { COGCombatMetrics } from '../combat-metrics.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
 import { isApplicationId, newApplicationId, snapshotHpPools, appendDamageUndoRecord } from '../../utils/damage/damage-undo.mjs';
-import { creditKill, awardKillPopularity, killContextFor } from './kill-credit.mjs';
+import { creditKill, awardKillPopularity, fireKillTriggers, killContextFor } from './kill-credit.mjs';
 import { onLethalDamage } from './transform-cues.mjs';
 import { isDying, tickDying, zeroHealthOutcome, ZERO_HEALTH } from './dying.mjs';
 import { noticePatronDeath } from './patron-notices.mjs';
-import { spendActivationUses } from './buff-activation.mjs';
-import { collectDamageReflections, earnedReflections } from '../../utils/damage/damage-reflection.mjs';
+import { spendActivationUses, openAutoWindows } from './buff-activation.mjs';
+import { endEmptiedSource } from './duration-expiry.mjs';
+import { collectDamageCaps } from '../../utils/roll/damage-modifiers.mjs';
+import { collectDamageReflections, collectDamageRetaliations, earnedReflections } from '../../utils/damage/damage-reflection.mjs';
 import {
-  hitFactors, targetDamageContexts, damageBucketsFor, typeEntriesFor, totalDrFor, spendDr, spendHpPools, hpPoolUpdates, perTargetRecord
+  hitFactors, targetDamageContexts, damageBucketsFor, typeEntriesFor, capEntries, totalDrFor, spendDr, spendHpPools, hpPoolUpdates, perTargetRecord
 } from './damage-math.mjs';
 
 /**
@@ -82,7 +84,7 @@ async function recordUndo(targetActor, record) {
 }
 
 /** The undo record of one application. Reads `game.user` and the clock. */
-function undoRecordOf({ appId, messageId, attackerActor, attackName, actualDamage, per, killTrophy, lethal = false, dyingTicked = false, killContext = null, before, after, reflect = null }) {
+function undoRecordOf({ appId, messageId, attackerActor, attackName, actualDamage, per, killTrophy, lethal = false, dyingTicked = false, killContext = null, before, after, reflect = null, retaliate = null }) {
   return {
     applicationId: appId,
     messageId: messageId ?? null,
@@ -102,16 +104,19 @@ function undoRecordOf({ appId, messageId, attackerActor, attackName, actualDamag
     // what the GM rebuilds the kill-Popularity context from, so a request's own tags are never trusted (3.56o)
     killContext,
     killAwarded: false,
+    // set once the kill's event triggers (a heal, gold) have fired, so a second click or a replayed request fires nothing
+    triggersFired: false,
     before,
     after,
     reflect,
+    retaliate,
     undoneAt: null,
     undoneBy: null
   };
 }
 
 /** The result object of an application. */
-function damageResult({ appId, targetActor, adjustedRaw, dr, pools, hpPerBar, reflections, damageType, damageBuckets, typeBreakdown, isImmune, isResistant, loggedMetrics, stageA, per, dying = null }) {
+function damageResult({ appId, targetActor, adjustedRaw, dr, pools, hpPerBar, reflections, retaliations, damageType, damageBuckets, typeBreakdown, isImmune, isResistant, loggedMetrics, stageA, per, dying = null }) {
   return {
     applicationId: appId,
     targetId: targetActor.id,
@@ -125,6 +130,7 @@ function damageResult({ appId, targetActor, adjustedRaw, dr, pools, hpPerBar, re
     barsRemoved: pools.barsRemoved,
     slotsLost: pools.slotsLost,
     reflections,
+    retaliations,
     excessDamage: pools.excessDamage,
     damageToHp: pools.damageToHp,
     tempDamage: pools.tempDamage,
@@ -145,6 +151,30 @@ function damageResult({ appId, targetActor, adjustedRaw, dr, pools, hpPerBar, re
     dying,
     perTarget: { context: per.perTargetContext, matchedRowKeys: [...stageA.matchedRowKeys], lines: per.lines, parts: per.damagePartsApplied, evade: per.evadeRecord, amazing: per.amazingRecord }
   };
+}
+
+/**
+ * The `spellBaseCap` rows of the target against this hit: cut the entries to the card's Rank 1 base (`capEntries`).
+ * @returns {{ stage: string, text: string }|null} the breakdown line, null when no row matched
+ */
+function applySpellBaseCap(targetActor, entries, defenseContext, spellBase) {
+  const caps = collectDamageCaps(targetActor, defenseContext);
+  if (caps.length === 0) return null;
+  const label = caps.map(c => c.label).join(', ');
+  if (!spellBase) return { stage: 'defense', text: `${label}: Rank 1 base unknown, GM adjudicates`.slice(0, 160) };
+  const { capped, before, after } = capEntries(entries, spellBase.total);
+  return { stage: 'defense', text: capped ? `${label}: cut to the Rank 1 base, ${before} → ${after}` : `${label}: within the Rank 1 base (${spellBase.total})` };
+}
+
+/**
+ * A hit that emptied temporary bars a Skill or spell on the target granted ends that item (the shield is gone, so is the spell).
+ * @returns {Promise<{ stage: string, text: string }|null>} the breakdown line, null when nothing ended
+ */
+async function endShieldSource(targetActor, before, pools) {
+  const bars = before.tempBars;
+  if (!bars?.sourceUuid || !(bars.count > 0) || pools.tbCount !== 0 || !pools.hasTempBars) return null;
+  if (!(await endEmptiedSource(targetActor, bars.sourceUuid))) return null;
+  return { stage: 'defense', text: `${bars.source || 'The shield'} is spent and ends`.slice(0, 160) };
 }
 
 export const COGDamage = {
@@ -177,6 +207,9 @@ export const COGDamage = {
    *   Success on the attack (E6.9, judged by the caller; ignored on a Critical Hit click or a fully evaded hit). The
    *   Floor number joins the first damage type the target is not immune to, after the multipliers and before DR, and the
    *   context is retargeted with `situation.amazing_success`
+   * @param {{ formula: string, total: number, type: string }|null} [params.spellBase=null] the spell damage card's Rank 1 base
+   *   (`parseSpellBase`): a `spellBaseCap` row of the target cuts a matching hit to its
+   *   total after the multiplier, the Evade and the Floor bonuses and before DR; a matching hit with no base is not cut
    * @param {number} [params.extraDr=0] "+N DR against the triggering attack" from the target's interrupt to this one attack
    *   (`findInterceptionFor`); added to the DR, ignored by Armor-Piercing
    * @param {string} [params.extraDrLabel=''] the interrupt's name, for the breakdown line
@@ -184,12 +217,14 @@ export const COGDamage = {
    *   temporary slots first and then regular ones. No parts, DR, resistance or Evade pass; undo, metrics and lethal
    *   handling are the same as for damage. Never earns a reflection of its own.
    * @param {boolean} [params.intercepting=false] the target caught this hit (Catcher): its defence context carries `situation.intercepting`
+   * @param {boolean} [params.noTriggers=false] this application earns no reflect or retaliate offer (the damage a retaliation
+   *   itself deals, so offers never chain)
    * @param {string|null} [params.applicationId=null] application id for damage undo (generated when absent)
    * @param {string|null} [params.messageId=null] chat message the application came from (informational)
    * @returns {Promise<object>} `slotsLost` is the regular bars removed plus the temporary slots emptied by this application;
    *   `reflections` the target's `reflect` rows that number reaches (D4, Q164)
    */
-  async applyDamageToTarget({ targetActor, rawDamage, attackerActor = null, attackName = 'Attack', attackType = 'Melee', ignoreDR = false, multiplier = 1, combat = null, damageType = '', typedDamage = null, parts = null, rollContext = null, isCrit = false, targetRows = null, clickTargets = null, evade = null, amazing = null, extraDr = 0, extraDrLabel = '', slotLoss = 0, intercepting = false, applicationId = null, messageId = null }) {
+  async applyDamageToTarget({ targetActor, rawDamage, attackerActor = null, attackName = 'Attack', attackType = 'Melee', ignoreDR = false, multiplier = 1, combat = null, damageType = '', typedDamage = null, parts = null, rollContext = null, isCrit = false, targetRows = null, clickTargets = null, evade = null, amazing = null, spellBase = null, extraDr = 0, extraDrLabel = '', slotLoss = 0, intercepting = false, noTriggers = false, applicationId = null, messageId = null }) {
     if (!targetActor) return { error: 'No target actor' };
 
     // A `hit` window the previous hit spent closes before this hit reads the target's rows
@@ -197,11 +232,16 @@ export const COGDamage = {
     const appId = isApplicationId(applicationId) ? applicationId : newApplicationId();
     const before = snapshotHpPools(targetActor);
     const factors = hitFactors({ multiplier, evade, amazing, isCrit, slotLoss });
-    const { card, retargeted, stageA, attackTags, defenseContext } = targetDamageContexts({
+    const contextsOf = () => targetDamageContexts({
       targetActor, attackerActor, rollContext, isCrit, amazingOn: factors.amazingOn, targetRows, clickTargets, parts, intercepting
     });
+    let contexts = contextsOf();
+    // An `auto` window of the target opens at this hit, before its rows are read (a window opened has changed the context)
+    if (await openAutoWindows(targetActor, { event: 'hit', tags: contexts.attackTags })) contexts = contextsOf();
+    const { card, retargeted, stageA, attackTags, defenseContext } = contexts;
     const { damageBuckets } = damageBucketsFor({ parts: stageA.parts, slotMode: factors.slotMode, typedDamage, damageType, rawDamage });
     const types = typeEntriesFor(targetActor, { damageBuckets, factors, defenseContext });
+    const capLine = factors.slotMode ? null : applySpellBaseCap(targetActor, types.entries, defenseContext, spellBase);
     const { dr, antiPiercingDr, interruptDr } = totalDrFor(targetActor, { ignoreDR, slotMode: factors.slotMode, extraDr, conditionalDr: types.conditionalDr });
     const { typeBreakdown, totalAdjustedRaw, rawTotal } = spendDr(types.entries, dr);
 
@@ -210,7 +250,7 @@ export const COGDamage = {
     const hpPerBar = COGCombatMetrics.getHpPerBar(targetActor);
     // "Double Con Mod to Health Bars" (p. 165): a slot holds that many times its HP, so the damage reaching the bar shrinks
     const reachingBar = factors.slotMode ? totalAdjustedRaw : Math.floor(totalAdjustedRaw / types.healthBar.factor);
-    const pools = spendHpPools(targetActor, { damageAfterDR: reachingBar, typeBreakdown, slotMode: factors.slotMode, slotsToLose: factors.slotsToLose, hpPerBar });
+    const pools = spendHpPools(targetActor, { damageAfterDR: reachingBar, typeBreakdown, slotMode: factors.slotMode, slotsToLose: factors.slotsToLose, hpPerBar, attackTags });
     // Slot loss: the raw figure is the HP the lost slots hold (the pools pass computes it)
     const adjustedRaw = factors.slotMode ? pools.damageAfterDR : rawTotal;
     const { actorUpdates, after } = hpPoolUpdates(targetActor, pools, before);
@@ -221,21 +261,29 @@ export const COGDamage = {
       stageA, card, retargeted, factors, isCrit, typeBreakdown, dr, ignoreDR, antiPiercingDr, interruptDr, extraDrLabel, evade, amazing,
       floorImmune: types.floorImmune, amazingImmune: types.amazingImmune, damageBuckets, healthBar: types.healthBar
     });
-    // A slot-loss application never reflects (no chain), and a hit that cost no slot earns nothing (D4, Q164).
-    // The undo record keeps the matching rows and the slots lost: the GM re-derives what an offer may reflect from it (3.56a).
-    const reflectRows = factors.slotMode ? [] : collectDamageReflections(targetActor, defenseContext);
+    if (capLine) per.lines.push(capLine);
+    // A slot-loss application, a retaliation's own damage (`noTriggers`) and a hit with no other attacker earn no offers (no chain),
+    // and a hit that cost no slot earns no reflection (D4, Q164). A retaliation needs only the touch, whatever it cost.
+    // The undo record keeps the matching rows and the slots lost: the GM re-derives what an offer may do from it (3.56a).
+    const quiet = factors.slotMode || noTriggers || !attackerActor || attackerActor === targetActor;
+    const reflectRows = quiet ? [] : collectDamageReflections(targetActor, defenseContext);
     const reflections = earnedReflections(reflectRows, pools.slotsLost);
     const reflect = reflections.length ? { rows: reflectRows, slotsLost: pools.slotsLost, used: [] } : null;
-    const record = (extra) => undoRecordOf({ appId, messageId, attackerActor, attackName, actualDamage: pools.actualDamage, per, before, after, reflect, ...extra });
+    // A fully Evaded attack did not land (the trigger is the touch), so it earns no retaliation.
+    const retaliations = quiet || factors.evadeMult === 0 ? [] : collectDamageRetaliations(targetActor, defenseContext);
+    const retaliate = retaliations.length ? { rows: retaliations, used: [] } : null;
+    const record = (extra) => undoRecordOf({ appId, messageId, attackerActor, attackName, actualDamage: pools.actualDamage, per, before, after, reflect, retaliate, ...extra });
     // The death can come inside the update (Con Mod 0), so the record the credit reads is stored first
     if (deferred) await recordUndo(targetActor, record({ killTrophy: null }));
     // A Dying actor who takes a slot's worth of damage loses a round of the countdown instead (R5, R11)
     const wasDying = isDying(targetActor);
-    const downing = deferred ? { attackerUuid: attackerActor?.uuid ?? null, applicationId: appId, attackTags, combatId: combat?.id ?? '' } : null;
+    const downing = deferred ? { attackerUuid: attackerActor?.uuid ?? null, applicationId: appId, attackTags: [...attackTags], combatId: combat?.id ?? '' } : null;
     await targetActor.update(actorUpdates, { cogDamageHandled: true, ...(downing ? { cogDowning: downing } : {}) });
+    const shieldLine = await endShieldSource(targetActor, before, pools);
+    if (shieldLine) per.lines.push(shieldLine);
     const dying = wasDying && pools.barsRemoved >= 1 ? await tickDying(targetActor, { cause: 'hit', applicationId: appId }) : null;
     // A hit that cost HP or slots counts against the target's open `hit` windows.
-    if (pools.actualDamage > 0 || pools.slotsLost > 0) await spendActivationUses(targetActor, [], { event: 'hit' });
+    if (pools.actualDamage > 0 || pools.slotsLost > 0) await spendActivationUses(targetActor, [], { event: 'hit', tags: attackTags });
 
     const killTrophy = await creditKill(targetActor, attackerActor, { isLethal: lethalNow, appId, attackTags, combat });
     const loggedMetrics = await recordDamageMetrics({ combat, attackerActor, targetActor, adjustedRaw, dr, actualDamage: pools.actualDamage, attackName, attackType, appId });
@@ -243,10 +291,11 @@ export const COGDamage = {
       await recordUndo(targetActor, record({ killTrophy, lethal: lethalNow, dyingTicked: Boolean(dying), killContext: killContextFor(lethalNow, targetActor, attackerActor, attackTags) }));
     }
     await awardKillPopularity(targetActor, attackerActor, { isLethal: lethalNow, appId, attackTags, combat });
+    await fireKillTriggers(targetActor, attackerActor, { isLethal: lethalNow, appId, attackTags, combat });
     await onLethalDamage(targetActor, { isLethal: pools.isLethal, appId });
     await noticePatronDeath(targetActor, attackerActor, { isLethal: lethalNow });
     return damageResult({
-      appId, targetActor, adjustedRaw, dr, pools, hpPerBar, reflections, damageType, damageBuckets, typeBreakdown,
+      appId, targetActor, adjustedRaw, dr, pools, hpPerBar, reflections, retaliations, damageType, damageBuckets, typeBreakdown,
       isImmune, isResistant: types.anyResistant, loggedMetrics, stageA, per, dying
     });
   }

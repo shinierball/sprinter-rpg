@@ -17,6 +17,7 @@
  * owns the participant's actor from socketlib's envelope, never from the payload.
  */
 import { SYSTEM_ID } from '../constants.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { isActiveGM, registerRelayAction, requestRelay } from '../utils/gm-relay.mjs';
 import { readCheckRecord, effectiveCheck } from '../utils/roll/check-assists.mjs';
@@ -294,7 +295,8 @@ export function registerContestHooks() {
   // Returns the promise so a test can await it; Foundry ignores a hook's return value except `false`.
   const onMessage = (message) => ingestContestRoll(message).catch((err) => console.warn('Sprinter RPG | Contest ingest failed', err));
   globalThis.Hooks?.on?.('createChatMessage', onMessage);
-  globalThis.Hooks?.on?.('updateChatMessage', onMessage);
+  // A migration write converts a card's stored data; it is not a new roll to ingest.
+  globalThis.Hooks?.on?.('updateChatMessage', (message, _changes, options) => (isMigrationWrite(options) ? undefined : onMessage(message)));
   globalThis.Hooks?.on?.('preDeleteChatMessage', guardContestDelete);
 }
 

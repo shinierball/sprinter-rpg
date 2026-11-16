@@ -128,7 +128,7 @@ export const SPECS = Object.freeze([
       description: '<p>Reaches the car next to you, and the one next to that. A melee weapon. Its damage is its Skill\'s Base Damage (Lance Training): 1d12 + Strength Piercing. Made for use from a vehicle: a driver uses it without Disadvantage.</p>',
       isWeapon: true,
       slot: 'hands',
-      tags: ['rule.mounted_only', 'weapon.lance', 'weaponClass.melee'],
+      tags: ['rule.mounted-only', 'weapon.lance', 'weaponClass.melee'],
       associatedSkills: ['lance']
     }
   },

@@ -40,6 +40,9 @@
         <span style="flex: 1;">{{this.name}} <span class="cog-text-secondary">Level {{this.level}}</span></span>
         <strong class="cog-text-success">{{this.gain}}</strong>
       </label>
+      {{#each this.pets}}
+        <div class="cog-text-secondary" style="font-size: 12px; margin-left: 28px;"><i class="fa-solid fa-paw"></i> also: {{this.name}} {{this.from}} &rarr; {{this.to}}</div>
+      {{/each}}
     {{/each}}
   </div>
 

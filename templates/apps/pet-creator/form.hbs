@@ -1,0 +1,50 @@
+<div class="cog-pet-creator">
+  <section class="cog-builder-section">
+    <div class="cog-section-title"><i class="fa-solid fa-paw"></i> New Pet or Mount</div>
+    <div class="cog-form-grid">
+      <div class="cog-form-group cog-span-2">
+        <label>Name</label>
+        <input type="text" class="cog-field-input" data-change-action="setField" data-prop="name" value="{{spec.name}}" placeholder="Pet Name" />
+      </div>
+      <div class="cog-form-group">
+        <label>Size</label>
+        <select class="cog-field-input" data-change-action="setField" data-prop="size">
+          {{#each sizeOptions}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label>Creature Type</label>
+        <input type="text" class="cog-field-input" data-change-action="setField" data-prop="creatureType" value="{{spec.creatureType}}" placeholder="Beast" />
+      </div>
+      <div class="cog-form-group">
+        <label>Attitude</label>
+        <select class="cog-field-input" data-change-action="setField" data-prop="attitude">
+          {{#each attitudeOptions}}
+            <option value="{{id}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label>Origin</label>
+        <select class="cog-field-input" data-change-action="setField" data-prop="origin">
+          {{#each originOptions}}
+            <option value="{{id}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group cog-span-2">
+        <label>Dedicated mount</label>
+        <label class="cog-checkbox-label">
+          <input type="checkbox" data-change-action="setField" data-prop="isMount" {{#if spec.isMount}}checked{{/if}} />
+          <span>Does not level; Large, Move 30 unless you pick a size</span>
+        </label>
+      </div>
+    </div>
+    <p class="cog-label-hint">A new pet starts at Level 1 with the base stats. Roles, Levels and links are set on its sheet afterwards.</p>
+    <div class="cog-form-actions">
+      <button type="button" class="cog-btn cog-bg-accent-fill cog-text-on-fill" data-action="createPet"><i class="fa-solid fa-plus"></i> Create Pet</button>
+    </div>
+  </section>
+</div>

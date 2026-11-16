@@ -1,4 +1,5 @@
 import { tagQueryField, scaleByField, rowScopeField, enchantmentRef } from './tag-fields.mjs';
+import { SELF_TARGET_TAG } from '../../data/tag-vocabulary.mjs';
 
 /**
  * One outgoing damage modifier row: label, mode, value, dice, stat, multiplier, damageType, minRank, condition.
@@ -51,17 +52,22 @@ export function asTriggerField(fields) {
     label: new fields.StringField({ initial: '' }),
     // stored past the one-per-weapon limit after a confirm
     ruleBreak: new fields.BooleanField({ initial: false }),
+    // a buff's row: the trigger fires only from this Rank of the buff (0: always); inert on gear, attack items and templates
+    minRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
     enchantment: enchantmentRef(fields)
   });
 }
 
 /**
- * Array of Amazing Success triggers (gear and attack).
+ * Array of Amazing Success triggers (gear, attack and buff).
  * @param {object} fields foundry.data.fields
  */
 export function asTriggersField(fields) {
   return new fields.ArrayField(asTriggerField(fields), { initial: [] });
 }
+
+/** How often a defence trigger row (`reflect`, `retaliate`) may fire before it asks for a Rule Break: never limited, once a combat, once a floor. */
+const DEFENSE_ONCE_PER = Object.freeze(['', 'combat', 'floor']);
 
 /**
  * Defensive modifier schema row for resistance, immunity, tempHp, reduction, dr, evade, vulnerability (double damage), suppress_dr (DR does not apply).
@@ -77,6 +83,11 @@ export function defenseModifierField(fields) {
     flat: new fields.NumberField({ initial: 0 }),
     rounding: new fields.StringField({ initial: 'up', choices: ['up', 'down'] }),
     option: new fields.StringField({ initial: '', blank: true }),
+    // Read only by the trigger kinds: `reflect` rolls it as a chance die (it fires on a 1), `retaliate` as the damage dice
+    dice: new fields.StringField({ initial: '' }),
+    oncePer: new fields.StringField({ initial: '', blank: true, choices: [...DEFENSE_ONCE_PER] }),
+    // The row applies once its ranked source (a skill, a spell, an applied buff) reaches this Rank; other sources ignore it
+    minRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
     scaleBy: scaleByField(fields),
     disabled: new fields.BooleanField({ initial: false }),
     condition: tagQueryField(fields),
@@ -159,7 +170,7 @@ export function craftModifiersField(fields) {
 
 /**
  * Vehicle Move row (3.44c): a vehicle upgrade or buff, or its driver's skill Rank, changes the vehicle's Move. `kind` is a
- * `rowKinds.vehicleModifiers` id: `moveAdd` (`value`: feet added) or `moveMultiply` (`multiplier`); modules add more.
+ * `rowKinds.vehicleModifiers` id: `moveAdd` (`value`: feet added), `moveMultiply` (`multiplier`) or `moveSet` (`value` feet in the Move mode `option`); modules add more.
  * `condition` is matched against the vehicle's tags (`vehicle.kind.<id>`). `minRank`/`maxRank` as on roll rows.
  * @param {object} fields foundry.data.fields
  */
@@ -169,6 +180,8 @@ function vehicleModifierField(fields) {
     kind: new fields.StringField({ initial: 'moveAdd', blank: false }),
     value: new fields.NumberField({ initial: 0 }),
     multiplier: new fields.NumberField({ initial: 1, min: 0 }),
+    // `moveSet`: the Move mode the row sets (`CONFIG.COG.moveModes`); blank reads as the ground Move
+    option: new fields.StringField({ initial: '' }),
     minRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
     maxRank: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null }),
     disabled: new fields.BooleanField({ initial: false }),
@@ -242,9 +255,10 @@ export function recoveryModifiersField(fields) {
 /**
  * Events a popularity trigger can fire on. Only events the engine detects are listed: `crit` and
  * `critFail` are a natural 20 or 1 on a skill check, attack, spell cast or Evade roll; `kill` is lethal damage
- * applied by the actor. Triggers on anything else (a lick, a Surprise Round action) stay descriptive tags.
+ * applied by the actor; `amazing` is a roll whose degree is an Amazing Success or better (an attack's first target, a plain check
+ * once its Difficulty is known). Triggers on anything else (a lick, a Surprise Round action) stay descriptive tags.
  */
-export const POPULARITY_EVENTS = Object.freeze(['crit', 'critFail', 'kill']);
+export const POPULARITY_EVENTS = Object.freeze(['crit', 'critFail', 'kill', 'amazing']);
 
 /** How often a popularity trigger may fire before it needs a Rule Break confirmation. */
 const POPULARITY_ONCE_PER = Object.freeze(['', 'combat', 'floor']);
@@ -266,6 +280,51 @@ export function popularityTriggersField(fields) {
     oncePer: new fields.StringField({ initial: '', blank: true, choices: [...POPULARITY_ONCE_PER] }),
     // The Rank band the row applies in (as on damage rows; `maxRank` null = no ceiling). Only a skill or spell has a
     // Rank, so only its rows are gated: `evaluateRows` skips a skill's row below `minRank`.
+    minRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+    maxRank: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null })
+  }), { initial: [] });
+}
+
+/**
+ * Moments an event trigger can fire on. `kill` is lethal damage applied by the actor, the moment kill Popularity uses.
+ * `use` is a posted use card of a skill, attack or spell (`fireUseTriggers`). `levelUp` is each Level a crawler gains
+ * (`gainLevels`); it has no limit. Later events join this list beside the engine
+ * code that detects them.
+ */
+export const TRIGGER_EVENTS = Object.freeze(['kill', 'use', 'levelUp']);
+
+/** How often an event trigger may fire before it asks for a Rule Break: never limited, within one combat, within one floor. */
+const TRIGGER_ONCE_PER = Object.freeze(['', 'combat', 'floor']);
+
+/**
+ * Effects that fire when something happens (a kill heals the killer, a kill pays gold). The `kind` names an entry in the
+ * `eventTriggers` row-kind table (registered in `row-kinds/trigger.mjs`, so a module can add kinds); `condition` is matched
+ * against the event's context tags (a kill: the killing attack's tags plus the victim's `subject.*` tags). `oncePer` and
+ * `limit` say how often the row may fire in a combat or a floor (`limit` uses, then a Rule Break), `value` is the amount the
+ * kind reads and `scaleBy` scales it. `minRank`/`maxRank`/`scope` as on damage rows (a `use` row on a skill or spell fires
+ * only for a use of that item unless its scope is `owner`).
+ * @param {object} fields foundry.data.fields
+ */
+export function eventTriggersField(fields) {
+  return new fields.ArrayField(new fields.SchemaField({
+    label: new fields.StringField({ initial: '' }),
+    event: new fields.StringField({ initial: 'kill', choices: [...TRIGGER_EVENTS] }),
+    kind: new fields.StringField({ initial: 'heal' }),
+    value: new fields.NumberField({ initial: 1 }),
+    // A debuff identifier (never a name), read by the `debuff` kind
+    debuff: new fields.StringField({ initial: '' }),
+    // A catalog buff identifier, who it reaches (a `target.*` tag with a recipients block) and how far in feet (0: no limit, or
+    // the carrier's own Range for one chosen creature), read by the `buff` kind
+    identifier: new fields.StringField({ initial: '' }),
+    target: new fields.StringField({ initial: SELF_TARGET_TAG }),
+    range: new fields.NumberField({ min: 0, initial: 0 }),
+    // A skill identifier (never a name), read by the `check` kind
+    skill: new fields.StringField({ initial: '' }),
+    scope: rowScopeField(fields),
+    scaleBy: scaleByField(fields),
+    condition: tagQueryField(fields),
+    oncePer: new fields.StringField({ initial: '', blank: true, choices: [...TRIGGER_ONCE_PER] }),
+    limit: new fields.NumberField({ initial: 1, integer: true, min: 1 }),
     minRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
     maxRank: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null })
   }), { initial: [] });

@@ -55,7 +55,7 @@ export function setDRBonus(spec, val) {
   }
 }
 
-export function addSkill(spec, { name, identifier = '', rank = 1, isPassive = false, type = 'active', stat = '', checkType = 'stat', checkNote = '', baseDamage = null, rankLimits = [], cooldown = { value: 0, unit: '' }, notes = '', choice = false, category = '' } = {}) {
+export function addSkill(spec, { name, identifier = '', rank = 1, isPassive = false, type = 'active', stat = '', checkType = 'skill', checkNote = '', baseDamage = null, rankLimits = [], cooldown = { value: 0, unit: '' }, notes = '', choice = false, category = '' } = {}) {
   const passive = Boolean(isPassive || type === 'passive');
   const r = Math.max(0, Number(rank) || 1);
   spec.skills.push({

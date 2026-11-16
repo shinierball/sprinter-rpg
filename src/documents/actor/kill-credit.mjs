@@ -10,6 +10,7 @@ import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { findDamageUndoRecord, markDamageUndoLethal } from '../../utils/damage/damage-undo.mjs';
 import { promptInfidelsLevel } from './worship-obligations.mjs';
 import { noticePatronDeath } from './patron-notices.mjs';
+import { fireEventTriggers } from './event-triggers.mjs';
 
 /**
  * Award a boss star or crawler skull on lethal damage. Never throws.
@@ -84,6 +85,24 @@ export async function awardKillPopularity(targetActor, attackerActor, { isLethal
   }
 }
 
+/**
+ * The killer's kill event triggers (`eventTriggers` rows of event `kill`: a heal, gold), straight after the kill Popularity and on
+ * the same context. Never throws.
+ */
+export async function fireKillTriggers(targetActor, attackerActor, { isLethal, appId, attackTags, combat }) {
+  if (!(isLethal && attackerActor && attackerActor.uuid !== targetActor.uuid)) return;
+  try {
+    const context = buildKillContext({ attacker: attackerActor, victim: targetActor, attackTags });
+    await fireEventTriggers(attackerActor, 'kill', {
+      context,
+      combatId: combat?.started ? combat.id : '',
+      application: { victimUuid: targetActor.uuid ?? '', applicationId: appId }
+    });
+  } catch (err) {
+    console.error('Sprinter RPG | Error firing kill triggers:', err);
+  }
+}
+
 /** The kill context kept on a lethal application's record (null when it is not a kill by another actor). */
 export function killContextFor(isLethal, targetActor, attackerActor, attackTags) {
   if (!(isLethal && attackerActor && attackerActor.uuid !== targetActor.uuid)) return null;
@@ -114,6 +133,7 @@ export async function creditDeferredKill(victim, downedBy) {
   const killTrophy = await creditKill(victim, attacker, state);
   if (killTrophy) await markDamageUndoLethal(victim, appId, { killTrophy });
   await awardKillPopularity(victim, attacker, state);
+  await fireKillTriggers(victim, attacker, state);
   await noticePatronDeath(victim, attacker, { isLethal: true });
   return 'paid';
 }

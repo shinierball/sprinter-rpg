@@ -11,7 +11,7 @@
  */
 import { resolveActorByUuid } from '../actor-uuid.mjs';
 import { getActiveModifierSources } from '../roll/damage-modifiers.mjs';
-import { shiftDegree, sanitizeVehicleCheckKind, VEHICLE_CHECK_KINDS, vehicleKindTag } from '../../data/rules/vehicle-rules.mjs';
+import { sanitizeVehicleCheckKind, VEHICLE_CHECK_KINDS, vehicleKindTag } from '../../data/rules/vehicle-rules.mjs';
 
 const MAX_TARGETS = 20;
 
@@ -89,24 +89,4 @@ export function vehicleCheckDifficulty(kindId, state = {}) {
   if (!def) return null;
   const dc = def.difficulty(state);
   return Number.isFinite(dc) ? dc : null;
-}
-
-/**
- * The stored shifts of a card applied to its rolled degree, in order. A shift is `{ rowKey, steps, failOnly }`.
- * @param {string} outcome a COG_ROLL_OUTCOMES id
- * @param {Array<{ steps?: number, failOnly?: boolean }>} shifts
- */
-export function applyShifts(outcome, shifts) {
-  let id = outcome;
-  for (const s of Array.isArray(shifts) ? shifts : []) id = shiftDegree(id, Number(s?.steps) || 1, { failOnly: s?.failOnly !== false });
-  return id;
-}
-
-/** A shift list from a stored flag: plain objects with a row key, at most 10. */
-export function sanitizeShifts(raw) {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((s) => s && typeof s === 'object' && typeof s.rowKey === 'string' && s.rowKey)
-    .map((s) => ({ rowKey: s.rowKey.slice(0, 200), steps: Math.max(1, Math.trunc(Number(s.steps)) || 1), failOnly: s.failOnly !== false }))
-    .slice(0, 10);
 }

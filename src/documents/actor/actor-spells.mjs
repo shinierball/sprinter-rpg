@@ -4,15 +4,19 @@ import { getGrantedRankDamageDie } from '../../data/rank-dice.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { resolveDamageContext } from '../../utils/roll/roll-context.mjs';
 import { applyDamageStatSubstitutions } from '../../utils/roll/narrow-modifiers.mjs';
-import { collectDamageModifiers, applyStatSuppression } from '../../utils/roll/damage-modifiers.mjs';
+import { collectDamageModifiers, applyStatSuppression, applyRetype } from '../../utils/roll/damage-modifiers.mjs';
 import { collectOnHitEffects } from '../../utils/attack/on-hit.mjs';
 import {
   toggleOffSpell, gateSpellCast, resolveSpellCost, confirmSpellMana, postSpellFailedCard, paySpellCost, applySpellHealing, applySpellCastEffects, applySpellCastConditions, recordSpellCast
 } from './spell-cast.mjs';
 import { spellCastCard, spellCastFlags } from './spell-cast-card.mjs';
 import { cardSummary, CARD_PROFILES } from '../../utils/item-describer/card-summary.mjs';
+import { buffApplyBlocks } from './use-card-parts.mjs';
+import { actingRank } from '../../utils/skill/rank-source.mjs';
+import { castTakesMark } from '../../utils/skill/advancing-items.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import { applyChosenEffectToParts, applyTechniquesToDamageParts } from './combat-damage.mjs';
+import { fireUseTriggers } from './event-triggers.mjs';
 
 /**
  * Parse and calculate spell damage formula and metadata based on spell description, stat, and rank upgrades
@@ -174,6 +178,23 @@ export function getSpellDamageData(actor, spellItem, options = {}) {
 }
 
 /**
+ * A spell's Rank 1 base damage as a formula: its stored base dice and the caster's Stat Mod for the base stat, without
+ * Upgrades, Rank dice or other bonuses (`1d4 + 3`). Nothing for a spell with no plain base dice.
+ * @param {object} actor the caster
+ * @param {Item|object} spellItem
+ * @returns {{ formula: string, type: string }|null}
+ */
+export function spellRank1BaseFormula(actor, spellItem) {
+  const sys = spellItem?.system || {};
+  const base = normalizeBaseDamage(sys.baseDamage);
+  if (!baseDamageDice(base)) return null;
+  const statKey = baseDamageStat(base, sys.stat);
+  const mod = statKey ? Number(actor?.system?.abilities?.[statKey]?.mod) || 0 : 0;
+  const bonus = mod === 0 ? '' : mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`;
+  return { formula: `${base.dice}${bonus}`, type: base.damageType || 'Magical' };
+}
+
+/**
  * Resolve composite damage parts for a spell item.
  * Enumerates Base Spell Damage, Rank Break Milestones, Rank Damage Die,
  * Spell Damage Modifiers, Active Buffs, and Equipped Gear bonuses.
@@ -308,7 +329,7 @@ export function getSpellDamageParts(actor, spellItem, options = {}) {
   applyChosenEffectToParts(actor, parts, options.damageEffect, spellItem, { primaryType, skillRank: rank, rollContext, options });
   applyTechniquesToDamageParts(actor, parts, options, options.damageEffect ?? '', primaryType, spellItem, rank, rollContext);
 
-  return applyStatSuppression(applyDamageStatSubstitutions(actor, parts, rollContext, { skip: options.skipSubstitutions }), dmod);
+  return applyRetype(applyStatSuppression(applyDamageStatSubstitutions(actor, parts, rollContext, { skip: options.skipSubstitutions }), dmod), dmod);
 }
 
 /**
@@ -357,14 +378,19 @@ export async function rollSpell(actor, spellItem, action = 'cast', options = {})
   // The cast card offers its conditions only when it offers no attack (the hit card offers them otherwise)
   const conditionEffects = cast.offersAttack ? [] : (cast.conditionTags ?? []).map((ref) => ({ kind: 'debuffs', ref }));
   cast.summaryHtml = await cardSummary(spellItem, omit, { actor, effects: conditionEffects });
+  // The buffs this spell applies: a block per row in force, on every cast card (an attack spell included)
+  cast.buffBlocks = await buffApplyBlocks(actor, spellItem, { rank: Math.max(actingRank(spellItem), 1) });
   recordSpellCast(actor, spellItem, cost, healInfo);
 
   const { content, contestData } = spellCastCard(actor, spellItem, opts, cast);
+  // A spell whose text calls for a Spell Check against a target makes it at the cast (an attack spell's Check is its attack roll)
+  if (contestData?.hasContest && !cast.offersAttack && castTakesMark(spellItem, opts)) await actor.markSkillUsed(spellItem, { reason: 'spell-check' });
   const castMessage = await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor }),
-    content,
+    content: content + cast.buffBlocks.html,
     flags: spellCastFlags(actor, spellItem, opts, cast, contestData)
   }, cardMessageOptions(actor));
   await relayPendingSpellConditions(castMessage, spellItem, cast.pendingConditions, cast.appliedConditionTargets, 'appliedTargets');
+  await fireUseTriggers(actor, spellItem, { options: opts });
   return castMessage;
 }

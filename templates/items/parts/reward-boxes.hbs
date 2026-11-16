@@ -15,6 +15,10 @@
         {{#each row.tierOptions as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
       </select>
       <input class="cog-field-input" type="number" min="1" step="1" style="width: 56px;" data-change-action="editRewardBox" data-index="{{row.index}}" data-field="quantity" value="{{row.quantity}}" title="{{localize 'COG.RewardBoxes.Quantity'}}" />
+      <label class="cog-text-secondary" data-tooltip="{{localize 'COG.RewardBoxes.WaitsHint'}}">
+        <input type="checkbox" data-change-action="editRewardBox" data-index="{{row.index}}" data-field="whenEmpty" {{#if row.whenEmpty}}checked{{/if}} />
+        {{localize "COG.RewardBoxes.Waits"}}
+      </label>
       <span class="flex-1">
         {{#if row.hasTemplate}}
           <span class="cog-badge" title="{{localize 'COG.RewardBoxes.Template'}}">{{row.templateName}}</span>

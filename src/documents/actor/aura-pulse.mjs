@@ -89,17 +89,17 @@ export function auraSideOf(caster, casterToken, candidate, candidateToken) {
 
 /**
  * What an aura applies, read from its own config only.
- * @returns {{ friendly: { buffs: boolean, tempBars: { slots: number, hpPerSlot: number, element: string }, healBars: number, isHoT: boolean, cleanse: string[] },
+ * @returns {{ friendly: { buffs: boolean, tempBars: { slots: number, hpPerSlot: number, element: string, passTag: string }, healBars: number, isHoT: boolean, cleanse: string[] },
  *   hostile: { damageFormula: string|null, damageType: string, debuffs: string[] } }}
  */
 export function auraEffectsOf(holder, item) {
   const area = item?.system?.area || {};
-  const { slots, hpPerSlot, element } = computeAuraTempBars(holder, item);
+  const { slots, hpPerSlot, element, passTag } = computeAuraTempBars(holder, item);
   const formula = String(area.periodicDamageFormula ?? '').trim();
   return {
     friendly: {
       buffs: buildAuraEffectItems(holder, item).length > 0,
-      tempBars: { slots, hpPerSlot, element },
+      tempBars: { slots, hpPerSlot, element, passTag },
       healBars: Number(area.healingBars) || 0,
       isHoT: Boolean(area.isHoT),
       cleanse: Array.isArray(area.cleanseDebuffs) ? area.cleanseDebuffs.filter(Boolean) : []
@@ -134,7 +134,7 @@ export function blankAuraState() {
  *   (a token mid-movement, whose document and placeable still hold the origin)
  * @returns {{ tokens: object[], measure: (a: object, b: object) => number|null }}
  */
-function sceneTokenViews(scene, { centres = null } = {}) {
+export function sceneTokenViews(scene, { centres = null } = {}) {
   const viewed = globalThis.canvas?.scene;
   if (viewed && (scene === viewed || (scene?.id && scene.id === viewed.id))) {
     const placeables = asArray(globalThis.canvas?.tokens?.placeables).map(t => {
@@ -279,6 +279,7 @@ async function restoreStoredBars(actor, item, stored) {
     'system.attributes.hp.tempBars.source': item.name,
     'system.attributes.hp.tempBars.sourceUuid': item.uuid || '',
     'system.attributes.hp.tempBars.element': stored.element || '',
+    'system.attributes.hp.tempBars.passTag': stored.passTag || '',
     'system.attributes.hp.temp': total
   });
   return true;
@@ -314,7 +315,7 @@ async function leaveAlly(item, state, actor) {
   const key = keyOf(actor);
   const bars = actor.system?.attributes?.hp?.tempBars;
   const away = bars?.sourceUuid === item.uuid && bars.count > 0
-    ? { uuid: key, count: bars.count, maxCount: bars.maxCount, hpPerSlot: bars.hpPerSlot, currentSlotHp: bars.currentSlotHp, element: bars.element || '' }
+    ? { uuid: key, count: bars.count, maxCount: bars.maxCount, hpPerSlot: bars.hpPerSlot, currentSlotHp: bars.currentSlotHp, element: bars.element || '', passTag: bars.passTag || '' }
     : null;
   if (!(await removeAuraItems(actor, item, { types: ['buff', 'tempBars'] }))) return false;
   if (away) state.storedBars = [...state.storedBars.filter(b => b.uuid !== key), away];

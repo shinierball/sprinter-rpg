@@ -12,6 +12,8 @@ import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { emitsLight, igniteLight } from '../actor/light-source.mjs';
 import { cooldownLabel, hasCooldown } from '../../utils/time/cooldowns.mjs';
 import { gateItemCooldown } from '../actor/cooldown-gate.mjs';
+import { lifetimeKindsOf } from '../../data/rules/potion-rules.mjs';
+import { gatePotionUse, askPotionRecipient, POTION_GATE_CLEAR } from './potion-gate.mjs';
 import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from '../actor/action-block.mjs';
 import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from '../actor/zero-zone-gate.mjs';
 import { isActivatedGearAura, toggleGearAura } from '../actor/gear-aura.mjs';
@@ -149,8 +151,16 @@ export async function useItem(item, options = {}) {
   // whether or not the item has outcomes. Items with no owner carry no record.
   const cooldownGate = actor ? await gateItemCooldown(actor, item, { options }) : { proceed: true, flags: {}, commit: async () => {} };
   if (!cooldownGate.proceed) return { error: 'cooldown_cancelled', message: `"${itemName}" is on cooldown.` };
+  // Potion rules (9.8): who takes it, then Potion Sickness and the lifetime limit ask before anything is spent.
+  const recipient = actor ? (options.recipient ?? await askPotionRecipient(actor, item, options)) : null;
+  const potionGate = actor
+    ? await gatePotionUse(actor, item, { recipient, options, outcomes: Array.isArray(sys.outcomes) ? sys.outcomes : [] })
+    : POTION_GATE_CLEAR;
+  if (!potionGate.proceed) return { error: 'potion_cancelled', message: `"${itemName}" was not used.` };
+  // The lifetime kinds the use applied; a random outcome narrows it to the one rolled.
+  let potionKinds = lifetimeKindsOf(sys.outcomes);
   if (actor) await spendActivationUses(actor, [item]);
-  const gateFlags = { ...cooldownGate.flags, ...usageFlags, ...zeroZoneGate.flags, ...actionBlockGate.flags };
+  const gateFlags = { ...cooldownGate.flags, ...usageFlags, ...zeroZoneGate.flags, ...actionBlockGate.flags, ...potionGate.flags };
   // A confirmed Rule Break (no charges, used up, on cooldown) shows on the card like every other Rule Break card.
   const ruleBreakBadge = gateFlags.ruleBreak ? ` ${ruleBreakBadgeHtml()}` : '';
 
@@ -176,6 +186,7 @@ export async function useItem(item, options = {}) {
       return;
     }
     await cooldownGate.commit();
+    await potionGate.commit(potionKinds);
     if (prayerDeity) await addKnownDeity(actor, prayerDeity, { via: 'scroll' });
     // The last unit of a consumable leaves its used form; a consumed light leaves it when the light ends (3.76 B3).
     const unit = { quantity: currentQty, leaveForm: !(actor && emitsLight(item)) };
@@ -243,7 +254,8 @@ export async function useItem(item, options = {}) {
       // Read before the use can delete the item; only the rolled outcome's effect is described (3.71)
       const summaryHtml = await outcomeCardSummary(item, actor, [chosenOutcome]);
       // Consume only once the outcome resolved: a cast that throws leaves the scroll in the pack.
-      const singleRes = await resolveSingleOutcome(chosenOutcome, actor, item, false, { enchantTarget });
+      potionKinds = lifetimeKindsOf([chosenOutcome]);
+      const singleRes = await resolveSingleOutcome(chosenOutcome, actor, item, false, { enchantTarget, recipient });
       // A refused or cancelled enchantment keeps the unit; a destroyed item still spends the scroll (the book's roll).
       if (enchantWasRefused(singleRes)) unitSpent = false;
       else await consumeItemUse();
@@ -302,7 +314,7 @@ export async function useItem(item, options = {}) {
     let totalDmg = 0;
 
     for (const out of outcomes) {
-      const res = await resolveSingleOutcome(out, actor, item, true, { enchantTarget });
+      const res = await resolveSingleOutcome(out, actor, item, true, { enchantTarget, recipient });
       outcomeHtmls.push(res.outcomeHtml);
       appliedResults.push(res);
       totalHealBars += res.healBars || 0;

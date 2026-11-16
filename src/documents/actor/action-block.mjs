@@ -9,6 +9,7 @@
 import { RULE_FLAGS, hasRuleFlag, collectItemSources } from '../../utils/tag/tag-behaviour.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { guidanceCausesFor } from './pet-guidance.mjs';
 
 const NO_FLAGS = Object.freeze({});
 
@@ -21,6 +22,19 @@ const BLOCKS = Object.freeze([
   // A pending forfeit (Shocked): the next Action is already lost, so taking one is a Rule Break until it is forfeited.
   Object.freeze({ flag: RULE_FLAGS.forfeitsAction, types: null, cause: 'Must forfeit their next Action' })
 ]);
+
+/** The type-limited restrictions (Held, Terrified, Staggered, Muted, Enraged); `except` blocks every type but those listed. */
+const TYPED_BLOCKS = Object.freeze([
+  Object.freeze({ flag: RULE_FLAGS.noMove, types: Object.freeze(['move']), cause: 'Cannot take Move Actions' }),
+  Object.freeze({ flag: RULE_FLAGS.noCast, types: Object.freeze(['cast']), cause: 'Cannot cast Spells' }),
+  Object.freeze({ flag: RULE_FLAGS.onlyAttackMove, except: Object.freeze(['attack', 'move']), cause: 'Can only take Attack and Move Actions' })
+]);
+
+/** The restrictions in force. */
+const blocksInForce = () => [...BLOCKS, ...TYPED_BLOCKS];
+
+/** Does this restriction cover an Action of this type? */
+const blockCovers = (block, actionType) => (block.except ? !block.except.includes(actionType) : !block.types || block.types.includes(actionType));
 
 /** Localized text with an English fallback for a client that has not loaded the language file. */
 function text(key, data, fallback) {
@@ -36,13 +50,15 @@ function text(key, data, fallback) {
  * @param {string} actionType a `COG_ACTION_TYPES` id ('attack', 'cast', 'check', 'item', 'evade', ...)
  * @returns {string[]}
  */
-function actionBlockCauses(actor, actionType) {
+function actionBlockCauses(actor, actionType, extra) {
   if (!actor) return [];
   const causes = [];
-  for (const block of BLOCKS) {
-    if (block.types && !block.types.includes(actionType)) continue;
+  for (const block of blocksInForce()) {
+    if (!blockCovers(block, actionType)) continue;
     if (hasRuleFlag(actor, block.flag)) causes.push(block.cause);
   }
+  // A pet that is not guided (or hides, or has used its one attack) is a restriction of the same kind (core book p. 232).
+  causes.push(...guidanceCausesFor(actor, actionType, extra));
   return causes;
 }
 
@@ -59,19 +75,21 @@ function blockSourceNames(actor, flag) {
 /**
  * The plain-text lines a confirm shows for this actor's blocks: who, the rule, and the debuff that causes it
  * ("Test Crawler: Cannot take Actions (Dying)"). Plain text: escape it where it goes into HTML.
+ * @param {{ hasAttacked?: boolean }} [extra] a guided pet's attack count for the round when the caller has it (the ledger)
  * @returns {string[]}
  */
-export function actionBlockLines(actor, actionType) {
+export function actionBlockLines(actor, actionType, extra) {
   const name = actor?.name || 'This actor';
   const lines = [];
-  for (const block of BLOCKS) {
-    if (block.types && !block.types.includes(actionType)) continue;
+  for (const block of blocksInForce()) {
+    if (!blockCovers(block, actionType)) continue;
     if (!hasRuleFlag(actor, block.flag)) continue;
     const debuffs = blockSourceNames(actor, block.flag).join(', ');
     lines.push(debuffs
       ? text('COG.ActionBlockGate.CauseDebuff', { name, cause: block.cause, debuffs }, `${name}: ${block.cause} (${debuffs})`)
       : text('COG.ActionBlockGate.Cause', { name, cause: block.cause }, `${name}: ${block.cause}`));
   }
+  for (const cause of guidanceCausesFor(actor, actionType, extra)) lines.push(`${name}: ${cause}`);
   return lines;
 }
 
@@ -96,9 +114,17 @@ export async function gateActionBlock(actor, actionType, { options = {} } = {}) 
   if (!actionBlockApplies(actor, actionType, options)) return ACTION_BLOCK_CLEAR;
   const reasons = actionBlockCauses(actor, actionType);
   const name = actor?.name || 'This actor';
-  const debuffs = [...new Set(BLOCKS.flatMap((b) => (!b.types || b.types.includes(actionType)) && hasRuleFlag(actor, b.flag) ? blockSourceNames(actor, b.flag) : []))].join(', ');
+  const debuffs = [...new Set(blocksInForce().flatMap((b) => blockCovers(b, actionType) && hasRuleFlag(actor, b.flag) ? blockSourceNames(actor, b.flag) : []))].join(', ');
   // The message becomes HTML in the dialog body (names escaped); the reason is plain text (a notification).
-  const message = debuffs
+  // A type-limited restriction names its own rule ("Cannot cast Spells"), not "cannot take Actions".
+  const guidance = guidanceCausesFor(actor, actionType);
+  const typedOnly = reasons.every((r) => TYPED_BLOCKS.some((b) => b.cause === r));
+  const causeText = escapeAttr(reasons.join('; '));
+  const message = guidance.length
+    ? `${escapeAttr(name)}: ${causeText}. Act anyway as a Rule Break?`
+    : typedOnly
+    ? text('COG.ActionBlockGate.PromptCause', { name: escapeAttr(name), cause: causeText, debuffs: escapeAttr(debuffs) }, `${escapeAttr(name)}: ${causeText} (${escapeAttr(debuffs)}). Act anyway as a Rule Break?`)
+    : debuffs
     ? text('COG.ActionBlockGate.PromptDebuff', { name: escapeAttr(name), debuffs: escapeAttr(debuffs) }, `${escapeAttr(name)} cannot take Actions (${escapeAttr(debuffs)}). Act anyway as a Rule Break?`)
     : text('COG.ActionBlockGate.Prompt', { name: escapeAttr(name) }, `${escapeAttr(name)} cannot take Actions. Act anyway as a Rule Break?`);
   const res = await confirmRuleBreak({

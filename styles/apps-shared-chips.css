@@ -1,0 +1,272 @@
+/* Styles other windows share, kept from the old Mob Creator stylesheet: the weapon builder's nav, footer and indicator, the source and provenance chips, badges, personal-space rows, rapid-commit and grind chips. */
+
+.creator-nav {
+  background: var(--cog-window-bg);
+  border-bottom: 2px solid var(--cog-panel-border);
+}
+
+.creator-nav .tab-btn {
+  color: var(--cog-text-muted);
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.creator-nav .tab-btn:hover {
+  color: var(--cog-on-fill);
+  background: color-mix(in srgb, var(--cog-on-fill) 5%, transparent);
+}
+
+.creator-nav .tab-btn.active {
+  color: var(--cog-on-fill);
+  background: var(--cog-accent-fill);
+  border-bottom: 2px solid var(--cog-gold-fill);
+}
+
+
+/* Footer & Actions */
+.creator-footer {
+  background: var(--cog-window-bg);
+  padding: 10px 18px;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--cog-panel-border);
+}
+
+
+.creation-indicator {
+  color: var(--cog-info);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Item provenance */
+.cog-provenance-chip {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* 7.7d source badge: the set-symbol chip. Tokens: --cog-source-<theme> (light and dark; the always-dark panels take the dark values). */
+:root,
+.theme-light {
+  --cog-source-shiny: #87641d;
+  --cog-source-rulebook: #962d22;
+  --cog-source-homebrew: #3d6b4f;
+}
+
+.theme-dark,
+.cog-dark {
+  --cog-source-shiny: #f1c40f;
+  --cog-source-rulebook: #c0392b;
+  --cog-source-homebrew: #6fbf8b;
+}
+
+.cog-provenance-chip[data-provenance="source"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  box-sizing: border-box;
+  height: 16px;
+  padding: 0 4px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* A theme that is turned off: struck through with a dashed border, kept at full opacity so it stays AA (4.5:1) in light mode. */
+.cog-provenance-chip[data-provenance="source"][data-source-off] {
+  border-style: dashed;
+}
+
+.cog-provenance-chip[data-provenance="source"][data-source-off] .cog-source-symbol,
+.cog-provenance-chip[data-provenance="source"][data-source-off] .cog-source-label {
+  text-decoration: line-through;
+}
+
+.cog-provenance-chip[data-provenance="source"] .cog-source-symbol,
+.cog-provenance-chip[data-provenance="source"] .cog-source-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--cog-text);
+}
+
+/* Documents without book text (3.63) */
+.cog-badge-no-book-text,
+.cog-badge-rule-break {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+}
+
+.cog-space-occupants-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--cog-info);
+  margin-bottom: 8px;
+}
+
+.cog-space-occupants {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cog-space-occupant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--cog-surface);
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+}
+
+.cog-space-occupant-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cog-space-occupant-who img {
+  border-radius: 3px;
+}
+
+.cog-space-occupant-name {
+  font-weight: bold;
+  color: var(--cog-text-strong);
+}
+
+.cog-space-owner-tag {
+  font-size: 10px;
+  background: var(--cog-warning-fill);
+  color: var(--cog-on-fill);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.cog-space-empty {
+  color: var(--cog-text-muted);
+  font-size: 12px;
+}
+
+.cog-space-occupant-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cog-linked-spaces {
+  margin-top: 8px;
+  border-top: 1px dashed var(--cog-divider);
+  padding-top: 6px;
+}
+
+.cog-linked-space {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.cog-linked-space-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.cog-linked-space-hint {
+  color: var(--cog-text-muted);
+  font-style: italic;
+}
+
+/* ---------------- Interactive state classes that replaced conditional inline styles ---------------- */
+.cog-dim-when-disabled:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.cog-rapid-commit-btn {
+  cursor: pointer;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cog-accent) 40%, transparent);
+}
+
+.cog-rapid-commit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.cog-grind-chip-on {
+  background: var(--cog-info-tint);
+  border: 1px solid var(--cog-info);
+}
+
+.cog-grind-chip-off {
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+  opacity: 0.6;
+}
+
+.cog-grind-hours-over {
+  background: var(--cog-danger-tint);
+  border: 1px solid var(--cog-accent);
+}
+
+.cog-grind-hours-ok {
+  background: var(--cog-success-tint);
+  border: 1px solid var(--cog-success);
+}
+
+.cog-grind-tab-active {
+  background: var(--cog-magic-tint);
+  color: var(--cog-gold);
+  border-color: var(--cog-gold);
+  font-weight: bold;
+}
+
+.cog-grind-tab-idle {
+  background: var(--cog-window-bg);
+  color: var(--cog-text-secondary);
+  border-color: var(--cog-panel-border);
+}
+
+.cog-grind-skill-ready {
+  background: var(--cog-success-tint);
+  border: 1.5px solid var(--cog-success);
+}
+
+.cog-grind-skill-selected {
+  background: var(--cog-magic-tint);
+  border: 1.5px solid var(--cog-gold);
+}
+
+.cog-grind-skill-idle {
+  background: var(--cog-window-bg);
+  border: 1px solid var(--cog-panel-border);
+}
+
+

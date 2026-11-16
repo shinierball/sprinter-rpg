@@ -15,6 +15,7 @@ import { contentRegistry } from './registry.mjs';
 import { readCatalog } from '../sourcery/commit.mjs';
 import { COG_THEME_ID } from './default-content-provider.mjs';
 import { TABLE_PACK } from '../sourcery/canon.mjs';
+import { registerUserQuery } from '../utils/gm-relay.mjs';
 
 export const SOURCERY_PROVIDER = 'sprinter-rpg-sourcery';
 export const SOURCERY_CATALOG_SETTING = 'sourceryCatalog';
@@ -336,9 +337,30 @@ export async function whenSourceryCatalogsSettled() {
   while (inFlight.size) await Promise.allSettled([...inFlight]);
 }
 
-/** Listen to `sprinter-rpg.registerContent` and register the imported packs (and prune missing ones at setup). Call once at load. */
+/**
+ * The question (`askUser`, src/utils/gm-relay.mjs) the GM puts to every other connected client after a world migration
+ * rewrote world packs: re-read the imported packs. Each client's catalogs hold copies taken when it read them (`setup`),
+ * which a document update does not change, so a creator would otherwise build from the old shape.
+ */
+export const SOURCERY_REFRESH_QUERY = 'sourceryRefresh';
+
+/**
+ * Re-read the imported packs into the catalogs after they were written, once every refresh already running has ended
+ * (the one `setup` started included): the last refresh to finish wins, so it must be the one that read the new data.
+ * @returns {Promise<number>} catalog entries registered
+ */
+export async function refreshSourceryCatalogsAfterWrite() {
+  await whenSourceryCatalogsSettled();
+  return applySourceryCatalog();
+}
+
+/**
+ * Listen to `sprinter-rpg.registerContent` and register the imported packs (and prune missing ones at setup); answer the
+ * GM's refresh question. Call once at load.
+ */
 export function installSourceryContentHook({ onCatalogsRefreshed } = {}) {
   if (typeof onCatalogsRefreshed === 'function') afterRefresh = onCatalogsRefreshed;
+  registerUserQuery(SOURCERY_REFRESH_QUERY, () => refreshSourceryCatalogsAfterWrite());
   globalThis.Hooks?.on?.('sprinter-rpg.registerContent', registry => {
     registerSourceryCatalogSetting();
     registerSourceryContent(registry);

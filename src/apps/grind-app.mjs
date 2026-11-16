@@ -18,14 +18,13 @@ import { GRIND_MAP_TAGS, getRequiredGrindingHours, getAdvancementTarget, getSafe
 import { SYSTEM_PATH } from '../constants.mjs';
 import { getItemAllTags } from '../documents/active-tags.mjs';
 import { getCurrentFloor } from '../utils/floor/current-floor.mjs';
-import { parseFloorNumber } from '../documents/actor/actor-environment.mjs';
 import { buildAdvancementControls, runAdvancementControl } from './advancement-batch.mjs';
 import { openAwardLevels } from './award-levels-app.mjs';
 import { lowestLevelBonusMembers } from '../utils/skill/skill-advancement.mjs';
 import { ADVANCEMENT_ROUTES, routeAllowsGain } from '../utils/skill/advancement-routes.mjs';
 import { ruleSkillRank } from '../utils/skill/rule-skills.mjs';
 import { patronGrindOptions } from '../documents/actor/patron-benefits.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../utils/tag/tag-behaviour.mjs';
+import { advancingItemsOf } from '../utils/skill/advancing-items.mjs';
 
 
 const TPL = `${SYSTEM_PATH}/templates/apps/grind-app`;
@@ -107,12 +106,10 @@ export class COGGrindApp extends COGToolApp {
       this.mapType = this._detectMapFromActor();
     }
 
-    // Default floor number: the actor's design floor, else its details.floor select value read by the
-    // shared parseFloorNumber helper (the same reading the race/class floor gate uses), else the world's current floor
+    // Default floor number: a mob's design floor, else the world's current Floor (a crawler's `details.floor` label is the
+    // crawler's own record and can lag the world, so it is not read)
     const designFloor = parseInt(this.actor?.system?.details?.designFloor, 10);
-    this.floorNumber = (Number.isFinite(designFloor) && designFloor >= 1 ? designFloor : 0)
-      || parseFloorNumber(this.actor?.system?.details?.floor)
-      || getCurrentFloor();
+    this.floorNumber = (Number.isFinite(designFloor) && designFloor >= 1 ? designFloor : 0) || getCurrentFloor();
   }
 
   /**
@@ -206,7 +203,7 @@ export class COGGrindApp extends COGToolApp {
     context.lastGrindResult = this.lastGrindResult || null;
 
     // Active Crawler Endurance stats
-    const allSkills = activeCrawler?.items ? activeCrawler.items.filter(i => i.type === 'skill').filter(i => !hasRuleFlag(i, RULE_FLAGS.noRanks)) : [];
+    const allSkills = advancingItemsOf(activeCrawler);
     // The Endurance skill by identifier (never by name, moves the identifier to the registry)
     const endRank = ruleSkillRank(activeCrawler, 'fatigueCheck');
     const conMod = activeCrawler?.system?.abilities?.con?.mod ?? 0;
@@ -237,7 +234,8 @@ export class COGGrindApp extends COGToolApp {
         img: skill.img || 'icons/svg/item-bag.svg',
         baseRank,
         modifiedRank,
-        stat: (skill.system?.stat || 'str').toUpperCase(),
+        stat: (skill.system?.stat || (skill.type === 'spell' ? 'int' : 'str')).toUpperCase(),
+        isSpell: skill.type === 'spell',
         checked: isChecked,
         requiredHours: reqHours,
         investedHours,

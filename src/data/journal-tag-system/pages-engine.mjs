@@ -92,6 +92,7 @@ export const ENGINE_PAGES = [
       <tr><td><code>requirements</code></td><td>What a race or class needs before a crawler takes it (not a modifier row): rows joined with AND; an unmet row asks a Rule Break</td><td>self</td></tr>
       <tr><td><code>manaCostModifiers</code>, <code>recoveryModifiers</code></td><td>Spell MP cost, rest recovery</td><td>self</td></tr>
       <tr><td><code>popularityTriggers</code>, <code>aiFavorRatings</code>, <code>statSubstitutions</code></td><td>Popularity, AI Favor, using one stat for another</td><td>self, subject</td></tr>
+      <tr><td><code>eventTriggers</code></td><td>What happens when an event does (a kill heals the killer or pays gold; a use gives the user a debuff)</td><td>self, subject</td></tr>
     </tbody>
   </table>
   <p>
@@ -129,7 +130,7 @@ export const ENGINE_PAGES = [
   </ul>
 
   <div class="cog-journal-callout cog-journal-callout-info">
-    <strong>Situations.</strong> The engine sets <code>situation.in_combat</code>, <code>situation.disadvantaged</code>, <code>situation.critical_hit</code>, <code>situation.amazing_success</code>, <code>situation.damage_effect</code>, <code>situation.specialty</code> (the item you make, or your target, carries the rolling skill's chosen specialty) <code>situation.same_size</code> and (on a defence row) <code>situation.intercepting</code>, a hit the holder caught for an ally, itself; rolls in a race or chase also carry <code>contest.race</code> or <code>contest.chase</code>. Any other situation a row mentions (such as <code>situation.aiming</code>) appears as a toggle in the roll dialog. Press <strong>+ New situation</strong> in a condition editor to invent one for your table.
+    <strong>Situations.</strong> The engine sets <code>situation.in_combat</code>, <code>situation.disadvantaged</code>, <code>situation.critical_hit</code>, <code>situation.amazing_success</code>, <code>situation.damage_effect</code>, <code>situation.specialty</code> (the item you make, or your target, carries the rolling skill's chosen specialty) <code>situation.same_size</code> and (on a defence row) <code>situation.intercepting</code>, a hit the holder caught for an ally, itself, and (on a heal row) <code>situation.single_target</code>, a heal that goes to one creature; rolls in a race or chase also carry <code>contest.race</code> or <code>contest.chase</code>. Any other situation a row mentions (such as <code>situation.aiming</code>) appears as a toggle in the roll dialog. Press <strong>+ New situation</strong> in a condition editor to invent one for your table.
   </div>
 
   <h3>Once per Floor</h3>
@@ -175,8 +176,10 @@ scaled = number &times; (base + per &times; n), kept between min and max
       <tr><td><code>rank</code></td><td>A Rank</td><td>This item, the item used, the weapon skill, an owned item</td></tr>
       <tr><td><code>floor</code></td><td>The current Floor</td><td></td></tr>
       <tr><td><code>stat</code> / <code>statValue</code></td><td>Your modifier / score for a chosen stat</td><td></td></tr>
+      <tr><td><code>paidDrStat</code></td><td>Your modifier or score for a chosen stat, as the world setting AI Favor Spent for DR says</td><td></td></tr>
       <tr><td><code>count</code></td><td>Creatures or items matching a tag query</td><td>Party, allies, enemies, owned items, targets hit at once (per target)</td></tr>
       <tr><td><code>move</code></td><td>Your Move in feet (per 0.1 = &ldquo;per 10 ft&rdquo;)</td><td></td></tr>
+      <tr><td><code>size</code></td><td>Your size value (1 to 8)</td><td></td></tr>
       <tr><td><code>worshipTier</code></td><td>Your Tier of Devotion (1-3); 0 for a god you do not worship</td><td>The god of this gift, or the highest god you worship</td></tr>
     </tbody>
   </table>
@@ -207,6 +210,8 @@ scaled = number &times; (base + per &times; n), kept between min and max
       <tr><td><code>add</code></td><td>Each matching hit deals more: dice, a flat amount, a stat, or a Rank die. A weapon's own <code>add</code> rows are its Bonus damage (page 3).</td></tr>
       <tr><td><code>multiply</code></td><td>Each matching hit's damage is multiplied, for one damage type or all of it; &times;0 is a real zero.</td></tr>
       <tr><td><code>suppress_stat</code></td><td>The matching hits add no stat bonus to their damage, for one damage type or all of it.</td></tr>
+      <tr><td><code>retype</code></td><td>Every part of the damage the row matches takes the row's damage type, so Resistance and Vulnerability see it.</td></tr>
+      <tr><td><code>healAdd</code></td><td>A heal of the holder's Skill or Spell restores that many more Health Bar slots; a condition on <code>situation.single_target</code> limits it to a heal that goes to one creature.</td></tr>
     </tbody>
   </table>
 
@@ -225,7 +230,11 @@ scaled = number &times; (base + per &times; n), kept between min and max
       <tr><td><code>effectImmunity</code></td><td>A Debuff, or a contested Skill or Spell, that the row's condition matches does not land on the holder.</td></tr>
       <tr><td><code>evadeOutcome</code></td><td>Sets what a successful Evade does against an area attack.</td></tr>
       <tr><td><code>attackerAdvantage</code></td><td>Whoever attacks the holder has Advantage (or Disadvantage) while the row's condition matches: a held or prone target.</td></tr>
-      <tr><td><code>reflect</code></td><td>When one blow costs the holder at least this many Health Bar slots, the holder may make the attacker lose slots.</td></tr>
+      <tr><td><code>reflect</code></td><td>When one blow costs the holder at least this many Health Bar slots, the holder may make the attacker lose slots. A chance die makes it work only on a 1; Once per limits how often.</td></tr>
+      <tr><td><code>paidDr</code></td><td>When the holder is hit, their player may spend AI Favor; each point buys the row's value in Damage Reduction against that one hit.</td></tr>
+      <tr><td><code>retaliate</code></td><td>Every hit that lands and matches the row's condition lets the holder hit the attacker back for the row's dice plus its flat value. Once per limits how often.</td></tr>
+      <tr><td><code>healthBarAdd</code></td><td>Each Health Bar slot holds that many more HP for the hit being judged; maximum Health is not raised.</td></tr>
+      <tr><td><code>spellBaseCap</code></td><td>A matching spell hit is taken only down to that spell's Rank 1 base (its die and Stat Mod); DR then applies.</td></tr>
       <tr><td><code>healthBarScale</code></td><td>Each Health Bar slot holds that many times its HP: damage reaching the bar is divided by it.</td></tr>
     </tbody>
   </table>
@@ -251,6 +260,12 @@ scaled = number &times; (base + per &times; n), kept between min and max
       <tr><td><code>manaCostModifiers</code>: <code>multiply</code></td><td>A matching spell's Mana cost is multiplied after the adds, and rounds up.</td></tr>
       <tr><td><code>recoveryModifiers</code></td><td>A matching rest restores more or less Mana or HP: the row multiplies the resource it names.</td></tr>
       <tr><td><code>popularityTriggers</code></td><td>The named event (a natural 20 or 1 on a roll, or a kill) awards or takes Popularity. A once-per limit asks for a Rule Break before the award.</td></tr>
+      <tr><td><code>eventTriggers</code>: <code>heal</code></td><td>When the row's event happens (a kill), the holder heals the row's value in Health Bar slots. Once per and a limit cap it in a combat or a floor; past the cap a Rule Break is asked.</td></tr>
+      <tr><td><code>eventTriggers</code>: <code>gold</code></td><td>When the row's event happens (a kill), the holder is paid the row's value in gold, under the same cap.</td></tr>
+      <tr><td><code>eventTriggers</code>: <code>check</code></td><td>When the row's event happens (a kill), the holder is offered a roll of the skill the row names, with one button on a card, against the Unopposed Difficulty. An <code>amazing</code> Popularity row on <code>situation.after_kill</code> pays for an Amazing Success on it.</td></tr>
+      <tr><td><code>eventTriggers</code>: <code>aiFavor</code></td><td>When the row's event happens (a kill, or each Level gained), the holder gains the row's value in AI Favor. A Level gained has no limit.</td></tr>
+      <tr><td><code>eventTriggers</code>: <code>debuff</code></td><td>When the row's event happens (a use of the skill, attack or spell that carries the row), the user gains the debuff the row names, with the usual immunity and repeat rules.</td></tr>
+      <tr><td><code>eventTriggers</code>: <code>buff</code></td><td>When the row's event happens, the catalog buff the row names lands on the people its target reaches within its range, on the buff's own Duration, through the one buff landing rule. A recipient out of reach, of the wrong kind or immune is skipped and named on the trigger card; nothing is asked.</td></tr>
       <tr><td><code>aiFavorRatings</code></td><td>A matching weapon, weapon Skill or attack has this AI Favor rating. The highest matching rating applies; ratings do not stack.</td></tr>
       <tr><td><code>statSubstitutions</code></td><td>A roll uses another stat in place of its own, for the scope the row names. The matching row with the best modifier applies.</td></tr>
     </tbody>
@@ -261,6 +276,7 @@ scaled = number &times; (base + per &times; n), kept between min and max
     <thead><tr><th>Kind</th><th>In play</th></tr></thead>
     <tbody>
       <tr><td><code>moveAdd</code></td><td>The vehicle's Move gains this many feet. Rows add together, then the multipliers apply.</td></tr>
+      <tr><td><code>moveSet</code></td><td>The creature has at least this Move in the mode named by the option (ground Move, swim, fly, burrow or jump). A raised ground Move comes before the additions.</td></tr>
       <tr><td><code>moveMultiply</code></td><td>The vehicle's Move is multiplied after the additions (1.5 adds half again). Matching rows multiply.</td></tr>
     </tbody>
   </table>

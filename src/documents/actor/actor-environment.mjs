@@ -3,8 +3,11 @@ import { getCurrentFloor, CURRENT_FLOOR_SETTING } from '../../utils/floor/curren
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { openApplications } from '../../compat.mjs';
-import { parseFloorNumber, floorLabel } from '../../utils/floor/floor-number.mjs';
+import { floorLabel } from '../../utils/floor/floor-number.mjs';
 import { SECONDS_PER_HOUR } from '../../utils/time/timing.mjs';
+import { captureFloorExit } from './popularity-checklist.mjs';
+import { postFloorPetReminder } from './pet-floor-reminder.mjs';
+import { postChecklistDue } from './popularity-checklist-due.mjs';
 
 /** World setting: how many crawlers are left alive. */
 export const CRAWLER_COUNT_SETTING = 'crawlerCount';
@@ -87,7 +90,7 @@ function isNonGM() {
  */
 export { getCurrentFloor };
 
-export { parseFloorNumber, floorLabel };
+export { floorLabel };
 
 export async function setCurrentFloor(floor) {
   const parsed = parseInt(floor, 10);
@@ -97,9 +100,15 @@ export async function setCurrentFloor(floor) {
     refuseNonGMWrite();
     return getCurrentFloor();
   }
+  // Both writes start before the first await: a caller that does not await still sees the new floor at once.
+  const previousFloor = getCurrentFloor();
+  const exit = captureFloorExit(val, { currentFloor: previousFloor, timer: getFloorTimer() });
   try {
     await globalThis.game.settings.set(SYSTEM_ID, CURRENT_FLOOR_SETTING, val);
   } catch (_) {}
+  const left = await exit;
+  if (left) await postChecklistDue('floor', { floor: left.floor });
+  if (val > previousFloor) await postFloorPetReminder();
   return val;
 }
 
@@ -174,6 +183,7 @@ export function onCurrentFloorChange() {
     if (actor?.type === 'crawler') actor.reset?.();
   }
   refreshEnvironmentDisplays();
+  globalThis.Hooks?.callAll?.('cogFloorChanged', { floor: getCurrentFloor() });
 }
 
 export function refreshEnvironmentDisplays() {

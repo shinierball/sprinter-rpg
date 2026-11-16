@@ -11,7 +11,7 @@
  */
 
 /**
- * @typedef {'damage'|'target'|'defense'|'derived'|'evade'|'reflect'|'effect'|'incoming'|'rollBonus'|'rollAdvantage'|'assist'|'craft'|'boxChoose'|'boxOpen'|'magicItem'|'require'} Stage
+ * @typedef {'damage'|'target'|'defense'|'derived'|'evade'|'reflect'|'retaliate'|'cap'|'fire'|'effect'|'incoming'|'rollBonus'|'rollAdvantage'|'assist'|'craft'|'boxChoose'|'boxOpen'|'magicItem'|'require'} Stage
  * @typedef {object} RowKindDef
  * @property {string} id /^[A-Za-z][\w.-]*$/ ; built-ins unprefixed, modules prefixed ('my-module.ward')
  * @property {string} label i18n key (or plain text from a module) for the kind select
@@ -48,18 +48,20 @@ const ROLL_FIELDS = Object.freeze(['value', 'dice', 'stat', 'advantage', 'option
  * rows directly), `numeric` the fields a snapshot checks as numbers.
  */
 export const ROW_ARRAYS = Object.freeze({
-  damageModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'mode', default: 'add', open: true, enforce: true, stages: Object.freeze(['damage', 'target']), fields: Object.freeze(['value', 'dice', 'stat', 'multiplier', 'damageType', 'option']) }),
-  defenseModifiers: Object.freeze({ roles: Object.freeze(['self', 'attacker']), kindField: 'kind', default: 'resistance', open: true, enforce: true, stages: Object.freeze(['defense', 'derived', 'evade', 'reflect', 'effect', 'incoming']), fields: Object.freeze(['damageType', 'value', 'percent', 'flat', 'rounding', 'option']) }),
+  damageModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'mode', default: 'add', open: true, enforce: true, stages: Object.freeze(['damage', 'target', 'heal']), fields: Object.freeze(['value', 'dice', 'stat', 'multiplier', 'damageType', 'option']) }),
+  defenseModifiers: Object.freeze({ roles: Object.freeze(['self', 'attacker']), kindField: 'kind', default: 'resistance', open: true, enforce: true, stages: Object.freeze(['defense', 'derived', 'evade', 'reflect', 'retaliate', 'paid', 'cap', 'effect', 'incoming']), fields: Object.freeze(['damageType', 'value', 'percent', 'flat', 'rounding', 'option', 'dice', 'oncePer']) }),
   attackModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'kind', default: 'bonus', open: true, enforce: true, stages: Object.freeze(['rollBonus', 'rollAdvantage', 'waive']), fields: ROLL_FIELDS }),
   // 3.44c: `afterRoll` is offered after the roll (reroll, degree shift); `waive` lifts an engine roll penalty (a `rollPenalties` id).
   checkModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject', 'attacker']), kindField: 'kind', default: 'bonus', open: true, enforce: true, stages: Object.freeze(['rollBonus', 'rollAdvantage', 'assist', 'afterRoll', 'waive']), fields: ROLL_FIELDS }),
   // 3.15 S7: skill limits and speed-ups of a craft. `craft` is the one stage, read by the crafting plan (actor-crafting.mjs).
   craftModifiers: Object.freeze({ roles: Object.freeze(['self']), kindField: 'kind', default: 'maxBonus', open: true, enforce: true, stages: Object.freeze(['craft']), fields: Object.freeze(['value', 'multiplier']) }),
   // 3.44c: Move rows of a vehicle (its upgrades and buffs) and of its driver (a skill rank). `move` is the one stage, read by `vehicleMoveOf`.
-  vehicleModifiers: Object.freeze({ roles: Object.freeze(['self']), kindField: 'kind', default: 'moveAdd', open: true, enforce: true, stages: Object.freeze(['move']), fields: Object.freeze(['value', 'multiplier']) }),
+  vehicleModifiers: Object.freeze({ roles: Object.freeze(['self']), kindField: 'kind', default: 'moveAdd', open: true, enforce: true, stages: Object.freeze(['move']), fields: Object.freeze(['value', 'multiplier', 'option']) }),
   manaCostModifiers: Object.freeze({ roles: Object.freeze(['self']), kindField: 'mode', default: 'add', open: false, enforce: false, stages: Object.freeze([]), fields: Object.freeze(['value', 'multiplier']) }),
   recoveryModifiers: Object.freeze({ roles: Object.freeze(['self']), kindField: null, default: 'default', open: false, enforce: false, stages: Object.freeze([]), fields: Object.freeze(['resource', 'multiplier']) }),
   popularityTriggers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: null, default: 'default', open: false, enforce: false, stages: Object.freeze([]), fields: Object.freeze(['event', 'value', 'oncePer']) }),
+  // 9.6c: effects that fire at a moment (a kill heals or pays). `fire` is the one stage, read by `fireEventTriggers` (documents/actor/event-triggers.mjs); each kind pushes a plain effect description and writes nothing.
+  eventTriggers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'kind', default: 'heal', open: true, enforce: true, stages: Object.freeze(['fire']), fields: Object.freeze(['value', 'debuff', 'identifier', 'target', 'range', 'skill', 'oncePer', 'limit']) }),
   aiFavorRatings: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: null, default: 'default', open: false, enforce: false, stages: Object.freeze([]), fields: Object.freeze(['value']) }),
   statSubstitutions: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: null, default: 'default', open: false, enforce: false, stages: Object.freeze([]), fields: Object.freeze(['scope', 'from', 'to', 'optional']) }),
   // 7.3a: the prizes of a loot box (`system.box.contents[]`). `boxOpen` runs the prizes; `boxChoose` (7.3i-1) asks the opener for a pick first. Its handlers are async (7.3c) and
@@ -88,6 +90,7 @@ export const ROW_KINDS = {
   manaCostModifiers: {},
   recoveryModifiers: {},
   popularityTriggers: {},
+  eventTriggers: {},
   aiFavorRatings: {},
   statSubstitutions: {},
   boxContents: {},

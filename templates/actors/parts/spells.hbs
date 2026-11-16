@@ -16,6 +16,7 @@
     <table class="cog-attacks-table cog-spells-table">
       <thead>
         <tr>
+          <th style="width: 5%; text-align: center;" title="Marked when you make the spell's Check in play (an Attack Spell, or one that calls for a Spell Check). A marked spell gets a Skill Advancement Check like a skill.">Used</th>
           <th style="width: 18%;">Spell Name</th>
           <th style="width: 5%; text-align: center;" title="Spell Rank">Rank</th>
           <th style="width: 6%; text-align: center;" title="Mana Cost">Mana</th>
@@ -30,6 +31,15 @@
       <tbody>
         {{#each spells as |spell|}}
           <tr class="draggable" data-item-id="{{spell.id}}" draggable="true">
+            <td style="text-align: center;">
+              {{#if (or spell.isGranted ../isPet)}}
+                <span class="cog-text-secondary" style="font-size: 11px;">—</span>
+              {{else if spell.useLocked}}
+                <i class="fa-solid fa-lock cog-text-secondary cog-skill-lock" title="{{spell.advanceNote}}. Casting this spell does not mark it for advancement at this Rank." data-tooltip-text="{{spell.advanceNote}}"></i>
+              {{else}}
+                <input class="cog-field-input cog-ac-success cog-checkbox-center" data-change-action="editItemField" type="checkbox" data-field="system.checked" {{#if spell.isChecked}}checked{{/if}} title="Marked when you make the spell's Check in play. A marked spell gets a Skill Advancement Check at the next 2-hour check (Rank 4 or lower) or end of floor (Rank 5 or higher)." />
+              {{/if}}
+            </td>
             <td>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img class="cog-bg-icon-box" src="{{spell.img}}" style="width: 22px; height: 22px; border: 1px solid var(--cog-panel-border); border-radius: 3px; object-fit: contain;" />
@@ -46,6 +56,8 @@
             <td style="text-align: center;">
               {{#if spell.isGranted}}
                 <span class="cog-text-success" style="font-weight: bold;" title="Granted Rank {{spell.system.rank}} (by {{spell.itemSources}})">{{spell.system.rank}}</span>
+              {{else if ../isPet}}
+                <span class="cog-text" style="font-weight: bold;" title="Rank = Floor">{{spell.modifiedRank}}</span>
               {{else}}
                 <div style="display: inline-flex; align-items: center; justify-content: center; gap: 2px;">
                   <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.rank" value="{{spell.system.rank}}" style="width: 32px; text-align: center;" title="Spell Rank" />
@@ -84,6 +96,9 @@
             </td>
             <td>
               <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{spell.system.notes}}" placeholder="Notes..." style="font-size: 11px;" title="{{spell.system.notes}}" />
+              {{#if (and (not spell.isGranted) (not ../isPet))}}
+                {{> "systems/sprinter-rpg/templates/actors/parts/grind-strip.hbs" row=spell bankedGrindHours=../bankedGrindHours}}
+              {{/if}}
             </td>
             <td style="text-align: center; white-space: nowrap;">
               <div class="item-actions">
@@ -99,6 +114,9 @@
                   <button type="button" class="cog-attack-roll-btn cog-bg-info-fill cog-text-on-fill" data-action="rollSpellAttack" data-tooltip="{{spell.attackTooltip}}" style="font-size: 10px; padding: 2px 6px;">
                     <i class="fa-solid fa-crosshairs"></i>
                   </button>
+                {{/if}}
+                {{#if (and (not spell.isGranted) (not ../isPet))}}
+                  {{> "systems/sprinter-rpg/templates/actors/parts/advancement-check-button.hbs" row=spell}}
                 {{/if}}
                 {{#if spell.isGranted}}
                   <span class="cog-text-muted" style="font-size: 10px; font-style: italic;" title="Granted by equipped gear: {{spell.itemSources}}">Equipped</span>

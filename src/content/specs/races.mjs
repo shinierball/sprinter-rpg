@@ -42,7 +42,7 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.floor_coupon.weapon_training"
+        "perk.floor_coupon.weapon_training"
       ],
       "grants": [
         {
@@ -200,7 +200,36 @@ export const COG_RACES = [
       "tags": [
         "creature.animal",
         "kind.race",
-        "rule.cog.nine_lives"
+        "creature.feline"
+      ],
+      "grantedEffects": [
+        {
+          "type": "buff",
+          "name": "Nine Lives",
+          "img": "icons/svg/aura.svg",
+          "system": {
+            "identifier": "nine-lives",
+            "defenseModifiers": [
+              {
+                "kind": "reduction",
+                "percent": 50,
+                "rounding": "up",
+                "label": "Nine Lives"
+              }
+            ],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "hit",
+                "value": 9
+              }
+            }
+          }
+        }
       ],
       "grants": [
         {
@@ -298,7 +327,8 @@ export const COG_RACES = [
       "identifier": "cat-girl-cat-boy",
       "archetypes": [],
       "tags": [
-        "kind.race"
+        "kind.race",
+        "creature.feline"
       ],
       "grants": [
         {
@@ -376,6 +406,9 @@ export const COG_RACES = [
             ],
             "any": [
               "subject.creature.feline"
+            ],
+            "none": [
+              "subject.id.race.cat-girl-cat-boy"
             ]
           }
         }
@@ -414,9 +447,10 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.chain_weapon",
-        "rule.cog.acid_touch",
-        "rule.no_breath"
+        "perk.cog.chain_weapon",
+        "perk.cog.acid_touch",
+        "perk.no_breath",
+        "creature.undead"
       ],
       "grants": [
         {
@@ -458,6 +492,22 @@ export const COG_RACES = [
         {
           "kind": "vulnerability",
           "damageType": "Holy"
+        },
+        {
+          "kind": "retaliate",
+          "label": "Acid Touch",
+          "dice": "1d4",
+          "value": 1,
+          "scaleBy": {
+            "source": "floor"
+          },
+          "damageType": "Acid",
+          "condition": {
+            "any": [
+              "weaponClass.unarmed",
+              "weaponClass.natural"
+            ]
+          }
         }
       ],
       "requirements": [
@@ -500,9 +550,9 @@ export const COG_RACES = [
       "tags": [
         "kind.race",
         "access.cog.impersonation",
-        "rule.cog.changeling_shapeshifting",
-        "rule.cog.changeling_disguise_systems",
-        "rule.cog.changeling_mimic_aversion"
+        "perk.cog.changeling_shapeshifting",
+        "perk.cog.changeling_disguise_systems",
+        "perk.cog.changeling_mimic_aversion"
       ],
       "grants": [
         {
@@ -692,8 +742,42 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.weapon_incorporation",
-        "rule.cog.shape_changing"
+        "perk.cog.weapon_incorporation",
+        "perk.cog.shape_changing"
+      ],
+      "grantedEffects": [
+        {
+          "type": "buff",
+          "name": "Incorporated Weapon",
+          "img": "icons/svg/aura.svg",
+          "system": {
+            "identifier": "incorporated-weapon",
+            "damageModifiers": [
+              {
+                "mode": "add",
+                "stat": "con",
+                "label": "Incorporated Weapon",
+                "condition": {
+                  "none": [
+                    "weaponClass.natural",
+                    "weaponClass.unarmed"
+                  ]
+                }
+              }
+            ],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "scene"
+              },
+              "window": {
+                "unit": "combat",
+                "value": 1
+              }
+            }
+          }
+        }
       ],
       "grants": [
         {
@@ -775,7 +859,8 @@ export const COG_RACES = [
       "identifier": "dwarf-classic",
       "archetypes": [],
       "tags": [
-        "kind.race"
+        "kind.race",
+        "creature.dwarf"
       ],
       "grants": [
         {
@@ -901,7 +986,22 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.head_lizard_light"
+        "perk.cog.head_lizard_light",
+        "creature.dwarf"
+      ],
+      "grantedEffects": [
+        {
+          "type": "buff",
+          "name": "Head Lizard Light",
+          "img": "icons/svg/light.svg",
+          "system": {
+            "identifier": "head-lizard-light",
+            "light": {
+              "dim": 15,
+              "mode": "carried"
+            }
+          }
+        }
       ],
       "grants": [
         {
@@ -981,7 +1081,8 @@ export const COG_RACES = [
       "identifier": "elf-high",
       "archetypes": [],
       "tags": [
-        "kind.race"
+        "kind.race",
+        "creature.elf"
       ],
       "grants": [
         {
@@ -1088,6 +1189,17 @@ export const COG_RACES = [
               "subject.creature.rat_kin"
             ]
           }
+        },
+        {
+          "kind": "advantage",
+          "advantage": "disadvantage",
+          "label": "Unwashed Company",
+          "condition": {
+            "all": [
+              "stat.cha",
+              "situation.unwashed_company"
+            ]
+          }
         }
       ]
     },
@@ -1124,8 +1236,21 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.city_elf_reassign",
-        "rule.cog.settlement_first_impression"
+        "perk.cog.city_elf_reassign",
+        "creature.elf"
+      ],
+      "checkModifiers": [
+        {
+          "kind": "advantage",
+          "advantage": "advantage",
+          "label": "First Impression",
+          "condition": {
+            "all": [
+              "stat.cha",
+              "situation.first_impression"
+            ]
+          }
+        }
       ],
       "grants": [
         {
@@ -1193,7 +1318,8 @@ export const COG_RACES = [
       "identifier": "elf-night",
       "archetypes": [],
       "tags": [
-        "kind.race"
+        "kind.race",
+        "creature.elf"
       ],
       "grants": [
         {
@@ -1297,8 +1423,9 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.manager_benefit",
-        "rule.flight_limited"
+        "perk.manager_benefit",
+        "perk.flight_limited",
+        "creature.fairy"
       ],
       "grants": [
         {
@@ -1385,12 +1512,85 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.level_up_ai_favor",
-        "rule.cog.ai_favor_dr",
-        "rule.cog.untrained_as_rank_2",
-        "rule.cog.shake_off_debuff"
+        "perk.cog.level_up_ai_favor",
+        "perk.cog.ai_favor_dr",
+        "perk.cog.untrained_as_rank_2",
+        "perk.cog.shake_off_debuff"
+      ],
+      "eventTriggers": [
+        {
+          "label": "AI Favor on Level Up",
+          "event": "levelUp",
+          "kind": "aiFavor",
+          "value": 1
+        }
+      ],
+      "defenseModifiers": [
+        {
+          "kind": "paidDr",
+          "label": "Spend AI Favor for DR",
+          "option": "aiFavor",
+          "value": 1,
+          "scaleBy": {
+            "source": "paidDrStat",
+            "stat": "con"
+          }
+        }
+      ],
+      "grantedEffects": [
+        {
+          "type": "buff",
+          "name": "Quick Study",
+          "img": "icons/svg/aura.svg",
+          "system": {
+            "identifier": "quick-study",
+            "checkModifiers": [
+              {
+                "kind": "bonus",
+                "value": 2,
+                "label": "Quick Study",
+                "condition": {
+                  "all": [
+                    "check.skill",
+                    "skillGroup.utility"
+                  ],
+                  "none": [
+                    "action.passive"
+                  ]
+                }
+              }
+            ],
+            "activation": {
+              "enabled": true,
+              "cooldown": {
+                "value": 1,
+                "unit": "day"
+              },
+              "window": {
+                "unit": "use",
+                "value": 1,
+                "query": {
+                  "all": [
+                    "kind.skill",
+                    "skillGroup.utility"
+                  ],
+                  "none": [
+                    "action.passive"
+                  ]
+                }
+              }
+            }
+          }
+        }
       ],
       "grants": [
+        {
+          "kind": "skill",
+          "mode": "fixed",
+          "identifier": "shake-off-debuff",
+          "label": "Shake Off a Debuff",
+          "rank": 1
+        },
         {
           "kind": "stat",
           "stat": "str",
@@ -1465,8 +1665,9 @@ export const COG_RACES = [
       "tags": [
         "kind.race",
         "sense.water_breathing",
-        "rule.no_heat_survival",
-        "rule.cog.inventory_burns_health"
+        "perk.no_heat_survival",
+        "perk.cog.inventory_burns_health",
+        "creature.elemental"
       ],
       "grants": [
         {
@@ -1580,8 +1781,8 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.winged_reach",
-        "rule.cog.obsidian_sixth_floor_choice"
+        "perk.cog.winged_reach",
+        "perk.cog.obsidian_sixth_floor_choice"
       ],
       "grants": [
         {
@@ -1679,10 +1880,75 @@ export const COG_RACES = [
       "identifier": "dccrce0000000018",
       "archetypes": [],
       "tags": [
-        "kind.race",
-        "rule.cog.day_night_stats",
-        "rule.cog.day_strength_halved",
-        "rule.cog.night_strength_doubled"
+        "kind.race"
+      ],
+      "grantedEffects": [
+        {
+          "type": "buff",
+          "name": "Day Aspect",
+          "img": "icons/svg/sun.svg",
+          "system": {
+            "identifier": "day-aspect",
+            "grants": [
+              {
+                "kind": "stat",
+                "stat": "int",
+                "value": 5
+              },
+              {
+                "kind": "stat",
+                "stat": "str",
+                "value": 0,
+                "percent": -50
+              }
+            ],
+            "manaCostModifiers": [
+              {
+                "mode": "multiply",
+                "multiplier": 0.5,
+                "label": "Day Aspect"
+              }
+            ],
+            "activation": {
+              "enabled": true,
+              "window": {
+                "unit": "hours",
+                "value": 15
+              }
+            }
+          }
+        },
+        {
+          "type": "buff",
+          "name": "Night Aspect",
+          "img": "icons/svg/aura.svg",
+          "system": {
+            "identifier": "night-aspect",
+            "grants": [
+              {
+                "kind": "stat",
+                "stat": "str",
+                "value": 5,
+                "percent": 100,
+                "beforePercent": true
+              }
+            ],
+            "manaCostModifiers": [
+              {
+                "mode": "multiply",
+                "multiplier": 2,
+                "label": "Night Aspect"
+              }
+            ],
+            "activation": {
+              "enabled": true,
+              "window": {
+                "unit": "hours",
+                "value": 15
+              }
+            }
+          }
+        }
       ],
       "grants": [
         {
@@ -1727,28 +1993,7 @@ export const COG_RACES = [
           }
         }
       ],
-      "manaCostModifiers": [
-        {
-          "mode": "multiply",
-          "multiplier": 0.5,
-          "condition": {
-            "all": [
-              "situation.day"
-            ]
-          },
-          "label": "In Daylight"
-        },
-        {
-          "mode": "multiply",
-          "multiplier": 2,
-          "condition": {
-            "all": [
-              "situation.night"
-            ]
-          },
-          "label": "At Night"
-        }
-      ]
+      "manaCostModifiers": []
     },
     "flags": {
       "sprinter-rpg": {
@@ -1850,7 +2095,8 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.rat_informants"
+        "perk.cog.rat_informants",
+        "creature.rat_kin"
       ],
       "grants": [
         {
@@ -2039,8 +2285,21 @@ export const COG_RACES = [
       "identifier": "dccrce0000000022",
       "archetypes": [],
       "tags": [
-        "kind.race",
-        "rule.cog.four_arms"
+        "kind.race"
+      ],
+      "grantedEffects": [
+        {
+          "type": "buff",
+          "name": "Four Arms",
+          "img": "icons/svg/aura.svg",
+          "system": {
+            "identifier": "four-arms",
+            "limbModifiers": {
+              "arms": 2,
+              "hands": 2
+            }
+          }
+        }
       ],
       "grants": [
         {
@@ -2215,7 +2474,7 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.level_50_wings"
+        "perk.cog.level_50_wings"
       ],
       "grants": [
         {
@@ -2428,9 +2687,46 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.cog.troll_grapple_target",
-        "rule.popularity.troll_lick",
-        "rule.popularity.crit_larger_foe"
+        "perk.popularity.troll_lick",
+        "perk.popularity.crit_larger_foe"
+      ],
+      "popularityTriggers": [
+        {
+          "label": "Troll Fame",
+          "event": "amazing",
+          "value": 1,
+          "condition": {
+            "all": [
+              "check.attack",
+              "subject.creature.troll"
+            ]
+          }
+        },
+        {
+          "label": "Giant Killer",
+          "event": "crit",
+          "value": 1,
+          "condition": {
+            "all": [
+              "check.attack",
+              "situation.in_combat",
+              "situation.larger_foe"
+            ]
+          }
+        }
+      ],
+      "defenseModifiers": [
+        {
+          "kind": "attackerAdvantage",
+          "option": "advantage",
+          "label": "Trolls Wrestle Well",
+          "condition": {
+            "all": [
+              "attacker.creature.troll",
+              "id.skill.dccskl0000000015"
+            ]
+          }
+        }
       ],
       "grants": [
         {
@@ -2660,8 +2956,8 @@ export const COG_RACES = [
       "tags": [
         "creature.animal",
         "kind.race",
-        "rule.no_fall_damage",
-        "rule.popularity.surprise_round_action"
+        "perk.no_fall_damage",
+        "perk.popularity.surprise_round_action"
       ],
       "grants": [
         {
@@ -2811,7 +3107,7 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.flight_limited"
+        "perk.flight_limited"
       ],
       "grants": [
         {
@@ -2917,8 +3213,8 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "rule.flight_limited",
-        "rule.cog.flight_clipped_cleric"
+        "perk.flight_limited",
+        "perk.cog.flight_clipped_cleric"
       ],
       "grants": [
         {
@@ -3040,7 +3336,8 @@ export const COG_RACES = [
       "tags": [
         "kind.race",
         "companion.pet",
-        "rule.cog.silent_stalk"
+        "perk.cog.silent_stalk",
+        "creature.feline"
       ],
       "grants": [
         {
@@ -3142,7 +3439,8 @@ export const COG_RACES = [
       "archetypes": [],
       "tags": [
         "kind.race",
-        "companion.pet"
+        "companion.pet",
+        "creature.dog"
       ],
       "grants": [
         {
@@ -3342,7 +3640,7 @@ export const COG_RACES = [
       "tags": [
         "kind.race",
         "companion.pet",
-        "rule.cog.cephalopod_camouflage_squeeze"
+        "perk.cog.cephalopod_camouflage_squeeze"
       ],
       "grants": [
         {
@@ -3517,8 +3815,8 @@ export const COG_RACES = [
       "tags": [
         "kind.race",
         "companion.pet",
-        "rule.cog.prehensile_climbing_swinging",
-        "rule.cog.mischievous_pilfer"
+        "perk.cog.prehensile_climbing_swinging",
+        "perk.cog.mischievous_pilfer"
       ],
       "grants": [
         {
@@ -3612,7 +3910,7 @@ export const COG_RACES = [
         "kind.race",
         "companion.pet",
         "companion.mount",
-        "rule.cog.earthquake_resonance"
+        "perk.cog.earthquake_resonance"
       ],
       "grants": [
         {
@@ -3706,8 +4004,8 @@ export const COG_RACES = [
         "kind.race",
         "companion.pet",
         "companion.mount",
-        "rule.cog.caustic_regurgitation",
-        "rule.cog.caustic_regurgitation_scavenger_digestio"
+        "perk.cog.caustic_regurgitation",
+        "perk.cog.caustic_regurgitation_scavenger_digestio"
       ],
       "grants": [
         {
@@ -3805,7 +4103,7 @@ export const COG_RACES = [
         "kind.race",
         "companion.pet",
         "companion.mount",
-        "rule.cog.fire_breath"
+        "perk.cog.fire_breath"
       ],
       "grants": [
         {

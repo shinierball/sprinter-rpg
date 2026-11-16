@@ -3,9 +3,10 @@ import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { getReachedRankBreaks } from '../skill/rank-breaks.mjs';
 import { matchesTagQuery } from './tag-query.mjs';
 import { hasRuleFlag, RULE_FLAGS } from './tag-behaviour.mjs';
-import { VEHICLE_TAGS, OUTCOME_TAGS } from '../../data/tag-vocabulary.mjs';
+import { VEHICLE_TAGS, OUTCOME_TAGS, POTION_TAG } from '../../data/tag-vocabulary.mjs';
+import { registerSpellCheckReader } from '../skill/spells-advance.mjs';
 
-export const AURA_TAGS = Object.freeze(['delivery.aura', 'shape.aura']);
+const AURA_TAGS = Object.freeze(['delivery.aura']);
 const FREE_INTERRUPT_TAG = 'action.free_interrupt';
 export const INTERRUPT_TAGS = Object.freeze(['action.interrupt', FREE_INTERRUPT_TAG]);
 /** Mob identity: `mob.unique` marks a named one-of-a-kind boss (`MOB_BOSS_TAG` is in `data/tag-vocabulary.mjs`). */
@@ -142,6 +143,11 @@ export function isHealingItem(item) {
   return getTagsOf(item).has(SKILL_ROLE_TAGS.heal);
 }
 
+/** A potion: loot whose type is Potion carries the derived tag `item.potion` (9.8). */
+export function isPotion(item) {
+  return getTagsOf(item).has(POTION_TAG);
+}
+
 /**
  * The "Place Area of Effect" button: an explicit area, or a sized area that is placed or has an area shape.
  * @param {object} sys item system data
@@ -175,6 +181,18 @@ export function spellRole(source) {
   for (const [tag, role] of SPELL_ROLE_TAGS) if (tags.has(tag)) return role;
   return 'none';
 }
+
+/**
+ * Whether casting a spell calls for a Check, so the cast takes the Used mark: an Attack Spell (`action.attack`) or a
+ * spell whose text calls for a Spell Check against a target (`system.contest.hasContest`). Every other spell needs no
+ * Check when cast and is the book's Passive: it is never marked.
+ * @param {object} spell
+ * @returns {boolean}
+ */
+export function spellMakesCheck(spell) {
+  return spellRole(spell) === 'attack' || spell?.system?.contest?.hasContest === true;
+}
+registerSpellCheckReader(spellMakesCheck);
 
 const SPELL_ROLE_LABELS = Object.freeze({ attack: 'Attack', heal: 'Heal', passive: 'Passive', interrupt: 'Interrupt', free_interrupt: 'Free Interrupt', none: 'Spell' });
 

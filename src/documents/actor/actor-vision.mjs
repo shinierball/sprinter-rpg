@@ -12,6 +12,7 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { isMigrationWrite } from '../migrations/world-migration.mjs';
 import { collectSenses, hasSenseOverride } from '../../utils/character/senses.mjs';
 
 export const SYNC_TOKEN_VISION = 'syncTokenVision';
@@ -157,6 +158,7 @@ export async function onItemChangeSyncVision(item, _options, userId) {
 }
 
 /** `updateItem` passes `(item, changes, options, userId)`; the other two item hooks have no `changes`. */
-export function onItemUpdateSyncVision(item, _changes, _options, userId) {
-  return onItemChangeSyncVision(item, _options, userId);
+export function onItemUpdateSyncVision(item, _changes, options, userId) {
+  if (isMigrationWrite(options)) return false;
+  return onItemChangeSyncVision(item, options, userId);
 }

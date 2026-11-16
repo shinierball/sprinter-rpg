@@ -5,7 +5,7 @@ import { COGDamage } from '../../documents/actor/damage-pipeline.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { elementToDamageType } from '../../data/tag-vocabulary.mjs';
 import { parseRollContext } from '../../utils/roll/roll-context.mjs';
-import { parseCardParts } from '../../utils/damage/damage-parts.mjs';
+import { parseCardParts, parseSpellBase } from '../../utils/damage/damage-parts.mjs';
 import { parseTargetRows, targetRowsFor } from '../../utils/damage/per-target-damage.mjs';
 import { resolveActorByUuid, findTokenByActorUuid, isSameActor } from '../../utils/actor-uuid.mjs';
 import { clickTargetsOf } from '../../utils/roll/scalars.mjs';
@@ -13,9 +13,11 @@ import { getActiveGM } from '../../utils/gm-relay.mjs';
 import { applyCardEffect, canWriteTarget, registerChatApplier, messageAuthorId } from '../chat-relay.mjs';
 import { multiplierOf } from '../../utils/damage/per-target-damage.mjs';
 import { findEvadeFor } from '../../utils/attack/evade-link.mjs';
+import { isTrustedEvade } from '../../documents/actor/evade-aftermath.mjs';
 import { findInterceptionFor } from '../../utils/combat/interrupts.mjs';
 import { tokensInCardArea } from './area-membership.mjs';
 import { postReflectOffers } from './apply-reflect.mjs';
+import { offerPaidDr } from './paid-dr.mjs';
 import { newApplicationId, setDamageUndoInflictedItems } from '../../utils/damage/damage-undo.mjs';
 import { indexDamageApplication } from '../damage-applications.mjs';
 import { appliedEffectLine } from '../../utils/item-describer/card-summary.mjs';
@@ -127,6 +129,7 @@ export function parseApplyDamage(button) {
     sourceMessageId: typeof card.dataset?.sourceMessageId === 'string' && card.dataset.sourceMessageId ? card.dataset.sourceMessageId : null,
     ignoreEvade: button.dataset?.evade === 'ignore',
     asTriggers: parseAsTriggers(card.dataset?.asTriggers),
+    spellBase: parseSpellBase(card.dataset?.spellBase),
     amazingMode: amazingModeOf(button.dataset?.amazing),
     fallbackTargetUuid: button.dataset?.targetUuid || card.dataset?.targetUuid
   };
@@ -141,18 +144,6 @@ function clickBatchOf(targets) {
   if (!Array.isArray(targets) || !targets.length) return null;
   if (!clickBatches.has(targets)) clickBatches.set(targets, clickTargetsOf(targets));
   return clickBatches.get(targets);
-}
-
-/**
- * An Evade message counts only when its author is the GM or owns the evader, and the evader resolves: a player can fake
- * an Evade only for an actor they could roll a real one for (E6.3).
- */
-export function isTrustedEvade(message, record) {
-  const evader = resolveActorByUuid(record.evaderUuid);
-  if (!evader) return false;
-  const author = game.users?.get?.(messageAuthorId(message));
-  if (!author) return false;
-  return Boolean(author.isGM) || Boolean(evader.testUserPermission?.(author, 'OWNER'));
 }
 
 /**
@@ -295,6 +286,8 @@ export async function applyDamageTo(targetActor, params, ctx) {
   const interception = params.sourceMessageId
     ? findInterceptionFor(game.messages, { attackMessageId: params.sourceMessageId, interrupterUuid: targetActor.uuid, isTrusted: isTrustedInterception })
     : null;
+  // A holder of a `paidDr` row may spend AI Favor for DR on this one application (asked on this client, before the hit lands)
+  const paid = await offerPaidDr(targetActor, attacker, params, ctx);
   const res = await COGDamage.applyDamageToTarget({
     targetActor,
     rawDamage: params.rawDamage,
@@ -312,8 +305,9 @@ export async function applyDamageTo(targetActor, params, ctx) {
     multiplier: params.multiplier,
     evade,
     amazing,
-    extraDr: interception?.drBonus ?? 0,
-    extraDrLabel: interception?.name ?? '',
+    spellBase: params.spellBase ?? null,
+    extraDr: (interception?.drBonus ?? 0) + paid.extraDr,
+    extraDrLabel: [interception?.name, paid.label].filter(Boolean).join(', '),
     intercepting: Boolean(interception),
     applicationId: newApplicationId(),
     messageId: ctx?.message?.id ?? null
@@ -382,12 +376,13 @@ export async function applyDamageTo(targetActor, params, ctx) {
       lines: [...(res.perTarget?.lines ?? []), ...lifestealLines(lifesteal), ...appliedEffects]
     });
   }
-  // Damage Reflection: the holder's player is offered the reflection; nothing is written to the attacker until they accept.
-  if (res?.reflections?.length && !res.error) {
+  // Damage Reflection and Retaliation: the holder's player is offered each; nothing is written to the attacker until they accept.
+  const { reflections, retaliations } = res ?? {};
+  if ((reflections?.length || retaliations?.length) && !res.error) {
     try {
-      await postReflectOffers({ holder: targetActor, attacker, reflections: res.reflections, applicationId: res.applicationId });
+      await postReflectOffers({ holder: targetActor, attacker, reflections, retaliations, applicationId: res.applicationId });
     } catch (err) {
-      console.error('Sprinter RPG | Could not post the Damage Reflection offer:', err);
+      console.error('Sprinter RPG | Could not post the defence trigger offers:', err);
     }
   }
   return {

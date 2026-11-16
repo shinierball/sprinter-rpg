@@ -21,7 +21,7 @@ import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from './zero-zone-gate
 import { computeManaCost, resolveManaCostSituations } from '../../utils/roll/narrow-modifiers.mjs';
 import { isAuraItem, isAreaTagSet, isHealingItem } from '../../utils/tag/tag-mechanics.mjs';
 import { igniteLight, isLit, isSelfLightSpell, extinguish as extinguishLight } from './light-source.mjs';
-import { auraDismissedMessage, grantItemTempBars, healingBarsFor, cleanseListFor } from './use-card-parts.mjs';
+import { auraDismissedMessage, grantItemTempBars, healingBarsFor, healBonusSlots, isSingleTargetHeal, cleanseListFor } from './use-card-parts.mjs';
 import { spellFailedCardHtml } from './spell-cast-card.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import { restoredValue } from '../../utils/damage/resource-restore.mjs';
@@ -255,13 +255,14 @@ export async function applySpellHealing(actor, spell, opts, updates) {
 
   // Calculate bars to heal from barsFormula, with the cumulative healing bonuses from rank breaks
   const resolvedBreaks = resolveReachedRankBreaks(spell, effectiveRank);
-  const barsToHeal = healingBarsFor(actor, sys.healing?.barsFormula || '1', resolvedBreaks);
   const debuffsToCleanse = cleanseListFor(sys, resolvedBreaks);
 
   const targetFilter = sys.healing?.targetFilter || sys.healing?.targetType || '';
   const isExplicitSelf = opts.target === 'self' || targetFilter === 'self';
   const isExplicitNonSelf = (targetFilter === 'ally' || targetFilter === 'allies' || targetFilter === 'area') && !isExplicitSelf;
   const isSelfTarget = isExplicitSelf || !isExplicitNonSelf;
+  const singleTarget = isSingleTargetHeal(spell, { isSelfTarget, targetCount: globalThis.game?.user?.targets?.size ?? 0, targetFilter });
+  const barsToHeal = healingBarsFor(actor, sys.healing?.barsFormula || '1', resolvedBreaks) + healBonusSlots(actor, spell, { singleTarget });
 
   const isHoT = Boolean(sys.healing?.isHoT);
   const hotRounds = Number(sys.healing?.hotRounds) || 3;

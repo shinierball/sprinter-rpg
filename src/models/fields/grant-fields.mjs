@@ -1,6 +1,6 @@
 import { tagQueryField, enchantmentRef } from './tag-fields.mjs';
 import { cooldownField } from './timing-fields.mjs';
-import { GRANT_KINDS, GRANT_MODES, grantRowErrors, grantedEffectErrors } from '../items/grant-validation.mjs';
+import { GRANT_KINDS, GRANT_MODES, GRANT_FLOOR_SOURCES, grantRowErrors, grantedEffectErrors } from '../items/grant-validation.mjs';
 import { EFFECT_ITEM_TYPES } from '../../utils/document-types.mjs';
 
 /**
@@ -24,6 +24,8 @@ export function grantField(fields) {
     // stat rows: a percent of the unenhanced score, and (fixed mode) the number it was worked out to on the owner.
     percent:    new fields.NumberField({ nullable: false, initial: 0 }),
     locked:     new fields.NumberField({ nullable: true, initial: null }),
+    // stat rows: the flat `value` also joins the base the live percents of that stat are taken from (core p. 136).
+    beforePercent: new fields.BooleanField({ initial: false }),
     rank:       new fields.NumberField({ nullable: false, integer: true, min: 0, initial: 1 }),
     cooldown:   cooldownField(fields),
     label:      new fields.StringField({ initial: '' }),
@@ -37,6 +39,8 @@ export function grantField(fields) {
     category:   new fields.StringField({ initial: '' }),
     // rank_bonus: never lower an owned skill below `floor`; skip skills the actor does not own.
     floor:      new fields.NumberField({ nullable: false, integer: true, min: 0, initial: 0 }),
+    // rank_raise rows: where the Rank N comes from ('' this row's `floor`; 'rank' the Rank of the buff carrying the row).
+    floorFrom:  new fields.StringField({ initial: '', blank: true, choices: GRANT_FLOOR_SOURCES }),
     onlyIfOwned: new fields.BooleanField({ initial: false }),
     enchantment: enchantmentRef(fields)
   };

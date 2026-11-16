@@ -36,6 +36,7 @@ import { isEffectItem } from '../document-types.mjs';
 /** Default templates, identical to `COG.Feature` in lang/en.json (used when i18n is unavailable). */
 export const FEATURE_TEMPLATES = Object.freeze({
   'COG.Feature.Stat': '{value} {stat}',
+  'COG.Feature.StatBeforePercent': '{value} {stat} (before %)',
   'COG.Feature.StatPool': 'Distribute {value} points among {options}',
   'COG.Feature.StatNow': '{text} ({value} now)',
   'COG.Feature.StatLocked': '{text} (locked at {value})',
@@ -52,6 +53,7 @@ export const FEATURE_TEMPLATES = Object.freeze({
   'COG.Feature.RankBonusOwned': '{text}, only if owned',
   'COG.Feature.RankCap': 'Rank cap {value}: {target}',
   'COG.Feature.RankRaise': '{target}: Rank {floor}, or {value} if already at {floor} or higher',
+  'COG.Feature.RankRaiseFromCarrier': "{target}: this item's Rank, or {value} if already at or above it",
   'COG.Feature.RankCapChoice': 'Rank cap {value} for {count} chosen skill(s)',
   'COG.Feature.Dr': '{value} DR',
   'COG.Feature.Walk': '{value} ft Walk speed',
@@ -84,6 +86,7 @@ export const FEATURE_TEMPLATES = Object.freeze({
   'COG.Feature.PopularityEventCrit': 'a Critical Hit',
   'COG.Feature.PopularityEventCritFail': 'a Critical Fail',
   'COG.Feature.PopularityEventKill': 'a kill',
+  'COG.Feature.PopularityEventAmazing': 'an Amazing Success',
   'COG.Feature.PopularityOncePerCombat': 'once per combat',
   'COG.Feature.PopularityOncePerFloor': 'once per floor',
   'COG.Feature.MaxRank': 'if Rank ≤ {value}',
@@ -232,10 +235,10 @@ async function describeStatGrants(item) {
 }
 
 /** One stat row as text: "+5 STR, +10% STR (+1 now)", "+10% STR (locked at +1)" or "+10% STR (not locked yet)". */
-function statEntryText({ stat, flat, percent, state, now }) {
+function statEntryText({ stat, flat, percent, beforePercent, state, now }) {
   const name = statName(stat);
   const parts = [];
-  if (flat !== 0) parts.push(t('COG.Feature.Stat', { value: signed(flat), stat: name }));
+  if (flat !== 0) parts.push(t(beforePercent && percent !== 0 ? 'COG.Feature.StatBeforePercent' : 'COG.Feature.Stat', { value: signed(flat), stat: name }));
   if (percent !== 0) parts.push(t('COG.Feature.Stat', { value: `${signed(percent)}%`, stat: name }));
   const text = parts.join(', ');
   if (state === 'live' && now !== null) return t('COG.Feature.StatNow', { text, value: signed(now) });
@@ -288,7 +291,8 @@ async function describeSkillGrants(item) {
       out.push(line('skill', text, path, g, '', target));
     } else if (g.kind === 'rank_raise') {
       const target = await targetOf(g);
-      out.push(line('skill', t('COG.Feature.RankRaise', { target, floor: Number(g.floor) || 0, value: signed(Number(g.value) || 0) }), path, g, '', target));
+      const key = g.floorFrom === 'rank' ? 'COG.Feature.RankRaiseFromCarrier' : 'COG.Feature.RankRaise';
+      out.push(line('skill', t(key, { target, floor: Number(g.floor) || 0, value: signed(Number(g.value) || 0) }), path, g, '', target));
     } else if (g.kind === 'rank_cap') {
       const target = g.mode === 'choice' ? '' : await targetOf(g);
       const text = g.mode === 'choice'
@@ -330,6 +334,8 @@ function defenseText(row) {
   if (row.kind === 'vulnerability') text = t('COG.Feature.Vulnerability', { type });
   else if (row.kind === 'suppress_dr') text = t('COG.Feature.SuppressDr', { type });
   else text = withScale(summarizeRow('defenseModifiers', row), row, 'defenseModifiers');
+  const min = Math.trunc(Number(row.minRank) || 0);
+  if (min > 0) text = t('COG.Feature.Limits', { text, limits: t('COG.Feature.MinRank', { value: min }) });
   return [withCondition(text, row.condition)];
 }
 
@@ -394,6 +400,11 @@ function popularityText(row) {
   return [withCondition(text, row.condition)];
 }
 
+/** Event trigger rows: "Heal 1 slot on kill, up to 5 a combat" plus the scale and the condition text. */
+function eventTriggerText(row) {
+  return [withCondition(withScale(summarizeRow('eventTriggers', row), row, 'eventTriggers'), row.condition)];
+}
+
 /** AI Favor rating rows (3.25d): "AI Favor 2" plus the condition text. */
 function aiFavorText(row) {
   return [withCondition(t('COG.Feature.AiFavor', { value: Math.trunc(Number(row.value) || 0) }), row.condition)];
@@ -410,6 +421,7 @@ const ROW_TEXTS = Object.freeze({
   recoveryModifiers: recoveryText,
   statSubstitutions: substitutionText,
   popularityTriggers: popularityText,
+  eventTriggers: eventTriggerText,
   aiFavorRatings: aiFavorText
 });
 
@@ -537,6 +549,7 @@ export const DESCRIBERS = Object.freeze([
   { group: 'other', describe: withLabels(rowArrayDescriber('recoveryModifiers')) },
   { group: 'other', describe: withLabels(rowArrayDescriber('statSubstitutions')) },
   { group: 'other', describe: withLabels(rowArrayDescriber('popularityTriggers')) },
+  { group: 'other', describe: withLabels(rowArrayDescriber('eventTriggers')) },
   { group: 'other', describe: withLabels(rowArrayDescriber('aiFavorRatings')) },
   { group: 'other', describe: withLabels(describeMovement) },
   { group: 'other', describe: withLabels(describeSenses) },

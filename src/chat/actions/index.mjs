@@ -10,6 +10,7 @@ import { handleRollEvade } from './roll-evade.mjs';
 import { handleTriggerInterrupt, handleRetargetInterrupter } from './interrupts.mjs';
 import { handleApplyHealing, handleApplyMana, handleApplyHoT } from './restore.mjs';
 import { handleApplyBuff } from './apply-buff.mjs';
+import { handleApplyItemBuff, handleRemoveItemBuff } from './apply-item-buff.mjs';
 import { handleApplyCondition } from './apply-condition.mjs';
 import { handleChangeVictim, handleRevertTransformation, handleRevealSecret, handleKeepSecret } from './transformation.mjs';
 import { handleCleanseDebuff, handleMendInjury, handleCureDebuff } from './cure.mjs';
@@ -22,6 +23,9 @@ import { handlePlaceTemplate } from './place-template.mjs';
 import { handleRollContest } from './roll-contest.mjs';
 import { handleUndoDamage } from './undo-damage.mjs';
 import { handleApplyAiFavorTally } from './ai-favor-tally.mjs';
+import { handleRollMobLoot, handleHandOutBossLoot } from './fight-loot.mjs';
+import { handleApplyEvadeInjury } from './evade-injuries.mjs';
+import { handleGrindMapFind } from './grind-map-find.mjs';
 import { handleUseAssist, handleApplyAssist, handleResolveCalledPlay } from './use-assist.mjs';
 import { handleCameraPickRow, handleCameraAward, handleCameraChoice, handleCameraWithheld } from './cameras.mjs';
 import { handleContestRoll, handleContestDrop, handleContestPropose } from './contest.mjs';
@@ -29,17 +33,26 @@ import { handleTauntDeclared, handleResolveDeclared } from './declared-attacks.m
 import { handleLootBoxWatch } from './loot-box-watch.mjs';
 import { handleDeityGift, handleDeityFallen, handleDeitySmiteChance, handleDeityInfidels } from './deity.mjs';
 import {
-  handleVehicleChoose, handleVehicleOffer, handleVehicleBoardAnyway, handleVehicleRamDamage, handleVehicleCollision,
+  handleVehicleChoose, handleVehicleBoardAnyway, handleVehicleRamDamage, handleVehicleCollision,
   handleVehicleExplode, handleVehicleExplodeDismiss
 } from './vehicle-check.mjs';
 import { handlePatronOffer, handlePatronChoose } from './patron-offer.mjs';
+import { handleChoosePetRole } from './pet-role.mjs';
 import { handlePatronTransfer, handlePatronDeath, handlePatronEndDeity } from './patron-endings.mjs';
 import { handlePatronGig } from './patron-gig.mjs';
 import { handlePatronAudition, handlePatronPopularity, handlePatronSteady } from './patron-audition.mjs';
+import { handleCheckOffer, handleApplyCheckReroll } from './check-offers.mjs';
+import { handleAfterKillCheck } from './after-kill-check.mjs';
 import { handleSetDifficulty, handleAskOpposed, handleClearDifficulty } from './check-difficulty.mjs';
+import { handlePopularityChecklistUndo } from './popularity-checklist.mjs';
+import { handlePopularityChecklistOpen } from './popularity-checklist-open.mjs';
+import { handleFanBoxAlertAward, handleFanBoxAlertDismiss } from './fan-box-alert.mjs';
 import { handleHitVehicle, handleVehicleEvade } from './vehicle-combat.mjs';
+import { handlePetThrown } from './pet-thrown.mjs';
 
 export const CHAT_ACTIONS = Object.freeze({
+  crawlerPetThrown: handlePetThrown,
+  crawlerChoosePetRole: handleChoosePetRole,
   crawlerPatronOffer: handlePatronOffer,
   crawlerPatronChoose: handlePatronChoose,
   crawlerPatronTransfer: handlePatronTransfer,
@@ -54,7 +67,8 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerDeitySmiteChance: handleDeitySmiteChance,
   crawlerDeityInfidels: handleDeityInfidels,
   crawlerVehicleChoose: handleVehicleChoose,
-  crawlerVehicleOffer: handleVehicleOffer,
+  crawlerCheckOffer: handleCheckOffer,
+  crawlerApplyCheckReroll: handleApplyCheckReroll,
   crawlerVehicleBoardAnyway: handleVehicleBoardAnyway,
   crawlerVehicleRamDamage: handleVehicleRamDamage,
   crawlerVehicleCollision: handleVehicleCollision,
@@ -72,6 +86,8 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerApplyMana: handleApplyMana,
   crawlerApplyHoT: handleApplyHoT,
   crawlerApplyBuff: handleApplyBuff,
+  crawlerApplyItemBuff: handleApplyItemBuff,
+  crawlerRemoveItemBuff: handleRemoveItemBuff,
   crawlerApplyCondition: handleApplyCondition,
   crawlerCleanseDebuff: handleCleanseDebuff,
   crawlerMendInjury: handleMendInjury,
@@ -92,10 +108,19 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerUseAssist: handleUseAssist,
   crawlerApplyAssist: handleApplyAssist,
   crawlerResolveCalledPlay: handleResolveCalledPlay,
+  crawlerAfterKillCheck: handleAfterKillCheck,
   crawlerSetDifficulty: handleSetDifficulty,
   crawlerAskOpposed: handleAskOpposed,
   crawlerClearDifficulty: handleClearDifficulty,
   crawlerApplyAiFavorTally: handleApplyAiFavorTally,
+  crawlerRollMobLoot: handleRollMobLoot,
+  crawlerApplyEvadeInjury: handleApplyEvadeInjury,
+  crawlerHandOutBossLoot: handleHandOutBossLoot,
+  crawlerGrindMapFind: handleGrindMapFind,
+  crawlerPopularityChecklistUndo: handlePopularityChecklistUndo,
+  crawlerPopularityChecklistOpen: handlePopularityChecklistOpen,
+  crawlerFanBoxAlertAward: handleFanBoxAlertAward,
+  crawlerFanBoxAlertDismiss: handleFanBoxAlertDismiss,
   crawlerCameraPickRow: handleCameraPickRow,
   crawlerCameraAward: handleCameraAward,
   crawlerCameraChoice: handleCameraChoice,

@@ -26,6 +26,11 @@ export class CrawlerDataModel extends BaseActorDataModel {
         grindLevelHours: new fields.NumberField({ initial: 0, integer: true, min: 0 }),
         /** Stat points (3 per Level gained) waiting to be spent. */
         pendingStatPoints: new fields.NumberField({ initial: 0, integer: true, min: 0 }),
+        /** Stat and Skill potions consumed in this crawler's whole life; the book allows two of each (p. 226). The GM may correct them. */
+        potionsTaken: new fields.SchemaField({
+          stat: new fields.NumberField({ initial: 0, integer: true, min: 0 }),
+          skill: new fields.NumberField({ initial: 0, integer: true, min: 0 })
+        }),
         ...BaseActorDataModel.defineCharacterDetailsFields()
       }),
       gearSlots: BaseActorDataModel.defineGearSlotsField(),

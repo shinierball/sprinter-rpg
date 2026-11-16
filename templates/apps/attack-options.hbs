@@ -85,6 +85,8 @@
     <label class="cog-situation-toggle">
       <input type="checkbox" name="situation" value="{{tag}}" {{#if checked}}checked{{/if}}>
       {{label}}
+      {{#if suggested}}<span class="cog-badge cog-badge-success">{{../text.suggested}}</span>{{/if}}
+      {{#if detectedText}}<small class="cog-situation-source">{{detectedText}}</small>{{/if}}
       {{#if fromText}}<small class="cog-situation-source">{{fromText}}</small>{{/if}}
       {{#if used}}<small class="cog-situation-source">{{../text.used}}</small>{{/if}}
       {{#if readsText}}<small class="cog-situation-source">{{readsText}}</small>{{/if}}

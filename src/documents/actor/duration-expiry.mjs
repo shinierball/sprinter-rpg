@@ -3,12 +3,15 @@ import { isActiveGM } from '../../utils/gm-relay.mjs';
 import { clearDispelsForCombat } from '../../utils/effects/dispel.mjs';
 import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
 import { TIME_UNITS, timingAmount, amountRounds } from '../../utils/time/timing.mjs';
+import { REST_LEVELS } from '../../utils/time/rest-durations.mjs';
+import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { durationSpec, effectiveDuration, expiryStamp, isTimeExpired, tickRoundDuration } from '../../utils/time/durations.mjs';
-import { currentTimeContext } from './dungeon-time.mjs';
+import { currentTimeContext, getSceneEpoch, SCENE_EPOCH_REASONS } from './dungeon-time.mjs';
 import { auraRank } from './aura-effects.mjs';
 import { activeAurasOnScene } from './aura-pulse.mjs';
 import { isDyingDebuff, die, sweepDyingClock, restampDyingClock } from './dying.mjs';
 import { isRankedItem } from '../../utils/document-types.mjs';
+import { readFlag } from '../../utils/flags.mjs';
 
 /**
  * Duration stamping and expiry.
@@ -18,11 +21,16 @@ import { isRankedItem } from '../../utils/document-types.mjs';
  * - Sweep: on `updateWorldTime` the active GM ends every effect whose `expiresAt` is reached.
  * - Rounds: `COGCombat#processRoundDurations` counts rounds down in Clean Up and ends them with `expireEffect`.
  * - Combat end: `deleteCombat` ends the effects bound to the combat.
+ * - Scene end: a scene-long effect is stamped with the scene epoch and ends when a combat ends or the GM starts a New Scene.
  * Gear never has a duration (a gear aura lasts while worn); zone regions run their own countdown (zone-pulse.mjs).
  */
 
 /** Item types whose duration is stamped and counted. */
 const TIMED_TYPES = new Set(['buff', 'debuff', 'spell', 'skill']);
+/** The duration unit that ends with a scene. */
+const SCENE_UNIT = 'scene';
+/** The duration unit that ends when the world's current floor changes. */
+const FLOOR_UNIT = 'floor';
 const asArray = (list) => (Array.isArray(list) ? list : Array.from(list?.values?.() ?? list ?? []));
 
 /** True when an effect is working: a debuff always, anything else while `system.active`. Gear is never timed. */
@@ -37,26 +45,38 @@ const readChanged = (changed, path) => {
   return globalThis.foundry?.utils?.getProperty?.(changed, path);
 };
 
+/** A floor-long duration's stamp (the floor it began on, kept once there); undefined when the effect is not floor-long. */
+function floorStampPatch(cfg, eff, fresh) {
+  if (eff.type !== FLOOR_UNIT) return undefined;
+  return !fresh && Number.isInteger(cfg.floorStamp) ? null : { 'system.durationConfig.floorStamp': getCurrentFloor() };
+}
+
 /**
  * The duration fields an effect gets when it comes into force. Null when it is not timed that way.
  * @param {Item} item
  * @param {{ time?: number }} [now] `currentTimeContext()`
+ * @param {boolean} [fresh] stamp again over an existing stamp (a re-cast restarts the duration)
  * @returns {{ 'system.durationConfig.expiresAt'?: number, 'system.durationConfig.remainingRounds'?: number }|null}
  */
-function durationStampPatch(item, now = currentTimeContext(item?.actor ?? null)) {
+function durationStampPatch(item, now = currentTimeContext(item?.actor ?? null), fresh = false) {
   if (!item || !TIMED_TYPES.has(item.type)) return null;
   const cfg = item.system?.durationConfig;
   if (!cfg) return null;
   const rank = item.actor && isRankedItem(item) ? auraRank(item.actor, item) : undefined;
   const eff = effectiveDuration(item, { rank });
+  if (eff.type === SCENE_UNIT) {
+    return !fresh && Number.isInteger(cfg.sceneEpoch) ? null : { 'system.durationConfig.sceneEpoch': getSceneEpoch() };
+  }
+  const floorPatch = floorStampPatch(cfg, eff, fresh);
+  if (floorPatch !== undefined) return floorPatch;
   const kind = TIME_UNITS[eff.type]?.kind;
   if (kind !== 'time' && kind !== 'rounds') return null;
   const amount = timingAmount({ value: eff.value, unit: eff.type, scaleBy: eff.scaleBy }, { actor: item.actor ?? null, source: item }) + eff.bonus;
   if (kind === 'time') {
-    if (Number.isFinite(cfg.expiresAt)) return null;
+    if (!fresh && Number.isFinite(cfg.expiresAt)) return null;
     return { 'system.durationConfig.expiresAt': expiryStamp({ ...cfg, type: eff.type }, now?.time ?? 0, { amount }) };
   }
-  if ((Number(cfg.remainingRounds) || 0) > 0) return null;
+  if (!fresh && (Number(cfg.remainingRounds) || 0) > 0) return null;
   const rounds = Math.max(0, amountRounds('rounds', amount));
   return rounds > 0 ? { 'system.durationConfig.remainingRounds': rounds } : null;
 }
@@ -78,7 +98,7 @@ export function stampOnUpdate(item, changed) {
   if (!item || !TIMED_TYPES.has(item.type) || item.type === 'debuff') return null;
   const next = readChanged(changed, 'system.active');
   if (typeof next !== 'boolean' || next === Boolean(item.system?.active)) return null;
-  const patch = next ? durationStampPatch(item) : { 'system.durationConfig.expiresAt': null, 'system.durationConfig.remainingRounds': 0 };
+  const patch = next ? durationStampPatch(item) : { 'system.durationConfig.expiresAt': null, 'system.durationConfig.remainingRounds': 0, 'system.durationConfig.sceneEpoch': null, 'system.durationConfig.floorStamp': null };
   if (!patch) return null;
   const flat = Object.hasOwn(changed, 'system.active');
   const written = {};
@@ -107,7 +127,8 @@ async function expireEffect(actor, item, { combatants } = {}) {
     await die(actor, { cause: 'countdown' });
     return false;
   }
-  if (item.type === 'debuff') {
+  // A copy someone else's Skill or spell put here is gone when its time is up; a crawler's own buff is switched off
+  if (item.type === 'debuff' || (item.type === 'buff' && readFlag(item, 'appliedBy'))) {
     await item.delete();
     return;
   }
@@ -126,6 +147,7 @@ async function expireEffect(actor, item, { combatants } = {}) {
         'system.attributes.hp.tempBars.currentSlotHp': 0,
         'system.attributes.hp.tempBars.source': '',
         'system.attributes.hp.tempBars.sourceUuid': '',
+        'system.attributes.hp.tempBars.passTag': '',
         'system.attributes.hp.temp': 0
       });
     }
@@ -133,8 +155,39 @@ async function expireEffect(actor, item, { combatants } = {}) {
   await item.update({
     'system.active': false,
     'system.durationConfig.expiresAt': null,
-    'system.durationConfig.remainingRounds': 0
+    'system.durationConfig.remainingRounds': 0,
+    'system.durationConfig.sceneEpoch': null,
+    'system.durationConfig.floorStamp': null
   });
+}
+
+/**
+ * A non-aura Skill or spell that grants temporary bars with a timed duration is switched on at the use, with a fresh stamp
+ * (a re-cast restarts it), so the sweep, the round count, a combat's end, a scene's end or a floor change ends it and the
+ * bars with it. An item with no timed duration is left as it is.
+ * @param {Item} item the Skill or spell that was used
+ * @returns {Promise<boolean>} whether the item was switched on
+ */
+export async function startTimedEffect(item) {
+  if (!item || !['spell', 'skill'].includes(item.type) || isAuraItem(item)) return false;
+  const patch = durationStampPatch(item, undefined, true);
+  if (!patch && !endsWithCombat(item)) return false;
+  await item.update({ 'system.active': true, ...(patch ?? {}) });
+  return true;
+}
+
+/**
+ * A hit emptied the temporary bars a Skill or spell on this actor granted: the item ends with them.
+ * @param {Actor} actor the holder
+ * @param {string} sourceUuid the item the emptied bars came from
+ * @returns {Promise<boolean>} whether an item was switched off
+ */
+export async function endEmptiedSource(actor, sourceUuid) {
+  if (!sourceUuid) return false;
+  const item = asArray(actor?.items).find(it => it.uuid === sourceUuid);
+  if (!item || !['spell', 'skill'].includes(item.type) || isAuraItem(item) || !isInForce(item)) return false;
+  await expireEffect(actor, item);
+  return true;
 }
 
 async function postExpiryCard(title, rows) {
@@ -219,7 +272,8 @@ export async function tickRoundEffects(combat, round) {
 /** @returns {boolean} whether an effect lasts only as long as the combat */
 function endsWithCombat(item) {
   const cfg = item?.system?.durationConfig;
-  return Boolean(cfg?.endsWithCombat) || ['combat', 'scene'].includes(durationSpec(cfg).unit);
+  const unit = durationSpec(cfg).unit;
+  return Boolean(cfg?.endsWithCombat) || unit === 'combat';
 }
 
 /**
@@ -247,6 +301,75 @@ export async function expireCombatEffects(combat) {
   }
   await restampDyingClock(combat);
   await postExpiryCard('Combat Ended', expired);
+  return expired;
+}
+
+// ---- Scene end ----------------------------------------------------------------------------------------------
+
+/**
+ * A scene closed (a combat ended, or the GM pressed New Scene): end every in-force scene-long effect that was stamped
+ * with an epoch, on every actor the world knows. A combat starting is not a boundary, so an effect given before a
+ * fight lasts through it.
+ * @returns {Promise<object[]>}
+ */
+async function expireSceneEffects() {
+  const expired = [];
+  for (const actor of sweepActors()) {
+    for (const item of asArray(actor.items)) {
+      if (!isInForce(item) || !Number.isInteger(item.system?.durationConfig?.sceneEpoch)) continue;
+      const rank = isRankedItem(item) ? auraRank(actor, item) : undefined;
+      if (effectiveDuration(item, { rank }).type !== SCENE_UNIT) continue;
+      const row = expiredRow(actor, item);
+      await expireEffect(actor, item, { combatants: globalThis.game?.combat?.combatants });
+      expired.push(row);
+    }
+  }
+  await postExpiryCard('Scene Ended', expired);
+  return expired;
+}
+
+// ---- Floor end and rest end -----------------------------------------------------------------------------------
+
+/**
+ * The floor changed: end every in-force floor-long effect stamped on another floor, on every actor the world knows.
+ * @param {number} [floor] the floor now current
+ * @returns {Promise<object[]>}
+ */
+async function expireFloorEffects(floor = getCurrentFloor()) {
+  const expired = [];
+  for (const actor of sweepActors()) {
+    for (const item of asArray(actor.items)) {
+      const stamp = item.system?.durationConfig?.floorStamp;
+      if (!isInForce(item) || !Number.isInteger(stamp) || stamp === floor) continue;
+      const rank = isRankedItem(item) ? auraRank(actor, item) : undefined;
+      if (effectiveDuration(item, { rank }).type !== FLOOR_UNIT) continue;
+      const row = expiredRow(actor, item);
+      await expireEffect(actor, item, { combatants: globalThis.game?.combat?.combatants });
+      expired.push(row);
+    }
+  }
+  await postExpiryCard('Floor Changed', expired);
+  return expired;
+}
+
+/**
+ * A rest of `level` (1 short, 2 long, 3 full day; 0 for a rest that ends nothing) ends the actor's in-force buffs, spells and
+ * Skills whose duration is a rest of that level or shorter. A debuff that a rest clears is `rest()`'s own business.
+ * @param {Actor} actor
+ * @param {number} level
+ * @returns {Promise<object[]>} the effects that ended
+ */
+export async function expireRestEffects(actor, level) {
+  const expired = [];
+  for (const item of asArray(actor?.items)) {
+    if (item.type === 'debuff' || !isInForce(item)) continue;
+    const rank = isRankedItem(item) ? auraRank(actor, item) : undefined;
+    const restLevel = REST_LEVELS[effectiveDuration(item, { rank }).type];
+    if (!restLevel || restLevel > level) continue;
+    const row = expiredRow(actor, item);
+    await expireEffect(actor, item, { combatants: globalThis.game?.combat?.combatants });
+    expired.push(row);
+  }
   return expired;
 }
 
@@ -315,7 +438,12 @@ export function registerDurationHooks() {
   hooks = [
     ['updateWorldTime', (worldTime) => { if (isActiveGM()) return sweepTimedEffects(worldTime); }],
     ['updateWorldTime', (worldTime) => { if (isActiveGM()) return sweepDyingClock(worldTime, sweepActors()); }],
-    ['deleteCombat', (combat) => { if (isActiveGM()) return expireCombatEffects(combat); }]
+    ['deleteCombat', (combat) => { if (isActiveGM()) return expireCombatEffects(combat); }],
+    ['cogSceneBoundary', ({ reason } = {}) => {
+      const closes = reason === SCENE_EPOCH_REASONS.COMBAT_END || reason === SCENE_EPOCH_REASONS.MANUAL;
+      if (closes && isActiveGM()) return expireSceneEffects();
+    }],
+    ['cogFloorChanged', ({ floor } = {}) => { if (isActiveGM()) return expireFloorEffects(floor); }]
   ];
   for (const [name, fn] of hooks) globalThis.Hooks?.on?.(name, fn);
 }

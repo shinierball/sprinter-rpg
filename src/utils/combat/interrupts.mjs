@@ -6,6 +6,7 @@
  * (see INTERRUPT_TRIGGERS in tag-mechanics.mjs); no ids, names or notes are read.
  */
 import { isMobSide } from './combat-sides.mjs';
+import { isCombatantOfActor } from '../../documents/combat/combatants.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../tag/tag-behaviour.mjs';
 import {
   getTagsOf, isOfferedOnAttack, isOfferedOnCheck, isOfferedOnMove, MOVE_EVENTS, TOUCH_REACH_FEET, OFFER_ROLES, isAreaTagSet
@@ -100,17 +101,34 @@ export function measureTokenFeet(a, b) {
   }
   const size = Number(grid?.size) || 0;
   if (!size) return null;
-  const unit = Number(globalThis.canvas?.scene?.grid?.distance ?? globalThis.canvas?.dimensions?.distance) || 5;
-  return Math.hypot(ca.x - cb.x, ca.y - cb.y) / size * unit;
+  return Math.hypot(ca.x - cb.x, ca.y - cb.y) / size * sceneUnitFeet();
 }
 
-function findCombatantFor(combatants, { tokenId = null, actorId = null }) {
+/** Scene feet per grid square (5 when the scene does not say). */
+function sceneUnitFeet() {
+  return Number(globalThis.canvas?.scene?.grid?.distance ?? globalThis.canvas?.dimensions?.distance) || 5;
+}
+
+/**
+ * Edge-to-edge feet between two token placeables: the centre distance minus half of each token's extra width
+ * (a token `width` squares wide reaches `(width - 1) / 2` squares past a 1-square token's edge). Two adjacent
+ * 1-square tokens are 5 ft apart; a 1-square and a 2-square token side by side are 5 ft apart. Never below 0; null
+ * when `measureTokenFeet` cannot tell.
+ */
+export function tokenGapFeet(a, b) {
+  const centres = measureTokenFeet(a, b);
+  if (centres === null) return null;
+  const extraSquares = (Math.max((Number(a?.document?.width) || 1) - 1, 0) + Math.max((Number(b?.document?.width) || 1) - 1, 0)) / 2;
+  return Math.max(0, centres - extraSquares * sceneUnitFeet());
+}
+
+function findCombatantFor(combatants, { tokenId = null, actor = null }) {
   if (tokenId) {
     const byToken = combatants.find(c => c?.tokenId === tokenId);
     if (byToken) return byToken;
   }
-  if (!actorId) return null;
-  return combatants.find(c => c?.actorId === actorId || c?.actor?.id === actorId) || null;
+  // The shared rule: an unlinked token actor never takes a sibling token's combatant.
+  return actor ? combatants.find(c => isCombatantOfActor(c, actor)) ?? null : null;
 }
 
 /**
@@ -128,7 +146,7 @@ function findCombatantFor(combatants, { tokenId = null, actorId = null }) {
 export function sameSideCombatants(actor, combat, { tokenId = null, combatant = null, excludeCombatants = [], excludeActorIds = [] } = {}) {
   const combatants = toArray(combat?.combatants);
   if (!actor || !combatants.length) return [];
-  const own = combatant ?? findCombatantFor(combatants, { tokenId, actorId: actor.id });
+  const own = combatant ?? findCombatantFor(combatants, { tokenId, actor });
   const ownTok = own ? null : findActorToken(actor, { tokenId });
   const side = own
     ? isMobSide({ actor: own.actor || actor, token: own.token })
@@ -157,9 +175,11 @@ export function sameSideCombatants(actor, combat, { tokenId = null, combatant = 
  */
 export function collectCheckAssistOffers({ record, eff = null, combat = null } = {}) {
   if (!record || !combat?.id || record.combatId !== combat.id || record.round !== Number(combat.round)) return [];
+  // Other crawlers cannot aid a Stat Check (core p. 59).
+  if (record.statOnly === true) return [];
   const roller = resolveActorByUuid(record.rollerUuid);
   const combatants = toArray(combat.combatants);
-  const rollerCbt = roller ? findCombatantFor(combatants, { tokenId: record.rollerTokenId, actorId: roller.id }) : null;
+  const rollerCbt = roller ? findCombatantFor(combatants, { tokenId: record.rollerTokenId, actor: roller }) : null;
   if (!rollerCbt) return [];
   const effective = eff ?? effectiveCheck(record);
   if (!effective) return [];
@@ -222,7 +242,7 @@ export function collectMoveInterruptOffers({ moverToken, origin, destination = n
   const combatants = toArray(combat?.combatants);
   const moverActor = moverToken?.actor;
   if (!moverToken || !moverActor || !origin || !combatants.length) return [];
-  const moverCbt = findCombatantFor(combatants, { tokenId: moverToken.id, actorId: moverActor.id });
+  const moverCbt = findCombatantFor(combatants, { tokenId: moverToken.id, actor: moverActor });
   if (!moverCbt || moverCbt.defeated) return [];
   const after = destination
     ? centreAt(moverToken, destination)
@@ -275,14 +295,14 @@ export function collectInterruptOffers({ attacker, targetResults, combat = null,
 
   const combatants = toArray(combat?.combatants);
   const attackerCbt = combatants.length
-    ? findCombatantFor(combatants, { tokenId: attacker?.token?.id ?? null, actorId: attacker?.id })
+    ? findCombatantFor(combatants, { tokenId: attacker?.token?.id ?? null, actor: attacker })
     : null;
 
   for (const tr of targetResults || []) {
     const defender = tr.actor || lookupActor(tr.actorId);
     if (!defender) continue;
     const defCbt = combatants.length
-      ? findCombatantFor(combatants, { tokenId: tr.tokenId ?? null, actorId: defender.id })
+      ? findCombatantFor(combatants, { tokenId: tr.tokenId ?? null, actor: defender })
       : null;
 
     const base = {

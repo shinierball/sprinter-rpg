@@ -17,6 +17,7 @@ import { ENCHANTMENT_ROW_ARRAYS } from '../loot/outcome-defaults.mjs';
 import { craftText } from './craft-text.mjs';
 import { getRowKind, kindOf } from '../row-kinds.mjs';
 import { getSizeInfo, sanitizeSizeId } from '../../data/sizes.mjs';
+import { unopposedDifficulty } from '../../data/rules/difficulty-rules.mjs';
 import { enchantmentFactor, getEnchantmentCategory } from '../../data/rules/crafting-rules.mjs';
 import { upgradeKindsOf } from '../../data/rules/vehicle-rules.mjs';
 import { VEHICLE_TAGS } from '../../data/tag-vocabulary.mjs';
@@ -165,7 +166,7 @@ export function combinedDifficulty(templates) {
  */
 export function mundaneDifficulty({ floor, dc } = {}) {
   if (dc !== null && dc !== undefined && dc !== '' && Number.isFinite(Number(dc))) return Number(dc);
-  return 10 + 2 * nonNeg(floor);
+  return unopposedDifficulty({ floor });
 }
 
 /**

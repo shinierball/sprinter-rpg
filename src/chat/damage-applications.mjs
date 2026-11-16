@@ -10,6 +10,9 @@
 import { SYSTEM_ID } from '../constants.mjs';
 import { isApplicationId } from '../utils/damage/damage-undo.mjs';
 import { messageAuthorId } from './chat-relay.mjs';
+import { readFlag } from '../utils/flags.mjs';
+import { messageList } from '../utils/card/recent-cards.mjs';
+import { appliedBeforeEvade } from '../utils/attack/evade-link.mjs';
 import { MAX_TARGET_LINES } from '../utils/damage/per-target-damage.mjs';
 
 const DAMAGE_APPLICATIONS_FLAG = 'damageApplications';
@@ -96,4 +99,24 @@ export async function markDamageApplicationUndone(message, applicationId, target
     console.error('Sprinter RPG | Could not mark the damage application undone:', err);
     return false;
   }
+}
+
+/**
+ * True when a damage card answering this check has an application that was not undone (an Evade card: the attack's damage
+ * already applied to its roller).
+ * @param {object} message the check card
+ * @param {{ kind: string, rollerUuid: string }} record its check record
+ */
+export function damageAlreadyApplied(message, record) {
+  const messages = messageList(globalThis.game?.messages);
+  if (record.kind === 'evade') {
+    return appliedBeforeEvade(messages, { attackMessageId: readFlag(message, 'attackMessageId'), evaderUuid: readFlag(message, 'evaderUuid') ?? record.rollerUuid, getApplications: getDamageApplications });
+  }
+  if (!message?.id) return false;
+  return messages.some((m) => readFlag(m, 'sourceMessageId') === message.id && getDamageApplications(m).some((a) => !a.undone));
+}
+
+/** True when a damage card answers this check (made from it, applied or not): the Called Plays on it keep where they went. */
+export function damageCardAnswers(message) {
+  return Boolean(message?.id) && messageList(globalThis.game?.messages).some((m) => readFlag(m, 'sourceMessageId') === message.id);
 }

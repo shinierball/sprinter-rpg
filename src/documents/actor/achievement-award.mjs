@@ -7,7 +7,7 @@
  * Awards are the GM's call: a non-GM client warns and writes nothing, like the session ledger's GM-only writers
  * (`session-relay.mjs`). Players never reach this module, so there is no relay action for it.
  *
- * Boxes stack: a grant adds to an unopened box with the same identifier, tier, template and contents, and otherwise
+ * Boxes stack: a grant adds to an unopened box with the same identifier, tier, template, contents and `whenEmpty`, and otherwise
  * creates a new item. A second award of the same (non-repeatable) achievement asks a Rule Break and records it on the
  * trophy (`flags.sprinter-rpg.rewardBoxesGranted = { at, by, ruleBreak }`), as `grantStartingItems` does.
  * Does not import `actor.mjs`.
@@ -65,7 +65,7 @@ const templateKeyOf = (data) => data?.flags?.[SYSTEM_ID]?.[BOX_TEMPLATE_FLAG] ??
 /**
  * Pure: the create data for one reward-box row. With no template it is the generic tier box, built through
  * `buildPayload('loot', ...)`; with a template (a plain object from a box document) it is a copy of it.
- * @param {{ tier?: *, quantity?: number, uuid?: string }} row a `rewardBoxes` row
+ * @param {{ tier?: *, quantity?: number, uuid?: string, whenEmpty?: string }} row a `rewardBoxes` row (`whenEmpty: 'keep'` makes a box that waits for the GM)
  * @param {object|null} [template] the template box as plain data, or null
  * @returns {object} item create data
  */
@@ -83,6 +83,7 @@ export function lootBoxDataFor(row, template = null) {
     data.system.quantity = quantity;
     data.system.box = data.system.box ?? {};
     data.system.box.tier = resolveLootBoxTier(data.system.box.tier || clean.tier);
+    if (clean.whenEmpty === 'keep') data.system.box.whenEmpty = 'keep';
     const key = clean.uuid || template.uuid || '';
     if (key) {
       data.flags = data.flags ?? {};
@@ -99,7 +100,7 @@ export function lootBoxDataFor(row, template = null) {
       identifier: `loot-box-${tier}`,
       lootType: LOOT_BOX_LOOT_TYPE,
       quantity,
-      box: { tier, contents: [] }
+      box: { tier, contents: [], whenEmpty: clean.whenEmpty }
     }
   }, { warnings: [] });
 }
@@ -116,11 +117,13 @@ export function findBoxStack(actorItems, data) {
   const tier = resolveLootBoxTier(sys.box?.tier);
   const key = templateKeyOf(data);
   const contents = sys.box?.contents ?? [];
+  const waits = sys.box?.whenEmpty === 'keep';
   return asArray(actorItems).find((item) => {
     if (item?.type !== 'loot' || !isLootBoxType(item.system?.lootType) || item.system?.used) return false;
     if ((item.system?.identifier ?? '') !== identifier) return false;
     if (resolveLootBoxTier(item.system?.box?.tier) !== tier) return false;
     if (templateKeyOf(item) !== key) return false;
+    if ((item.system?.box?.whenEmpty === 'keep') !== waits) return false;
     const have = item.system?.box?.contents ?? [];
     return deepEqual(JSON.parse(JSON.stringify(have)), JSON.parse(JSON.stringify(contents)));
   }) ?? null;

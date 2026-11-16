@@ -15,6 +15,7 @@
 .cog-fsim-step:hover { background: var(--cog-surface-muted); }
 .cog-fsim-step.active { background: var(--cog-accent-strong-fill); color: var(--cog-on-fill); border-color: var(--cog-accent-fill); }
 .cog-fsim-step.done .cog-fsim-step-mark { color: var(--cog-success); }
+.cog-fsim-step.active .cog-fsim-step-mark { color: var(--cog-on-fill); }
 .cog-fsim-step.break { border-color: var(--cog-accent); }
 .cog-fsim-step-label { flex: 1; }
 .cog-fsim-dice-count { font-size: 10px; background: var(--cog-surface-strong); color: var(--cog-text); border-radius: 8px; padding: 0 6px; }
@@ -99,7 +100,7 @@
 
 /* Crawler Creator floor start: the stage rail and the sticky preview beside the Induction parts or the stage panel */
 .cog-crawler-creator-window .window-content > [hidden] { display: none; }
-.cog-crawler-creator-window.cog-creator-staged .window-content {
+:is(.cog-crawler-creator-window, .cog-mob-creator-v2-window).cog-creator-staged .window-content {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr) 250px;
   grid-auto-rows: min-content;

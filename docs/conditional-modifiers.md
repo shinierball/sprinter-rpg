@@ -19,6 +19,7 @@ Module authors: [engine-extension.md](engine-extension.md) registers new scalars
 | `manaCostModifiers` | `mode` | `self` | no |
 | `recoveryModifiers` | (none) | `self` | no |
 | `popularityTriggers` | (none) | `self`, `subject` | no |
+| `eventTriggers` | `kind` | `self`, `subject` | yes |
 | `aiFavorRatings` | (none) | `self`, `subject` | no |
 | `statSubstitutions` | (none) | `self`, `subject` | no |
 | `boxContents` | `kind` | `self` | yes (loot box prizes, not a modifier row; see below) |
@@ -66,7 +67,7 @@ The roles an array sees are listed in section 1; the editor only offers those. W
 
 **Situations** are unprefixed tags in the `situation.` namespace:
 
-- The engine sets eight itself: `situation.in_combat`, `situation.disadvantaged` (the net roll is Disadvantage), `situation.critical_hit`, `situation.amazing_success` (not on a Critical Hit), `situation.damage_effect` (the attack uses a Damage Effect), `situation.specialty` (the item you make, or your target, carries the rolling skill's chosen specialty) and `situation.same_size` (attacker and target the same size; a roll may also tick it by hand) and `situation.intercepting` (a defence row only: the holder caught the hit for an ally). A roll inside a racing or chasing contest also carries `contest.race` or `contest.chase`.
+- The engine sets nine itself: `situation.in_combat`, `situation.disadvantaged` (the net roll is Disadvantage), `situation.critical_hit`, `situation.amazing_success` (not on a Critical Hit), `situation.damage_effect` (the attack uses a Damage Effect), `situation.specialty` (the item you make, or your target, carries the rolling skill's chosen specialty) and `situation.same_size` (attacker and target the same size; a roll may also tick it by hand) and `situation.intercepting` (a defence row only: the holder caught the hit for an ally) and `situation.single_target` (a `healAdd` row only: the heal goes to one creature, the user or one target, with no area). A roll inside a racing or chasing contest also carries `contest.race` or `contest.chase`.
 - Any other situation a row mentions is offered in the roll dialog as a toggle (e.g. `situation.aiming`). A situation flagged `maneuver` is listed under Maneuvers in the Attack Options pop-up.
 - "+ New situation" in any condition editor creates a world situation tag on the spot.
 
@@ -90,6 +91,8 @@ The kind decides what a row does. Built-ins (labels as in the editor):
 | damage | `add` | value, dice, stat, damageType, option | `damageType` blank = the action's own type; option `rank` = a Rank die |
 | damage | `multiply` | multiplier, damageType | Multiplies the whole damage, flat bonuses included; stacks multiplicatively with other multipliers and crits; x0 is a real zero |
 | damage | `suppress_stat` | damageType | Zeroes the stat modifier on matching parts |
+| damage | `retype` | damageType | Every part of the damage the row matches takes this type, so Resistance and Vulnerability see it; the last row wins; a blank type does nothing |
+| damage | `healAdd` | value (scalable) | Adds this many Health Bar slots to a heal of the owner's Skill or Spell; condition it on `situation.single_target` for a heal that goes to one creature |
 | defense | `resistance`, `immunity`, `vulnerability` | damageType | |
 | defense | `tempHp` | value | |
 | defense | `reduction` | percent, flat, rounding, damageType | Reduction % and/or flat, typed or not |
@@ -98,9 +101,17 @@ The kind decides what a row does. Built-ins (labels as in the editor):
 | defense | `suppress_dr` | damageType | |
 | defense | `effectImmunity` | none (the row's condition names the effect) | A Debuff or contested Skill or Spell the condition matches does not land; an empty condition is immune to nothing |
 | defense | `evadeOutcome` | option (`full`, `half`, `none`) | What a successful Evade does against an area attack |
-| defense | `reflect` | value, flat | When one blow costs the holder at least `value` Health Bar slots, the attacker may lose `flat` slots |
+| defense | `reflect` | value, flat, dice, oncePer | When one blow costs the holder at least `value` Health Bar slots, the attacker may lose `flat` slots; `dice` is a chance die (it works on a 1), `oncePer` a combat or floor limit a click asks a Rule Break to pass |
+| defense | `retaliate` | value, dice, damageType, oncePer | Every landed hit the condition matches offers the holder a hit back for `dice` plus `value` (scalable); `oncePer` limits it |
 | defense | `attackerAdvantage` | option (`advantage`, `disadvantage`) | Whoever attacks the holder rolls with Advantage (or Disadvantage); a mob attacker's Difficulty on the holder moves 5 per net step. Debuffs that leave their bearer open to attack carry it |
+| defense | `healthBarAdd` | value (scalable) | Each Health Bar slot holds this many more HP for the hit being judged; maximum Health is not raised |
+| defense | `paidDr` | value (scalable), option (`aiFavor`) | When the holder is hit and has AI Favor, their player (or the GM) is asked how many points to spend; each buys `value` Damage Reduction against that one hit (Armor-Piercing ignores it) |
+| defense | `spellBaseCap` | none (the row's condition, `kind.spell`, names the hits) | A matching hit from a spell is taken only down to that spell's Rank 1 base (its die and Stat Mod, no Upgrades or bonuses), after the multiplier and before DR |
 | defense | `healthBarScale` | value (default 2) | Each Health Bar slot holds `value` times its HP: damage reaching the bar is divided by it, rounded down; the highest factor wins |
+| event | `heal` | value, oncePer, limit | When the row's event happens (a kill by the holder, judged on the kill's tags and the victim's `subject.*` tags), the holder heals `value` Health Bar slots (scalable); `oncePer` and `limit` cap it in a combat or a floor, and past the cap a Rule Break is asked. |
+| event | `gold` | value, oncePer, limit | The same moment pays the holder `value` gold (scalable), under the same cap |
+| event | `aiFavor` | value, oncePer, limit | The same moment gives the holder `value` AI Favor; the event `levelUp` (each Level gained, no limit) is an event of this array too |
+| event | `debuff` | debuff, oncePer, limit | When the row's event happens (a use of the skill, attack or spell that carries it: event `use`), the debuff the row names by identifier lands on the user at once, through the one debuff writer (immunity, repeat rule and secret debuffs hold). A row on a skill or spell fires only for a use of that item unless its `scope` is `owner`. |
 | attack / check | `bonus` | value, dice, stat | |
 | attack / check | `advantage` | advantage | One Advantage or Disadvantage reason; reasons net out (more Advantage → 2d20kh, more Disadvantage → 2d20kl, equal → 1d20) |
 | check | `assist` | dice, option (`replace`, `add`) | Changes the dice an assist skill rolls; never touches ordinary checks |
@@ -108,6 +119,7 @@ The kind decides what a row does. Built-ins (labels as in the editor):
 | check | `degreeShift` | value, option (`failOnly`, `any`) | After the roll the roller may move the result's degree `value` steps (default 1); a Fail never shifts past Near Miss into a success |
 | attack / check | `waive` | option (a `rollPenalties` id; `driver` is built in) | The named engine roll penalty does not apply to the rolls the row matches |
 | vehicle | `moveAdd` | value | Adds feet to a Move. A vehicle's is read by `vehicleMoveOf` from its installed gear and active buffs and its driver's skills; a creature's by `creatureMoveOf` from its debuffs in force, buffs, gear and skills |
+| vehicle | `moveSet` | value, option (`move`, `swim`, `fly`, `burrow`, `jump`) | The creature has at least `value` feet of Move in the mode named by the option (a pet's special ability). A raised ground Move comes before the additions; the other modes are read by `creatureMoveOf` as `modes`, the higher of the stored speed and the highest row |
 | vehicle | `moveMultiply` | multiplier | Multiplies a Move after the additions; matching rows multiply, so two halving debuffs leave a quarter. A creature's stored Move is never changed; the sheet shows the Move now beside it |
 | craft | `maxBonus` | value | The highest enchantment bonus level the holder crafts; the highest matching row wins, no matching row is no limit, and a craft above it asks a Rule Break |
 | craft | `time` | multiplier | Multiplies the hours of a craft; matching rows multiply |
@@ -159,8 +171,10 @@ scaled = number × (base + per × n), then clamped to [min, max]
 | `floor` | the current Floor | |
 | `stat` | the owner's modifier for a chosen stat | |
 | `statValue` | the owner's score for a chosen stat | |
+| `paidDrStat` | the owner's modifier, or full score, for a chosen stat, as the world setting `aiFavorDrStat` says | |
 | `count` | creatures or items matching a `where` query | `party` (default), `allies`, `enemies`, `items`, `targets` (at apply: targets hit at once) |
 | `move` | the owner's Move in feet (`per: 0.1` = per 10 ft) | |
+| `size` | the owner's size value (1 to 8, as on the size table) | |
 | `worshipTier` | the Tier of Devotion (1-3) of a worshipped god; 0 when the god is not worshipped | `source` (default: the god whose gift carries the row), `highest` (the highest god worshipped) |
 
 - **Party includes the owner.** `count` with scope `party` counts every actor sharing `details.party` with the owner, the owner too. There is no "party minus me" scope yet; if the owner matches `where`, they are counted.
@@ -182,7 +196,7 @@ A new moment ("when a template is placed", "at the start of my turn") is engine 
 
 A tag may carry `rows` and `flags`. Its rows behave as rows on whatever carries the tag (equipped gear, an active buff, an owned skill, the actor) and are owner-wide. Its flags are yes/no gates the engine reads with `hasRuleFlag(subject, flag)`; code never matches a `rule.*` id, so a renamed or replaced tag keeps the rule.
 
-The 19 core flags (`RULE_FLAGS`, `src/utils/tag/tag-behaviour.mjs`): `no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`, `mounted-only`, `works-in-zero-zone`, `no-actions` (acting is a Rule Break confirm; Dying and Dead carry it), `no-healing` (healing the bearer is a Rule Break confirm), `forfeits-action` (the next Action is lost: a "Forfeited" slot is recorded and the debuff ends).
+The 26 core flags (`RULE_FLAGS`, `src/utils/tag/tag-behaviour.mjs`): `no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`, `mounted-only`, `extra-pet` (the bearer keeps one more pet than the limit; acts while the live flag `taming-rules` is on), `works-in-zero-zone`, `no-actions` (acting is a Rule Break confirm; Dying and Dead carry it), `no-healing` (healing the bearer is a Rule Break confirm), `forfeits-action` (the next Action is lost: a "Forfeited" slot is recorded and the debuff ends), `no-move` (a Move Action is a Rule Break confirm), `no-cast` (casting a Spell is one), `only-attack-move` (any Action but an Attack or a Move is one) and `universal` (the tag's rows apply to every creature's rolls, carried or not: the stock attack reasons such as cover) `unseen` (others cannot see the bearer: its attacks are offered "Target cannot see you", attacks on it "You cannot see the target"; carried by `rule.unseen`) and `mind-control` (a spell carrying it takes control of its target; a buff whose immunity row names `rule.mind-control-effect`, Clear Head, refuses it); `no-move`, `no-cast` and `only-attack-move` act only while the live flag `typed-action-blocks` is on.
 
 Example: `rule.aiming-offset` carries rows conditioned on `situation.aiming` and a ranged attack: Disadvantage, a to-hit bonus of the carrier's Rank (scalar `rank`), and `1d4` damage at Ranks 1, 5, 10 and 15 (four `add` rows with `minRank`). A skill that carries the tag gets the whole behaviour with no code.
 

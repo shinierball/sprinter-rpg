@@ -9,17 +9,21 @@ import { CHECK_TAGS, isPassiveSkill } from '../../utils/tag/tag-mechanics.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { resolveFloorRows } from '../../utils/floor/floor-limited-rows.mjs';
 import { buildRollContext, resolveRowAdvantage } from '../../utils/roll/roll-context.mjs';
-import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { getRankCap } from '../../utils/skill/rank-cap.mjs';
-import { isFloorRanked } from '../../utils/skill/rank-source.mjs';
+import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
+import { getRankCap, getRankCeiling } from '../../utils/skill/rank-cap.mjs';
+import { advancingNoun, isAdvancingType } from '../../utils/skill/spells-advance.mjs';
+import { isFloorRanked, ranksFollowFloorOf } from '../../utils/skill/rank-source.mjs';
 import { ADVANCEMENT_ROUTES, routeAllowsGain, routeOfSource } from '../../utils/skill/advancement-routes.mjs';
 import { clearRouteStamp, confirmRouteGain, hasRouteStamp, routeLimitPhrase } from './advancement-gates.mjs';
 import { advancementTarget, grindLevelProgress } from '../../utils/skill/skill-advancement.mjs';
 import { openWindow, isWithinWindow, formatWindow } from '../../utils/time/time-window.mjs';
 import { currentTimeContext } from './dungeon-time.mjs';
+import { petLevelsFor } from '../../data/rules/pet-rules.mjs';
+import { petsOwnedBy } from '../../utils/pet/pet-lookup.mjs';
 import { levelGainDelta } from '../../utils/character/advancement-delta.mjs';
 import { buildAdvancementCard } from '../../chat/advancement-card.mjs';
 import { DAY_HOURS } from '../../utils/time/timing.mjs';
+import { fireLevelUpTriggers } from './event-triggers.mjs';
 
 /** Highest Level the book allows; going past it is a Rule Break. */
 const MAX_LEVEL = 250;
@@ -31,7 +35,7 @@ const signed = (n) => (n > 0 ? ` + ${n}` : n < 0 ? ` - ${Math.abs(n)}` : '');
 /**
  * Mark a skill as used in play, so the next advancement check rolls it. The one writer of
  * `system.checked = true`.
- * No-op for passive skills, an already-marked skill, a skill whose use route is closed at its Rank (the sheet's lock badge
+ * No-op for an actor whose Ranks follow the Floor (a pet), passive skills, an already-marked skill, a skill whose use route is closed at its Rank (the sheet's lock badge
  * says how it does advance), or something that cannot be updated.
  * @param {Item} skillItem
  * @param {object} [params]
@@ -42,6 +46,7 @@ const signed = (n) => (n > 0 ? ` + ${n}` : n < 0 ? ` - ${Math.abs(n)}` : '');
  */
 export async function markSkillUsed(actor, skillItem, { reason, allowPassive = false } = {}) {
   if (!skillItem || typeof skillItem.update !== 'function') return false;
+  if (ranksFollowFloorOf(actor)) return false; // a pet's Ranks are the Floor: nothing to advance
   if (skillItem.system?.checked) return false;
   if (hasRuleFlag(skillItem, RULE_FLAGS.noRanks)) return false;
   if (!allowPassive && isPassiveSkill(skillItem)) return false;
@@ -132,7 +137,7 @@ export async function applyRankGain(actor, skill, { source, options = {}, routeC
   const closed = !routeAllowsGain(skill, route, rank);
   const stamped = closed && !routeChecked && hasRouteStamp(skill, route, rank);
   const limited = closed && !routeChecked && !stamped;
-  const cap = getRankCap(actor, skill);
+  const cap = Math.min(getRankCap(actor, skill), getRankCeiling(skill) ?? Infinity);
   const capped = rank >= cap;
   // A route Rule Break confirmed upstream (a gate or a stamp) is still a Rule Break on the gain
   let ruleBreak = closed && !limited;
@@ -142,7 +147,7 @@ export async function applyRankGain(actor, skill, { source, options = {}, routeC
     if (limited) reasons.push(routeLimitPhrase(skill, route, rank));
     if (capped) reasons.push(`is at its Rank cap (${cap})`);
     const confirm = await confirmRuleBreak({
-      title: limited ? 'Skill Does Not Advance This Way' : 'Rank Cap Reached',
+      title: limited ? `${advancingNoun(skill)} Does Not Advance This Way` : 'Rank Cap Reached',
       message: `${skill?.name ?? 'This skill'} ${reasons.join(' and ')}. Advance anyway as a Rule Break?`,
       options
     });
@@ -258,19 +263,41 @@ export async function runGrindAdvancement(actor, skill, { invested, options = {}
 }
 
 /**
- * The single Level writer (crawlers only). Adds Levels, resets the grind-hour Level tracker (any Level
- * gain erases it) and banks 3 pending Stat points per Level. Going past Level 250 needs a Rule Break
- * confirmation; declining leaves the Level alone.
+ * Level every pet this crawler owns (not a dedicated mount, which never levels) by the book: two Levels per crawler
+ * Level until the pet is Level 15, then one for one, 3 Stat points per Level the pet gains.
+ * @param {Actor} crawler
+ * @param {number} crawlerLevels Levels the crawler gained
+ * @param {object} [options] Passed to `gainLevels`
+ * @returns {Promise<Array<{actorId: string, actorName: string, previousLevel: number, newLevel: number, pointsGained: number}>>}
+ */
+async function followOwnerLevels(crawler, crawlerLevels, options) {
+  const followed = [];
+  for (const pet of petsOwnedBy(crawler)) {
+    if (pet.system?.details?.isMount) continue;
+    const { levelsGained } = petLevelsFor({ petLevel: pet.system?.details?.level, crawlerLevels });
+    if (!levelsGained) continue;
+    const res = await gainLevels(pet, levelsGained, { source: 'follow', options });
+    if (res.levelsGained) followed.push({ actorId: pet.id, actorName: pet.name, previousLevel: res.previousLevel, newLevel: res.newLevel, pointsGained: res.pointsGained });
+  }
+  return followed;
+}
+
+/**
+ * The single Level writer (crawlers and pets). Adds Levels, resets a crawler's grind-hour Level tracker (any Level
+ * gain erases it) and banks 3 pending Stat points per Level. A crawler's pets follow it (`followOwnerLevels`); a pet
+ * that gains Levels directly follows nobody. Going past Level 250 needs a Rule Break confirmation; declining leaves
+ * the Level alone.
  * @param {number} n Levels to add
  * @param {object} [params]
- * @param {string} [params.source] 'grind' | 'xp' | 'award' (informational)
+ * @param {string} [params.source] 'grind' | 'xp' | 'award' | 'follow' (informational)
  * @param {object} [params.options] Passed to confirmRuleBreak (`ruleBreak: true` pre-confirms)
- * @returns {Promise<{previousLevel: number, newLevel: number, levelsGained: number, pointsGained: number, ruleBreak: boolean}>}
+ * @returns {Promise<{previousLevel: number, newLevel: number, levelsGained: number, pointsGained: number, ruleBreak: boolean, pets: object[]}>}
  */
 export async function gainLevels(actor, n, { source, options = {} } = {}) {
   const previousLevel = Math.max(1, Math.trunc(Number(actor.system?.details?.level)) || 1);
-  const none = { previousLevel, newLevel: previousLevel, levelsGained: 0, pointsGained: 0, ruleBreak: false };
-  if (actor.type !== 'crawler') return none;
+  const none = { previousLevel, newLevel: previousLevel, levelsGained: 0, pointsGained: 0, ruleBreak: false, pets: [] };
+  const isPet = actor.type === 'pet';
+  if (actor.type !== 'crawler' && !isPet) return none;
   const levels = Math.max(0, Math.trunc(Number(n)) || 0);
   if (levels === 0) return none;
 
@@ -287,8 +314,12 @@ export async function gainLevels(actor, n, { source, options = {} } = {}) {
 
   const delta = levelGainDelta(actor.system?.details, levels);
   const { newLevel, pointsGained } = delta;
-  await actor.update(delta.update);
-  return { previousLevel, newLevel, levelsGained: levels, pointsGained, ruleBreak };
+  const update = { ...delta.update };
+  if (isPet) delete update['system.details.grindLevelHours']; // a pet has no grind tracker
+  await actor.update(update);
+  await fireLevelUpTriggers(actor, levels, options);
+  const pets = isPet ? [] : await followOwnerLevels(actor, levels, options);
+  return { previousLevel, newLevel, levelsGained: levels, pointsGained, ruleBreak, pets };
 }
 
 /**
@@ -306,7 +337,7 @@ export async function creditGrindLevelHours(actor, hours, { lowestLevelBonus = f
   const progress = grindLevelProgress({ level, tracker: actor.system?.details?.grindLevelHours, hours });
   if (!progress.levelsGained) {
     await actor.update({ 'system.details.grindLevelHours': progress.tracker });
-    return { levelsGained: 0, previousLevel: level, newLevel: level, tracker: progress.tracker, bonusRolled: false, d2: null, pointsGained: 0 };
+    return { levelsGained: 0, previousLevel: level, newLevel: level, tracker: progress.tracker, bonusRolled: false, d2: null, pointsGained: 0, pets: [] };
   }
   let count = progress.levelsGained;
   let rolled = null;
@@ -330,23 +361,37 @@ export async function creditGrindLevelHours(actor, hours, { lowestLevelBonus = f
     tracker: res.levelsGained ? 0 : progress.tracker,
     bonusRolled: lowestLevelBonus,
     d2: rolled,
-    pointsGained: res.pointsGained
+    pointsGained: res.pointsGained,
+    pets: res.pets
   };
 }
 
 /**
  * Spend one pending Stat point on a stat: raises the base (Unenhanced) and Enhanced score by 1. The
  * saferoom restriction is narrative, so nothing blocks it beyond having a point to spend.
+ * A pet's Stat points may not go into Intelligence (core book p. 231): spending one there asks a Rule Break.
  * @param {string} stat 'str' | 'int' | 'con' | 'dex' | 'cha'
+ * @param {object} [options] Passed to confirmRuleBreak (`ruleBreak: true` pre-confirms)
  * @returns {Promise<{spent: boolean, stat?: string, remaining: number}>}
  */
-export async function spendStatPoint(actor, stat) {
+export async function spendStatPoint(actor, stat, options = {}) {
   const s = String(stat ?? '').toLowerCase().trim();
   const pending = Math.max(0, Math.trunc(Number(actor.system?.details?.pendingStatPoints)) || 0);
   if (!STAT_KEYS.includes(s) || pending <= 0) return { spent: false, remaining: pending };
+  let ruleBreak = false;
+  if (actor.type === 'pet' && s === 'int') {
+    const confirm = await confirmRuleBreak({
+      title: 'Pet Intelligence',
+      message: `A pet's Stat points may not go into Intelligence. Put one into ${actor.name}'s Intelligence anyway as a Rule Break?`,
+      options
+    });
+    if (!confirm.confirmed) return { spent: false, stat: s, remaining: pending };
+    ruleBreak = true;
+  }
   const raised = await actor.increaseUnenhancedStat(s, 1);
   if (raised?.declined) return { spent: false, stat: s, remaining: pending };
   await actor.update({ 'system.details.pendingStatPoints': pending - 1 });
+  if (ruleBreak) await markRuleBreak(actor);
   return { spent: true, stat: s, remaining: pending - 1 };
 }
 
@@ -393,8 +438,9 @@ export async function runAdvancementCheck(actor, skillOrId, options = {}) {
   const skill = typeof skillOrId === 'string'
     ? actor.items?.get(skillOrId)
     : skillOrId;
-  if (!skill || skill.type !== 'skill') return null;
+  if (!skill || !isAdvancingType(skill)) return null;
 
+  const noun = advancingNoun(skill);
   // The unmarked question and a closed use route are one dialog; the gain then does not ask the route again
   const unmarked = !skill.system?.checked;
   const useClosed = !routeAllowsGain(skill, ADVANCEMENT_ROUTES.use);
@@ -403,14 +449,14 @@ export async function runAdvancementCheck(actor, skillOrId, options = {}) {
     const gate = await confirmRouteGain(actor, skill, ADVANCEMENT_ROUTES.use, {
       options,
       verb: 'Roll a Skill Advancement Check',
-      title: unmarked ? 'Skill Not Marked' : undefined,
+      title: unmarked ? `${noun} Not Marked` : undefined,
       also: unmarked ? ['has not been used since its last check'] : []
     });
     if (!gate.ok) return { rolled: false, passed: false, ruleBreak: false, reason: 'declined' };
     ruleBreak = true;
   } else if (unmarked) {
     const confirm = await confirmRuleBreak({
-      title: 'Skill Not Marked',
+      title: `${noun} Not Marked`,
       message: `${skill.name} has not been used since its last check. Roll a Skill Advancement Check anyway as a Rule Break?`,
       options
     });

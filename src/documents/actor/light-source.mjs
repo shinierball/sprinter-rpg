@@ -6,6 +6,7 @@
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { resolveReachedRankBreaks, getItemRank } from '../../utils/skill/rank-breaks.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
+import { isMigrationWrite } from '../migrations/world-migration.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { findActorToken } from '../../utils/combat/interrupts.mjs';
@@ -378,7 +379,8 @@ export async function onLightItemCreate(item, _options, userId) {
 }
 
 /** `updateItem`: gear equipped lights, unequipped puts out. */
-export async function onLightItemUpdate(item, changes, _options, userId) {
+export async function onLightItemUpdate(item, changes, options, userId) {
+  if (isMigrationWrite(options)) return null;
   const actor = item?.parent;
   if (actor?.documentName !== 'Actor' || item.type !== 'gear' || !ownUserChange(userId)) return null;
   const equipped = changes?.system?.equipped ?? changes?.['system.equipped'];

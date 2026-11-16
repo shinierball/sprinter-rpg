@@ -54,7 +54,7 @@ export const SPECS = Object.freeze([
     system: {
       identifier: 'three-dose-tonic',
       description: '<p>Sold as "one serving" by a company that has never met a person. It holds three doses, and the label is lying about all of them.</p>',
-      lootType: 'consumable',
+      lootType: 'potion',
       quantity: 2,
       executionMode: 'all',
       charges: { value: 3, max: 3 },

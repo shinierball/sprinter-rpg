@@ -36,7 +36,7 @@ export const SPECS = Object.freeze([
       identifier: 'cable-management',
       stat: 'dex',
       rank: 1,
-      checkType: 'stat',
+      checkType: 'skill',
       checkNote: 'Unopposed',
       description: '<p>Keeping a hundred cables from becoming one cable. Use it and put in the hours: it improves that way up to Rank 5. After that the audience has seen everything it can do, and only training or something magic will move it.</p>',
       tags: ['skillGroup.utility'],

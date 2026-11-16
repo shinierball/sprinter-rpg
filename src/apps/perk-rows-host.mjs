@@ -9,7 +9,7 @@
  *
  * Two pure functions do the projection both ways: {@link systemFromRows} and {@link rowsFromSystem}.
  */
-import { damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, sensesField, statCapsField } from '../models/fields/modifier-fields.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, eventTriggersField, sensesField, statCapsField } from '../models/fields/modifier-fields.mjs';
 import { grantsField, startingItemsField } from '../models/fields/grant-fields.mjs';
 import { requirementsField } from '../models/fields/requirement-fields.mjs';
 import { buildRowEditorContext } from '../sheets/item/context-rows.mjs';
@@ -29,7 +29,7 @@ const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 /** The `system` keys of the row arrays the creator edits with the item sheet's modifier editor. */
 const MODIFIER_KEYS = Object.freeze([
   'damageModifiers', 'defenseModifiers', 'attackModifiers', 'checkModifiers',
-  'manaCostModifiers', 'recoveryModifiers', 'statSubstitutions', 'popularityTriggers'
+  'manaCostModifiers', 'recoveryModifiers', 'statSubstitutions', 'popularityTriggers', 'eventTriggers'
 ]);
 
 /** Every `system` key the host presents and the rows form may write. */
@@ -143,6 +143,7 @@ function hostFields() {
     recoveryModifiers: recoveryModifiersField(fields),
     statSubstitutions: statSubstitutionsField(fields),
     popularityTriggers: popularityTriggersField(fields),
+    eventTriggers: eventTriggersField(fields),
     tags: new fields.ArrayField(new fields.StringField(), { initial: [] }),
     grants: grantsField(fields),
     requirements: requirementsField(fields),

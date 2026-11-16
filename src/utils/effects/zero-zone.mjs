@@ -105,14 +105,20 @@ export async function toggleWorldZeroZone() {
   return setWorldZeroZone(!worldZeroZone());
 }
 
-/** Setting onChange, on every client: re-apply the body classes, redraw the GM pill. No chat card (617). */
-export function onZeroZoneChange() {
+/**
+ * Setting onChange, on every client: re-apply the body classes, redraw the GM pill. No chat card (617).
+ * @param {{ reconcile?: boolean }} [opts] `reconcile: false` (a world migration rewriting the setting) re-prepares and
+ *   re-renders only: the active GM writes no token vision and starts or ends no aura
+ * @returns {Promise<void>} settles when the actors are refreshed
+ */
+export function onZeroZoneChange({ reconcile = true } = {}) {
   refreshHudVisibility();
   // Every client re-prepares its actors; the active GM also rewrites token vision and gear auras. Lazy: the refresh
   // module reaches documents that import this one.
-  import('./gear-offline-refresh.mjs')
-    .then(({ refreshGearOffline, subjectActorsInView }) => refreshGearOffline(subjectActorsInView()))
+  const refreshed = import('./gear-offline-refresh.mjs')
+    .then(({ refreshGearOffline, subjectActorsInView }) => refreshGearOffline(subjectActorsInView(), { reconcile }))
     .catch(err => console.warn('Sprinter RPG | Zero zone refresh failed:', err));
   // The floor clock re-renders from src/hooks/ready.mjs; an engine never imports a window (GEMINI 🧱 1).
   globalThis.Hooks?.callAll?.('cogZeroZoneChanged');
+  return refreshed;
 }

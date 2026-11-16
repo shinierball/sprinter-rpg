@@ -34,7 +34,7 @@ export function rangeText(key, data = {}) {
 }
 
 /** The attacker's token (a placeable with a centre): an explicit one, the actor's own token, else its first on the canvas. */
-function attackerTokenOf(attacker, explicit) {
+export function attackerTokenOf(attacker, explicit) {
   if (explicit?.center) return explicit;
   const own = attacker?.token?.object ?? attacker?.getActiveTokens?.()?.[0] ?? null;
   return own?.center ? own : null;

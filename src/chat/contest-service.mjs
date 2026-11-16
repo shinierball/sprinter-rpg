@@ -20,7 +20,7 @@ import { contestMoveOptions } from '../documents/actor/vehicle-contest.mjs';
 import { CONTEST_FLAG, readContest, sanitizeContestWrapper, buildContestCardHtml } from './contest-card.mjs';
 
 /** Read lazily: contest-card.mjs and this module sit in one import cycle, so the constant may not be initialised at load. */
-const flagPath = () => `flags.${SYSTEM_ID}.${CONTEST_FLAG}`;
+const contestFlagPath = () => `flags.${SYSTEM_ID}.${CONTEST_FLAG}`;
 
 /** A replace-not-merge value for a message update (Foundry v14 ForcedReplacement); the plain value outside Foundry. */
 function replaceValue(value) {
@@ -113,7 +113,7 @@ export function updateContest(contestId, reducer) {
     if (out === false) return { ok: false, reason: 'unchanged' };
     const next = { id: wrapper.id, state: sanitizeContest(out ?? draft) };
     const data = cardData(next);
-    await message.update({ content: data.content, [flagPath()]: replaceValue(next) });
+    await message.update({ content: data.content, [contestFlagPath()]: replaceValue(next) });
     return { ok: true, state: next.state };
   });
   queues.set(contestId, run);

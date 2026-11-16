@@ -77,8 +77,8 @@ registerCoreKind('checkModifiers', {
  * The roll penalties a `waive` row may name: the live ids and their label keys. The vehicle rules' `registerRollPenalty`
  * adds to them, so the `waive` option stays open to modules (this module is a leaf and cannot read that registry).
  */
-const WAIVE_CHOICES = ['driver'];
-const WAIVE_LABELS = { driver: 'COG.Rows.Kind.Roll.waive.Option.driver' };
+const WAIVE_CHOICES = ['driver', 'rider'];
+const WAIVE_LABELS = { driver: 'COG.Rows.Kind.Roll.waive.Option.driver', rider: 'COG.Rows.Kind.Roll.waive.Option.rider' };
 
 /** Add a penalty id a `waive` row may name. Called by `registerRollPenalty`. */
 export function addWaivableRollPenalty(id, label) {

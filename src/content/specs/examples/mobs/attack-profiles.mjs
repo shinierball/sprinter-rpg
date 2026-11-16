@@ -36,7 +36,7 @@ export const SPECS = Object.freeze([
         name: 'Boom Drop',
         toHitStat: 'str',
         damageStat: 'str',
-        damageDice: '2d6',
+        dice: 2, die: 'd6',
         damageType: 'Bludgeoning',
         hitDifficulty: 13,
         rangeFeet: 10,
@@ -47,7 +47,7 @@ export const SPECS = Object.freeze([
         name: 'Pole Sweep',
         toHitStat: 'str',
         damageStat: 'str',
-        damageDice: '1d8',
+        dice: 1, die: 'd8',
         damageType: 'Bludgeoning',
         area: { shape: 'line', lineLength: 20, lineWidth: 5 }
       },
@@ -55,7 +55,7 @@ export const SPECS = Object.freeze([
         name: 'Feedback Squeal',
         toHitStat: 'cha',
         damageStat: 'cha',
-        damageDice: '2d6',
+        dice: 2, die: 'd6',
         damageType: 'Sonic',
         area: { shape: 'cone', radius: 15 },
         cooldown: { value: 1, unit: 'rounds' },
@@ -63,7 +63,7 @@ export const SPECS = Object.freeze([
       }
     ],
     loot: [
-      { name: 'Foam Windscreen', quantity: 1, notes: '', description: 'Keeps the wind off the microphone. Keeps nothing off you.' }
+      { name: 'Foam Windscreen', quantity: 1, lootType: 'consumable', description: 'Keeps the wind off the microphone. Keeps nothing off you.' }
     ]
   },
   {
@@ -83,7 +83,7 @@ export const SPECS = Object.freeze([
         name: 'Mortar Cue',
         toHitStat: 'dex',
         damageStat: 'dex',
-        damageDice: '2d6',
+        dice: 2, die: 'd6',
         damageType: 'Fire',
         rangeFeet: 60,
         area: { shape: 'blast', radius: 10, splash: 5 }
@@ -92,7 +92,7 @@ export const SPECS = Object.freeze([
         name: 'Smoke Cue',
         toHitStat: 'int',
         damageStat: 'int',
-        damageDice: '1d4',
+        dice: 1, die: 'd4',
         damageType: 'Fire',
         rangeFeet: 30,
         contest: { hasContest: true, targetStat: 'dex', customDC: 12, onFailDebuff: 'blinded' },
@@ -100,7 +100,7 @@ export const SPECS = Object.freeze([
       }
     ],
     loot: [
-      { name: 'Spent Flash Pot', quantity: 1, notes: '', description: 'Smells like a birthday party that went wrong.' }
+      { name: 'Spent Flash Pot', quantity: 1, lootType: 'consumable', description: 'Smells like a birthday party that went wrong.' }
     ]
   },
   {
@@ -120,7 +120,7 @@ export const SPECS = Object.freeze([
         name: 'Coordinated Booing',
         toHitStat: 'cha',
         damageStat: 'cha',
-        damageDice: '2d4',
+        dice: 2, die: 'd4',
         damageType: 'Psychic',
         rangeFeet: 30,
         ignoreDR: true,
@@ -130,7 +130,7 @@ export const SPECS = Object.freeze([
         name: 'Thrown Concessions',
         toHitStat: 'dex',
         damageStat: 'dex',
-        damageDice: '2d6',
+        dice: 2, die: 'd6',
         damageType: 'Bludgeoning',
         rangeFeet: 30,
         onHit: {
@@ -142,7 +142,7 @@ export const SPECS = Object.freeze([
       }
     ],
     loot: [
-      { name: 'Foam Finger', quantity: 1, notes: '', description: 'Number one at something. It does not say what.' }
+      { name: 'Foam Finger', quantity: 1, lootType: 'consumable', description: 'Number one at something. It does not say what.' }
     ]
   }
 ]);

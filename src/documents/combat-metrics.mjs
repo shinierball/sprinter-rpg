@@ -9,12 +9,12 @@ import { saveArchivedCombat } from './combat/archive.mjs';
 import { COGSessionEngine } from './session/session-engine.mjs';
 import { awardAchievement } from './actor/achievement-award.mjs';
 import { isDying, untickDying } from './actor/dying.mjs';
-import { SYSTEM_ID } from '../constants.mjs';
+import { metricsOf, saveMetrics, clearMetrics } from './combat/combat-flags.mjs';
 import {
   isApplicationId, findDamageUndoRecord, markDamageUndoRecord, computeUndoUpdates, claimUndo, releaseUndo
 } from '../utils/damage/damage-undo.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
-import { combatantOfActor } from './combat/combatants.mjs';
+import { combatantOfActor, isCombatantOfActor } from './combat/combatants.mjs';
 import { removeDispelsByApplication } from '../utils/effects/dispel.mjs';
 import { resolveHpPerBar } from '../utils/damage/hp-per-bar.mjs';
 
@@ -108,7 +108,7 @@ export class COGCombatMetrics {
   static getMetrics(combat = null) {
     const c = combat || this.getCombat();
     if (!c) return {};
-    return c.getFlag?.(SYSTEM_ID, 'metrics') || c.flags?.[SYSTEM_ID]?.metrics || c.metrics || {};
+    return metricsOf(c, c.metrics || {});
   }
 
   /**
@@ -207,7 +207,7 @@ export class COGCombatMetrics {
       });
     }
 
-    await c.setFlag(SYSTEM_ID, 'metrics', metrics);
+    await saveMetrics(c, metrics);
     this._refreshOpenWindows();
 
     // Sync to active session progression
@@ -271,7 +271,7 @@ export class COGCombatMetrics {
       });
     }
 
-    await c.setFlag(SYSTEM_ID, 'metrics', metrics);
+    await saveMetrics(c, metrics);
     this._refreshOpenWindows();
 
     return {
@@ -307,7 +307,7 @@ export class COGCombatMetrics {
     if (!c) return false;
 
     // Only track if actor is in this combat
-    const isCombatant = c.combatants?.some(con => con.actorId === actor.id);
+    const isCombatant = c.combatants?.some(con => isCombatantOfActor(con, actor));
     if (!isCombatant) return false;
 
     // Only a GM can write the Combat flag; a player's click is relayed to the GM instead.
@@ -320,7 +320,7 @@ export class COGCombatMetrics {
     const key = skillName.trim();
     entry.skills[key] = (entry.skills[key] || 0) + 1;
 
-    await c.setFlag(SYSTEM_ID, 'metrics', metrics);
+    await saveMetrics(c, metrics);
     this._refreshOpenWindows();
     return true;
   }
@@ -347,7 +347,7 @@ export class COGCombatMetrics {
     entry.totalDamage = Math.max(0, (entry.totalDamage || 0) + Number(delta));
 
     if (typeof c.setFlag === 'function') {
-      await c.setFlag(SYSTEM_ID, 'metrics', metrics);
+      await saveMetrics(c, metrics);
     } else {
       c.metrics = metrics;
       const combatant = (c.combatants || []).find(con => (con.actorId || con.actor?.id) === actorId);
@@ -368,7 +368,7 @@ export class COGCombatMetrics {
     const c = combat || this.getCombat();
     if (!c) return;
     if (typeof c.unsetFlag === 'function') {
-      await c.unsetFlag(SYSTEM_ID, 'metrics');
+      await clearMetrics(c);
     } else {
       c.metrics = {
         totalDamageDealt: 0,
@@ -529,7 +529,7 @@ export class COGCombatMetrics {
         const metrics = structuredClone(this.getMetrics(combat));
         metrics.awards = metrics.awards || [];
         metrics.awards.push(awardRecord);
-        await combat.setFlag(SYSTEM_ID, 'metrics', metrics);
+        await saveMetrics(combat, metrics);
       } else {
         combat.metrics = combat.metrics || {};
         combat.metrics.awards = combat.metrics.awards || [];
@@ -583,7 +583,7 @@ export class COGCombatMetrics {
         victim.damageTaken = Math.max(0, (Number(victim.damageTaken) || 0) - damage);
       }
 
-      await c.setFlag(SYSTEM_ID, 'metrics', metrics);
+      await saveMetrics(c, metrics);
       this._refreshOpenWindows();
       return { reversed: true, combatId: c.id, damage };
     }

@@ -4,10 +4,13 @@ import { CORE_INTERRUPTS } from '../../data/core-interrupts.mjs';
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { computeManaCost } from '../../utils/roll/narrow-modifiers.mjs';
 import {
-  isInterruptItem, isFreeInterruptItem, getFreeInterruptRankBreak, getTagsOf, getInterruptTriggersFromTags, getInterceptModeFromTags, getInterruptRange, getInterruptEffects, TOUCH_REACH_FEET, NOT_VS_AREA_TAG, INTERRUPT_RANGE_FROM
+  isPotion, isHealingItem, isInterruptItem, isFreeInterruptItem, getFreeInterruptRankBreak, getTagsOf, getInterruptTriggersFromTags, getInterceptModeFromTags, getInterruptRange, getInterruptEffects, TOUCH_REACH_FEET, NOT_VS_AREA_TAG, INTERRUPT_RANGE_FROM
 } from '../../utils/tag/tag-mechanics.mjs';
+import { combatantOfActor } from '../combat/combatants.mjs';
 import { recordInterceptionOnDeclaration } from '../combat-declarations.mjs';
 import { withFlags } from '../../utils/flags.mjs';
+import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { actionBlockApplies, actionBlockLines } from './action-block.mjs';
 
 const INTERRUPT_ITEM_TYPES = ['spell', 'skill', 'gear', 'attack'];
 
@@ -39,6 +42,50 @@ function describeInterrupt(tagSet, range, effects = null) {
   };
 }
 
+/** The trigger ids a healing potion is offered on: the holder when attacked (`any`) and an attacked ally. */
+const POTION_TRIGGER_IDS = Object.freeze(['any', 'on_ally_attack']);
+
+/** The Interrupt list entry of a healing potion the actor holds. */
+function potionInterrupt(actor, item, { hasBudgetRemaining }) {
+  const units = Number(item.system?.quantity);
+  let canUse = true;
+  let reasonCannotUse = null;
+  if (!hasBudgetRemaining) {
+    canUse = false;
+    reasonCannotUse = 'Action budget depleted';
+  } else if (Number.isFinite(units) && units <= 0) {
+    canUse = false;
+    reasonCannotUse = 'None left';
+  } else if (actionBlockApplies(actor, 'item')) {
+    canUse = false;
+    reasonCannotUse = actionBlockLines(actor, 'item').join('; ');
+  }
+  return {
+    id: `item:${item.id || item._id}`,
+    itemId: item.id || item._id,
+    name: item.name,
+    item,
+    type: 'loot',
+    category: 'defensive',
+    icon: item.img || 'fa-solid fa-flask',
+    isFree: false,
+    actionCost: 1,
+    costDesc: '1 Action',
+    manaCost: 0,
+    drBonus: 0,
+    ignoreDebuffs: false,
+    triggers: [...POTION_TRIGGER_IDS],
+    trigger: 'any',
+    triggerLabel: 'Anytime',
+    interceptMode: null,
+    notVsArea: false,
+    range: { feet: 0, from: 'defender', unlimited: false, reach: TOUCH_REACH_FEET },
+    description: item.system?.notes || htmlSnippet(item.system?.description),
+    canUse,
+    reasonCannotUse
+  };
+}
+
 /**
  * Discover and evaluate all available Interrupts for this actor.
  * Includes built-in core interrupts (src/data/core-interrupts.mjs),
@@ -62,7 +109,7 @@ export function getAvailableInterrupts(actor, options = {}) {
     // Check active combat
     const combat = globalThis.game?.combat;
     if (combat && typeof combat.getCombatantActions === 'function') {
-      const c = combat.combatants?.find ? combat.combatants.find(con => con.actorId === actor.id) : null;
+      const c = combatantOfActor(combat, actor);
       if (c) {
         const ca = combat.getCombatantActions(c);
         actionsSpent = ca.spent ?? 0;
@@ -131,6 +178,12 @@ export function getAvailableInterrupts(actor, options = {}) {
     });
   }
 
+  // 1b. A healing potion is an Interrupt (9.8 D5): taken by its holder when they are attacked, or poured into an attacked ally in touch reach.
+  for (const item of allItems) {
+    if (item?.type !== 'loot' || !isPotion(item) || !isHealingItem(item)) continue;
+    owned.push(potionInterrupt(actor, item, { hasBudgetRemaining }));
+  }
+
   // 2. Built-in core interrupts (data in core-interrupts.mjs)
   const budgetReason = hasBudgetRemaining ? null : 'Action budget depleted';
   for (const core of CORE_INTERRUPTS) {
@@ -165,10 +218,7 @@ export async function triggerInterrupt(actor, interruptOrId, options = {}) {
   // If active combat exists, check if this actor is a combatant
   const combat = globalThis.game?.combat;
   if (combat && typeof combat.triggerInterrupt === 'function') {
-    const combatantsList = Array.isArray(combat.combatants)
-      ? combat.combatants
-      : (combat.combatants.contents || Array.from(combat.combatants.values?.() || []));
-    const c = combatantsList.find(con => con.actorId === actor.id || (con.actor && con.actor.id === actor.id));
+    const c = combatantOfActor(combat, actor);
     if (c) {
       return await combat.triggerInterrupt(c.id, interruptOrId, options);
     }
@@ -201,6 +251,10 @@ export async function triggerInterrupt(actor, interruptOrId, options = {}) {
   }
 
   const isFree = Boolean(interrupt.isFree || interrupt.actionCost === 0);
+  // A Skill used as an interrupt is a use of it, in combat or not (combat.triggerInterrupt marks it there).
+  if (interrupt.item?.type === 'skill') await actor.markSkillUsed?.(interrupt.item, { reason: 'interrupt' });
+  // A healing potion is taken now, so its healing lands before the attack's damage is applied (9.8).
+  await interrupt.item?.useAsInterrupt?.(resolveActorByUuid(options.attackContext?.defenderUuid));
 
   // What the interrupt does to the attack that triggered it (redirect / intercept)
   const interception = resolveInterception({ interrupter: actor, interrupt, attackContext: options.attackContext });

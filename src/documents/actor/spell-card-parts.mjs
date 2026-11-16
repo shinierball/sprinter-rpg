@@ -9,6 +9,7 @@ import { canWriteTarget, messageAuthorId, parseMessageContent } from '../../chat
 import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
+import { attackerIdOf } from '../../utils/combat/card-flags.mjs';
 import { ownsAuraSource } from './aura-relay.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
@@ -61,7 +62,7 @@ function cardAuthorizes(message, spell, targetUuid, user) {
   const holderId = spell?.parent?.id;
   if (!holderId) return false;
   const isCast = f.isSpellCast === true && idString(f.conditionSpellId) === spell.id && idString(f.conditionCasterId) === holderId;
-  const isHit = f.isSpellAttack === true && idString(f.attackItemUuid) === spell.uuid && idString(f.attackerId) === holderId;
+  const isHit = f.isSpellAttack === true && idString(f.attackItemUuid) === spell.uuid && idString(attackerIdOf(message)) === holderId;
   if (!isCast && !isHit) return false;
   return Array.isArray(f.conditionTargetUuids) && f.conditionTargetUuids.includes(targetUuid);
 }

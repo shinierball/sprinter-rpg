@@ -9,6 +9,8 @@ import { getCurrentFloor } from '../floor/current-floor.mjs';
 import { getRowKind, kindOf } from '../row-kinds.mjs';
 import { isMarkerActor } from '../area/marker.mjs';
 import { giftWorshipTier, highestWorshipTier } from '../deity/worship-state.mjs';
+import { actorSizeNumber } from '../../data/sizes.mjs';
+import { PAID_DR_STAT_MODES, paidDrStatMode } from '../character/paid-dr-stat.mjs';
 
 /**
  * Scalars: a row's "this much per something". A scalar is a registered
@@ -595,6 +597,14 @@ function registerBuiltIns() {
     describe: (spec) => `per point of ${statKeyOf(spec).toUpperCase()}`
   }, core);
 
+  // The Stat or its Mod by the world setting `aiFavorDrStat` (what one AI Favor spent for DR is worth).
+  registerScalar({
+    id: 'paidDrStat', label: 'COG.Rows.Scalar.paidDrStat.Label', hint: 'COG.Rows.Scalar.paidDrStat.Hint',
+    needs: ['actor', 'world'], params: { stat: true },
+    resolve: ({ actor }, spec) => Number(actor?.system?.abilities?.[statKeyOf(spec)]?.[paidDrStatMode() === PAID_DR_STAT_MODES.STAT ? 'value' : 'mod']) || 0,
+    describe: (spec) => `per point of ${statKeyOf(spec).toUpperCase()}${paidDrStatMode() === PAID_DR_STAT_MODES.STAT ? '' : ' Mod'}`
+  }, core);
+
   registerScalar({
     id: 'count', label: 'COG.Rows.Scalar.count.Label', hint: 'COG.Rows.Scalar.count.Hint',
     needs: ['actor', 'world', 'combat', 'targets'],
@@ -630,6 +640,13 @@ function registerBuiltIns() {
     needs: ['actor'],
     resolve: ({ actor }) => moveReader(actor),
     describe: () => 'per foot of Move'
+  }, core);
+
+  registerScalar({
+    id: 'size', label: 'COG.Rows.Scalar.size.Label', hint: 'COG.Rows.Scalar.size.Hint',
+    needs: ['actor'],
+    resolve: ({ actor }) => actorSizeNumber(actor),
+    describe: () => 'per size value'
   }, core);
 
   registerScalar({

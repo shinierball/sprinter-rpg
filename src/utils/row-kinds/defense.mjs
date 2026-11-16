@@ -190,28 +190,65 @@ registerCoreKind('defenseModifiers', {
 /** Slots the attacker loses by default when a `reflect` row names none. */
 const DEFAULT_REFLECT_SLOTS = 1;
 
+const ONCE_PER_TEXT = Object.freeze({ combat: 'once a combat', floor: 'once a floor' });
+/** The row's limit as stored (`''` for none or anything unknown). */
+const oncePerOf = (row) => (Object.hasOwn(ONCE_PER_TEXT, row?.oncePer) ? row.oncePer : '');
+const limitText = (row) => ONCE_PER_TEXT[oncePerOf(row)] ?? '';
+const diceOf = (row) => (typeof row?.dice === 'string' ? row.dice.trim() : '');
+
 // Damage Reflection (an External Buff the player triggers: one hit that costs the holder at least N Health Bar slots
 // costs the attacker 1 slot). The engine only reports which rows a hit satisfies; the player decides on the offer card.
+// `dice` is a chance die (the reflection happens on a 1); `oncePer` a limit the click asks a Rule Break to pass.
 registerCoreKind('defenseModifiers', {
   id: 'reflect',
   label: 'COG.Rows.Kind.Defense.reflect.Label',
   hint: 'COG.Rows.Kind.Defense.reflect.Hint',
-  fields: ['value', 'flat'],
+  fields: ['value', 'flat', 'dice', 'oncePer'],
   static: 'never',
   apply: {
-    // acc: Array<{ label, minSlots, slots }>; ctx.label is the row's label
+    // acc: Array<{ label, key, minSlots, slots, chance, oncePer }>; ctx.label is the row's label, ctx.key its row key
     reflect(acc, row, ctx) {
       acc.push({
         label: ctx.label,
+        key: ctx.key,
         minSlots: Math.max(1, Math.floor(Number(row.value) || 1)),
-        slots: Math.max(1, Math.floor(Number(row.flat) || DEFAULT_REFLECT_SLOTS))
+        slots: Math.max(1, Math.floor(Number(row.flat) || DEFAULT_REFLECT_SLOTS)),
+        chance: diceOf(row),
+        oncePer: oncePerOf(row)
       });
     }
   },
   summarize(row) {
     const min = Math.max(1, Math.floor(Number(row.value) || 1));
     const slots = Math.max(1, Math.floor(Number(row.flat) || DEFAULT_REFLECT_SLOTS));
-    return `Reflect ${slots} slot${slots === 1 ? '' : 's'} when losing ${min}+`;
+    const chance = diceOf(row);
+    return [`Reflect ${slots} slot${slots === 1 ? '' : 's'} when losing ${min}+`, chance && `on a 1 of ${chance}`, limitText(row)].filter(Boolean).join(', ');
+  }
+});
+
+/** The dice and the flat value of a `retaliate` row as one formula (`1d4 + 3`); `''` when it has neither. */
+function retaliationFormula(row) {
+  const flat = Math.trunc(Number(row?.value) || 0);
+  return [diceOf(row), flat > 0 ? String(flat) : ''].filter(Boolean).join(' + ');
+}
+
+// Damage back on touch: every landed hit that matches the row's condition offers the holder's player a hit on the attacker
+// (the card rolls the row's dice plus its value). No threshold; nothing is written until the player accepts the offer.
+registerCoreKind('defenseModifiers', {
+  id: 'retaliate',
+  label: 'COG.Rows.Kind.Defense.retaliate.Label',
+  hint: 'COG.Rows.Kind.Defense.retaliate.Hint',
+  fields: ['value', 'dice', 'damageType', 'oncePer'],
+  scaled: { value: 'whole' },
+  static: 'never',
+  apply: {
+    // acc: Array<{ label, key, formula, damageType, oncePer }>; the row's `value` is already scaled by its scaleBy
+    retaliate(acc, row, ctx) {
+      acc.push({ label: ctx.label, key: ctx.key, formula: retaliationFormula(row), damageType: typeof row.damageType === 'string' ? row.damageType : '', oncePer: oncePerOf(row) });
+    }
+  },
+  summarize(row) {
+    return [`Retaliate ${retaliationFormula(row) || '0'}${typeSuffix(row)}`, limitText(row)].filter(Boolean).join(', ');
   }
 });
 
@@ -233,4 +270,69 @@ registerCoreKind('defenseModifiers', {
     }
   },
   summarize(row) { return `Health Bars ×${healthBarFactor(row)}`; }
+});
+
+// "Plus Move / 10 to each Health Bar slot": for the hit being judged each slot holds `value` more HP (maximum Health is not
+// raised). acc.hbAdd sums the scaled values, acc.hbAddSources names the rows.
+registerCoreKind('defenseModifiers', {
+  id: 'healthBarAdd',
+  label: 'COG.Rows.Kind.Defense.healthBarAdd.Label',
+  hint: 'COG.Rows.Kind.Defense.healthBarAdd.Hint',
+  fields: ['value'],
+  scaled: { value: 'whole' },
+  static: 'never',
+  apply: {
+    defense(acc, row, ctx) {
+      const add = Math.max(0, Number(row.value) || 0);
+      if (!add) return;
+      acc.hbAdd = (acc.hbAdd ?? 0) + add;
+      (acc.hbAddSources ??= []).push(ctx.label);
+    }
+  },
+  summarize(row) { return `Health Bar slots ${signed(Number(row.value) || 0)} HP`; }
+});
+
+// Damage Reduction bought with a resource: when the holder is hit, their player is asked how many points to spend, and each
+// buys the row's (scaled) value in DR for that one application. The kind only describes the offer; the dialog and the spend
+// are in `chat/actions/apply-damage.mjs`. The option names the resource.
+registerCoreKind('defenseModifiers', {
+  id: 'paidDr',
+  label: 'COG.Rows.Kind.Defense.paidDr.Label',
+  hint: 'COG.Rows.Kind.Defense.paidDr.Hint',
+  fields: ['value', 'option'],
+  scaled: { value: 'whole' },
+  option: {
+    label: 'COG.Rows.Kind.Defense.paidDr.OptionLabel',
+    choices: ['aiFavor'],
+    default: 'aiFavor',
+    labels: { aiFavor: 'COG.Rows.Kind.Defense.paidDr.Option.aiFavor' }
+  },
+  static: 'never',
+  apply: {
+    // acc: Array<{ label, resource, dr }>; `value` is already worked out by the row's scaleBy
+    paid(acc, row, ctx) {
+      const dr = Math.max(0, Math.floor(Number(row.value) || 0));
+      if (dr <= 0) return false;
+      acc.push({ label: ctx.label, resource: (typeof row.option === 'string' && row.option.trim()) || 'aiFavor', dr });
+    }
+  },
+  summarize(row) { return `Spend AI Favor for ${signed(Math.max(0, Math.floor(Number(row.value) || 0)))} DR each`; }
+});
+
+// Magic damage taken only down to the attacking spell's Rank 1 base (a Rank 1 base is its die and Stat Mod, no Upgrades). The
+// row's `condition` is judged against the hit's defence context, so a row that names `kind.spell` cuts spell damage only.
+registerCoreKind('defenseModifiers', {
+  id: 'spellBaseCap',
+  label: 'COG.Rows.Kind.Defense.spellBaseCap.Label',
+  hint: 'COG.Rows.Kind.Defense.spellBaseCap.Hint',
+  fields: [],
+  static: 'never',
+  apply: {
+    // acc: Array<{ label }>; ctx.label is the row's label
+    cap(acc, row, ctx) { acc.push({ label: ctx.label }); }
+  },
+  summarize(row) {
+    const tags = conditionTags(row.condition);
+    return tags.length ? `Damage cut to the attacker's Rank 1 base: ${tags.join(', ')}` : "Damage cut to the attacker's Rank 1 base";
+  }
 });

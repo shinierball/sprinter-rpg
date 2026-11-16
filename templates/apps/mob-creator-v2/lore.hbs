@@ -1,0 +1,76 @@
+{{!-- Loot and Lore stage: the three human text boxes.  The part root is hidden unless this is the active stage (parts: stage ids in app.mjs). --}}
+<section class="cog-creator-section cog-mobv2-panel" data-stage="lore"{{#unless active}} hidden{{/unless}}>
+  <h3 class="cog-mobv2-title">{{localize titleKey}}</h3>
+  {{#if active}}
+    <div class="cog-form-group">
+    <label for="{{rootId}}-description">{{localize 'COG.MobCreator.Lore.Description'}}</label>
+    <textarea id="{{rootId}}-description" rows="4" data-change-action="setField" data-path="description">{{description}}</textarea>
+  </div>
+  <div class="cog-form-group">
+    <label for="{{rootId}}-ai">{{localize 'COG.MobCreator.Lore.AiDescription'}}</label>
+    <textarea id="{{rootId}}-ai" rows="3" data-change-action="setField" data-path="aiDescription">{{aiDescription}}</textarea>
+  </div>
+  <div class="cog-form-group">
+    <label for="{{rootId}}-notes">{{localize 'COG.MobCreator.Lore.Notes'}}</label>
+    <textarea id="{{rootId}}-notes" rows="3" data-change-action="setField" data-path="notes">{{notes}}</textarea>
+  </div>
+
+  <h4 class="cog-mobv2-subtitle">{{localize 'COG.MobCreator.Loot.Title'}}</h4>
+  <div class="cog-mobv2-toolbar">
+    <button type="button" class="cog-btn" data-action="addLootItem"><i class="fa-solid fa-box-open"></i> {{localize 'COG.MobCreator.Loot.AddLoot'}}</button>
+    <button type="button" class="cog-btn" data-action="newLootItem"><i class="fa-solid fa-wand-magic-sparkles"></i> {{localize 'COG.MobCreator.Loot.NewLoot'}}</button>
+    <button type="button" class="cog-btn" data-action="addLoot"><i class="fa-solid fa-plus"></i> {{localize 'COG.MobCreator.Loot.AddTrophy'}}</button>
+  </div>
+
+  {{#if heldLoot.length}}
+  <h4 class="cog-mobv2-subtitle">{{localize 'COG.MobCreator.Loot.Held'}}</h4>
+  <p class="cog-rule-hint">{{localize 'COG.MobCreator.Loot.HeldHint'}}</p>
+  {{#each heldLoot}}
+  <article class="cog-mobv2-card" data-held-loot data-index="{{index}}">
+    <header class="cog-mobv2-card-head">
+      <img src="{{img}}" alt="" class="cog-mobv2-icon cog-bg-icon-box" />
+      <b>{{name}}</b>
+      {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=badge}}
+      <label for="{{@root.rootId}}-held-{{index}}-quantity">{{localize 'COG.MobCreator.Loot.Quantity'}}</label>
+      <input type="number" id="{{@root.rootId}}-held-{{index}}-quantity" min="0" data-change-action="setItemQuantity" data-index="{{index}}" data-type="int" value="{{quantity}}" />
+      <button type="button" class="cog-btn" data-action="removeItem" data-index="{{index}}" title="{{localize 'COG.MobCreator.Loot.Remove'}}"><i class="fa-solid fa-trash"></i></button>
+    </header>
+  </article>
+  {{/each}}
+  {{/if}}
+
+  {{#if trophies.length}}
+  <h4 class="cog-mobv2-subtitle">{{localize 'COG.MobCreator.Loot.Trophies'}}</h4>
+  <p class="cog-rule-hint">{{localize 'COG.MobCreator.Loot.TrophyHint'}}</p>
+  {{#each trophies}}
+  <article class="cog-mobv2-card" data-loot-card data-index="{{index}}">
+    <header class="cog-mobv2-card-head">
+      <input type="text" id="{{@root.rootId}}-loot-{{index}}-name" class="cog-mobv2-card-name" data-change-action="setLootField" data-path="name" value="{{name}}" placeholder="{{localize 'COG.MobCreator.Loot.NamePlaceholder'}}" />
+      <button type="button" class="cog-btn" data-action="removeLoot" title="{{localize 'COG.MobCreator.Loot.Remove'}}"><i class="fa-solid fa-trash"></i></button>
+    </header>
+    <div class="cog-mobv2-grid">
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-loot-{{index}}-quantity">{{localize 'COG.MobCreator.Loot.Quantity'}}</label>
+        <input type="number" id="{{@root.rootId}}-loot-{{index}}-quantity" min="0" data-change-action="setLootField" data-path="quantity" data-type="int" value="{{quantity}}" />
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-loot-{{index}}-type">{{localize 'COG.MobCreator.Loot.LootType'}}</label>
+        <select id="{{@root.rootId}}-loot-{{index}}-type" data-change-action="setLootField" data-path="lootType">
+          {{#each lootTypeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-loot-{{index}}-value">{{localize 'COG.MobCreator.Loot.Value'}}</label>
+        <input type="number" id="{{@root.rootId}}-loot-{{index}}-value" min="0" data-change-action="setLootField" data-path="value" data-type="int" value="{{value}}" />
+      </div>
+    </div>
+    <div class="cog-form-group">
+      <label for="{{@root.rootId}}-loot-{{index}}-description">{{localize 'COG.MobCreator.Loot.Description'}}</label>
+      <textarea id="{{@root.rootId}}-loot-{{index}}-description" rows="2" data-change-action="setLootField" data-path="description">{{description}}</textarea>
+    </div>
+  </article>
+  {{/each}}
+  {{/if}}
+  <p class="cog-rule-hint"><i class="fa-solid fa-hand"></i> {{lootHint}}</p>
+  {{/if}}
+</section>

@@ -44,7 +44,7 @@ import { openApplications } from '../compat.mjs';
 import { COGCrawlerCreatorApp } from '../apps/crawler-creator.mjs';
 import { COGClassCreatorApp } from '../apps/class-creator.mjs';
 import { COGRaceCreatorApp } from '../apps/race-creator.mjs';
-import { COGMobCreatorApp } from '../apps/mob-creator/mob-creator-app.mjs';
+import { COGMobCreatorV2App } from '../apps/mob-creator-v2/app.mjs';
 import { COGWeaponBuilderApp } from '../apps/weapon-builder/weapon-builder-app.mjs';
 import { COGBasePointBuilderApp } from '../apps/base-point-builder.mjs';
 import { COGAchievementManagerApp } from '../apps/achievement-manager.mjs';
@@ -58,6 +58,7 @@ import { COG_DAMAGE_TYPES, COG_DAMAGE_TYPE_RARITY } from '../data/damage-types.m
 import { COG_STANDARD_ARRAY } from '../data/rules/crawler-creation-rules.mjs';
 import { CREATURE_SIZES, getSizeInfo } from '../data/sizes.mjs';
 import { HERITAGES } from '../data/rules/heritages.mjs';
+import { POPULARITY_CHANGES, FAN_BOX_MILESTONE_RULE, popularityChangesFor, milestonesCrossed } from '../data/rules/popularity-changes.mjs';
 import { USED_FORMS } from '../data/rules/used-forms.mjs';
 import { LOOT_GENERATORS } from '../data/rules/loot-generators.mjs';
 import { MAGIC_ITEM_BASES } from '../data/rules/magic-item-bases.mjs';
@@ -66,6 +67,8 @@ import { COG_MACROS } from '../data/macros.mjs';
 import { TOKEN_DEFAULTS } from '../data/token-defaults.mjs';
 import { BOSS_TIERS } from '../data/mob-creation-rules.mjs';
 import { LOOT_BOX_TIERS } from '../data/loot-box-tiers.mjs';
+import { MOB_LOOT_BY_FLOOR } from '../utils/loot/fight-loot.mjs';
+import { BOSS_MAPS } from '../data/rules/boss-maps.mjs';
 import { LOOT_BOX_FX } from '../utils/loot/loot-box-timeline.mjs';
 import { getBackgroundTable, rollBackgroundTable, ensureBackgroundTables } from '../data/rules/background-table-rules.mjs';
 import { TAG_SYSTEM_JOURNAL_DATA, ensureTagSystemJournal, openTagSystemJournal } from '../data/journal-tag-system.mjs';
@@ -102,13 +105,16 @@ import { GEAR_SLOTS } from '../utils/gear/gear-slots.mjs';
 import { SEX_OPTIONS } from '../utils/tag/sex.mjs';
 import { VEHICLE_ROLES } from '../data/rules/vehicle-crew-rules.mjs';
 import { CONTEST_KINDS, CHASE_GROUND } from '../data/rules/contest-rules.mjs';
+import { PET_ATTITUDES, PET_CHECK_KINDS, PET_GUIDANCE, PET_ROLES } from '../data/rules/pet-rules.mjs';
 import { VEHICLE_KINDS, VEHICLE_CHECK_RESULTS, VEHICLE_CHECK_KINDS, VEHICLE_UPGRADE_KINDS, ROLL_PENALTIES } from '../data/rules/vehicle-rules.mjs';
 import { CHECK_TYPES } from '../data/rules/check-types.mjs';
 import { AREA_REGION_BUILDERS } from '../utils/area/region-shapes.mjs';
 import { ROW_KINDS } from '../utils/row-kinds.mjs';
+import { MOVE_MODES } from '../utils/row-kinds/vehicle.mjs';
 import { RULE_SKILL_DEFS, ruleSkillRank } from '../utils/skill/rule-skills.mjs';
 import { ADVANCEMENT_ROUTE_DEFS } from '../utils/skill/advancement-routes.mjs';
 import { ZERO_HEALTH_OUTCOMES } from '../documents/actor/dying.mjs';
+import { SITUATION_DETECTORS, registerSituationDetector } from '../utils/attack/situation-detectors.mjs';
 import { RULE_FLAGS, RULE_FLAG_DEFS, hasRuleFlag, registerRuleFlag, getTagBehaviour, listBehaviourTags, tagBehaviourErrors } from '../utils/tag/tag-behaviour.mjs';
 import { registerSexOption } from '../utils/tag/sex.mjs';
 import { registerStepHandler } from '../data/floor-simulator/steps/index.mjs';
@@ -194,12 +200,13 @@ export function buildGameNamespace() {
       openBridge: (options = {}) => COGItemFromWordsApp.open({ createItem: createAndEditItem, ...options }),
       openReview: (options = {}) => new COGDraftReviewApp({ createItem: createAndEditItem, ...options }).render({ force: true })
     },
-    openMobCreator: (options = {}) => COGMobCreatorApp.open(options),
+    openMobCreator: (options = {}) => COGMobCreatorV2App.open(options),
     openWeaponBuilder: (options = {}) => COGWeaponBuilderApp.open(options),
     TagIndex,
     tags: tagIndex,
     hasRuleFlag,
     registerRuleFlag,
+    registerSituationDetector,
     registerSexOption,
     registerStepHandler,
     registerRuleSkill: (def, opts) => contentRegistry.registerRuleSkill(def, opts),
@@ -222,7 +229,7 @@ export function buildGameNamespace() {
       COGCrawlerCreatorApp,
         COGClassCreatorApp,
       COGRaceCreatorApp,
-      COGMobCreatorApp,
+      COGMobCreatorV2App,
       COGWeaponBuilderApp,
       COGBasePointBuilderApp,
       COGAchievementManagerApp,
@@ -278,12 +285,15 @@ export function buildConfigCOG() {
     buffs: contentRegistry.getCatalog('buffs'),
     macros: COG_MACROS,
     mobs: contentRegistry.getCatalog('mobs'),
-    mobCreator: COGMobCreatorApp,
+    mobCreator: COGMobCreatorV2App,
     promptAttackOptions,
     cameraAudiences: { ...DEFAULT_CAMERA_AUDIENCES },
     // Personal space ranks and prices (tables per rank, coupon prices); a module may replace it
     spaceRules: structuredClone(DEFAULT_SPACE_RULES),
     bossTiers: { ...BOSS_TIERS },
+    // Loot after a fight: the gold a dead mob carries by Floor (the book lists Floors 1-5) and the map a boss tier drops
+    mobLootByFloor: MOB_LOOT_BY_FLOOR,
+    bossMaps: BOSS_MAPS,
     // New actors' prototype token defaults by actor type; a module may edit a row
     tokenDefaults: { ...TOKEN_DEFAULTS },
     // Item from words: the providers that can write a draft for the bridge window (`registerDraftProvider`)
@@ -308,6 +318,14 @@ export function buildConfigCOG() {
     contestKinds: CONTEST_KINDS,
     chaseGround: CHASE_GROUND,
     vehicleKinds: VEHICLE_KINDS,
+    // A pet's attitude toward its handler, hostile to bonded (data and a sheet select; taming moves it)
+    petAttitudes: PET_ATTITUDES,
+    petCheckKinds: PET_CHECK_KINDS,
+    petGuidance: PET_GUIDANCE,
+    // A pet's roles (Tank, Aggressive, Utility): id, label, ability picks and the role buff's identifier
+    petRoles: PET_ROLES,
+    // The Moves a `moveSet` row may name (move, swim, fly, burrow, jump)
+    moveModes: MOVE_MODES,
     vehicleCheckResults: VEHICLE_CHECK_RESULTS,
     vehicleCheckKinds: VEHICLE_CHECK_KINDS,
     vehicleUpgradeKinds: VEHICLE_UPGRADE_KINDS,
@@ -315,6 +333,7 @@ export function buildConfigCOG() {
     areaRegionBuilders: AREA_REGION_BUILDERS,
     rowKinds: ROW_KINDS,
     ruleFlags: RULE_FLAG_DEFS,
+    situationDetectors: SITUATION_DETECTORS,
     // What happens at 0% by actor type: 'dying', 'dead' or 'none' (dying.mjs; a module may add a type)
     zeroHealthOutcomes: ZERO_HEALTH_OUTCOMES,
     advancementRoutes: ADVANCEMENT_ROUTE_DEFS,
@@ -326,6 +345,11 @@ export function buildConfigCOG() {
     outcomeConfig: COG_OUTCOME_CONFIG,
     sizes: CREATURE_SIZES,
     heritages: HERITAGES,
+    // The book's standard Popularity changes and the Fan Box milestone rule `{ list, factor }` (a module may replace either)
+    popularityChanges: POPULARITY_CHANGES,
+    fanBoxMilestones: { list: [...FAN_BOX_MILESTONE_RULE.list], factor: FAN_BOX_MILESTONE_RULE.factor },
+    popularityChangesFor,
+    milestonesCrossed,
     usedForms: USED_FORMS,
     enchantmentCategories: ENCHANTMENT_CATEGORIES,
     getSizeInfo,

@@ -12,7 +12,8 @@ import { classifyAttackOutcome, collectInterruptOffers, interruptEffectsText } f
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
 import { toHitForTarget, toHitLineText } from '../../utils/attack/per-target-to-hit.mjs';
-import { asTriggersOf, asTriggerLines, amazingNames, isAmazingOutcome, amazingCardText } from '../../utils/roll/amazing-success.mjs';
+import { attackAsTriggers } from '../../utils/roll/buff-as-triggers.mjs';
+import { asTriggerLines, amazingNames, isAmazingOutcome, amazingCardText } from '../../utils/roll/amazing-success.mjs';
 import { clickTargetsOf } from '../../utils/roll/scalars.mjs';
 import { findOutOfRange, rangeText } from '../../utils/attack/attack-range.mjs';
 import { isHeadOn, occupantEvadeLine, vehicleEvadeDifficulty, vehicleTargetOf } from '../../utils/vehicle/vehicle-combat.mjs';
@@ -286,7 +287,7 @@ export function resolveAttackTargets(actor, roll, options = {}) {
   });
 
   // An Amazing Success row names the weapon's AS triggers (E6.9 3.5) and the Floor it adds.
-  const asTriggers = asTriggersOf(options.sourceItem);
+  const asTriggers = attackAsTriggers(actor, options.sourceItem, options.toHitContext);
   const asLines = asTriggerLines(asTriggers, { found: amazingNames(asTriggers) }).map(l => l.text);
   let targetResultsHtml = '';
   if (targetResults.length > 0) {
@@ -367,9 +368,8 @@ export function interruptPromptsHtml(actor, targetResults, options = {}) {
   const isCoreEvade = (o) => !o.interrupt?.item && o.interrupt?.id === CORE_EVADE_ID;
   const prompts = offers.filter(o => !(isAutoHit && isCoreEvade(o)) && !(isCoreEvade(o) && o.actor?.type === 'mount_vehicle')).map(o => {
     const int = o.interrupt;
+    // Who a Taunt or Catcher takes the attack from is in the card's target lines: the button names the interrupt instead.
     let detail = int.costDesc ? `(${int.costDesc})` : '';
-    if (o.interceptMode === 'redirect') detail = `(Redirect from ${o.defenderName})`;
-    else if (o.interceptMode === 'intercept') detail = `(Protect ${o.defenderName})`;
     const effects = interruptEffectsText(int);
     if (effects) detail = detail ? `${detail} ${effects}` : `(${effects})`;
     return {
@@ -404,9 +404,9 @@ export function interruptPromptsHtml(actor, targetResults, options = {}) {
         data-d20="${escapeAttr(options.d20Face ?? '')}"
         data-role="${escapeAttr(p.role)}"
         style="width: 100%; margin-top: 4px; padding: 5px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-warning); border-radius: 3px; display: flex; align-items: center; justify-content: space-between; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif); text-transform: uppercase;">
-        <span style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <span style="display: flex; align-items: center; gap: 6px; min-width: 0; text-align: left;">
           <i class="${p.icon} cog-dark cog-text-warning"></i>
-          <span>${escapeAttr(p.label)}</span>
+          <span style="overflow-wrap: anywhere;">${escapeAttr(p.label)}</span>
           ${freeBadge}
         </span>
         <span class="cog-dark cog-text-warning" style="font-size: 10px; white-space: nowrap;">${escapeAttr(p.detail)}</span>

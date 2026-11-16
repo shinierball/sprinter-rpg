@@ -1,0 +1,13 @@
+{{!-- Grind progress strip of a skill or spell row: hours invested / required, with the pool buttons. Params: row, bankedGrindHours --}}
+{{#if (or row.investedHours bankedGrindHours row.canAdvance)}}
+  <div class="cog-skill-grind-inline" style="display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 10px;">
+    <span class="{{#if row.canAdvance}}cog-text-success{{else}}cog-text-warning{{/if}}" style="font-weight: bold;" title="Invested Hours / Required: {{row.investedHours}} / {{row.requiredGrindHours}} hrs">
+      ⏳ {{row.investedHours}}/{{row.requiredGrindHours}}h
+    </span>
+    {{#if bankedGrindHours}}
+      <button type="button" class="cog-dim-when-disabled cog-bg-surface-strong cog-text-strong" data-action="allocateGrindHours" data-skill-id="{{row.id}}" data-mode="sub" {{#unless row.canSubHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-panel-border); border-radius: 2px; cursor: pointer;" title="Remove 1 hour back to pool">-1</button>
+      <button type="button" class="cog-dim-when-disabled cog-bg-success-fill cog-text-on-fill" data-action="allocateGrindHours" data-skill-id="{{row.id}}" data-mode="add" {{#unless row.canAddHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-success-fill); border-radius: 2px; cursor: pointer;" title="Allocate 1 hour from pool">+1</button>
+      <button type="button" class="cog-dim-when-disabled cog-bg-info-fill cog-text-on-fill" data-action="allocateGrindHours" data-skill-id="{{row.id}}" data-mode="max" {{#unless row.canAddHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-info-fill); border-radius: 2px; cursor: pointer;" title="Fill to required hours">Fill</button>
+    {{/if}}
+  </div>
+{{/if}}

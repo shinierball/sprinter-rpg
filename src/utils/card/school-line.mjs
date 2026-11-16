@@ -26,7 +26,8 @@ export function schoolLabels(item) {
 }
 
 /**
- * One muted card line listing the school labels, escaped; an empty string when the spell has none.
+ * One muted card line listing the school labels, escaped; an empty string when the spell has none. A label that starts
+ * with the line's own heading ("School: Illusion") is shown without it, so the line reads "School: Illusion", not twice.
  * @param {object} item
  * @returns {string}
  */
@@ -35,5 +36,7 @@ export function schoolLineHtml(item) {
   if (!labels.length) return '';
   const heading = globalThis.game?.i18n?.localize?.('COG.Tags.School');
   const word = heading && heading !== 'COG.Tags.School' ? heading : 'School';
-  return `<div class="cog-text-muted cog-school-line" style="margin-bottom: 6px; font-size: 11px;">${escapeAttr(word)}: ${labels.map(escapeAttr).join(', ')}</div>`;
+  const prefix = `${word}: `;
+  const names = labels.map((label) => (label.startsWith(prefix) ? label.slice(prefix.length) : label));
+  return `<div class="cog-text-muted cog-school-line" style="margin-bottom: 6px; font-size: 11px;">${escapeAttr(word)}: ${names.map(escapeAttr).join(', ')}</div>`;
 }

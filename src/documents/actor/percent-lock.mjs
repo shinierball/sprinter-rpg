@@ -64,7 +64,9 @@ export function lockStatRows(grants, abilities, { onlyEmpty = false } = {}) {
   let changed = false;
   const out = (Array.isArray(grants) ? grants : []).map((g) => {
     if (!isPercentRow(g) || (onlyEmpty && !isEmptyLock(g))) return g;
-    const locked = roundPercent(unenhancedOf(abilities, g.stat), g.percent);
+    // A before-percent row's own flat is part of the base its percent is taken from.
+    const base = unenhancedOf(abilities, g.stat) + (g.beforePercent === true ? Number(g.value) || 0 : 0);
+    const locked = roundPercent(base, g.percent);
     if (g.locked === locked) return g;
     changed = true;
     return { ...(typeof g.toObject === 'function' ? g.toObject() : g), locked };

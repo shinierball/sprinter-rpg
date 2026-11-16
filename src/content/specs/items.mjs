@@ -430,7 +430,7 @@ export const COG_ITEMS = [
         "value": 0,
         "unit": ""
       },
-      "lootType": "consumable",
+      "lootType": "potion",
       "usedInto": "empty-bottle",
       "executionMode": "all",
       "notes": "Refills mana completely to maximum.",
@@ -464,7 +464,7 @@ export const COG_ITEMS = [
         "value": 0,
         "unit": ""
       },
-      "lootType": "consumable",
+      "lootType": "potion",
       "usedInto": "empty-bottle",
       "executionMode": "all",
       "notes": "Restores 2 Health Bars immediately (2 * CON Mod HP).",
@@ -481,7 +481,7 @@ export const COG_ITEMS = [
       "tags": [
         "kind.loot",
         "action.heal",
-        "resource.hp-bars"
+        "resource.hp_bars"
       ]
     }
   },
@@ -497,7 +497,7 @@ export const COG_ITEMS = [
         "value": 0,
         "unit": ""
       },
-      "lootType": "consumable",
+      "lootType": "potion",
       "usedInto": "empty-bottle",
       "executionMode": "all",
       "notes": "Restores 5 Health Bars immediately (5 * CON Mod HP).",
@@ -514,7 +514,7 @@ export const COG_ITEMS = [
       "tags": [
         "kind.loot",
         "action.heal",
-        "resource.hp-bars"
+        "resource.hp_bars"
       ]
     }
   },
@@ -530,7 +530,7 @@ export const COG_ITEMS = [
         "value": 0,
         "unit": ""
       },
-      "lootType": "consumable",
+      "lootType": "potion",
       "usedInto": "empty-bottle",
       "executionMode": "all",
       "notes": "Applies Troll Blood Regeneration: Restores 2 Health Bars per round for 3 combat rounds.",
@@ -559,7 +559,7 @@ export const COG_ITEMS = [
         "value": 0,
         "unit": ""
       },
-      "lootType": "consumable",
+      "lootType": "potion",
       "usedInto": "empty-bottle",
       "executionMode": "all",
       "notes": "Cures all Poison, Acid, and Toxic debuffs immediately.",
@@ -1256,7 +1256,6 @@ export const COG_ITEMS = [
       },
       "description": "Tier 1 Alchemy table: a crafting table of tier 1.",
       "tags": [
-        "kind.upgrade",
         "upgrade.crafting_table"
       ]
     }
@@ -1278,7 +1277,6 @@ export const COG_ITEMS = [
       },
       "description": "Tier 1 Arcanist table: a crafting table of tier 1.",
       "tags": [
-        "kind.upgrade",
         "upgrade.crafting_table"
       ]
     }
@@ -1300,7 +1298,6 @@ export const COG_ITEMS = [
       },
       "description": "Tier 1 Smithing table: a crafting table of tier 1.",
       "tags": [
-        "kind.upgrade",
         "upgrade.crafting_table"
       ]
     }
@@ -1322,7 +1319,6 @@ export const COG_ITEMS = [
       },
       "description": "Tier 1 Tattoo Chair: a crafting chair of tier 1.",
       "tags": [
-        "kind.upgrade",
         "upgrade.crafting_table"
       ]
     }
@@ -1344,7 +1340,6 @@ export const COG_ITEMS = [
       },
       "description": "Tier 3 Makeup table: a crafting table of tier 3.",
       "tags": [
-        "kind.upgrade",
         "upgrade.crafting_table"
       ]
     }

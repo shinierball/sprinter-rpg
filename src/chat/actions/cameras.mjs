@@ -10,6 +10,7 @@
  * (never written from a hook, never a modal); the GM's button asks the Rule Break.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { isMigrationWrite } from '../../documents/migrations/world-migration.mjs';
 import { CAMERAS_FLAG, sanitizeCameraRecord, cameraRowOf, cameraCell, cameraReasonLabel, cameraText } from '../../utils/roll/cameras.mjs';
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
@@ -182,7 +183,7 @@ export function registerCameraHooks() {
     settleCameraAward(message).catch(err => console.warn('Sprinter RPG | Camera award failed', err));
   };
   globalThis.Hooks?.on?.('createChatMessage', onMessage);
-  globalThis.Hooks?.on?.('updateChatMessage', onMessage);
+  globalThis.Hooks?.on?.('updateChatMessage', (message, _changes, options) => { if (!isMigrationWrite(options)) onMessage(message); });
 }
 
 /** Tests only. */

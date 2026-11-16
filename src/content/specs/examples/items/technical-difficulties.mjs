@@ -16,6 +16,9 @@
  *   Squib Malfunction               untyped damage each round that stacks (every copy ticks), until the end of combat
  *   Walk-In Freezer Incident        a flat -2 on Dex checks and a halved Move, to the end of the next round (no Stat grant)
  *   Break a Leg, Literally          a flat -2 on Strength and Dex checks and a halved Move, until a long rest
+ *   Stage Directions                `rule.no-move`: its bearer cannot take Move Actions; moving asks a Rule Break
+ *   Gag Order                       `rule.no-cast`: its bearer cannot cast Spells; casting asks a Rule Break
+ *   One-Note Act                    `rule.attack-and-move-only`: only Attack and Move Actions; any other asks a Rule Break
  * A `buildPayload('debuff', spec)` input. Original text, written for this system.
  */
 import { exampleId } from '../ids.mjs';
@@ -211,6 +214,45 @@ export const SPECS = Object.freeze([
       checkModifiers: [{ kind: 'bonus', value: -2, condition: { all: [], any: ['stat.str', 'stat.dex'], none: [] } }],
       vehicleModifiers: [{ kind: 'moveMultiply', multiplier: 0.5 }],
       durationConfig: { type: 'long_rest', value: 0 }
+    }
+  },
+  {
+    type: 'debuff',
+    _id: id(15),
+    name: 'Stage Directions',
+    img: 'icons/svg/anchor.svg',
+    system: {
+      identifier: 'stage-directions',
+      severity: 'Minor',
+      description: '<p>The script says to hold position and nobody has told you which position. You cannot take Move Actions this round or the one after it. Moving anyway is a Rule Break; everything else is fine.</p>',
+      tags: ['rule.no-move'],
+      durationConfig: { type: 'rounds', value: 2 }
+    }
+  },
+  {
+    type: 'debuff',
+    _id: id(16),
+    name: 'Gag Order',
+    img: 'icons/svg/silenced.svg',
+    system: {
+      identifier: 'gag-order',
+      severity: 'Minor',
+      description: '<p>Legal has asked the cast to stop narrating their spells, effective immediately. You cannot cast Spells until the end of combat. Casting anyway is a Rule Break.</p>',
+      tags: ['rule.no-cast'],
+      durationConfig: TO_END_OF_COMBAT
+    }
+  },
+  {
+    type: 'debuff',
+    _id: id(17),
+    name: 'One-Note Act',
+    img: 'icons/svg/fire.svg',
+    system: {
+      identifier: 'one-note-act',
+      severity: 'Minor',
+      description: '<p>You have been cast as the angry one and you are committing to it. You may only take Attack and Move Actions this round or the one after it. Any other Action is a Rule Break.</p>',
+      tags: ['rule.attack-and-move-only'],
+      durationConfig: { type: 'rounds', value: 2 }
     }
   }
 ]);

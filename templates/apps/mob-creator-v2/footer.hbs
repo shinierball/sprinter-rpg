@@ -1,0 +1,18 @@
+{{!-- Footer: the status line, Fill, Back, Next and Create. Shares the Crawler Creator's footer classes. --}}
+<footer class="cog-creator-footer flexrow">
+  <div class="footer-status">
+    {{#if canCreate}}
+      <span class="status-ready"><i class="fa-solid fa-circle-check"></i> {{localize 'COG.MobCreator.Footer.Ready'}}</span>
+    {{else}}
+      <span class="status-not-ready"><i class="fa-solid fa-triangle-exclamation"></i> {{localize 'COG.MobCreator.Footer.RuleBreak'}}{{#each reasons}} {{this}}{{/each}}</span>
+    {{/if}}
+  </div>
+  <div class="cog-fsim-footer-right">
+    <button type="button" class="cog-fsim-btn" data-action="fillBudget"><i class="fa-solid fa-scale-balanced"></i> {{localize 'COG.MobCreator.Stats.Fill'}}</button>
+    <button type="button" class="cog-fsim-btn" data-action="prevStep" {{#unless canBack}}disabled{{/unless}}><i class="fa-solid fa-chevron-left"></i> {{localize 'COG.FloorSim.Back'}}</button>
+    <button type="button" class="cog-fsim-btn" data-action="nextStep" {{#unless canNext}}disabled{{/unless}}>{{localize 'COG.FloorSim.Next'}} <i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+  <button type="button" class="cog-create-crawler-btn {{#unless canCreate}}rule-break{{/unless}}" data-action="createMob">
+    <i class="fa-solid fa-skull"></i> {{localize 'COG.MobCreator.Footer.Create'}}
+  </button>
+</footer>

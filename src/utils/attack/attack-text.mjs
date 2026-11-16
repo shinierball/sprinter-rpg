@@ -54,7 +54,17 @@ const TEXT = Object.freeze({
   'COG.AttackOptions.From': 'from {source}',
   'COG.AttackOptions.Used': '(already used this floor: Rule Break)',
   'COG.AttackOptions.ReadsAs': 'Reads as: {text}',
-  'COG.AttackOptions.SkipHint': 'Shift-click an attack to roll your last pick without this window.'
+  'COG.AttackOptions.SkipHint': 'Shift-click an attack to roll your last pick without this window.',
+  'COG.AttackSituation.Suggested': 'Suggested',
+  'COG.AttackSituation.SizeNote': 'Target is {targetSize}, you are {ownSize}',
+  'COG.AttackSituation.NoTarget': 'No target',
+  'COG.AttackSituation.AttackerUnseen': 'You are unseen',
+  'COG.AttackSituation.TargetUnseen': 'The target is unseen',
+  'COG.AttackSituation.NoToken': 'No token on the scene',
+  'COG.AttackSituation.EnemyInReach': 'An enemy is within reach of you',
+  'COG.AttackSituation.NoLight': 'Cannot tell the light here',
+  'COG.AttackSituation.DimLight': 'Target is in dim light',
+  'COG.AttackSituation.DarkTarget': 'Target is in darkness'
 });
 
 /** A string by key, formatted with `{name}` data; works without a loaded i18n catalogue. */

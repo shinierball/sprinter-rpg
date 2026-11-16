@@ -45,7 +45,7 @@ const MILD_COMPETENCE = {
   system: {
     identifier: 'potion-of-mild-competence',
     description: '<p>Tastes like a motivational poster. Drink it and you are, for the rest of your career, a little better at running.</p>',
-    lootType: 'consumable',
+    lootType: 'potion',
     quantity: 1,
     executionMode: 'all',
     outcomes: [

@@ -4,7 +4,7 @@ import { BaseActorDataModel } from './base-actor-model.mjs';
 import { resolveStatSubstitution } from '../../utils/roll/narrow-modifiers.mjs';
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { getCOGStatModifier } from '../../documents/actor.mjs';
-import { bossTierFromTags, hbSlots, slotPercentages, statBudget, statSpent } from '../../data/mob-creation-rules.mjs';
+import { bossTierFromTags, mobTotalDr, defaultEvadeBase, defaultSurpriseBase, hbSlots, slotPercentages, statBudget, statSpent } from '../../data/mob-creation-rules.mjs';
 import { MOB_UNIQUE_TAG } from '../../utils/tag/tag-mechanics.mjs';
 import { MOB_BOSS_TAG } from '../../data/tag-vocabulary.mjs';
 
@@ -159,22 +159,22 @@ export class MobDataModel extends BaseActorDataModel {
     const rawEvadeBase = sourceEvadeBase !== undefined ? sourceEvadeBase : this.attributes.evadeBase;
     const evadeBase = (rawEvadeBase !== null && rawEvadeBase !== undefined && rawEvadeBase !== '')
       ? Number(rawEvadeBase)
-      : (10 + dexMod);
+      : defaultEvadeBase(dexMod);
 
     const sourceSurpriseBase = this._source?.attributes?.surpriseBase;
     const rawSurpriseBase = sourceSurpriseBase !== undefined ? sourceSurpriseBase : this.attributes.surpriseBase;
     const surpriseBase = (rawSurpriseBase !== null && rawSurpriseBase !== undefined && rawSurpriseBase !== '')
       ? Number(rawSurpriseBase)
-      : (10 + intMod);
+      : defaultSurpriseBase(intMod);
 
     this.attributes.evadeBase = evadeBase;
     this.attributes.surpriseBase = surpriseBase;
     this.attributes.effectiveEvadeDC = (rawEvadeBase !== null && rawEvadeBase !== undefined && rawEvadeBase !== '')
       ? Number(rawEvadeBase) + F
-      : (10 + (this.abilities.dex?.mod ?? 0) + F);
+      : defaultEvadeBase(this.abilities.dex?.mod ?? 0) + F;
     this.attributes.effectiveSurpriseDC = (rawSurpriseBase !== null && rawSurpriseBase !== undefined && rawSurpriseBase !== '')
       ? Number(rawSurpriseBase) + F
-      : (10 + (this.abilities.int?.mod ?? 0) + F);
+      : defaultSurpriseBase(this.abilities.int?.mod ?? 0) + F;
 
     // 3. Stat budget & spent readouts (D5-D, §5.2)
     const budget = statBudget({ level: this.details.level || 1, bossTier: this.bossTier });
@@ -190,6 +190,6 @@ export class MobDataModel extends BaseActorDataModel {
                    (Number(this.attributes.dr.buffs) || 0) +
                    (Number(this.attributes.dr.items) || 0);
     this.attributes.dr.floor = F;
-    this.attributes.dr.total = Math.max(0, baseDr + F);
+    this.attributes.dr.total = mobTotalDr(baseDr, F);
   }
 }

@@ -590,7 +590,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.rat_kin"
+      ]
     },
     "items": [
       {
@@ -776,7 +778,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Stays at the back and casts. If caught in melee it tries to retreat."
       },
-      "tags": []
+      "tags": [
+        "creature.rat_kin"
+      ]
     },
     "items": [
       {
@@ -1104,7 +1108,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Opens combat from ambush, focuses attacks with its allies, and uses its Heal Others Spell on wounded allies."
       },
-      "tags": []
+      "tags": [
+        "creature.rat_kin"
+      ]
     },
     "items": [
       {
@@ -1365,7 +1371,8 @@ export const COG_MOBS = [
       },
       "tags": [
         "mob.tier.neighborhood",
-        "mob.unique"
+        "mob.unique",
+        "creature.undead"
       ]
     },
     "items": [
@@ -2677,7 +2684,10 @@ export const COG_MOBS = [
         "notes": "",
         "special": "While its pack has not been attacked, an injured one can be calmed by feeding it, healing it, or playing loud music. A charge of 20 ft in a straight line adds +1d6 damage."
       },
-      "tags": []
+      "tags": [
+        "creature.beast",
+        "creature.dog"
+      ]
     },
     "items": [
       {
@@ -2884,7 +2894,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Cannot be knocked Prone or off-kilter. Flattery or a mirror makes it stop and do squats in the middle of combat."
       },
-      "tags": []
+      "tags": [
+        "creature.animal"
+      ]
     },
     "items": [
       {
@@ -3347,7 +3359,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Flies, and moves through the air as easily as over ground. It can dive onto a target, and dies when the dive hits."
       },
-      "tags": []
+      "tags": [
+        "creature.animal"
+      ]
     },
     "items": [
       {
@@ -3753,7 +3767,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Goes for corpses first. When one dies it spawns 1-15 more, up to 5,000 in all, and with enough of them they grow into the next stage. Up to 5 can share a space; a crawler in a crowded space makes a DEX check at 4 times the count to avoid stepping on one and spawning more."
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -3904,7 +3920,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -4252,7 +4270,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Its sneeze spreads Diseased, a taint debuff or Stiff Legs. It gurgles like a pig when it speaks."
       },
-      "tags": []
+      "tags": [
+        "creature.fairy"
+      ]
     },
     "items": [
       {
@@ -4477,7 +4497,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Immune to every Debuff that deals damage. Flies at 45 ft and can hover."
       },
-      "tags": []
+      "tags": [
+        "creature.fairy"
+      ]
     },
     "items": [
       {
@@ -4714,7 +4736,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Oblivious to its surroundings until touched or interrupted, and then flies into an immediate rage."
       },
-      "tags": []
+      "tags": [
+        "creature.undead"
+      ]
     },
     "items": [
       {
@@ -4877,7 +4901,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": "Usually appears in groups of 3 to 6."
       },
-      "tags": []
+      "tags": [
+        "creature.animal"
+      ]
     },
     "items": [
       {
@@ -6686,7 +6712,10 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.dog",
+        "creature.animal"
+      ]
     },
     "items": [
       {
@@ -7332,7 +7361,10 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast",
+        "creature.dog"
+      ]
     },
     "items": [
       {
@@ -7705,7 +7737,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.elemental"
+      ]
     },
     "items": [
       {
@@ -7844,7 +7878,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -8037,7 +8073,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.animal"
+      ]
     },
     "items": [
       {
@@ -8198,7 +8236,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.animal"
+      ]
     },
     "items": [
       {
@@ -9410,7 +9450,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -11018,7 +11060,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.undead"
+      ]
     },
     "items": [
       {
@@ -11646,7 +11690,10 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.feline",
+        "creature.animal"
+      ]
     },
     "items": [
       {
@@ -11830,7 +11877,8 @@ export const COG_MOBS = [
         "special": ""
       },
       "tags": [
-        "mob.tier.neighborhood"
+        "mob.tier.neighborhood",
+        "creature.rat_kin"
       ]
     },
     "items": [
@@ -12244,7 +12292,8 @@ export const COG_MOBS = [
         "special": ""
       },
       "tags": [
-        "mob.tier.city"
+        "mob.tier.city",
+        "creature.undead"
       ]
     },
     "items": [
@@ -12511,7 +12560,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.elemental"
+      ]
     },
     "items": [
       {
@@ -13006,7 +13057,8 @@ export const COG_MOBS = [
       },
       "tags": [
         "mob.tier.neighborhood",
-        "mob.unique"
+        "mob.unique",
+        "creature.beast"
       ]
     },
     "items": [
@@ -13221,7 +13273,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -13369,7 +13423,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -13575,7 +13631,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.animal"
+      ]
     },
     "items": [
       {
@@ -13762,7 +13820,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -14113,7 +14173,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -14283,7 +14345,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -14589,7 +14653,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.undead"
+      ]
     },
     "items": [
       {
@@ -14782,7 +14848,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.beast"
+      ]
     },
     "items": [
       {
@@ -15316,7 +15384,9 @@ export const COG_MOBS = [
         "notes": "",
         "special": ""
       },
-      "tags": []
+      "tags": [
+        "creature.fairy"
+      ]
     },
     "items": [
       {

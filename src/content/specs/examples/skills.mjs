@@ -20,7 +20,7 @@ export const EXAMPLE_SKILL_SPECS = Object.freeze([
       stat: 'cha',
       rank: 1,
       description: '<p>You radiate the confidence of a studio audience that was paid in advance. Allies within the aura feel the applause (Studio Audience Approval, +1 Evade, +1 to hit, +1 damage, Resistance to Sonic, Immunity to Psychic, 1 Health Bar back with a slow trickle for three rounds, temporary Health Bars of their own). Hecklers in the same aura get Stage Fright and 1d4 Sonic damage each round.</p>',
-      tags: ['delivery.aura', 'shape.aura', 'skillGroup.social'],
+      tags: ['delivery.aura', 'skillGroup.social'],
       delivery: 'aura',
       area: {
         hasArea: true,

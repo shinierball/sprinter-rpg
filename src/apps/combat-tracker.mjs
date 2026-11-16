@@ -19,7 +19,10 @@ import { COGCombat } from '../documents/combat.mjs';
 import { COMBAT_STEPS, COMBAT_STEP_DEFINITIONS } from '../documents/combat/steps.mjs';
 import { COG_ACTION_TYPES } from '../documents/combat/action-ledger.mjs';
 import { getCalledPlays, mayDiscardCalledPlay } from '../documents/combat/called-plays.mjs';
-import { findCombatant } from '../documents/combat/combatants.mjs';
+import { combatantOfActor, findCombatant } from '../documents/combat/combatants.mjs';
+import { guidanceOfCombatant } from '../documents/actor/pet-guidance.mjs';
+import { guidePet } from '../documents/actor/pet-checks.mjs';
+import { PET_GUIDANCE } from '../data/rules/pet-rules.mjs';
 import { COGCombatMetricsApp } from './combat-metrics.mjs';
 import { COGCombatArchiveApp } from './combat-archive.mjs';
 import { COGSessionManagerApp } from './session-manager/manager-app.mjs';
@@ -143,7 +146,8 @@ export class COGCombatTracker extends BaseCombatTracker {
       openInterruptDrawer: COGCombatTracker.#onOpenInterruptDrawer,
       closeInterruptDrawer: COGCombatTracker.#onCloseInterruptDrawer,
       triggerInterrupt: COGCombatTracker.#onTriggerInterrupt,
-      discardCalledPlay: COGCombatTracker.#onDiscardCalledPlay
+      discardCalledPlay: COGCombatTracker.#onDiscardCalledPlay,
+      guidePet: COGCombatTracker.#onGuidePet
     }
   };
 
@@ -513,6 +517,7 @@ export class COGCombatTracker extends BaseCombatTracker {
     return {
       ...turn,
       actor,
+      guidance: COGCombatTracker.#guidanceContext(combat, combatant, isLiveRound),
       calledPlays,
       isTargeted,
       zeroHealth,
@@ -826,6 +831,32 @@ export class COGCombatTracker extends BaseCombatTracker {
     else if (res?.error) globalThis.ui?.notifications?.warn?.(res.error);
   }
 
+  /** The owner's combatant of a pet's combatant in this combat, or null. */
+  static #ownerCombatantOf(combat, combatant) {
+    const ownerId = combatant?.actor?.system?.details?.ownerId;
+    return ownerId ? combatantOfActor(combat, globalThis.game?.actors?.get?.(ownerId)) : null;
+  }
+
+  /** A pet's guidance badge and whether this user may use the Guide control (only while it is not yet guided, in the live round). */
+  static #guidanceContext(combat, combatant, isLiveRound) {
+    const state = guidanceOfCombatant(combatant);
+    if (!state) return null;
+    const def = PET_GUIDANCE[state];
+    const owner = COGCombatTracker.#ownerCombatantOf(combat, combatant);
+    return { state, label: def.label, badge: def.badge, canGuide: state === 'none' && isLiveRound && Boolean(owner) && canEditCombatantActions(owner) };
+  }
+
+  /** Guide a pet: the owner's Action, then the guiding check (see `guidePet`). */
+  static async #onGuidePet(event, target) {
+    const combat = this.activeCombat;
+    if (!combat) return;
+    const c = findCombatant(combat, combatantIdOf(target));
+    const owner = COGCombatTracker.#ownerCombatantOf(combat, c);
+    if (!c || !owner || !canEditCombatantActions(owner)) return;
+    await guidePet(combat, c, { round: this._getViewedRound(combat) });
+    this.render();
+  }
+
   /** Spend 1 AI Favor for a +1 non-Attack action. */
   static async #onSpendFavor(event, target) {
     const combat = this.activeCombat;
@@ -879,7 +910,9 @@ export class COGCombatTracker extends BaseCombatTracker {
     const res = await combat.triggerInterrupt(combatantId, interruptId, { round: this._getViewedRound(combat), ruleBreak: confirmed });
     // Evade from the drawer rolls the same Evade the attack card's Roll Evade button does (3.40 o5).
     if (res?.success && res.interrupt?.id === 'evade' && typeof res.actor?.rollEvade === 'function') {
-      await res.actor.rollEvade({ actionBlockChecked: true });
+      // The ledger asked the "cannot take Actions" gate when it charged a slot; a free slot (the round's Evade is
+      // already taken) asked nothing, so the actor's own gate asks there.
+      await res.actor.rollEvade({ actionBlockChecked: res.isFree !== true });
     }
     if (res && res.success) this.render();
   }

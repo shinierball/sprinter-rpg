@@ -4,6 +4,7 @@
  * picked `skill` of a `choice` row, 7.3i). Built through `buildPayload('loot', ...)` like any user-made loot.
  */
 import { buildPayload } from './builders/item-payload.mjs';
+import { POTION_LOOT_TYPE } from './tag-vocabulary.mjs';
 
 /**
  * @param {{ name: string, identifier: string }} skill the skill the potion trains
@@ -19,7 +20,7 @@ export function skillPotionPayload(skill, ranks = 1, { name = '', warnings = [] 
   return buildPayload('loot', {
     name: String(name ?? '').trim() || `Skill Potion: ${skillName}`,
     system: {
-      quantity: 1, lootType: 'consumable', usedInto: 'empty-bottle', executionMode: 'all',
+      quantity: 1, lootType: POTION_LOOT_TYPE, usedInto: 'empty-bottle', executionMode: 'all',
       notes: `Permanently adds ${added} Ranks to ${skillName}.`,
       outcomes: [{ name: 'Study', type: 'skill_rank', skillIdentifier: identifier, skillName, rankBonus: added, targetType: 'self' }]
     }

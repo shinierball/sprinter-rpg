@@ -1,0 +1,28 @@
+{{!-- Review stage: every Rule Break, the builder's warnings and what Create makes. The stat block is the preview on the right.  The part root is hidden unless this is the active stage (parts: stage ids in app.mjs). --}}
+<section class="cog-creator-section cog-mobv2-panel" data-stage="review"{{#unless active}} hidden{{/unless}}>
+  <h3 class="cog-mobv2-title">{{localize titleKey}}</h3>
+  {{#if active}}
+    <p>{{summary}}</p>
+  {{#if ruleBreaks.length}}
+    <div class="cog-fsim-breaks">
+      <h4><i class="fa-solid fa-triangle-exclamation"></i> {{localize 'COG.MobCreator.Review.RuleBreaks'}}</h4>
+      <ul>{{#each ruleBreaks}}<li>{{this}}</li>{{/each}}</ul>
+    </div>
+  {{else}}
+    <p class="status-ready"><i class="fa-solid fa-circle-check"></i> {{localize 'COG.MobCreator.Review.NoBreaks'}}</p>
+  {{/if}}
+  {{#if custom.length}}
+    <div class="cog-fsim-warnings">
+      <h4>{{localize 'COG.MobCreator.Review.Custom'}}</h4>
+      <ul>{{#each custom}}<li>{{this}}</li>{{/each}}</ul>
+    </div>
+  {{/if}}
+  {{#if note}}<p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{note}}</p>{{/if}}
+  {{#if warnings.length}}
+    <div class="cog-fsim-warnings">
+      <h4>{{localize 'COG.MobCreator.Review.Warnings'}}</h4>
+      <ul>{{#each warnings}}<li>{{this}}</li>{{/each}}</ul>
+    </div>
+  {{/if}}
+  {{/if}}
+</section>

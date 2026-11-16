@@ -166,7 +166,7 @@ export const sessionProgressionMixin = {
         identifier: ident,
         rank: 1,
         stat: 'str',
-        checkType: 'stat',
+        checkType: 'skill',
         description: 'Trained from field experience during crawler session.'
       }
     }]);

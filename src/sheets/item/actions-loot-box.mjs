@@ -355,7 +355,7 @@ export async function dropRewardBoxTemplate(achievement, doc) {
   const identifier = itemIdentifier(doc);
   const mate = rows.find((r) => (uuid && r.uuid === uuid) || (!uuid && identifier && r.identifier === identifier));
   if (mate) mate.quantity += 1;
-  else rows.push({ tier: resolveLootBoxTier(doc.system?.box?.tier), quantity: 1, uuid, identifier, name: String(doc.name ?? '') });
+  else rows.push({ tier: resolveLootBoxTier(doc.system?.box?.tier), quantity: 1, uuid, identifier, name: String(doc.name ?? ''), whenEmpty: '' });
   await achievement.update({ 'system.rewardBoxes': rows });
   return rows;
 }
@@ -449,10 +449,10 @@ export const LOOT_BOX_ACTIONS = {
   /** Achievement: add a generic reward box row (Bronze, 1). */
   async addRewardBox() {
     if (!canEditAchievement(this)) return;
-    await this.item.update({ 'system.rewardBoxes': [...rewardRows(this.item), { tier: 'bronze', quantity: 1, uuid: '', identifier: '', name: '' }] });
+    await this.item.update({ 'system.rewardBoxes': [...rewardRows(this.item), { tier: 'bronze', quantity: 1, uuid: '', identifier: '', name: '', whenEmpty: '' }] });
   },
 
-  /** change: a reward row's tier or quantity (`data-index`, `data-field`). */
+  /** change: a reward row's tier, quantity or waits-for-the-GM tick box (`data-index`, `data-field`). */
   async editRewardBox(event, target) {
     if (!canEditAchievement(this)) return;
     const field = String(target?.dataset?.field ?? '');
@@ -461,6 +461,7 @@ export const LOOT_BOX_ACTIONS = {
     if (!row) return;
     if (field === 'quantity') row.quantity = whole(valueOf(target));
     else if (field === 'tier') row.tier = resolveLootBoxTier(valueOf(target));
+    else if (field === 'whenEmpty') row.whenEmpty = valueOf(target) === true ? 'keep' : '';
     else return;
     await this.item.update({ 'system.rewardBoxes': rows });
   },

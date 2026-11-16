@@ -381,14 +381,14 @@ export function buildRankBreakViews(context, thresholds) {
  * that index) and a precomputed stat select.
  * @param {Array|object} grants
  * @param {{ showLocked?: boolean }} [opts] `showLocked`: the table has a Locked column (an owned item in fixed mode)
- * @returns {Array<{ idx: number, stat: string, label: string, value: number, percent: number, locked: (number|string), showLocked: boolean, options: Array<{ value: string, label: string, selected: boolean }> }>}
+ * @returns {Array<{ idx: number, stat: string, label: string, value: number, percent: number, beforePercent: boolean, locked: (number|string), showLocked: boolean, options: Array<{ value: string, label: string, selected: boolean }> }>}
  */
 export function statGrantRows(grants, { showLocked = false } = {}) {
   return toRowArray(grants).flatMap((row, idx) => {
     if (row?.kind !== 'stat') return [];
     const stat = String(row.stat ?? '').toLowerCase();
     return [{
-      idx, stat, label: String(row.label ?? ''), value: Number(row.value) || 0, percent: Number(row.percent) || 0,
+      idx, stat, label: String(row.label ?? ''), value: Number(row.value) || 0, percent: Number(row.percent) || 0, beforePercent: row.beforePercent === true,
       // An empty lock stays an empty input (not 0): the row is not locked yet
       locked: row.locked === null || row.locked === undefined || row.locked === '' ? '' : Number(row.locked),
       // An empty Minimum is no minimum (not 0)

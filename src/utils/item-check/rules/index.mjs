@@ -5,6 +5,7 @@
 import './weapon.mjs';
 import './gear.mjs';
 import './buff.mjs';
+import './applied-buffs.mjs';
 import './debuff.mjs';
 import './technique.mjs';
 import './deity.mjs';
@@ -13,6 +14,7 @@ import './achievement.mjs';
 import './space-upgrade.mjs';
 import './weapon-skill.mjs';
 import './attack-damage.mjs';
+import './stat-check-skill.mjs';
 import './consumable.mjs';
 import './wand.mjs';
 import './unknown-tag.mjs';

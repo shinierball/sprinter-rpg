@@ -20,6 +20,8 @@ export const FALLBACK_USED_FORM = 'spent-item';
 export const USED_FORM_BY_LOOT_TYPE = Object.freeze({ scroll: 'used-scroll', scratch_ticket: 'used-ticket' });
 /** The `usedInto` value that leaves nothing behind (7.3a): the unit is spent and no junk is made. Not a registry entry. */
 export const USED_FORM_NONE = 'none';
+/** The junk a dead mob leaves (core p. 215): its weapons and armour are poor enough to count as Misc. Junk. */
+export const SCAVENGED_JUNK_FORM = 'scavenged-junk';
 /** The form a light source that is spent leaves when it names none. */
 export const LIGHT_USED_FORM = 'burnt-torch';
 
@@ -44,6 +46,10 @@ const SEEDED_USED_FORMS = [
   {
     id: 'used-ticket', name: 'Used Scratch Ticket', img: 'icons/svg/item-bag.svg',
     description: 'Scratched down to grey dust. The odds were printed on the back in a font that was not meant to be read.'
+  },
+  {
+    id: SCAVENGED_JUNK_FORM, name: 'Scavenged Odds and Ends', img: 'icons/svg/item-bag.svg',
+    description: 'Bent cutlery, a boot with no partner, a helmet that was clearly a bucket. Whatever the last owner called it, it is worth a gold piece to someone.'
   },
   {
     id: FALLBACK_USED_FORM, name: 'Spent Item', img: 'icons/svg/item-bag.svg',

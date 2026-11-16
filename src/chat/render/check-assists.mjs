@@ -10,9 +10,8 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { collectCheckAssistOffers, classifyAttackOutcome } from '../../utils/combat/interrupts.mjs';
-import { appliedBeforeEvade } from '../../utils/attack/evade-link.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { getDamageApplications } from '../damage-applications.mjs';
+import { damageAlreadyApplied } from '../damage-applications.mjs';
 
 /** English fallbacks of the `COG.Assist.*` keys in lang/en.json (the headless test world has no i18n). */
 const TEXT = Object.freeze({
@@ -31,6 +30,7 @@ const TEXT = Object.freeze({
   NotNeeded: 'not needed (no damage)',
   Awaiting: 'awaiting the GM: {total}, or {with} with it',
   AppliedBefore: 'Damage was already applied; Undo and apply again to use this assist.',
+  AppliedBeforeReroll: 'Damage was already applied; Undo and apply again to use the new result.',
   ApplyButton: "Apply to {name}'s check",
   NotApplied: 'Not applied yet: no GM connected',
   CardTitle: "INTERRUPT: {skill} +{amount} → {name}'s check",
@@ -74,14 +74,6 @@ export function assistText(key, data = {}) {
     // fall through to the fallback
   }
   return Object.entries(data).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), TEXT[key] ?? full);
-}
-
-function messageList() {
-  const messages = globalThis.game?.messages;
-  if (!messages) return [];
-  if (Array.isArray(messages)) return messages;
-  if (Array.isArray(messages.contents)) return messages.contents;
-  return Array.from(messages.values?.() ?? messages);
 }
 
 function flagsOf(message) {
@@ -155,17 +147,6 @@ function assistLineText(entry, eff) {
   else tail = assistText('Awaiting', { total: eff.total, with: eff.total + entry.amount });
   const text = `${head} ${tail}`;
   return entry.proposal ? `${text} — ${entry.proposal}` : text;
-}
-
-/** True when a damage card answering this check has an application that was not undone (E6.3 detection). */
-function damageAlreadyApplied(message, record) {
-  const messages = messageList();
-  const f = flagsOf(message);
-  if (record.kind === 'evade') {
-    return appliedBeforeEvade(messages, { attackMessageId: f.attackMessageId, evaderUuid: f.evaderUuid ?? record.rollerUuid, getApplications: getDamageApplications });
-  }
-  if (!message?.id) return false;
-  return messages.some((m) => flagsOf(m).sourceMessageId === message.id && getDamageApplications(m).some((a) => !a.undone));
 }
 
 /** Whether this user may choose where an unresolved Called Play goes: the GM, the caller's or the roller's owners (D14). */
@@ -272,10 +253,18 @@ export function renderCheckAssists(root, message) {
   const card = root.querySelector('.message-content') ?? root;
   card.querySelectorAll('.cog-check-assists, .cog-assist-offers').forEach((n) => n.remove());
   const doc = root.ownerDocument;
-  if (eff.assists.length) {
+  // A reroll or a shift changes the result a card shows, so the target rows and the Evade banner follow the record then too.
+  const changed = (eff.rerolled || eff.shifts.length > 0);
+  if (eff.assists.length || changed) {
     decorateTargets(card, eff, record);
     decorateEvade(card, eff, record);
-    card.append(buildAssistList(doc, message, record, eff));
+  }
+  if (eff.assists.length) card.append(buildAssistList(doc, message, record, eff));
+  else if (changed && damageAlreadyApplied(message, record)) {
+    // A reroll or shift after the damage was applied: the same note the assist block shows.
+    const note = el(doc, 'div', 'cog-check-assists', '');
+    note.append(el(doc, 'div', 'cog-check-assists-note', assistText('AppliedBeforeReroll')));
+    card.append(note);
   }
   const combat = globalThis.game?.combat;
   if (!combat || record.combatId !== combat.id || record.round !== Number(combat.round)) return;

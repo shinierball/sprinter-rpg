@@ -14,8 +14,9 @@ import { normalizeTiming } from '../../utils/time/timing.mjs';
 import { matchesTagQuery } from '../../utils/tag/tag-query.mjs';
 import { matchesAnySuppression } from '../../utils/effects/debuff-suppresses.mjs';
 import { baseRankOf } from '../../utils/skill/rank-source.mjs';
+import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { SKILL_SOFT_CAP } from '../../utils/skill/rank-limits.mjs';
-import { isStaticDefenseRow } from '../../utils/roll/damage-modifiers.mjs';
+import { isStaticDefenseRow, meetsMinRank } from '../../utils/roll/damage-modifiers.mjs';
 import { raceInForce } from '../../utils/character/overlay-state.mjs';
 import { applyRowKind, getRowKind, kindOf } from '../../utils/row-kinds.mjs';
 
@@ -25,16 +26,22 @@ export const STAT_KEYS = ['str', 'int', 'con', 'dex', 'cha'];
  * One ability's gear and buff bonuses (the one code path for the live actor and the floor simulator's payload).
  * Live percents (gear in live mode or with no lock, buffs and debuffs always) are summed per stat and floored once;
  * the gear's share is floored on its own so the sheet can split the two columns.
+ * A row with `beforePercent` also adds its flat to the base the live percents of that stat are taken from (core p. 136,
+ * "+5 Strength" then "doubled" reads (10 + 5) x 2): the gear column's percents use the gear's early flats, the total
+ * uses every early flat on the stat. A gear percent locked at equip is a stored number and is not re-worked.
  * @param {number} unenhanced the score a percent is taken from
- * @param {{flat?: number, pct?: number}} [gearStat] `collectGearBonuses(...).stats[key]`
+ * @param {{flat?: number, pct?: number, early?: number}} [gearStat] `collectGearBonuses(...).stats[key]`
  * @param {number} [buffFlat] buff plus debuff flat total
  * @param {number} [buffPct] buff plus debuff percent total
+ * @param {number} [buffEarly] buff plus debuff total of the `beforePercent` flats
  * @returns {{gearBonus: number, buffBonus: number}}
  */
-export function statBonuses(unenhanced, gearStat, buffFlat = 0, buffPct = 0) {
+export function statBonuses(unenhanced, gearStat, buffFlat = 0, buffPct = 0, buffEarly = 0) {
   const gearPct = gearStat?.pct || 0;
-  const gearPctBonus = roundPercent(unenhanced, gearPct);
-  const totalPctBonus = roundPercent(unenhanced, gearPct + buffPct);
+  const gearBase = unenhanced + (gearStat?.early || 0);
+  const base = gearBase + buffEarly;
+  const gearPctBonus = roundPercent(gearBase, gearPct);
+  const totalPctBonus = roundPercent(base, gearPct + buffPct);
   return { gearBonus: (gearStat?.flat || 0) + gearPctBonus, buffBonus: buffFlat + (totalPctBonus - gearPctBonus) };
 }
 
@@ -75,7 +82,7 @@ function addLimbs(sys, limbs) {
  */
 export function collectGearBonuses(equippedGear, mode = 'fixed') {
   const out = {
-    stats: emptyStatMap(() => ({ flat: 0, pct: 0 })),
+    stats: emptyStatMap(() => ({ flat: 0, pct: 0, early: 0 })),
     dr: 0
   };
   for (const item of (equippedGear || [])) {
@@ -87,6 +94,7 @@ export function collectGearBonuses(equippedGear, mode = 'fixed') {
         const slot = out.stats[String(g.stat ?? '').toLowerCase().trim()];
         if (!slot) continue;
         slot.flat += Number(g.value) || 0;
+        if (g.beforePercent === true) slot.early += Number(g.value) || 0;
         const percent = Number(g.percent) || 0;
         if (!percent) continue;
         const locked = g.locked === null || g.locked === undefined || g.locked === '' ? NaN : Number(g.locked);
@@ -114,7 +122,7 @@ export function collectStaticDefense(sources, derivedContext) {
     const rows = source?.system?.defenseModifiers ?? source?.defenseModifiers;
     if (!Array.isArray(rows)) continue;
     for (const row of rows) {
-      if (!row || row.disabled === true || !isStaticDefenseRow(row, derivedContext)) continue;
+      if (!row || row.disabled === true || !isStaticDefenseRow(row, derivedContext) || !meetsMinRank(source, row)) continue;
       applyRowKind('defenseModifiers', getRowKind('defenseModifiers', kindOf('defenseModifiers', row)), 'derived', out, row, { source, tags: derivedContext.tags });
     }
   }
@@ -123,9 +131,10 @@ export function collectStaticDefense(sources, derivedContext) {
 
 /**
  * Add every `grants[kind: stat]` row of a buff or debuff into `stats` (flat deltas) and `pct` (percent sums).
- * Buff and debuff percents are always live whatever the setting: they never lock.
+ * Buff and debuff percents are always live whatever the setting: they never lock. A `beforePercent` row's flat is
+ * also summed into `early` (the base the percents are taken from).
  */
-function addStatGrants(sys, stats, pct, floored) {
+function addStatGrants(sys, stats, pct, floored, early) {
   for (const g of (Array.isArray(sys?.grants) ? sys.grants : [])) {
     if (g?.kind !== 'stat' || (g.mode && g.mode !== 'fixed')) continue;
     const key = String(g.stat ?? '').toLowerCase().trim();
@@ -133,6 +142,7 @@ function addStatGrants(sys, stats, pct, floored) {
     const value = Number(g.value) || 0;
     stats[key] += value;
     pct[key] += Number(g.percent) || 0;
+    if (g.beforePercent === true) early[key] += value;
     // A negative row with a `floor` never takes the score below it (D5); the highest floor on a stat wins.
     const floor = Number(g.floor);
     if (floored && value < 0 && Number.isFinite(floor) && floor > 0) {
@@ -165,6 +175,7 @@ export function collectBuffBonuses(activeBuffs) {
   const out = {
     stats: emptyStatMap(() => 0),
     pct: emptyStatMap(() => 0),
+    early: emptyStatMap(() => 0),
     limbs: { arms: 0, legs: 0, hands: 0 },
     floored: {}
   };
@@ -173,7 +184,7 @@ export function collectBuffBonuses(activeBuffs) {
     if (!buff) continue;
     const bSys = buff.system || buff;
     addLimbs(bSys, out.limbs);
-    addStatGrants(bSys, out.stats, out.pct, out.floored);
+    addStatGrants(bSys, out.stats, out.pct, out.floored, out.early);
   }
   return out;
 }
@@ -218,11 +229,11 @@ export function resolvePersistentDebuffs(items, equippedGear) {
  * @param {object[]} debuffItems - owned debuff items plus the output of {@link resolvePersistentDebuffs}
  */
 export function collectDebuffEffects(debuffItems) {
-  const out = { stats: emptyStatMap(() => 0), pct: emptyStatMap(() => 0), limbs: { arms: 0, legs: 0, hands: 0 }, floored: {} };
+  const out = { stats: emptyStatMap(() => 0), pct: emptyStatMap(() => 0), early: emptyStatMap(() => 0), limbs: { arms: 0, legs: 0, hands: 0 }, floored: {} };
   for (const debuff of (debuffItems || [])) {
     const dSys = debuff.system || {};
     addLimbs(dSys, out.limbs);
-    addStatGrants(dSys, out.stats, out.pct, out.floored);
+    addStatGrants(dSys, out.stats, out.pct, out.floored, out.early);
   }
   return out;
 }
@@ -258,7 +269,14 @@ export function collectRankRaiseGrants({ sources = [], items = [] } = {}) {
   const take = (item) => {
     const list = item?.system?.grants;
     if (!Array.isArray(list)) return;
-    for (const g of list) if (g?.kind === 'rank_raise' && (!g.mode || g.mode === 'fixed')) out.push(g);
+    for (const g of list) {
+      if (g?.kind !== 'rank_raise' || (g.mode && g.mode !== 'fixed')) continue;
+      if (g.floorFrom !== 'rank') { out.push(g); continue; }
+      // Rank N is the stored Rank of the buff carrying the row; a carrier with no Rank (any other item, a buff nothing
+      // applied) drops the row, since with floor 0 its value would raise every Rank.
+      const rank = item.type === 'buff' ? Number(item.system?.rank) || 0 : 0;
+      if (rank >= 1) out.push({ ...g, floor: rank });
+    }
   };
   for (const s of sources) take(s);
   for (const i of items) if (i?.type === 'class' || (i?.type === 'race' && raceInForce(items, i))) take(i);
@@ -393,7 +411,7 @@ const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
  * The one place a skill's acting Rank is derived: with `highRankActive` false (a crawler above the Sixth Floor's
  * reach), a stored Rank past the soft cap acts as the soft cap, so every reader of `modifiedRank` follows.
  */
-export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map(), tagGrants = [], rankRaises = [], animalSkillsLocked = false, skillSuppressions = [], highRankActive = true } = {}) {
+export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map(), tagGrants = [], rankRaises = [], animalSkillsLocked = false, skillSuppressions = [], highRankActive = true, ranksFollowFloor = false } = {}) {
   // Each skill's itemBonus (gear + tag grants) is computed once and used in both passes.
   const bonuses = new Map();
   for (const item of skills) {
@@ -403,11 +421,12 @@ export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map
 
   // Weapon groups are tags (`weaponGroup.*`), not skills: there is no group-skill type bonus.
   for (const item of skills) {
-    const storedRank = baseRankOf(item);
-    const baseRank = highRankActive ? storedRank : Math.min(storedRank, SKILL_SOFT_CAP);
+    // An owner whose Ranks follow the Floor (a pet): the Floor is the Rank; nothing stored counts, only gear and buffs add.
+    const storedRank = ranksFollowFloor ? getCurrentFloor() : baseRankOf(item);
+    const baseRank = highRankActive || ranksFollowFloor ? storedRank : Math.min(storedRank, SKILL_SOFT_CAP);
     const gearData = gearBonusEntryFor(gearSkillBonuses, item, 'skill');
     const itemBonus = bonuses.get(item);
-    const boonBonus = Number(item.system?.boonBonus) || 0;
+    const boonBonus = ranksFollowFloor ? 0 : Number(item.system?.boonBonus) || 0;
     const preRank = Math.max(0, baseRank + itemBonus + boonBonus);
     const modifiedRank = raisedRank(preRank, raiseRowsFor(item, rankRaises));
     const raiseBonus = modifiedRank - preRank;
@@ -467,9 +486,11 @@ export function animalSkillsLockedFor(tagSet, items = []) {
  * Writes spell.system.{itemBonus, modifiedRank, effectiveRank, statMod} and spell.{baseRank, itemBonus, modifiedRank, effectiveRank, statMod, statModStr}.
  * baseRank = Number(rank) || 1; modifiedRank = Math.max(1, baseRank + itemBonus).
  */
-export function deriveSpellRanks(spells, { abilities, gearSkillBonuses = new Map(), tagGrants = [], rankRaises = [] } = {}) {
+export function deriveSpellRanks(spells, { abilities, gearSkillBonuses = new Map(), tagGrants = [], rankRaises = [], ranksFollowFloor = false, highRankActive = true } = {}) {
   for (const spell of spells) {
-    const baseRank = Number(spell.system?.rank) || 1;
+    const storedRank = Number(spell.system?.rank) || 1;
+    // A stored Rank past the soft cap acts at the soft cap below the Sixth Floor, as for a Skill (p. 128)
+    const baseRank = ranksFollowFloor ? Math.max(1, getCurrentFloor()) : (highRankActive ? storedRank : Math.min(storedRank, SKILL_SOFT_CAP));
     const gearData = gearBonusEntryFor(gearSkillBonuses, spell, 'spell');
     const itemBonus = (gearData ? gearData.bonus : 0) + tagBonusFor(spell, tagGrants);
     const preRank = Math.max(1, baseRank + itemBonus);

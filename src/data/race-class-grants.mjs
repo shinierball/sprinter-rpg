@@ -182,7 +182,7 @@ export const GRANT_SYSTEM = {
     ...resolvedSys,
     rank: s.rank ?? resolvedSys.rank ?? 1,
     stat: s.stat || resolvedSys.stat || 'str',
-    checkType: s.checkType || resolvedSys.checkType || 'stat',
+    checkType: s.checkType || resolvedSys.checkType || 'skill',
     checkNote: s.checkNote ?? resolvedSys.checkNote ?? '',
     baseDamage: normalizeBaseDamage(s.baseDamage?.dice ? s.baseDamage : resolvedSys.baseDamage),
     rankLimits: cleanRankLimits(s.rankLimits !== undefined ? s.rankLimits : resolvedSys.rankLimits),

@@ -10,6 +10,7 @@ import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { durationRounds } from '../../utils/time/durations.mjs';
 import { getCOGStatModifier } from './actor-constants.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
+import { statCheckDifficulty } from '../../data/rules/difficulty-rules.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { buildRegionData, buildAuraRingData, withoutCoverageFill, createRegion } from '../../utils/area/region-shapes.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
@@ -46,7 +47,7 @@ export async function checkFatalDebuffProtection(actor, debuff, damageVal, optio
   }
   currentFloor = Number(currentFloor) || 1;
 
-  const dc = 10 + currentFloor;
+  const dc = statCheckDifficulty({ floor: currentFloor });
   const conVal = actor.system?.abilities?.con?.value ?? 10;
   const conMod = actor.system?.abilities?.con?.mod ?? getCOGStatModifier(conVal);
   // Resistance check: `check.resist`, `stat.con` and the hazard's own tags (automatic, so only
@@ -151,9 +152,10 @@ export async function applyDamage(actor, rawDamage, options = {}) {
  * @param {string} [params.source=''] - Display label only (source spell or item name); never used for matching
  * @param {string} [params.sourceUuid=''] - UUID of the source item; the key used to match and remove these bars
  * @param {string} [params.element=''] - `element.<type>` tag the bars are limited to; empty = absorb every damage type
+ * @param {string} [params.passTag=''] - a tag whose damage passes the bars by (empty = the bars take every hit)
  * @returns {Promise<COGActor>}
  */
-export async function grantTempBars(actor, { count, hpPerSlot, source = '', sourceUuid = '', element = '' } = {}) {
+export async function grantTempBars(actor, { count, hpPerSlot, source = '', sourceUuid = '', element = '', passTag = '' } = {}) {
   const numCount = Math.max(0, Math.floor(Number(count) || 0));
   const numPerSlot = Math.max(0, Math.floor(Number(hpPerSlot) || 0));
   if (numCount <= 0 || numPerSlot <= 0) {
@@ -165,6 +167,7 @@ export async function grantTempBars(actor, { count, hpPerSlot, source = '', sour
       'system.attributes.hp.tempBars.source': '',
       'system.attributes.hp.tempBars.sourceUuid': '',
       'system.attributes.hp.tempBars.element': '',
+      'system.attributes.hp.tempBars.passTag': '',
       'system.attributes.hp.temp': 0
     });
   }
@@ -177,6 +180,7 @@ export async function grantTempBars(actor, { count, hpPerSlot, source = '', sour
     'system.attributes.hp.tempBars.source': String(source || ''),
     'system.attributes.hp.tempBars.sourceUuid': String(sourceUuid || ''),
     'system.attributes.hp.tempBars.element': normalizeElementTag(element),
+    'system.attributes.hp.tempBars.passTag': String(passTag || ''),
     'system.attributes.hp.temp': totalHp
   });
 }
@@ -459,6 +463,7 @@ export function hasImmunity(actor, damageType) {
  * attacker's `attacker.*` tags and the incoming attack's own tags).
  * Returns { percent, flat, dr, rounding: 'up'|'down', isResistant, isImmune, vulnerable, suppressDr, hbFactor, hbSource, sources }.
  * `hbFactor` (1 when no row) is the largest `healthBarScale` factor: damage reaching the Health Bar is divided by it.
+ * `hbAdd` (0 when no row) is the HP the `healthBarAdd` rows add to each slot, `hbAddSources` their labels.
  * `sources` ({ kind, label }[]) names what applied, for the chat breakdown only: every matching `defenseModifiers`
  * row, plus `{ kind: 'resistance', label: 'Resistant' }` / `{ kind: 'immunity', label: 'Immune' }` for a derived one.
  * `dr` is conditional flat damage resistance, on top of `attributes.dr.total`. `vulnerable`: a matching
@@ -482,7 +487,7 @@ export function getDamageReduction(actor, damageType, context) {
   const sources = [];
   const acc = {
     percent: 0, flat: 0, dr: 0, rounding: 'up', isResistant: actor.hasResistance(damageType) || (elementTag && actor.hasResistance(elementTag)),
-    immune: null, vulnerable: false, suppressDr: false, hbFactor: 1, hbSource: ''
+    immune: null, vulnerable: false, suppressDr: false, hbFactor: 1, hbSource: '', hbAdd: 0, hbAddSources: []
   };
   if (acc.isResistant) {
     acc.percent += 0.5;
@@ -526,6 +531,8 @@ export function getDamageReduction(actor, damageType, context) {
     suppressDr: acc.suppressDr,
     hbFactor: acc.hbFactor,
     hbSource: acc.hbSource,
+    hbAdd: acc.hbAdd,
+    hbAddSources: acc.hbAddSources,
     sources
   };
 }

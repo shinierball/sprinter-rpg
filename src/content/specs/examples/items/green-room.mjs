@@ -135,7 +135,7 @@ export const SPECS = Object.freeze([
       identifier: COLD_OPEN_IDENTIFIER,
       stat: 'cha',
       rank: 0,
-      checkType: 'stat',
+      checkType: 'skill',
       checkNote: 'Unopposed',
       description: '<p>The first thirty seconds in front of a room that has not decided yet. What the three scouts of the Green Room do, and what they look for. A Charisma check, unopposed; they count it as the performance Skill, and a Bard needs it at Rank 10 to meet their criteria.</p>',
       tags: ['skillGroup.social']

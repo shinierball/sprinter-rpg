@@ -12,6 +12,7 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { attackText } from './attack-text.mjs';
+import { DETECTED } from '../../data/rules/attack-situation-rules.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 import { skillRefSlug } from '../skill/weapon-skill-options.mjs';
 
@@ -112,7 +113,8 @@ export function prefill(model, pick) {
     effects: [],
     variant: '',
     maneuvers: [],
-    situations: [],
+    // a stock reason the scene showed (size, an unseen party) starts ticked; a maneuver is a choice and never does
+    situations: (Array.isArray(model?.situations) ? model.situations : []).filter(o => o?.detected === DETECTED.yes).map(o => o.tag),
     calledPlays: (Array.isArray(model?.calledPlays) ? model.calledPlays : []).map(e => e?.id).filter(id => typeof id === 'string'),
     markTarget: pick?.markTarget === 'attack' ? 'attack' : 'effect',
     // the weapon Skill picked last time, only while it is still one of the weapon's options ('' = the default)

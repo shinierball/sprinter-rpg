@@ -4,6 +4,7 @@
  * active GM gets one whisper. Plain text; the token's disposition is never touched.
  */
 import { isActiveGM } from '../utils/gm-relay.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { collectActorTags } from '../documents/active-tags.mjs';
 import { godsFromTags, rivalNoticeLines, rivalsLookup } from '../utils/deity/rivals.mjs';
 import { deityLabel, deityRecords } from '../utils/deity/deity-names.mjs';
@@ -65,5 +66,5 @@ export function registerWorshipNoticeHooks() {
   if (registered) return;
   registered = true;
   globalThis.Hooks?.on?.('createToken', (tokenDoc) => onTokenCreated(tokenDoc));
-  globalThis.Hooks?.on?.('updateItem', (item, changes) => onDeityUpdated(item, changes));
+  globalThis.Hooks?.on?.('updateItem', (item, changes, options) => (isMigrationWrite(options) ? undefined : onDeityUpdated(item, changes)));
 }

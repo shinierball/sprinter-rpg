@@ -6,7 +6,7 @@
 
   {{#if isActorPicker}}
     <span class="cog-bg-warning-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 8px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
-      SELECTING FOR CRAWLER: {{actor.name}}
+      {{#if actor}}SELECTING FOR CRAWLER: {{actor.name}}{{else}}PICKING SKILLS{{/if}}
     </span>
   {{else if isAttackSkillPicker}}
     <span class="cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 8px; border-radius: 3px; font-family: 'Oswald', sans-serif;">

@@ -46,6 +46,7 @@ defineItemSummaryTemplates({
   [`${K}Damage`]: 'Damage: {text}',
   [`${K}Crit`]: 'Critical Hit: {n}x base dice',
   [`${K}IgnoreDR`]: 'Ignores DR',
+  [`${K}AsTriggerFromRank`]: '{text}, from Rank {rank}',
   [`${K}PersistentBuffs`]: 'While equipped, grants: {list}',
   [`${K}PersistentDebuffs`]: 'While equipped, inflicts: {list}',
   [`${K}Heal`]: 'Heals {bars} each round',
@@ -222,7 +223,7 @@ const ignoreDR = {
 const asTriggers = {
   id: 'as-triggers',
   group: 'effect',
-  applies: (item) => (isGear(item) || item?.type === 'attack') && Array.isArray(sysOf(item).asTriggers) && sysOf(item).asTriggers.length > 0,
+  applies: (item) => (isGear(item) || item?.type === 'attack' || item?.type === 'buff') && Array.isArray(sysOf(item).asTriggers) && sysOf(item).asTriggers.length > 0,
   describe: (item, ctx) => {
     const triggers = sysOf(item).asTriggers.filter((x) => x && typeof x === 'object'
       && ((x.type === 'debuff' && str(x.identifier)) || (x.type === 'narrative' && str(x.text))));
@@ -230,7 +231,10 @@ const asTriggers = {
     for (const trig of triggers) {
       if (trig.type === 'debuff' && trig.identifier) found.set(trig.identifier, conditionName('debuffs', trig.identifier, ctx));
     }
-    return asTriggerLines(triggers, { found }).map((l) => itemLine('on-hit', l.text, 'system.asTriggers'));
+    // A buff's row starts at its own Rank (`minRank`); asTriggerLines keeps the order of `triggers`, one line each
+    const ranked = item.type === 'buff' ? triggers.map((x) => num(x.minRank)) : [];
+    return asTriggerLines(triggers, { found }).map((l, i) => itemLine('on-hit',
+      ranked[i] > 0 ? t(`${K}AsTriggerFromRank`, { text: l.text, rank: ranked[i] }) : l.text, 'system.asTriggers'));
   }
 };
 
@@ -310,7 +314,7 @@ const gearHealing = {
 const gearTempBars = {
   id: 'gear-temp-bars',
   group: 'effect',
-  applies: (item) => isGear(item) && sysOf(item).tempBars?.hasTempBars === true && num(sysOf(item).tempBars.hpPerSlot) > 0,
+  applies: (item) => isGear(item) && sysOf(item).tempBars?.hasTempBars === true && (num(sysOf(item).tempBars.hpPerSlot) > 0 || Boolean(str(sysOf(item).tempBars.hpPerSlotStat))),
   describe: (item, ctx) => {
     const tb = sysOf(item).tempBars;
     return [itemLine('heal', tempBarsText(tb, num(tb.hpPerSlot), { actor: ctx?.actor }), 'system.tempBars')];

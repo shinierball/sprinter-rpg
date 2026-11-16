@@ -1,7 +1,7 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
-import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField } from '../fields/effect-fields.mjs';
-import { damageModifiersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, popularityTriggersField, aiFavorRatingsField } from '../fields/modifier-fields.mjs';
-import { cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
+import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField, appliedBuffsField, itemTempBarsField } from '../fields/effect-fields.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, popularityTriggersField, eventTriggersField, aiFavorRatingsField } from '../fields/modifier-fields.mjs';
+import { advancementStateFields, cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
 import { rankBreaksField } from '../../utils/skill/rank-breaks.mjs';
 
 /**
@@ -18,7 +18,7 @@ export class SkillDataModel extends BaseItemDataModel {
       boonBonus: new fields.NumberField({ integer: true, initial: 0 }),
       stat: new fields.StringField({ initial: 'str' }),
       // A CONFIG.COG.checkTypes id (no `choices`: the registry validates, so a module can add one). `checkNote` is the book's wording: human text, never read by a mechanic.
-      checkType: new fields.StringField({ initial: 'stat' }),
+      checkType: new fields.StringField({ initial: 'skill' }),
       checkNote: new fields.StringField({ initial: '' }),
       // The crawler's chosen specialty: one tag id (an item's identity tag or an item type). Read by roll-context as `situation.specialty`.
       specialty: new fields.StringField({ initial: '' }),
@@ -42,6 +42,7 @@ export class SkillDataModel extends BaseItemDataModel {
       upgrades: new fields.StringField({ initial: '' }),
       damageModifiers: damageModifiersField(fields),
       popularityTriggers: popularityTriggersField(fields),
+      eventTriggers: eventTriggersField(fields),
       defenseModifiers: defenseModifiersField(fields),
       attackModifiers: rollModifiersField(fields),
       checkModifiers: rollModifiersField(fields),
@@ -49,12 +50,7 @@ export class SkillDataModel extends BaseItemDataModel {
       vehicleModifiers: vehicleModifiersField(fields),
       rankDamageParts: rankDamagePartsField(fields),
 
-      checked: new fields.BooleanField({ initial: false }),
-      investedHours: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
-      /** World time (seconds) the once-per-grind-day window opened by this skill's last grind check ends. */
-      grindStamp: new fields.SchemaField({
-        expiresAt: new fields.NumberField({ nullable: true, initial: null })
-      }),
+      ...advancementStateFields(fields),
       isTechnique: new fields.BooleanField({ initial: false }),
       // A technique applies to the attacks whose tags (plus their weapon skill's) match this query.
       appliesToQuery: new fields.SchemaField({
@@ -138,12 +134,10 @@ export class SkillDataModel extends BaseItemDataModel {
       light: lightSchemaField(fields),
       rankBreaks: rankBreaksField(fields, rankBreakTimingFields(fields)),
       area: areaSchemaField(fields),
+      // The buffs this item's card applies to people (see appliedBuffsField); an aura's `area.grantedBuffs` is separate.
+      appliedBuffs: appliedBuffsField(fields),
       delivery: new fields.StringField({ initial: 'target' }),
-      tempBars: new fields.SchemaField({
-        hasTempBars: new fields.BooleanField({ initial: false }),
-        slotsFormula: new fields.StringField({ initial: 'con' }),
-        hpPerSlot: new fields.NumberField({ integer: true, min: 0, initial: 2 })
-      }),
+      tempBars: itemTempBarsField(fields, { slotsFormula: 'con', hpPerSlot: 2 }),
       durationConfig: durationConfigField(fields),
       active: new fields.BooleanField({ initial: false }),
       appliedAllyUuids: new fields.ArrayField(new fields.StringField(), { initial: [] }),

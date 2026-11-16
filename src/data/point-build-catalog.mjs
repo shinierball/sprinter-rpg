@@ -132,7 +132,7 @@ export const COG_POINT_BUILD_BENEFITS = [
     category: 'Economy',
     description: 'A money perk: cheaper shop prices, more coin from each sale, or added bank interest. Each of the three is worth +1 and is taken separately.',
     rows: [
-      { path: 'system.tags', row: 'rule.store_discount' }
+      { path: 'system.tags', row: 'perk.store_discount' }
     ]
   },
   {
@@ -268,7 +268,7 @@ export const COG_POINT_BUILD_BENEFITS = [
     category: 'Economy',
     description: 'Pick a signature attack. A mob it kills drops extra gold equal to the Floor Number.',
     rows: [
-      { path: 'system.tags', row: 'rule.kill_bounty' }
+      { path: 'system.tags', row: 'perk.kill_bounty' }
     ]
   },
   {
@@ -445,7 +445,7 @@ export const COG_POINT_BUILD_BENEFITS = [
     category: 'Movement',
     description: 'You can fly, within a limit such as a set distance per scene, or gliding only.',
     rows: [
-      { path: 'system.tags', row: 'rule.flight_limited' }
+      { path: 'system.tags', row: 'perk.flight_limited' }
     ]
   },
   {
@@ -456,7 +456,7 @@ export const COG_POINT_BUILD_BENEFITS = [
     category: 'Defense',
     description: 'You never need to breathe, so inhaled poisons, gases and smothering cannot hurt you.',
     rows: [
-      { path: 'system.tags', row: 'rule.no_breath' }
+      { path: 'system.tags', row: 'perk.no_breath' }
     ]
   },
   {
@@ -694,7 +694,7 @@ export const COG_POINT_BUILD_BENEFITS = [
     category: 'Defense',
     description: 'Lost limbs and damaged organs grow back on their own over time, with no divine healing needed.',
     rows: [
-      { path: 'system.tags', row: 'rule.limb_regeneration' }
+      { path: 'system.tags', row: 'perk.limb_regeneration' }
     ]
   },
   {
@@ -706,7 +706,7 @@ export const COG_POINT_BUILD_BENEFITS = [
     description: 'You take no Poison damage, and no disease, infection or engineered plague can take hold of you.',
     rows: [
       { path: 'system.defenseModifiers', row: { kind: 'immunity', damageType: 'Poison' } },
-      { path: 'system.tags', row: 'rule.immunity_disease' }
+      { path: 'system.tags', row: 'perk.immunity_disease' }
     ]
   },
   {

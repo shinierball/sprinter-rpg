@@ -7,9 +7,10 @@
 
 import { COGCombat } from '../documents/combat.mjs';
 import { COG_ACTION_TYPES } from '../documents/combat/action-ledger.mjs';
+import { metricsOf, roundHistoryOf } from '../documents/combat/combat-flags.mjs';
 import { COGExperienceTracker } from './xp-tracker.mjs';
 import { COGToolApp } from './tool-app.mjs';
-import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
 
 
 export class COGCombatArchiveApp extends COGToolApp {
@@ -73,8 +74,8 @@ export class COGCombatArchiveApp extends COGToolApp {
       for (const c of globalThis.game.combats) {
         if (!archivedCombats.some(a => a.id === c.id)) {
           const scene = c.scene || (globalThis.game?.scenes?.get ? globalThis.game.scenes.get(c.sceneId) : null);
-          const metrics = c.getFlag?.(SYSTEM_ID, 'metrics') || c.flags?.[SYSTEM_ID]?.metrics || {};
-          const roundHistory = c.getFlag?.(SYSTEM_ID, 'roundHistory') || c.flags?.[SYSTEM_ID]?.roundHistory || {};
+          const metrics = metricsOf(c);
+          const roundHistory = roundHistoryOf(c);
 
           const combatantsData = Array.from(c.combatants || []).map(con => {
             const actor = con.actor || (globalThis.game?.actors?.get ? globalThis.game.actors.get(con.actorId) : null);

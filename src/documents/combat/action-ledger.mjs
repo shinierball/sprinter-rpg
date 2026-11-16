@@ -8,22 +8,27 @@
  * - Crawlers get 2 actions per round base; can spend 1 AI Favor once per round for +1 non-Attack Action.
  */
 
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, writeFlag } from '../../utils/flags.mjs';
 import { registerRelayAction, dispatchRelay } from '../../utils/gm-relay.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { actionBlockLines } from '../actor/action-block.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { endsByRoll, settleAfterAction, settleForfeits } from '../actor/condition-expiry.mjs';
 import { bossActionBudget } from '../../data/mob-creation-rules.mjs';
+import { MOUNT_ACTIONS_PER_ROUND } from '../../data/rules/pet-rules.mjs';
+import { isDedicatedMount } from '../../utils/pet/pet-lookup.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS, withRuleBreak } from '../../utils/rule-break.mjs';
 import { combatText } from '../../utils/combat/combat-round-text.mjs';
 import { addAiFavor } from '../../chat/actions/ai-favor-tally.mjs';
 import { findCombatById, isCombatWriter, canWriteCombatant, isMobCombatant } from './combatants.mjs';
-import { CALLED_PLAYS_FLAG } from './called-plays.mjs';
+import { calledPlaysOf, clearCalledPlays } from './called-plays.mjs';
+import { roundHistoryOf, saveRoundHistory } from './combat-flags.mjs';
 
 /** Relay action: a player records an action (e.g. an interrupt) on a Combat only the GM can update. */
 const RECORD_ACTION_RELAY = 'recordCombatantAction';
 const CLEAR_ACTION_RELAY = 'clearCombatantAction';
+const ACTIONS_FLAG = 'actions';
+const MAX_ALLIES_SEEN_FLAG = 'maxCrawlerAlliesSeen';
 const ACTION_DATA_KEYS = ['type', 'label', 'category', 'icon', 'isAttack', 'isInterrupt', 'note', 'slotIndex', 'forfeited'];
 
 function pickActionData(actionData = {}) {
@@ -71,6 +76,31 @@ const deepClone = (obj) => {
   }
   return structuredClone(obj);
 };
+
+/** A combatant's stored Actions for the active round, or null when none are stored. */
+const combatantActionsOf = (combatant) => readFlag(combatant, ACTIONS_FLAG) || null;
+const saveCombatantActions = (combatant, actions) => writeFlag(combatant, ACTIONS_FLAG, actions);
+
+/** Put one combatant's Actions for `round` into the combat's round history (a copy is written, the stored one is not changed). */
+async function recordRoundEntry(combat, round, combatantId, actions) {
+  const history = deepClone(roundHistoryOf(combat));
+  history[round] = history[round] || {};
+  history[round][combatantId] = actions;
+  await saveRoundHistory(combat, history);
+}
+
+/**
+ * A combatant's Actions for a round with nothing stored: none for a mob at step zero, one for anyone else there, a Boss's
+ * budget, one for a dedicated mount (core book p. 233), else two.
+ * @param {{ actor: Actor|null, isMob: boolean, isBoss: boolean, isStepZero: boolean, alliesCount: number }} p
+ * @returns {number}
+ */
+function defaultActionMax({ actor, isMob, isBoss, isStepZero, alliesCount }) {
+  if (isStepZero) return isMob ? 0 : 1;
+  if (isBoss) return bossActionBudget(alliesCount);
+  if (isDedicatedMount(actor)) return MOUNT_ACTIONS_PER_ROUND;
+  return 2;
+}
 
 export const COG_ACTION_TYPES = {
   // Standard Actions
@@ -121,10 +151,10 @@ export function countCrawlerSideAllies(combat) {
  */
 export function getMaxCrawlerAlliesSeen(combat) {
   const current = combat.countCrawlerSideAllies();
-  const stored = Number(combat.getFlag?.(SYSTEM_ID, 'maxCrawlerAlliesSeen') ?? combat.flags?.[SYSTEM_ID]?.maxCrawlerAlliesSeen) || 0;
+  const stored = Number(readFlag(combat, MAX_ALLIES_SEEN_FLAG)) || 0;
   const maxSeen = Math.max(current, stored);
   if (maxSeen > stored && isCombatWriter() && typeof combat.setFlag === 'function') {
-    combat.setFlag(SYSTEM_ID, 'maxCrawlerAlliesSeen', maxSeen).catch?.(() => {});
+    writeFlag(combat, MAX_ALLIES_SEEN_FLAG, maxSeen).catch?.(() => {});
   }
   return maxSeen;
 }
@@ -157,12 +187,12 @@ export function getCombatantActions(combatantOrId, combat = null, round = null) 
   const alliesCount = (combatDoc && typeof combatDoc.getMaxCrawlerAlliesSeen === 'function')
     ? combatDoc.getMaxCrawlerAlliesSeen()
     : 2;
-  const isStepZero = combatDoc && combatDoc.currentStep === 0;
-  const defaultMax = isStepZero ? (isMob ? 0 : 1) : (isBoss ? bossActionBudget(alliesCount) : 2);
+  const isStepZero = Boolean(combatDoc) && combatDoc.currentStep === 0;
+  const defaultMax = defaultActionMax({ actor, isMob, isBoss, isStepZero, alliesCount });
 
   // If querying a past round from history
   if (combatDoc && targetRound !== activeRound) {
-    const history = combatDoc.getFlag?.(SYSTEM_ID, 'roundHistory') || combatDoc.flags?.[SYSTEM_ID]?.roundHistory || {};
+    const history = roundHistoryOf(combatDoc);
     const savedRound = history[targetRound]?.[cId];
     if (savedRound) {
       return {
@@ -182,7 +212,7 @@ export function getCombatantActions(combatantOrId, combat = null, round = null) 
     };
   }
 
-  const saved = c?.getFlag?.(SYSTEM_ID, 'actions') || c?.flags?.[SYSTEM_ID]?.actions || null;
+  const saved = combatantActionsOf(c);
 
   if (saved) {
     return {
@@ -224,12 +254,12 @@ export function hasEvadeAction(combat, combatant, round = null) {
  */
 export async function snapshotRoundActions(combat, round = combat.round) {
   const r = Number(round) || 1;
-  const history = deepClone(combat.getFlag(SYSTEM_ID, 'roundHistory') || {});
+  const history = deepClone(roundHistoryOf(combat));
   history[r] = history[r] || {};
   for (const c of (combat.combatants || [])) {
     history[r][c.id] = combat.getCombatantActions(c);
   }
-  await combat.setFlag(SYSTEM_ID, 'roundHistory', history);
+  await saveRoundHistory(combat, history);
   return history[r];
 }
 
@@ -278,7 +308,8 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
   const budgetCause = `Action budget exceeded (${actions.spent + 1}/${actions.max})`;
   if (overBudget) causes.push(budgetCause);
   // A "no Actions" bearer (Paralyzed, Dying): the same confirm, unless the roll that led here already asked.
-  if (options?.actionBlockChecked !== true) causes.push(...actionBlockLines(actor, type));
+  // An unguided or hiding pet (and a guided one's second attack) asks through the same lines; `hasAttacked` is the viewed round's.
+  if (options?.actionBlockChecked !== true) causes.push(...actionBlockLines(actor, type, { hasAttacked: actions.hasAttacked }));
 
   let ruleBreak = false;
   let ruleBreakReason = '';
@@ -340,22 +371,16 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
   let wroteHere = true;
   if (isCombatWriter()) {
     if (isPastRound) {
-      const history = deepClone(combat.getFlag(SYSTEM_ID, 'roundHistory') || {});
-      history[targetRound] = history[targetRound] || {};
-      history[targetRound][c.id] = updatedActions;
-      await combat.setFlag(SYSTEM_ID, 'roundHistory', history);
+      await recordRoundEntry(combat, targetRound, c.id, updatedActions);
     } else {
-      await c.setFlag(SYSTEM_ID, 'actions', updatedActions);
+      await saveCombatantActions(c, updatedActions);
       // Also sync to active round history
-      const history = deepClone(combat.getFlag(SYSTEM_ID, 'roundHistory') || {});
-      history[targetRound] = history[targetRound] || {};
-      history[targetRound][c.id] = updatedActions;
-      await combat.setFlag(SYSTEM_ID, 'roundHistory', history);
+      await recordRoundEntry(combat, targetRound, c.id, updatedActions);
     }
   } else if (!isPastRound && canWriteCombatant(c)) {
     // The owner records their own combatant's Action locally, so it works with no GM connected (E7.9 §9.5).
     // The roundHistory copy lives on the GM-only Combat; the round-advance snapshot refreshes it.
-    await c.setFlag(SYSTEM_ID, 'actions', updatedActions);
+    await saveCombatantActions(c, updatedActions);
   } else {
     // Only the GM may update a Combat document: ask the active GM to record it (re-validated there).
     wroteHere = false;
@@ -421,21 +446,15 @@ export async function clearCombatantAction(combat, combatantOrId, slotIndex = nu
 
   if (isCombatWriter()) {
     if (isPastRound) {
-      const history = deepClone(combat.getFlag(SYSTEM_ID, 'roundHistory') || {});
-      history[targetRound] = history[targetRound] || {};
-      history[targetRound][c.id] = updatedActions;
-      await combat.setFlag(SYSTEM_ID, 'roundHistory', history);
+      await recordRoundEntry(combat, targetRound, c.id, updatedActions);
     } else {
-      await c.setFlag(SYSTEM_ID, 'actions', updatedActions);
-      const history = deepClone(combat.getFlag(SYSTEM_ID, 'roundHistory') || {});
-      history[targetRound] = history[targetRound] || {};
-      history[targetRound][c.id] = updatedActions;
-      await combat.setFlag(SYSTEM_ID, 'roundHistory', history);
+      await saveCombatantActions(c, updatedActions);
+      await recordRoundEntry(combat, targetRound, c.id, updatedActions);
     }
   } else if (!isPastRound && canWriteCombatant(c)) {
     // The owner clears their own combatant's Action locally (mirrors recordCombatantAction); the
     // GM-only roundHistory copy is refreshed by the round-advance snapshot.
-    await c.setFlag(SYSTEM_ID, 'actions', updatedActions);
+    await saveCombatantActions(c, updatedActions);
   } else {
     // Only the GM may update a Combat document: ask the active GM to clear it (re-validated there).
     const sent = await dispatchRelay(CLEAR_ACTION_RELAY, {
@@ -511,7 +530,7 @@ export async function spendAIFavorBonusAction(combat, combatantOrId, options = {
     updatedActions.ruleBreakReason = reasons.join('; ');
   }
 
-  await c.setFlag(SYSTEM_ID, 'actions', updatedActions);
+  await saveCombatantActions(c, updatedActions);
 
   if (globalThis.ChatMessage?.create) {
     const note = ruleBreak
@@ -549,9 +568,9 @@ export async function resetRoundActions(combat) {
     const isMob = isMobCombatant(c);
     const actor = c.actor || (globalThis.game?.actors?.get ? globalThis.game.actors.get(c.actorId) : null);
     const isBoss = Boolean(actor?.isBoss);
-    const max = isStepZero ? (isMob ? 0 : 1) : (isBoss ? bossActionBudget(alliesCount) : 2);
+    const max = defaultActionMax({ actor, isMob, isBoss, isStepZero, alliesCount });
 
-    await c.setFlag(SYSTEM_ID, 'actions', {
+    await saveCombatantActions(c, {
       max,
       spent: 0,
       bonusActionGranted: false,
@@ -559,10 +578,7 @@ export async function resetRoundActions(combat) {
       slots: []
     });
     // Clean Up ends every Called Play not used this round (E7.9 D7 c; readers also filter by the stored round).
-    const calledPlays = c.getFlag?.(SYSTEM_ID, CALLED_PLAYS_FLAG) ?? c.flags?.[SYSTEM_ID]?.[CALLED_PLAYS_FLAG];
-    if (calledPlays !== undefined && calledPlays !== null && typeof c.unsetFlag === 'function') {
-      await c.unsetFlag(SYSTEM_ID, CALLED_PLAYS_FLAG);
-    }
+    if (calledPlaysOf(c) != null) await clearCalledPlays(c);
   }
   // A Shocked bearer with no Action left last round loses one of the new round's.
   for (const c of (combat.combatants || [])) await settleForfeits(combat, c);

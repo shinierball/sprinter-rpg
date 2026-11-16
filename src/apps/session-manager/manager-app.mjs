@@ -6,6 +6,8 @@ import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { sessionRosterDialogsMixin } from './app-roster-dialogs.mjs';
 import { buildAdvancementControls, runAdvancementControl } from '../advancement-batch.mjs';
 import { openAwardLevels } from '../award-levels-app.mjs';
+import { COGPopularityChecklistApp, buildPopularityControls } from '../popularity-checklist-app.mjs';
+import { postChecklistDue } from '../../documents/actor/popularity-checklist-due.mjs';
 import { buildSecretRows, openRowActor, revealRow, changeRow, cureRow, saveRowNote } from './secrets-tab.mjs';
 import { findCheckMessageByRollId, setCheckDifficulty, askOpposed } from '../../chat/actions/check-difficulty.mjs';
 import { difficultyText, readStandingDifficulty, standingLineText, STANDING_DIFFICULTY_SETTING } from '../../utils/roll/check-difficulty.mjs';
@@ -95,6 +97,7 @@ export class COGSessionManagerApp extends COGToolApp {
       runFloorCheck: COGSessionManagerApp.#onRunFloorCheck,
       runSkillCheck: COGSessionManagerApp.#onRunSkillCheck,
       awardLevels: COGSessionManagerApp.#onAwardLevels,
+      openPopularityChecklist: COGSessionManagerApp.#onOpenPopularityChecklist,
       distributeXP: COGSessionManagerApp.#onDistributeXP,
       broadcastReview: COGSessionManagerApp.#onBroadcastReview,
       openSecret: COGSessionManagerApp.#onOpenSecret,
@@ -315,6 +318,7 @@ export class COGSessionManagerApp extends COGToolApp {
       crawlersList,
       crawlersDropdownList,
       advancementControls,
+      popularityControls: buildPopularityControls({ sessionId: this.#sessionId() || '' }),
       trackedCount,
       allWorldCrawlersCount,
       filterParty: this.filterParty,
@@ -371,6 +375,7 @@ export class COGSessionManagerApp extends COGToolApp {
 
   static async #onEndSession(event, target) {
     await COGSessionEngine.endSession(target.dataset.sessionId);
+    await postChecklistDue('session', { sessionId: target.dataset.sessionId });
     this.render();
   }
 
@@ -576,6 +581,11 @@ export class COGSessionManagerApp extends COGToolApp {
     const all = this.advancementActors ?? [];
     // The card's button offers just that crawler; every crawler still starts unticked.
     await openAwardLevels(id ? all.filter(a => a.id === id) : all);
+  }
+
+  /** GM: open the Popularity checklist on the moment the button names, for the session the tab is showing. */
+  static async #onOpenPopularityChecklist(event, target) {
+    await COGPopularityChecklistApp.open({ moment: target.dataset.moment, sessionId: this.#sessionId() || '' });
   }
 
   /** Wrap-up: distribute session XP, with an optional milestone bonus. */

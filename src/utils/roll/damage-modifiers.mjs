@@ -1,5 +1,5 @@
 import { getItemAllTags } from '../../documents/active-tags.mjs';
-import { identityTag, isTargetSensitiveTag, SAME_SIZE_SITUATION, USE_TAG_PREFIX, useTagFor } from '../../data/tag-vocabulary.mjs';
+import { identityTag, isTargetSensitiveTag, SIZE_SITUATIONS, USE_TAG_PREFIX, useTagFor } from '../../data/tag-vocabulary.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { isWeaponGear } from '../gear/wield-mode.mjs';
 import { floorRowsUsed } from '../floor/floor-row-usage.mjs';
@@ -11,6 +11,8 @@ import { collectItemSources, appendTagSources, hasRuleFlag, RULE_FLAGS } from '.
 import { isGearSuppressed } from '../effects/gear-suppression.mjs';
 import { CHECK_TAGS, WIELD_TAGS, VEHICLE_TAGS, isTechniqueSkill } from '../tag/tag-mechanics.mjs';
 import { driverPenalty } from '../../data/rules/vehicle-rules.mjs';
+import { riderPenalty } from '../../data/rules/pet-rules.mjs';
+import { ridingLabel } from '../pet/pet-riding.mjs';
 import { drivingLabel, itemOwnedByVehicle } from '../vehicle/vehicle-combat.mjs';
 import { ROW_ARRAYS, getRowKind, kindOf, rowKindOf, warnRowKindOnce, applyRowKind } from '../row-kinds.mjs';
 import { actingRank } from '../skill/rank-source.mjs';
@@ -89,21 +91,30 @@ function rowsOf(source, key) {
   return Array.isArray(rows) ? rows : [];
 }
 
-/** The Rank a ranked source is judged at: the higher of its modified and base Rank. */
+/**
+ * The Rank a ranked source is judged at: the higher of its modified and base Rank. An applied buff's is the stored Rank the
+ * spell landed it at, also on a pet (whose own Ranks follow the Floor: `actingRank` would read 0 there).
+ */
 function rankOf(source) {
+  if (source?.type === 'buff') return Number(source.system?.rank) || 0;
   return actingRank(source);
 }
 
-/** A skill's or spell's rows only apply once it reaches the row's `minRank`; other sources ignore it. */
-function meetsMinRank(origin, row) {
+/** A skill or spell has a Rank; so does a buff a Skill or spell applied (`system.rank` above 0). */
+function isRanked(source) {
+  return isRankedItem(source) || (source?.type === 'buff' && rankOf(source) > 0);
+}
+
+/** A ranked source's rows only apply once it reaches the row's `minRank`; other sources ignore it. */
+export function meetsMinRank(origin, row) {
   // A tag source is judged on its carrier (E4.0 R13).
   const source = origin.carrier ?? origin;
-  if (!isRankedItem(source)) return true;
+  if (!isRanked(source)) return true;
   return rankOf(source) >= (Number(row.minRank) || 0);
 }
 
-/** The row arrays whose rows honour `scope` (E8.7): the roll arrays. Defense, mana cost and the rest are not tied to an action. */
-export const SCOPED_ARRAYS = new Set(['damageModifiers', 'attackModifiers', 'checkModifiers', 'craftModifiers']);
+/** The row arrays whose rows honour `scope` (E8.7): the roll arrays and `use` event triggers. Defense, mana cost and the rest are not tied to an action. */
+export const SCOPED_ARRAYS = new Set(['damageModifiers', 'attackModifiers', 'checkModifiers', 'craftModifiers', 'eventTriggers']);
 
 /**
  * Sources whose rows can be scoped to themselves (E8.7): skills, spells, attack items, and gear that is a weapon
@@ -143,6 +154,8 @@ function isActionOf(source, context) {
  */
 export function rowAppliesToAction(source, row, key, context) {
   if (!SCOPED_ARRAYS.has(key) || row?.scope === 'owner' || !isScopedSource(source)) return true;
+  // An event trigger is tied to an action only when the event is a use of one (a kill row on a skill stays owner-wide)
+  if (key === 'eventTriggers' && row?.event !== 'use') return true;
   return isActionOf(source, context);
 }
 
@@ -159,9 +172,10 @@ function meetsMaxRank(source, row, ctxItem) {
   const max = row.maxRank;
   if (max === null || max === undefined || max === '' || !Number.isFinite(Number(max))) return true;
   const carrier = source.carrier ?? source;
-  // A spell's or technique's own row is judged on its own Rank (a technique is not the weapon skill the roll is for);
-  // any other row on the roll's skill (else the carrying skill).
-  const own = carrier.type === 'spell' || (carrier.type === 'skill' && isTechniqueSkill(carrier));
+  // A spell's or technique's own row is judged on its own Rank (a technique is not the weapon skill the roll is for), and
+  // so is an applied buff's (Rank above 0: its Move row stops at the Rank the spell reached); any other row on the roll's
+  // skill (else the carrying skill). A buff with Rank 0 was never applied and keeps the roll's skill.
+  const own = carrier.type === 'spell' || (carrier.type === 'skill' && isTechniqueSkill(carrier)) || (carrier.type === 'buff' && rankOf(carrier) > 0);
   const skill = own ? carrier : (ctxItem?.type === 'skill' ? ctxItem : (carrier.type === 'skill' ? carrier : null));
   if (!skill) return true;
   // A row on the roll's skill is judged at the stored Rank, held back by a Rank past the soft cap that is not yet active
@@ -280,6 +294,7 @@ export function evaluateRows(actor, key, context, opts = {}) {
  *   multiplierSources: Array<string>,
  *   suppressStat: boolean,
  *   suppressStatTypes: Set<string>,
+ *   retype: { type: string, label: string }|null,
  *   appliedKeys: Array<string>,
  *   targetRows: Array<object>,
  *   targetAddParts: Array<object>
@@ -327,8 +342,8 @@ export function collectDamageModifiers(actor, context, { primaryType: primary, s
     if (applyRowKind('damageModifiers', def, 'damage', acc, row, { ...ctx, serial: acc.addParts.length })) appliedKeys.push(rowKey);
   }
 
-  const { addParts, multipliers, multiplierSources, suppressStat, suppressStatTypes } = acc;
-  return { addParts, multipliers, multiplierSources, suppressStat, suppressStatTypes, appliedKeys, targetRows, targetAddParts };
+  const { addParts, multipliers, multiplierSources, suppressStat, suppressStatTypes, retype = null } = acc;
+  return { addParts, multipliers, multiplierSources, suppressStat, suppressStatTypes, retype, appliedKeys, targetRows, targetAddParts };
 }
 
 /**
@@ -346,6 +361,20 @@ export function applyStatSuppression(parts, dmod) {
     const type = String(p.type || 'Physical').toLowerCase().trim();
     if (dmod.suppressStat || dmod.suppressStatTypes.has(type)) p.statMod = 0;
   }
+  return parts;
+}
+
+/**
+ * A `retype` row declares all the matching damage one type (the last row in evaluation order wins): every part takes it, so
+ * Resistance and Vulnerability at apply see the new type. Mutates and returns `parts`.
+ *
+ * @param {Array<object>} parts
+ * @param {{ retype?: { type: string, label: string }|null }} dmod - collectDamageModifiers result
+ * @returns {Array<object>}
+ */
+export function applyRetype(parts, dmod) {
+  if (!dmod?.retype) return parts;
+  for (const p of parts) p.type = dmod.retype.type;
   return parts;
 }
 
@@ -460,6 +489,10 @@ export function collectRollAdvantage(actor, context, { isAttack = false, floorRo
   })) {
     acc.disadvantages.push(drivingLabel(actor));
   }
+  // The rider in control of a mount rolls Attack Skill Checks with Disadvantage, unless a matched `waive` row names it (Riding Rank 5).
+  if (tags.has(VEHICLE_TAGS.riding) && riderPenalty({ tags, isAttack, waived: waive.waived })) {
+    acc.disadvantages.push(ridingLabel(actor));
+  }
   return acc;
 }
 
@@ -467,8 +500,8 @@ export function collectRollAdvantage(actor, context, { isAttack = false, floorRo
 function isOfferableSituation(tag, withSubjects = true) {
   if (typeof tag !== 'string') return false;
   if (tag.startsWith('subject.')) return withSubjects && tag.length > 'subject.'.length;
-  // Same size is the target's too: a targeted roll answers it per target, only an untargeted roll offers the toggle.
-  if (tag === SAME_SIZE_SITUATION) return withSubjects;
+  // The size situations are the target's too: a targeted roll answers them per target, only an untargeted roll offers the toggle.
+  if (SIZE_SITUATIONS.includes(tag)) return withSubjects;
   return tag.startsWith('situation.') && getTagDefinition(tag)?.engine !== true;
 }
 
@@ -583,7 +616,7 @@ export function collectCraftModifiers(actor, context, { extraSources = [] } = {}
  * @returns {{ adds: Array<number>, multipliers: Array<number>, breakdown: Array<string> }}
  */
 export function collectVehicleModifiers(vehicle, context, { extraSources = [] } = {}) {
-  const acc = { adds: [], multipliers: [], breakdown: [] };
+  const acc = { adds: [], multipliers: [], sets: {}, breakdown: [] };
   for (const { source, row, scale } of evaluateRows(vehicle, 'vehicleModifiers', context, { extraSources })) {
     const def = getRowKind('vehicleModifiers', kindOf('vehicleModifiers', row));
     if (!def) continue;
@@ -696,6 +729,43 @@ export function collectIncomingAdvantage(target, defenseContext) {
     const def = getRowKind('defenseModifiers', kindOf('defenseModifiers', row));
     if (!def?.apply?.incoming) continue;
     applyRowKind('defenseModifiers', def, 'incoming', acc, row, { actor: target, source, context: defenseContext, label: row.label || source.name || 'Attacked' });
+  }
+  return acc;
+}
+
+/**
+ * The DR the target's `paidDr` rows offer for a resource spent on a hit, one entry per matching row. The caller asks how many
+ * points to spend and multiplies; nothing is written here.
+ * @param {object} target - the one hit
+ * @param {object} defenseContext - the `defense` RollContext built as for `collectIncomingAdvantage`
+ * @returns {Array<{ label: string, resource: string, dr: number }>}
+ */
+export function collectPaidDr(target, defenseContext) {
+  const acc = [];
+  if (!target || !defenseContext) return acc;
+  for (const { source, row, key } of evaluateRows(target, 'defenseModifiers', defenseContext)) {
+    const def = getRowKind('defenseModifiers', kindOf('defenseModifiers', row));
+    if (!def?.apply?.paid) continue;
+    applyRowKind('defenseModifiers', def, 'paid', acc, row, { actor: target, source, context: defenseContext, key, label: row.label || source.name || 'Paid DR' });
+  }
+  return acc;
+}
+
+/**
+ * The `spellBaseCap` rows a hit meets: damage the bearer takes only down to the attacking spell's Rank 1 base. Rows are
+ * judged against the hit's own defence context, so a row's condition (`kind.spell`) decides which hits are cut.
+ *
+ * @param {object} target - the defender
+ * @param {object} defenseContext - the `defense` RollContext built as for `collectPaidDr`
+ * @returns {Array<{ label: string }>}
+ */
+export function collectDamageCaps(target, defenseContext) {
+  const acc = [];
+  if (!target || !defenseContext) return acc;
+  for (const { source, row, key } of evaluateRows(target, 'defenseModifiers', defenseContext)) {
+    const def = getRowKind('defenseModifiers', kindOf('defenseModifiers', row));
+    if (!def?.apply?.cap) continue;
+    applyRowKind('defenseModifiers', def, 'cap', acc, row, { actor: target, source, context: defenseContext, key, label: row.label || source.name || 'Rank 1 base cap' });
   }
   return acc;
 }

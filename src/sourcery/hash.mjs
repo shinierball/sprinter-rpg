@@ -49,7 +49,7 @@ export function sha256(text) {
 }
 
 /**
- * The verification hash of a field's hydrated text: the first 16 hex characters of the SHA-256 of the text with
+ * The verification hash of a field's book text (before any rendering, see `checkOf` in hydrator.mjs): the first 16 hex characters of the SHA-256 of the text with
  * every run of whitespace collapsed to one space, so a changed word or punctuation mark reads as a difference and a line
  * break does not. The recipe carries it as `check[path]`; the importer compares the text it hydrated against it.
  */

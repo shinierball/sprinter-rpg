@@ -111,8 +111,10 @@ export function parseUpgradeTextToRankBreak(text, knownDebuffs = []) {
   }
 
   // 4. Debuff match against known canonical debuffs (data-driven). A match stores the debuff's identifier when the list gives one.
+  // A debuff the text hangs on an Amazing Success belongs to the attack roll (a buff's Amazing Success trigger), not to the
+  // cast or use itself, so it is not an unconditional rank-break debuff.
   const debuffList = Array.isArray(knownDebuffs) && knownDebuffs.length > 0 ? knownDebuffs : catalogDebuffRefs();
-  for (const known of debuffList) {
+  for (const known of /\bon\s+an?\s+Amazing\s+Success\b/i.test(t) ? [] : debuffList) {
     const { name: dName, ref } = knownDebuff(known);
     if (!dName.trim()) continue;
     // Debuff names come from world items, so they may hold regex syntax ("[claude] Dazed", "Hex (Minor)").

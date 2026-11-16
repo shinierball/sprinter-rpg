@@ -5,7 +5,7 @@
     <div class="cog-banner-header">
       <span>SKILLS</span>
       <div style="display: flex; gap: 12px; align-items: center;">
-        {{#if bankedGrindHours}}
+        {{#if (and bankedGrindHours (not isPet))}}
           <span class="cog-badge cog-bg-window cog-text-gold" style="border: 1px solid var(--cog-gold); font-size: 11px; padding: 2px 7px; text-transform: uppercase;" title="Banked Grinding Hours Pool">
             <i class="fa-solid fa-vault"></i> Pool: <strong>{{bankedGrindHours}} hrs</strong>
           </span>
@@ -41,7 +41,7 @@
         {{#each skills as |skill|}}
           <tr class="draggable {{#if skill.isGranted}}cog-bg-warning-tint{{/if}}" data-item-id="{{skill.id}}" draggable="true">
             <td style="text-align: center;">
-              {{#if (or skill.isGranted skill.isCore)}}
+              {{#if (or skill.isGranted skill.isCore ../isPet)}}
                 <span class="cog-text-secondary" style="font-size: 11px;">—</span>
               {{else if skill.useLocked}}
                 <i class="fa-solid fa-lock cog-text-secondary cog-skill-lock" title="{{skill.advanceNote}}. Using this skill does not mark it for advancement at this Rank." data-tooltip="{{skill.advanceNote}}"></i>
@@ -93,6 +93,8 @@
                 <span class="cog-text-secondary" style="font-size: 11px;">—</span>
               {{else if skill.isGranted}}
                 <span class="cog-text" style="font-size: 11px;" title="Base Rank 0 (Granted by gear)">0</span>
+              {{else if ../isPet}}
+                <span class="cog-text" style="font-size: 11px;" title="Rank = Floor">{{skill.baseRank}}</span>
               {{else}}
                 <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.rank" value="{{skill.baseRank}}" style="width: 32px; text-align: center;" title="Base Trained Rank (Rank 0 = Untrained)" />
               {{/if}}
@@ -160,17 +162,8 @@
                 <span class="cog-text" style="font-size: 11px; font-style: italic;">{{skill.system.notes}}</span>
               {{else}}
                 <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{skill.system.notes}}" placeholder="Notes..." />
-                {{#if (and (not skill.isCore) (or skill.investedHours ../bankedGrindHours skill.canAdvance))}}
-                  <div class="cog-skill-grind-inline" style="display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 10px;">
-                    <span class="{{#if skill.canAdvance}}cog-text-success{{else}}cog-text-warning{{/if}}" style="font-weight: bold;" title="Invested Hours / Required: {{skill.investedHours}} / {{skill.requiredGrindHours}} hrs">
-                      ⏳ {{skill.investedHours}}/{{skill.requiredGrindHours}}h
-                    </span>
-                    {{#if ../bankedGrindHours}}
-                      <button type="button" class="cog-dim-when-disabled cog-bg-surface-strong cog-text-strong" data-action="allocateGrindHours" data-skill-id="{{skill.id}}" data-mode="sub" {{#unless skill.canSubHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-panel-border); border-radius: 2px; cursor: pointer;" title="Remove 1 hour back to pool">-1</button>
-                      <button type="button" class="cog-dim-when-disabled cog-bg-success-fill cog-text-on-fill" data-action="allocateGrindHours" data-skill-id="{{skill.id}}" data-mode="add" {{#unless skill.canAddHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-success-fill); border-radius: 2px; cursor: pointer;" title="Allocate 1 hour from pool">+1</button>
-                      <button type="button" class="cog-dim-when-disabled cog-bg-info-fill cog-text-on-fill" data-action="allocateGrindHours" data-skill-id="{{skill.id}}" data-mode="max" {{#unless skill.canAddHour}}disabled{{/unless}} style="padding: 0 4px; font-size: 9px; line-height: 14px; border: 1px solid var(--cog-info-fill); border-radius: 2px; cursor: pointer;" title="Fill to required hours">Fill</button>
-                    {{/if}}
-                  </div>
+                {{#if (and (not skill.isCore) (not ../isPet))}}
+                  {{> "systems/sprinter-rpg/templates/actors/parts/grind-strip.hbs" row=skill bankedGrindHours=../bankedGrindHours}}
                 {{/if}}
               {{/if}}
             </td>
@@ -190,17 +183,15 @@
                     <i class="fa-solid fa-burst"></i>
                   </button>
                 {{/if}}
-                {{#unless skill.isCore}}
+                {{#unless (or skill.isCore ../isPet)}}
                   <button type="button" class="cog-attack-roll-btn cog-bg-success-fill cog-text-on-fill" data-action="advanceSkill" data-skill-id="{{skill.id}}" data-tooltip="Test Skill Advancement: Roll 1d20 &ge; {{skill.advancementTarget}}{{#unless skill.canAdvance}} (needs {{skill.neededHours}} more grind hrs: a Rule Break){{/unless}}" style="font-size: 10px; padding: 2px 6px;">
                     <i class="fa-solid fa-graduation-cap"></i>
                   </button>
                 {{/unless}}
-                {{#unless (or skill.isGranted skill.isCore)}}
-                  <button type="button" class="cog-attack-roll-btn cog-bg-info-fill cog-text-on-fill" data-action="advancementCheck" data-item-id="{{skill.id}}" data-tooltip="Skill Advancement Check: roll d20 &ge; Rank {{skill.baseRank}}. Clears the Used mark." style="font-size: 10px; padding: 2px 6px;">
-                    <i class="fa-solid fa-chart-line"></i>
-                  </button>
+                {{#unless (or skill.isGranted skill.isCore ../isPet)}}
+                  {{> "systems/sprinter-rpg/templates/actors/parts/advancement-check-button.hbs" row=skill}}
                 {{/unless}}
-                {{#if skill.isChecked}}
+                {{#if (and skill.isChecked (not ../isPet))}}
                   <button type="button" class="cog-attack-roll-btn cog-bg-warning-fill cog-text-on-fill" data-action="grindSkill" data-item-id="{{skill.id}}" data-tooltip="Grind this skill: Rank {{skill.baseRank}} requires {{skill.requiredGrindHours}} hrs (Target: d20 &ge; {{skill.advancementTarget}})" style="font-size: 10px; padding: 2px 6px;">
                     <i class="fa-solid fa-dumbbell"></i>
                   </button>

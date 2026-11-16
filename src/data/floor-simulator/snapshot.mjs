@@ -125,7 +125,8 @@ export function derivedStatsFromPayload(payload) {
     const unenhanced = resolveBaseScore(payload?.system?.abilities?.[key]);
     const buffFlat = (buffs.stats[key] || 0) + (debuffs.stats[key] || 0);
     const buffPct = (buffs.pct[key] || 0) + (debuffs.pct[key] || 0);
-    const { gearBonus, buffBonus } = statBonuses(unenhanced, gear.stats[key], buffFlat, buffPct);
+    const buffEarly = (buffs.early[key] || 0) + (debuffs.early[key] || 0);
+    const { gearBonus, buffBonus } = statBonuses(unenhanced, gear.stats[key], buffFlat, buffPct, buffEarly);
     const value = unenhanced + gearBonus + buffBonus;
     abilities[key] = { unenhanced, value, mod: getCOGStatModifier(value), statCap: caps[key] ?? null, gearBonus, buffBonus };
   }

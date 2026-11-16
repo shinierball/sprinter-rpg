@@ -13,7 +13,10 @@ import { buildRollContext, actionTagsOf, roleTagsOf, parseRollContext, retargetC
 import { resolveTargetParts, resolveApplyRows, breakdownLines, multiplierOf, critAmountOf } from '../../utils/damage/per-target-damage.mjs';
 import { clickTargetsOf } from '../../utils/roll/scalars.mjs';
 import { damageTypeToElement, ENGINE_SITUATIONS, normalizeElementTag } from '../../data/tag-vocabulary.mjs';
+import { getHpPerBar } from '../combat-metrics.mjs';
 import { amazingNames } from '../../utils/roll/amazing-success.mjs';
+
+const HB_PRECISION = 1e9;
 
 /**
  * The DR that still counts against Armor-Piercing damage: the `drBonus` of equipped gear carrying the Anti-Piercing
@@ -144,7 +147,7 @@ export function typeEntriesFor(targetActor, { damageBuckets, factors, defenseCon
   let anyImmune = false;
   let anyResistant = false;
   let conditionalDr = 0;
-  const healthBar = { factor: 1, source: '' };
+  const healthBar = { factor: 1, source: '', add: 0, addSource: '' };
   const entries = [];
   for (const [dt, rawAmt] of Object.entries(damageBuckets)) {
     const scaled = Math.max(0, Math.floor((Number(rawAmt) || 0) * mult * evadeMult));
@@ -162,6 +165,7 @@ export function typeEntriesFor(targetActor, { damageBuckets, factors, defenseCon
       entry.flat = Number(red.flat) || 0;
       entry.rounding = red.rounding;
       if ((Number(red.hbFactor) || 1) > healthBar.factor) Object.assign(healthBar, { factor: Number(red.hbFactor), source: red.hbSource || '' });
+      if ((Number(red.hbAdd) || 0) > healthBar.add) Object.assign(healthBar, { add: Number(red.hbAdd), addSource: (red.hbAddSources ?? []).join(', ') });
     } else if (typeof targetActor.hasImmunity === 'function' && targetActor.hasImmunity(dt)) {
       entry.isImmune = true;
     } else if (typeof targetActor.hasResistance === 'function' && targetActor.hasResistance(dt)) {
@@ -179,7 +183,37 @@ export function typeEntriesFor(targetActor, { damageBuckets, factors, defenseCon
   if (floorEntry) floorEntry.initialAmt += evadeFloorBonus + amazingFloor;
   const floorImmune = evadeFloorBonus > 0 && !floorEntry;
   const amazingImmune = amazingFloor > 0 && !floorEntry;
+  // `healthBarAdd` rows: each slot holds `add` more HP, so the damage reaching the bar shrinks by (HP per slot + add) / HP per slot
+  if (healthBar.add > 0) {
+    const hpPerBar = getHpPerBar(targetActor);
+    healthBar.scale = healthBar.factor;
+    // Rounded down to nine places so a division that is a whole number of slots is never one slot short
+    healthBar.factor = Math.floor((healthBar.factor * (hpPerBar + healthBar.add) / hpPerBar) * HB_PRECISION) / HB_PRECISION;
+  }
   return { entries, conditionalDr, anyImmune, anyResistant, floorImmune, amazingImmune, healthBar };
+}
+
+/**
+ * Cut a hit down to `cap` (a spell's Rank 1 base), after the multipliers, the Evade and the Floor bonuses and before DR.
+ * Trims `initialAmt` from the last damage type the target is not immune to, backwards, until the types sum to the cap; the
+ * first type (the card's base type) is kept first. A hit already at or under the cap is left alone ("down to" never raises).
+ * @param {object[]} entries `typeEntriesFor` entries (mutated)
+ * @param {number} cap
+ * @returns {{ capped: boolean, before: number, after: number }} the sums of the non-immune types before and after
+ */
+export function capEntries(entries, cap) {
+  const limit = Math.max(0, Math.floor(Number(cap) || 0));
+  const live = entries.filter(e => !e.isImmune);
+  const before = live.reduce((sum, e) => sum + e.initialAmt, 0);
+  let excess = before - limit;
+  if (excess <= 0) return { capped: false, before, after: before };
+  for (const e of [...live].reverse()) {
+    const cut = Math.min(excess, e.initialAmt);
+    e.initialAmt -= cut;
+    excess -= cut;
+    if (excess <= 0) break;
+  }
+  return { capped: true, before, after: limit };
 }
 
 /**
@@ -218,7 +252,7 @@ export function totalDrFor(targetActor, { ignoreDR, slotMode, extraDr, condition
 export function spendDr(entries, dr) {
   const typeBreakdown = {};
   const drRank = e => e.vulnerable ? 0 : (e.percent > 0 || e.legacyHalf || e.isResistant) ? 2 : e.flat > 0 ? 3 : 1;
-  let drLeft = dr;
+  let drLeft = Math.max(0, dr); // DR below 0 spends as 0: it never makes damage larger
   for (const e of entries.map((entry, i) => ({ entry, i })).sort((a, b) => drRank(a.entry) - drRank(b.entry) || a.i - b.i).map(x => x.entry)) {
     e.drUsed = 0;
     if (e.isImmune || e.suppressDr) continue;
@@ -263,10 +297,11 @@ export function spendDr(entries, dr) {
  * @param {boolean} params.slotMode
  * @param {number} params.slotsToLose
  * @param {number} params.hpPerBar
+ * @param {Iterable<string>} [params.attackTags] the hit's tags; a pool with a `passTag` the hit carries is passed by (empty when the shield rules are off)
  * @returns {object} every pool number the result and the update need; `damageAfterDR` is the slot-mode overwrite when
  *   the hit is a slot loss
  */
-export function spendHpPools(targetActor, { damageAfterDR, typeBreakdown, slotMode, slotsToLose, hpPerBar }) {
+export function spendHpPools(targetActor, { damageAfterDR, typeBreakdown, slotMode, slotsToLose, hpPerBar, attackTags = [] }) {
   const tb = targetActor.system?.attributes?.hp?.tempBars;
   let tbCount = Number(tb?.count) || 0;
   const tbHpPerSlot = Number(tb?.hpPerSlot) || 0;
@@ -282,6 +317,12 @@ export function spendHpPools(targetActor, { damageAfterDR, typeBreakdown, slotMo
       .filter(([dt]) => damageTypeToElement(dt) === tbElement)
       .reduce((sum, [, row]) => sum + (Number(row.final) || 0), 0);
     passedDamage = damageAfterDR - absorbableDamage;
+  }
+  // A pool with a `passTag` (non-magic only: `kind.spell`) lets a hit carrying that tag go by whole, to the regular bars.
+  const tbPassTag = hasTempBars && !slotMode ? String(tb?.passTag ?? '').trim() : '';
+  if (tbPassTag && new Set(attackTags).has(tbPassTag)) {
+    absorbableDamage = 0;
+    passedDamage = damageAfterDR;
   }
 
   let tempBarsRemainingHp = 0;
@@ -381,6 +422,7 @@ export function hpPoolUpdates(targetActor, pools, before) {
       actorUpdates['system.attributes.hp.tempBars.source'] = '';
       actorUpdates['system.attributes.hp.tempBars.sourceUuid'] = '';
       actorUpdates['system.attributes.hp.tempBars.element'] = '';
+      actorUpdates['system.attributes.hp.tempBars.passTag'] = '';
     }
   }
   const after = {
@@ -393,7 +435,8 @@ export function hpPoolUpdates(targetActor, pools, before) {
         hpPerSlot: tbHpPerSlot,
         source: tbCount === 0 ? '' : before.tempBars.source,
         sourceUuid: tbCount === 0 ? '' : before.tempBars.sourceUuid,
-        element: tbCount === 0 ? '' : before.tempBars.element
+        element: tbCount === 0 ? '' : before.tempBars.element,
+        passTag: tbCount === 0 ? '' : before.tempBars.passTag
       }
       : null
   };
@@ -416,7 +459,9 @@ export function perTargetRecord({ stageA, card, retargeted, factors, isCrit, typ
     amazing: amazingOn ? { ...amazingRecord, triggers: amazing.triggers, found: amazingNames(amazing.triggers) } : null
   });
   if (interruptDr > 0) lines.push({ stage: 'dr', text: `+${interruptDr} DR${extraDrLabel ? ` (${String(extraDrLabel).slice(0, 40)})` : ''}` });
-  if (healthBar && healthBar.factor > 1 && !slotMode) lines.push({ stage: 'dr', text: `Health Bars ×${healthBar.factor}${healthBar.source ? ` (${String(healthBar.source).slice(0, 40)})` : ''}` });
+  const scaleFactor = healthBar?.scale ?? healthBar?.factor ?? 1;
+  if (healthBar && scaleFactor > 1 && !slotMode) lines.push({ stage: 'dr', text: `Health Bars ×${scaleFactor}${healthBar.source ? ` (${String(healthBar.source).slice(0, 40)})` : ''}` });
+  if (healthBar && healthBar.scale !== undefined && !slotMode) lines.push({ stage: 'dr', text: `Health Bar slots +${healthBar.add} HP${healthBar.addSource ? ` (${String(healthBar.addSource).slice(0, 40)})` : ''}` });
   if (slotMode) lines.push({ stage: 'crit', text: `Lost ${slotsToLose} Health Bar slot${slotsToLose === 1 ? '' : 's'}` });
   const evadeRecord = evade ? { messageId: evade.messageId ?? null, outcome: evade.outcome, multiplier: evade.multiplier, floorBonus: evadeDouble === 2 ? 0 : Number(evade.floorBonus) || 0, double: evade.double === true, ignored: Boolean(evade.ignored), rolls: evade.rolls ?? 1 } : null;
   // This target's context: its subject.* tags, the button's crit, and the rows that went into its numbers (frozen

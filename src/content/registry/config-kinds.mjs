@@ -20,6 +20,7 @@ import { USED_FORMS, usedFormDefProblem, registerUsedForm as registerUsedFormDef
 import { LOOT_GENERATORS, lootGeneratorDefProblem, registerLootGenerator as registerLootGeneratorDef } from '../../data/rules/loot-generators.mjs';
 import { MAGIC_ITEM_BASES, magicItemBaseDefProblem, registerMagicItemBase as registerMagicItemBaseDef } from '../../data/rules/magic-item-bases.mjs';
 import { ENCHANTMENT_CATEGORIES, enchantmentCategoryDefProblem, registerEnchantmentCategory as registerEnchantmentCategoryDef } from '../../data/rules/crafting-rules.mjs';
+import { POPULARITY_CHANGES, popularityChangeDefProblem, registerPopularityChange as registerPopularityChangeDef } from '../../data/rules/popularity-changes.mjs';
 import { HERITAGES, HERITAGE_TAG_PREFIX, heritageDefProblem, registerHeritage as registerHeritageDef } from '../../data/rules/heritages.mjs';
 
 /** @returns {string|null} why a boss tier definition is refused, or null */
@@ -44,6 +45,7 @@ const KINDS = Object.freeze({
   lootGenerator: { name: 'registerLootGenerator', config: 'lootGenerators', table: LOOT_GENERATORS, problem: lootGeneratorDefProblem, apply: (reg, def) => registerLootGeneratorDef(def) },
   magicItemBase: { name: 'registerMagicItemBase', config: 'magicItemBases', table: MAGIC_ITEM_BASES, problem: magicItemBaseDefProblem, apply: (reg, def) => registerMagicItemBaseDef(def) },
   enchantmentCategory: { name: 'registerEnchantmentCategory', config: 'enchantmentCategories', table: ENCHANTMENT_CATEGORIES, problem: enchantmentCategoryDefProblem, apply: (reg, def) => registerEnchantmentCategoryDef(def) },
+  popularityChange: { name: 'registerPopularityChange', config: 'popularityChanges', table: POPULARITY_CHANGES, problem: popularityChangeDefProblem, apply: (reg, def) => registerPopularityChangeDef(def) },
   heritage: {
     name: 'registerHeritage', config: 'heritages', table: HERITAGES, problem: heritageDefProblem,
     // The derived `heritage.<id>` tag goes first, so tag pickers and `requires` queries know it.
@@ -185,8 +187,9 @@ export function resetConfigKinds(reg) {
  * Register a tag directly into the system tag registry and TagIndex.
  * @param {object} reg
  * @param {object} tagDef - { id: string, label: string, namespace: string, description?: string, descriptive?: boolean,
- *   rows?: object, flags?: string[] }. `descriptive: true` marks a tag with no engine reader; its `description` is the
- *   rules text the sheet shows. `rows` / `flags` give the tag behaviour.
+ *   rows?: object, flags?: string[] }. `descriptive: true` marks a tag that carries no rows or flags: the system applies
+ *   nothing for it; a requirement or query may still match it like any tag. Its `description` is the rules text the
+ *   sheet shows. `rows` / `flags` give the tag behaviour.
  * @param {{ priority?: number }} [opts] a higher priority replaces an existing definition of the id (core is 0,
  *   the default 10); `reset()` restores the replaced one
  * @returns {boolean} whether the definition took effect
@@ -337,4 +340,17 @@ export function registerEnchantmentCategory(reg, def, opts) {
  */
 export function registerHeritage(reg, def, opts) {
   return registerConfigKind(reg, 'heritage', def, opts);
+}
+
+/**
+ * Register a standard Popularity change (the book's checklist): delegates to `registerPopularityChange`
+ * (`CONFIG.COG.popularityChanges[id]`) under the priority rule.
+ * @param {object} reg
+ * @param {{ id: string, label: string, moment: 'session'|'day'|'floor', value: number, floors?: { min?: number|null, max?: number|null },
+ *   oncePer?: string, pretick?: (facts: object) => { ticked: boolean, hint: string } }} def
+ * @param {{ priority?: number }} [opts]
+ * @returns {boolean}
+ */
+export function registerPopularityChange(reg, def, opts) {
+  return registerConfigKind(reg, 'popularityChange', def, opts);
 }

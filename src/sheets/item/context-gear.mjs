@@ -15,7 +15,7 @@ import { buildWeaponContext } from './context-weapon.mjs';
 /** Gear row arrays whose rows a cooldown can gate (a once-per-scene modifier). */
 const COOLDOWN_ROW_FIELDS = Object.freeze([
   'damageModifiers', 'defenseModifiers', 'attackModifiers', 'checkModifiers', 'craftModifiers', 'vehicleModifiers',
-  'manaCostModifiers', 'recoveryModifiers', 'statSubstitutions', 'popularityTriggers', 'asTriggers'
+  'manaCostModifiers', 'recoveryModifiers', 'statSubstitutions', 'popularityTriggers', 'eventTriggers', 'asTriggers'
 ]);
 
 const listString = (raw) => (Array.isArray(raw) ? raw.join(', ') : (raw || ''));

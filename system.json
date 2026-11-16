@@ -2,10 +2,10 @@
   "id": "sprinter-rpg",
   "title": "Sprinter RPG",
   "description": "A Foundry VTT system for crawler-style dungeon roleplaying games.",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "url": "https://github.com/shinierball/sprinter-rpg",
   "manifest": "https://github.com/shinierball/sprinter-rpg/releases/latest/download/system.json",
-  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v8.0.0/sprinter-rpg.zip",
+  "download": "https://github.com/shinierball/sprinter-rpg/releases/download/v8.1.0/sprinter-rpg.zip",
   "socket": true,
   "relationships": {
     "requires": [
@@ -129,7 +129,8 @@
     "styles/huds.css",
     "styles/apps-creators.css",
     "styles/apps-journal.css",
-    "styles/apps-mob-creator.css",
+    "styles/apps-shared-chips.css",
+    "styles/apps-mob-creator-v2.css",
     "styles/utilities.css",
     "styles/apps-floor-vehicle.css",
     "styles/loot-box.css"

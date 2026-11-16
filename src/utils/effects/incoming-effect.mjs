@@ -14,13 +14,15 @@ const namespaceOf = (tag) => String(tag).split('.')[0];
 
 /**
  * The tags an incoming effect shows the defender.
- * @param {{ item?: object|null, debuff?: object|string|null }} [source] `item` is the initiating Skill, Spell or attack;
- *   `debuff` the Debuff it would inflict (item or item data, or a reference: a `condition.*` tag or identifier)
+ * @param {{ item?: object|null, debuff?: object|string|null, buff?: object|null }} [source] `item` is the initiating Skill, Spell or attack;
+ *   `debuff` the Debuff it would inflict (item or item data, or a reference: a `condition.*` tag or identifier);
+ *   `buff` the Buff it would land (item data)
  * @returns {string[]} deduplicated, only the namespaces in INCOMING_EFFECT_NAMESPACES
  */
-export function incomingEffectTags({ item = null, debuff = null } = {}) {
+export function incomingEffectTags({ item = null, debuff = null, buff = null } = {}) {
   const found = new Set();
   if (item) for (const t of getItemAllTags(item)) found.add(t);
+  if (buff && typeof buff === 'object') for (const t of getItemAllTags(buff)) found.add(t);
   if (debuff && typeof debuff === 'object') {
     for (const t of getItemAllTags(debuff)) found.add(t);
     const own = conditionRefTagId(debuff);

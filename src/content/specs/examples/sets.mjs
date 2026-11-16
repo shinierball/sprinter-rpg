@@ -128,6 +128,61 @@ export const EXAMPLE_SET_META = Object.freeze([
     id: 'technical-difficulties', symbol: 'TD', code: 'td', label: 'Technical Difficulties', release: '8.0.0',
     authorship: 'ai',
     premise: 'Debuffs in the shapes the rules call for: one that stacks, a warning that becomes a final warning, one that brings another with it, a dropped feed that leaves its bearer unable to take Actions, and a supervisor who hands them out.'
+  }),
+  Object.freeze({
+    id: 'animal-segment', symbol: 'AN', code: 'an', label: 'Animal Segment', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Pets and a mount built by the book: attitudes, three roles, abilities, a saddle and a weapon that wants one.'
+  }),
+  Object.freeze({
+    id: 'fan-mail', symbol: 'FM', code: 'fm', label: 'Fan Mail', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Two achievements whose reward boxes wait for the GM: one Silver box still being voted on, and a pending Bronze box beside a plain one.'
+  }),
+  Object.freeze({
+    id: 'craft-services', symbol: 'CS', code: 'cs', label: 'Craft Services', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Skills and spells that hand a buff to the caster, one target, the party, whoever is in reach, or the whole room.'
+  }),
+  Object.freeze({
+    id: 'second-takes', symbol: 'ST', code: 'st', label: 'Second Takes', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Two accessories that offer a second chance after a check has rolled: one rerolls the d20 of a Skill check once per floor, one moves a failed Stat check a degree toward Success once per scene.'
+  }),
+  Object.freeze({
+    id: 'boss-maps', symbol: 'BM', code: 'bm', label: 'Boss Maps', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Two maps a boss can drop: one that offers its holder a Silver box each time the party grinds, and an atlas of every magical item on the floor.'
+  }),
+  Object.freeze({
+    id: 'bottle-service', symbol: 'BV', code: 'bv', label: 'Bottle Service', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Three potions: a healing shot that can be taken as an Interrupt or poured into a friend, and a Stat potion and a Skill potion that each count against a crawler\'s lifetime two.'
+  }),
+  Object.freeze({
+    id: 'prop-department', symbol: 'PD', code: 'pd', label: 'Prop Department', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'A neighbourhood map and a borough map that lengthen the safe grind, a weapon with its Skill in each of the Power, Exotic and Utility weapon groups, and a troll who collects the toll.'
+  }),
+  Object.freeze({
+    id: 'location-shoot', symbol: 'LS', code: 'ls', label: 'Location Shoot', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Gear, buffs and skills that use the stock attack reasons (cover, light, weather, ground, size, reach, sight) and the size scalar in their rows.'
+  }),
+  Object.freeze({
+    id: 'signature-moves', symbol: 'SM', code: 'sm', label: 'Signature Moves', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Race and class perks that do something: a buff that opens a short window of reduced damage once a scene, and a race whose first impression and smelly-crowd rows turn on a situation the roll dialog offers.'
+  }),
+  Object.freeze({
+    id: 'side-effects-may-include', symbol: 'SE', code: 'se', label: 'Side Effects May Include', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'A sponsor\'s supplement, an understudy, a confetti cannon and two segments the network would rather you did not try at home.'
+  }),
+  Object.freeze({
+    id: 'creature-feature', symbol: 'CT', code: 'ct', label: 'Creature Feature', release: '8.1.0',
+    authorship: 'ai',
+    premise: 'Four mobs made the way the Mob Creator makes them: picked weapons, spells, buffs and Skills with their Ranks, quick Resistance, Immunity and Multiplier rows, Mana, picked loot and typed trophies.'
   })
 ]);
 

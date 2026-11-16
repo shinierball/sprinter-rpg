@@ -25,8 +25,6 @@ const TEXT = Object.freeze({
   NotBoarded: 'Did not make it aboard.',
   BoardAnyway: 'Board anyway (Rule Break)',
   Offer: '{label} ({source})',
-  OfferReroll: 'Reroll: {label}',
-  OfferShift: 'Use {label}',
   Choose: 'Take instead: {label}',
   RamHit: 'The ram connects.',
   RamMiss: 'The ram misses.',
@@ -129,12 +127,5 @@ export function renderVehicleCheck(root, message) {
     if (!made && !aboard && user?.isGM) block.append(button(doc, vcText('BoardAnyway'), 'crawlerVehicleBoardAnyway', {}));
   }
 
-  if (info && userOwnsActor(info.roller, user)) {
-    for (const offer of info.offers) {
-      const label = vcText(offer.kind === 'reroll' ? 'OfferReroll' : 'OfferShift', { label: offer.label });
-      const b = button(doc, `${label}${offer.sourceName ? ` (${offer.sourceName})` : ''}`, 'crawlerVehicleOffer', { rowKey: offer.rowKey, offerKind: offer.kind });
-      block.append(b);
-    }
-  }
   host.append(block);
 }

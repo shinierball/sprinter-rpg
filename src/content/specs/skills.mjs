@@ -114,7 +114,7 @@ export const COG_SKILLS = [
         "action.attack",
         "element.piercing",
         "kind.skill",
-        "rule.latch",
+        "action.latch",
         "skillGroup.animal",
         "skillGroup.combat",
         "stat.str",
@@ -1898,7 +1898,7 @@ export const COG_SKILLS = [
         "action.attack",
         "element.bludgeoning",
         "kind.skill",
-        "rule.extra-attack",
+        "action.extra_attack",
         "skillGroup.combat",
         "stat.dex",
         "weaponClass.unarmed",
@@ -5203,6 +5203,7 @@ export const COG_SKILLS = [
         "action.passive",
         "kind.skill",
         "rule.aiming-offset",
+        "rule.aiming-offset-ice",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -5234,7 +5235,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Used for crafting potions and poisons up to +5 bonus level.",
       "upgrades": "",
@@ -5594,6 +5595,7 @@ export const COG_SKILLS = [
       "identifier": "animal-handling",
       "tags": [
         "kind.skill",
+        "pet.skill.handling",
         "skillGroup.utility",
         "stat.cha"
       ],
@@ -5625,7 +5627,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "General knowledge of magic; identify whether items are magical.",
       "upgrades": "Rank 5: Determine Rank and bonus level of magical items.\nRank 10: Imbue items with inherent spells at Arcanist Table.\nRank 15: Default cooldown of imbued spells is 3 hours.",
@@ -5877,7 +5879,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Class only. Neutralize (10 min) and deconstruct (1 hr) traps without a demolitions table.",
       "upgrades": "Rank 5: Identify placement time; neutralize takes 5 min.\nRank 10: Identify creation time; deconstruct takes 30 min.\nRank 15: Identify trap designer; deconstruct takes 15 min.",
@@ -6003,7 +6005,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "",
       "upgrades": "Rank 5: Move Actions in difficult terrain without penalty.\nRank 10: Avoid Take Down or involuntary Move as free Interrupt.\nRank 15: Step on vertical surfaces.",
@@ -6137,7 +6139,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Conduct experiments involving chemistry, physics, or biology (takes 2 hours).",
       "upgrades": "Rank 5: Experiments take 1 hour.\nRank 10: Choose specialty; roll with Advantage.\nRank 15: Experiments take 30 minutes.",
@@ -6259,7 +6261,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Deconstruct explosive and smoke bombs (takes 1 hour).",
       "upgrades": "Rank 5: Takes 30 minutes.\nRank 10: Never make Explosives Handling check when using this skill.\nRank 15: Round dice up when cutting dynamite; takes 15 minutes.",
@@ -6382,7 +6384,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Make documents look super elegant and official.",
       "upgrades": "Rank 5: Advantage on next Cha check vs recipient.\nRank 10: Craft scrolls as if a crafting skill.\nRank 15: Once per floor, craft scroll for spell seen within 2 hours.",
@@ -6505,7 +6507,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Map dungeon and figure out locations in relation to landmarks.",
       "upgrades": "Rank 10: Provide Advantage die to Tracking or spatial relation checks.\nRank 15: Navigate point A to point B via most direct path.",
@@ -6631,7 +6633,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Stat Check",
       "notes": "Cat-based Races only. Gain +10ft Move. Use this check when making Dexterity Stat Checks.",
       "upgrades": "Rank 5: Reduce Surprise Attack damage taken by Rank.\nRank 10: Reduce all Area damage by 50%.\nRank 15: +10ft Move, +1 Evade Buff, Advantage to Evade Held effects.",
@@ -6902,7 +6904,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Stat Check",
       "notes": "Acquired via Random Origin Potion.",
       "upgrades": "Rank 5: Throw range Str × 20 feet.\nRank 10: Add 1 Rank damage die to thrown Attacks.\nRank 15: Throw range Str × 30 feet.",
@@ -7117,6 +7119,7 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "character-actor",
+      "rankSource": "floor",
       "tags": [
         "action.passive",
         "kind.skill",
@@ -7151,7 +7154,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Piloting motorcycles. Disadvantage on Attacks while piloting; cannot use two-handed weapons.",
       "upgrades": "Rank 5: Chopper has +5ft Move.\nRank 10: Attacking while piloting no longer suffers Disadvantage.\nRank 15: Chopper has +5ft Move; Advantage on crazy stunts.",
@@ -7322,7 +7325,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "str",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Make check every minute during dangerous climbs. Attacking while climbing suffers Disadvantage.",
       "upgrades": "Rank 5: Check every 5 minutes.\nRank 10: Check every 10 minutes; no Disadvantage on Attacks.\nRank 15: Check every 15 minutes; party rolls untrained normally.",
@@ -7449,7 +7452,7 @@ export const COG_SKILLS = [
       },
       "rank": 0,
       "stat": "con",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "When Attack drops you to 0% Health Bar, roll Unopposed. On Success, drop to 10% instead. Cooldown: Once per scene.",
       "upgrades": "Rank 5: No check required.\nRank 10: Health Bar unaffected by damage that would drop to 0%.\nRank 15: Cooldown twice per scene. Heal to 100% and gain +Rank DR for 1 round.",
@@ -7585,7 +7588,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Prepare edible food for party in 1 hour.",
       "upgrades": "Rank 5: Takes 30 minutes with makeshift ingredients.\nRank 10: Diners gain Well Fed Buff (heal 2 HB slots/hr).\nRank 15: Well Fed Buff ends Debuffs if dropping to 10% HB.",
@@ -7956,7 +7959,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Detect active non-magic traps. Disadvantage when scanning entire room or while moving.",
       "upgrades": "Rank 5: Detect magical traps.\nRank 10: No Disadvantage when scanning broadly or moving.\nRank 15: Party gains Advantage on first check to avoid detected trap.",
@@ -8580,7 +8583,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Operate four-wheeled vehicles in extreme circumstances.",
       "upgrades": "Rank 5: No Disadvantage when attacking while driving.\nRank 10: Vehicle has +5ft Move; Advantage to Evade vehicle attacks.\nRank 15: Vehicle has +5ft Move; Advantage on extreme stunts.",
@@ -8754,7 +8757,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Scrounge clutter and junk piles (takes 1 hour per 50ft area).",
       "upgrades": "",
@@ -8880,7 +8883,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "con",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Prevent fatigue and avoid Fatigued Debuff during long-distance travel and grinding.",
       "upgrades": "Rank 5: Ignore effects of Major Fail.\nRank 10: Advantage if not Fatigued or in extreme conditions.\nRank 15: Critical Fail converted to Standard Fail.",
@@ -9019,7 +9022,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Design and build mechanisms with moving parts, fluids, or chemicals out of Misc Junk.",
       "upgrades": "Rank 5: Specialize in mundane item type with Advantage.\nRank 10: Craft specialty item with +1 bonus level enchantment.\nRank 15: Craft up to +2 bonus level enchantment; takes half time.",
@@ -9447,7 +9450,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Safely prime, disarm, or manage explosive devices.",
       "upgrades": "",
@@ -9584,7 +9587,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Craft generic mundane items with no moving parts wholly out of Misc Junk.",
       "upgrades": "Rank 5: Specialize in mundane item with Advantage.\nRank 10: Craft specialty item with +1 bonus level enchantment.\nRank 15: Craft with up to +2 bonus level enchantment; takes half time.",
@@ -10010,7 +10013,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Provide medical aid. Patient regains 1 HB slot (+1 per higher degree of success). Once per rest.",
       "upgrades": "Rank 5: Spend 5 min to heal Minor Injury Debuff.\nRank 10: Spend 10 min to heal Long-Term Minor Injury Debuff.\nRank 15: Regain +1 HB slot; spend 15 min to heal Major Injury Debuff.",
@@ -10135,7 +10138,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Build high-performance vehicle engines with Engine Stand attachment to Engineering Table.",
       "upgrades": "Rank 5: Build custom vehicles with no bonus level limits.\nRank 10: +10ft Move per +1 Bonus Level; use as Repair for engines.\nRank 15: Cut engine/vehicle crafting time in half.",
@@ -10266,7 +10269,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Critical Fails occur on Natural 1–4.",
       "upgrades": "Rank 5: Critical Fail on Nat 3-; determine type and status.\nRank 10: Critical Fail on Nat 2-; craft explosives with a demolitions table.\nRank 15: Critical Fail on Nat 1 as usual; create raw materials.",
@@ -10528,7 +10531,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "",
       "upgrades": "",
@@ -10791,7 +10794,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Safely handle and deploy incendiary devices.",
       "upgrades": "Rank 5: Determine type, status, and raw materials.\nRank 10: Craft incendiary devices with a demolitions table.\nRank 15: Add +5 Splash at no added Difficulty; takes half time.",
@@ -10927,7 +10930,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Infuse potion bonuses onto consumable items (e.g. Invisibility smoke bomb).",
       "upgrades": "Rank 5: One potion infuses 2 items at once.\nRank 10: One potion infuses 5 items at once.\nRank 15: One potion infuses 10 items at once.",
@@ -11172,7 +11175,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Analyze environmental puzzle or clue area (takes 10 min, or 1 Action with Look for Clues).",
       "upgrades": "Rank 5: Advantage if familiar with area.\nRank 10: Each attempt takes 5 minutes.\nRank 15: Advantage if you know the parties involved.",
@@ -11294,7 +11297,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "con",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "On Amazing Success+, gain 1 permanent Intelligence.",
       "upgrades": "Rank 5: On Crit, gain +1 additional permanent Int.\nRank 10: Standard Success+ grants +1 permanent Int; eat cursed items safely.\nRank 15: Choose which Stat is permanently increased.",
@@ -11419,7 +11422,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "str",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "With running start of 10 ft, leap distance up to Rank + Str ft with height 1 ft.",
       "upgrades": "Rank 5: Add Dex to height of Jump.\nRank 10: Gain +1 Evade Buff.\nRank 15: Leap distance is Rank + (Str × 2).",
@@ -11664,7 +11667,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Animals only. Leap distance up to Rank × 2 with height Dex × 2 ft.",
       "upgrades": "Rank 5: Distance Rank × 3, height Dex × 3.\nRank 10: Leap straight up without arcing trajectory.\nRank 15: Leap may last Rank in seconds (gliding).",
@@ -11787,7 +11790,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Pick mechanical locks (takes Floor number in minutes). Disadvantage without proper tools.",
       "upgrades": "Rank 10: Takes half time; alter lock so key no longer works.\nRank 15: No Disadvantage when lacking tools.",
@@ -11913,7 +11916,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Know neighborhood lore, Mob quirks, and local factions.",
       "upgrades": "Rank 5: Identify major factions in the area.\nRank 10: Aware of important local NPCs.\nRank 15: Advantage on first Cha check when encountering organized group.",
@@ -12280,7 +12283,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Concentrate senses to notice hidden details and environmental cues. Used with Look for Clues.",
       "upgrades": "Rank 5: Halve penalty for cluttered areas.\nRank 10: Halve penalty for short notice window.\nRank 15: Halve penalty for distance range.",
@@ -12402,7 +12405,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "cha",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Electrify an audience through acting, dancing, singing, or comedy.",
       "upgrades": "Rank 5: Choose additional performance specialty.\nRank 10: Coach others so they roll unskilled without Disadvantage.\nRank 15: Mimic another's performance after seeing it once.",
@@ -12769,7 +12772,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Understand gods, rituals, boons, and followers.",
       "upgrades": "Rank 5: Identify followers on sight even when concealed.\nRank 15: Know specific strengths and weaknesses of gods.",
@@ -12895,7 +12898,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Spend 2 hours to repair simple broken or damaged items.",
       "upgrades": "Rank 5: Repair things with moving parts.\nRank 10: Repairs take 1 hour.\nRank 15: Rebuild destroyed items.",
@@ -13045,7 +13048,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Tie secure knots, bind prisoners, and manage ropes.",
       "upgrades": "Rank 5: Use as Attack (range 10 ft vs Evade); target gains Held Debuff.\nRank 10: Whip line to untie knot from distance and recover rope.\nRank 15: Attack range increases to Strength score (min 15 ft).",
@@ -13167,12 +13170,71 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Control living mounts during action and combat scenes. Rider attacks with Disadvantage.",
       "upgrades": "Rank 5: Mount has +5ft Move; no Disadvantage on Attacks while riding.\nRank 10: Mount has +10ft Move; party rolls untrained normally.\nRank 15: Mount has +15ft Move; Advantage on extreme stunts.",
       "checked": false,
       "damageModifiers": [],
+      "attackModifiers": [
+        {
+          "label": "No Disadvantage when attacking while riding",
+          "kind": "waive",
+          "option": "rider",
+          "value": 0,
+          "scope": "owner",
+          "minRank": 5
+        }
+      ],
+      "checkModifiers": [
+        {
+          "label": "Advantage on extreme stunts",
+          "kind": "advantage",
+          "advantage": "advantage",
+          "value": 0,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "pet.check.ride"
+            ]
+          }
+        }
+      ],
+      "vehicleModifiers": [
+        {
+          "label": "Mount Move +5 ft",
+          "kind": "moveAdd",
+          "value": 5,
+          "minRank": 5,
+          "condition": {
+            "all": [
+              "companion.mount"
+            ]
+          }
+        },
+        {
+          "label": "Mount Move +10 ft more",
+          "kind": "moveAdd",
+          "value": 10,
+          "minRank": 10,
+          "condition": {
+            "all": [
+              "companion.mount"
+            ]
+          }
+        },
+        {
+          "label": "Mount Move +15 ft more",
+          "kind": "moveAdd",
+          "value": 15,
+          "minRank": 15,
+          "condition": {
+            "all": [
+              "companion.mount"
+            ]
+          }
+        }
+      ],
       "rankBreaks": {
         "rank5": {
           "damageDice": "",
@@ -13258,6 +13320,7 @@ export const COG_SKILLS = [
       "identifier": "riding",
       "tags": [
         "kind.skill",
+        "pet.skill.riding",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -13289,7 +13352,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Short bursts of running and emergency sprints. Check every minute; +1 per 10ft Move.",
       "upgrades": "Rank 5: Permanent +5ft Move Buff; check every 2 minutes.\nRank 10: Additional permanent +10ft Move Buff; check every 4 minutes.\nRank 15: Additional permanent +15ft Move Buff; check every 6 minutes.",
@@ -13428,7 +13491,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Collect useful materials from deconstructed or failed craft items (takes 1 hour).",
       "upgrades": "Rank 5: Salvage checks take 30 minutes.\nRank 10: Recover 100% of important raw materials on Success.\nRank 15: On crafting Fail or Near Miss, reroll with Advantage (extra 15 min).",
@@ -13550,7 +13613,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Collect, identify, sew, and iron patches onto clothing.",
       "upgrades": "Rank 5: Sew and iron patches onto clothing.\nRank 10: Craft enchanted patches (1 per gear slot, no accessory slot cost).\nRank 15: Takes half time; bonus value of patch enchantments increased by +1.",
@@ -13950,7 +14013,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "str",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Forge mundane metal items, weapons, and armor.",
       "upgrades": "Rank 5: Craft items up to +5 bonus level.\nRank 10: Craft items up to +10 bonus level.\nRank 15: Smithing takes half time.",
@@ -14225,7 +14288,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "cha",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Navigate towns without attracting attention, contact criminal networks, and learn rumors.",
       "upgrades": "Rank 5: Hear or spread an additional rumor.\nRank 10: Quickly locate a hiding place in town.\nRank 15: Uncover leverage on important person in town.",
@@ -14347,7 +14410,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "con",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Survive dangerous wilderness and harsh conditions unscathed.",
       "upgrades": "Rank 5: No extra damage from Critical Fails.\nRank 10: Party rolls untrained normally.\nRank 15: No extra damage from Major Fails.",
@@ -14469,7 +14532,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "str",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Swim in dangerous waters. Check every 30 seconds. Gain Fatigued Debuff after 1 min.",
       "upgrades": "Rank 5: Fatigued Debuff delayed to 2 minutes.\nRank 10: Swim at full Move speed as Action.\nRank 15: Check every 5 minutes; Fatigued Debuff only on Critical Fail.",
@@ -14592,7 +14655,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Limit once per combat. Grant self and party members +1 bonus to Attack, Damage, or Evade.",
       "upgrades": "Rank 5: Advantage if observing battlefield 5 min prior to combat.\nRank 10: Roll 2d10 when you Call a Play (choose one).\nRank 15: Bonus applies to all three disciplines simultaneously.",
@@ -14730,7 +14793,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Create mundane and magical tattoos.",
       "upgrades": "Rank 5: Craft tattoos with up to +5 bonus level.\nRank 10: Craft tattoos with up to +10 bonus level.\nRank 15: Crafting tattoos takes half time.",
@@ -15141,7 +15204,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Locate and follow footprints or trails. Renew check every 15 minutes.",
       "upgrades": "Rank 5: Follow for 30 min per check; gain 1 target info.\nRank 10: Follow for 1 hr per check; gain 2 target info.\nRank 15: Follow for 2 hrs per check; gain 4 target info.",
@@ -15263,7 +15326,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Craft traps using a demolitions table with Trap Module.",
       "upgrades": "",
@@ -15970,7 +16033,7 @@ export const COG_SKILLS = [
         "companion.pet",
         "element.slashing",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.combat",
         "stat.dex",
         "weaponClass.natural",
@@ -15997,7 +16060,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "cha",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Cha Check",
       "notes": "Innate feline supernatural luck and danger sense. Grants passive +2 bonus to Evade and Stealth checks.",
       "upgrades": "Rank 5: +1 to Evade\nRank 10: Offsets Disadvantage against surprise traps\nRank 15: Once per floor, surviving a lethal blow leaves you at 1 HP instead of dying.",
@@ -16098,7 +16161,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.cha"
       ],
@@ -16123,7 +16186,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Extraordinary balance and flexibility. Always lands on feet, eliminating falling damage from up to 30ft.",
       "upgrades": "Rank 5: Jump distance tripled\nRank 10: Can leap off vertical dungeon walls to gain +10ft horizontal reach\nRank 15: Interrupt: Halve all area-effect blast damage by flipping out of the blast zone.",
@@ -16224,7 +16287,7 @@ export const COG_SKILLS = [
         "action.interrupt",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -16351,8 +16414,8 @@ export const COG_SKILLS = [
         "companion.pet",
         "element.piercing",
         "kind.skill",
-        "rule.latch",
-        "rule.pet-skill",
+        "action.latch",
+        "action.pet_skill",
         "skillGroup.combat",
         "stat.str",
         "weaponClass.natural",
@@ -16379,7 +16442,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Int Check",
       "notes": "Good dog! Keen senses keep the entire bonded party vigilant.",
       "upgrades": "Rank 5: +2 bonus to detecting hidden doors and mechanical traps\nRank 10: Barks to alert party, giving everyone advantage on Ambush checks\nRank 15: Scent tracking detects invisible and stealth foes within 60ft.",
@@ -16480,7 +16543,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.int"
       ],
@@ -16505,7 +16568,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Sprints with enthusiastic speed to retrieve stowed or dropped items, weapons, or aid downed party members.",
       "upgrades": "Rank 5: +10ft sprint speed when moving toward dropped loot or an ally\nRank 10: Can retrieve items from combat ground without provoking opportunity attacks\nRank 15: Drag fallen ally up to 20ft as part of your movement action.",
@@ -16606,7 +16669,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -16733,7 +16796,7 @@ export const COG_SKILLS = [
         "companion.pet",
         "element.slashing",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.combat",
         "stat.dex",
         "weaponClass.natural",
@@ -16760,7 +16823,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Int Check",
       "notes": "Telescopic raptor vision that pierces camouflage, fog, darkness, and cover up to 500ft away.",
       "upgrades": "Rank 5: +5 to passive perception checks\nRank 10: Spots hidden enemy structural weaknesses, increasing allied crit range by 1\nRank 15: Reveals invisible enemies and magical auras within line of sight.",
@@ -16861,7 +16924,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.int"
       ],
@@ -16886,7 +16949,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Grants innate Fly speed of 40ft. Can ride thermal updrafts to glide indefinitely across huge floor caverns.",
       "upgrades": "Rank 5: Fly speed increases to 50ft\nRank 10: Can carry a rider once size is Large or higher without speed reduction\nRank 15: Aerial barrel roll offsets all opportunity attacks when flying past enemies.",
@@ -16987,8 +17050,8 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.flight",
-        "rule.pet-skill",
+        "action.flight",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -17115,7 +17178,7 @@ export const COG_SKILLS = [
         "companion.pet",
         "element.bludgeoning",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.combat",
         "stat.str",
         "weaponClass.natural",
@@ -17142,7 +17205,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Rapidly adjusts skin color and texture to blend seamlessly into walls, floors, and water. Grants +4 to Stealth.",
       "upgrades": "Rank 5: Completely invisible while staying motionless\nRank 10: Can hide allies in adjacent squares under protective camouflage mantle\nRank 15: First strike from camouflage is an automatic critical hit.",
@@ -17243,7 +17306,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -17268,7 +17331,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Eject a siphon jet of pressurized water or mucus to slide or swim with tremendous burst speed. Can slip through narrow slits.",
       "upgrades": "Rank 5: +20ft swim and crawl speed\nRank 10: Interrupt: Emit ink cloud (15ft burst) that blinds attackers when struck\nRank 15: Squeeze through any opening large enough to fit a coin.",
@@ -17369,7 +17432,7 @@ export const COG_SKILLS = [
         "action.interrupt",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -17497,7 +17560,7 @@ export const COG_SKILLS = [
         "element.piercing",
         "element.poison",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.combat",
         "stat.dex",
         "weaponClass.natural",
@@ -17524,7 +17587,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Int Check",
       "notes": "Weaves high-tensile silk tripwires and snare nests across doorways or passages up to 20ft wide.",
       "upgrades": "Rank 5: Detects any creature touching webs within 60ft via tremor sense\nRank 10: Enemies entering web area gain the Webbed debuff\nRank 15: Silk can be woven into durable armor plating giving +1 DR.",
@@ -17625,7 +17688,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.int"
       ],
@@ -17650,7 +17713,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Traverse vertical walls and ceilings with zero movement penalty. Fire silk anchor strands to swing across 30ft gaps.",
       "upgrades": "Rank 5: Can pull yourself or small allies across chasms on silk lines\nRank 10: Can act as a combat mount along ceilings and walls while carrying a rider\nRank 15: Web grapple can yank distant enemies towards you.",
@@ -17753,7 +17816,7 @@ export const COG_SKILLS = [
         "companion.pet",
         "kind.skill",
         "rule.mount",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -17880,7 +17943,7 @@ export const COG_SKILLS = [
         "companion.pet",
         "element.bludgeoning",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.combat",
         "stat.dex",
         "weaponClass.natural",
@@ -18008,7 +18071,7 @@ export const COG_SKILLS = [
         "action.contested",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -18033,7 +18096,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Uses limbs and strong prehensile tail to scramble across scaffolds, light fixtures, and ceiling rafters at full Move speed.",
       "upgrades": "Rank 5: +10ft climbing speed\nRank 10: Can hang by tail while firing bows or casting spells with hands\nRank 15: Swing-kick from rafters deals double damage to grounded enemies.",
@@ -18134,7 +18197,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -18261,7 +18324,7 @@ export const COG_SKILLS = [
         "companion.pet",
         "element.bludgeoning",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.combat",
         "stat.str",
         "weaponClass.natural",
@@ -18288,7 +18351,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "cha",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Cha Check",
       "notes": "Release a bone-shattering primordial velociraptor shriek that echoes down dungeon corridors, inspiring allies and demoralizing foes.",
       "upgrades": "Rank 5: Allies gain +1 to their next attack roll\nRank 15: Roar disorients mob spellcasters, interrupting channeled abilities.",
@@ -18389,7 +18452,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.cha"
       ],
@@ -18414,7 +18477,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "str",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Str Check",
       "notes": "Enables this pet to be mounted and ridden into combat smoothly. Adds +20ft Move speed and ignores rough terrain.",
       "upgrades": "Rank 5: +10ft additional sprint speed\nRank 10: Mounted rider gains +1 Evade while riding\nRank 15: Charge through enemy ranks knocking medium and smaller foes prone.",
@@ -18518,7 +18581,7 @@ export const COG_SKILLS = [
         "kind.skill",
         "role.rider",
         "rule.mount",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.str"
       ],
@@ -18645,7 +18708,7 @@ export const COG_SKILLS = [
         "companion.pet",
         "element.acid",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.combat",
         "stat.con",
         "weaponClass.natural",
@@ -18672,7 +18735,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "con",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Con Check",
       "notes": "Devour any organic, mineral, or metal trash, monster corpses, or debris to restore 1 health bar and cleanse poison debuffs.",
       "upgrades": "Rank 5: Restores 2 health bars per rest\nRank 10: Complete immunity to ingested toxins and disease\nRank 15: Regurgitate refined metal nuggets or salvaged components from digested junk.",
@@ -18773,7 +18836,7 @@ export const COG_SKILLS = [
         "action.heal",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.con"
       ],
@@ -18800,7 +18863,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "str",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Str Check",
       "notes": "Heads down, bulk forward! Tramples through doors, wooden barricades, and lesser mobs, acting as a massive living siege mount.",
       "upgrades": "Rank 5: +10ft trample Move speed\nRank 10: Smashes through stone barricades and locks on a successful check\nRank 15: Provides full cover to up to 2 riders mounted upon its back.",
@@ -18904,7 +18967,7 @@ export const COG_SKILLS = [
         "kind.skill",
         "role.rider",
         "rule.mount",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.str"
       ],
@@ -19031,7 +19094,7 @@ export const COG_SKILLS = [
         "companion.pet",
         "element.fire",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "shape.cone",
         "skillGroup.combat",
         "stat.con",
@@ -19058,7 +19121,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Int Check",
       "notes": "An ancient instinct for riches. Smells out hidden gold, platinum, gemstone caches, and secret vaults within 100ft.",
       "upgrades": "Rank 5: +3 to appraising treasure values and spotting counterfeit coin\nRank 10: Can detect enchanted weapons and artifacts through 5ft of solid stone\nRank 15: Loot found by the dragon or party yields +20% bonus coin payout.",
@@ -19159,7 +19222,7 @@ export const COG_SKILLS = [
         "action.passive",
         "companion.pet",
         "kind.skill",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.int"
       ],
@@ -19184,7 +19247,7 @@ export const COG_SKILLS = [
     "system": {
       "rank": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Grants 50ft Fly speed with hover capability. Serves as a terrifying aerial mount capable of carrying crawlers.",
       "upgrades": "Rank 5: Fly speed increases to 60ft\nRank 10: Wing buffet deals 1d6 Bludgeoning to all adjacent foes when taking off\nRank 15: Aerial dogfighting: Can make a full breath attack in mid-flight without landing.",
@@ -19287,9 +19350,9 @@ export const COG_SKILLS = [
         "companion.pet",
         "kind.skill",
         "role.rider",
-        "rule.flight",
+        "action.flight",
         "rule.mount",
-        "rule.pet-skill",
+        "action.pet_skill",
         "skillGroup.utility",
         "stat.dex"
       ],
@@ -19321,7 +19384,7 @@ export const COG_SKILLS = [
       "rank": 1,
       "boonBonus": 0,
       "stat": "cha",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Stat Check",
       "rankSource": "own",
       "isAttack": false,
@@ -19898,6 +19961,7 @@ export const COG_SKILLS = [
     "system": {
       "identifier": "dccskl0000000151",
       "tags": [
+        "action.passive",
         "kind.skill",
         "skillGroup.utility",
         "stat.int"
@@ -19905,7 +19969,7 @@ export const COG_SKILLS = [
       "rank": 1,
       "boonBonus": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "passive",
       "checkNote": "Stat Check",
       "rankSource": "own",
       "isAttack": false,
@@ -19914,6 +19978,17 @@ export const COG_SKILLS = [
         "value": 1,
         "unit": "day"
       },
+      "appliedBuffs": [
+        {
+          "buff": "scene-boon",
+          "target": "target.party",
+          "range": 0,
+          "minRank": 0,
+          "maxRank": null,
+          "rank": 4,
+          "rankSkill": ""
+        }
+      ],
       "range": "",
       "rangeFeet": 0,
       "baseDamage": {
@@ -20161,7 +20236,7 @@ export const COG_SKILLS = [
         "hpPerSlot": 2
       },
       "durationConfig": {
-        "type": "instant",
+        "type": "scene",
         "value": 0
       },
       "active": false,
@@ -20195,7 +20270,7 @@ export const COG_SKILLS = [
       "rank": 1,
       "boonBonus": 0,
       "stat": "con",
-      "checkType": "stat",
+      "checkType": "statOnly",
       "checkNote": "Stat Check",
       "rankLimits": [
         {
@@ -20213,7 +20288,7 @@ export const COG_SKILLS = [
       ],
       "rankSource": "own",
       "isAttack": false,
-      "hasDamage": false,
+      "hasDamage": true,
       "cooldown": {
         "value": 0,
         "unit": ""
@@ -20222,13 +20297,22 @@ export const COG_SKILLS = [
       "rangeFeet": 0,
       "baseDamage": {
         "dice": "1d8",
-        "stat": "",
+        "stat": "none",
         "damageType": "Fire"
       },
       "notes": "",
       "description": "",
       "upgrades": "",
-      "damageModifiers": [],
+      "damageModifiers": [
+        {
+          "mode": "add",
+          "value": 1,
+          "scaleBy": {
+            "source": "floor"
+          },
+          "label": "Lava Burst"
+        }
+      ],
       "defenseModifiers": [],
       "attackModifiers": [],
       "checkModifiers": [],
@@ -20522,6 +20606,14 @@ export const COG_SKILLS = [
       "damageModifiers": [],
       "defenseModifiers": [],
       "attackModifiers": [],
+      "eventTriggers": [
+        {
+          "label": "Monster Truck Charge",
+          "event": "use",
+          "kind": "debuff",
+          "debuff": "fatigued"
+        }
+      ],
       "checkModifiers": [],
       "rankDamageParts": [],
       "checked": false,
@@ -20780,6 +20872,7 @@ export const COG_SKILLS = [
     "system": {
       "identifier": "party-dr-buff",
       "tags": [
+        "action.passive",
         "kind.skill",
         "skillGroup.utility",
         "stat.int"
@@ -20787,7 +20880,7 @@ export const COG_SKILLS = [
       "rank": 1,
       "boonBonus": 0,
       "stat": "int",
-      "checkType": "stat",
+      "checkType": "passive",
       "checkNote": "Stat Check",
       "rankSource": "own",
       "isAttack": false,
@@ -20796,6 +20889,17 @@ export const COG_SKILLS = [
         "value": 1,
         "unit": "day"
       },
+      "appliedBuffs": [
+        {
+          "buff": "party-dr",
+          "target": "target.party",
+          "range": 0,
+          "minRank": 0,
+          "maxRank": null,
+          "rank": 0,
+          "rankSkill": ""
+        }
+      ],
       "range": "",
       "rangeFeet": 0,
       "baseDamage": {
@@ -21043,7 +21147,7 @@ export const COG_SKILLS = [
         "hpPerSlot": 2
       },
       "durationConfig": {
-        "type": "instant",
+        "type": "scene",
         "value": 0
       },
       "active": false,
@@ -21067,6 +21171,7 @@ export const COG_SKILLS = [
     "system": {
       "identifier": "party-regeneration",
       "tags": [
+        "action.passive",
         "kind.skill",
         "skillGroup.utility",
         "stat.con"
@@ -21074,7 +21179,7 @@ export const COG_SKILLS = [
       "rank": 1,
       "boonBonus": 0,
       "stat": "con",
-      "checkType": "stat",
+      "checkType": "passive",
       "checkNote": "Stat Check",
       "rankSource": "own",
       "isAttack": false,
@@ -21083,6 +21188,17 @@ export const COG_SKILLS = [
         "value": 1,
         "unit": "day"
       },
+      "appliedBuffs": [
+        {
+          "buff": "party-regeneration",
+          "target": "target.party",
+          "range": 30,
+          "minRank": 0,
+          "maxRank": null,
+          "rank": 0,
+          "rankSkill": "regeneration"
+        }
+      ],
       "range": "",
       "rangeFeet": 0,
       "baseDamage": {
@@ -21330,8 +21446,8 @@ export const COG_SKILLS = [
         "hpPerSlot": 2
       },
       "durationConfig": {
-        "type": "instant",
-        "value": 0
+        "type": "minutes",
+        "value": 10
       },
       "active": false,
       "appliedAllyUuids": []
@@ -21944,7 +22060,7 @@ export const COG_SKILLS = [
       "rank": 1,
       "boonBonus": 0,
       "stat": "str",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Stat Check",
       "rankSource": "own",
       "isAttack": false,
@@ -22231,7 +22347,7 @@ export const COG_SKILLS = [
       "rank": 1,
       "boonBonus": 0,
       "stat": "dex",
-      "checkType": "stat",
+      "checkType": "skill",
       "checkNote": "Standard",
       "rankLimits": [
         {
@@ -22513,6 +22629,124 @@ export const COG_SKILLS = [
           "emptied": [
             "system.description"
           ]
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccskl1000000001",
+    "name": "Shake Off a Debuff",
+    "type": "skill",
+    "img": "icons/svg/aura.svg",
+    "system": {
+      "identifier": "shake-off-debuff",
+      "tags": [
+        "kind.skill",
+        "skillGroup.utility",
+        "stat.con"
+      ],
+      "rank": 1,
+      "stat": "con",
+      "checkType": "none",
+      "checkNote": "None",
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
+      "cooldown": {
+        "value": 1,
+        "unit": "floor"
+      },
+      "rankBreaks": {
+        "rank5": {
+          "damageDice": "",
+          "baseDiceCountMod": "",
+          "rankDamageDice": 0,
+          "buffsResistances": "",
+          "debuff": "",
+          "notes": "",
+          "isArmorPiercing": false,
+          "healing": {
+            "barsBonus": 0,
+            "cleanseDebuff": ""
+          },
+          "rank": 5,
+          "critMultiplier": 1,
+          "damageType": "",
+          "contest": {
+            "dcBonus": 0,
+            "onFailDebuff": ""
+          }
+        },
+        "rank10": {
+          "damageDice": "",
+          "baseDiceCountMod": "",
+          "rankDamageDice": 0,
+          "buffsResistances": "",
+          "debuff": "",
+          "notes": "",
+          "isArmorPiercing": false,
+          "healing": {
+            "barsBonus": 0,
+            "cleanseDebuff": ""
+          },
+          "rank": 10,
+          "critMultiplier": 1,
+          "damageType": "",
+          "contest": {
+            "dcBonus": 0,
+            "onFailDebuff": ""
+          }
+        },
+        "rank15": {
+          "damageDice": "",
+          "baseDiceCountMod": "",
+          "rankDamageDice": 0,
+          "buffsResistances": "",
+          "debuff": "",
+          "notes": "",
+          "isArmorPiercing": false,
+          "healing": {
+            "barsBonus": 0,
+            "cleanseDebuff": ""
+          },
+          "rank": 15,
+          "critMultiplier": 1,
+          "damageType": "",
+          "contest": {
+            "dcBonus": 0,
+            "onFailDebuff": ""
+          }
+        },
+        "rank20": {
+          "damageDice": "",
+          "baseDiceCountMod": "",
+          "rankDamageDice": 0,
+          "buffsResistances": "",
+          "debuff": "",
+          "notes": "",
+          "isArmorPiercing": false,
+          "healing": {
+            "barsBonus": 0,
+            "cleanseDebuff": ""
+          },
+          "rank": 20,
+          "critMultiplier": 1,
+          "damageType": "",
+          "contest": {
+            "dcBonus": 0,
+            "onFailDebuff": ""
+          }
         }
       }
     }

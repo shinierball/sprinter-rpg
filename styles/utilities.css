@@ -417,15 +417,6 @@
   gap: 10px;
 }
 
-/* Mob creator: header, tab nav, body and footer are sibling parts of the window content */
-.cog-mob-creator-app .window-content {
-  display: flex;
-  flex-direction: column;
-}
-.cog-mob-creator-app .window-content > .creator-body {
-  min-height: 0;
-}
-
 /* Combat archive: header, sidebar and detail are sibling parts of the window content (grid replaces the old wrapper) */
 .cog-archive-app .window-content {
   display: grid;
@@ -850,6 +841,32 @@
 .cog-check-assist-unresolved { font-style: italic; }
 .cog-check-assists-total { font-weight: bold; }
 .cog-check-assists-note { font-size: 10px; color: var(--cog-text-secondary); }
+.cog-check-offers {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid var(--cog-accent);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  color: var(--cog-text);
+}
+.cog-check-offers-title { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cog-gold); }
+.cog-check-offer-btn {
+  width: auto;
+  margin: 2px 4px 2px 0;
+  padding: 0 8px;
+  line-height: 1.6;
+  border: 1px solid var(--cog-accent-strong-fill);
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+}
+.cog-check-offer-btn:hover:not(:disabled) { background: var(--cog-accent-strong-fill); }
+.cog-check-offer-btn:disabled { opacity: 0.5; cursor: default; }
+.cog-check-offer-lines { list-style: none; margin: 2px 0; padding: 0 0 0 6px; }
+.cog-check-offer-line { padding: 1px 0; }
+.dice-roll.is-rerolled .dice-total { text-decoration: line-through; opacity: 0.6; }
 .cog-assist-card-title { font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: bold; text-transform: uppercase; color: var(--cog-gold); }
 .cog-assist-card-lines { font-size: 10px; color: var(--cog-text-secondary); }
 .cog-assist-apply { margin-top: 4px; font-family: 'Oswald', sans-serif; font-size: 11px; }

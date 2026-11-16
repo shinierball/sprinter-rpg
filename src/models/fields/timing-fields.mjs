@@ -49,7 +49,11 @@ export function durationConfigField(fields, { type = 'instant', value = 0 } = {}
     scaleBy: scaleByField(fields),
     endsWithCombat: new fields.BooleanField({ initial: false }),
     remainingRounds: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
-    expiresAt: new fields.NumberField({ nullable: true, initial: null })
+    expiresAt: new fields.NumberField({ nullable: true, initial: null }),
+    // The scene epoch a scene-long effect came into force in; null while it is not stamped (engine state)
+    sceneEpoch: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null }),
+    // The floor a floor-long effect came into force on; null while it is not stamped (engine state)
+    floorStamp: new fields.NumberField({ integer: true, min: 0, nullable: true, initial: null })
   });
 }
 
@@ -71,3 +75,19 @@ export const rankBreakTimingFields = (fields) => () => ({
   cooldown: cooldownField(fields, { nullable: true }),
   duration: durationSpecField(fields)
 });
+
+/**
+ * What a Skill or Spell remembers for advancement in play: the Used mark, the grind hours put in, and the end of the
+ * once-per-day grind window. In-play state, not authored content.
+ * @param {object} fields foundry.data.fields
+ */
+export function advancementStateFields(fields) {
+  return {
+    checked: new fields.BooleanField({ initial: false }),
+    investedHours: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+    /** World time (seconds) the once-per-grind-day window opened by this item's last grind check ends. */
+    grindStamp: new fields.SchemaField({
+      expiresAt: new fields.NumberField({ nullable: true, initial: null })
+    })
+  };
+}

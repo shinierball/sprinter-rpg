@@ -106,6 +106,17 @@
                   </div>
                 {{/if}}
 
+                {{#if turn.guidance}}
+                  <div class="cog-pet-guidance flexrow">
+                    <span class="cog-pet-guidance-badge guidance-{{turn.guidance.state}}" data-tooltip="{{turn.guidance.label}}">{{turn.guidance.badge}}</span>
+                    {{#if turn.guidance.canGuide}}
+                      <button type="button" class="cog-pet-guide-btn" data-action="guidePet" data-combatant-id="{{turn.id}}" data-tooltip="Guide this pet: your Action, an Int-Opposed Animal Handling check">
+                        <i class="fa-solid fa-paw"></i> Guide
+                      </button>
+                    {{/if}}
+                  </div>
+                {{/if}}
+
                 <!-- Action Slots Row -->
                 <div class="cog-actions-row flexrow">
                   <span class="cog-actions-label">ACTIONS:</span>

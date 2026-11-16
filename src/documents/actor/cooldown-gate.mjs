@@ -20,7 +20,8 @@ const NO_FLAGS = Object.freeze({});
 const NO_COMMIT = async () => {};
 const NO_COOLDOWN = () => ({ proceed: true, ruleBreak: false, state: null, flags: NO_FLAGS, commit: NO_COMMIT });
 
-function plainRecord(r) {
+/** A use record as a plain object (a stored one may be a data-model instance). */
+export function plainRecord(r) {
   return typeof r?.toObject === 'function' ? r.toObject() : { ...r };
 }
 

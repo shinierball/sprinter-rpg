@@ -13,7 +13,7 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { getOfferedSituations } from '../roll/damage-modifiers.mjs';
-import { RULE_FLAG_DEFS, hasRuleFlag } from '../tag/tag-behaviour.mjs';
+import { RULE_FLAG_DEFS, hasRuleFlag, isUniversalTagSource } from '../tag/tag-behaviour.mjs';
 import { cooldownState, effectiveCooldown } from '../time/cooldowns.mjs';
 import { formatRemaining, timingAmount } from '../time/timing.mjs';
 import { describeRow } from '../item-describer/feature-describer.mjs';
@@ -30,6 +30,9 @@ import { camerasOffered, armedCamera, cameraAudienceList, sanitizeCameraChoice }
 import { firstScalar } from '../first-scalar.mjs';
 import { skillRefSlug, readableSkillName } from '../skill/weapon-skill-options.mjs';
 import { escapeAttr } from '../escape-attr.mjs';
+import { DETECTED } from '../../data/rules/attack-situation-rules.mjs';
+import { detectSituations } from './situation-detectors.mjs';
+import { stockSituationsOpenWindow } from './stock-situations.mjs';
 
 /** The rule flag a situation tag carries to be listed under Maneuvers (3.22-4 registers it and flags `situation.aiming`). */
 const MANEUVER_FLAG = 'maneuver';
@@ -186,7 +189,9 @@ function situationOption(actor, o) {
   const reads = readsOf(o);
   return {
     tag: o.tag, label: o.label, source: o.source, ...(rank !== undefined ? { rank } : {}), ...(rank !== undefined && carrier.id ? { carrierId: carrier.id } : {}), reads,
-    ...(o.used !== undefined ? { used: o.used } : {})
+    ...(o.used !== undefined ? { used: o.used } : {}),
+    // A line a `universal` tag offers (a stock reason) is not something this attacker's own gear gives them to choose
+    stock: isUniversalTagSource(o.sourceRef)
   };
 }
 
@@ -229,10 +234,13 @@ function maneuverNote(advantageFor, tag) {
  * @param {Array<object>} [opts.skillOptions] the weapon's Skill options (`resolveWeaponSkills(...).options`, hit mode); the window lists them from two up
  * @param {string} [opts.defaultSkill] the identifier the roll uses when the attacker picks none
  * @param {string} [opts.chosenSkill] the Skill the roll already uses (a damage roll from a card or macro): the effects offered are that Skill's
+ * @param {object|null} [opts.facts] `readAttackFacts` result (hit mode): the stock reasons' detectors read it; null leaves every reason unknown
+ * @param {Array<object>} [opts.extraSituations] pre-built, pre-ticked situation lines the caller adds after detection (the owed Evade Advantage)
+ * @param {boolean} [opts.stockOpens] the `stockSituationsOpenWindow` setting: off, stock situation lines alone open the window only when detected
  * @returns {{ mode: string, isMob: boolean, attackName: string, effects: object[], maneuvers: object[], situations: object[],
  *   calledPlays: object[], plainFormula: string, aiFavorIfNone: number, hasOptions: boolean, optionFor: (id: string) => object }}
  */
-export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', calledPlays = [], advantageFor = null, options: rollOptions = {}, skillOptions = [], defaultSkill = '', chosenSkill = '' } = {}) {
+export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', calledPlays = [], advantageFor = null, options: rollOptions = {}, skillOptions = [], defaultSkill = '', chosenSkill = '', facts = null, stockOpens = stockSituationsOpenWindow(), extraSituations = [] } = {}) {
   // A damage-mode model previews with the roll's own damage context, so building it reads the targets once.
   const damageContext = mode === 'damage' ? context : null;
   let effects = [];
@@ -258,8 +266,15 @@ export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', c
     }
   }
   const options = offered.map(o => situationOption(actor, o));
+  // Detection pre-ticks a reason the scene shows; a damage roll never detects (the hit already judged them)
+  const detected = detectSituations(mode === 'hit' ? options.map(o => o.tag) : [], facts, { actor, item: attackItem, context });
+  for (const o of options) {
+    const found = detected.get(o.tag);
+    o.detected = found?.state ?? DETECTED.unknown;
+    o.note = found?.note ?? '';
+  }
   const maneuvers = options.filter(o => isManeuverTag(o.tag)).map(o => ({ ...o, note: maneuverNote(advantageFor, o.tag) }));
-  const situations = options.filter(o => !isManeuverTag(o.tag));
+  const situations = [...options.filter(o => !isManeuverTag(o.tag)), ...extraSituations];
   const pending = mode === 'hit' ? calledPlays.filter(e => e && typeof e.id === 'string') : [];
   const aiFavorIfNone = noneFavor(actor, attackItem, context);
   // Playing to the Cameras (E6.10): a hit roll of anything but a mob offers the audiences; a damage roll is no Check.
@@ -267,6 +282,8 @@ export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', c
   const cameras = cameraRoll ? cameraAudienceList().map(a => ({ id: a.id, label: String(a.label || a.id) })) : [];
   const armedCameras = cameraRoll ? armedCamera(actor) : '';
   const cache = new Map(effects.map(e => [e.identifier, e]));
+  // Stock reasons are always listed, so with the setting off only a detected one (or a line the attacker's own row offers) opens the window
+  const opening = stockOpens ? situations : situations.filter(o => !o.stock || o.detected === DETECTED.yes);
   return {
     mode,
     isMob: actor?.type === 'mob',
@@ -281,7 +298,7 @@ export function buildAttackOptions(actor, attackItem, context, { mode = 'hit', c
     defaultSkill: mode === 'hit' ? String(defaultSkill || '') : '',
     get plainFormula() { return memo(this, 'plainFormula', () => previewFormula(actor, attackItem, 'none', damageContext)); },
     aiFavorIfNone,
-    hasOptions: (mode === 'hit' && skillOptions.length > 1) || effects.length > 0 || maneuvers.length > 0 || situations.length > 0 || pending.length > 0 || Boolean(armedCameras),
+    hasOptions: (mode === 'hit' && skillOptions.length > 1) || effects.length > 0 || maneuvers.length > 0 || opening.length > 0 || pending.length > 0 || Boolean(armedCameras),
     optionFor(id) {
       if (!cache.has(id)) cache.set(id, effectOption(actor, attackItem, id, damageContext));
       return cache.get(id);

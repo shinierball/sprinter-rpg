@@ -13,6 +13,7 @@ import { ruleBreakBadgeHtml } from '../utils/rule-break-visibility.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { CHECK_RECORD_FLAG } from '../utils/roll/check-assists.mjs';
 import { isMobSide } from '../utils/combat/combat-sides.mjs';
+import { attackerIdOf } from '../utils/combat/card-flags.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
 
 export const AI_FAVOR_TALLY_FLAG = 'aiFavorTally';
@@ -87,7 +88,7 @@ export function buildAiFavorTally({ combat, messages = worldMessages() } = {}) {
     if (!itemId) continue;
     const record = flags[CHECK_RECORD_FLAG];
     if (!record || record.combatId !== combatId) continue;
-    cards.push({ itemId, rollerUuid: String(record.rollerUuid ?? ''), attackerId: flags.attackerId ?? null, bonus: flags.aiFavorBonus });
+    cards.push({ itemId, rollerUuid: String(record.rollerUuid ?? ''), attackerId: attackerIdOf(message) ?? null, bonus: flags.aiFavorBonus });
   }
 
   const lines = [];

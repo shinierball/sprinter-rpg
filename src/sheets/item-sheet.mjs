@@ -13,6 +13,7 @@ import { buildSkillContext } from './item/context-skill.mjs';
 import { buildSpellContext } from './item/context-spell.mjs';
 import { buildAttackContext } from './item/context-attack.mjs';
 import { buildGearContext } from './item/context-gear.mjs';
+import { buildAsTriggerContext } from './item/context-as-triggers.mjs';
 import { TIMING_ACTIONS } from './item/actions-timing.mjs';
 import { buildTimingContext } from './item/context-timing.mjs';
 import { buildLootContext } from './item/context-outcomes.mjs';
@@ -31,6 +32,8 @@ import { TRANSFORM_ACTIONS } from './item/actions-transform.mjs';
 import { buildTransformContext } from './item/context-transform.mjs';
 import { buildDebuffSuppressesContext, buildDebuffSeverityContext, buildDebuffRepeatContext } from './item/context-debuff.mjs';
 import { buildActivationContext } from './item/context-activation.mjs';
+import { buildBuffAppliedContext } from './item/context-applied-buffs.mjs';
+import { APPLIED_BUFF_ACTIONS } from './item/actions-applied-buffs.mjs';
 import { ROW_ACTIONS } from './item/actions-rows.mjs';
 import { OUTCOME_ACTIONS } from './item/actions-outcomes.mjs';
 import { SPECIALTY_ACTIONS } from './item/actions-specialty.mjs';
@@ -81,7 +84,7 @@ export class COGItemSheet extends COGItemSheetV2 {
   static DEFAULT_OPTIONS = {
     classes: ['item'],
     position: { width: 580, height: 640 },
-    actions: { ...TAG_ACTIONS, ...LIST_ACTIONS, ...WEAPON_ACTIONS, ...FINDING_ACTIONS, ...ROW_ACTIONS, ...OUTCOME_ACTIONS, ...AS_TRIGGER_ACTIONS, ...SPECIALTY_ACTIONS, ...ADVANCEMENT_ACTIONS, ...COPY_BLUEPRINT_ACTIONS, ...POOP_ACTIONS, ...TIMING_ACTIONS, ...USE_ACTIONS, ...BLUEPRINT_ACTIONS, ...LOOT_BOX_ACTIONS, ...TRANSFORM_ACTIONS, ...DEITY_EFFECT_ACTIONS, ...PATRON_ACTIONS }
+    actions: { ...TAG_ACTIONS, ...LIST_ACTIONS, ...WEAPON_ACTIONS, ...FINDING_ACTIONS, ...ROW_ACTIONS, ...OUTCOME_ACTIONS, ...AS_TRIGGER_ACTIONS, ...APPLIED_BUFF_ACTIONS, ...SPECIALTY_ACTIONS, ...ADVANCEMENT_ACTIONS, ...COPY_BLUEPRINT_ACTIONS, ...POOP_ACTIONS, ...TIMING_ACTIONS, ...USE_ACTIONS, ...BLUEPRINT_ACTIONS, ...LOOT_BOX_ACTIONS, ...TRANSFORM_ACTIONS, ...DEITY_EFFECT_ACTIONS, ...PATRON_ACTIONS }
   };
 
   /** Body part for each item type (the `item.type` enum; sponsor has the traits part). */
@@ -141,7 +144,7 @@ export class COGItemSheet extends COGItemSheetV2 {
     class: buildClassContext,
     deity: buildDeityContext,
     patron: buildPatronContext,
-    buff: buildActivationContext,
+    buff: (context, item) => { buildActivationContext(context, item); buildBuffAppliedContext(context, item); buildAsTriggerContext(context); },
     debuff: (context, item) => { buildTransformContext(context, item); buildDebuffSuppressesContext(context, item); buildDebuffSeverityContext(context, item); buildDebuffRepeatContext(context, item); },
     space_upgrade: buildSpaceUpgradeContext
   });

@@ -16,7 +16,7 @@ import {
 } from '../../utils/attack/attack-options.mjs';
 import { attackOptionsLineHtml } from '../../utils/attack/attack-options-line.mjs';
 import { collectDamageModifiers, multiplierFor } from '../../utils/roll/damage-modifiers.mjs';
-import { damageCardDataAttrs, ignoreEvadeButtonHtml } from '../../utils/damage/damage-parts.mjs';
+import { damageCardDataAttrs, ignoreEvadeButtonHtml, spellBaseDataAttr } from '../../utils/damage/damage-parts.mjs';
 import { critDiceParts, cardShownParts, critDiceTotal, critDiceNoteHtml, critSubButtonHtml } from '../../utils/damage/crit-dice.mjs';
 import { resolveRollParts, targetRowsDataAttr, perTargetBoxHtml } from '../../utils/damage/per-target-damage.mjs';
 import { collectOnHitEffects, hasOnHitDebuff, onHitCardAttrs } from '../../utils/attack/on-hit.mjs';
@@ -24,7 +24,7 @@ import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
 import { isTechniqueApplicable } from './actor-techniques.mjs';
 import { getItemInflictedConditions } from './inflicted-conditions.mjs';
-import { getSpellDamageData } from './actor-spells.mjs';
+import { getSpellDamageData, spellRank1BaseFormula } from './actor-spells.mjs';
 import { withFlags } from '../../utils/flags.mjs';
 import { jsonAttr } from '../../utils/escape-attr.mjs';
 
@@ -181,6 +181,14 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
     }
   }
 
+  // The Rank 1 base, rolled once with the card: a defender whose buff cuts magic damage down to it reads this number.
+  let spellBaseAttr = '';
+  const rank1Base = spellRank1BaseFormula(actor, spellItem);
+  if (rank1Base) {
+    const baseRoll = await new Roll(rank1Base.formula).evaluate();
+    spellBaseAttr = spellBaseDataAttr({ ...rank1Base, total: Math.max(0, baseRoll.total) });
+  }
+
   const evaluatedParts = cardShownParts(allParts, rollContext.isCrit);
   const critTotal = critDiceTotal(allParts);
   const totalRawDamage = Object.values(typedDamage).reduce((acc, v) => acc + v, 0);
@@ -272,7 +280,7 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
       data-item-id="${spellItem.id}"
       data-item-name="${escapeAttr(spellItem.name)}"
       data-damage-value="${totalRawDamage}"
-      data-typed-damage='${jsonAttr(typedDamage)}'${damageCardDataAttrs(allParts, rollContextDataAttr({ ...rollContext, appliedRowKeys: dmod.appliedKeys }), critDebuffs, targetRowsDataAttr(dmod.targetRows), sourceId)}
+      data-typed-damage='${jsonAttr(typedDamage)}'${damageCardDataAttrs(allParts, rollContextDataAttr({ ...rollContext, appliedRowKeys: dmod.appliedKeys }), critDebuffs, targetRowsDataAttr(dmod.targetRows), sourceId)}${spellBaseAttr}
       data-attack-type="spell"
       data-is-armor-piercing="${isArmorPiercing}"
       data-condition-tags='${jsonAttr(normalConditionTags)}'${onHitCardAttrs(collectOnHitEffects({ sources: [{ item: spellItem, rank }] }))}

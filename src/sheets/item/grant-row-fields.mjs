@@ -11,7 +11,7 @@
  * Inputs are named `<rowPath>.<field>`; the query and the options list are action delegates (no `name`) that find their
  * row from `data-grant-path` / `data-grant-index`. Every control carries `data-row-field="<field>"`.
  */
-import { GRANT_KINDS, grantRowErrors } from '../../models/items/grant-validation.mjs';
+import { GRANT_KINDS, GRANT_FLOOR_SOURCES, grantRowErrors } from '../../models/items/grant-validation.mjs';
 import { CHOICE_CATEGORY_QUERIES } from '../../data/race-class-choices.mjs';
 import { normalizeTiming } from '../../utils/time/timing.mjs';
 import { groupedTagOptions } from '../../utils/character/point-build-params.mjs';
@@ -29,7 +29,7 @@ export const GRANT_ROW_FIELDS = Object.freeze({
   'spell:fixed':      Object.freeze(['identifier', 'rank', 'label']),
   'spell:choice':     Object.freeze(['rank', 'count', 'distinct', 'query', 'options', 'category', 'label']),
   'rank_bonus:fixed': Object.freeze(['value', 'tag', 'query', 'floor', 'onlyIfOwned', 'label']),
-  'rank_raise:fixed': Object.freeze(['identifier', 'tag', 'query', 'floor', 'value', 'label']),
+  'rank_raise:fixed': Object.freeze(['identifier', 'tag', 'query', 'floorFrom', 'floor', 'value', 'label']),
   'rank_cap:fixed':   Object.freeze(['value', 'identifier', 'tag', 'label']),
   'rank_cap:choice':  Object.freeze(['value', 'query', 'options', 'category', 'label'])
 });
@@ -162,6 +162,10 @@ function fieldView(field, row, key, rowPath, ctx) {
   const kind = key.split(':')[0];
   const base = { field, name: `${rowPath}.${field}`, label: `COG.Rows.Grant.Field.${field}` };
   if (field === 'tag') return { ...base, isTag: true, ...tagGroups(String(row.tag ?? '')), blank: loc('COG.Rows.Grant.NoTag') };
+  if (field === 'floorFrom') {
+    const options = pickOptions(GRANT_FLOOR_SOURCES.map((id) => ({ id, label: loc(`COG.Rows.Grant.FloorFrom.${id || 'row'}`) })), row.floorFrom);
+    return { ...base, isSelect: true, options };
+  }
   if (field === 'category') {
     const options = pickOptions(Object.keys(CHOICE_CATEGORY_QUERIES), row.category, { blankLabel: loc('COG.Rows.Grant.NoCategory') });
     if (row.category && !options.some((option) => option.selected)) options.push({ value: row.category, label: row.category, selected: true });
@@ -204,7 +208,8 @@ export function grantRowView(row, rowPath, ctx = {}) {
     kindOptions: GRANT_KINDS.map((value) => ({ value, labelKey: `COG.Rows.Grant.Kind.${value}`, selected: value === kind })),
     modeOptions: key ? grantModesOf(kind).map((value) => ({ value, labelKey: `COG.Rows.Grant.Mode.${value}`, selected: value === mode })) : [],
     showModes: key ? grantModesOf(kind).length > 1 : false,
-    fields: key ? (ctx.fieldsByKey?.[key] ?? GRANT_ROW_FIELDS[key]).map((field) => fieldView(field, source, key, rowPath, ctx)) : [],
+    // `floorFrom` reads a buff's stored Rank, so only a buff's editor offers it
+    fields: key ? (ctx.fieldsByKey?.[key] ?? GRANT_ROW_FIELDS[key]).filter((field) => field !== 'floorFrom' || ctx.item?.type === 'buff').map((field) => fieldView(field, source, key, rowPath, ctx)) : [],
     incomplete: errors.length > 0,
     problem: errors.join('; ')
   };

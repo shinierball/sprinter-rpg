@@ -1,14 +1,14 @@
 /**
  * "Apply Buff" chat button (scratch-off buff outcomes, consumables).
  */
-import { findConditionEntry } from '../../content/catalog-lookup.mjs';
 import { applyCardEffect, canWriteTarget, registerChatApplier } from '../chat-relay.mjs';
 import { resolveTargetActors } from './targets.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
 import { buffCardText } from '../../utils/card/buff-card-text.mjs';
-import { carrySourceStamp, landItems, isContentOff } from '../../utils/content-source.mjs';
 import { withFlags } from '../../utils/flags.mjs';
+import { buffCopyData } from '../../utils/effects/applied-buff.mjs';
+import { landBuff, hasUnappliedBuff } from '../../documents/actor/item-buffs.mjs';
 
 function parseApplyBuff(button) {
   return {
@@ -18,63 +18,20 @@ function parseApplyBuff(button) {
   };
 }
 
-export async function applyBuffTo(targetActor, params) {
+/**
+ * A consumable's or gear ability's buff as a timed copy on the actor, through the one landing rule (a second dose of an
+ * applied copy refreshes it, a copy the actor has by other means was already confirmed on the clicking client).
+ */
+export async function applyBuffTo(targetActor, params, ctx) {
   const { buffIdentifier, buffName } = params;
-  // By identifier through the catalog (never by name).
-  const match = findConditionEntry('buffs', buffIdentifier);
-
-  const buffData = match ? carrySourceStamp({
-    name: match.name,
-    type: 'buff',
-    img: match.img || 'icons/svg/aura.svg',
-    // An item applied to someone is in force: a buff model defaults to inactive, which would skip its modifiers and its duration stamp
-    system: { ...structuredClone(match.system || {}), active: true }
-  }, match) : {
-    name: buffName,
-    type: 'buff',
-    img: 'icons/svg/aura.svg',
-    system: { description: '', active: true }
-  };
-
-  const rawExternal = targetActor.system?.attributes?.externalBuffs || {};
-  let emptySlot = null;
-  for (const slot of ['buff1', 'buff2', 'buff3']) {
-    if (!rawExternal[slot]) {
-      emptySlot = slot;
-      break;
-    }
-  }
-
-  let mode = 'item';
-  // An external buff slot holds a buff reference (the catalog _id), never a name; an unmatched buff becomes an item.
-  if (emptySlot && targetActor.type === 'crawler' && match?._id && !isContentOff(match)) {
-    await targetActor.update({ [`system.attributes.externalBuffs.${emptySlot}`]: match._id });
-    mode = 'slot';
-  } else {
-    await targetActor.createEmbeddedDocuments('Item', landItems([buffData]));
-  }
-  return { targetUuid: targetActor.uuid, targetName: targetActor.name, buffName: buffData.name, mode };
+  const data = withFlags(buffCopyData(buffIdentifier, { fallbackName: buffName }), {
+    appliedBy: { messageId: ctx?.message?.id ?? '', sourceName: buffName }
+  });
+  await landBuff(targetActor, data, { options: { ruleBreak: true, interactive: false } });
+  return { targetUuid: targetActor.uuid, targetName: targetActor.name, buffName: data.name, mode: 'item' };
 }
 
 registerChatApplier('crawlerApplyBuff', { parse: parseApplyBuff, apply: applyBuffTo });
-
-/**
- * Whether the actor already has the buff a card names, by its structured identifier (never its name): a buff item
- * carrying `system.identifier`, or an external buff slot holding the identifier or the catalog `_id`. A card that
- * names no identifier makes a plain buff with no identity, so it never counts as a second copy.
- * @param {Actor} actor
- * @param {string} buffIdentifier
- * @returns {boolean}
- */
-export function hasBuffAlready(actor, buffIdentifier) {
-  const id = typeof buffIdentifier === 'string' ? buffIdentifier.trim() : '';
-  if (!id) return false;
-  const owned = [...(actor?.items ?? [])].some((i) => i.type === 'buff' && i.system?.identifier === id);
-  if (owned) return true;
-  const catalogId = findConditionEntry('buffs', id)?._id;
-  const slots = Object.values(actor?.system?.attributes?.externalBuffs ?? {});
-  return slots.some((v) => v && (v === id || v === catalogId));
-}
 
 /** A chat line recording that a second copy was taken as a Rule Break. */
 async function postDuplicateRuleBreak(actorName, buffName) {
@@ -101,7 +58,7 @@ export async function handleApplyBuff(event, button, message) {
   const secondCopies = new Set();
   // A target this client cannot write is not asked: applyCardEffect gives its own "Only the GM can apply this" warning.
   for (const actor of resolved) {
-    if (canWriteTarget(actor) && hasBuffAlready(actor, params.buffIdentifier)) {
+    if (canWriteTarget(actor) && hasUnappliedBuff(actor, params.buffIdentifier)) {
       const verdict = await confirmRuleBreak({
         title: buffCardText('COG.BuffCard.DuplicateTitle'),
         message: buffCardText('COG.BuffCard.DuplicateMessage', { actor: actor.name, buff: params.buffName })

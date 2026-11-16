@@ -683,6 +683,49 @@
   color: var(--cog-accent-strong);
 }
 
+/* A pet's guidance badge and its Guide control (core book p. 232) */
+.cog-pet-guidance {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.cog-pet-guidance-badge {
+  padding: 1px 6px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--cog-text);
+  border: 1px solid var(--cog-divider);
+  border-radius: 3px;
+}
+
+.cog-pet-guidance-badge.guidance-none,
+.cog-pet-guidance-badge.guidance-hiding {
+  color: var(--cog-danger);
+  border-color: var(--cog-danger);
+}
+
+.cog-pet-guidance-badge.guidance-limited,
+.cog-pet-guidance-badge.guidance-free {
+  color: var(--cog-success);
+  border-color: var(--cog-success);
+}
+
+.cog-pet-guide-btn {
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 1px 8px;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
 /* Actions Row & Pips */
 .cog-actions-row {
   display: flex;

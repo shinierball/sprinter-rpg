@@ -5,6 +5,7 @@
  * `attachment.token`, so there is nothing to move here.
  */
 import { isActiveGM } from '../utils/gm-relay.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { isMarkerActor } from '../utils/area/marker.mjs';
 import { centreAfterMovement } from '../utils/combat/movement-position.mjs';
 import { activeAurasOnScene, syncAuraMembership, withAuraLock } from '../documents/actor/aura-pulse.mjs';
@@ -70,7 +71,8 @@ export function queueAuraSync(tokenDoc, { deleted = false, movement = null } = {
   return entry.promise;
 }
 
-export function onAuraTokenMove(tokenDoc, movement) { return queueAuraSync(tokenDoc, { movement }); }
+// A migration write that moves a token is not a move into or out of an aura
+export function onAuraTokenMove(tokenDoc, movement, operation) { return isMigrationWrite(operation) ? undefined : queueAuraSync(tokenDoc, { movement }); }
 export function onAuraTokenCreate(tokenDoc) { return queueAuraSync(tokenDoc); }
 export function onAuraTokenDelete(tokenDoc) { return queueAuraSync(tokenDoc, { deleted: true }); }
 

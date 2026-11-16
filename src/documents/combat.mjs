@@ -15,12 +15,13 @@
  * delegates that Foundry, the tracker, the relays and the declarations mixin call by name.
  */
 
-import { SYSTEM_ID } from '../constants.mjs';
 import { combatDeclarationsMixin } from './combat-declarations.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { DECLARATION_STATUS } from '../utils/combat/declared-attacks.mjs';
 import { combatText } from '../utils/combat/combat-round-text.mjs';
 import { postAiFavorTallyCard } from '../chat/ai-favor-tally-card.mjs';
+import { postFightLootCard } from '../chat/fight-loot-card.mjs';
+import { postEvadeInjuryCard } from '../chat/evade-injury-card.mjs';
 import { runAuraPulseStep } from './combat-aura-pulse.mjs';
 import { tickRoundEffects } from './actor/duration-expiry.mjs';
 import { settleNextActionsAtCleanUp } from './actor/condition-expiry.mjs';
@@ -28,7 +29,7 @@ import { evaluateEffectFormula, postRoundEndEffectsChatCard, triggerRoundEndEffe
 import { isMobCombatant, findCombatant } from './combat/combatants.mjs';
 import {
   COMBAT_STEPS, CLEAN_UP_ORDER, registerCleanUpStep, unregisterCleanUpStep, cleanUpSteps,
-  currentStep, currentStepDefinition, isSurpriseRound, interruptWindowOpen,
+  currentStep, currentStepDefinition, isSurpriseRound, saveSurpriseRound, interruptWindowOpen,
   toggleSurpriseRound, setCombatStep, nextStep, goToStep, previousStep, stepFiveCleanUp
 } from './combat/steps.mjs';
 import { assignPhaseInitiative, rollInitiative, sortCombatants } from './combat/initiative.mjs';
@@ -44,6 +45,15 @@ const BaseCombat = globalThis.CONFIG?.Combat?.documentClass
   ?? globalThis.foundry?.documents?.BaseCombat
   ?? globalThis.Combat
   ?? class {};
+
+/** End Combat's Injury card: GM only, and a failure never stops the combat ending. */
+async function postInjuryCardAtEnd(combat) {
+  try {
+    if (globalThis.game?.user?.isGM) await postEvadeInjuryCard(combat);
+  } catch (err) {
+    console.warn('Sprinter RPG | Could not post the Injury card:', err);
+  }
+}
 
 export class COGCombat extends BaseCombat {
   /**
@@ -430,7 +440,7 @@ export class COGCombat extends BaseCombat {
 
     // Surprise rounds are rare and only apply to the initial ambush round
     if (this.isSurpriseRound) {
-      await this.setFlag(SYSTEM_ID, 'isSurpriseRound', false);
+      await saveSurpriseRound(this, false);
     }
 
     if (typeof super.nextRound === 'function') {
@@ -465,6 +475,15 @@ export class COGCombat extends BaseCombat {
     } catch (err) {
       console.warn('Sprinter RPG | Could not post the AI Favor tally:', err);
     }
+    // GM card with the mob loot and each boss's Boss Box and map; nothing is handed out until the GM presses a button.
+    try {
+      if (globalThis.game?.user?.isGM) await postFightLootCard(this);
+    } catch (err) {
+      console.warn('Sprinter RPG | Could not post the Loot card:', err);
+    }
+    // GM card with the Injuries the combat's Evades earned (pp. 80, 96); a line already on a card is not shown again, so the
+    // combat's deletion afterwards posts only what End Combat did not.
+    await postInjuryCardAtEnd(this);
     if (typeof super.endCombat === 'function') {
       return super.endCombat();
     }

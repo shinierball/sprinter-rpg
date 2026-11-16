@@ -1,6 +1,6 @@
 /**
  * The buff activation block's payload normaliser (a creation spec or an import). Never throws: each fix is a warning.
- * A spec authors `enabled`, `cooldown`, `window.unit`, `window.value` and `window.query`; the four state fields
+ * A spec authors `enabled`, `auto`, `cooldown`, `window.unit`, `window.value` and `window.query`; the four state fields
  * (`open`, `closesAt`, `combatId`, `usesLeft`) are the engine's, so a built buff always starts closed.
  */
 import { firstScalar } from '../../utils/first-scalar.mjs';
@@ -41,6 +41,7 @@ export function normalizeActivation(system, warn) {
   }
 
   block.enabled = block.enabled === true;
+  if (block.auto !== undefined) block.auto = block.auto === true;
   block.cooldown = normalizeTiming(block.cooldown);
   block.window = { ...window, unit, value: counted ? Math.floor(value) : value };
   block.open = false;

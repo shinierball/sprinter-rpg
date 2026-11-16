@@ -28,7 +28,7 @@ function skillEntry({ id, name, img, system: sys = {}, sourceBadge }) {
     system: {
       identifier: sys.identifier || '',
       stat: sys.stat || 'str',
-      checkType: sys.checkType || 'stat',
+      checkType: sys.checkType || 'skill',
       checkNote: sys.checkNote || '',
       notes: sys.notes || '',
       isTechnique: sys.isTechnique === true,

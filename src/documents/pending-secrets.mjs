@@ -13,8 +13,11 @@ import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { itemIdentifier } from '../utils/identifier.mjs';
 import { getCurrentFloor } from './actor/actor-environment.mjs';
 import { postSecretCard, transformCardText } from './actor/transform-cues.mjs';
+import { registerStoredCopy } from '../utils/migrations/stored-copies.mjs';
 
 export const PENDING_SECRETS_SETTING = 'pendingSecrets';
+// Each held record keeps the debuff's creation data (`debuffData`).
+registerStoredCopy({ of: 'Item.debuff', at: 'setting:pendingSecrets' });
 const HOLD_SECRET_RELAY = 'holdSecret';
 
 const clone = (value) => {

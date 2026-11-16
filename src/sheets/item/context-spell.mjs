@@ -5,6 +5,7 @@ import { getCustomTags, getTagDefinition } from '../../data/tag-definitions.mjs'
 import { FAVORED_TAG_PREFIX } from '../../utils/tag/tag-mechanics.mjs';
 import { hasOnHitDebuff } from '../../utils/attack/on-hit.mjs';
 import { buildOnHitContext } from './context-on-hit.mjs';
+import { buildAppliedBuffsContext } from './context-applied-buffs.mjs';
 import { normalizeBaseDamage, baseDamageDice } from '../../utils/damage/base-damage.mjs';
 import { buildBaseDamageContext, buildHealingContext, buildRankBreakTagText, buildRankBreakViews } from './context-common.mjs';
 import { buildRankBreakCards } from './context-rank-breaks.mjs';
@@ -28,6 +29,7 @@ export function buildFavoredPicker(item) {
 export function buildSpellContext(context, item) {
   const sys = context.system;
   buildOnHitContext(context);
+  buildAppliedBuffsContext(context, item);
   context.favoredPicker = buildFavoredPicker(item);
   buildRankBreakTagText(context, RANK_BREAK_THRESHOLDS);
   buildRankBreakViews(context, RANK_BREAK_THRESHOLDS);

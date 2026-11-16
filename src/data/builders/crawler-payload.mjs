@@ -8,7 +8,7 @@
 
 import { contentRegistry } from '../../content/registry.mjs';
 import {
-  STARTER_RANK, STARTER_POTION_COUNT, findLoadout, defaultLoadout, resolveLoadoutId, getStarterWeaponDefinition, weaponTagsForSkill,
+  STARTER_RANK, STARTER_POTION_COUNT, findLoadout, defaultLoadout, resolveLoadoutId, getStarterWeaponDefinition, weaponTagsForSkill, importedWeaponName,
   starterSpellPayload, starterUnarmedPayloads, starterPotionPayload
 } from '../../content/creation-loadouts.mjs';
 import { starterWeaponSkillFields } from '../../utils/skill/starter-weapon-skill.mjs';
@@ -165,7 +165,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         system: {
           rank: s.rank,
           stat: (s.stat || 'str').toLowerCase(),
-          checkType: 'stat',
+          checkType: 'skill',
           damageModifiers: []
         }
       });
@@ -177,6 +177,9 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
   const starterSkills = [];
   if (starterMode === 'weapon') {
     const copy = starterSkillCopy(wDef.skillIdentifier);
+    // An imported book name replaces the example Skill's name; identifier, tags and rules stay the system's.
+    const importedName = importedWeaponName(wDef);
+    if (copy && importedName) copy.name = importedName;
     starterSkills.push({
       primary: true,
       payload: copy ?? {
@@ -187,7 +190,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
           ...(wDef.skillIdentifier ? { identifier: wDef.skillIdentifier } : {}),
           rank: STARTER_RANK,
           stat: (wDef.toHitStat || 'str').toLowerCase(),
-          checkType: 'stat',
+          checkType: 'skill',
           notes: `Skill: ${wDef.name}`,
           ...starterWeaponSkillFields(wDef, weaponTagsForSkill(wDef.skillIdentifier)),
           damageModifiers: []
@@ -202,7 +205,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
   for (const { primary, payload } of starterSkills) {
     const identifier = payload.system?.identifier;
     const lowered = String(payload.name ?? '').toLowerCase().trim();
-    const existing = itemPayloads.find(p => p.type === 'skill' && ((identifier && p.system?.identifier === identifier) || String(p.name ?? '').toLowerCase().trim() === lowered));
+    const existing = itemPayloads.find(p => p.type === 'skill' && ((identifier && p.system?.identifier === identifier) || (lowered && String(p.name ?? '').toLowerCase().trim() === lowered)));
     if (existing) {
       existing.system = { ...(existing.system ?? {}), rank: Math.max(Number(existing.system?.rank) || 0, STARTER_RANK) };
       if (primary) withRole(existing, 'primarySkill');
@@ -248,38 +251,26 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
     });
   }
 
-  // If starterMode === 'weapon': add the weapon to inventory (gear), equip it, and add an attack using it
+  // If starterMode === 'weapon': add the weapon to inventory (gear) and equip it. The weapon is the starter attack: no
+  // separate attack item, which would take the weapon's hands a second time and stay equipped when the weapon is stowed.
   if (starterMode === 'weapon') {
     const weaponTags = weaponTagsForSkill(wDef.skillIdentifier);
-    // 1. Add weapon to inventory and equip it
     itemPayloads.push({
       name: wDef.name,
       type: 'gear',
       img: wDef.img || 'icons/svg/sword.svg',
+      flags: role('starterAttack'),
       system: {
         slot: 'hands',
         quantity: 1,
         equipped: true,
         isWeapon: true,
+        toHitStat: wDef.toHitStat,
         drBonus: 0,
         ...(wDef.skillIdentifier ? { associatedSkills: [wDef.skillIdentifier] } : {}),
         ...(weaponTags.length ? { tags: weaponTags } : {}),
+        ...(wDef.wieldMode ? { wieldMode: wDef.wieldMode } : {}),
         notes: wDef.effects || `Equipped weapon: ${wDef.name}`
-      }
-    });
-
-    // 2. Add an attack using the equipped item
-    itemPayloads.push({
-      name: wDef.name,
-      type: 'attack',
-      img: wDef.img || 'icons/svg/sword.svg',
-      flags: role('starterAttack'),
-      system: {
-        toHitStat: wDef.toHitStat,
-        toHitRank: 3,
-        ...(wDef.skillIdentifier ? { associatedSkills: [wDef.skillIdentifier] } : {}),
-        ...(weaponTags.length ? { tags: weaponTags } : {}),
-        effects: wDef.effects || ''
       }
     });
   } else if (starterMode === 'spell') {

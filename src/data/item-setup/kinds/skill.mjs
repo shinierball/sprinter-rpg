@@ -13,7 +13,7 @@ import { NAME_FIELD, idList, nameSpec, text } from '../answers.mjs';
 const ROLES = Object.freeze(['weapon', 'attack', 'check', 'passive', 'technique']);
 const DEFAULT_ROLE = 'check';
 const DEFAULT_STAT = 'str';
-const DEFAULT_CHECK_TYPE = 'stat';
+const DEFAULT_CHECK_TYPE = 'skill';
 const ATTACKS = Object.freeze(['weapon', 'attack']);
 
 const whenRole = (...roles) => Object.freeze({ field: 'role', in: Object.freeze(roles) });
@@ -27,7 +27,7 @@ registerSetupKind({
     NAME_FIELD,
     Object.freeze({ id: 'role', type: 'choice', options: ROLES, rerender: true }),
     Object.freeze({ id: 'stat', type: 'choice', source: 'stats' }),
-    Object.freeze({ id: 'checkType', type: 'choice', source: 'checkTypes', values: Object.freeze(['stat', 'opposed', 'tool']), when: whenRole('check') }),
+    Object.freeze({ id: 'checkType', type: 'choice', source: 'checkTypes', values: Object.freeze(['skill', 'statOnly', 'opposed', 'tool']), when: whenRole('check') }),
     Object.freeze({ id: 'baseDamage', type: 'baseDamage', when: whenRole(...ATTACKS) }),
     Object.freeze({ id: 'types', type: 'tagChips', chips: 'weaponTypes', when: whenRole(...ATTACKS) }),
     Object.freeze({ id: 'groups', type: 'tagChips', chips: 'skillGroups', when: whenRole('check', 'passive') }),

@@ -138,7 +138,7 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
       quantity: 1,
       value: 150,
       hasActivatedAbility: false,
-      tags: ['delivery.aura', 'shape.aura'],
+      tags: ['delivery.aura'],
       area: {
         hasArea: true,
         shape: 'burst',

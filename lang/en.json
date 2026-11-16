@@ -51,6 +51,9 @@
         "Added": "Added {skill} to the Skills this weapon attacks with."
       }
     },
+    "ItemManager": {
+      "PickAdd": "Pick"
+    },
     "ItemSetup": {
       "Title": "Create New Item",
       "Pick": {
@@ -460,6 +463,13 @@
         "incomplete": "A modifier row will not apply: {detail}.",
         "reference-unresolved": "A {kind} reference \"{ref}\" does not exist in this world."
       },
+      "appliedBuff": {
+        "no-recipients": "The target \"{target}\" does not say who it reaches, so this buff goes to the caster only.",
+        "no-reach": "{target} with no distance reaches everyone on the scene. Add a Within distance to limit it."
+      },
+      "grant": {
+        "floor-from-rank": "A Rank raise row takes its Rank from the item carrying it, and only a buff has a Rank. On anything else the row does nothing."
+      },
       "buff": {
         "no-rows": "This buff changes nothing: it has no stat grant, defense, damage, attack, check or other effect."
       },
@@ -494,7 +504,8 @@
       },
       "attackSkill": {
         "no-damage": "This Skill attacks but has no Base Damage, healing or on-hit effect.",
-        "damage-not-dice": "This Skill's Base Damage is not plain dice (like 1d6), so it rolls no damage."
+        "damage-not-dice": "This Skill's Base Damage is not plain dice (like 1d6), so it rolls no damage.",
+        "stat-check": "A Stat Check is not an attack roll; its damage is dealt on a Success."
       },
       "consumable": {
         "no-outcome": "Using this does nothing: it has no outcome and casts no spell.",
@@ -519,6 +530,9 @@
       "AmountTip": "{amount} not responding"
     },
     "Skill": {
+      "DamageOnSuccess": "Roll Damage (on a Success)",
+      "FailedCheckDamageTitle": "The check did not succeed",
+      "FailedCheckDamage": "The check failed ({outcome}). Roll damage anyway as a Rule Break?",
       "HighRankBadge": "Rank 16+ from the Sixth Floor",
       "HighRankTip": "Rank {rank} is kept, and acts as 15 until the crawler reaches Floor {floor}.",
       "Sheet": {
@@ -632,7 +646,8 @@
       }
     },
     "CheckType": {
-      "stat": "Stat Check",
+      "skill": "Skill Check",
+      "statOnly": "Stat Check",
       "opposed": "Opposed Contest",
       "attack": "Attack vs Evade",
       "evade": "Evade",
@@ -657,6 +672,125 @@
     },
     "Session": {
       "LedgerEditNotOwner": "You can only edit ledger entries for crawlers you own."
+    },
+    "PopularityChange": {
+      "Hint": {
+        "Cha": "Charisma {cha} (needs {need} or more)",
+        "ChaLow": "Charisma {cha} ({need} or less)",
+        "NoRecord": "No floor record",
+        "Left": "{hours}h left on the floor timer",
+        "Ground": "{hours}h ground of the last {window}",
+        "Crit": "Natural {d20}, {name}",
+        "Party": "Party of {size}: only featured crawlers",
+        "Pet": "Has a pet",
+        "NoPet": "No pet"
+      },
+      "session": {
+        "crit": "Rolled a Critical Hit or Critical Fail in a fight or a life-or-death check",
+        "courage": "Did something courageous",
+        "solution": "Solved a problem in an original, entertaining way that worked",
+        "avoided-fight": "Walked away from a fight",
+        "boring": "Was boring or gross"
+      },
+      "day": {
+        "recap": "Made the day's highlight reel"
+      },
+      "floor": {
+        "pet": "Their pet charmed the audience",
+        "cha-high": "High Charisma for the floor",
+        "catchphrase": "Memorable catchphrase",
+        "big-attack": "Primary attack was a big d10-or-larger hit",
+        "cha-low": "Low Charisma for the floor",
+        "early-stairwell": "Reached the stairwell with over 30 hours to spare",
+        "grind": "Spent over half of the last 30 hours grinding"
+      },
+      "tutorial": {
+        "weapon": "Wielded a unique or unconventional weapon",
+        "cha-high": "Reached Charisma 10 or higher",
+        "solution": "Solved a problem in an entertaining way",
+        "event": "Some other bold, strange or memorable moment",
+        "big-weapon": "Used the same big weapon for most of the floor",
+        "cha-low": "Charisma 5 or less",
+        "boring": "Avoided difficult fights and was boring for over 30 hours",
+        "early-stairwell": "Reached the stairwell with over 30 hours to spare",
+        "grind": "Spent over half of the last 30 hours grinding"
+      }
+    },
+    "PopularityChecklist": {
+      "Title": "Popularity checklist: {moment}",
+      "Moment": { "session": "Session", "day": "Day", "floor": "Floor" },
+      "Net": "Net {net}",
+      "Box": "{tier} Fan Box",
+      "Undo": "Undo",
+      "Undone": "[UNDONE]",
+      "UndoneLine": "Popularity checklist undone: {moment}.",
+      "UndoneBoxes": "Fan Boxes already awarded stay with their crawlers: {boxes}.",
+      "UndoneBelow": "{name} is back below {milestones}; any Fan Box already awarded for it stays.",
+      "Other": "Other",
+      "Unknown": "Crawler",
+      "GmOnly": "Only the GM can apply the Popularity checklist.",
+      "RuleBreakTitle": "Popularity Checklist",
+      "RuleBreakMessage": "{detail}. Apply anyway as a Rule Break?",
+      "RuleBreakUsed": "{count} change(s) already applied this period",
+      "RuleBreakFirstFloor": "{count} change(s) on the First Floor, where Popularity does not count yet",
+      "UndoReason": "Undo: {label}",
+      "ReasonLabel": "Popularity checklist ({moment})",
+      "BoxTrophy": "Fan Box: {tier}",
+      "BoxReward": "1x {tier} Fan Box",
+      "BoxQuote": "The audience is voting on the contents. Voting closes {time}.",
+      "Due": {
+        "Title": "Popularity checklist due",
+        "session": "The session has ended.",
+        "day": "Day {days} ended.",
+        "floor": "Floor {floor} was left.",
+        "Open": "Open checklist"
+      },
+      "Window": {
+        "Title": "Popularity Checklist",
+        "Due": "due",
+        "Button": { "session": "Session Popularity", "day": "Day Popularity", "floor": "Floor Popularity" },
+        "PeriodDay": "Day {day}",
+        "PeriodExit": "Leaving Floor {floor} with {timer}h on the clock",
+        "PeriodLive": "Floor {floor}, {timer}h on the clock",
+        "NoSession": "No session",
+        "BannerNoCrawlers": "No tracked crawlers in this session.",
+        "BannerFirstFloor": "First Floor: Popularity does not count yet, so nothing is pre-ticked. Applying anything asks for a Rule Break.",
+        "BannerNoExit": "No floor-exit record for the floor just left: reading the live floor and clock.",
+        "Change": "Change",
+        "Include": "Include {name}",
+        "Crosses": "Crosses {milestones}: you will be alerted",
+        "Used": "[USED]",
+        "Amount": "Amount",
+        "OtherReason": "Reason",
+        "Boxes": "Fan Boxes",
+        "BoxTier": "Tier",
+        "AwardBox": "Award Fan Box",
+        "RemoveBox": "Remove",
+        "Apply": "Apply",
+        "Reset": "Reset",
+        "NothingTicked": "Nothing is ticked to apply."
+      },
+      "Hint": {
+        "DayJump": "Gained {gain} Popularity in a day",
+        "BoxThisFloor": "Already had a Fan Box on this floor"
+      }
+    },
+    "FanBoxAlert": {
+      "Title": "Fan Box milestone",
+      "Reached": "{name} reached Popularity {milestone} (now {now})",
+      "Hint": "Already had a Fan Box on this floor.",
+      "Below": "Popularity is now {now}, below {milestone}",
+      "Award": "Award Fan Box...",
+      "NoBox": "No box",
+      "Awarded": "[AWARDED] {tier}",
+      "Dismissed": "[NO BOX]",
+      "TierTitle": "Award a Fan Box",
+      "TierLabel": "Tier",
+      "TierIntro": "{name} reached Popularity {milestone}. Which tier of Fan Box?",
+      "Confirm": "Award",
+      "Cancel": "Cancel",
+      "GmOnly": "Only the GM can answer a Fan Box alert.",
+      "Unknown": "Crawler"
     },
     "Heritage": {
       "earth": {
@@ -724,7 +858,8 @@
         "style": "Style"
       },
       "Penalty": {
-        "driver": "Driving a vehicle"
+        "driver": "Driving a vehicle",
+        "rider": "Riding a mount"
       },
       "NotDriver": {
         "Title": "Not the driver"
@@ -758,8 +893,6 @@
       "Boarded": "Made it aboard.",
       "NotBoarded": "Did not make it aboard.",
       "BoardAnyway": "Board anyway (Rule Break)",
-      "OfferReroll": "Reroll: {label}",
-      "OfferShift": "Use {label}",
       "Choose": "Take instead: {label}",
       "RamHit": "The ram connects.",
       "RamMiss": "The ram misses.",
@@ -767,6 +900,30 @@
       "EvadeHit": "The hit lands.",
       "RamDamage": "Roll ram damage",
       "RuleBreak": "Rule Break: not the driver, or above the available Move."
+    },
+    "CheckOffer": {
+      "Title": "After the roll",
+      "RowReroll": "Reroll: {label} ({source})",
+      "Shift": "Use {label}: {from} → {to}",
+      "RerollCardFlavor": "{name}: reroll of {check} ({source})",
+      "Rerolled": "Rerolled ({source}): {old} → {new}",
+      "Shifted": "Shifted ({source}): {from} → {to}",
+      "Refused": "The reroll was not applied ({reason}).",
+      "RuleBreak": "Rule Break",
+      "AiFavorReroll": "Reroll (1 AI Favor): {have} left",
+      "SourceAiFavor": "AI Favor",
+      "Apply": "Apply to {name}'s check",
+      "NotApplied": "This reroll has not reached its check yet. The GM can apply it.",
+      "LedgerReason": "Reroll: {check}",
+      "LedgerNote": "Rerolled: was {old}",
+      "RuleBreakTitle": "Reroll Rule Break",
+      "Anyway": "Reroll anyway as a Rule Break?",
+      "Reason": {
+        "natural-one": "A Natural 1 cannot be rerolled.",
+        "already-rerolled": "This Check was already rerolled with AI Favor.",
+        "no-favor": "Not enough AI Favor ({have}/{need}).",
+        "applied": "The result was already applied."
+      }
     },
     "VehicleRam": {
       "Dice": "Ram dice",
@@ -1170,6 +1327,7 @@
         "TextPlaceholder": "What happens, as text the GM adjudicates",
         "NameLabel": "Name",
         "NamePlaceholder": "Rimshot",
+        "FromRankLabel": "From Rank",
         "DamageRow": "Extra damage row",
         "Add": "Add AS trigger",
         "Remove": "Remove",
@@ -1526,6 +1684,10 @@
       "Fixed1": "Fixed 1 Bar",
       "Fixed2": "Fixed 2 Bars",
       "HpPerBar": "Health per bar",
+      "HpPerSlotStat": "Health per bar from",
+      "HpPerSlotFixed": "The number here",
+      "PassTag": "Damage tagged this passes by",
+      "PassTagHint": "A tag such as kind.spell: a hit carrying it skips the bars. Empty: the bars take every hit.",
       "Combat": "Bonuses inside the area",
       "Evade": "Evade Bonus",
       "Attack": "Attack Bonus",
@@ -1602,6 +1764,7 @@
       "blueprint": "Blueprint",
       "box": "Loot box",
       "consumable": "Consumable",
+      "potion": "Potion",
       "treasure": "Treasure",
       "crafting": "Crafting material",
       "quest": "Quest item"
@@ -1659,11 +1822,60 @@
         }
       }
     },
+    "AppliedBuffs": {
+      "Sheet": {
+        "Title": "Buffs this applies",
+        "Hint": "One click on the use card gives each row's buff to its target. Several rows can apply at once or by Rank; the buff lasts as long as this item's Duration.",
+        "Buff": "Buff",
+        "ChooseBuff": "Choose a buff",
+        "Target": "Gives it to",
+        "Within": "Within (ft)",
+        "WithinHintOne": "How far away the creature can be. Blank: this item's own Range.",
+        "WithinHintOther": "How far from the caster a recipient can be. Blank: no limit.",
+        "FromRank": "From Rank",
+        "ToRank": "To Rank",
+        "BuffRank": "Buff's Rank",
+        "BuffRankHint": "The Rank the buff carries, for buff rows that read Rank. Blank: this item's Rank.",
+        "ItemRank": "Item's Rank",
+        "RankSkill": "Rank of skill",
+        "RankSkillHint": "Use the caster's Rank in this skill as the buff's Rank.",
+        "Lasts": "Lasts as long as this item: {duration}.",
+        "NoDuration": "This item has no Duration, so the buff has no time limit.",
+        "Add": "Add a buff",
+        "Remove": "Remove this row"
+      }
+    },
     "BuffCard": {
       "AppliedOnUse": "Applied on use",
       "DuplicateTitle": "Buff Already Applied",
       "DuplicateMessage": "{actor} already has {buff}. Apply a second copy as a Rule Break?",
-      "RuleBreakLine": "{actor} took a second copy of {buff} as a Rule Break."
+      "RuleBreakLine": "{actor} took a second copy of {buff} as a Rule Break.",
+      "ApplyTo": "Apply to {target}",
+      "Lasts": "Lasts {duration}",
+      "To": "To: {target}",
+      "WithinFeet": "{target} within {feet} ft",
+      "AtRank": "Rank {rank}",
+      "Remove": "Remove",
+      "AppliedTo": "Applied to: {names}.",
+      "NotMeasured": "Distance was not measured.",
+      "NotAllowed": "Only the caster's owner or a GM can apply this.",
+      "ReachTitle": "Buff Beyond Its Rules",
+      "ReachMessage": "Some recipients are outside what this buff reaches. Apply it to them anyway as a Rule Break?",
+      "Reason": {
+        "out-of-reach": "out of reach",
+        "not-on-scene": "not on this scene",
+        "wrong-kind": "not a valid kind of target",
+        "other-side": "on the opposing side",
+        "immune": "immune"
+      },
+      "RankTitle": "Buff Rank",
+      "RankMessage": "What Rank does {buff} land at? Closing this lands it at Rank 0, where every row counts.",
+      "RankLabel": "Rank",
+      "RankConfirm": "Land it",
+      "RankBreakTitle": "Rank Beyond the Limit",
+      "RankBreakMessage": "{buff} at Rank {rank} is above the usual limit of Rank {cap}. Land it anyway as a Rule Break?",
+      "CapTitle": "Buff at Its Cap",
+      "CapMessage": "{actor} already has {count} of {cap} copies of {buff}. Add another as a Rule Break?"
     },
     "Transform": {
       "Title": "TRANSFORMATION",
@@ -1786,6 +1998,8 @@
         "WindowAmount": "Window length",
         "WindowUnit": "Window unit",
         "WindowQuery": "Counts only uses with these tags (empty = any use or hit)",
+        "Auto": "Opens by itself",
+        "AutoHint": "Opens at the first hit once its cooldown is ready, with no click and no question.",
         "Cooldown": "Cooldown (once per day: 1 day)",
         "Note": "While the window is closed the buff does nothing. Use opens it; it closes by the clock, at combat end, after the counted uses or hits, or by End.",
         "Unit": {
@@ -1814,6 +2028,18 @@
         "DamageTypeHint": "For a buff whose rows name a damage type; blank for any.",
         "DurationText": "Duration (text)",
         "DurationHint": "Shown to people; the timed duration below is what ends the buff.",
+        "AppliedRank": "Applied at Rank",
+        "AppliedRankHint": "Set when a Skill or spell applies this buff: rows with a From Rank read it. 0 for a buff nothing applied.",
+        "Repeat": "When applied again",
+        "RepeatHint": "Refresh: one buff, its timer renewed. Stack: one more copy, and every copy counts.",
+        "RepeatMode": {
+          "refresh": "Refresh",
+          "stack": "Stack"
+        },
+        "RepeatMax": "At most",
+        "RepeatMaxHint": "A stack holds at most this many copies; a copy past it asks a Rule Break. Blank for no cap.",
+        "RepeatMaxFromRank": "At most its Rank",
+        "RepeatMaxFromRankHint": "The cap is the Rank the copy was applied at (when above 0), instead of the number.",
         "Description": "Description"
       }
     },
@@ -2326,6 +2552,8 @@
       "HealBarsMany": "{n} Health Bars",
       "TempBarsOne": "Grants 1 temporary Health Bar of {hp} HP",
       "TempBarsMany": "Grants {slots} temporary Health Bars of {hp} HP",
+      "TempBarsStat": "Grants {slots} temporary Health Bars, each holding the {stat} Mod in HP",
+      "TempBarsPass": "Damage tagged {tag} passes them by.",
       "SpellSkill": {
         "Stat": "Stat: {stat}",
         "Rank": "Rank {n}",
@@ -2340,6 +2568,7 @@
         "SkillGroup": "Group: {group}",
         "Specialty": "Specialty: {label}",
         "CheckTypeNoStat": "Check: {type}",
+        "DamageOnSuccess": "Damage on a Success",
         "AiFavor": "AI Favor {n}",
         "ManaCost": "{n} Mana",
         "ManaCostModified": "{n} Mana (base {base})",
@@ -2372,6 +2601,13 @@
         "DispelMatching": "{text} matching {query}",
         "FumbleDebuff": "On a fumble: {debuff}",
         "OptionalEffects": "Damage effects: {list}",
+        "AppliedBuff": "Gives {buff} to {target}",
+        "AppliedBuffWithin": "Gives {buff} to {target} within {feet} ft",
+        "AppliedBuffFrom": "From Rank {rank}: {text}",
+        "AppliedBuffUpTo": "Up to Rank {rank}: {text}",
+        "AppliedBuffBetween": "Rank {from} to {to}: {text}",
+        "AppliedBuffAtRank": "{text}, at Rank {rank}",
+        "AppliedBuffRankSkill": "{text}, at the caster's Rank in {skill}",
         "Duration": "Duration: {text}",
         "DurationBonus": "Duration: {text} (+{n} from Rank)",
         "EndsWithCombat": "{text}, ends when combat ends",
@@ -2430,6 +2666,7 @@
         "Damage": "Damage: {text}",
         "Crit": "Critical Hit: {n}x base dice",
         "IgnoreDR": "Ignores DR",
+        "AsTriggerFromRank": "{text}, from Rank {rank}",
         "PersistentBuffs": "While equipped, grants: {list}",
         "PersistentDebuffs": "While equipped, inflicts: {list}",
         "Heal": "Heals {bars} each round",
@@ -2607,6 +2844,8 @@
       "Label": "Label",
       "Flat": "Flat amount (+ or -)",
       "Percent": "Percent (+ or -)",
+      "BeforePercent": "Before %",
+      "BeforePercentTooltip": "Added before percentages are worked out: +5 and doubled reads (10 + 5) x 2, not 10 x 2 + 5.",
       "Locked": "Locked",
       "LockedTooltip": "The percent, worked out when the owner got the item. Edit it to re-work it.",
       "NotLocked": "not yet",
@@ -2618,6 +2857,7 @@
     },
     "Feature": {
       "Stat": "{value} {stat}",
+      "StatBeforePercent": "{value} {stat} (before %)",
       "StatPool": "Distribute {value} points among {options}",
       "StatNow": "{text} ({value} now)",
       "StatLocked": "{text} (locked at {value})",
@@ -2634,6 +2874,7 @@
       "RankBonusOwned": "{text}, only if owned",
       "RankCap": "Rank cap {value}: {target}",
       "RankRaise": "{target}: Rank {floor}, or {value} if already at {floor} or higher",
+      "RankRaiseFromCarrier": "{target}: this item's Rank, or {value} if already at or above it",
       "RankCapChoice": "Rank cap {value} for {count} chosen skill(s)",
       "Dr": "{value} DR",
       "Walk": "{value} ft Walk speed",
@@ -2666,6 +2907,7 @@
       "PopularityEventCrit": "a Critical Hit",
       "PopularityEventCritFail": "a Critical Fail",
       "PopularityEventKill": "a kill",
+      "PopularityEventAmazing": "an Amazing Success",
       "PopularityOncePerCombat": "once per combat",
       "PopularityOncePerFloor": "once per floor",
       "MaxRank": "if Rank ≤ {value}",
@@ -2793,6 +3035,32 @@
       "RuleBreakTitle": "Popularity Limit",
       "RuleBreakMessage": "{label} already gave Popularity this {scope}. Award it again as a Rule Break?"
     },
+    "PaidDr": {
+      "Title": "Spend AI Favor for DR",
+      "Question": "{target} takes {damage}{type} before DR {dr}. Spend AI Favor for +{each} DR each? You have {available}.",
+      "Piercing": "This attack is Armor-Piercing: the DR will be ignored.",
+      "None": "Spend none",
+      "Spend": "Spend {n}"
+    },
+    "EventTrigger": {
+      "Healed": "{label}: healed {slots} {slotWord}",
+      "HealBlocked": "{label}: no healing",
+      "Gold": "{label}: +{amount} gold",
+      "AiFavor": "{label}: +{amount} AI Favor",
+      "Debuff": "{label}: you gain {debuff}",
+      "DebuffBlocked": "{label}: {debuff} did not land",
+      "Buff": "{label}: {buff} on {names}",
+      "BuffSkipped": "skipped {names}",
+      "BuffBlocked": "{label}: {buff} did not land",
+      "BuffAtCap": "at its cap on {names}",
+      "NotYours": "not yours to change",
+      "CheckOffer": "{label}: roll {skill}",
+      "CheckButton": "Roll {skill}",
+      "Slot": "slot",
+      "Slots": "slots",
+      "RuleBreakTitle": "Trigger Limit",
+      "RuleBreakMessage": "{label} already fired {used} of {limit} times this {scope}. Fire it again as a Rule Break?"
+    },
     "RaceClass": {
       "RuleBreakTitle": "Race and Class Not Unlocked",
       "RuleBreakMessage": "Race and Class are chosen on Floor {floor}, and {actor} is on Floor {current}. Apply {name} anyway as a Rule Break?",
@@ -2816,6 +3084,110 @@
       "NoActor": "The crawler for this line was not found.",
       "Done": "{actor} gains +{value} AI Favor.",
       "ChatReason": "Combat tally: {item}"
+    },
+    "FightLoot": {
+      "Title": "Loot",
+      "Hint": "Nothing is handed out until you press a button and confirm.",
+      "Bodies": "Dead mobs: {count}",
+      "RollMob": "Roll mob loot",
+      "MobDone": "Mob loot handed out",
+      "ShareLine": "{name}: {junk} Misc. Junk, {gold} gold",
+      "BossLine": "{name} ({tier})",
+      "Levels": "Levels: use Award Levels, {tier}.",
+      "HandOut": "Hand out",
+      "BossDone": "Handed out",
+      "Got": "{name}: {box}{map}",
+      "GotMap": " and {map}",
+      "GmOnly": "Only the GM can hand out loot.",
+      "AlreadyTitle": "Already Handed Out",
+      "AlreadyMessage": "This loot was already handed out. Hand it out again as a Rule Break?",
+      "AlreadyReason": "Loot handed out twice from one combat.",
+      "Cancel": "Cancel",
+      "Next": "Next",
+      "Confirm": "Hand out",
+      "Roll": {
+        "Title": "Mob loot",
+        "Intro": "Each dead mob carries one roll of Misc. Junk and one of gold, multiplied by the number of bodies. The book lists mob gold for Floors 1 to 5.",
+        "Unlisted": "The book lists Floors 1 to 5; this Floor is pre-filled with the last entry.",
+        "Bodies": "Bodies",
+        "Floor": "Floor",
+        "JunkDice": "Misc. Junk dice",
+        "GoldDice": "Gold dice (empty for none)",
+        "Result": "{label} ({dice}): {total}",
+        "JunkLabel": "Misc. Junk",
+        "GoldLabel": "Gold"
+      },
+      "Share": {
+        "Title": "Share the loot",
+        "Intro": "Pre-filled as an even split. Handed out {junk} of {totalJunk} Misc. Junk and {gold} of {totalGold} gold; a mismatch is allowed.",
+        "Junk": "Misc. Junk",
+        "Gold": "Gold"
+      },
+      "Boss": {
+        "Title": "Hand out: {name}",
+        "Intro": "Tick the crawlers who get this boss's Boss Box and map.",
+        "Box": "Box",
+        "KillingBlow": "killing blow",
+        "TierBox": "{tier} Loot Box",
+        "MapName": "Map name",
+        "MapTick": "Hand out a map",
+        "MapPlaceholder": "Name this boss's map, or leave empty for none"
+      },
+      "Map": {
+        "neighborhood": {
+          "Label": "Neighborhood Map",
+          "Description": "A hand-drawn map of the boss's neighborhood. It adds an hour to the safe grinding limit on a grind of 5 or more hours."
+        },
+        "borough": {
+          "Label": "Borough Boss Map",
+          "Description": "A map of the boss's borough, with the notes the neighborhood map left out. It adds two hours to the safe grinding limit."
+        },
+        "city": {
+          "Label": "City Boss Map",
+          "Description": "A city-sized map with several routes circled in red. Whoever holds it can find a Silver box worth of loot each time the party grinds. Homebrew."
+        },
+        "country": {
+          "Label": "Country Boss Map",
+          "Description": "A map of the floor with every magical item marked on it. Nothing is automated; the GM reads out what it shows. Homebrew."
+        }
+      }
+    },
+    "GrindMapFind": {
+      "Line": "{name} holds {item}: finds a {tier} box.",
+      "Button": "Grant {tier} box",
+      "Found": "Found",
+      "AlreadyTitle": "Already Found",
+      "AlreadyMessage": "{name} already found this session's box. Grant another as a Rule Break?",
+      "AlreadyReason": "{name} found a map box twice in one grinding session."
+    },
+    "EvadeAftermath": {
+      "ReasonNatural20": "Evade Natural 20 against this mob",
+      "ReasonAmazing": "Evade Amazing Success against this mob",
+      "LineMinor": "Minor Injury when the fight ends",
+      "LineMajor": "Major Injury when the fight ends",
+      "NoCombat": " (no combat: apply it by hand)",
+      "LineAdvantage": "Advantage on the next attack against {mob}",
+      "ThisMob": "this mob",
+      "Card": {
+        "Title": "Evade Fallout",
+        "Hint": "Nothing lands until you press Apply.",
+        "Minor": "Minor Injury",
+        "Major": "Major Injury",
+        "CauseMajorFail": "Major Fail",
+        "CauseNatural1": "Natural 1",
+        "Line": "{name}: {injury} ({cause} against {attacker}, round {round})",
+        "LineNoAttacker": "{name}: {injury} ({cause}, round {round})",
+        "Dead": "Dead: Apply all skips this line.",
+        "Apply": "Apply",
+        "ApplyAll": "Apply all",
+        "Landed": "Landed: {name}",
+        "GmOnly": "Only the GM can apply Injuries.",
+        "Gone": "Could not find {name}: nothing landed.",
+        "NotLanded": "{name}: the Injury did not land.",
+        "AlreadyTitle": "Already Applied",
+        "AlreadyMessage": "This Injury was already applied. Apply it again as a Rule Break?",
+        "AlreadyReason": "An Evade Injury applied twice."
+      }
     },
     "FloorSim": {
       "Rail": {
@@ -2947,6 +3319,222 @@
       "RandomizeAll": "Randomize All",
       "Back": "Back",
       "Next": "Next"
+    },
+    "MobCreator": {
+      "Title": "Mob Creator",
+      "Custom": "custom",
+      "Created": "Created mob \"{name}\".",
+      "CreateFailed": "Mob creation failed: {message}",
+      "RuleBreak": {
+        "Title": "Mob Rule Break",
+        "Message": "{reasons} Create this mob anyway as a Rule Break?"
+      },
+      "Stage": {
+        "identity": "Identity",
+        "stats": "Stats",
+        "defenses": "Defenses",
+        "attacks": "Attacks",
+        "abilities": "Abilities",
+        "lore": "Loot and Lore",
+        "review": "Review"
+      },
+      "Footer": {
+        "Ready": "The mob follows the rules and is ready to create.",
+        "RuleBreak": "Creating now is a Rule Break:",
+        "Create": "Create Mob"
+      },
+      "Identity": {
+        "Name": "Name",
+        "CreatureType": "Creature type",
+        "Level": "Level",
+        "DesignFloor": "Design floor",
+        "Size": "Size",
+        "BossTier": "Boss tier",
+        "TierNone": "None (regular mob)",
+        "TierOption": "{label} (base 5, +{points} points a level, {bars} + Floor bars)",
+        "TierHelp": "A regular mob has base 1 and 3 points a level. A boss has base 5 and its tier's points a level: {tiers}.",
+        "Unique": "Unique: a singular named figure",
+        "Summoned": "Summoned: called into the fight by another creature",
+        "Minion": "Minion: serves a boss",
+        "Tags": {
+          "Label": "Actor tags",
+          "Empty": "No extra tags. The boss tier, unique, summoned and minion add their own.",
+          "Choose": "Add a registered tag...",
+          "Placeholder": "Custom tag id",
+          "Add": "Add Tag"
+        }
+      },
+      "Stats": {
+        "Stat": {
+          "str": "STR",
+          "dex": "DEX",
+          "con": "CON",
+          "int": "INT",
+          "cha": "CHA"
+        },
+        "Base": "Base",
+        "Budget": "Budget",
+        "Spent": "Spent",
+        "Remaining": "Remaining",
+        "OverBudget": "Over budget",
+        "Legal": "Within budget",
+        "Help": "A regular mob has base 1 in every stat and 3 points per level. A boss has base 5 and its tier's points per level. Going over the budget is a Rule Break the GM can allow.",
+        "Unspent": "{points} stat points are still unspent.",
+        "FillFocus": "Fill focus",
+        "Fill": "Fill to budget",
+        "Focus": {
+          "even": "Even spread",
+          "physical": "Physical (STR and CON)",
+          "agile": "Agile (DEX)",
+          "caster": "Caster (INT)"
+        }
+      },
+      "Defenses": {
+        "Bars": "Health bars",
+        "BarsHelp": "Blank uses the formula: {bars}.",
+        "HpPerBar": "HP per bar and total",
+        "SlotPercentages": "Bar thresholds (%)",
+        "EvadeBase": "Evade base",
+        "SurpriseBase": "Surprise base",
+        "OnFloor": "On Floor",
+        "Dr": "Damage Reduction",
+        "Move": "Move",
+        "Step": "Step"
+      },
+      "Attacks": {
+        "Guidance": "A Level {level} {kind} recommends {dice} damage dice (Table 51), one fewer for an area attack and one fewer for a rider.",
+        "KindMob": "mob",
+        "KindBoss": "boss",
+        "Add": "Add attack",
+        "AddWeapon": "Add weapon...",
+        "NewWeapon": "New weapon...",
+        "NamePlaceholder": "Attack name",
+        "MoveUp": "Move up",
+        "MoveDown": "Move down",
+        "Remove": "Remove",
+        "ToHitStat": "To-hit stat",
+        "DiceCount": "Dice",
+        "DieSize": "Die",
+        "Recommended": "Recommended ({count})",
+        "DiceHint": "Table 51 recommends {count} for this attack.",
+        "DamageStat": "Damage stat",
+        "NoStat": "None",
+        "DamageType": "Damage type",
+        "HitDifficulty": "Hit Difficulty (before the Floor)",
+        "HitHint": "Blank uses the mob's Evade.",
+        "Range": "Range (ft)",
+        "Cooldown": "Cooldown",
+        "CooldownUnit": "Cooldown unit",
+        "AreaShape": "Area shape",
+        "NoShape": "None (single target)",
+        "Radius": "Radius (ft)",
+        "Length": "Length (ft)",
+        "Width": "Width (ft)",
+        "Splash": "Splash (ft)",
+        "ArmorPiercing": "Pierces armor (ignores DR)",
+        "Save": "Stat-check save instead of Evade",
+        "SaveHint": "The target rolls this check; the Floor is added to the DC.",
+        "SaveStat": "Save stat",
+        "SaveDC": "Save DC (before the Floor)",
+        "SaveDebuff": "On a failed save",
+        "NoDebuff": "No condition",
+        "ReadsAs": "Reads as:",
+        "Notes": "Effects and tactical notes",
+        "NotesPlaceholder": "Prose only. The mechanics line above is generated.",
+        "Weapons": "Weapons",
+        "WeaponSkill": "Skill",
+        "Rank": "Rank",
+        "RankFollows": "Follows the Floor and the boss tier until you change it.",
+        "Rolls": "The mob rolls {damage}; the damage stat adds {bonus}. Difficulty {difficulty} (its Evade plus the Floor).",
+        "WeaponNoSkill": "{name} has no damage source on this mob: it has no Base Damage of its own and the mob owns none of the Skills it lists.",
+        "WeaponSkillMissing": "{name} has no damage source on this mob: the Skill catalog lacks {skills}.",
+        "WeaponListsNone": "{name} has no damage source on this mob: it has no Base Damage of its own and lists no Skill.",
+        "Dropped": "Attacks from other mobs",
+        "DropHint": "Drag an attack from a mob's sheet, or a weapon from a compendium, onto this window to add it."
+      },
+      "Picks": {
+        "Duplicate": "{name} is already on this mob.",
+        "Invalid": "{name} cannot be added to a mob."
+      },
+      "Lore": {
+        "Description": "Description",
+        "AiDescription": "AI announcement",
+        "Notes": "GM notes"
+      },
+      "Review": {
+        "Summary": "{name} will be created with {items} embedded items.",
+        "RuleBreaks": "Rule Breaks",
+        "NoBreaks": "No Rule Breaks.",
+        "Custom": "Overrides of the formulas",
+        "Warnings": "Builder warnings",
+        "CustomBars": "Health bars are {bars}; the formula gives {derived}.",
+        "CustomEvade": "Evade base is {base}; the formula gives {derived}.",
+        "CustomSurprise": "Surprise base is {base}; the formula gives {derived}.",
+        "Unspent": "{points} stat points are still unspent."
+      },
+      "Block": {
+        "LevelFloor": "Level / Floor",
+        "Hp": "HP",
+        "Evade": "Evade",
+        "Surprise": "Surprise",
+        "Dr": "DR",
+        "Move": "Move / Step",
+        "Budget": "Stat points",
+        "Dice": "Recommended damage dice",
+        "Attacks": "Attacks"
+      },
+      "Loot": {
+        "Title": "Loot",
+        "AddLoot": "Add loot...",
+        "NewLoot": "New loot...",
+        "AddTrophy": "Add trophy",
+        "Held": "Picked from the catalogs",
+        "HeldHint": "Each is a copy of the catalog item; the quantity is how many this mob drops.",
+        "Trophies": "Trophies",
+        "TrophyHint": "A plain drop made here: its name, how many, what kind and what it sells for. Add notes on the item's own sheet after the mob is made.",
+        "Name": "Name",
+        "NamePlaceholder": "Trophy name",
+        "Quantity": "Quantity",
+        "LootType": "Loot type",
+        "Value": "Value",
+        "Description": "Description",
+        "Remove": "Remove",
+        "DropHint": "Drag gear or loot from a compendium or the sidebar onto this window to add it."
+      },
+      "CreatureType": {
+        "Other": "Other (typed)",
+        "OtherLabel": "Type, in your own words",
+        "Hint": "A registered type adds its creature tag, which other rules can match. Other is text only."
+      },
+      "Abilities": {
+        "Guidance": "Pick the abilities, spells and Skills this mob has from the catalogs, or make a new one. A Skill starts at Rank {rank} (the mob's Floor, or 5 x the boss tier's place, never above 15); change it in the Rank select.",
+        "AddAbility": "Add ability...",
+        "NewAbility": "New ability...",
+        "AddSpell": "Add spell...",
+        "NewSpell": "New spell...",
+        "AddSkill": "Add skill...",
+        "NewSkill": "New skill...",
+        "Abilities": "Abilities",
+        "Spells": "Spells",
+        "Skills": "Skills",
+        "Quick": "Quick defenses",
+        "QuickHint": "A resistance, an immunity or a damage multiplier against one damage type. For anything else, pick or make an ability.",
+        "AddMultiplier": "Add damage multiplier",
+        "AddResistance": "Add resistance",
+        "AddImmunity": "Add immunity",
+        "TraitName": "Name",
+        "TraitDamageType": "Damage type",
+        "TraitMultiplier": "Multiplier",
+        "Remove": "Remove",
+        "Rank": "Rank",
+        "RankFollows": "Follows the Floor or tier",
+        "BroughtBy": "Brought by {weapon}",
+        "Mana": "Mana",
+        "ManaHint": "The Mana this mob can spend on its spells.",
+        "ManaShort": "The dearest spell costs {cost} Mana and this mob has {mana}. It can still cast it as a Rule Break.",
+        "Empty": "None yet.",
+        "DropHint": "Drag spells, abilities and Skills here from a compendium, the sidebar or another sheet."
+      }
     },
     "CrawlerCreator": {
       "Description": {
@@ -3306,6 +3894,8 @@
       "Title": "Reward Boxes",
       "Hint": "Boxes this achievement hands to the crawler. A tier alone gives that tier's generic box; drop a box here to use it as a template.",
       "Add": "Add box",
+      "Waits": "Waits for the GM",
+      "WaitsHint": "The box is not opened to the tier's default contents. It waits for the GM to fill it, and a player who opens it early spends nothing.",
       "Quantity": "Quantity",
       "Tier": "Tier",
       "Template": "Template box",
@@ -3423,6 +4013,20 @@
       "RowLine": "{feet}ft away; range {range}ft",
       "NoRoll": "{name} was out of range of this attack, so there is nothing to roll."
     },
+    "AttackSituation": {
+      "OpenSettingName": "Stock attack reasons open Attack Options",
+      "OpenSettingHint": "On: every attack opens the Attack Options window, because cover, darkness and the other stock reasons can always be ticked. Shift-click rolls at once and applies the suggested ticks. Off: those reasons alone do not open the window. It opens when one of them was detected or the attack has something else to choose; a reason the system cannot detect (cover) then needs the manual Disadvantage.",
+      "Suggested": "Suggested",
+      "SizeNote": "Target is {targetSize}, you are {ownSize}",
+      "NoTarget": "No target",
+      "AttackerUnseen": "You are unseen",
+      "TargetUnseen": "The target is unseen",
+      "NoToken": "No token on the scene",
+      "EnemyInReach": "An enemy is within reach of you",
+      "NoLight": "Cannot tell the light here",
+      "DimLight": "Target is in dim light",
+      "DarkTarget": "Target is in darkness"
+    },
     "AttackMechanics": {
       "ToHit":"{n}+F to hit",
       "Range": "{n}ft range",
@@ -3488,6 +4092,7 @@
       "Title": "Cannot Act",
       "Prompt": "{name} cannot take Actions. Act anyway as a Rule Break?",
       "PromptDebuff": "{name} cannot take Actions ({debuffs}). Act anyway as a Rule Break?",
+      "PromptCause": "{name}: {cause} ({debuffs}). Act anyway as a Rule Break?",
       "Cause": "{name}: {cause}",
       "CauseDebuff": "{name}: {cause} ({debuffs})"
     },
@@ -3540,6 +4145,16 @@
         "hit": "Evade failed",
         "resolved": "Hit"
       }
+    },
+    "Migration": {
+      "Progress": "Updating world data to release {version}",
+      "Done": "World data updated to release {version}: {count} documents changed.",
+      "Failed": "{count} documents could not be updated; the console (F12) lists them. They are tried again the next time the world opens.",
+      "Deferred": "{count} documents could not be updated yet; the console (F12) lists each and why. They are tried again the next time the world opens.",
+      "RelockFailed": "The compendium {pack} was unlocked to update it and could not be locked again. Lock it from the Compendium sidebar.",
+      "WaitForGm": "This world's data is from release {stored} and is updated when a Game Master opens it. Until then some documents may be missing or look wrong.",
+      "OtherGm": "{name} is updating this world's data.",
+      "Downgrade": "This world was last updated by release {stored}, newer than this release ({current}). Some documents may not load. Install release {stored} or later."
     },
     "MobAttack": {
       "Header": "Mob Attack Declared \u2014 Hits Automatically",
@@ -3637,6 +4252,7 @@
       "NotNeeded": "not needed (no damage)",
       "Awaiting": "awaiting the GM: {total}, or {with} with it",
       "AppliedBefore": "Damage was already applied; Undo and apply again to use this assist.",
+      "AppliedBeforeReroll": "Damage was already applied; Undo and apply again to use the new result.",
       "ApplyButton": "Apply to {name}'s check",
       "NotApplied": "Not applied yet: no GM connected",
       "CardTitle": "INTERRUPT: {skill} +{amount} → {name}'s check",
@@ -3887,6 +4503,12 @@
           "AddBar": "Popularity",
           "ConditionHint": "Applies when the event's tags match"
         },
+        "EventTrigger": {
+          "Title": "Event triggers",
+          "Add": "Add event trigger",
+          "AddBar": "Event trigger",
+          "ConditionHint": "Applies when the event's tags match (a kill: the attack's tags and the victim's subject.* tags)"
+        },
         "Craft": {
           "Title": "Crafting limits and speed-ups",
           "Add": "Add crafting modifier",
@@ -3931,15 +4553,28 @@
         "minRank": "Min rank",
         "maxRank": "Max rank",
         "usesPer": "Limit",
+        "limit": "Times per scope (before a Rule Break)",
         "FlatDamage": "Flat",
         "Dr": "DR",
         "TempHp": "Temp HP",
         "EvadeBonus": "Evade bonus",
         "ReflectMinSlots": "Slots lost in one blow (at least)",
         "ReflectSlots": "Attacker loses (slots)",
+        "ReflectChance": "Chance die (reflects on a 1)",
+        "RetaliateValue": "Flat damage",
+        "RetaliateDice": "Damage dice",
         "Bonus": "Bonus",
         "Mana": "Mana",
         "PopularityAmount": "Popularity",
+        "TriggerHealSlots": "Health Bar slots healed",
+        "TriggerGold": "Gold paid",
+        "TriggerAiFavor": "AI Favor given",
+        "PaidDrPerPoint": "DR per point spent",
+        "debuff": "Debuff gained",
+        "identifier": "Buff given",
+        "target": "Reaches",
+        "range": "Range (ft, 0 for no limit)",
+        "skill": "Skill (identifier)",
         "AiFavorAmount": "AI Favor rating",
         "DamageTypeAdd": "Damage type",
         "DamageTypeOnly": "Only damage type",
@@ -3972,7 +4607,10 @@
         "event": {
           "crit": "a crit",
           "critFail": "a critical fail",
-          "kill": "a kill"
+          "kill": "a kill",
+          "amazing": "an Amazing Success",
+          "use": "a use",
+          "levelUp": "a Level gained"
         },
         "oncePer": {
           "combat": "Combat",
@@ -4139,7 +4777,12 @@
           "category": "Category",
           "tag": "Tag",
           "floor": "Floor rank",
+          "floorFrom": "Rank N from",
           "onlyIfOwned": "Only if owned"
+        },
+        "FloorFrom": {
+          "row": "This row's Floor rank",
+          "rank": "This buff's Rank (Floor rank is ignored)"
         },
         "Kind": {
           "stat": "Stat",
@@ -4243,6 +4886,14 @@
           "suppress_stat": {
             "Label": "Suppress stat bonus",
             "Hint": "The matching hits add no stat bonus to their damage, for one damage type or all of it."
+          },
+          "retype": {
+            "Label": "All damage is one type",
+            "Hint": "Matching damage becomes this type, as Resistance sees it."
+          },
+          "healAdd": {
+            "Label": "Heal more",
+            "Hint": "Adds slots to a heal (situation.single_target: one creature)."
           }
         },
         "Defense": {
@@ -4278,6 +4929,18 @@
             "Label": "Suppress DR",
             "Hint": "Damage Resist does not apply to the matching hits, for one damage type or all of it."
           },
+          "healthBarAdd": {
+            "Label": "Health Bar slots hold more",
+            "Hint": "Each slot holds this much more HP."
+          },
+          "paidDr": {
+            "Label": "Paid DR",
+            "Hint": "DR bought per point.",
+            "OptionLabel": "Resource",
+            "Option": {
+              "aiFavor": "AI Favor"
+            }
+          },
           "healthBarScale": {
             "Label": "Health Bar scale",
             "Hint": "Each Health Bar slot holds this many times its HP: damage reaching the bar is divided by it."
@@ -4286,9 +4949,17 @@
             "Label": "Immune to effect",
             "Hint": "The row's condition is the effect: a Debuff or a contested Skill or Spell it matches does not land."
           },
+          "spellBaseCap": {
+            "Label": "Spell base cap",
+            "Hint": "A spell hit is cut to its Rank 1 base."
+          },
           "reflect": {
             "Label": "Damage Reflection",
             "Hint": "When one blow costs the holder at least this many Health Bar slots, the holder may make the attacker lose slots."
+          },
+          "retaliate": {
+            "Label": "Retaliate",
+            "Hint": "A matching hit lets the holder hit back for dice plus value."
           },
           "evadeOutcome": {
             "Label": "Area Evade",
@@ -4346,7 +5017,8 @@
             "Hint": "The roll penalty named by the option does not apply to the rolls this row matches.",
             "OptionLabel": "Penalty waived",
             "Option": {
-              "driver": "Driving a vehicle"
+              "driver": "Driving a vehicle",
+              "rider": "Riding a mount"
             }
           }
         },
@@ -4376,6 +5048,32 @@
           "default": {
             "Label": "Popularity",
             "Hint": "Awards or takes Popularity when the named event happens: a natural 20 or 1 on a roll, or a kill. A once-per limit asks for a Rule Break before the award."
+          }
+        },
+        "Trigger": {
+          "heal": {
+            "Label": "Heal",
+            "Hint": "When the event happens (a kill), the holder heals the row's value in Health Bar slots. Once per, with a limit, caps it in a combat or a floor; past it a Rule Break is asked."
+          },
+          "gold": {
+            "Label": "Gold",
+            "Hint": "When the event happens (a kill), the holder is paid the row's value in gold. Once per, with a limit, caps it in a combat or a floor; past it a Rule Break is asked."
+          },
+          "check": {
+            "Label": "Offer a check",
+            "Hint": "On the event (a kill), the holder is offered a roll of the named skill, Unopposed. A limit caps it."
+          },
+          "aiFavor": {
+            "Label": "AI Favor",
+            "Hint": "Gains AI Favor."
+          },
+          "debuff": {
+            "Label": "Gain a debuff",
+            "Hint": "When the event happens (a use of the skill or spell), the user gains the named debuff at once. Immunity and a repeat are judged as for any debuff."
+          },
+          "buff": {
+            "Label": "Give a buff",
+            "Hint": "When the event happens, the named buff lands, on its own Duration, on who Target reaches within Range (0 is no limit). Anyone out of reach or immune is skipped and named on the card; nothing is asked."
           }
         },
         "Substitution": {
@@ -4508,6 +5206,18 @@
           "moveMultiply": {
             "Label": "Move multiplier",
             "Hint": "Multiplies the vehicle's Move after the additions (1.5 adds half again). Matching rows multiply."
+          },
+          "moveSet": {
+            "Label": "Move of at least",
+            "Hint": "The creature has at least this Move in the mode named by the option. The ground Move is raised before the additions; swim, fly, burrow and jump are read by their own Move.",
+            "OptionLabel": "Move mode",
+            "Option": {
+              "move": "Ground Move",
+              "swim": "Swim",
+              "fly": "Fly",
+              "burrow": "Burrow",
+              "jump": "Jump"
+            }
           }
         }
       },
@@ -4538,6 +5248,10 @@
           "Label": "Stat Mod",
           "Hint": "The row owner's modifier for the chosen stat."
         },
+        "paidDrStat": {
+          "Label": "Stat or Mod (AI Favor DR setting)",
+          "Hint": "The Stat's modifier, or its score by the AI Favor DR setting."
+        },
         "statValue": {
           "Label": "Stat score",
           "Hint": "The row owner's score (not the modifier) for the chosen stat, such as seconds equal to Intelligence."
@@ -4556,6 +5270,10 @@
         "move": {
           "Label": "Move",
           "Hint": "The row owner's Move in feet (write per: 0.1 for \"per 10ft\")."
+        },
+        "size": {
+          "Label": "Size",
+          "Hint": "The row owner's size value (1 to 8, as on the size table)."
         },
         "worshipTier": {
           "Label": "Tier of Devotion",

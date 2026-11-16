@@ -1,0 +1,11 @@
+{{!-- GM buttons that open the Popularity checklist on a moment. Context: popularityControls ({ title, moments: [{ id, label, due, dueLabel }] }). Interactive controls use data-action and carry no name attribute. --}}
+<section class="cog-popularity-controls">
+  <div class="cog-popularity-controls-title"><i class="fa-solid fa-star"></i> {{title}}</div>
+  <div class="cog-popularity-controls-buttons">
+    {{#each moments}}
+      <button type="button" class="cog-btn cog-btn-secondary" data-action="openPopularityChecklist" data-moment="{{this.id}}">
+        <i class="fa-solid fa-clipboard-check"></i> {{this.label}}{{#if this.due}} <span class="cog-state-badge cog-pc-due">{{this.dueLabel}}</span>{{/if}}
+      </button>
+    {{/each}}
+  </div>
+</section>

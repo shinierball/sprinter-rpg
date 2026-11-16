@@ -5,6 +5,7 @@
  */
 import { rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { checkTypeLabel } from '../../data/rules/check-types.mjs';
 import { auraActiveBlockHtml, damageSourcesPreviewHtml } from './use-card-parts.mjs';
 
 /**
@@ -76,21 +77,22 @@ export function untrainedSkillFlavor(actor, skill, { advState, statName, untMod,
  * The flavor line of a trained check (and of an untrained one whose Disadvantage was cancelled).
  * @param {Actor} actor
  * @param {Item} skill
- * @param {{ advState: object, statName: string, breakdown: string[], effectiveTotal: number }} parts
+ * @param {{ advState: object, statName: string, breakdown: string[], effectiveTotal: number, statOnly?: boolean }} parts `statOnly`: a Stat Check, named so
  * @returns {string}
  */
-export function skillCheckFlavor(actor, skill, { advState, statName, breakdown, effectiveTotal }) {
+export function skillCheckFlavor(actor, skill, { advState, statName: stat, breakdown, effectiveTotal, statOnly = false }) {
+  const statName = statOnly ? `${stat} ${checkTypeLabel('statOnly')}` : `${stat} Check`;
   const total = `<strong>Total ${effectiveTotal >= 0 ? `+${effectiveTotal}` : effectiveTotal}</strong>`;
   if (advState.mode === 'disadvantage') {
-    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} Check [<strong>${advState.label || 'Disadvantage'}</strong>]: ${advState.formula} + ${breakdown.join(' + ')} = ${total})`;
+    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} [<strong>${advState.label || 'Disadvantage'}</strong>]: ${advState.formula} + ${breakdown.join(' + ')} = ${total})`;
   }
   if (advState.mode === 'advantage') {
-    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} Check [<strong>${advState.label}</strong>]: ${advState.formula} + ${breakdown.join(' + ')} = ${total})`;
+    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} [<strong>${advState.label}</strong>]: ${advState.formula} + ${breakdown.join(' + ')} = ${total})`;
   }
   if (advState.mode === 'cancelled') {
-    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} Check [<strong>${advState.label}</strong>]: 1d20 + ${breakdown.join(' + ')} = ${total})`;
+    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} [<strong>${advState.label}</strong>]: 1d20 + ${breakdown.join(' + ')} = ${total})`;
   }
-  return `<strong>${actor.name}</strong>: ${skill.name} (${statName} Check: 1d20 + ${breakdown.join(' + ')} = ${total})`;
+  return `<strong>${actor.name}</strong>: ${skill.name} (${statName}: 1d20 + ${breakdown.join(' + ')} = ${total})`;
 }
 
 /**
@@ -98,16 +100,18 @@ export function skillCheckFlavor(actor, skill, { advState, statName, breakdown, 
  * @param {Actor} actor
  * @param {Item} skill
  * @param {{ dmgData: object, parts: object[], cardContext: object }} damage `parts` the damage parts for the preview,
- *   `cardContext` the roll context carried on the button
+ *   `cardContext` the roll context carried on the button, `onSuccess` the button says the damage comes on a Success
  * @returns {string}
  */
-export function skillDamageButtonHtml(actor, skill, { dmgData, parts, cardContext }) {
+export function skillDamageButtonHtml(actor, skill, { dmgData, parts, cardContext, onSuccess = false }) {
+  const localized = globalThis.game?.i18n?.localize?.('COG.Skill.DamageOnSuccess');
+  const label = onSuccess ? `${localized && localized !== 'COG.Skill.DamageOnSuccess' ? localized : 'Roll Damage (on a Success)'} ` : 'Roll Attack Damage ';
   const previewHtml = damageSourcesPreviewHtml(parts, { wrapperStyle: 'margin-top: 6px;' });
   return `
         <div style="margin-top: 6px;">
           ${previewHtml}
           <button type="button" class="cog-attack-roll-btn roll-skill-dmg roll-skill-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollItemDamage" data-actor-uuid="${actor.uuid}" data-item-id="${skill.id}" data-skill-id="${skill.id}" data-item-type="skill" data-formula="${dmgData.formula}"${rollContextDataAttr(cardContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif); margin-top: 4px;">
-            <i class="fa-solid fa-burst"></i> Roll Attack Damage (${dmgData.formulaWithStat || dmgData.formula})
+            <i class="fa-solid fa-burst"></i> ${escapeAttr(label)}(${dmgData.formulaWithStat || dmgData.formula})
           </button>
         </div>
       `;

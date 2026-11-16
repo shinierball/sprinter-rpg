@@ -16,6 +16,7 @@
  * - an item made on an actor by the sheet's own "new" buttons passes `cogHomebrew: true` and is stamped.
  */
 import { SYSTEM_ID } from '../constants.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { readSourceStamp } from '../utils/content-source.mjs';
 
 /** Dotted paths whose change counts as rewriting the words of a document. */
@@ -95,7 +96,7 @@ function changedValue(changes, path) {
  */
 export function flipEditedAuthorship(doc, changes, options) {
   try {
-    if (options?.cogAuthorship === false) return false;
+    if (options?.cogAuthorship === false || isMigrationWrite(options)) return false;
     if (!isTopLevelWorld(doc) && !isEmbeddedWorldItem(doc)) return false;
     if (readSourceStamp(doc)?.authorship !== 'ai') return false;
     const touched = TEXT_PATHS.some((path) => {

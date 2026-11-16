@@ -1,0 +1,93 @@
+{{!-- The Popularity checklist window. Context built in apps/popularity-checklist-app.mjs. Controls use data-action / data-change-action and carry no name attribute. --}}
+<div class="cog-pc">
+  <header class="cog-pc-header">
+    <nav class="cog-pc-moments">
+      {{#each moments}}
+        <button type="button" class="cog-btn {{#if this.active}}cog-btn-primary{{else}}cog-btn-secondary{{/if}}" data-action="setMoment" data-moment="{{this.id}}">
+          {{this.label}}{{#if this.due}} <span class="cog-state-badge cog-pc-due">{{this.dueLabel}}</span>{{/if}}
+        </button>
+      {{/each}}
+    </nav>
+    <div class="cog-pc-period">{{periodLabel}}</div>
+  </header>
+
+  {{#each banners}}
+    <div class="cog-pc-banner">{{this}}</div>
+  {{/each}}
+
+  <div class="cog-pc-grid-wrap">
+    {{#if crawlers.length}}
+      <table class="cog-pc-grid">
+        <thead>
+          <tr>
+            <th class="cog-pc-change-col">{{localize "COG.PopularityChecklist.Window.Change"}}</th>
+            {{#each crawlers}}
+              <th class="cog-pc-crawler {{#unless this.included}}cog-pc-excluded{{/unless}}">
+                <label class="cog-pc-include" for="cog-pc-include-{{this.actorId}}">
+                  <input type="checkbox" id="cog-pc-include-{{this.actorId}}" data-change-action="toggleCrawler" data-actor-id="{{this.actorId}}" aria-label="{{this.includeLabel}}" {{#if this.included}}checked{{/if}} />
+                  {{#if this.img}}<img class="cog-pc-portrait cog-bg-icon-box" src="{{this.img}}" alt="" />{{/if}}
+                  <span class="cog-pc-name">{{this.name}}</span>
+                </label>
+                <div class="cog-pc-now">{{this.popularity}} &rarr; <strong>{{this.after}}</strong> <span class="cog-pc-net">({{this.netLabel}})</span></div>
+                {{#if this.crossHint}}<div class="cog-pc-cross">{{this.crossHint}}</div>{{/if}}
+              </th>
+            {{/each}}
+          </tr>
+        </thead>
+        <tbody>
+          {{#each rows}}
+            <tr>
+              <th class="cog-pc-change-col" scope="row">{{this.label}} <span class="cog-pc-value">{{this.valueLabel}}</span></th>
+              {{#each this.cells}}
+                <td class="cog-pc-cell {{#unless this.included}}cog-pc-excluded{{/unless}}">
+                  <div class="cog-pc-cell-controls">
+                    <input type="checkbox" id="{{this.id}}" data-change-action="toggleCell" data-actor-id="{{this.actorId}}" data-change-id="{{this.changeId}}" {{#if this.checked}}checked{{/if}} />
+                    <input type="number" class="cog-pc-amount" id="{{this.amountId}}" value="{{this.amount}}" data-change-action="setAmount" data-actor-id="{{this.actorId}}" data-change-id="{{this.changeId}}" aria-label="{{localize "COG.PopularityChecklist.Window.Amount"}}" />
+                    {{#if this.used}}<span class="cog-state-badge cog-pc-used">{{this.usedLabel}}</span>{{/if}}
+                  </div>
+                  {{#if this.hint}}<div class="cog-pc-hint">{{this.hint}}</div>{{/if}}
+                </td>
+              {{/each}}
+            </tr>
+          {{/each}}
+          <tr>
+            <th class="cog-pc-change-col" scope="row">{{localize "COG.PopularityChecklist.Other"}}</th>
+            {{#each crawlers}}
+              <td class="cog-pc-cell {{#unless this.included}}cog-pc-excluded{{/unless}}">
+                <div class="cog-pc-cell-controls">
+                  <input type="text" id="cog-pc-other-label-{{this.actorId}}" value="{{this.otherLabel}}" placeholder="{{localize "COG.PopularityChecklist.Window.OtherReason"}}" data-change-action="setOtherLabel" data-actor-id="{{this.actorId}}" aria-label="{{localize "COG.PopularityChecklist.Window.OtherReason"}}" />
+                  <input type="number" class="cog-pc-amount" id="cog-pc-other-amount-{{this.actorId}}" value="{{this.otherAmount}}" data-change-action="setOtherAmount" data-actor-id="{{this.actorId}}" aria-label="{{localize "COG.PopularityChecklist.Window.Amount"}}" />
+                </div>
+              </td>
+            {{/each}}
+          </tr>
+        </tbody>
+      </table>
+    {{/if}}
+
+    <section class="cog-pc-boxes">
+      <h4><i class="fa-solid fa-gift"></i> {{localize "COG.PopularityChecklist.Window.Boxes"}}</h4>
+      {{#each boxes}}
+        <div class="cog-pc-box">
+          <input type="checkbox" id="{{this.id}}" data-change-action="toggleBox" data-box-key="{{this.key}}" aria-label="{{this.name}}" {{#if this.checked}}checked{{/if}} />
+          <label for="{{this.id}}">{{this.name}}</label>
+          <select id="{{this.tierId}}" data-change-action="setBoxTier" data-box-key="{{this.key}}" aria-label="{{localize "COG.PopularityChecklist.Window.BoxTier"}}">
+            {{#each this.tiers}}<option value="{{this.key}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+          </select>
+          {{#if this.hint}}<span class="cog-pc-hint">{{this.hint}}</span>{{/if}}
+          {{#if this.manual}}<button type="button" class="cog-btn cog-btn-secondary" data-action="removeManualBox" data-box-key="{{this.key}}">{{localize "COG.PopularityChecklist.Window.RemoveBox"}}</button>{{/if}}
+        </div>
+      {{/each}}
+      <div class="cog-pc-award">
+        {{#each crawlers}}
+          <button type="button" class="cog-btn cog-btn-secondary" data-action="addManualBox" data-actor-id="{{this.actorId}}"><i class="fa-solid fa-plus"></i> {{localize "COG.PopularityChecklist.Window.AwardBox"}}: {{this.name}}</button>
+        {{/each}}
+      </div>
+    </section>
+  </div>
+
+  <footer class="cog-pc-footer">
+    <button type="button" class="cog-btn cog-btn-secondary" data-action="reset"><i class="fa-solid fa-rotate-left"></i> {{localize "COG.PopularityChecklist.Window.Reset"}}</button>
+    <button type="button" class="cog-btn cog-btn-success" data-action="apply" {{#unless canApply}}disabled{{/unless}}><i class="fa-solid fa-check"></i> {{localize "COG.PopularityChecklist.Window.Apply"}}</button>
+  </footer>
+</div>

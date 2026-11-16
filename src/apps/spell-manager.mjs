@@ -102,7 +102,6 @@ export class COGSpellManager extends CatalogBrowserMixin(COGToolApp) {
 
   constructor(options = {}) {
     super(options);
-    this.onSelect = options.onSelect || null;
     this.activeSpellType = 'all';
     this.activeStat = 'all';
     this.activeDamageType = 'all';
@@ -196,13 +195,14 @@ export class COGSpellManager extends CatalogBrowserMixin(COGToolApp) {
    * @param {object} spellData
    */
   async addSpellToActor(spellData) {
-    if (!this.actor) {
+    if (!this.actor && !this.onPick) {
       globalThis.ui?.notifications?.warn('No character open to learn this spell.');
       return;
     }
 
+    // In pick mode the caller decides about duplicates.
     const identifier = spellData.identifier ?? itemIdentifier(spellData);
-    const existing = this.actor.items.find(i => i.type === 'spell' && itemIdentifier(i) === identifier);
+    const existing = this.actor?.items.find(i => i.type === 'spell' && itemIdentifier(i) === identifier);
     if (existing) {
       globalThis.ui?.notifications?.info(`${this.actor.name} already knows "${spellData.name}".`);
       return;
@@ -210,7 +210,7 @@ export class COGSpellManager extends CatalogBrowserMixin(COGToolApp) {
 
     await this.addRowToActor(spellData, {
       mutate: (full) => ({ ...full, type: 'spell', img: full.img || 'icons/svg/aura.svg' }),
-      message: `Added spell "${spellData.name}" to ${this.actor.name}.`
+      message: this.actor ? `Added spell "${spellData.name}" to ${this.actor.name}.` : undefined
     });
   }
 

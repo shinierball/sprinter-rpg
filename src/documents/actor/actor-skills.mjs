@@ -8,6 +8,7 @@ import { rollGrindComplication } from '../../content/grind-complications.mjs';
 import { getStatCaps } from '../../utils/character/stat-caps.mjs';
 import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
 import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
+import { isAdvancingType } from '../../utils/skill/spells-advance.mjs';
 import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
 import { buildRollContext, extendContext } from '../../utils/roll/roll-context.mjs';
 import { extractD20Result } from '../session/roll-outcomes.mjs';
@@ -22,9 +23,14 @@ import {
   rollSkillCheckDice, skillUseParts, postSkillCheckMessage
 } from './skill-roll.mjs';
 import { applyCondition } from './actor-conditions.mjs';
+import { recordGrind } from './grind-log.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
 import { runGrindAdvancement, postAdvancementCard, creditGrindLevelHours } from './actor-advancement.mjs';
+import { buildPetLevelLines } from '../../chat/advancement-card.mjs';
 import { settleHealed } from './healing.mjs';
+import { mapFindOf, mapFindOffers, postMapFindCard } from './grind-map-find.mjs';
+import { fireUseTriggers } from './event-triggers.mjs';
+import { expireRestEffects } from './duration-expiry.mjs';
 import { confirmMagicGain, confirmGrindAllocation } from './advancement-gates.mjs';
 
 /**
@@ -65,6 +71,7 @@ function buildGrindLevelLine(progress) {
   return `
     <div class="cog-text-gold" style="font-size: 11px; margin-top: 4px;">
       <i class="fa-solid fa-angles-up"></i> <strong>LEVEL UP${bonus}:</strong> Level ${progress.previousLevel} &rarr; <strong>${progress.newLevel}</strong> (+${progress.pointsGained} Stat points to spend)
+      ${buildPetLevelLines(progress.pets)}
     </div>`;
 }
 
@@ -99,13 +106,18 @@ export async function rollSkill(actor, skillItem, options = {}) {
 
   const rank = skillRankParts(actor, skillItem);
   const early = await earlySkillMessage(actor, skillItem, options, { auraData, rank, gates });
-  if (early) return early.message;
+  if (early) {
+    await fireUseTriggers(actor, skillItem, { options });
+    return early.message;
+  }
 
   const check = await prepareSkillCheck(actor, skillItem, options, { rank, rangeGate: gates.rangeGate });
   // Every check, trained or not, runs the same stages; an untrained one at net Disadvantage only changes the dice and flavor (3.54)
   const { roll, flavorText, rollId } = await rollSkillCheckDice(actor, skillItem, options, { check, rank });
   const parts = await skillUseParts(actor, skillItem, options, { check, rank, auraData, roll });
-  return postSkillCheckMessage(actor, skillItem, options, { check, gates, roll, flavorText, parts, rollId });
+  const message = await postSkillCheckMessage(actor, skillItem, options, { check, gates, roll, flavorText, parts, rollId });
+  await fireUseTriggers(actor, skillItem, { context: check.rollContext, roll, options });
+  return message;
 }
 
 /**
@@ -323,6 +335,7 @@ export async function rest(actor, restType = 'long', options = {}) {
   const isHourRest = ['1hour', '1h', 'hour'].includes(normType);
   const cooldownResets = restCooldownUpdates(actor, isHourRest ? 0 : restLevelOf(normType));
   if (cooldownResets.length) await actor.updateEmbeddedDocuments('Item', cooldownResets);
+  await expireRestEffects(actor, isHourRest ? 0 : restLevelOf(normType));
 
   // A rest takes its hours off the dungeon clock only when asked (the rest dialog's checkbox, ticked by default), so a
   // party resting together moves the clock once.
@@ -406,7 +419,7 @@ export async function allocateGrindHours(actor, skillId, hours, options = {}) {
   const delta = parseInt(hours, 10) || 0;
   if (delta === 0) return null;
   const skill = actor.items?.get(skillId);
-  if (!skill || skill.type !== 'skill') return null;
+  if (!skill || !isAdvancingType(skill)) return null;
 
   const currentBank = Number(actor.system.details?.bankedGrindHours ?? actor.system.bankedGrindHours) || 0;
   const currentInvested = Number(skill.system?.investedHours ?? skill.system?.grindHours) || 0;
@@ -452,7 +465,7 @@ export async function allocateGrindHours(actor, skillId, hours, options = {}) {
  */
 export async function attemptSkillAdvancement(actor, skillId, options = {}) {
   const skillItem = actor.items?.get(skillId);
-  if (!skillItem || skillItem.type !== 'skill') return null;
+  if (!skillItem || !isAdvancingType(skillItem)) return null;
 
   const currentRank = Number(skillItem.system?.rank) || 0;
   const reqHours = getRequiredGrindingHours(currentRank);
@@ -588,6 +601,7 @@ export async function executePartyGrindSession(partyActors, options = {}) {
     // The relay authorizes the time against a crawler the requester owns.
     const timerActor = crawlers.find(a => a?.isOwner) || crawlers[0];
     newFloorTimer = await decrementFloorTimer(nonBonusHours, { actorUuid: timerActor?.uuid });
+    for (const crawler of crawlers) await recordGrind(crawler, nonBonusHours);
   }
 
   // 3. Process each participating crawler individually
@@ -652,9 +666,11 @@ export async function executePartyGrindSession(partyActors, options = {}) {
       enduranceChecks,
       fatigueGained,
       totalEarnedHours,
-      bankedHours: newBanked
+      bankedHours: newBanked,
+      mapFind: mapFindOf(crawler)
     });
   }
+  const mapFinds = mapFindOffers(crawlerResults);
 
   // 4. Generate unified Party Chat Card
   if (!options.silent) {
@@ -674,7 +690,8 @@ export async function executePartyGrindSession(partyActors, options = {}) {
       mapType,
       mapBonus,
       complication,
-      crawlerResults
+      crawlerResults,
+      mapFinds
     });
   }
 
@@ -695,7 +712,8 @@ export async function executePartyGrindSession(partyActors, options = {}) {
     mapType,
     mapBonus,
     complication,
-    crawlerResults
+    crawlerResults,
+    mapFinds
   };
 }
 
@@ -794,5 +812,7 @@ async function postPartyGrindChatCard(data) {
         }
       }
     });
+    // a City Boss Map's find: its own card, one line and button per holder
+    await postMapFindCard(data.mapFinds);
   }
 }

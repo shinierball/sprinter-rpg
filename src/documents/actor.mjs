@@ -14,6 +14,7 @@ import * as spellAttackRoll from './actor/spell-attack-roll.mjs';
 import * as spaces from './actor/actor-spaces.mjs';
 import * as crafting from './actor/actor-crafting.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
+import { isMigrationWrite } from './migrations/world-migration.mjs';
 import { resolveHpPerBar } from '../utils/damage/hp-per-bar.mjs';
 import { isSameOwnedEntry } from '../utils/character/owned-entry.mjs';
 import { camerasOffered, sanitizeCameraChoice, armedCamera, CAMERA_ARMED_FLAG } from '../utils/roll/cameras.mjs';
@@ -201,6 +202,8 @@ export class COGActor extends BaseActor {
     if (typeof super._preUpdate === 'function') {
       await super._preUpdate(changes, options, user);
     }
+    // Converting stored data is not a user's edit: no duplicate-buff guard, no damage absorbed into temp bars.
+    if (isMigrationWrite(options)) return;
     this._preventDuplicateExternalBuffs(changes);
     this._absorbDamageIntoTempBars(changes, options);
   }
@@ -258,6 +261,7 @@ export class COGActor extends BaseActor {
     if (newTbCount === 0) {
       changes['system.attributes.hp.tempBars.source'] = '';
       changes['system.attributes.hp.tempBars.sourceUuid'] = '';
+      changes['system.attributes.hp.tempBars.passTag'] = '';
     }
     changes['system.attributes.hp.temp'] = tempBarsRemainingHp;
 
@@ -536,6 +540,7 @@ export class COGActor extends BaseActor {
   // popularity
   awardPopularity(...args) { return popularity.awardPopularity(this, ...args); }
   awardPopularityForRoll(...args) { return popularity.awardPopularityForRoll(this, ...args); }
+  awardPopularityForOutcome(...args) { return popularity.awardPopularityForOutcome(this, ...args); }
 
   // achievements
   announceAchievement(...args) { return achievements.announceAchievement(this, ...args); }

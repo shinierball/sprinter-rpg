@@ -4,6 +4,7 @@
 import { refreshEnvironmentDisplays, onCurrentFloorChange, CRAWLER_COUNT_SETTING, FLOOR_TIMER_SETTING } from '../documents/actor/actor-environment.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { HUD_HIDDEN_SETTING, refreshHudVisibility } from '../utils/effects/hud-visibility.mjs';
+import { STOCK_SITUATIONS_OPEN_SETTING } from '../utils/attack/stock-situations.mjs';
 import { ZERO_ZONE_SETTING, onZeroZoneChange } from '../utils/effects/zero-zone.mjs';
 import { RULE_BREAK_MODES, RULE_BREAK_MODE_SETTING } from '../utils/rule-break.mjs';
 import { WORSHIP_TRACKING, WORSHIP_TRACKING_SETTING } from '../utils/deity/devotion.mjs';
@@ -12,6 +13,7 @@ import { SPACE_PRICES_SETTING } from '../data/rules/space-rank-rules.mjs';
 import { refreshOpenActorSheets } from '../utils/ui/related-sheets.mjs';
 import { invalidateTagBehaviour, TAG_OVERRIDES_SETTING } from '../utils/tag/tag-behaviour.mjs';
 import { PERCENT_STAT_SETTING, PERCENT_STAT_MODES } from '../utils/character/stat-percent.mjs';
+import { PAID_DR_STAT_SETTING, PAID_DR_STAT_MODES } from '../utils/character/paid-dr-stat.mjs';
 import { lockOwnedPercentRows } from '../documents/actor/percent-lock.mjs';
 import { ACTION_HUD_POSITION_SETTING } from '../utils/ui/action-hud-position.mjs';
 import { PENDING_SECRETS_SETTING } from '../documents/pending-secrets.mjs';
@@ -29,6 +31,8 @@ import { DELIBERATE_PAUSE_SETTING, UNPAUSE_BY_DEFAULT_SETTING } from '../utils/t
 import { XP_CONFIG_SETTING, DEFAULT_XP_WEIGHTS } from '../utils/combat/xp-config.mjs';
 import { SHEET_PDF_SETTING } from '../utils/ui/sheet-pdf-setting.mjs';
 import { LIVE_FLAGS, registerLiveFlags } from '../utils/live-flags.mjs';
+import { POPULARITY_CHECKLIST_SETTING, emptyChecklistState } from '../documents/actor/popularity-checklist.mjs';
+import { MIGRATED_VERSION_SETTING, isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 
 /**
  * Register the system settings. `src/hooks` hands in what lives above this layer: the menu launcher classes
@@ -52,6 +56,15 @@ export function registerSettings({ launchers, onAiContentChange }) {
     config: false,
     type: Array,
     default: []
+  });
+
+  game.settings.register(SYSTEM_ID, POPULARITY_CHECKLIST_SETTING, {
+    name: 'Popularity Checklist',
+    hint: 'Stores the Popularity checklist records: applied checks, the floor last left, and Fan Box floors.',
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: emptyChecklistState()
   });
 
   game.settings.register(SYSTEM_ID, PENDING_SECRETS_SETTING, {
@@ -89,7 +102,17 @@ export function registerSettings({ launchers, onAiContentChange }) {
     config: true,
     type: Boolean,
     default: false,
-    onChange: () => onZeroZoneChange()
+    // A migration write re-renders only: the active GM's vision and aura reconcile would write mid-run.
+    onChange: (_value, options) => onZeroZoneChange({ reconcile: !isMigrationWrite(options) })
+  });
+
+  game.settings.register(SYSTEM_ID, STOCK_SITUATIONS_OPEN_SETTING, {
+    name: 'COG.AttackSituation.OpenSettingName',
+    hint: 'COG.AttackSituation.OpenSettingHint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true
   });
 
   game.settings.register(SYSTEM_ID, ACTIVE_SESSION_SETTING, {
@@ -264,7 +287,25 @@ export function registerSettings({ launchers, onAiContentChange }) {
       [PERCENT_STAT_MODES.LIVE]: 'Live (house rule)'
     },
     default: PERCENT_STAT_MODES.FIXED,
-    onChange: (mode) => { lockOwnedPercentRows(mode).catch((err) => console.error('COG | locking percent Stat bonuses failed', err)); }
+    onChange: (mode, options) => {
+      if (isMigrationWrite(options)) return;
+      lockOwnedPercentRows(mode).catch((err) => console.error('COG | locking percent Stat bonuses failed', err));
+    }
+  });
+
+  // How much Damage Reduction one AI Favor buys for a crawler whose race lets them spend it when damaged (the `paidDrStat` scale source reads it).
+  game.settings.register(SYSTEM_ID, PAID_DR_STAT_SETTING, {
+    name: 'AI Favor Spent for DR',
+    hint: 'How much Damage Reduction one AI Favor buys for a crawler whose race lets them spend it when damaged. '
+      + 'Con Mod: the Constitution modifier. Con Stat (as printed): the full Constitution score.',
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      [PAID_DR_STAT_MODES.MOD]: 'Con Mod',
+      [PAID_DR_STAT_MODES.STAT]: 'Con Stat (as printed)'
+    },
+    default: PAID_DR_STAT_MODES.MOD
   });
 
   game.settings.register(SYSTEM_ID, PRIMARY_THEME_SETTING, {
@@ -361,6 +402,10 @@ export function registerSettings({ launchers, onAiContentChange }) {
   });
 
   // One world Boolean per live flag in LIVE_FLAGS (empty while no change waits for a live check).
+  // The release this world's data was last migrated to ('' = the oldest supported release). Hidden: the migration
+  // runner reads and writes it.
+  game.settings.register(SYSTEM_ID, MIGRATED_VERSION_SETTING, { scope: 'world', config: false, type: String, default: '' });
+
   registerLiveFlags(game.settings, LIVE_FLAGS);
 }
 

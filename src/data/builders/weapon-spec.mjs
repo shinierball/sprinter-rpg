@@ -41,10 +41,11 @@ export function startWeaponDraft(seed = {}) {
  * @param {object} weaponSystem the draft's `system`
  * @param {{ find?: Function, list?: Function }} resolver the catalogs
  * @param {number[]} [ranks]
+ * @param {object} [pick] the listed-Skill entry to read instead of the first one this world has (a mob's own pick)
  * @returns {Array<{ rank: number, untrained: boolean, text: string }>}
  */
-export function rankReadout(weaponSystem, resolver, ranks = READOUT_RANKS) {
-  const found = listedSkillEntries(weaponSystem, resolver).find((entry) => entry.inWorld);
+export function rankReadout(weaponSystem, resolver, ranks = READOUT_RANKS, pick = undefined) {
+  const found = pick ?? listedSkillEntries(weaponSystem, resolver).find((entry) => entry.inWorld);
   const skill = found?.definition?.system ?? null;
   return ranks.map((rank) => {
     const scaled = scaleWeaponBase({ skill, weapon: weaponSystem, rank });

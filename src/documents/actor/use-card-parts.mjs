@@ -4,9 +4,20 @@
  * cleanse list. Every function takes the actor first and never uses `this`.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { tempBarBaseSlots } from '../../utils/damage/temp-bars.mjs';
+import { tempBarBaseSlots, tempBarHpPerSlot, tempBarPassTag } from '../../utils/damage/temp-bars.mjs';
+import { startTimedEffect } from './duration-expiry.mjs';
 import { absorbElementOf } from './aura-effects.mjs';
 import { resolveAreaGeometry, areaReach } from '../../utils/area/area-geometry.mjs';
+import { evaluateRows } from '../../utils/roll/damage-modifiers.mjs';
+import { buildRollContext } from '../../utils/roll/roll-context.mjs';
+import { ENGINE_SITUATIONS } from '../../data/tag-vocabulary.mjs';
+import { kindOf, getRowKind, applyRowKind } from '../../utils/row-kinds.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { findConditionEntry } from '../../content/catalog-lookup.mjs';
+import { durationConfigText } from '../../utils/time/durations.mjs';
+import { buffCardText } from '../../utils/card/buff-card-text.mjs';
+import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
+import { ITEM_BUFF_SLOT, appliedBuffRowsAt, buildAppliedBuff, rowRecipients } from '../../utils/effects/applied-buff.mjs';
 
 /**
  * The `ChatMessage.create` data posted when an active aura is cast again and so dismissed.
@@ -93,9 +104,10 @@ export async function grantItemTempBars(actor, item, resolvedBreaks) {
   let slots = tempBarBaseSlots(sys.tempBars?.slotsFormula, actor.system?.abilities);
   slots = Math.max(1, slots) + (resolvedBreaks.tempBars.barsGranted || 0);
 
-  const hpPerSlot = (Number(sys.tempBars?.hpPerSlot) || 2) + (resolvedBreaks.tempBars.hpPerSlot || 0);
+  const hpPerSlot = tempBarHpPerSlot(sys.tempBars, actor.system?.abilities, resolvedBreaks.tempBars.hpPerSlot);
   const totalTempHp = slots * hpPerSlot;
-  await actor.grantTempBars({ count: slots, hpPerSlot, source: item.name, sourceUuid: item.uuid || '', element: absorbElementOf(item) });
+  await actor.grantTempBars({ count: slots, hpPerSlot, source: item.name, sourceUuid: item.uuid || '', element: absorbElementOf(item), passTag: tempBarPassTag(sys.tempBars) });
+  await startTimedEffect(item);
   return { slots, hpPerSlot, totalTempHp };
 }
 
@@ -189,6 +201,37 @@ export function healingBarsFor(actor, formulaRaw, resolvedBreaks) {
 }
 
 /**
+ * The Health Bar slots the owner's `healAdd` rows add to a heal of this Skill or Spell. The rows are the owner's
+ * `damageModifiers`, judged in a `damage` context of the heal item's tags plus `situation.single_target` when
+ * the heal goes to one creature (the owner, or one target, with no area).
+ * @param {Actor} actor
+ * @param {Item} item the healing Skill or Spell
+ * @param {{ singleTarget?: boolean }} [params]
+ * @returns {number}
+ */
+export function healBonusSlots(actor, item, { singleTarget = false } = {}) {
+  const context = buildRollContext({ actor, phase: 'damage', item, tags: singleTarget ? [ENGINE_SITUATIONS.singleTarget] : [] });
+  const acc = { slots: 0, sources: [] };
+  for (const { source, row, key } of evaluateRows(actor, 'damageModifiers', context)) {
+    const def = getRowKind('damageModifiers', kindOf('damageModifiers', row));
+    if (def?.apply?.heal) applyRowKind('damageModifiers', def, 'heal', acc, row, { actor, source, rowKey: key, context, tags: context.tags, label: row.label || source?.name || '' });
+  }
+  return acc.slots;
+}
+
+/**
+ * Whether a heal goes to one creature: the owner, or exactly one target, and the item has no area.
+ * @param {Item} item
+ * @param {{ isSelfTarget?: boolean, targetCount?: number, targetFilter?: string }} [params] `targetFilter` is the item's
+ *   own (`area` and `allies` heal several)
+ * @returns {boolean}
+ */
+export function isSingleTargetHeal(item, { isSelfTarget = false, targetCount = 0, targetFilter = '' } = {}) {
+  if (resolveAreaGeometry(item) || targetFilter === 'area' || targetFilter === 'allies') return false;
+  return isSelfTarget || targetCount <= 1;
+}
+
+/**
  * Debuff names a healing item cleanses: its own list plus the reached rank-break ones, without duplicates.
  * @param {object} sys the item's system data
  * @param {object} resolvedBreaks `resolveReachedRankBreaks(item, rank)`
@@ -205,4 +248,47 @@ export function cleanseListFor(sys, resolvedBreaks) {
     }
   }
   return debuffsToCleanse;
+}
+
+/**
+ * The "applies a buff" blocks of a use card and the flags that go with them: one block per `appliedBuffs` row in force at
+ * the Rank, each with its Apply button. Recipients are gathered when the button is clicked (`item-buffs.mjs`), so the
+ * caster can cast, then target, then click. `{ html: '', flags: {} }` when no row is in force.
+ * @param {Actor} holder the caster
+ * @param {Item} item the skill or spell
+ * @param {{ rank: number }} use the Rank the item is used at
+ * @returns {Promise<{ html: string, flags: { itemBuffs?: object } }>}
+ */
+export async function buffApplyBlocks(holder, item, { rank }) {
+  const rows = appliedBuffRowsAt(item, rank);
+  if (!rows.length) return { html: '', flags: {} };
+  const blocks = rows.map((entry) => {
+    const { row, index } = entry;
+    const name = findConditionEntry('buffs', row.buff)?.name || row.buff;
+    const { spec } = rowRecipients(row, 0);
+    const reach = Number(row.range) || 0;
+    const target = reach > 0 ? buffCardText('COG.BuffCard.WithinFeet', { target: spec.label, feet: reach }) : spec.label;
+    const copy = buildAppliedBuff(holder, item, entry, { rank });
+    const lasts = durationConfigText(copy.system?.durationConfig);
+    const copyRank = Number(copy.system?.rank) || 0;
+    return `
+        <div class="cog-outcome-buff cog-bg-info-tint" style="border-left: 4px solid var(--cog-info); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 class="cog-text-info" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;"><i class="fa-solid fa-sparkles"></i> ${escapeAttr(name)}</h4>
+            <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="font-size: 10px;">BUFF</span>
+          </div>
+          <p style="margin: 4px 0; font-size: 12px;">${escapeAttr(buffCardText('COG.BuffCard.To', { target }))}${lasts ? ` &bull; ${escapeAttr(buffCardText('COG.BuffCard.Lasts', { duration: lasts }))}` : ''}${copyRank > 0 && copyRank !== rank ? ` &bull; ${escapeAttr(buffCardText('COG.BuffCard.AtRank', { rank: copyRank }))}` : ''}</p>
+          <div class="${ITEM_BUFF_SLOT}" data-row="${Number(index)}"></div>
+          <div style="margin-top: 8px;">
+            <button type="button" class="cog-apply-buff-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyItemBuff" data-row="${Number(index)}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+              <i class="fa-solid fa-hand-sparkles"></i> ${escapeAttr(buffCardText('COG.BuffCard.ApplyTo', { target }))}
+            </button>
+          </div>
+        </div>`;
+  }).join('');
+  const summary = await cardSummary(item, OMIT_ALL, { actor: holder, effects: rows.map(({ row }) => ({ kind: 'buffs', ref: row.buff })) });
+  return {
+    html: blocks + summary,
+    flags: { itemBuffs: { itemUuid: item.uuid ?? '', casterUuid: holder?.uuid ?? '', rank, applied: {} } }
+  };
 }

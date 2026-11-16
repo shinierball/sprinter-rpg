@@ -1,4 +1,5 @@
 import { SYSTEM_ID } from '../constants.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { recordedPicks } from '../utils/character/recorded-picks.mjs';
 import { readSourceStamp } from '../utils/content-source.mjs';
@@ -362,6 +363,8 @@ function refreshCatalogEntry(compendiumItem) {
  */
 export async function onUpdateItemSync(item, changed, options, userId) {
   if (globalThis.game?.user && userId && userId !== globalThis.game.user.id) return null;
+  // A migration converts the pack's documents and the world's copies on its own; it does not re-sync one from the other.
+  if (isMigrationWrite(options)) return null;
   if ((isCompendiumDocument(item) || options?.pack) && isRegisteredCompendiumDocument(compendiumPackId(item) || options?.pack)) {
     return syncCompendiumItemToWorld(item, { changed, options });
   }
@@ -383,8 +386,9 @@ export function registerCompendiumSyncHooks() {
   globalThis.Hooks.on('preUpdateToken', guardLinkAfterUpdate);
 }
 
-/** The link guard: decides from the actor the token will have after the update. */
-function guardLinkAfterUpdate(tokenDoc, changes) {
+/** The link guard: decides from the actor the token will have after the update. A migration write is left as it is. */
+function guardLinkAfterUpdate(tokenDoc, changes, options) {
+  if (isMigrationWrite(options)) return;
   const actor = changes.actorId !== undefined
     ? globalThis.game?.actors?.get?.(changes.actorId)
     : (tokenDoc.actor || globalThis.game?.actors?.get?.(tokenDoc.actorId));

@@ -12,6 +12,7 @@ import { matchesTagQuery, normalizeTagList } from '../../utils/tag/tag-query.mjs
 import { VEHICLE_TAGS } from '../tag-vocabulary.mjs';
 import { addWaivableRollPenalty } from '../../utils/row-kinds.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
+import { unopposedDifficulty } from './difficulty-rules.mjs';
 
 export const DEFAULT_VEHICLE_KIND = 'wheeled';
 const DEFAULT_VEHICLE_SIZE_NUMBER = 4;
@@ -288,30 +289,6 @@ export function resultDelta(applied, effect, maxHp) {
   };
 }
 
-const FAIL_DEGREES = ['critical_failure', 'major_failure', 'failure'];
-const LADDER = ['critical_failure', 'major_failure', 'failure', 'near_miss', 'success', 'amazing_success', 'critical_success'];
-
-/**
- * Shift a check degree by a number of steps (the book's "reduce the level of a Fail by 1"). Upward from a Fail
- * degree it stops at Near Miss: a shift never turns a fail into a success. With `failOnly` (the default) only a Fail
- * degree moves; without it Near Miss and the successes move too, and negative steps move down.
- * @param {string} outcome a COG_ROLL_OUTCOMES id
- * @param {number} steps
- * @param {{ failOnly?: boolean }} [opts]
- * @returns {string} the new degree id (the same id when nothing moves or the id is unknown)
- */
-export function shiftDegree(outcome, steps, { failOnly = true } = {}) {
-  const id = trimmedScalar(outcome);
-  const at = LADDER.indexOf(id);
-  const n = Math.trunc(Number(steps));
-  if (at < 0 || !Number.isFinite(n) || n === 0) return id;
-  if (failOnly && !FAIL_DEGREES.includes(id)) return id;
-  let to = Math.max(0, Math.min(LADDER.length - 1, at + n));
-  const nearMiss = LADDER.indexOf('near_miss');
-  if (FAIL_DEGREES.includes(id) && n > 0) to = Math.min(to, nearMiss);
-  return LADDER[to];
-}
-
 // ---------------------------------------------------------------------------------------------------------------
 // Vehicle check kinds
 // ---------------------------------------------------------------------------------------------------------------
@@ -353,9 +330,6 @@ export function sanitizeVehicleCheckKind(raw) {
   const id = trimmedScalar(raw);
   return Object.hasOwn(VEHICLE_CHECK_KINDS, id) ? id : '';
 }
-
-/** Unopposed default Difficulty (p. 59): 10 + 2 x Floor. */
-const unopposedDifficulty = ({ floor } = {}) => 10 + 2 * wholeNumber(floor);
 
 const C = 'COG.Vehicle.Check.';
 registerVehicleCheckKind({ id: 'performance', label: `${C}performance`, resolve: 'table6', difficulty: unopposedDifficulty });
@@ -530,11 +504,12 @@ export function explosionFormula({ size, floor = 0 } = {}) {
 }
 
 /**
- * Full Move after the vehicle's and its driver's Move rows: (full + the adds) x the multipliers, rounded down.
- * @param {{ full: number, adds?: number[], multipliers?: number[] }} args
+ * Full Move after the vehicle's and its driver's Move rows: (the larger of full and `set` + the adds) x the multipliers,
+ * rounded down. `set` is the highest `moveSet` row for the ground Move ("has a Move of at least"); 0 for none.
+ * @param {{ full: number, set?: number, adds?: number[], multipliers?: number[] }} args
  */
-export function ratedMove({ full, adds = [], multipliers = [] } = {}) {
-  const sum = (Array.isArray(adds) ? adds : []).reduce((t, a) => t + (Number.isFinite(Number(a)) ? Number(a) : 0), wholeNumber(full));
+export function ratedMove({ full, set = 0, adds = [], multipliers = [] } = {}) {
+  const sum = (Array.isArray(adds) ? adds : []).reduce((t, a) => t + (Number.isFinite(Number(a)) ? Number(a) : 0), Math.max(wholeNumber(full), wholeNumber(set)));
   const total = (Array.isArray(multipliers) ? multipliers : []).reduce((t, m) => t * (Number.isFinite(Number(m)) && Number(m) >= 0 ? Number(m) : 1), sum);
   return Math.max(0, Math.floor(total));
 }

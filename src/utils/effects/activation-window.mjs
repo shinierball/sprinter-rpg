@@ -27,7 +27,7 @@ export const isEventUnit = (unit) => EVENT_UNITS.includes(unit);
  * The sanitised activation block of a buff (an item, a `getActiveBuffs()` entry or a bare system object). A missing
  * block reads as a disabled one; an unknown unit reads as `use`; a non-number reads as its initial.
  * @param {object|null|undefined} item
- * @returns {{ enabled: boolean, cooldown: object|null, window: { unit: string, value: number, query: object|null },
+ * @returns {{ enabled: boolean, auto: boolean, cooldown: object|null, window: { unit: string, value: number, query: object|null },
  *   open: boolean, closesAt: number|null, combatId: string, usesLeft: number }}
  */
 export function activationOf(item) {
@@ -38,6 +38,7 @@ export function activationOf(item) {
   const closesAt = raw?.closesAt === null || raw?.closesAt === undefined ? null : finite(raw.closesAt, null);
   return {
     enabled: raw?.enabled === true,
+    auto: raw?.auto === true,
     cooldown: raw?.cooldown && typeof raw.cooldown === 'object' ? raw.cooldown : null,
     window: { unit: ACTIVATION_WINDOW_UNITS.includes(unit) ? unit : FALLBACK_UNIT, value: Math.max(0, finite(window.value, 1)), query },
     open: raw?.open === true,

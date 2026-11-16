@@ -3,10 +3,12 @@ import { SYSTEM_ID } from '../../constants.mjs';
 import { sanitizeContestRef, moveLine } from '../../utils/contest/contest-roll.mjs';
 import { sanitizeVehicleRef, vehicleCheckSetup, vehicleCheckKeys, withVehicleSources } from '../../utils/vehicle/vehicle-check.mjs';
 import { buildCheckRecord, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
+import { checkRerollStamp } from './check-reroll-stamp.mjs';
 import { collectCheckToHit, rollCheckTargets } from '../../utils/attack/per-target-to-hit.mjs';
 import { buildRollContext, extendContext, resolveRollToggles } from '../../utils/roll/roll-context.mjs';
 import { cameraParts, consumeArmedCamera } from '../../utils/roll/cameras.mjs';
 import { newRollId, standingStampFor, noteStandingStamp } from '../../utils/roll/check-difficulty.mjs';
+import { awardAmazingForCheckCard } from './actor-popularity.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { attackTargetEntries } from './attack-targets.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
@@ -84,6 +86,7 @@ export async function rollStat(actor, statKey, options = {}) {
   // A plain check card with no Difficulty of its own takes the standing one, when the GM put it up.
   const floor = getCurrentFloor();
   const stamp = standingStampFor({ kind: 'stat', rollerType: actor.type, hasOwnDc: Boolean(vehicle || contest), floor });
+  const rerollStamp = checkRerollStamp(rollContext);
   const message = await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor: actor }),
     flavor: `${flavor}${camera.noteHtml}`,
@@ -93,13 +96,16 @@ export async function rollStat(actor, statKey, options = {}) {
         ...perTarget.flags,
         ...camera.flags,
         ...actionBlockGate.flags,
+        ...rerollStamp.flags,
         [CHECK_RECORD_FLAG]: buildCheckRecord({
           kind: 'stat',
+          itemUuid: rerollStamp.itemUuid,
           roller: actor,
           rollerTokenId: rollerTokenIdOf(actor),
           roll,
           combat: combatRefFor(actor),
           tags: [...rollContext.tags],
+          contextTags: [...rollContext.tags],
           targets: perTarget.results.map((r, i) => ({ actorId: r.actorId, actorUuid: targetActors[i]?.uuid, name: r.actorName, dc: stamp?.dc ?? null, bonus: r.bonus })),
           dc: vehicle ? vehicle.dc : (stamp?.dc ?? null),
           difficulty: stamp?.difficulty ?? null,
@@ -114,5 +120,7 @@ export async function rollStat(actor, statKey, options = {}) {
   });
   if (stamp) await noteStandingStamp();
   await consumeArmedCamera(actor);
+  // An Amazing Success on a card born with its Difficulty (or a natural 20) pays an `amazing` Popularity row
+  awardAmazingForCheckCard(message, actor, rollContext).catch(() => {});
   return message;
 }

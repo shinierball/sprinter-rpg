@@ -8,6 +8,7 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { CHECK_TAGS } from '../../utils/tag/tag-mechanics.mjs';
 import { buildCheckRecord, classifyEvade, combatRefFor, rollerTokenIdOf, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
+import { checkRerollStamp } from './check-reroll-stamp.mjs';
 import { collectCheckModifiers, collectRollAdvantage, collectEvadeOutcome } from '../../utils/roll/damage-modifiers.mjs';
 import { cameraParts, consumeArmedCamera } from '../../utils/roll/cameras.mjs';
 import { buildRollContext, extendContext, resolveRollToggles, resolveRowAdvantage, actionTagsOf, roleTagsOf } from '../../utils/roll/roll-context.mjs';
@@ -147,6 +148,7 @@ export async function rollEvade(actor, options = {}) {
   const content = rollHtml ? `${rollHtml}${resultHtml}` : (resultHtml || undefined);
   const attackMessageId = typeof options.attackMessageId === 'string' && options.attackMessageId ? options.attackMessageId : null;
 
+  const rerollStamp = checkRerollStamp(rollContext);
   const message = await roll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor: `${flavor}${camera.noteHtml}`,
@@ -167,8 +169,10 @@ export async function rollEvade(actor, options = {}) {
     evaderUuid: actor.uuid,
     ...(options.ruleBreak === true ? { ruleBreak: true } : {}),
     ...(options.freeEvade === true ? { freeEvade: true } : {}),
+    ...rerollStamp.flags,
     [CHECK_RECORD_FLAG]: buildCheckRecord({
       kind: 'evade',
+      itemUuid: rerollStamp.itemUuid,
       roller: actor,
       rollerTokenId: rollerTokenIdOf(actor),
       roll,

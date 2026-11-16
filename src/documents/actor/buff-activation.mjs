@@ -13,8 +13,10 @@ import { isBuffSuppressed } from '../../utils/effects/dispel.mjs';
 import { matchesTagQuery } from '../../utils/tag/tag-query.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
-import { currentTimeContext } from './dungeon-time.mjs';
-import { gateItemCooldown } from './cooldown-gate.mjs';
+import { currentTimeContext, runningCombatId } from './dungeon-time.mjs';
+import { gateItemCooldown, plainRecord } from './cooldown-gate.mjs';
+import { cooldownState, effectiveCooldown, nextUseRecord } from '../../utils/time/cooldowns.mjs';
+import { timingAmount } from '../../utils/time/timing.mjs';
 import { registerExpirySource, sweepActors } from './duration-expiry.mjs';
 import { notify, say, speakerOf } from './vehicle-drive-common.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
@@ -59,13 +61,46 @@ export async function useBuffActivation(actor, buff, { options } = {}) {
   await gate.commit();
 
   const now = currentTimeContext(actor);
-  await item.update(statePaths(openPatch(activation, { now: now.time, combatId: now.combat?.id ?? '' })));
+  await item.update(statePaths(openPatch(activation, { now: now.time, combatId: runningCombatId(actor) })));
   await globalThis.ChatMessage?.create?.({
     speaker: speakerOf(actor),
     content: `<div class="cog-chat-card"><div class="cog-text-secondary">${escapeAttr(say('COG.Activation.Used', '{actor} uses {buff} {window}.', { actor: actor.name, buff: item.name, window: activationWindowPhrase(activation, say, 'COG.Activation.') }))}</div></div>`,
     flags: { [SYSTEM_ID]: { buffActivation: item.id } }
   }, cardMessageOptions(actor));
   return { ok: true, ruleBreak: gate.ruleBreak };
+}
+
+/**
+ * Open every closed `auto` window of an event unit on the actor whose cooldown is ready. Asks nothing and posts nothing:
+ * a spent cooldown leaves the window closed (never a Rule Break prompt), and a buff withheld for another reason is left alone.
+ * `tags` are the event's own (an attack's), matched against each window's `query`.
+ * @param {Actor} actor the owner
+ * @param {{ event?: 'use'|'hit', tags?: Iterable<string> }} [params]
+ * @returns {Promise<number>} how many windows were opened
+ */
+export async function openAutoWindows(actor, { event = 'hit', tags = [] } = {}) {
+  if (!isEventUnit(event)) return 0;
+  const tagSet = new Set(tags ?? []);
+  const now = currentTimeContext(actor);
+  let opened = 0;
+  for (const item of asArray(actor?.items)) {
+    if (item?.type !== 'buff') continue;
+    const activation = activationOf(item);
+    if (!activation.enabled || !activation.auto || activation.open || activation.window.unit !== event) continue;
+    if (isBuffSuppressed(actor, item, { ignoreWindow: true })) continue;
+    if (!matchesTagQuery(tagSet, activation.window.query)) continue;
+    const spec = effectiveCooldown(item, { grantRow: { cooldown: activation.cooldown } });
+    const amount = timingAmount(spec, { actor, source: item, carrier: item, row: spec, context: { phase: 'use', item } });
+    const records = Array.isArray(item.system?.useRecords) ? item.system.useRecords : [];
+    const record = records.find((r) => r?.key === ACTIVATION_RECORD_KEY) ?? null;
+    if (spec.unit && !cooldownState(spec, record, now, { amount }).ready) continue;
+    const next = spec.unit ? nextUseRecord(spec, record, now, { amount, key: ACTIVATION_RECORD_KEY }) : null;
+    const update = statePaths(openPatch(activation, { now: now.time, combatId: runningCombatId(actor) }));
+    if (next) update['system.useRecords'] = [...records.filter((r) => r?.key !== ACTIVATION_RECORD_KEY).map(plainRecord), next];
+    await item.update(update);
+    opened += 1;
+  }
+  return opened;
 }
 
 /**
@@ -88,14 +123,15 @@ export async function endBuffActivation(actor, buff) {
  * the spent windows and spends nothing (a use that may still be cancelled calls it early, then spends once it proceeds).
  * @param {Actor} actor
  * @param {Item[]} usedItems what is being used (empty for a hit)
- * @param {{ event?: 'use'|'hit', settleOnly?: boolean }} [params]
+ * @param {{ event?: 'use'|'hit', settleOnly?: boolean, tags?: Iterable<string> }} [params] `tags` are the event's own (an
+ *   attack's), joined with the used items' tags
  * @returns {Promise<number>} how many windows were written
  */
-export async function spendActivationUses(actor, usedItems, { event = 'use', settleOnly = false } = {}) {
+export async function spendActivationUses(actor, usedItems, { event = 'use', settleOnly = false, tags: eventTags = [] } = {}) {
   let written = 0;
   const windows = openWindows(actor).filter((item) => activationOf(item).window.unit === event && isEventUnit(event));
   if (!windows.length) return written;
-  const tags = new Set();
+  const tags = new Set(eventTags ?? []);
   for (const used of usedItems ?? []) for (const tag of getItemAllTags(used)) tags.add(tag);
   const now = currentTimeContext(actor).time;
   for (const item of windows) {

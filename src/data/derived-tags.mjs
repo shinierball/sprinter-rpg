@@ -2,7 +2,7 @@ import { conditionTagId, debuffIdentifier } from '../utils/identifier.mjs';
 import { isWeaponGear, getWieldMode } from '../utils/gear/wield-mode.mjs';
 import { hasOnHitDebuff, hasOnHitEffect, hasLifesteal, hasDispel } from '../utils/attack/on-hit.mjs';
 import { heritageTag, sanitizeHeritageId } from './rules/heritages.mjs';
-import { ARCHETYPE_TO_TAG, STAT_TO_TAG, damageTypeToElement, identityTag } from './tag-vocabulary.mjs';
+import { ARCHETYPE_TO_TAG, STAT_TO_TAG, POTION_LOOT_TYPE, POTION_TAG, damageTypeToElement, identityTag } from './tag-vocabulary.mjs';
 import { getTagDefinition, resolveAreaShape } from './tag-definitions.mjs';
 import { getReachedRankBreaks } from '../utils/skill/rank-breaks.mjs';
 import { RANKED_ITEM_TYPES } from '../utils/document-types.mjs';
@@ -26,7 +26,7 @@ export const DERIVED_TAG_FIELDS = Object.freeze([
   'system.critMultiplierR15', 'system.onHit', 'system.fumbleDebuff', 'system.contest', 'system.isWeapon',
   'system.slot', 'system.wieldMode', 'system.wieldedOneHanded',
   'system.tags', 'system.archetypes', 'system.area', 'system.delivery', 'system.durationConfig', 'system.tempBars',
-  'system.light', 'system.outcomes', 'system.grants', 'system.spaceType', 'system.isSpaceUpgrade', 'system.upgradeType', 'system.heritage'
+  'system.light', 'system.outcomes', 'system.grants', 'system.spaceType', 'system.heritage', 'system.lootType'
 ]);
 
 /** Whether any tag in the list has a definition carrying `flag` (read from the definition: this module sits below tag-behaviour.mjs). */
@@ -75,6 +75,9 @@ export function computeDerivedTags(item) {
     derived.add(identityTag(type, sys.identifier));
   }
 
+  // A potion (9.8): the loot type is the structured field, the tag is what the rules read.
+  if (type === 'loot' && lc(sys.lootType) === POTION_LOOT_TYPE) derived.add(POTION_TAG);
+
   // Governing Stat
   const statVal = lc(sys.stat) || lc(sys.toHitStat);
   if (statVal && STAT_TO_TAG[statVal]) {
@@ -116,7 +119,7 @@ export function computeDerivedTags(item) {
   // Healing, HoT, and Cleansing derived tags
   if (sys.healing?.hasHealing) {
     derived.add('action.heal');
-    derived.add('resource.hp-bars');
+    derived.add('resource.hp_bars');
     if (sys.healing.isHoT) {
       derived.add('action.hot');
       derived.add('duration.rounds');
@@ -126,10 +129,9 @@ export function computeDerivedTags(item) {
     }
   }
 
-  // Armor Piercing / Ignore DR derived tags
+  // Armor Piercing (Ignore DR) derived tag
   if (sys.ignoreDR || sys.isArmorPiercing || sys.techniqueConfig?.isArmorPiercing) {
     derived.add('action.armor_piercing');
-    derived.add('action.ignore_dr');
   }
 
   // Condition Triggers & Rank Break Triggers
@@ -258,9 +260,6 @@ export function computeDerivedTags(item) {
     const deliv = lc(sys.delivery);
     if (/^[a-z0-9_-]+$/.test(deliv)) {
       derived.add(`delivery.${deliv}`);
-      if (deliv === 'aura') {
-        derived.add('shape.aura');
-      }
     }
   }
 
@@ -287,7 +286,6 @@ export function computeDerivedTags(item) {
     derived.add('action.contested');
     const cType = lc(sys.contest.contestType) || 'dc';
     if (cType === 'opposed') {
-      derived.add('action.opposed');
       derived.add('contest.opposed');
     } else {
       derived.add('contest.dc');
@@ -310,11 +308,11 @@ export function computeDerivedTags(item) {
     }
     if (outType === 'heal' || outType === 'heal_bars' || outcome.healBars) {
       derived.add('action.heal');
-      derived.add('resource.hp-bars');
+      derived.add('resource.hp_bars');
     }
     if (outType === 'heal_over_time' || outType === 'hot') {
       derived.add('action.heal');
-      derived.add('resource.hp-bars');
+      derived.add('resource.hp_bars');
       derived.add('duration.rounds');
     }
   }
@@ -334,17 +332,11 @@ export function computeDerivedTags(item) {
     }
   }
 
-  // Personal Space & Upgrade tags
+  // Personal Space type tag
   if (type === 'personal_space') {
     derived.add('kind.personal_space');
     if (sys.spaceType) {
       derived.add(sys.spaceType);
-    }
-  }
-  if (type === 'upgrade' || sys.isSpaceUpgrade) {
-    derived.add('kind.upgrade');
-    if (sys.upgradeType) {
-      derived.add(sys.upgradeType);
     }
   }
 

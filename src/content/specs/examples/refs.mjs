@@ -70,7 +70,7 @@ export const EXAMPLE_ACTOR_IDS = Object.freeze({
   'overcaffeinated-stagehand': actor(3),
   'the-floor-manager': actor(4),
   'clipboard-intern': actor(5),
-  'applause-llama': actor(6),
+  'rental-ostrich': actor(6),
   'prize-showcase-golf-cart': actor(7),
   'off-brand-bodyguard': actor(8),
   'retired-game-show-host': actor(9)

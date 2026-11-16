@@ -182,6 +182,16 @@ const debuffSeverity = {
   }
 };
 
+/** "Stacks when applied again" on a buff a second application adds another copy of (the default refreshes the first). */
+const buffRepeat = {
+  id: 'buff-repeat',
+  group: 'effect',
+  applies: typeIn('buff'),
+  describe(item) {
+    return str(sysOf(item).repeat?.mode) === 'stack' ? [itemLine('mod', t(`${K}RepeatStack`), 'system.repeat.mode')] : [];
+  }
+};
+
 /** "Stacks when applied again" / "Becomes X when applied again", and the debuffs that land with this one. */
 const debuffRepeat = {
   id: 'debuff-repeat',
@@ -512,6 +522,6 @@ const patronFields = {
 
 /** @type {ReadonlyArray<import('./shared.mjs').ItemSummaryBlock>} */
 export const BLOCKS = Object.freeze([
-  buffHeal, buffActivation, debuffDamage, debuffSeverity, debuffRepeat, debuffTransform, debuffSuppresses, limbModifiers, effectDuration, interrupt, light,
+  buffHeal, buffActivation, buffRepeat, debuffDamage, debuffSeverity, debuffRepeat, debuffTransform, debuffSuppresses, limbModifiers, effectDuration, interrupt, light,
   achievementReward, spaceCost, spaceBonuses, spaceTraining, spaceCrafting, spaceStudio, deityFields, patronFields
 ]);

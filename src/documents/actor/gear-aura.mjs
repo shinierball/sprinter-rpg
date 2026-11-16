@@ -8,10 +8,11 @@
  * - A gear aura has no round countdown ("while equipped"): `processRoundDurations` skips gear.
  * - Moving the item to another actor is a delete on the old holder (aura ends there) and a create on the new one.
  *
- * The aura tag (`delivery.aura` / `shape.aura`) tells an aura from an area weapon, whose `area` block describes a blast.
+ * The aura tag (`delivery.aura`) tells an aura from an area weapon, whose `area` block describes a blast.
  */
 import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
 import { isGearSuppressed } from '../../utils/effects/gear-suppression.mjs';
+import { isMigrationWrite } from '../migrations/world-migration.mjs';
 
 /** True for a gear item that can emit an aura. */
 export function isGearAura(item) {
@@ -61,7 +62,8 @@ export async function onGearAuraItemCreate(item, _options, userId) {
 }
 
 /** `updateItem`: equipping starts a passive gear aura; unequipping ends any gear aura. */
-export async function onGearAuraItemUpdate(item, changes, _options, userId) {
+export async function onGearAuraItemUpdate(item, changes, options, userId) {
+  if (isMigrationWrite(options)) return null;
   const holder = wielderOf(item);
   if (!holder || !isGearAura(item) || !ownUserChange(userId)) return null;
   const equipped = changes?.system?.equipped ?? changes?.['system.equipped'];

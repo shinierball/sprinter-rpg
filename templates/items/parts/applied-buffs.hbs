@@ -1,0 +1,53 @@
+{{!-- BUFFS THIS APPLIES (skill and spell): each row is a buff handed to the caster, one creature, the party, allies or everyone, from the use card. --}}
+<details class="cog-collapsible-block" {{#if appliedBuffs.count}}open{{/if}}>
+  <summary class="cog-collapsible-summary cog-bg-info-fill">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-hand-holding-heart"></i> {{localize "COG.AppliedBuffs.Sheet.Title"}}</span>
+    <span class="cog-toggle-indicator {{#if appliedBuffs.count}}active{{/if}}">{{appliedBuffs.count}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <p class="cog-text-secondary" style="font-size: 11px; margin: 0 0 6px;">{{localize "COG.AppliedBuffs.Sheet.Hint"}}</p>
+    {{#each appliedBuffs.rows as |row|}}
+      <div class="cog-field-row" style="margin-bottom: 6px; align-items: flex-end; flex-wrap: wrap;">
+        <div class="cog-field-group">
+          <span class="cog-field-label">{{localize "COG.AppliedBuffs.Sheet.Buff"}}</span>
+          <select name="{{row.names.buff}}" class="cog-field-input">
+            {{#each row.buffOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.AppliedBuffs.Sheet.Target"}}</span>
+          <select name="{{row.names.target}}" class="cog-field-input">
+            {{#each row.targetOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+          </select>
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label" title="{{row.rangeHint}}">{{localize "COG.AppliedBuffs.Sheet.Within"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="any" name="{{row.names.range}}" value="{{row.range}}" title="{{row.rangeHint}}" />
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.AppliedBuffs.Sheet.FromRank"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="1" name="{{row.names.minRank}}" value="{{row.minRank}}" />
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.AppliedBuffs.Sheet.ToRank"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="1" name="{{row.names.maxRank}}" value="{{row.maxRank}}" placeholder="{{localize 'COG.Rows.Placeholder.NoCeiling'}}" />
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label" title="{{localize 'COG.AppliedBuffs.Sheet.BuffRankHint'}}">{{localize "COG.AppliedBuffs.Sheet.BuffRank"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="1" name="{{row.names.rank}}" value="{{row.rank}}" placeholder="{{localize 'COG.AppliedBuffs.Sheet.ItemRank'}}" title="{{localize 'COG.AppliedBuffs.Sheet.BuffRankHint'}}" />
+        </div>
+        <div class="cog-field-group small">
+          <span class="cog-field-label" title="{{localize 'COG.AppliedBuffs.Sheet.RankSkillHint'}}">{{localize "COG.AppliedBuffs.Sheet.RankSkill"}}</span>
+          <select name="{{row.names.rankSkill}}" class="cog-field-input" title="{{localize 'COG.AppliedBuffs.Sheet.RankSkillHint'}}">
+            {{#each row.rankSkillOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
+          </select>
+        </div>
+        <a class="cog-text-accent" data-action="removeAppliedBuff" data-index="{{row.index}}" data-tooltip="{{localize 'COG.AppliedBuffs.Sheet.Remove'}}" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
+      </div>
+    {{/each}}
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{appliedBuffs.durationLine}}</p>
+    <button type="button" class="cog-btn cog-bg-accent-strong-fill cog-text-on-fill" data-action="addAppliedBuff" style="font-size: 11px; padding: 3px 6px; border: 1px solid var(--cog-ink); border-radius: 3px; cursor: pointer;">
+      <i class="fa-solid fa-plus"></i> {{localize "COG.AppliedBuffs.Sheet.Add"}}
+    </button>
+  </div>
+</details>

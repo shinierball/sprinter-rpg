@@ -50,6 +50,7 @@ import { registerCompendiumSyncHooks } from '../data/compendium-sync.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { registerChatMessageHook } from '../chat/register-chat-hook.mjs';
 import { registerSettings } from '../settings/register-settings.mjs';
+import { captureStoredSourcesAtInit } from '../documents/migrations/stored-sources.mjs';
 import { registerHandlebarsHelpers, preloadTemplates } from './handlebars.mjs';
 import { buildGameNamespace, buildConfigCOG, installEnvironmentAccessors, syncRegistryConfig } from './system-api.mjs';
 import { registerKeybindings } from './keybindings.mjs';
@@ -106,6 +107,10 @@ export async function onInit() {
   });
   // The Loot Box Showcase (7.3e): client settings `lootBoxShow` (full / reduced / summary) and `lootBoxShowSound`.
   registerLootBoxShowSettings(game.settings);
+  // The world migrations need the sources as the database holds them. Right after this hook Foundry builds every world
+  // document from game.data and cleans it in place, and Foundry does not wait for an async init hook: so the copy is
+  // taken here, synchronously, after the watermark setting is registered and before this hook's first await.
+  captureStoredSourcesAtInit();
   registerKeybindings();
   syncRegistryConfig();
   setIdentityNameResolver(resolveIdentityName);

@@ -12,18 +12,25 @@ import { setupInitialHotbar } from './hotbar.mjs';
 import { runGMWorldSetup } from './world-setup.mjs';
 import { checkDefaultUnpause } from './pause.mjs';
 import { registerSceneEpochHooks } from '../documents/actor/dungeon-time.mjs';
+import { migrateWorldAtReady } from '../documents/migrations/migrate-at-ready.mjs';
 import { registerDurationHooks } from '../documents/actor/duration-expiry.mjs';
 import { registerDevotionHooks } from '../documents/actor/devotion-sweep.mjs';
+import { registerPopularityChecklistHooks } from '../documents/actor/popularity-checklist.mjs';
+import { registerFanBoxAlertHooks } from '../documents/actor/fan-box-alert.mjs';
+import { setPopularityChecklistOpener } from '../documents/actor/popularity-checklist-due.mjs';
+import { COGPopularityChecklistApp } from '../apps/popularity-checklist-app.mjs';
 import { registerLightExpiry } from '../documents/actor/light-source.mjs';
 import { registerActivationHooks } from '../documents/actor/buff-activation.mjs';
 import { registerCameraHooks } from '../chat/actions/cameras.mjs';
 import { registerContestHooks } from '../chat/contest-ingest.mjs';
 import { registerVehicleDriveHooks } from '../documents/actor/vehicle-drive.mjs';
+import { registerPetCheckHooks } from '../documents/actor/pet-checks.mjs';
 import { getActiveGM, isActiveGM } from '../utils/gm-relay.mjs';
 import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
 import { maybePromptCleanup } from '../content/theme-cleanup.mjs';
 import { noteAiContentAtReady } from './ai-content.mjs';
 import { clearPopularityUsage } from '../documents/actor/actor-popularity.mjs';
+import { postEvadeInjuryCard } from '../chat/evade-injury-card.mjs';
 import { relinkAtReady } from './tokens.mjs';
 import { reconcilePersonalSpaceOwnership } from '../documents/actor/personal-space-links.mjs';
 import { reconcileVehicleOwnership } from '../documents/actor/vehicle-crew.mjs';
@@ -55,12 +62,21 @@ export async function onReady() {
   // On a page load the canvas is drawn (and a player's character token controlled) before `ready`, so the first
   // `canvasReady` and `controlToken` have already fired: pick up the token that is controlled now.
   if (globalThis.canvas?.ready) crawlerHud.syncControlledToken();
+  // Stored data from an older release is converted before any hook below is registered and before any world write this
+  // hook makes. A GM who is not the active GM leaves world setup to the active GM's run while the world is behind.
+  const migration = await migrateWorldAtReady();
   // A scene here is bounded by a combat starting or ending (or the GM's New Scene button), not by a Foundry scene.
   registerSceneEpochHooks();
   // Timed effects end on the world clock and at the end of a combat (the active GM only).
   registerDurationHooks();
   // Missed offerings are counted when the world clock crosses into a new day (active GM only).
   registerDevotionHooks();
+  // Each crawler's Popularity at the start of the dungeon day is recorded when the clock crosses a day (active GM only).
+  registerPopularityChecklistHooks();
+  // A crawler reaching a Fan Box milestone alerts the GM; crossings stamped while no GM was connected are posted now.
+  registerFanBoxAlertHooks();
+  // The due card's button reaches the checklist window (apps/ code) through this opener.
+  setPopularityChecklistOpener((moment) => COGPopularityChecklistApp.open({ moment }));
   registerLightExpiry();
   // An activated buff's combat window closes when the combat ends (the active GM only).
   registerActivationHooks();
@@ -77,10 +93,11 @@ export async function onReady() {
   registerContestHooks();
   // A vehicle check card reaches its vehicle (Table 6, braking) on the active GM's client.
   registerVehicleDriveHooks();
+  registerPetCheckHooks();
   // Imported Sourcery text joins the registry catalogs (built sync from the redacted specs; the world packs are async). The
   // refresh began at `setup`; this only waits for it.
   await sourceryCatalogsReady().catch(err => console.warn('Sprinter RPG | Sourcery catalog refresh failed:', err));
-  if (game.user.isGM) await runGMWorldSetup();
+  if (game.user.isGM && !migration?.skipWorldSetup) await runGMWorldSetup();
   if (game.user.isGM) noticePrimaryListedOff();
   noteAiContentAtReady();
   // The active GM is offered the cleanup of a turned-off theme (or hidden AI content) once per change of the off list.
@@ -112,6 +129,8 @@ export function onDeleteCombat(combat) {
   if (game.users?.activeGM?.isSelf) {
     const actors = [...(combat?.combatants ?? [])].map(c => c.actor).filter(Boolean);
     clearPopularityUsage(actors, 'combat').catch(() => {});
+    // Foundry ends a combat by deleting it: a combat deleted without End Combat still gets its Injury card, once.
+    postEvadeInjuryCard(combat).catch(err => console.warn('Sprinter RPG | Could not post the Injury card:', err));
   }
 }
 

@@ -26,13 +26,13 @@ export const SPECS = Object.freeze([
         name: 'Burning Summons',
         toHitStat: 'dex',
         damageStat: 'cha',
-        damageDice: '1d8',
+        dice: 1, die: 'd8',
         damageType: 'Brimstone',
         effects: 'The summons does not go out. It stays lit.'
       }
     ],
     loot: [
-      { name: 'Court Stamp', quantity: 1, notes: '', description: 'It says RECEIVED. It does not say by whom.' }
+      { name: 'Court Stamp', quantity: 1, lootType: 'consumable', description: 'It says RECEIVED. It does not say by whom.' }
     ]
   }
 ]);

@@ -32,7 +32,6 @@ export const BARE_BOSS_TIER_ID = 'floor';
  */
 export const MOB_SPEC_TAGS = Object.freeze({
   attack: 'action.attack',
-  hot: 'action.hot',
   unique: 'mob.unique',
   minion: 'mob.minion',
   summoned: 'mob.summoned'
@@ -276,4 +275,74 @@ export function recommendedDice({ level = null, floor = null, isBoss = false, ar
 export function bossActionBudget(crawlerAlliesCount = 0) {
   const count = Math.max(0, parseInt(crawlerAlliesCount, 10) || 0);
   return Math.max(2, count);
+}
+
+/** The book's base of a mob's Evade and Surprise difficulty ratings, before the stat modifier and the Floor. */
+const DEFENSE_RATING_BASE = 10;
+
+/**
+ * A mob's total Damage Resistance: its own (armor, buffs, items) plus the Floor, never below 0. The mob sheet and the Mob Creator's stat block both read it here.
+ * @param {number} baseDr
+ * @param {number} floor
+ * @returns {number}
+ */
+export function mobTotalDr(baseDr, floor) {
+  return Math.max(0, baseDr + floor);
+}
+
+/**
+ * A mob's Evade base when none is stored: 10 plus its Dexterity modifier. The Evade DC is this plus the Floor.
+ * @param {number} dexMod
+ * @returns {number}
+ */
+export function defaultEvadeBase(dexMod) {
+  return DEFENSE_RATING_BASE + dexMod;
+}
+
+/**
+ * A mob's Surprise base when none is stored: 10 plus its Intelligence modifier. The Surprise DC is this plus the Floor.
+ * @param {number} intMod
+ * @returns {number}
+ */
+export function defaultSurpriseBase(intMod) {
+  return DEFENSE_RATING_BASE + intMod;
+}
+
+/**
+ * The rules a mob spec breaks, as plain sentences (empty when none). Only a stat budget the book does not allow counts:
+ * a bars, Evade or Surprise number that differs from its formula is an override the creator offers on purpose, and unspent
+ * points are a note, not a break (the human, 2026-11-13, Question 2 a).
+ * @param {{ level?: number, bossTier?: string|null, abilities?: object }} [spec]
+ * @returns {string[]}
+ */
+export function mobRuleBreakReasons({ level = 1, bossTier = null, abilities = {} } = {}) {
+  const { base, points } = statBudget({ level, bossTier });
+  const spent = statSpent(abilities, base);
+  if (spent <= points) return [];
+  return [`The stats spend ${spent} points but the budget is ${points} (base ${base}, level ${Math.max(1, parseInt(level, 10) || 1)}).`];
+}
+
+/** The book's boss tiers in rank order, weakest first: a tier's place in this order sets its Skills' starting Rank. */
+const BOSS_TIER_ORDER = Object.freeze(['neighborhood', 'borough', 'city', 'province', 'country', 'floor', 'dungeon']);
+/** A boss's Skill starts at this many Ranks per place in the tier order (the order is counted up to `SKILL_TIER_PLACES`). */
+const SKILL_RANKS_PER_TIER_PLACE = 5;
+const SKILL_TIER_PLACES = 5;
+/** No Skill a mob or a boss is made with starts above this Rank (the human, 2026-11-13). */
+const MOB_SKILL_RANK_CAP = 15;
+
+/**
+ * The Rank a Skill starts at on a new mob: the mob's Floor, or for a boss 5 x its tier's place in the order Neighborhood 1,
+ * Borough 2, City 3 and so on (counted up to 5), never above Rank 15. A tier outside the book's seven (a homebrew tier)
+ * starts at Rank 0. The Skill's Rank follows the Floor and the tier until the GM sets it.
+ * @param {{ floor?: number, bossTier?: string|null }} [mob]
+ * @returns {number}
+ */
+export function skillStartRank({ floor = 1, bossTier = null } = {}) {
+  const tier = bossTier && bossTier !== 'none' ? String(bossTier).toLowerCase().trim().replace(/^mob\.tier\./, '') : null;
+  if (tier) {
+    const at = BOSS_TIER_ORDER.indexOf(tier);
+    if (at < 0) return 0;
+    return Math.min(MOB_SKILL_RANK_CAP, Math.min(at + 1, SKILL_TIER_PLACES) * SKILL_RANKS_PER_TIER_PLACE);
+  }
+  return Math.min(MOB_SKILL_RANK_CAP, Math.max(1, Math.trunc(Number(floor)) || 1));
 }

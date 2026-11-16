@@ -1,8 +1,11 @@
 import { COG_OUTCOME_CONFIG } from '../documents/session/roll-outcomes.mjs';
 import {
-  AIMING_CONDITION, CONTEST_TAGS, ENGINE_SITUATIONS, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS, SAME_SIZE_SITUATION, VEHICLE_TAGS,
-  PATRON_ACCESS_TAGS, PATRON_TAGS, WORSHIP_TAGS, WORSHIP_TIER_TAG_PREFIX
+  AIMING_CONDITION, CONTEST_TAGS, ENGINE_SITUATIONS, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS, PET_TAGS, RANGED_ANY, SAME_SIZE_SITUATION, LARGER_FOE_SITUATION, SMALLER_FOE_SITUATION, AFTER_KILL_SITUATION, FOE_HALF_LEVEL_SITUATION, STOCK_SITUATIONS, VEHICLE_TAGS,
+  PATRON_ACCESS_TAGS, PATRON_TAGS, WORSHIP_TAGS, WORSHIP_TIER_TAG_PREFIX, selfTag
 } from './tag-vocabulary.mjs';
+import { MELEE_ATTACK_ANY } from './rules/melee-attack.mjs';
+import './migrate-drop-kind-upgrade.mjs';
+import './migrate-tag-ids.mjs';
 
 /** Label and text of each access a would-be patron may hold, by tag id (`PATRON_ACCESS_TAGS`, core rulebook p. 315). */
 const PATRON_ACCESS_DEFINITIONS = Object.freeze({
@@ -13,6 +16,38 @@ const PATRON_ACCESS_DEFINITIONS = Object.freeze({
   'access.agency.outreach_pr': { label: 'Access: Outreach PR Agent', description: 'Has a crawler outreach PR agent.' }
 });
 
+/**
+ * One stock attack reason's `attackModifiers` row (`advantage` is the d20 mode it gives): a plain row conditioned on the
+ * reason's own tag, plus the kind of attack it is for.
+ */
+function stockRows(tag, advantage, { any = [], none = [] } = {}) {
+  return { attackModifiers: [{ kind: 'advantage', advantage, condition: { all: [tag], any: [...any], none: [...none] } }] };
+}
+
+/** The new stock attack reasons of the rulebook's pp. 83-85 (`situation.higher_ground` predates them and is listed in place). */
+const STOCK_SITUATION_ENTRIES = [
+  { id: STOCK_SITUATIONS.inMeleeReach, label: 'Enemy Within Melee Reach of You', rows: stockRows(STOCK_SITUATIONS.inMeleeReach, 'disadvantage', { any: [...RANGED_ANY, 'check.spell'] }) },
+  { id: STOCK_SITUATIONS.cover, label: 'Target Behind Cover', rows: stockRows(STOCK_SITUATIONS.cover, 'disadvantage', { none: [...MELEE_ATTACK_ANY] }) },
+  { id: STOCK_SITUATIONS.darkness, label: 'Target in Darkness', rows: stockRows(STOCK_SITUATIONS.darkness, 'disadvantage') },
+  { id: STOCK_SITUATIONS.dimLight, label: 'Target in Dim Light', rows: stockRows(STOCK_SITUATIONS.dimLight, 'disadvantage') },
+  { id: STOCK_SITUATIONS.severeWeather, label: 'Severe Weather', rows: stockRows(STOCK_SITUATIONS.severeWeather, 'disadvantage') },
+  { id: STOCK_SITUATIONS.shiftingGround, label: 'Shifting Ground', rows: stockRows(STOCK_SITUATIONS.shiftingGround, 'disadvantage') },
+  { id: STOCK_SITUATIONS.targetLarger, label: 'Target 4+ Sizes Larger', rows: stockRows(STOCK_SITUATIONS.targetLarger, 'advantage') },
+  {
+    id: STOCK_SITUATIONS.targetSmaller, label: 'Target 4+ Sizes Smaller',
+    rows: {
+      ...stockRows(STOCK_SITUATIONS.targetSmaller, 'disadvantage'),
+      // A melee attack Disadvantaged by this adds the attacker's size value to its damage (p. 85)
+      damageModifiers: [{
+        mode: 'add', value: 1, scaleBy: { source: 'size' },
+        condition: { all: [STOCK_SITUATIONS.targetSmaller, ENGINE_SITUATIONS.disadvantaged], any: [...MELEE_ATTACK_ANY], none: [] }
+      }]
+    }
+  },
+  { id: STOCK_SITUATIONS.unseenAttacker, label: 'Target Cannot See You', rows: stockRows(STOCK_SITUATIONS.unseenAttacker, 'advantage') },
+  { id: STOCK_SITUATIONS.unseenTarget, label: 'You Cannot See the Target', rows: stockRows(STOCK_SITUATIONS.unseenTarget, 'disadvantage') }
+].map((entry) => ({ namespace: 'situation', flags: ['universal'], ...entry }));
+
 /** Spell schools (3.58 D6b), id suffix and label. Descriptive: the GM adjudicates, no mechanic reads them. */
 const SPELL_SCHOOLS = Object.freeze([
   ['healing', 'Healing'], ['mind_control', 'Mind Control'], ['buff', 'Buff'], ['debuff', 'Debuff'], ['entangle', 'Entangle'],
@@ -21,12 +56,25 @@ const SPELL_SCHOOLS = Object.freeze([
   ['utility', 'Utility'], ['defense', 'Defense']
 ]);
 
-/** One school tag; the description's "a"/"an" follows the first letter of the school's name. */
-function schoolTag([suffix, label]) {
-  const name = label.toLowerCase();
-  const article = 'aeiou'.includes(name[0]) ? 'An' : 'A';
-  return { id: `school.${suffix}`, label, namespace: 'school', description: `${article} ${name} spell. A label for the table; the system does not apply it.`, descriptive: true };
+/** One school tag, labelled "School: <name>" (Question 1307 b); the description's "a"/"an" follows the first letter of the name. */
+function schoolTag([suffix, name]) {
+  const lower = name.toLowerCase();
+  const article = 'aeiou'.includes(lower[0]) ? 'An' : 'A';
+  return { id: `school.${suffix}`, label: `School: ${name}`, namespace: 'school', description: `${article} ${lower} spell. A label for the table; the system does not apply it.`, descriptive: true };
 }
+
+/** The area shapes of a Spell: the Ice Aiming perk is for a Spell with one target, so any of them switches it off. */
+const AREA_SHAPE_TAGS = Object.freeze(['shape.aoe', 'shape.burst', 'shape.blast', 'shape.cone', 'shape.line', 'shape.rect', 'shape.splash']);
+
+/**
+ * Aiming's rows for an Ice Spell: Aiming ticked, a Spell with one target, and the caster has the perk tag. A Spell that
+ * is already ranged gets Aiming from `rule.aiming-offset` (`AIMING_CONDITION`), so it is left out here: the two sets of
+ * rows never both apply to one Spell.
+ */
+const AIMING_ICE_CONDITION = Object.freeze({
+  all: ['situation.aiming', 'kind.spell', 'element.ice', selfTag('perk.cog.aiming_for_ice_spells')],
+  none: [...AREA_SHAPE_TAGS, ...AIMING_CONDITION.any]
+});
 
 /**
  * The built-in tag definitions. Data only; lookups and registration live in `tag-definitions.mjs`.
@@ -52,8 +100,7 @@ export const COG_TAGS = [
   { id: 'kind.personal_space', label: 'Personal Space', namespace: 'kind', description: 'Derived on every Personal Space actor from its type. Its space type tag is derived with it.' },
   { id: 'kind.patron', label: 'Patron', namespace: 'kind', description: 'Derived on every patron item from its type, so a tag query can name patrons. A patron never adds tags or rows to the crawler that holds it.' },
   { id: 'kind.sponsor', label: 'Sponsor', namespace: 'kind', description: 'Derived on every sponsor item from its type, so a tag query can name sponsors. A sponsor held by a crawler is an identity carrier: it adds this tag and no bonuses.' },
-  { id: 'kind.space_upgrade', label: 'Space Upgrade (item type)', namespace: 'kind', description: 'Derived on every Personal Space upgrade item from its type, beside kind.upgrade.' },
-  { id: 'kind.upgrade', label: 'Space Upgrade', namespace: 'kind', description: 'Derived on a Personal Space upgrade item. Its upgrade type tag is derived with it.' },
+  { id: 'kind.space_upgrade', label: 'Space Upgrade (item type)', namespace: 'kind', description: 'Derived on every Personal Space upgrade item from its type.' },
   { id: 'kind.technique', label: 'Combat Technique', namespace: 'kind', description: 'Derived on a Skill that is a Combat Technique (it modifies attacks). A technique is never the Skill an attack is matched to.' },
   { id: 'kind.core', label: 'Core Action', namespace: 'kind', description: 'A core action that every crawler has (Intervene, Call a Play). It has no Ranks and is stored on the Skill, not derived.', flags: ['no-ranks'] },
   // Derived from the actor type (`collectActorTags`, documents/active-tags.mjs); registered so tag pickers can offer them.
@@ -81,6 +128,7 @@ export const COG_TAGS = [
   { id: 'upgrade.comms', label: 'Outside World Broadcast & Comms', namespace: 'upgrade' },
   { id: 'upgrade.defense', label: 'Security & Blast Doors', namespace: 'upgrade' },
   { id: 'upgrade.stash_expansion', label: 'Stash & Vault Storage Expansion', namespace: 'upgrade' },
+  { id: 'upgrade.barracks', label: 'Mercenary Barracks Upgrade', namespace: 'upgrade', description: 'The type tag of the barracks upgrades: they house mercenaries and NPCs between floors.' },
   { id: 'upgrade.crafting_table', label: 'Crafting Table', namespace: 'upgrade' },
   { id: 'upgrade.studio', label: 'Studio', namespace: 'upgrade', description: 'An upgrade bought for one table type (system.studio.tableTypeTag): its crafting rows apply to a craft that uses a table of that type. It takes no table space and wants a space of rank 2 or more.' },
 
@@ -90,8 +138,8 @@ export const COG_TAGS = [
   { id: 'heritage.alien', label: 'Alien Heritage', namespace: 'heritage', description: 'The race comes from another world.', descriptive: true },
   { id: 'heritage.pet', label: 'Pet Heritage', namespace: 'heritage', description: 'The race is a pet or companion race (the engine reads companion.pet for that).', descriptive: true },
   { id: 'race.form', label: 'Transformation Form', namespace: 'race', description: 'The race is only a form an affliction changes a victim into. Race pickers leave it out; applying it by hand still works.' },
-  { id: 'companion.pet', label: 'Pet Companion', namespace: 'companion' },
-  { id: 'companion.vehicle', label: 'Vehicle', namespace: 'companion' },
+  { id: 'companion.pet', label: 'Companion Type: Pet', namespace: 'companion' },
+  { id: 'companion.vehicle', label: 'Companion Type: Vehicle', namespace: 'companion' },
   { id: 'companion.mount', label: 'Mount / Beast of Burden', namespace: 'companion', flags: ['mount'] },
 
   // --- Species (a crawler's origin at induction, written by the crawler creator; not a race) ---
@@ -127,16 +175,16 @@ export const COG_TAGS = [
   { id: WORSHIP_TAGS.fallen, label: 'Fallen Worshipper', namespace: 'worship', description: 'Marks a debuff laid on a worshipper who missed too many offerings.' },
   { id: 'access.saferoom.free_room', label: 'Free Safe Room Lodging', namespace: 'access', description: 'Gets a private room in any safe room without paying for it.', descriptive: true },
   { id: 'access.guild.weapon_training', label: 'Guild Access: Weapon Training', namespace: 'access', description: 'May use any guild that teaches weapon skills, on every floor.', descriptive: true },
-  { id: 'rule.store_discount', label: 'Trade Perk', namespace: 'rule', description: 'Pays less at shops, earns more when selling, or collects extra bank interest (the item description says which, and how much).', descriptive: true },
-  { id: 'rule.kill_bounty', label: 'Kill Bounty', namespace: 'rule', description: 'A mob slain in the way the item names drops bonus gold equal to the Floor Number (the item description names the way).', descriptive: true },
-  { id: 'rule.flight_limited', label: 'Limited Flight', namespace: 'rule', description: 'Flies only within a limit per scene, such as time, distance or gliding (the item description says which). The Fly speed is a structured value; the GM enforces the limit.', descriptive: true },
-  { id: 'rule.no_breath', label: 'Does Not Breathe', namespace: 'rule', description: 'Has no need for air at all.', descriptive: true },
-  { id: 'rule.limb_regeneration', label: 'Limb Regrowth', namespace: 'rule', description: 'One missing limb grows back completely over a span of 12 days, shortened by a number of days equal to the Con Mod.', descriptive: true },
-  { id: 'rule.immunity_disease', label: 'Immune to Disease', namespace: 'rule', description: 'Cannot catch or suffer from any disease.', descriptive: true },
+  { id: 'perk.store_discount', label: 'Trade Perk', namespace: 'perk', description: 'Pays less at shops, earns more when selling, or collects extra bank interest (the item description says which, and how much).', descriptive: true },
+  { id: 'perk.kill_bounty', label: 'Kill Bounty', namespace: 'perk', description: 'A mob slain in the way the item names drops bonus gold equal to the Floor Number (the item description names the way).', descriptive: true },
+  { id: 'perk.flight_limited', label: 'Limited Flight', namespace: 'perk', description: 'Flies only within a limit per scene, such as time, distance or gliding (the item description says which). The Fly speed is a structured value; the GM enforces the limit.', descriptive: true },
+  { id: 'perk.no_breath', label: 'Does Not Breathe', namespace: 'perk', description: 'Has no need for air at all.', descriptive: true },
+  { id: 'perk.limb_regeneration', label: 'Limb Regrowth', namespace: 'perk', description: 'One missing limb grows back completely over a span of 12 days, shortened by a number of days equal to the Con Mod.', descriptive: true },
+  { id: 'perk.immunity_disease', label: 'Immune to Disease', namespace: 'perk', description: 'Cannot catch or suffer from any disease.', descriptive: true },
   { id: 'sense.water_breathing', label: 'Water Breathing', namespace: 'sense', description: 'Breathes water as easily as air.', descriptive: true },
 
   // --- Actions ---
-  { id: 'action.attack', label: 'Attack', namespace: 'action' },
+  { id: 'action.attack', label: 'Action Type: Attack', namespace: 'action' },
   { id: 'action.heal', label: 'Heal', namespace: 'action' },
   { id: 'action.restore', label: 'Restore / Refill', namespace: 'action' },
   { id: 'action.passive', label: 'Passive', namespace: 'action' },
@@ -145,9 +193,7 @@ export const COG_TAGS = [
   { id: 'action.hot', label: 'Heal Over Time (HoT)', namespace: 'action' },
   { id: 'action.cleanse', label: 'Cleanse Debuff', namespace: 'action' },
   { id: 'action.armor_piercing', label: 'Armor Piercing', namespace: 'action', flags: ['ignores-dr'] },
-  { id: 'action.ignore_dr', label: 'Ignore Damage Resistance', namespace: 'action', flags: ['ignores-dr'] },
   { id: 'action.contested', label: 'Contested Check', namespace: 'action' },
-  { id: 'action.opposed', label: 'Opposed Contest', namespace: 'action' },
   { id: 'action.inflict_debuff', label: 'Inflict Debuff / Condition', namespace: 'action' },
   { id: 'action.summon', label: 'Summon Minion / Companion', namespace: 'action', description: 'Descriptive: the GM rules on the summoned creature; the system does not create it.', descriptive: true },
   { id: 'action.displacement', label: 'Forced Movement / Knockback', namespace: 'action', description: 'Descriptive: the GM moves the target; the system applies no forced movement.', descriptive: true },
@@ -180,6 +226,7 @@ export const COG_TAGS = [
   { id: 'material.unsalvageable', label: 'Unsalvageable Material', namespace: 'material', description: 'A crafting material that is never given back when a craft fails.' },
   { id: 'item.broken', label: 'Broken', namespace: 'item', description: 'The item is broken. It can be repaired.' },
   { id: 'item.destroyed', label: 'Destroyed', namespace: 'item', description: 'The item is destroyed and cannot be repaired.' },
+  { id: 'item.potion', label: 'Potion', namespace: 'item', description: 'Derived on loot whose type is Potion. Taking one is limited to one every other round in combat (Potion Sickness), and Stat and Skill potions to two each in a crawler\'s life.' },
   { id: 'item.trap', label: 'Trap', namespace: 'item', description: 'A trap. Crafting rows may test it on the item being made.' },
   { id: 'item.explosive', label: 'Explosive', namespace: 'item', description: 'An explosive device. Crafting rows may test it on the item being made.' },
 
@@ -203,8 +250,29 @@ export const COG_TAGS = [
   { id: `${VEHICLE_TAGS.checkPrefix}evade`, label: 'Vehicle Evade', namespace: 'vehicle', engine: true, description: 'Set by the engine on a driver\'s check to dodge an attack on the vehicle.' },
   { id: VEHICLE_TAGS.explosion, label: 'Vehicle Explosion', namespace: 'vehicle', engine: true, description: 'Set by the engine on the damage of an exploding vehicle; the vehicle\'s DR does not protect against it.' },
   { id: VEHICLE_TAGS.driving, label: 'Driving a Moving Vehicle', namespace: 'situation', engine: true, description: 'Set by the engine on the rolls of a vehicle\'s driver while it moves.' },
+  { id: VEHICLE_TAGS.riding, label: 'Riding a Mount', namespace: 'situation', engine: true, description: 'Set by the engine on the rolls of a crawler who is riding a pet or mount.' },
+  { id: PET_TAGS.skillRiding, label: 'Rides Mounts', namespace: 'pet', description: 'A skill that rides living mounts. The rider rules find it by this tag.' },
+  { id: PET_TAGS.checkRide, label: 'Riding Check', namespace: 'pet', engine: true, description: 'Set by the engine on an Unopposed check made to stay on a mount.' },
+  { id: PET_TAGS.skillHandling, label: 'Handles Animals', namespace: 'pet', description: 'A skill that tames and guides animals. The taming rules and the pet limit find it by this tag.' },
+  { id: `${PET_TAGS.checkPrefix}tame`, label: 'Taming Check', namespace: 'pet', engine: true, description: 'Set by the engine on an Int-Opposed check made to change a pet\'s attitude.' },
+  { id: `${PET_TAGS.checkPrefix}guide`, label: 'Guiding Check', namespace: 'pet', engine: true, description: 'Set by the engine on an Int-Opposed check made to guide a pet in combat.' },
+  { id: `${PET_TAGS.checkPrefix}command`, label: 'Command Check', namespace: 'pet', engine: true, description: 'Set by the engine on an Unopposed check made to command a pet or a minion.' },
+  { id: PET_TAGS.extraPet, label: 'Keeps One More Pet', namespace: 'rule', flags: ['extra-pet'], description: 'A class, gear or buff carrying this lets its bearer keep one more pet than the limit.' },
+  { id: `${PET_TAGS.attitudePrefix}hostile`, label: 'Hostile Pet', namespace: 'pet', engine: true, description: 'Derived on a pet whose attitude is Hostile.' },
+  { id: `${PET_TAGS.attitudePrefix}calm`, label: 'Calm Pet', namespace: 'pet', engine: true, description: 'Derived on a pet whose attitude is Calm.' },
+  { id: `${PET_TAGS.attitudePrefix}friendly`, label: 'Friendly Pet', namespace: 'pet', engine: true, description: 'Derived on a pet whose attitude is Friendly.' },
+  { id: `${PET_TAGS.attitudePrefix}bonded`, label: 'Bonded Pet', namespace: 'pet', engine: true, description: 'Derived on a pet whose attitude is Bonded.' },
+  { id: `${PET_TAGS.originPrefix}dungeon`, label: 'Dungeon-Born Pet', namespace: 'pet', engine: true, description: 'Derived on a pet born in the dungeon.' },
+  { id: `${PET_TAGS.originPrefix}earth`, label: 'Earth-Born Pet', namespace: 'pet', engine: true, description: 'Derived on a pet born on Earth.' },
+  { id: `${PET_TAGS.rolePrefix}tank`, label: 'Tank Role', namespace: 'pet', description: 'A buff that makes a pet a Tank: DR equal to the Floor, and one special ability.' },
+  { id: `${PET_TAGS.rolePrefix}aggressive`, label: 'Aggressive Role', namespace: 'pet', description: 'A buff that makes a pet Aggressive: two attacks and bonus damage equal to the Floor.' },
+  { id: `${PET_TAGS.rolePrefix}utility`, label: 'Utility Role', namespace: 'pet', description: 'A buff that makes a pet a Utility pet: two special abilities.' },
+  { id: `${PET_TAGS.abilityPrefix}fast`, label: 'Fast Ability', namespace: 'pet', description: 'A pet special ability buff that gives a Move of 60 ft.' },
+  { id: `${PET_TAGS.abilityPrefix}flight`, label: 'Flight Ability', namespace: 'pet', description: 'A pet special ability buff that gives a flying Move.' },
+  { id: `${PET_TAGS.abilityPrefix}heightened_senses`, label: 'Heightened Senses Ability', namespace: 'pet', description: 'A pet special ability buff the GM reads: the pet makes a Stat Check in place of a Skill Check to notice things.' },
+  { id: `${PET_TAGS.abilityPrefix}resistance`, label: 'Resistance Ability', namespace: 'pet', description: 'A pet special ability buff that gives resistance to a damage type.' },
   { id: VEHICLE_TAGS.headOn, label: 'Head-On or From Behind', namespace: 'situation', description: 'The attack or Evade is straight ahead of or behind a vehicle, so its speed does not count.' },
-  { id: VEHICLE_TAGS.mountedOnly, label: 'Mounted Use Only', namespace: 'rule', flags: ['mounted-only'], description: 'A weapon made for use while mounted or driving; a driver uses it without Disadvantage.' },
+  { id: VEHICLE_TAGS.mountedOnly, label: 'Mounted Use Only', namespace: 'rule', flags: ['mounted-only'], description: 'A weapon made for use while mounted or driving; a driver uses it without Disadvantage, and using it unmounted asks a Rule Break.' },
 
   // --- Contests ---
   { id: CONTEST_TAGS.race, label: 'Race Check', namespace: 'contest', engine: true, description: 'Set by the engine on a check made for a leg of a race.' },
@@ -219,8 +287,8 @@ export const COG_TAGS = [
 
   // --- Resources ---
   { id: 'resource.mana', label: 'Mana Points', namespace: 'resource' },
-  { id: 'resource.hp-bars', label: 'Health Bars', namespace: 'resource' },
-  { id: 'resource.temp-bars', label: 'Temporary Health Bars', namespace: 'resource' },
+  { id: 'resource.hp_bars', label: 'Health Bars', namespace: 'resource' },
+  { id: 'resource.temp_bars', label: 'Temporary Health Bars', namespace: 'resource' },
   // Derived per actor from its Hit Points (healthFractionTags); read as subject.resource.health_N for a target
   ...HEALTH_FRACTION_STEPS.map(n => ({ id: healthFractionTag(n), label: `At ${n}% Health Bar or Less`, namespace: 'resource' })),
 
@@ -253,14 +321,13 @@ export const COG_TAGS = [
   { id: 'shape.rect', label: 'Rectangle', namespace: 'shape', flags: ['area'], area: { anchor: 'point', size: 'length', region: 'rectangle', defaults: { width: 5 } } },
   { id: 'shape.splash', label: 'Splash', namespace: 'shape', flags: ['area'] },
   { id: 'shape.single', label: 'Single Target', namespace: 'shape' },
-  { id: 'shape.aura', label: 'Aura', namespace: 'shape' },
 
   // --- Delivery Modes ---
   { id: 'delivery.placed', label: 'Placed Area', namespace: 'delivery' },
   { id: 'delivery.aura', label: 'Aura (Token Follower)', namespace: 'delivery' },
   { id: 'delivery.self', label: 'Self', namespace: 'delivery' },
   { id: 'delivery.target', label: 'Target Creature', namespace: 'delivery' },
-  { id: 'delivery.burst', label: 'Burst', namespace: 'delivery' },
+  { id: 'delivery.burst', label: 'Delivery Mode: Burst', namespace: 'delivery' },
 
   // --- Duration Types ---
   { id: 'duration.instant', label: 'Instantaneous', namespace: 'duration' },
@@ -277,11 +344,16 @@ export const COG_TAGS = [
   { id: 'duration.full_day_rest', label: "Until a full day's rest", namespace: 'duration' },
 
   // --- Target Filters ---
-  { id: 'target.allies', label: 'Allies', namespace: 'target' },
+  // A `recipients` block says who a buff a Skill or spell applies lands on: `gather` is one of BUFF_GATHERS (how the
+  // candidates are found, engine code) and `where` an optional tag query over each candidate actor's tags. A tag
+  // without a block is not offered as a buff target.
+  { id: 'target.allies', label: 'Allies', namespace: 'target', recipients: { gather: 'allies' } },
   { id: 'target.enemies', label: 'Enemies', namespace: 'target' },
-  { id: 'target.all', label: 'All Targets', namespace: 'target' },
-  { id: 'target.self', label: 'Self Only', namespace: 'target' },
-  { id: 'target.pet', label: 'Pet Target', namespace: 'target' },
+  { id: 'target.all', label: 'All Targets', namespace: 'target', recipients: { gather: 'everyone' } },
+  { id: 'target.self', label: 'Self Only', namespace: 'target', recipients: { gather: 'self' } },
+  { id: 'target.one', label: 'One Creature', namespace: 'target', recipients: { gather: 'chosen' } },
+  { id: 'target.party', label: 'Party', namespace: 'target', recipients: { gather: 'party' } },
+  { id: 'target.pet', label: 'Pet Target', namespace: 'target', recipients: { gather: 'chosen', where: { any: ['kind.pet'] } } },
   { id: 'target.mount', label: 'Mount Target', namespace: 'target' },
   { id: 'target.vehicle', label: 'Vehicle Target', namespace: 'target' },
 
@@ -344,8 +416,8 @@ export const COG_TAGS = [
   { id: 'condition.asleep', label: 'Asleep', namespace: 'condition' },
   { id: 'condition.fear', label: 'Fear', namespace: 'condition' },
   { id: 'condition.possession', label: 'Possession', namespace: 'condition', description: 'A possession effect (a spirit taking hold of the target); rows test it on the defender\'s check.' },
-  { id: 'injury.minor', label: 'Minor Injury', namespace: 'injury' },
-  { id: 'injury.major', label: 'Major Injury', namespace: 'injury' },
+  { id: 'injury.minor', label: 'Injury Severity: Minor', namespace: 'injury' },
+  { id: 'injury.major', label: 'Injury Severity: Major', namespace: 'injury' },
   { id: 'injury.long_term', label: 'Long-Term Injury', namespace: 'injury' },
 
   // --- Weapon Types ---
@@ -376,7 +448,7 @@ export const COG_TAGS = [
   { id: 'weaponClass.unarmed', label: 'Unarmed Attack', namespace: 'weaponClass', description: 'Unarmed attack category: a strike with no weapon in hand. It occupies no hand, and a Skill carrying it is listed as an unarmed attack.', flags: ['no-hands'] },
 
   // --- Weapon Properties ---
-  { id: 'weaponProp.reach', label: 'Reach', namespace: 'weaponProp', description: 'Descriptive: the weapon has reach; the GM checks it when a rule asks for a Reach weapon.', descriptive: true },
+  { id: 'weaponProp.reach', label: 'Weapon Property: Reach', namespace: 'weaponProp', description: 'Descriptive: the weapon has reach; the GM checks it when a rule asks for a Reach weapon.', descriptive: true },
   { id: 'weaponProp.thrown', label: 'Thrown', namespace: 'weaponProp', description: 'Descriptive: the weapon can be thrown; the GM rules on throwing.', descriptive: true },
 
   // --- Weapon Groups ---
@@ -428,10 +500,17 @@ export const COG_TAGS = [
 
   // --- Situations (roll-dialog toggles) ---
   { id: ENGINE_SITUATIONS.intercepting, label: 'Catching a hit', namespace: 'situation', engine: true, description: 'Set on the defence of a hit the actor took for an ally (Catcher).' },
+  { id: ENGINE_SITUATIONS.singleTarget, label: 'One creature healed', namespace: 'situation', engine: true, description: 'A heal that goes to one creature.' },
   { id: 'situation.aiming', label: 'Aiming', namespace: 'situation', flags: ['maneuver'] },
   { id: 'situation.used_tactics', label: 'Used Tactics this combat', namespace: 'situation' },
   // Set by buildRollContext when the roll's actor and its other party are the same size; tickable when no target stands behind the roll (permissive)
   { id: SAME_SIZE_SITUATION, label: 'Same Size as the Target', namespace: 'situation' },
+  // The same judgement for any size gap (the stock reasons `target_larger` / `target_smaller` need four sizes)
+  { id: LARGER_FOE_SITUATION, label: 'Larger', namespace: 'situation' },
+  { id: SMALLER_FOE_SITUATION, label: 'Smaller', namespace: 'situation' },
+  { id: FOE_HALF_LEVEL_SITUATION, label: 'Foe Half Level', namespace: 'situation', engine: true, description: 'Set by the engine on a kill context when the victim\'s Level times 2 is at least the killer\'s Level (or either Level is unknown).' },
+  // Set only by the button of a kill trigger's `check` offer, so a row can tell that check from an ordinary one
+  { id: AFTER_KILL_SITUATION, label: 'After Kill', namespace: 'situation' },
   { id: 'situation.night', label: 'At Night', namespace: 'situation' },
   { id: 'situation.day', label: 'In Daylight', namespace: 'situation' },
   { id: 'situation.natural_environment', label: 'In a Natural Environment', namespace: 'situation' },
@@ -451,7 +530,10 @@ export const COG_TAGS = [
   },
   { id: 'situation.after_full_meal', label: 'After a Full Meal', namespace: 'situation' },
   { id: 'situation.no_talking', label: 'No Talking Needed', namespace: 'situation' },
-  { id: 'situation.higher_ground', label: 'From Higher Ground', namespace: 'situation' },
+  { id: 'situation.first_impression', label: 'First Impression in a Settlement', namespace: 'situation', description: 'Ticked on the first Charisma check made after arriving in a settlement for the first time.' },
+  { id: 'situation.unwashed_company', label: 'Smelly or Dirty Company', namespace: 'situation', description: 'Ticked when the other party is smelly or dirty. The GM judges who is.' },
+  { id: STOCK_SITUATIONS.higherGround, label: 'From Higher Ground', namespace: 'situation', flags: ['universal'], rows: stockRows(STOCK_SITUATIONS.higherGround, 'advantage') },
+  ...STOCK_SITUATION_ENTRIES,
   { id: 'situation.hostile', label: 'Hostile Situation', namespace: 'situation' },
   { id: 'situation.earth_involved', label: 'Earth Involved', namespace: 'situation' },
   { id: 'situation.physically_menacing', label: 'Physically Menacing', namespace: 'situation' },
@@ -471,6 +553,8 @@ export const COG_TAGS = [
   { id: 'creature.troll', label: 'Troll', namespace: 'creature' },
   { id: 'creature.undead', label: 'Undead', namespace: 'creature' },
   { id: 'creature.elemental', label: 'Elemental', namespace: 'creature' },
+  { id: 'creature.humanoid', label: 'Humanoid', namespace: 'creature' },
+  { id: 'creature.ooze', label: 'Ooze', namespace: 'creature' },
   { id: 'creature.male', label: 'Male', namespace: 'creature' },
   { id: 'creature.female', label: 'Female', namespace: 'creature' },
   { id: 'creature.nonbinary', label: 'Non-binary', namespace: 'creature' },
@@ -484,25 +568,29 @@ export const COG_TAGS = [
 
   // --- Engine Rule Overrides ---
   { id: 'rule.no-damage-effects', label: 'Cannot Take Damage Effects', namespace: 'rule', flags: ['no-damage-effects'] },
+  { id: 'rule.unseen', label: 'Unseen', namespace: 'rule', flags: ['unseen'] },
   { id: 'rule.no-actions', label: 'Cannot Take Actions', namespace: 'rule', flags: ['no-actions'], description: 'The bearer cannot take Actions; an Action asks a Rule Break first.' },
   { id: 'rule.forfeit-action', label: 'Forfeits the Next Action', namespace: 'rule', flags: ['forfeits-action'], description: 'The bearer loses the next Action; a slot is recorded and the debuff ends. Acting first asks a Rule Break.' },
+  { id: 'rule.no-move', label: 'Cannot Take Move Actions', namespace: 'rule', flags: ['no-move'], description: 'The bearer cannot take Move Actions; a Move asks a Rule Break first.' },
+  { id: 'rule.no-cast', label: 'Cannot Cast Spells', namespace: 'rule', flags: ['no-cast'], description: 'The bearer cannot cast Spells; a cast asks a Rule Break first.' },
+  { id: 'rule.attack-and-move-only', label: 'Only Attack and Move Actions', namespace: 'rule', flags: ['only-attack-move'], description: 'The bearer may only take Attack and Move Actions; any other Action asks a Rule Break first.' },
   { id: 'rule.no-healing', label: 'Cannot Be Healed', namespace: 'rule', flags: ['no-healing'], description: 'The bearer cannot be healed; a heal asks a Rule Break first.' },
   { id: 'rule.requires-weapon', label: 'Requires Equipped Weapon', namespace: 'rule', flags: ['requires-weapon'] },
   { id: 'rule.no-standalone-attack', label: 'No Standalone Attack', namespace: 'rule', flags: ['no-standalone-attack'] },
-  { id: 'rule.mind-control', label: 'Mind Control', namespace: 'rule', description: 'Descriptive: the GM adjudicates control of the target.', descriptive: true },
-  { id: 'rule.temp-health-bars', label: 'Temporary Health Bars', namespace: 'rule' },
+  { id: 'action.mind_control', label: 'Mind Control', namespace: 'action', description: 'Descriptive: the GM adjudicates control of the target.', descriptive: true },
+  { id: 'rule.mind-control-effect', label: 'Mind Control Effect', namespace: 'rule', flags: ['mind-control'], description: 'A spell that takes control of its target. A bearer immune to mind control (a Clear Head buff) is not affected by it; the GM adjudicates the control itself.' },
+  { id: 'rule.temp-health-bars', label: 'Special Rule Flag: Temporary Health Bars', namespace: 'rule' },
   { id: 'rule.emits-light', label: 'Emits Light', namespace: 'rule', flags: ['emits-light'] },
-  { id: 'rule.causes-darkness', label: 'Causes Darkness', namespace: 'rule', description: 'Descriptive: the GM adjudicates the darkness it causes.', descriptive: true },
-  { id: 'rule.depletes-on-empty', label: 'Depletes When Empty', namespace: 'rule', description: 'Descriptive: the GM adjudicates what happens when the item runs empty.', descriptive: true },
-  { id: 'rule.summon', label: 'Summoning / Minion Creation', namespace: 'rule', description: 'Descriptive: the GM adjudicates the summoned creatures.', descriptive: true },
+  { id: 'perk.causes_darkness', label: 'Causes Darkness', namespace: 'perk', description: 'Descriptive: the GM adjudicates the darkness it causes.', descriptive: true },
+  { id: 'perk.depletes_on_empty', label: 'Depletes When Empty', namespace: 'perk', description: 'Descriptive: the GM adjudicates what happens when the item runs empty.', descriptive: true },
   { id: 'rule.hazard', label: 'Terrain Hazard', namespace: 'rule', flags: ['zone'] },
-  { id: 'rule.barrier', label: 'Barrier / Obstacle', namespace: 'rule', description: 'Descriptive: the GM adjudicates the barrier or obstacle.', descriptive: true },
-  { id: 'rule.flight', label: 'Flight / Levitation', namespace: 'rule', descriptive: true, description: 'Descriptive: the creature or effect flies or levitates. Movement comes from the Fly speed; the tag is a label for filters.' },
-  { id: 'rule.climb', label: 'Climbing / Vertical Surface Movement', namespace: 'rule', descriptive: true, description: 'Descriptive: the creature or effect climbs vertical surfaces. Movement comes from the Climb speed; the tag is a label for filters.' },
+  { id: 'action.barrier', label: 'Barrier / Obstacle', namespace: 'action', description: 'Descriptive: the GM adjudicates the barrier or obstacle.', descriptive: true },
+  { id: 'action.flight', label: 'Flight / Levitation', namespace: 'action', descriptive: true, description: 'Descriptive: the creature or effect flies or levitates. Movement comes from the Fly speed; the tag is a label for filters.' },
+  { id: 'perk.climb', label: 'Climbing / Vertical Surface Movement', namespace: 'perk', descriptive: true, description: 'Descriptive: the creature or effect climbs vertical surfaces. Movement comes from the Climb speed; the tag is a label for filters.' },
   { id: 'rule.lifesteal', label: 'Life Steal (Heals Caster on Damage)', namespace: 'rule' },
-  { id: 'rule.latch', label: 'Latch onto Target to Move When Target Moves', namespace: 'rule', description: 'Descriptive: the GM adjudicates latching on and moving with the target.', descriptive: true },
-  { id: 'rule.extra-attack', label: 'Grants Free Extra Attack', namespace: 'rule', description: 'Descriptive: the GM grants the free extra attack.', descriptive: true },
-  { id: 'rule.disadvantage', label: 'Imposes Disadvantage', namespace: 'rule', description: 'Descriptive: the GM applies the disadvantage it imposes.', descriptive: true },
+  { id: 'action.latch', label: 'Latch onto Target to Move When Target Moves', namespace: 'action', description: 'Descriptive: the GM adjudicates latching on and moving with the target.', descriptive: true },
+  { id: 'action.extra_attack', label: 'Grants Free Extra Attack', namespace: 'action', description: 'Descriptive: the GM grants the free extra attack.', descriptive: true },
+  { id: 'action.disadvantage', label: 'Imposes Disadvantage', namespace: 'action', description: 'Descriptive: the GM applies the disadvantage it imposes.', descriptive: true },
   {
     id: 'rule.aiming-offset', label: 'Aiming Offset (ticked Aiming: Disadvantage, adds rank to hit and 1d4 damage per tier)', namespace: 'rule',
     rows: {
@@ -518,14 +606,33 @@ export const COG_TAGS = [
       ]
     }
   },
+  // Carried by a class; `rule.aiming-offset-ice` reads it, so it is a core tag and not one of the bundled book tags.
+  { id: 'perk.cog.aiming_for_ice_spells', label: 'Aiming for Ice Spells', namespace: 'perk', description: '', descriptive: true },
+  {
+    id: 'rule.aiming-offset-ice', label: 'Aiming Offset for Ice Spells (single-target Ice Spells of a caster who has the perk)', namespace: 'rule',
+    rows: {
+      attackModifiers: [
+        { kind: 'bonus', label: 'Aiming (Ice)', value: 1, scaleBy: { source: 'rank' }, condition: AIMING_ICE_CONDITION },
+        { kind: 'advantage', label: 'Aiming (Ice)', advantage: 'disadvantage', condition: AIMING_ICE_CONDITION }
+      ],
+      damageModifiers: [
+        { mode: 'add', label: 'Aiming (Ice)', dice: '1d4', minRank: 1, condition: AIMING_ICE_CONDITION },
+        { mode: 'add', label: 'Aiming (Ice, Rank 5)', dice: '1d4', minRank: 5, condition: AIMING_ICE_CONDITION },
+        { mode: 'add', label: 'Aiming (Ice, Rank 10)', dice: '1d4', minRank: 10, condition: AIMING_ICE_CONDITION },
+        { mode: 'add', label: 'Aiming (Ice, Rank 15)', dice: '1d4', minRank: 15, condition: AIMING_ICE_CONDITION }
+      ]
+    }
+  },
   { id: 'rule.grind-map-neighborhood', label: 'Neighborhood Map (+1 grinding hour)', namespace: 'rule' },
   { id: 'rule.grind-map-borough', label: 'Borough Map (+2 grinding hours)', namespace: 'rule' },
-  { id: 'rule.offset-disadvantage', label: 'Offsets Disadvantage on Attacks', namespace: 'rule', description: 'Descriptive: the GM offsets disadvantage on attacks.', descriptive: true },
+  { id: 'rule.grind-map-city', label: 'City Boss Map (a Silver box per grinding session; homebrew)', namespace: 'rule' },
+  { id: 'rule.map-country', label: 'Country Boss Map (homebrew)', namespace: 'rule', description: 'A map of every magical item on the floor, awarded by a Country boss (BOSS_MAPS reads this tag); the GM reads it out.' },
+  { id: 'perk.offset_disadvantage', label: 'Offsets Disadvantage on Attacks', namespace: 'perk', description: 'Descriptive: the GM offsets disadvantage on attacks.', descriptive: true },
   { id: 'rule.anti-piercing', label: 'Anti-Piercing Armor', namespace: 'rule', flags: ['anti-piercing'] },
   { id: 'rule.works-in-zero-zone', label: 'Works in Zero Zone', namespace: 'rule', flags: ['works-in-zero-zone'] },
   { id: 'rule.mount',label: 'Mount / Rideable Companion', namespace: 'rule', flags: ['mount'] },
-  { id: 'rule.pet-skill', label: 'Pet Signature Skill', namespace: 'rule', description: 'Descriptive: marks a pet signature skill; the GM adjudicates it.', descriptive: true },
-  { id: 'rule.taunt', label: 'Taunt', namespace: 'rule', description: 'Draws enemy attacks toward the bearer (the redirect itself is the interrupt row on the skill).', descriptive: true },
+  { id: 'action.pet_skill', label: 'Pet Signature Skill', namespace: 'action', description: 'Descriptive: marks a pet signature skill; the GM adjudicates it.', descriptive: true },
+  { id: 'action.taunt', label: 'Taunt', namespace: 'action', description: 'Draws enemy attacks toward the bearer (the redirect itself is the interrupt row on the skill).', descriptive: true },
   { id: 'rule.no-redirect', label: 'Cannot Be Redirected or Intercepted', namespace: 'rule', flags: ['no-redirect'] },
   { id: 'rule.evade-area-full', label: 'Evade Area Full Damage Avoidance', namespace: 'rule', rows: { defenseModifiers: [{ kind: 'evadeOutcome', option: 'full', label: 'Full area evasion' }] } },
 

@@ -16,7 +16,7 @@ import { evaluateRows } from '../../utils/roll/damage-modifiers.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { extractD20Result } from '../session/roll-outcomes.mjs';
+import { COG_ROLL_OUTCOMES, extractD20Result } from '../session/roll-outcomes.mjs';
 import {
   matchPopularityTriggers, popularityActive, popularityTokens, usedKeys, recordUsage
 } from '../../utils/floor/popularity.mjs';
@@ -26,7 +26,8 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { findDamageUndoRecord, isApplicationId, markDamageUndoKillAwarded } from '../../utils/damage/damage-undo.mjs';
-import { withFlags } from '../../utils/flags.mjs';
+import { withFlags, readFlag, flagPath } from '../../utils/flags.mjs';
+import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 export const AWARD_POPULARITY = 'awardPopularity';
@@ -62,7 +63,8 @@ function runningCombatId(actor, hint = '') {
   return fighting?.id ?? '';
 }
 
-function currentTokens(actor, combatHint = '') {
+/** The scope tokens of this moment for `actor`: the running combat it counts against, and the current floor. */
+export function currentTokens(actor, combatHint = '') {
   return popularityTokens({ combatId: runningCombatId(actor, combatHint), floor: getCurrentFloor() });
 }
 
@@ -136,17 +138,20 @@ function liveContextOf(raw) {
 // trusts no amount and no context tag from the payload (3.56o).
 
 /** The `{ victimUuid, applicationId }` a payload names, sanitized, or null. */
-function readApplication(raw) {
+export function readApplication(raw) {
   if (!raw || typeof raw !== 'object') return null;
   if (typeof raw.victimUuid !== 'string' || !raw.victimUuid || !isApplicationId(raw.applicationId)) return null;
   return { victimUuid: raw.victimUuid, applicationId: raw.applicationId };
 }
 
-/** Whether the stored application is an unpaid kill by `actor`. */
-function killApplicationPayable(actor, application) {
+/**
+ * Whether the stored application is a live kill by `actor` whose `paidFlag` (`killAwarded` for the Popularity award, `triggersFired`
+ * for the event triggers) is not yet set: the record exists, is not undone, and was lethal.
+ */
+export function killApplicationPayable(actor, application, paidFlag = 'killAwarded') {
   const victim = resolveActorByUuid(application.victimUuid);
   const record = victim ? findDamageUndoRecord(victim, application.applicationId) : null;
-  return Boolean(record) && !record.undoneAt && record.attackerUuid === actor.uuid && record.lethal === true && record.killAwarded !== true;
+  return Boolean(record) && !record.undoneAt && record.attackerUuid === actor.uuid && record.lethal === true && record[paidFlag] !== true;
 }
 
 /**
@@ -154,7 +159,7 @@ function killApplicationPayable(actor, application) {
  * once deleted, the tags stored on the record), the attacker and the attack's own tags. Null when the record or the
  * attacker is gone.
  */
-function killContextOf(actor, application) {
+export function killContextOf(actor, application) {
   const victim = resolveActorByUuid(application.victimUuid);
   const record = victim ? findDamageUndoRecord(victim, application.applicationId) : null;
   return record ? killContextFromRecord(actor, victim, record) : null;
@@ -230,7 +235,7 @@ export async function addPopularity(actor, delta, reason) {
  * Award popularity for an event the engine saw.
  *
  * @param {object} actor the actor awarded
- * @param {'crit'|'critFail'|'kill'} event
+ * @param {'crit'|'critFail'|'kill'|'amazing'} event
  * @param {object} [ctx]
  * @param {object} ctx.context the event's RollContext: the roll's own context for a crit or critFail, or for a kill the
  *   per-target `popularity` context (`buildRollContext({ actor: killer, phase: 'popularity', tags, other: victim })`),
@@ -293,4 +298,47 @@ export async function awardPopularityForRoll(actor, roll, ctx = {}) {
   const event = d20 === 20 ? 'crit' : d20 === 1 ? 'critFail' : '';
   if (!event) return { total: 0, awarded: [], skipped: 'no-event' };
   return awardPopularity(actor, event, ctx);
+}
+
+/** The degrees that pay an `amazing` row: an Amazing Success, and the Critical Success a natural 20 is. */
+const AMAZING_OUTCOMES = Object.freeze([COG_ROLL_OUTCOMES.AMAZING_SUCCESS, COG_ROLL_OUTCOMES.CRITICAL_SUCCESS]);
+
+/** The card flag that stops a check card paying its `amazing` award twice (the GM may change its Difficulty again). */
+const AMAZING_AWARDED_FLAG = 'amazingAwarded';
+
+/**
+ * Award popularity for a roll's degree: an Amazing Success or a Critical Success pays the `amazing` rows. One award per call; the caller decides which outcome of the roll counts (an attack's first target, a plain
+ * check's own degree).
+ * @param {object} actor
+ * @param {string|null|undefined} outcome a `COG_ROLL_OUTCOMES` id
+ * @param {object} [ctx] same as `awardPopularity` (`context` = the roll's RollContext)
+ */
+export async function awardPopularityForOutcome(actor, outcome, ctx = {}) {
+  if (!AMAZING_OUTCOMES.includes(outcome)) return { total: 0, awarded: [], skipped: 'no-event' };
+  return awardPopularity(actor, 'amazing', ctx);
+}
+
+/**
+ * The `amazing` award of a plain check card (a skill or Stat card): its degree once it has one, paid once per card. The
+ * degree is known when the card is born with a Difficulty (or a natural 20) and again when the GM puts a Difficulty on it
+ * (`setCheckDifficulty`); the card's `amazingAwarded` flag stops a second award. `context` is the roll's own context at the
+ * roll, and rebuilt from the record's `contextTags` when the GM sets the Difficulty later.
+ * @param {ChatMessage} message the check card
+ * @param {object} actor the roller
+ * @param {object|null} [context] the roll's RollContext; the record's own tags when omitted
+ * @returns {Promise<{ total: number, awarded: Array<object>, skipped?: string }>}
+ */
+export async function awardAmazingForCheckCard(message, actor, context = null) {
+  const record = readCheckRecord(message);
+  if (!record || !actor || readFlag(message, AMAZING_AWARDED_FLAG) === true) return { total: 0, awarded: [], skipped: 'no-card' };
+  const effective = effectiveCheck(record);
+  if (!effective || effective.pending || !AMAZING_OUTCOMES.includes(effective.outcome)) return { total: 0, awarded: [], skipped: 'no-event' };
+  const live = context?.tags ? context : { v: 1, phase: 'check', tags: new Set(record.contextTags ?? record.tags) };
+  // marked first, so a second Difficulty change on the card cannot pay again; a card we cannot mark pays nothing
+  try {
+    await message.update({ [flagPath(AMAZING_AWARDED_FLAG)]: true });
+  } catch {
+    return { total: 0, awarded: [], skipped: 'unmarked' };
+  }
+  return awardPopularityForOutcome(actor, effective.outcome, { context: live });
 }

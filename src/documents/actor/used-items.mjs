@@ -95,15 +95,15 @@ function sameJunk(existing, payload) {
     && (a.usedFrom?.spellIdentifier ?? '') === (b.usedFrom?.spellIdentifier ?? '');
 }
 
-/** Leave one unit of a payload's junk on the owner: the matching stack gains one, or a new junk item is created. */
-async function leavePayload(actor, payload) {
+/** Leave `quantity` units of a payload's junk on the owner: the matching stack gains them, or a new junk item is created. */
+async function leavePayload(actor, payload, quantity = 1) {
   if (!actor || typeof actor.createEmbeddedDocuments !== 'function' || !payload) return null;
   const stack = [...(actor.items ?? [])].find((existing) => sameJunk(existing, payload));
   if (stack) {
-    await stack.update({ 'system.quantity': (Number(stack.system.quantity) || 0) + 1 });
+    await stack.update({ 'system.quantity': (Number(stack.system.quantity) || 0) + quantity });
     return stack;
   }
-  const [created] = await actor.createEmbeddedDocuments('Item', [payload]);
+  const [created] = await actor.createEmbeddedDocuments('Item', [{ ...payload, system: { ...payload.system, quantity } }]);
   return created ?? null;
 }
 
@@ -123,10 +123,11 @@ function leaveUsedForm(actor, item, params = {}) {
  * It forgets what it was (no origin). An unknown id leaves nothing.
  * @param {object} actor the owner
  * @param {string} formId a used-form id
+ * @param {number} [quantity=1] units to leave (a whole number, at least 1)
  * @returns {Promise<object|null>}
  */
-export function leaveUsedFormById(actor, formId) {
-  return leavePayload(actor, usedFormPayloadById(formId));
+export function leaveUsedFormById(actor, formId, quantity = 1) {
+  return leavePayload(actor, usedFormPayloadById(formId), Math.max(1, Math.floor(Number(quantity)) || 1));
 }
 
 /**

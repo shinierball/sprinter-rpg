@@ -49,7 +49,7 @@ const deepFreeze = (table) => Object.freeze(Object.fromEntries(Object.entries(ta
 export const DRAFT_FIELDS = deepFreeze({
   gear: { scalars: GEAR_SCALARS, arrays: GEAR_ARRAYS },
   weapon: { scalars: [...GEAR_SCALARS, 'wieldMode', 'critMultiplier', 'baseDamage.dice', 'baseDamage.stat', 'baseDamage.damageType'], arrays: [...GEAR_ARRAYS, 'tags', 'associatedSkills', 'onHit.debuffs'] },
-  buff: { scalars: ['healingPerRound', 'durationConfig.type', 'durationConfig.value'], arrays: EFFECT_ARRAYS },
+  buff: { scalars: ['healingPerRound', 'repeat.mode', 'durationConfig.type', 'durationConfig.value'], arrays: EFFECT_ARRAYS },
   debuff: { scalars: ['severity', 'damagePerRound', 'damageType', 'repeat.mode', 'repeat.into', 'durationConfig.type', 'durationConfig.value'], arrays: [...EFFECT_ARRAYS, 'alsoApplies'] },
   loot: { scalars: ['lootType', 'quantity', 'value', 'executionMode', 'charges.value', 'charges.max', 'spellIdentifier'], arrays: ['outcomes'] }
 });

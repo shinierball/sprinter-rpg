@@ -8,6 +8,7 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { parseMessageContent } from '../../chat/chat-relay.mjs';
+import { attackerIdOf } from '../combat/card-flags.mjs';
 import { readCheckRecord } from '../roll/check-assists.mjs';
 import { MAX_CARD_SCAN, messageList, scopeCombatId, inScope } from '../card/recent-cards.mjs';
 
@@ -47,7 +48,7 @@ export function findLatestHitCard(actor, item, { now = Date.now() } = {}) {
   for (let i = list.length - 1, scanned = 0; i >= 0 && scanned < MAX_CARD_SCAN; i--, scanned++) {
     const message = list[i];
     const f = flagsOf(message);
-    if (!f || f.isAttackRoll !== true || f.attackerId !== actor.id || f.attackItemId !== item.id) continue;
+    if (!f || f.isAttackRoll !== true || attackerIdOf(message) !== actor.id || f.attackItemId !== item.id) continue;
     if (message.visible === false || typeof message.id !== 'string' || !message.id) continue;
     if (!inScope(message, { combatId, now, combatIdOf: (m) => readCheckRecord(m)?.combatId })) continue;
     const button = damageButtonFor(message, item.id);

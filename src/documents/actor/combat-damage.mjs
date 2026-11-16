@@ -10,7 +10,7 @@ import { isWeaponGear, DEFAULT_CRIT_MULTIPLIER, configuredCritMultiplier } from 
 import { damageCardDataAttrs, ignoreEvadeButtonHtml } from '../../utils/damage/damage-parts.mjs';
 import { critDiceParts, cardShownParts, critDiceTotal, critDiceNoteHtml, critSubButtonHtml } from '../../utils/damage/crit-dice.mjs';
 import { resolveRollParts, targetRowsDataAttr, perTargetBoxHtml } from '../../utils/damage/per-target-damage.mjs';
-import { collectDamageModifiers, applyStatSuppression, multiplierFor } from '../../utils/roll/damage-modifiers.mjs';
+import { collectDamageModifiers, applyStatSuppression, applyRetype, multiplierFor } from '../../utils/roll/damage-modifiers.mjs';
 import { applyDamageStatSubstitutions } from '../../utils/roll/narrow-modifiers.mjs';
 import { resolveDamageContext, extendContext, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
@@ -19,7 +19,8 @@ import { escapeAttr, jsonAttr } from '../../utils/escape-attr.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
-import { asTriggersOf, asTriggersDataAttr, amazingPreviewHtml, amazingSubActionHtml, amazingSourceMessage } from '../../utils/roll/amazing-success.mjs';
+import { attackAsTriggers } from '../../utils/roll/buff-as-triggers.mjs';
+import { asTriggersDataAttr, amazingPreviewHtml, amazingSubActionHtml, amazingSourceMessage } from '../../utils/roll/amazing-success.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { sourceDamageBonusParts } from '../../utils/roll/check-assists.mjs';
 import { techniqueConditionMet, techniqueHealthRows, techniqueBonusDiceList, techniqueConditionPerTarget, techniqueConditionRow, techniqueConditionRowKey, isTechniqueApplicable, getAiFavorRating, resolveDamageEffect } from './actor-techniques.mjs';
@@ -35,6 +36,10 @@ import { resolveWeaponSkills } from './weapon-skills.mjs';
 import { getSkillDamageData } from './combat-skill-damage.mjs';
 import { actingRank } from '../../utils/skill/rank-source.mjs';
 import { withFlags } from '../../utils/flags.mjs';
+import { registerStoredCopy } from '../../utils/migrations/stored-copies.mjs';
+
+// The damage card copies the hit card's `attackChoices` flag (the snapshot of what was declared) into its own flags.
+registerStoredCopy({ of: 'ChatMessage.base', at: 'flag:attackChoices' });
 
 /**
  * Equipped gear that may add flat damage parts to an attack. Weapons are excluded: an equipped
@@ -220,7 +225,7 @@ export function getAttackDamageParts(actor, attackItem, options = {}) {
     parts.push(...dmod.addParts, ...dmod.targetAddParts);
 
     applyTechniquesToDamageParts(actor, parts, options, options.damageEffect || options.effect || '', sData.damageType || 'Physical', attackItem, sData.rank, rollContext);
-    return applyStatSuppression(applyDamageStatSubstitutions(actor, parts, rollContext, { skip: options.skipSubstitutions }), dmod);
+    return applyRetype(applyStatSuppression(applyDamageStatSubstitutions(actor, parts, rollContext, { skip: options.skipSubstitutions }), dmod), dmod);
   }
 
   const parts = [];
@@ -320,7 +325,7 @@ export function getAttackDamageParts(actor, attackItem, options = {}) {
   parts.push(...dmod.addParts, ...dmod.targetAddParts);
 
   applyTechniquesToDamageParts(actor, parts, options, chosenEffectRaw, primaryType, attackItem, skillRank, rollContext);
-  return applyStatSuppression(applyDamageStatSubstitutions(actor, parts, rollContext, { skip: options.skipSubstitutions }), dmod);
+  return applyRetype(applyStatSuppression(applyDamageStatSubstitutions(actor, parts, rollContext, { skip: options.skipSubstitutions }), dmod), dmod);
 }
 
 /**
@@ -503,6 +508,8 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
     choices = emptyChoices();
   }
 
+  // A damage click past a failed check (its Rule Break was confirmed at the button) is stamped on the card like any other
+  if (options.checkRuleBreak === true) ruleBreak = true;
   const chosenEffect = choices.effects[0] ?? 'none';
   const effectActive = choices.effects.length > 0;
   const extraTechs = [...(Array.isArray(options.techniques) ? options.techniques : []), ...choicesToDamageOptions(choices, actor).techniques];
@@ -693,7 +700,7 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
     : choicesFlag(choices, model ?? buildAttackOptions(actor, attackItem, baseContext, { mode: 'damage' }), { ruleBreak, reasons });
   const optionsLineHtml = await attackOptionsLineHtml(attackChoicesFlag);
 
-  const asTriggers = asTriggersOf(attackItem);
+  const asTriggers = attackAsTriggers(actor, attackItem, rollContext);
   // What each offered debuff does: only the effects, never the attacker's own item lines.
   const effectSummaryHtml = await cardSummary(attackItem, OMIT_ALL, { actor, effects: onHitDebuffs.map((ref) => ({ kind: 'debuffs', ref })) });
   const cardContent = `

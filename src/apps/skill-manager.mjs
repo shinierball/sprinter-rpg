@@ -100,7 +100,7 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
 
   /** @override */
   decorateRow(row) {
-    const system = { stat: 'str', checkType: 'stat', notes: '', ...row.system };
+    const system = { stat: 'str', checkType: 'skill', notes: '', ...row.system };
     const granted = this.mode === ATTACK_SKILL_MODE ? [] : (Array.isArray(this.item?.system?.grants) ? this.item.system.grants : []);
     const gearSkillIds = new Set(granted.filter(g => isGearBonusGrant(g) && g.kind === 'skill').map(g => g.identifier));
     const skill = { ...row, system };
@@ -182,7 +182,7 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
       system: {
         rank: 0,
         stat: 'str',
-        checkType: 'stat',
+        checkType: 'skill',
         critMultiplierR5: 1,
         critMultiplierR15: 1,
         notes: ''
@@ -236,7 +236,7 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
 
   /** Add selected skills to Actor */
   static async #onAddToActor() {
-    if (!this.actor) return;
+    if (!this.actor && !this.onPick) return;
 
     const checkedIds = [...this.selectedSkills];
     if (!checkedIds.length) {
@@ -255,8 +255,14 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
       if (created) added += 1;
     }
     if (added) {
-      ui.notifications?.info(`Added ${added} skill(s) to ${this.actor.name}.`);
-      this.close();
+      // Pick mode: the caller says what it did and the window stays open for more.
+      if (this.actor) {
+        ui.notifications?.info(`Added ${added} skill(s) to ${this.actor.name}.`);
+        this.close();
+      } else {
+        this.selectedSkills.clear();
+        this.render();
+      }
     }
   }
 

@@ -4,8 +4,8 @@
  * documentName, specs, delegate?, normalize? }`.
  *
  * Every bundled dataset is a spec file in this folder (3.32) and compiles through `buildPayload` with normalisation
- * on. Races and classes compile through the point-buy builder with the entry's `system` as an overlay
- * (point-buy-payload.mjs); the others (skills, spells, buffs, items, mobs, pets, mercenaries) are complete payload
+ * on. Pets compile through the pet builder (`buildPetPayload`); races and classes compile through the point-buy builder with the entry's `system` as an overlay
+ * (point-buy-payload.mjs); the others (skills, spells, buffs, items, mobs, mercenaries) are complete payload
  * specs with no budget builder, so `delegate: false`. src/data/<pack>.mjs re-exports each list for the 5.2 clean-up.
  */
 import { COG_SKILLS } from './skills.mjs';
@@ -42,7 +42,7 @@ export const PACK_SPECS = Object.freeze([
   { pack: 'races', documentName: 'Item', specs: typed('race', COG_RACES) },
   { pack: 'classes', documentName: 'Item', specs: typed('class', COG_CLASSES) },
   { pack: 'mobs', documentName: 'Actor', delegate: false, specs: typed('mob', COG_MOBS) },
-  { pack: 'pets', documentName: 'Actor', delegate: false, specs: typed('pet', COG_PETS) },
+  { pack: 'pets', documentName: 'Actor', specs: typed('pet', COG_PETS) },
   { pack: 'mercenaries', documentName: 'Actor', delegate: false, specs: typed('mercenary', COG_MERCENARIES) },
   // Built by build:packs but not declared in system.json: the manager reads the registry catalog.
   { pack: 'achievements', documentName: 'Item', delegate: false, specs: bundled(COG_ACHIEVEMENTS) },

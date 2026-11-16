@@ -36,8 +36,8 @@ export const REFERENCE_PAGES = [
       <tr><td>Technique flags</td><td><code>kind.technique</code></td></tr>
       <tr><td>A race's heritage</td><td><code>heritage.&lt;id&gt;</code> (earth, alien, pet, or one a module registers)</td></tr>
       <tr><td>Reached rank breaks</td><td>Every tag listed on a break the item has reached</td></tr>
-      <tr><td>Healing, Health-over-time, cleanse</td><td><code>action.heal</code>, <code>action.hot</code>, <code>action.cleanse</code>, <code>resource.hp-bars</code>, <code>duration.rounds</code></td></tr>
-      <tr><td>Armor-Piercing, Ignore DR</td><td><code>action.armor_piercing</code>, <code>action.ignore_dr</code></td></tr>
+      <tr><td>Healing, Health-over-time, cleanse</td><td><code>action.heal</code>, <code>action.hot</code>, <code>action.cleanse</code>, <code>resource.hp_bars</code>, <code>duration.rounds</code></td></tr>
+      <tr><td>Armor-Piercing (Ignore DR)</td><td><code>action.armor_piercing</code></td></tr>
       <tr><td>Critical multiplier, fumble debuff, On Hit parts</td><td><code>trigger.crit</code>, <code>trigger.fumble</code>, <code>trigger.on_hit</code>, <code>trigger.on_slot_loss</code></td></tr>
       <tr><td>Debuffs an attack, a technique or an area inflicts</td><td><code>action.inflict_debuff</code>; an attack also derives each <code>condition.&lt;x&gt;</code> it can inflict; a debuff item derives its own <code>condition.&lt;x&gt;</code></td></tr>
       <tr><td>Lifesteal, dispel</td><td><code>rule.lifesteal</code>, <code>action.dispel</code></td></tr>
@@ -46,14 +46,14 @@ export const REFERENCE_PAGES = [
       <tr><td>Area: radius, line length or the Has Area box; shape</td><td><code>shape.aoe</code>, <code>shape.&lt;shape&gt;</code>, <code>shape.splash</code>; any listed shape carrying the <code>area</code> flag also derives <code>shape.aoe</code></td></tr>
       <tr><td>Area target filter; a caster-anchored shape; an aura</td><td><code>target.&lt;filter&gt;</code>, <code>target.self</code></td></tr>
       <tr><td>Area that lingers and pulses</td><td><code>rule.hazard</code></td></tr>
-      <tr><td>Delivery</td><td><code>delivery.&lt;mode&gt;</code>; an aura also <code>shape.aura</code></td></tr>
+      <tr><td>Delivery</td><td><code>delivery.&lt;mode&gt;</code> (an aura is <code>delivery.aura</code>)</td></tr>
       <tr><td>Duration type</td><td><code>duration.&lt;type&gt;</code></td></tr>
       <tr><td>Temporary Health Bars</td><td><code>rule.temp-health-bars</code></td></tr>
       <tr><td>Light radii</td><td><code>rule.emits-light</code></td></tr>
-      <tr><td>Contest settings</td><td><code>action.contested</code>, <code>action.opposed</code>, <code>contest.dc</code>, <code>contest.opposed</code>, <code>contest.&lt;stat&gt;</code></td></tr>
-      <tr><td>Consumable outcomes</td><td><code>action.restore</code>, <code>action.heal</code>, <code>resource.mana</code>, <code>resource.hp-bars</code></td></tr>
+      <tr><td>Contest settings</td><td><code>action.contested</code>, <code>contest.dc</code>, <code>contest.opposed</code>, <code>contest.&lt;stat&gt;</code></td></tr>
+      <tr><td>Consumable outcomes</td><td><code>action.restore</code>, <code>action.heal</code>, <code>resource.mana</code>, <code>resource.hp_bars</code></td></tr>
       <tr><td>Grants</td><td><code>kind.skill</code>, <code>kind.spell</code>, and the stat tag of a stat grant</td></tr>
-      <tr><td>Personal space and upgrade types</td><td><code>kind.personal_space</code>, <code>kind.upgrade</code> and the type tag</td></tr>
+      <tr><td>Personal space and upgrade types</td><td><code>kind.personal_space</code>, <code>kind.space_upgrade</code> and the type tag</td></tr>
     </tbody>
   </table>
   <p>
@@ -103,7 +103,7 @@ export const REFERENCE_PAGES = [
 <div class="cog-journal-page">
   <h2>Descriptive Tags: Labels the GM Rules On</h2>
   <p>
-    Some tags are marked <strong>descriptive</strong> (a grey badge in the Tag Manager and on the Tags tab). A descriptive tag is a label for people. It records that a crawler has a trait, a sense, an access or a perk, and the engine never reads it. The GM decides what it means at the table. Examples: <code>sense.water_breathing</code>, <code>rule.taunt</code>, <code>rule.pet-skill</code>, <code>rule.offset-disadvantage</code>, <code>action.summon</code>.
+    Some tags are marked <strong>descriptive</strong> (a grey badge in the Tag Manager and on the Tags tab). A descriptive tag carries no rows or flags and the system applies nothing for it; a requirement or query may still match it like any tag. It is a label for people: it records that a crawler has a trait, a sense, an access or a perk. The GM decides what it means at the table. Examples: <code>sense.water_breathing</code>, <code>action.taunt</code>, <code>action.pet_skill</code>, <code>perk.offset_disadvantage</code>, <code>action.summon</code>.
   </p>
 
   <h3>Why a Descriptive Tag Cannot Carry Rows</h3>
@@ -113,7 +113,7 @@ export const REFERENCE_PAGES = [
 
   <h3>Perk Tags</h3>
   <p>
-    Perks the engine cannot run are registered as descriptive tags in the <code>rule.cog.*</code>, <code>access.*</code> and <code>sense.*</code> families. A race, class or item that grants a perk carries the tag; the tag's description holds the wording for the GM to rule on.
+    Perks the engine cannot run are registered as descriptive tags in the <code>perk.*</code>, <code>access.*</code> and <code>sense.*</code> families. A race, class or item that grants a perk carries the tag; the tag's description holds the wording for the GM to rule on.
   </p>
 
   <h3>Turning a Perk into Rows</h3>

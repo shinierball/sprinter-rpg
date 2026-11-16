@@ -9,6 +9,7 @@ import { findCombatant } from './combatants.mjs';
 import { spendActivationUses } from '../actor/buff-activation.mjs';
 import { COG_ACTION_TYPES, hasEvadeAction } from './action-ledger.mjs';
 import { withFlags } from '../../utils/flags.mjs';
+import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 
 /**
  * Record the Action an interrupt costs (nothing for a free one). Shared by `triggerInterrupt` and the assist
@@ -123,6 +124,10 @@ export async function triggerInterrupt(combat, combatantOrId, interruptOrId, opt
 
   // An interrupt that is one of the actor's items counts as a use of it for an open activation window.
   if (interrupt.item) await spendActivationUses(actor, [interrupt.item]);
+  // A Skill used as an interrupt (Taunt, Catcher) is a use of it: marked for the next advancement check.
+  if (interrupt.item?.type === 'skill') await actor.markSkillUsed?.(interrupt.item, { reason: 'interrupt' });
+  // A healing potion is taken now, so its healing lands before the attack's damage is applied (9.8).
+  await interrupt.item?.useAsInterrupt?.(resolveActorByUuid(options.attackContext?.defenderUuid));
 
   // What the interrupt does to the attack that triggered it (redirect / intercept)
   const interception = resolveInterception({ interrupter: actor, interrupt, attackContext: options.attackContext });

@@ -3,8 +3,10 @@ import { baseRankOf } from '../utils/skill/rank-source.mjs';
 import { slugifyIdentifier } from '../utils/identifier.mjs';
 import { stampTableOnCreate } from './actor/crafting-tables.mjs';
 import { stampOnCreate, stampOnUpdate } from './actor/duration-expiry.mjs';
+import { isMigrationWrite } from './migrations/world-migration.mjs';
 import { lockItemOnCreate } from './actor/percent-lock.mjs';
 import { useItem } from './item/use-item.mjs';
+import { usePotionInterrupt } from './item/potion-gate.mjs';
 import { rollSpellCard } from './item/spell-card.mjs';
 
 const BaseItem = globalThis.foundry?.documents?.Item
@@ -39,7 +41,7 @@ export class COGItem extends BaseItem {
   async _preUpdate(changed, options, user) {
     const allowed = await super._preUpdate?.(changed, options, user);
     if (allowed === false) return false;
-    stampOnUpdate(this, changed);
+    if (!isMigrationWrite(options)) stampOnUpdate(this, changed);
     return allowed;
   }
 
@@ -120,6 +122,15 @@ export class COGItem extends BaseItem {
    */
   async useLoot(options = {}) {
     return useItem(this, options);
+  }
+
+  /**
+   * Take this item as an Interrupt (9.8): a healing potion is used now, poured into `recipient`
+   * when that is another crawler. Nothing for any other item.
+   * @param {Actor|null} [recipient]
+   */
+  async useAsInterrupt(recipient = null) {
+    return usePotionInterrupt(this, recipient);
   }
 
   /**

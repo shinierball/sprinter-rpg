@@ -177,6 +177,28 @@ function blankToNull(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+/** A whole number from 0 up; blank or not a number is 0. */
+const wholeFrom0 = (value) => Math.max(0, Math.trunc(Number(value) || 0));
+
+/**
+ * A skill's or spell's applied-buff rows after the merge: blank number inputs are 0 (Within: no distance, Buff's Rank:
+ * the item's own Rank, From Rank: every Rank) and a blank To Rank is null (no ceiling).
+ */
+function cleanAppliedBuffs(rows) {
+  return rows.map((row) => {
+    if (!row || typeof row !== 'object') return row;
+    const out = { ...row };
+    if (out.buff !== undefined) out.buff = String(out.buff ?? '').trim();
+    if (out.range !== undefined) out.range = Math.max(0, Number(out.range) || 0);
+    for (const key of ['minRank', 'rank']) if (out[key] !== undefined) out[key] = wholeFrom0(out[key]);
+    if (out.maxRank !== undefined) {
+      const max = blankToNull(out.maxRank);
+      out.maxRank = max === null ? null : wholeFrom0(max);
+    }
+    return out;
+  });
+}
+
 /** Rank-break tier fields holding a nullable timing override. */
 const RANK_BREAK_TIMINGS = ['cooldown', 'duration'];
 const RANK_BREAK_STRINGS = ['damageDice', 'baseDiceCountMod', 'buffsResistances', 'debuff', 'notes', 'damageType', 'debuffOn'];
@@ -281,6 +303,7 @@ export function processItemFormData(item, data, { isGM } = {}) {
     if (INDEXED_ROW_PATHS.includes(path) || sys[path] === undefined) continue;
     sys[path] = clearBlankScale(mergeRows(item.system?.[path], sys[path]));
   }
+  if (Array.isArray(sys.appliedBuffs)) sys.appliedBuffs = cleanAppliedBuffs(sys.appliedBuffs);
   // The Advancement box: a blank line is no limit (no row); a row naming a route the box does not show (a module's, gone) is kept.
   if (sys.rankLimits !== undefined) {
     const kept = toArray(item.system?.rankLimits).filter((row) => row && !Object.hasOwn(ADVANCEMENT_ROUTE_DEFS, row.route));

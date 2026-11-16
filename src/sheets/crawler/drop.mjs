@@ -12,6 +12,9 @@ import { isSameOwnedEntry } from '../../utils/character/owned-entry.mjs';
 import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
 import { addKnownDeity } from '../../documents/actor/worship.mjs';
 import { addPatronProspect } from '../../documents/actor/patronage.mjs';
+import { landBuff } from '../../documents/actor/item-buffs.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { withLandingRank } from '../../utils/effects/buff-rank-prompt.mjs';
 
 /** Drop target attribute values (`data-drop-target`) and the actor field each slot writes. */
 const SLOT_DROP_TARGETS = Object.freeze({
@@ -41,8 +44,8 @@ export function dropCreateData(item) {
   return data;
 }
 
-async function createDropped(sheet, item, event) {
-  const created = await sheet._onDropItemCreate(dropCreateData(item), event);
+async function createDropped(sheet, item, event, data = dropCreateData(item)) {
+  const created = await sheet._onDropItemCreate(data, event);
   return Array.isArray(created) ? created[0] : created;
 }
 
@@ -60,7 +63,11 @@ async function dropOnSlot(sheet, event, item, { kind, slot }) {
     await actor.update({ [field]: existing.id });
     return existing;
   }
-  const created = await createDropped(sheet, item, event);
+  const data = item.type === 'buff'
+    ? await withLandingRank(dropCreateData(item))
+    : dropCreateData(item);
+  if (!data) return null;
+  const created = await createDropped(sheet, item, event, data);
   if (created?.id) await actor.update({ [field]: created.id });
   return created;
 }
@@ -129,7 +136,19 @@ export async function dropItem(sheet, event, item) {
     }
   }
 
+  if (item.type === 'buff') return dropBuffOnBody(actor, item);
+
   return createDropped(sheet, item, event);
+}
+
+/** A buff dropped on the sheet body lands in force and timed, through the one landing rule. Returns the copy, or null when declined. */
+async function dropBuffOnBody(actor, item) {
+  const data = withFlags(dropCreateData(item), { appliedBy: { messageId: '', sourceName: item.name } });
+  data.system = { ...data.system, active: true };
+  const ranked = await withLandingRank(data);
+  if (!ranked) return null;
+  const { item: copy } = await landBuff(actor, ranked, { options: { interactive: typeof document !== 'undefined' } });
+  return copy;
 }
 
 /**

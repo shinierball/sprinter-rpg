@@ -2,6 +2,7 @@
  * "Roll Opposed Contest" chat button.
  */
 import { resolveActorByUuid, isSameActor } from '../../utils/actor-uuid.mjs';
+import { recordAttackTotal } from '../../utils/roll/check-assists.mjs';
 import { isOutOfRangeOnMessage } from '../../utils/attack/attack-range.mjs';
 
 /**
@@ -19,7 +20,9 @@ export async function handleRollContest(event, button, message) {
   const targetStat = button.dataset?.targetStat || 'dex';
   const targetSkill = button.dataset?.targetSkill || '';
   const dc = Number(button.dataset?.dc) || 10;
-  const initiatorTotal = Number(button.dataset?.initiatorTotal) || 10;
+  let initiatorTotal = Number(button.dataset?.initiatorTotal) || 10;
+  // The attack card's record holds the current total (a reroll or an assist moved it after the button was written).
+  initiatorTotal = recordAttackTotal(message) ?? initiatorTotal;
   const onFailDebuff = button.dataset?.onFailDebuff || '';
   // The initiator's contest rank and the fail debuff's rank-break rounds, resolved on the initiator's client (3.10)
   const sourceRank = Number(button.dataset?.sourceRank) || 0;

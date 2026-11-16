@@ -9,6 +9,7 @@ export {
 } from './row-kinds/registry.mjs';
 import './row-kinds/damage.mjs';
 import './row-kinds/defense.mjs';
+import './row-kinds/trigger.mjs';
 export { addWaivableRollPenalty } from './row-kinds/check.mjs';
 import './row-kinds/craft.mjs';
 import './row-kinds/craft-space.mjs';

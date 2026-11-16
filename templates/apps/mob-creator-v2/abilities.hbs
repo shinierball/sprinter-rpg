@@ -1,0 +1,76 @@
+{{!-- Abilities stage: the buffs, spells and Skills the mob holds, the quick defensive traits and its Mana.  Controls carry no `name`: a Rank select is data-change-action="setItemRank" (data-index is the item's place in the mob's items), a quick trait control is "setTraitField" inside a row carrying data-trait-row and data-index.  The part root is hidden unless this is the active stage (parts: stage ids in app.mjs). --}}
+<section class="cog-creator-section cog-mobv2-panel" data-stage="abilities"{{#unless active}} hidden{{/unless}}>
+  <h3 class="cog-mobv2-title">{{localize titleKey}}</h3>
+  {{#if active}}
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{guidance}}</p>
+
+  {{#each groups}}
+  <h4 class="cog-mobv2-subtitle">{{title}}</h4>
+  <div class="cog-mobv2-toolbar">
+    <button type="button" class="cog-btn" data-action="{{addAction}}"><i class="fa-solid fa-plus"></i> {{addLabel}}</button>
+    <button type="button" class="cog-btn" data-action="{{newAction}}"><i class="fa-solid fa-wand-magic-sparkles"></i> {{create}}</button>
+  </div>
+  {{#each rows}}
+  <article class="cog-mobv2-card" data-item-card data-group="{{../id}}" data-index="{{index}}">
+    <header class="cog-mobv2-card-head">
+      <img src="{{img}}" alt="" class="cog-mobv2-icon cog-bg-icon-box" />
+      <b>{{name}}</b>
+      {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=badge}}
+      <button type="button" class="cog-btn" data-action="removeItem" data-index="{{index}}" title="{{localize 'COG.MobCreator.Abilities.Remove'}}"><i class="fa-solid fa-trash"></i></button>
+    </header>
+    {{#if brought}}<p class="cog-rule-hint">{{brought}}</p>{{/if}}
+    {{#if ranked}}
+    <div class="cog-form-group cog-mobv2-inline">
+      <label for="{{@root.rootId}}-item-{{index}}-rank">{{localize 'COG.MobCreator.Abilities.Rank'}}</label>
+      <select id="{{@root.rootId}}-item-{{index}}-rank" data-change-action="setItemRank" data-index="{{index}}" data-type="int">
+        {{#each rankOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      {{#if follows}}<span class="cog-rule-hint">{{localize 'COG.MobCreator.Abilities.RankFollows'}}</span>{{/if}}
+    </div>
+    {{/if}}
+    {{#if readsAs}}<p class="cog-rule-hint" data-reads-as>{{readsAs}}</p>{{/if}}
+  </article>
+  {{else}}
+  <p class="cog-rule-hint">{{localize 'COG.MobCreator.Abilities.Empty'}}</p>
+  {{/each}}
+  {{/each}}
+
+  {{#if mana}}
+  <div class="cog-form-group">
+    <label for="{{rootId}}-mana">{{localize 'COG.MobCreator.Abilities.Mana'}}</label>
+    <input type="number" min="0" id="{{rootId}}-mana" data-change-action="setField" data-path="mana" data-type="int" value="{{mana.value}}" />
+    <p class="cog-rule-hint">{{localize 'COG.MobCreator.Abilities.ManaHint'}}</p>
+    {{#if mana.note}}<p class="status-not-ready" data-mana-note><i class="fa-solid fa-triangle-exclamation"></i> {{mana.note}}</p>{{/if}}
+  </div>
+  {{/if}}
+
+  <h4 class="cog-mobv2-subtitle">{{localize 'COG.MobCreator.Abilities.Quick'}}</h4>
+  <p class="cog-rule-hint">{{localize 'COG.MobCreator.Abilities.QuickHint'}}</p>
+  <div class="cog-mobv2-toolbar">
+    {{#each quickButtons}}<button type="button" class="cog-btn" data-action="addTrait" data-type="{{type}}"><i class="fa-solid fa-plus"></i> {{label}}</button>{{/each}}
+  </div>
+  {{#each traits}}
+  <article class="cog-mobv2-card" data-trait-row data-index="{{index}}">
+    <header class="cog-mobv2-card-head">
+      <input type="text" id="{{@root.rootId}}-trait-{{index}}-name" class="cog-mobv2-card-name" data-change-action="setTraitField" data-path="name" value="{{name}}" aria-label="{{localize 'COG.MobCreator.Abilities.TraitName'}}" />
+      <button type="button" class="cog-btn" data-action="removeTrait" title="{{localize 'COG.MobCreator.Abilities.Remove'}}"><i class="fa-solid fa-trash"></i></button>
+    </header>
+    <div class="cog-mobv2-grid">
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-trait-{{index}}-dtype">{{localize 'COG.MobCreator.Abilities.TraitDamageType'}}</label>
+        <select id="{{@root.rootId}}-trait-{{index}}-dtype" data-change-action="setTraitField" data-path="damageType">
+          {{#each damageTypeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </div>
+      {{#if isMultiplier}}
+      <div class="cog-form-group">
+        <label for="{{@root.rootId}}-trait-{{index}}-mult">{{localize 'COG.MobCreator.Abilities.TraitMultiplier'}}</label>
+        <input type="number" min="0" step="0.25" id="{{@root.rootId}}-trait-{{index}}-mult" data-change-action="setTraitField" data-path="multiplier" value="{{multiplier}}" />
+      </div>
+      {{/if}}
+    </div>
+  </article>
+  {{/each}}
+  <p class="cog-rule-hint"><i class="fa-solid fa-hand"></i> {{localize 'COG.MobCreator.Abilities.DropHint'}}</p>
+  {{/if}}
+</section>

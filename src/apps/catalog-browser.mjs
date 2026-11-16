@@ -49,13 +49,18 @@ export function CatalogBrowserMixin(Base) {
     constructor(options = {}) {
       super(options);
       this.actor = options.actor || null;
+      /** Pick mode: `onPick(data, row)` receives a row's full document instead of an actor being given it. */
+      this.onPick = typeof options.onPick === 'function' ? options.onPick : null;
+      /** Pick mode: a function returning the documents already picked (creation data), so the list marks them. */
+      this.pickedItems = typeof options.picked === 'function' ? options.picked : null;
       this.searchQuery = '';
     }
 
     /** The merged rows of the kind, each passed through `decorateRow`. Built on every call, so a row never goes stale. */
     async catalogRows() {
       const { kind, fields } = this.constructor.CATALOG;
-      const rows = await unifiedCatalog(kind, { actor: this.actor, fields });
+      const owner = this.actor ?? (this.pickedItems ? { items: this.pickedItems() } : null);
+      const rows = await unifiedCatalog(kind, { actor: owner, fields });
       return Promise.all(rows.map((row) => this.decorateRow(row)));
     }
 
@@ -76,7 +81,7 @@ export function CatalogBrowserMixin(Base) {
       const game = globalThis.game;
       return Object.assign(context, {
         actor: this.actor,
-        isActorPicker: Boolean(this.actor),
+        isActorPicker: Boolean(this.actor || this.onPick),
         canCreate: game ? Boolean(game.user?.isGM || game.user?.can?.('ITEM_CREATE')) : true,
         searchQuery: this.rawSearchQuery !== undefined ? this.rawSearchQuery : this.searchQuery
       });
@@ -85,6 +90,8 @@ export function CatalogBrowserMixin(Base) {
     /**
      * Embed `row` on `this.actor`: the full source document (`resolveFullItemData`), then `mutate(payload)`,
      * `createEmbeddedDocuments`, an info notice and a re-render. Warns and returns null with no actor.
+     * In pick mode (`options.onPick`) the payload goes to `onPick(payload, row)` instead: nothing is embedded and no notice
+     * is shown (the caller says what it did); the window stays open for the next pick.
      * @param {object} row
      * @param {{ mutate?: (payload: object) => object, message?: string, noActorMessage?: string, collection?: string,
      *   category?: string, notify?: boolean, render?: boolean }} [options]
@@ -92,12 +99,17 @@ export function CatalogBrowserMixin(Base) {
      * @returns {Promise<object|null>} the created document
      */
     async addRowToActor(row, { mutate = (payload) => payload, message, noActorMessage = 'No actor bound to add this to.', collection, category, notify = true, render = true } = {}) {
-      if (!this.actor) {
+      if (!this.actor && !this.onPick) {
         globalThis.ui?.notifications?.warn?.(noActorMessage);
         return null;
       }
       const source = collection ?? this.constructor.CATALOG.collection;
       const payload = mutate(await resolveFullItemData(row, source, { category: category ?? source }));
+      if (this.onPick) {
+        await this.onPick(payload, row);
+        if (render && typeof this.render === 'function') this.render();
+        return payload;
+      }
       const created = (await this.actor.createEmbeddedDocuments('Item', [payload]))?.[0] ?? null;
       if (notify && message) globalThis.ui?.notifications?.info?.(message);
       if (render && typeof this.render === 'function') this.render();

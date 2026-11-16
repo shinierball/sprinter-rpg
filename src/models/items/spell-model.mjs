@@ -1,7 +1,7 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
-import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField } from '../fields/effect-fields.mjs';
-import { rollModifiersField, damageModifiersField, defenseModifiersField } from '../fields/modifier-fields.mjs';
-import { cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
+import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField, appliedBuffsField, itemTempBarsField } from '../fields/effect-fields.mjs';
+import { rollModifiersField, damageModifiersField, defenseModifiersField, eventTriggersField } from '../fields/modifier-fields.mjs';
+import { advancementStateFields, cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
 import { rankBreaksField } from '../../utils/skill/rank-breaks.mjs';
 
 /**
@@ -22,6 +22,7 @@ export class SpellDataModel extends BaseItemDataModel {
       duration: new fields.StringField({ initial: 'Instantaneous' }),
       cooldown: cooldownField(fields),
       useRecords: useRecordsField(fields),
+      ...advancementStateFields(fields),
       // A CONFIG.COG.checkTypes id, as on a skill: `attack` rolls an attack, `passive` is always on, `none` has no check (heals, interrupts, utility).
       checkType: new fields.StringField({ initial: 'attack' }),
       baseDamage: baseDamageField(fields),
@@ -50,6 +51,8 @@ export class SpellDataModel extends BaseItemDataModel {
       damageModifiers: damageModifiersField(fields),
       defenseModifiers: defenseModifiersField(fields),
       attackModifiers: rollModifiersField(fields),
+      // Rows that fire on an event (a kill this spell's owner makes, a cast of this spell); a row meant for one spell's kills conditions on its identity tag
+      eventTriggers: eventTriggersField(fields),
       checkModifiers: rollModifiersField(fields),
       quote: new fields.StringField({ initial: '' }),
       notes: new fields.StringField({ initial: '' }),
@@ -63,12 +66,10 @@ export class SpellDataModel extends BaseItemDataModel {
       interrupt: interruptSchemaField(fields),
       rankBreaks: rankBreaksField(fields, rankBreakTimingFields(fields)),
       area: areaSchemaField(fields),
+      // The buffs this item's card applies to people (see appliedBuffsField); an aura's `area.grantedBuffs` is separate.
+      appliedBuffs: appliedBuffsField(fields),
       delivery: new fields.StringField({ initial: 'target' }),
-      tempBars: new fields.SchemaField({
-        hasTempBars: new fields.BooleanField({ initial: false }),
-        slotsFormula: new fields.StringField({ initial: '' }),
-        hpPerSlot: new fields.NumberField({ integer: true, min: 0, initial: 0 })
-      }),
+      tempBars: itemTempBarsField(fields),
       durationConfig: durationConfigField(fields),
       light: lightSchemaField(fields),
       active: new fields.BooleanField({ initial: false }),

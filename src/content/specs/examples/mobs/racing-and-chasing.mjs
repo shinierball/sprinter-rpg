@@ -33,12 +33,12 @@ export const SPECS = Object.freeze([
         name: 'Parcel Peck',
         toHitStat: 'dex',
         damageStat: 'dex',
-        damageDice: '1d4',
+        dice: 1, die: 'd4',
         damageType: 'Piercing'
       }
     ],
     loot: [
-      { name: 'Branded Feather', quantity: 1, notes: '', description: 'Slightly too bright to be natural.' }
+      { name: 'Branded Feather', quantity: 1, lootType: 'consumable', description: 'Slightly too bright to be natural.' }
     ]
   },
   {
@@ -59,12 +59,12 @@ export const SPECS = Object.freeze([
         name: 'Clipboard Edge',
         toHitStat: 'int',
         damageStat: 'int',
-        damageDice: '1d6',
+        dice: 1, die: 'd6',
         damageType: 'Bludgeoning'
       }
     ],
     loot: [
-      { name: 'Stamped Receipt', quantity: 1, notes: '', description: 'Proof you were here. Not proof you won.' }
+      { name: 'Stamped Receipt', quantity: 1, lootType: 'consumable', description: 'Proof you were here. Not proof you won.' }
     ]
   }
 ]);

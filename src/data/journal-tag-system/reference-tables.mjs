@@ -32,7 +32,8 @@ export const NAMESPACE_GUIDE = Object.freeze({
   wield: { group: 'item', reader: 'One-handed or two-handed. Derived for weapons; a flexible two-hander is rewritten at roll time.' },
   skillGroup: { group: 'item', reader: 'Skill pickers and lists (the contest tracker lists movement skills first); the animal-skill lockout.' },
   technique: { group: 'item', reader: 'Names the skill a combat technique targets.' },
-  rule: { group: 'item', reader: 'Rule tags carry rows and flags the engine reads. A few are descriptive.' },
+  rule: { group: 'item', reader: 'Rule tags carry rows and flags the engine reads, or a named engine rule reads them.' },
+  perk: { group: 'item', reader: 'A race, class or benefit perk the engine cannot run. Descriptive: it carries no rows or flags and the system applies nothing for it; the tag shows the perk\'s text, and the GM adjudicates it.' },
   trigger: { group: 'item', reader: 'Interrupt offers (page 15) and the derived on-hit, critical and fumble triggers.' },
   interrupt: { group: 'item', reader: 'What an interrupt does to the attack that triggered it (page 15).' },
   injury: { group: 'item', reader: 'Marks a debuff as an injury and its severity; Mend Injury removes by it and rest durations read it.' },
@@ -52,6 +53,7 @@ export const NAMESPACE_GUIDE = Object.freeze({
   material: { group: 'item', reader: '<code>material.crafting</code> marks loot as a crafting reagent and <code>material.misc_junk</code> the baseline Misc. Junk. The junk a used-up consumable leaves behind carries both; the crafting rules (row 3.15) read them.' },
   crafting: { group: 'item', reader: '<code>crafting.table.&lt;type&gt;</code> is the type of a crafting table (a space upgrade), read by prefix: a blueprint\'s <code>tables</code> query names the types it needs and the lowest tier applies. <code>crafting.attachment.&lt;id&gt;</code> marks an attachment a blueprint may require. <code>crafting.coupon.table</code> marks loot that adds a table tier. <code>crafting.mode.*</code> is carried by a crafting check\'s context only.' },
   vehicle: { group: 'item', reader: '<code>vehicle.skill.driving</code> and <code>vehicle.skill.chopper</code> mark the skills a vehicle kind finds by tag query; <code>vehicle.kind.&lt;id&gt;</code> is derived on a vehicle; <code>vehicle.upgrade.&lt;id&gt;</code> marks gear installed on one (crafting reads it for default skills). <code>vehicle.check.&lt;id&gt;</code> and <code>vehicle.explosion</code> are carried by a roll\'s context only (3.44).' },
+  pet: { group: 'item', reader: '<code>pet.skill.riding</code> marks the skill that rides a mount (the rider rules find it by tag); <code>pet.check.&lt;kind&gt;</code> is carried by a pet check\'s context only.' },
   item: { group: 'item', reader: '<code>item.broken</code> (repairable) and <code>item.destroyed</code> (permanent) mark gear that crafting or the over-enchanting hazard broke. Equipping either asks a Rule Break. <code>item.trap</code> and <code>item.explosive</code> are descriptive: crafting rows may test them on the item being made.' },
   custom: { group: 'item', reader: 'Yours. Whatever rows or flags you give a custom tag, the engine runs.' },
   // Carried by actors
@@ -149,7 +151,7 @@ export function checkOutcomeHtml() {
 
   <h3>Outcomes (<code>outcome.*</code>)</h3>
   <p>
-    A finished d20 check against a Difficulty has a degree. The card carries the matching tag, and card-side readers test it: an assist skill's <code>when</code> query decides whether an assist is offered on an ally's card, and interrupt offers read the same card. A card with no Difficulty yet is pending, so a query that lists an outcome passes and the GM adjudicates. Popularity does not read outcome tags; it listens to events (<code>crit</code>, <code>critFail</code>, <code>kill</code>).
+    A finished d20 check against a Difficulty has a degree. The card carries the matching tag, and card-side readers test it: an assist skill's <code>when</code> query decides whether an assist is offered on an ally's card, and interrupt offers read the same card. A card with no Difficulty yet is pending, so a query that lists an outcome passes and the GM adjudicates. Popularity does not read outcome tags; it listens to events (<code>crit</code>, <code>critFail</code>, <code>kill</code>, <code>amazing</code>).
   </p>
   <ul>
     ${idList(Object.values(OUTCOME_TAGS))}

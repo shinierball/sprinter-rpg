@@ -25,6 +25,7 @@ import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { RANK_BREAK_THRESHOLDS } from '../../data/tag-vocabulary.mjs';
 import { resolveReachedRankBreaks, getItemRank } from '../skill/rank-breaks.mjs';
 import { collectOnHitEffects } from '../attack/on-hit.mjs';
+import { rowRecipients } from '../effects/applied-buff.mjs';
 import { effectiveDuration, durationConfigText } from '../time/durations.mjs';
 import { cooldownLabel, hasCooldown } from '../time/cooldowns.mjs';
 import { checkTypeLabel } from '../../data/rules/check-types.mjs';
@@ -50,6 +51,7 @@ defineItemSummaryTemplates({
   [`${KEY}.SkillGroup`]: 'Group: {group}',
   [`${KEY}.Specialty`]: 'Specialty: {label}',
   [`${KEY}.CheckTypeNoStat`]: 'Check: {type}',
+  [`${KEY}.DamageOnSuccess`]: 'Damage on a Success',
   [`${KEY}.AiFavor`]: 'AI Favor {n}',
   [`${KEY}.ManaCost`]: '{n} Mana',
   [`${KEY}.ManaCostModified`]: '{n} Mana (base {base})',
@@ -82,6 +84,13 @@ defineItemSummaryTemplates({
   [`${KEY}.DispelMatching`]: '{text} matching {query}',
   [`${KEY}.FumbleDebuff`]: 'On a fumble: {debuff}',
   [`${KEY}.OptionalEffects`]: 'Damage effects: {list}',
+  [`${KEY}.AppliedBuff`]: 'Gives {buff} to {target}',
+  [`${KEY}.AppliedBuffWithin`]: 'Gives {buff} to {target} within {feet} ft',
+  [`${KEY}.AppliedBuffFrom`]: 'From Rank {rank}: {text}',
+  [`${KEY}.AppliedBuffUpTo`]: 'Up to Rank {rank}: {text}',
+  [`${KEY}.AppliedBuffBetween`]: 'Rank {from} to {to}: {text}',
+  [`${KEY}.AppliedBuffAtRank`]: '{text}, at Rank {rank}',
+  [`${KEY}.AppliedBuffRankSkill`]: '{text}, at the caster\'s Rank in {skill}',
   [`${KEY}.Duration`]: 'Duration: {text}',
   [`${KEY}.DurationBonus`]: 'Duration: {text} (+{n} from Rank)',
   [`${KEY}.EndsWithCombat`]: '{text}, ends when combat ends',
@@ -213,6 +222,10 @@ function describeCast(item, ctx) {
     if (checkType) {
       const label = str(checkTypeLabel(checkType)) || checkType;
       out.push(itemLine('skill', L('CheckTypeNoStat', { type: label }), 'system.checkType'));
+      // A check that is not an attack deals its damage when it succeeds (the card's button asks when it did not).
+      if (sys.hasDamage === true && sys.isAttack !== true && sys.actionType !== 'attack' && checkType !== 'attack' && checkType !== 'passive' && checkType !== 'none') {
+        out.push(itemLine('skill', L('DamageOnSuccess'), 'system.hasDamage'));
+      }
     }
   }
   const favor = Math.trunc(Number(sys.aiFavor) || 0);
@@ -427,6 +440,28 @@ async function describeRiders(item) {
   return out;
 }
 
+/** One line per buff the item applies (`system.appliedBuffs`): who gets it, how far, from which Rank, and the Rank it carries. */
+async function describeAppliedBuffs(item) {
+  const rows = Array.isArray(sysOf(item).appliedBuffs) ? sysOf(item).appliedBuffs : [];
+  const out = [];
+  for (const row of rows) {
+    if (!isObj(row) || !str(row.buff)) continue;
+    const { spec } = rowRecipients(row);
+    const feet = whole(row.range);
+    const data = { buff: conditionName('buffs', row.buff), target: spec.label, feet };
+    let text = feet > 0 ? L('AppliedBuffWithin', data) : L('AppliedBuff', data);
+    if (str(row.rankSkill)) text = L('AppliedBuffRankSkill', { text, skill: await documentName(row.rankSkill, 'skill') });
+    else if (whole(row.rank) > 0) text = L('AppliedBuffAtRank', { text, rank: whole(row.rank) });
+    const from = whole(row.minRank);
+    const to = row.maxRank === null || row.maxRank === undefined ? null : whole(row.maxRank);
+    if (from > 0 && to !== null) text = L('AppliedBuffBetween', { from, to, text });
+    else if (from > 0) text = L('AppliedBuffFrom', { rank: from, text });
+    else if (to !== null) text = L('AppliedBuffUpTo', { rank: to, text });
+    out.push(itemLine('mod', text, 'system.appliedBuffs'));
+  }
+  return out;
+}
+
 // ---- timing -----------------------------------------------------------------------------------------------------
 
 function describeDuration(item, ctx) {
@@ -570,6 +605,7 @@ export const BLOCKS = Object.freeze([
   { id: 'spell-skill-riders', group: 'effect', applies: appliesTo(() => true), describe: describeRiders },
   { id: 'spell-skill-technique', group: 'effect', applies: appliesTo((i) => i.type === 'skill' && sysOf(i).isTechnique === true), describe: describeTechnique },
   { id: 'spell-skill-assist', group: 'effect', applies: appliesTo((i) => i.type === 'skill'), describe: describeAssist },
+  { id: 'spell-skill-applied-buffs', group: 'effect', applies: appliesTo(() => true), describe: describeAppliedBuffs },
   { id: 'spell-skill-duration', group: 'timing', applies: appliesTo(() => true), describe: describeDuration },
   { id: 'spell-skill-cooldown', group: 'timing', applies: appliesTo(() => true), describe: describeCooldown },
   { id: 'spell-skill-rank-breaks', group: 'effect', applies: appliesTo(() => true), describe: describeRankBreaks }

@@ -4,6 +4,7 @@
  */
 import { COGCombat } from '../documents/combat.mjs';
 import { pulseZones, onAreaRegionDeleted, endCombatZones, onZoneTokenMove } from '../documents/actor/zone-pulse.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 
 /** Clean Up order of the zone step: right after `aura-pulse` (150). */
 const AREA_ZONES_ORDER = 160;
@@ -12,6 +13,7 @@ COGCombat.registerCleanUpStep('area-zones', (combat, { round }) => pulseZones(co
 
 export function registerAreaZoneHooks() {
   Hooks.on('deleteRegion', (region) => onAreaRegionDeleted(region));
-  Hooks.on('moveToken', (tokenDoc, movement) => onZoneTokenMove(tokenDoc, movement));
+  // A migration write that moves a token is not a move into or out of a zone
+  Hooks.on('moveToken', (tokenDoc, movement, operation) => (isMigrationWrite(operation) ? undefined : onZoneTokenMove(tokenDoc, movement)));
   Hooks.on('deleteCombat', (combat) => endCombatZones(combat));
 }

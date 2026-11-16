@@ -34,7 +34,7 @@ export function roundPercent(base, percent) {
 
 /**
  * The stat rows of a `grants` list as display entries, in row order. A row with no flat and no percent is skipped; a
- * pool row is not a stat bonus and is skipped too. Reads `value`, `percent` and `locked` only.
+ * pool row is not a stat bonus and is skipped too. Reads `value`, `percent`, `beforePercent` and `locked` only.
  *
  * `state` says what to print after the amounts:
  * - `live`: the percent follows the score. With an owner (`unenhanced` given) `now` is today's number, else `null`.
@@ -46,9 +46,11 @@ export function roundPercent(base, percent) {
  * @param {object} [opts]
  * @param {'fixed'|'live'} [opts.mode] default: the world setting
  * @param {object|null} [opts.unenhanced] the owner's unenhanced scores by stat (`{ str: 15, ... }`); absent = no owner
- * @returns {Array<{ index: number, stat: string, flat: number, percent: number, state: 'live'|'locked'|'unlocked'|'plain', now: number|null }>}
+ * @param {Record<string, number>|null} [opts.early] every before-percent flat on the owner by stat (what `statBonuses`
+ *   takes percents from); absent = a before-percent row's own flat only
+ * @returns {Array<{ index: number, stat: string, flat: number, percent: number, beforePercent: boolean, state: 'live'|'locked'|'unlocked'|'plain', now: number|null }>}
  */
-export function statGrantEntries(grants, { mode = percentStatMode(), unenhanced = null } = {}) {
+export function statGrantEntries(grants, { mode = percentStatMode(), unenhanced = null, early = null } = {}) {
   const list = Array.isArray(grants) ? grants : Object.values(grants ?? {});
   const owned = Boolean(unenhanced) && typeof unenhanced === 'object';
   const out = [];
@@ -56,6 +58,7 @@ export function statGrantEntries(grants, { mode = percentStatMode(), unenhanced 
     if (row?.kind !== 'stat' || row.mode === 'pool') return;
     const flat = Number(row.value) || 0;
     const percent = Number(row.percent) || 0;
+    const beforePercent = row.beforePercent === true && flat !== 0;
     if (flat === 0 && percent === 0) return;
     const stat = String(row.stat ?? '').toLowerCase();
     let state = 'plain';
@@ -63,7 +66,7 @@ export function statGrantEntries(grants, { mode = percentStatMode(), unenhanced 
     if (percent !== 0) {
       if (mode === PERCENT_STAT_MODES.LIVE) {
         state = 'live';
-        if (owned) now = roundPercent(unenhanced[stat], percent);
+        if (owned) now = roundPercent(Number(unenhanced[stat]) + (early ? Number(early[stat]) || 0 : (beforePercent ? flat : 0)), percent);
       } else if (row.locked !== null && row.locked !== undefined && row.locked !== '' && Number.isFinite(Number(row.locked))) {
         state = 'locked';
         now = Number(row.locked);
@@ -71,7 +74,7 @@ export function statGrantEntries(grants, { mode = percentStatMode(), unenhanced 
         state = 'unlocked';
       }
     }
-    out.push({ index, stat, flat, percent, state, now });
+    out.push({ index, stat, flat, percent, beforePercent, state, now });
   });
   return out;
 }

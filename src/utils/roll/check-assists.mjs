@@ -10,17 +10,23 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { CHECK_TAGS, OUTCOME_TAGS, isOutcomeTag, getTagsOf, getInterruptTriggersFromTags, isOfferedOnCheck, calledAssistTrigger } from '../tag/tag-mechanics.mjs';
 import { matchesTagQuery, matchesTagQueryIgnoring } from '../tag/tag-query.mjs';
-import { COG_ROLL_OUTCOMES, evaluateRollOutcome, extractD20Result } from '../../documents/session/roll-outcomes.mjs';
+import { COG_ROLL_OUTCOMES, evaluateRollOutcome, extractD20Result, shiftDegree } from '../../documents/session/roll-outcomes.mjs';
 import { maxOfDiceFormula } from './dice-max.mjs';
 import { sanitizePatronCheckRef } from '../patron/patron-check-ref.mjs';
+import { sanitizePetCheckRef } from '../pet/pet-check-ref.mjs';
 import { DIFFICULTY_MODES } from '../../data/rules/difficulty-rules.mjs';
 
 export const CHECK_RECORD_FLAG = 'check';
 const CHECK_RECORD_VERSION = 1;
 export const MAX_RECORD_ASSISTS = 20;
+export const MAX_RECORD_REROLLS = 5;
+const MAX_RECORD_SHIFTS = 10;
+const MAX_RECORD_OFFERS_USED = 20;
+const MAX_CONTEXT_TAGS = 120;
 
 const RECORD_KINDS = Object.freeze(['skill', 'attack', 'spell', 'evade', 'stat']);
 const ASSIST_SOURCES = Object.freeze(['interrupt', 'called_play']);
+const REROLL_SOURCES = Object.freeze(['ai_favor', 'row']);
 const APPLIED_TO = Object.freeze(['check', 'damage', 'none', 'unresolved']);
 const SUCCESS_OUTCOMES = Object.freeze([COG_ROLL_OUTCOMES.SUCCESS, COG_ROLL_OUTCOMES.AMAZING_SUCCESS, COG_ROLL_OUTCOMES.CRITICAL_SUCCESS]);
 // Built on first use: this module sits on an import cycle with tag-mechanics.mjs, so CHECK_TAGS may not be
@@ -79,6 +85,60 @@ function sanitizeAssists(raw) {
   }
   out.sort((a, b) => (a.at - b.at) || a.id.localeCompare(b.id));
   return out.slice(0, MAX_RECORD_ASSISTS);
+}
+
+/** One reroll entry, or null when it is unusable (no finite total, unknown source). `total` is the whole new total, `d20` the new kept face. */
+function sanitizeReroll(raw, fallbackId = '') {
+  if (!isPlain(raw)) return null;
+  const total = numOrNull(raw.total);
+  if (total === null) return null;
+  const source = REROLL_SOURCES.includes(raw.source) ? raw.source : null;
+  if (!source) return null;
+  const id = str(raw.id) || fallbackId;
+  if (!id) return null;
+  return {
+    id,
+    at: num(raw.at),
+    source,
+    rowKey: str(raw.rowKey),
+    byName: str(raw.byName),
+    d20: numOrNull(raw.d20),
+    total,
+    messageId: strOrNull(raw.messageId),
+    ruleBreak: raw.ruleBreak === true,
+    reasons: (Array.isArray(raw.reasons) ? raw.reasons : []).filter((r) => typeof r === 'string' && r).slice(0, 8)
+  };
+}
+
+/** Rerolls from an object keyed by id (the flag shape, dotted writes) or an array; sorted by `at`, at most MAX_RECORD_REROLLS. */
+function sanitizeRerolls(raw) {
+  const pairs = Array.isArray(raw)
+    ? raw.map((entry, i) => [entry, isPlain(entry) && entry.id ? entry.id : `reroll-${i}`])
+    : (isPlain(raw) ? Object.entries(raw).map(([key, entry]) => [entry, key]) : []);
+  const out = [];
+  for (const [entry, fallbackId] of pairs) {
+    const clean = sanitizeReroll(entry, fallbackId);
+    if (clean) out.push(clean);
+  }
+  out.sort((a, b) => (a.at - b.at) || a.id.localeCompare(b.id));
+  return out.slice(0, MAX_RECORD_REROLLS);
+}
+
+/** A shift list: plain objects with a row key, `{ rowKey, steps, failOnly }`, at most MAX_RECORD_SHIFTS. */
+function sanitizeShifts(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((s) => isPlain(s) && typeof s.rowKey === 'string' && s.rowKey)
+    .map((s) => ({ rowKey: s.rowKey.slice(0, 200), steps: Math.max(1, Math.trunc(Number(s.steps)) || 1), failOnly: s.failOnly !== false }))
+    .slice(0, MAX_RECORD_SHIFTS);
+}
+
+/** The shifts applied to a degree, in order. A pending degree is never shifted. */
+function applyShifts(outcome, shifts) {
+  if (outcome === COG_ROLL_OUTCOMES.PENDING) return outcome;
+  let id = outcome;
+  for (const s of shifts) id = shiftDegree(id, s.steps, { failOnly: s.failOnly });
+  return id;
 }
 
 function sanitizeTarget(raw) {
@@ -150,11 +210,20 @@ function sanitizeVehicleRefRecord(raw) {
   };
 }
 
+/** The roll's whole context tags kept on a plain check card (`situation.*`, `subject.*`, `id.*`): strings only, at most `MAX_CONTEXT_TAGS`. */
+function sanitizeContextTags(raw) {
+  return [...new Set(Array.isArray(raw) ? raw.filter((t) => typeof t === 'string' && t) : [])].slice(0, MAX_CONTEXT_TAGS);
+}
+
 /** A record from its stored shape; null when it is not a usable record. Assists come back as an array. */
 function sanitizeRecord(raw) {
   if (!isPlain(raw) || !RECORD_KINDS.includes(raw.kind)) return null;
-  const total = numOrNull(raw.total);
-  if (total === null) return null;
+  const rolledTotal = numOrNull(raw.total);
+  if (rolledTotal === null) return null;
+  const rolledD20 = numOrNull(raw.d20);
+  const rerolls = sanitizeRerolls(raw.rerolls);
+  // The current roll is the last reroll's; the stored `total` and `d20` are never overwritten (`rolled` keeps them).
+  const current = rerolls.length ? rerolls[rerolls.length - 1] : null;
   return {
     v: CHECK_RECORD_VERSION,
     kind: raw.kind,
@@ -163,8 +232,14 @@ function sanitizeRecord(raw) {
     combatId: strOrNull(raw.combatId),
     round: numOrNull(raw.round),
     tags: (Array.isArray(raw.tags) ? raw.tags : []).filter((t) => typeof t === 'string' && t),
-    total,
-    d20: numOrNull(raw.d20),
+    ...(Array.isArray(raw.contextTags) && raw.contextTags.length ? { contextTags: sanitizeContextTags(raw.contextTags) } : {}),
+    total: current ? current.total : rolledTotal,
+    d20: current ? current.d20 : rolledD20,
+    rolled: { total: rolledTotal, d20: rolledD20 },
+    itemUuid: str(raw.itemUuid),
+    rerolls,
+    shifts: sanitizeShifts(raw.shifts),
+    offersUsed: (Array.isArray(raw.offersUsed) ? raw.offersUsed : []).filter((k) => typeof k === 'string' && k).slice(0, MAX_RECORD_OFFERS_USED),
     dc: numOrNull(raw.dc),
     rollId: str(raw.rollId),
     stat: str(raw.stat),
@@ -176,7 +251,9 @@ function sanitizeRecord(raw) {
     assists: sanitizeAssists(raw.assists),
     contest: sanitizeContestRefRecord(raw.contest),
     vehicle: sanitizeVehicleRefRecord(raw.vehicle),
-    patron: sanitizePatronCheckRef(raw.patron)
+    patron: sanitizePatronCheckRef(raw.patron),
+    pet: sanitizePetCheckRef(raw.pet),
+    ...(raw.statOnly === true ? { statOnly: true } : {})
   };
 }
 
@@ -200,12 +277,16 @@ function sanitizeRecord(raw) {
  * @param {{ messageId?: string, legId?: string, participantId?: string }|null} [p.contest] the race or chase leg this check was rolled for (3.45)
  * @param {{ vehicleUuid?: string, kind?: string, dc?: number|null, skill?: string, stat?: string, advantage?: boolean, rerollOf?: string, rerollKey?: string }|null} [p.vehicle] the vehicle this check was rolled for (3.44d)
  * @param {{ kind?: string, itemId?: string, skill?: string, rank?: number, dc?: number|null }|null} [p.patron] the patron item this check was rolled for, an audition or a gig (pp. 315-316)
+ * @param {string} [p.itemUuid] the skill, weapon or spell rolled; '' for a stat check or an Evade
  * @param {string} [p.rollId] links the ledger entry to this card
  * @param {string} [p.stat] the Stat rolled (`str` ...), '' when none
  * @param {number|null} [p.floor] the Floor when the check was rolled
  * @param {object|null} [p.difficulty] how `dc` was reached (see `sanitizeDifficulty`)
+ * @param {boolean} [p.statOnly] a skill card rolled as a Stat Check (no Rank): the kind stays `skill`, this marks it
+ * @param {Iterable<string>} [p.contextTags] the roll's whole context tags (kept on a skill or Stat card only)
  */
-export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, combat = null, tags = [], targets = [], dc = null, hasDamage = false, evade = null, assists = [], contest = null, vehicle = null, patron = null, rollId = '', stat = '', floor = null, difficulty = null } = {}) {
+export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, combat = null, tags = [], targets = [], dc = null, hasDamage = false, evade = null, assists = [], contest = null, vehicle = null, patron = null, pet = null, itemUuid = '', rollId = '', stat = '', floor = null, difficulty = null, statOnly = false, contextTags = [] } = {}) {
+  const contextTagsKept = kind === 'skill' || kind === 'stat' ? sanitizeContextTags([...(contextTags ?? [])]) : [];
   const record = {
     v: CHECK_RECORD_VERSION,
     kind: RECORD_KINDS.includes(kind) ? kind : 'skill',
@@ -214,8 +295,15 @@ export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, com
     combatId: strOrNull(combat?.id),
     round: combat ? numOrNull(combat.round) : null,
     tags: [...new Set((Array.isArray(tags) ? tags : [...(tags ?? [])]).filter(isKnownCheckTag))],
+    // The roll's whole context, kept only for a plain check card: the GM may set its Difficulty after the roll (`setCheckDifficulty`)
+    // and a Popularity trigger then judges the degree on the roll's tags
+    ...(contextTagsKept.length ? { contextTags: contextTagsKept } : {}),
     total: num(roll?.total),
     d20: extractD20Result(roll),
+    itemUuid: str(itemUuid),
+    rerolls: {},
+    shifts: [],
+    offersUsed: [],
     dc: numOrNull(dc),
     rollId: str(rollId),
     stat: str(stat),
@@ -227,7 +315,9 @@ export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, com
     assists: {},
     contest: sanitizeContestRefRecord(contest),
     vehicle: sanitizeVehicleRefRecord(vehicle),
-    patron: sanitizePatronCheckRef(patron)
+    patron: sanitizePatronCheckRef(patron),
+    pet: sanitizePetCheckRef(pet),
+    ...(statOnly === true ? { statOnly: true } : {})
   };
   for (const entry of sanitizeAssists(assists)) record.assists[entry.id] = entry;
   return record;
@@ -275,10 +365,29 @@ export function isSuccessOutcome(outcomeId) {
 
 // -- Evade ----------------------------------------------------------------------------------------------------
 
+/** What an Evade earns besides its damage (pp. 79-80): the Injury after combat and the Advantage it gives. */
+const EVADE_AFTERMATH = Object.freeze({
+  [COG_ROLL_OUTCOMES.CRITICAL_FAILURE]: { injury: 'major', advantage: null },
+  [COG_ROLL_OUTCOMES.MAJOR_FAILURE]: { injury: 'minor', advantage: null },
+  [COG_ROLL_OUTCOMES.AMAZING_SUCCESS]: { injury: null, advantage: 'amazing' },
+  [COG_ROLL_OUTCOMES.CRITICAL_SUCCESS]: { injury: null, advantage: 'natural_20' }
+});
+
+/**
+ * The aftermath of an Evade, from the system's one degree ladder, so only the highest degree counts (p. 80): a Natural 1 is a
+ * Major Injury and never also a Minor one; a Natural 20 gives Advantage whatever the total. No Difficulty, no degree.
+ * @returns {{ injury: 'minor'|'major'|null, advantage: 'natural_20'|'amazing'|null }}
+ */
+export function evadeAftermath({ total, dc, d20 = null } = {}) {
+  const none = { injury: null, advantage: null };
+  if (dc === null || dc === undefined || dc === '' || !Number.isFinite(Number(dc)) || !Number.isFinite(Number(total))) return none;
+  return { ...none, ...EVADE_AFTERMATH[outcomeIdOf(Number(total), Number(dc), d20)] };
+}
+
 /**
  * The book's Evade result for a total against the incoming DC (E6.4/E6.5): Equal succeeds, a Natural 1 always fails
  * and doubles, a Major Fail (short by 10 or more) adds the Floor, and only the highest degree counts.
- * @returns {{ isEvaded: boolean, evadeOutcome: string, damageMultiplier: number, floorBonus: number, double: boolean, bannerText: string, bannerBg: string, bannerBorder: string }}
+ * @returns {{ isEvaded: boolean, evadeOutcome: string, damageMultiplier: number, floorBonus: number, double: boolean, aftermath: { injury: string|null, advantage: string|null }, bannerText: string, bannerBg: string, bannerBorder: string }}
  */
 export function classifyEvade({ total, dc, d20 = null, isArea = false, areaOutcome = 'half', floor = 0 } = {}) {
   const naturalOne = d20 === 1;
@@ -322,7 +431,7 @@ export function classifyEvade({ total, dc, d20 = null, isArea = false, areaOutco
     bannerBg = 'var(--cog-accent-fill)';
     bannerBorder = 'var(--cog-accent-strong-fill)';
   }
-  return { isEvaded, evadeOutcome, damageMultiplier, floorBonus, double, bannerText, bannerBg, bannerBorder };
+  return { isEvaded, evadeOutcome, damageMultiplier, floorBonus, double, aftermath: evadeAftermath({ total, dc, d20 }), bannerText, bannerBg, bannerBorder };
 }
 
 // -- The effective check --------------------------------------------------------------------------------------
@@ -342,21 +451,25 @@ export function effectiveCheck(record) {
   const checkBonus = sumApplied(rec.assists, 'check');
   const damageBonus = sumApplied(rec.assists, 'damage');
   const total = rec.total + checkBonus;
+  // `outcomeRolled` is the degree the roll earned; `outcomeBefore` and `outcome` carry the card's degree shifts (a shift never
+  // changes a total or `isHit`).
   const judge = (before, dc) => {
-    const outcomeBefore = outcomeIdOf(rec.total + before, dc, rec.d20);
-    const outcome = outcomeIdOf(rec.total + before + checkBonus, dc, rec.d20);
-    return { outcomeBefore, outcome, total: rec.total + before + checkBonus };
+    const outcomeRolled = outcomeIdOf(rec.total + before + checkBonus, dc, rec.d20);
+    const outcomeBefore = applyShifts(outcomeIdOf(rec.total + before, dc, rec.d20), rec.shifts);
+    const outcome = applyShifts(outcomeRolled, rec.shifts);
+    return { outcomeRolled, outcomeBefore, outcome, total: rec.total + before + checkBonus };
   };
   const targets = rec.targets.map((t) => {
     const j = judge(t.bonus, t.dc);
     // A Natural 1 always misses, a Natural 20 is judged by its total (E6.5), as the attack card does.
     const isHit = t.dc !== null && rec.d20 !== 1 && j.total >= t.dc;
-    return { actorId: t.actorId, actorUuid: t.actorUuid, name: t.name, dc: t.dc, total: j.total, outcome: j.outcome, outcomeBefore: j.outcomeBefore, isHit };
+    return { actorId: t.actorId, actorUuid: t.actorUuid, name: t.name, dc: t.dc, total: j.total, outcome: j.outcome, outcomeBefore: j.outcomeBefore, outcomeRolled: j.outcomeRolled, isHit };
   });
   const single = judge(0, rec.dc);
   const outcomes = targets.length ? targets.map((t) => t.outcome) : [single.outcome];
   const outcome = rec.evade || !targets.length ? single.outcome : targets[0].outcome;
   const outcomeBefore = rec.evade || !targets.length ? single.outcomeBefore : targets[0].outcomeBefore;
+  const outcomeRolled = rec.evade || !targets.length ? single.outcomeRolled : targets[0].outcomeRolled;
   const pending = outcomes.includes(COG_ROLL_OUTCOMES.PENDING);
   const conditionTags = new Set(rec.tags);
   for (const o of outcomes) if (OUTCOME_TAGS[o]) conditionTags.add(OUTCOME_TAGS[o]);
@@ -371,11 +484,36 @@ export function effectiveCheck(record) {
     outcomes,
     outcome,
     outcomeBefore,
+    outcomeRolled,
+    rerolled: rec.rerolls.length > 0,
+    shifts: rec.shifts,
     evade,
     conditionTags,
     assists: rec.assists,
     unresolved: rec.assists.filter((a) => a.appliedTo === 'unresolved')
   };
+}
+
+/** The card's check record when it is an attack, spell or skill roll that carries a d20 (what a reroll can change), else null. */
+export function attackRecordOf(message) {
+  const record = readCheckRecord(message);
+  return record && ['attack', 'spell', 'skill'].includes(record.kind) && record.d20 !== null ? record : null;
+}
+
+/**
+ * The attack total a defender's roll answers, read from the card's check record (a reroll or an assist changes it after
+ * the card's buttons were written): the defender's own row when the record has one, else the whole check's total. Null
+ * when the card has no `attackRecordOf`.
+ * @param {object} message the attack card
+ * @param {string|null} [defenderUuid]
+ * @returns {number|null}
+ */
+export function recordAttackTotal(message, defenderUuid = null) {
+  const record = attackRecordOf(message);
+  if (!record) return null;
+  const eff = effectiveCheck(record);
+  const row = defenderUuid ? eff.targets.find(t => t.actorUuid === defenderUuid) : null;
+  return row ? row.total : eff.total;
 }
 
 /**

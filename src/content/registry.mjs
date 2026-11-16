@@ -40,7 +40,8 @@ import {
 } from './registry/spaces.mjs';
 import {
   resetConfigKinds, registerTag, registerTagNamespace, registerBossTier, registerLootBoxTier, registerSize, registerVehicleKind,
-  registerUsedForm, registerLootGenerator, registerMagicItemBase, registerEnchantmentCategory, registerHeritage
+  registerUsedForm, registerLootGenerator, registerMagicItemBase, registerEnchantmentCategory, registerHeritage,
+  registerPopularityChange
 } from './registry/config-kinds.mjs';
 
 export class COGContentRegistry {
@@ -236,6 +237,7 @@ export class COGContentRegistry {
   registerMagicItemBase(def, opts) { return registerMagicItemBase(this, def, opts); }
   registerEnchantmentCategory(def, opts) { return registerEnchantmentCategory(this, def, opts); }
   registerHeritage(def, opts) { return registerHeritage(this, def, opts); }
+  registerPopularityChange(def, opts) { return registerPopularityChange(this, def, opts); }
 }
 
 export const contentRegistry = new COGContentRegistry();

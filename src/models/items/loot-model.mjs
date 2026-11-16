@@ -2,6 +2,7 @@ import { BaseItemDataModel } from './base-item-model.mjs';
 import { lightSchemaField } from '../fields/effect-fields.mjs';
 import { cooldownField, useRecordsField } from '../fields/timing-fields.mjs';
 import { tagQueryField } from '../fields/tag-fields.mjs';
+import { POTION_LOOT_TYPE } from '../../data/tag-vocabulary.mjs';
 import { craftMaterialsField, enchantmentTemplateField, enchantmentLedgerField, lootBoxRowField } from '../fields/craft-fields.mjs';
 
 /** The scratch-off ticket loot type: the only value that is a scratch ticket. */
@@ -43,6 +44,7 @@ export function isLootBoxType(lootType) {
 /** Every loot type the sheet offers, in its order: `value` is `system.lootType`, `labelKey` the word for it. */
 export const LOOT_TYPE_CHOICES = Object.freeze([
   { value: 'consumable', labelKey: 'COG.LootType.consumable' },
+  { value: POTION_LOOT_TYPE, labelKey: 'COG.LootType.potion' },
   { value: SCRATCH_LOOT_TYPE, labelKey: 'COG.LootType.scratch' },
   { value: 'wand', labelKey: 'COG.LootType.wand' },
   { value: 'scroll', labelKey: 'COG.LootType.scroll' },
@@ -56,6 +58,7 @@ export const LOOT_TYPE_CHOICES = Object.freeze([
 /** English defaults for `COG.LootType.*`, used when no language file is loaded (headless tests). */
 const LOOT_TYPE_LABELS = Object.freeze({
   'COG.LootType.consumable': 'Consumable',
+  'COG.LootType.potion': 'Potion',
   'COG.LootType.scratch': 'Lottery ticket',
   'COG.LootType.wand': 'Wand',
   'COG.LootType.scroll': 'Spell scroll',

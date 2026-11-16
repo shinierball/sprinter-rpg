@@ -18,6 +18,7 @@ import { damageTypesOfRarity } from '../../utils/damage/damage-types.mjs';
 import { getStarterWeaponDefinition, starterPotionPayload, weaponTagsForSkill } from '../../content/creation-loadouts.mjs';
 import { buildPayload } from '../builders/item-payload.mjs';
 import { skillPotionPayload } from '../skill-potion-payload.mjs';
+import { POTION_LOOT_TYPE } from '../tag-vocabulary.mjs';
 import { cleanText } from './state.mjs';
 import { stableId } from '../../utils/stable-id.mjs';
 import { prefillAiFavorRating } from '../../utils/character/ai-favor.mjs';
@@ -111,7 +112,7 @@ export const LOOT_TIERS = Object.freeze({
   consumable: Object.freeze({
     bronze: slotTier('bronze', 'bronze consumable', false, {
       options: [
-        consumable('healing', '10 Healing Potions (5 Health Bar slots)', 'Healing Potion', 10, [heal('Healing', 5)], { usedInto: 'empty-bottle' }),
+        consumable('healing', '10 Healing Potions (5 Health Bar slots)', 'Healing Potion', 10, [heal('Healing', 5)], { usedInto: 'empty-bottle', lootType: POTION_LOOT_TYPE }),
         consumable('bandages', '10 Bandages (remove Blood Trail)', 'Bandages', 10, [{ name: 'Bind the wound', type: 'cure_debuff', debuffTarget: 'blood-trail', targetType: 'self' }]),
         consumable('torches', '10 Torches (20 ft bright, 20 ft dim, about an hour)', 'Torch', 10, [], { notes: 'Bright out to 20 feet, dim for 20 feet beyond that. Burns out in about an hour.' }),
         consumable('dynamite', '1 stick of basic dynamite', 'Stick of Dynamite', 1, [
@@ -122,7 +123,7 @@ export const LOOT_TIERS = Object.freeze({
     silver: slotTier('silver', 'silver consumable', false, {
       options: [
         { id: 'antidotes', label: 'Two Poison Antidotes', kind: 'consumable', catalog: ANTIDOTE_REF, name: 'Antidote Flask', quantity: 2 },
-        consumable('goodHealing', 'One Silver Healing Tonic (6 Health Bar slots)', 'Silver Healing Tonic', 1, [heal('Silver healing', 6)], { usedInto: 'empty-bottle' }),
+        consumable('goodHealing', 'One Silver Healing Tonic (6 Health Bar slots)', 'Silver Healing Tonic', 1, [heal('Silver healing', 6)], { usedInto: 'empty-bottle', lootType: POTION_LOOT_TYPE }),
         consumable('goodDynamite', 'One stick of fine dynamite', 'Stick of Fine Dynamite', 1, [
           { name: 'Blast', type: 'damage', damage: '2d6', damageType: 'Bludgeoning', targetType: 'closest_mob' }
         ], { notes: 'Thrown. 5 ft blast radius plus 5 ft splash.' })
@@ -133,7 +134,7 @@ export const LOOT_TIERS = Object.freeze({
         { id: 'scroll', label: 'A Spell Scroll of a random spell, cast at Rank 5', kind: 'scrollSpell', rank: 5 },
         consumable('premiumHealing', 'One Premium Healing Draught (7 Health Bar slots, mends one Minor Injury)', 'Premium Healing Draught', 1, [
           heal('Premium healing', 7), { name: 'Mend', type: 'mend_injury', injurySeverity: 'minor', targetType: 'self' }
-        ], { usedInto: 'empty-bottle' })
+        ], { usedInto: 'empty-bottle', lootType: POTION_LOOT_TYPE })
       ]
     }),
     platinum: slotTier('platinum', 'platinum consumable', false, {
@@ -291,13 +292,14 @@ function compileWeapon(option, tierSpec, choice, state, ctx, out, label, rollHaz
       name, img: def.img,
       system: {
         slot: 'hands', quantity: 1, equipped: true, isWeapon: true, toHitStat: def.toHitStat, ...baseDamage, associatedSkills, tags,
+        ...(def.wieldMode ? { wieldMode: def.wieldMode } : {}),
         aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []), grants: [...rows.statRows, ...rows.grants], damageModifiers: rows.damageModifiers,
         notes: def.effects || ''
       }
     }, label);
-    // The AI Favor reader looks at the attack item, not the gear it was made from: the rows ride on both, like the creator's starter attack.
-    const attack = build(out, 'attack', { name, img: def.img, system: { toHitStat: def.toHitStat, toHitRank: 3, ...baseDamage, associatedSkills, tags, effects: def.effects || '', aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []) } }, label);
-    out.creates.push(gear, attack);
+    // The weapon is the attack (its AI Favor rows are read from it): no separate attack item, which would take the
+    // weapon's hands a second time and stay equipped when the weapon is stowed.
+    out.creates.push(gear);
     out.unequip = weapons.filter(w => w.equipped).map(w => w.id);
     out.newWeapon = { name, aiFavor: prefillAiFavorRating(bonuses.aiFavorRatings), aiFavorRatings: structuredClone(bonuses.aiFavorRatings ?? []), skillIdentifier: skill, grants: [...rows.statRows, ...rows.grants], damageModifiers: rows.damageModifiers };
     out.summary = `${name} (new weapon)`;
@@ -438,6 +440,6 @@ export function manaPotionPayload(quantity, warnings = []) {
   if (payload) return payload;
   return buildPayload('loot', {
     name: 'Mana Potion',
-    system: { quantity, lootType: 'consumable', executionMode: 'all', outcomes: [{ name: 'Refill Mana', type: 'restore_resource', resource: 'mana', mode: 'full', targetType: 'self' }] }
+    system: { quantity, lootType: POTION_LOOT_TYPE, executionMode: 'all', outcomes: [{ name: 'Refill Mana', type: 'restore_resource', resource: 'mana', mode: 'full', targetType: 'self' }] }
   }, { warnings: [] });
 }

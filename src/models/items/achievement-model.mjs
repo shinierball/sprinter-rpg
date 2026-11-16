@@ -23,7 +23,9 @@ export class AchievementDataModel extends BaseItemDataModel {
         quantity: new fields.NumberField({ integer: true, min: 1, initial: 1 }),
         uuid: new fields.StringField({ initial: '' }),
         identifier: new fields.StringField({ initial: '' }),
-        name: new fields.StringField({ initial: '' })
+        name: new fields.StringField({ initial: '' }),
+        // 'keep': the box waits for the GM to fill it (a Fan Box); '' opens to the tier's default contents. Same two values as `system.box.whenEmpty`.
+        whenEmpty: new fields.StringField({ initial: '' })
       }), { initial: [] }),
       favor: new fields.NumberField({ integer: true, initial: 0 }),
       xp: new fields.NumberField({ integer: true, initial: 0 }),

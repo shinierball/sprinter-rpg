@@ -6,6 +6,7 @@
  * `effectiveCheck` (degree, assists, camera award) follows with no further change. The buttons on the card
  * (`crawlerSetDifficulty`, `crawlerAskOpposed`, `crawlerClearDifficulty`) are GM only.
  */
+import { damageCardAnswers } from '../damage-applications.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { readCheckRecord, effectiveCheck, calledPlayDestination, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
 import { difficultyFor, canSetDifficulty } from '../../utils/roll/check-difficulty.mjs';
@@ -15,6 +16,7 @@ import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { mobDifficultyShift, MOB_QUALITIES } from '../../documents/actor/attack-targets.mjs';
 import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { awardAmazingForCheckCard } from '../../documents/actor/actor-popularity.mjs';
 
 const STATS = Object.freeze(['str', 'dex', 'con', 'int', 'cha']);
 /** The "other value" choice of the Opposed dialog: a number standing in for the Stat Mod (a Spell Rank, a size class). */
@@ -81,11 +83,6 @@ export function findCheckMessageByRollId(rollId) {
   return messageList().reverse().find((m) => readCheckRecord(m)?.rollId === rollId) ?? null;
 }
 
-/** True when a damage card answers this check: the Called Plays then keep where they went. */
-function damageCardAnswers(message) {
-  return Boolean(message?.id) && messageList().some((m) => flagsOf(m).sourceMessageId === message.id);
-}
-
 /**
  * The Difficulty values to write: one per target (Opposed with no foe named uses each target's own Mod), else one.
  * @returns {{ difficulty: object, perTarget: Array<number|null> }|{ error: string }}
@@ -146,6 +143,8 @@ export async function setCheckDifficulty(message, spec, { syncLedger = true } = 
   await message.update(update);
 
   if (syncLedger) await syncLedgerEntry(message, difficulty);
+  // A plain check that now has an Amazing Success pays an `amazing` Popularity row, once per card
+  if (!clearing && (record.kind === 'skill' || record.kind === 'stat')) await awardAmazingForCheckCard(message, resolveActorByUuid(record.rollerUuid)).catch(() => {});
   return { ok: true, difficulty };
 }
 

@@ -1,0 +1,18 @@
+{{!-- The live stat block (data from statBlock() in src/apps/mob-creator-v2/context.mjs). Read-only: no control here. --}}
+<aside class="cog-fsim-preview cog-mobv2-block">
+  <h3>{{name}}</h3>
+  <p class="cog-mobv2-sub">
+    {{#if isBoss}}<span class="cog-badge"><i class="fa-solid fa-crown"></i> {{tierLabel}}</span>{{/if}}
+    {{localize 'COG.MobCreator.Block.LevelFloor'}} {{level}} / {{floor}}
+  </p>
+  <div class="cog-mobv2-block-stats">
+    {{#each stats}}<span class="cog-mobv2-block-stat"><b>{{label}}</b> {{value}} ({{mod}})</span>{{/each}}
+  </div>
+  <p class="cog-fsim-previewline"><b>{{localize 'COG.MobCreator.Block.Hp'}}</b> {{bars.value}} &times; {{hpPerBar}} = {{maxHp}}{{#if bars.custom}} <span class="cog-badge cog-mobv2-custom">{{localize 'COG.MobCreator.Custom'}}</span>{{/if}}</p>
+  <p class="cog-fsim-previewline"><b>{{localize 'COG.MobCreator.Block.Evade'}}</b> {{evade.base}}+F ({{evade.dc}}){{#if evade.custom}} <span class="cog-badge cog-mobv2-custom">{{localize 'COG.MobCreator.Custom'}}</span>{{/if}}</p>
+  <p class="cog-fsim-previewline"><b>{{localize 'COG.MobCreator.Block.Surprise'}}</b> {{surprise.base}}+F ({{surprise.dc}}){{#if surprise.custom}} <span class="cog-badge cog-mobv2-custom">{{localize 'COG.MobCreator.Custom'}}</span>{{/if}}</p>
+  <p class="cog-fsim-previewline"><b>{{localize 'COG.MobCreator.Block.Dr'}}</b> {{dr.base}}+F ({{dr.total}}) &bull; <b>{{localize 'COG.MobCreator.Block.Move'}}</b> {{move}} / {{step}}</p>
+  <p class="cog-fsim-previewline {{#if budget.over}}cog-mobv2-over{{/if}}"><b>{{localize 'COG.MobCreator.Block.Budget'}}</b> {{budget.spent}} / {{budget.points}}</p>
+  <p class="cog-fsim-previewline"><b>{{localize 'COG.MobCreator.Block.Dice'}}</b> {{recommendedDice}}</p>
+  <p class="cog-fsim-previewline"><b>{{localize 'COG.MobCreator.Block.Attacks'}}</b> {{attackCount}}</p>
+</aside>

@@ -1,11 +1,12 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
-import { damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, statCapsField, sensesField } from '../fields/modifier-fields.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, eventTriggersField, statCapsField, sensesField } from '../fields/modifier-fields.mjs';
 import { grantsField, grantedEffectsField, startingItemsField } from '../fields/grant-fields.mjs';
 import { requirementsField } from '../fields/requirement-fields.mjs';
 import { tagQueryField } from '../fields/tag-fields.mjs';
 import { deityBondField } from '../fields/deity-fields.mjs';
 import { patronageField } from '../fields/patron-fields.mjs';
 import { PATRON_MESSAGING } from '../../utils/patron/patron-profile.mjs';
+import { registerStoredCopy } from '../../utils/migrations/stored-copies.mjs';
 
 /**
  * Data Model for Sprinter RPG Race Items.
@@ -44,10 +45,17 @@ export class RaceDataModel extends BaseItemDataModel {
       recoveryModifiers: recoveryModifiersField(fields),
       statSubstitutions: statSubstitutionsField(fields),
       popularityTriggers: popularityTriggersField(fields),
+      eventTriggers: eventTriggersField(fields),
       description: new fields.HTMLField({ initial: '' })
     };
   }
 }
+// A race's granted effects keep a copy of a buff's or debuff's `system` (see grantedEffectsField).
+registerStoredCopy({ of: 'Item.buff', at: 'field:Item.race:grantedEffects' });
+registerStoredCopy({ of: 'Item.debuff', at: 'field:Item.race:grantedEffects' });
+// A race's and a class's chosen picks are ObjectField rows the grant code reads a `checkType` from (`GRANT_SYSTEM`).
+registerStoredCopy({ of: 'Item.skill', at: 'field:Item.race:chosenSkills' });
+registerStoredCopy({ of: 'Item.spell', at: 'field:Item.race:chosenSpells' });
 
 /**
  * Data Model for Sprinter RPG Class Items.
@@ -83,11 +91,16 @@ export class ClassDataModel extends BaseItemDataModel {
       recoveryModifiers: recoveryModifiersField(fields),
       statSubstitutions: statSubstitutionsField(fields),
       popularityTriggers: popularityTriggersField(fields),
+      eventTriggers: eventTriggersField(fields),
       description: new fields.HTMLField({ initial: '' })
     };
   }
 }
-
+// A class's granted effects keep a copy of a buff's or debuff's `system`.
+registerStoredCopy({ of: 'Item.buff', at: 'field:Item.class:grantedEffects' });
+registerStoredCopy({ of: 'Item.debuff', at: 'field:Item.class:grantedEffects' });
+registerStoredCopy({ of: 'Item.skill', at: 'field:Item.class:chosenSkills' });
+registerStoredCopy({ of: 'Item.spell', at: 'field:Item.class:chosenSpells' });
 
 /**
  * Data Model for Sprinter RPG Deity Items.
@@ -124,6 +137,11 @@ export class DeityDataModel extends BaseItemDataModel {
     };
   }
 }
+// A deity's signature and tier effects each keep a copy of a buff's or debuff's `system` (see grantedEffectsField).
+registerStoredCopy({ of: 'Item.buff', at: 'field:Item.deity:signatureEffects' });
+registerStoredCopy({ of: 'Item.debuff', at: 'field:Item.deity:signatureEffects' });
+registerStoredCopy({ of: 'Item.buff', at: 'field:Item.deity:tierEffects' });
+registerStoredCopy({ of: 'Item.debuff', at: 'field:Item.deity:tierEffects' });
 
 /**
  * Data Model for Sprinter RPG Sponsor Items.

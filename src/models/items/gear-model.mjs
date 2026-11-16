@@ -1,7 +1,7 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
-import { onHitField, areaSchemaField, baseDamageField, interruptSchemaField, lightSchemaField, auraStateField } from '../fields/effect-fields.mjs';
+import { onHitField, areaSchemaField, baseDamageField, interruptSchemaField, lightSchemaField, auraStateField, itemTempBarsField } from '../fields/effect-fields.mjs';
 import { cooldownField, useRecordsField } from '../fields/timing-fields.mjs';
-import { damageModifiersField, asTriggersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, aiFavorRatingsField, sensesField } from '../fields/modifier-fields.mjs';
+import { damageModifiersField, asTriggersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, eventTriggersField, aiFavorRatingsField, sensesField } from '../fields/modifier-fields.mjs';
 import { grantsField } from '../fields/grant-fields.mjs';
 import { enchantmentLedgerField } from '../fields/craft-fields.mjs';
 
@@ -57,6 +57,7 @@ export class GearDataModel extends BaseItemDataModel {
       recoveryModifiers: recoveryModifiersField(fields),
       statSubstitutions: statSubstitutionsField(fields),
       popularityTriggers: popularityTriggersField(fields),
+      eventTriggers: eventTriggersField(fields),
       senses: sensesField(fields),
 
       hasActivatedAbility: new fields.BooleanField({ initial: false }),
@@ -75,11 +76,7 @@ export class GearDataModel extends BaseItemDataModel {
       active: new fields.BooleanField({ initial: false }),
       appliedAllyUuids: new fields.ArrayField(new fields.StringField(), { initial: [] }),
       auraState: auraStateField(fields),
-      tempBars: new fields.SchemaField({
-        hasTempBars: new fields.BooleanField({ initial: false }),
-        slotsFormula: new fields.StringField({ initial: '' }),
-        hpPerSlot: new fields.NumberField({ initial: 0, min: 0 })
-      }),
+      tempBars: itemTempBarsField(fields, { integer: false }),
       notes: new fields.StringField({ initial: '' }),
       interrupt: interruptSchemaField(fields),
       light: lightSchemaField(fields),

@@ -404,11 +404,14 @@ export class COGCrawlerActionHUD extends COGToolApp {
 
     const attacks = [];
     const skills = [];
+    // Attack Skills that attack on their own (Unarmed Combat) are attacks, as on the sheet's Attacks table.
+    const synthesized = typeof this.actor?.getSynthesizedAttacks === 'function' ? this.actor.getSynthesizedAttacks() : [];
+    const skillAttackIds = new Set(synthesized.filter(a => a.isSkillAttack).map(a => a.id));
 
     for (const item of allItems) {
       const isAttack = item.type === 'attack' && item.system?.equipped !== false;
       const isWeapon = item.type === 'gear' && item.system?.equipped && isWeaponGear(item);
-      if (isAttack || isWeapon) {
+      if (isAttack || isWeapon || skillAttackIds.has(item.id)) {
         const formula = attackDamageDisplay(item, this.actor);
 
         attacks.push({

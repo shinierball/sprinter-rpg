@@ -141,6 +141,32 @@ export function parseCardParts(raw, { crit = false } = {}) {
 }
 
 /**
+ * ` data-spell-base='…'` for a spell damage card: the spell's Rank 1 base damage as rolled with the card.
+ * @param {{ formula: string, total: number, type: string }|null} base
+ * @returns {string} attribute text starting with a space, '' for none
+ */
+export function spellBaseDataAttr(base) {
+  if (!base || typeof base.formula !== 'string' || !Number.isFinite(Number(base.total))) return '';
+  return ` data-spell-base='${jsonAttr({ formula: base.formula, total: Number(base.total), type: String(base.type || '') })}'`;
+}
+
+/**
+ * Read `data-spell-base` back (a JSON string or an object). Pure; null on anything malformed or absent.
+ * @param {string|object|null} raw
+ * @returns {{ formula: string, total: number, type: string }|null}
+ */
+export function parseSpellBase(raw) {
+  let data = raw;
+  if (typeof raw === 'string') {
+    try { data = JSON.parse(raw); } catch { return null; }
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+  const total = Number(data.total);
+  if (data.total === null || data.total === '' || !Number.isFinite(total) || total < 0) return null;
+  return { formula: typeof data.formula === 'string' ? data.formula : '', total: Math.floor(total), type: typeof data.type === 'string' ? data.type : '' };
+}
+
+/**
  * The "Ignore Evade" sub-button of a damage card (E6.3): the primary button's numbers without the target's Evade. Only
  * cards that know their attack message and whose attacker can be evaded (not a crawler or mercenary) have it.
  * @param {{ sourceId: string|null, attackerType: string, multiplier: number, isCrit: boolean, armorPiercing: boolean }} input

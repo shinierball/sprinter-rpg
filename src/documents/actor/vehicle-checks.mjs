@@ -8,26 +8,16 @@ import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { isActiveGM } from '../../utils/gm-relay.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
-import { readCheckRecord, effectiveCheck, isSuccessOutcome } from '../../utils/roll/check-assists.mjs';
-import { getItemAllTags } from '../active-tags.mjs';
-import { skillStandInByQuery } from '../../utils/skill/skill-stand-in.mjs';
-import { vehicleCheckDifficulty, applyShifts, sanitizeShifts } from '../../utils/vehicle/vehicle-check.mjs';
+import { readCheckRecord, effectiveCheck, isSuccessOutcome, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
+import { flagPath } from '../../utils/flags.mjs';
+import { skillByQuery } from './skill-by-query.mjs';
+import { vehicleCheckDifficulty } from '../../utils/vehicle/vehicle-check.mjs';
 import { addAiFavor } from '../../chat/actions/ai-favor-tally.mjs';
 import { isTrustedAssist } from '../../chat/actions/use-assist.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
-import { availableMove, operateQueryFor, pickOperateSkill, resultEffect, resultDelta, VEHICLE_CHECK_KINDS } from '../../data/rules/vehicle-rules.mjs';
+import { availableMove, operateQueryFor, resultEffect, resultDelta, VEHICLE_CHECK_KINDS } from '../../data/rules/vehicle-rules.mjs';
 import { vehicleNow, vehicleMoveOf } from './vehicle-move.mjs';
 import { wholeFeet, str, say, messageById, cardFlag, cardKey, VEHICLE_CARD_FLAGS } from './vehicle-drive-common.mjs';
-
-/** The skill items of an actor as `pickOperateSkill` entries: tags and Modified Rank. */
-function skillEntries(actor) {
-  const items = Array.from(actor?.items ?? []).filter((i) => i?.type === 'skill');
-  return items.map((item) => ({
-    item,
-    tags: [...getItemAllTags(item)],
-    rank: Number(item.modifiedRank ?? item.system?.modifiedRank ?? item.system?.rank) || 0
-  }));
-}
 
 /**
  * The skill `actor` rolls to operate `vehicle`: among the actor's skills whose tags match the vehicle's query (its own
@@ -38,10 +28,7 @@ function skillEntries(actor) {
  * @returns {object|null} an owned skill item or a stand-in
  */
 export function operateSkillFor(actor, vehicle) {
-  const query = operateQueryFor(vehicle?.system);
-  const picked = pickOperateSkill(skillEntries(actor), query);
-  if (picked?.item) return picked.item;
-  return skillStandInByQuery(actor, query);
+  return skillByQuery(actor, operateQueryFor(vehicle?.system));
 }
 
 /**
@@ -164,13 +151,13 @@ export async function syncCard(message, { outcome, choice, note = '' }) {
   await message.update({ [cardKey(VEHICLE_CARD_FLAGS.result)]: { outcome, choice, note } });
 }
 
-/** The degree a card stands at: the rolled degree after the shifts recorded on it. Null while the Difficulty is open. */
+/** The degree a card stands at: the rolled degree after the shifts on its record. Null while the Difficulty is open. */
 export function cardOutcome(message) {
   const record = readCheckRecord(message);
   if (!record?.vehicle) return null;
   const eff = effectiveCheck(record);
   if (!eff || eff.pending) return null;
-  return applyShifts(eff.outcome, sanitizeShifts(cardFlag(message, VEHICLE_CARD_FLAGS.shifts)));
+  return eff.outcome;
 }
 
 async function ingestTable6(message, record, vehicle, roller, outcome) {
@@ -195,8 +182,8 @@ async function ingestTable6(message, record, vehicle, roller, outcome) {
   await syncCard(message, { outcome, choice: settled.choice });
   if (isNew && ref.rerollOf) {
     const old = messageById(ref.rerollOf);
-    const used = Array.isArray(cardFlag(old, VEHICLE_CARD_FLAGS.used)) ? cardFlag(old, VEHICLE_CARD_FLAGS.used) : [];
-    if (old && ref.rerollKey && !used.includes(ref.rerollKey)) await old.update({ [cardKey(VEHICLE_CARD_FLAGS.used)]: [...used, ref.rerollKey] });
+    const used = readCheckRecord(old)?.offersUsed ?? [];
+    if (old && ref.rerollKey && !used.includes(ref.rerollKey)) await old.update({ [flagPath(`${CHECK_RECORD_FLAG}.offersUsed`)]: [...used, ref.rerollKey] });
   }
   return { ingested: true, changed: settled.changed, outcome };
 }

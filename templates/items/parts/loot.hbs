@@ -25,7 +25,7 @@
       {{#each lootTypeOptions as |tOpt|}}<option value="{{tOpt.value}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.label}}</option>{{/each}}
     </select>
   </div>
-  {{#if (or (eq system.lootType "consumable") (eq system.lootType "wand"))}}
+  {{#if (or (eq system.lootType "consumable") (eq system.lootType "potion") (eq system.lootType "wand"))}}
     <div class="cog-field-group">
       <span class="cog-field-label" title="{{localize 'COG.Loot.Sheet.ModeHint'}}">{{localize "COG.Loot.Sheet.Mode"}}</span>
       <select class="cog-field-input" name="system.executionMode">
@@ -33,7 +33,7 @@
       </select>
     </div>
   {{/if}}
-  {{#if (or (eq system.lootType "wand") (eq system.lootType "consumable"))}}
+  {{#if (or (eq system.lootType "wand") (eq system.lootType "consumable") (eq system.lootType "potion"))}}
     <div class="cog-field-group small">
       <span class="cog-field-label" title="{{localize 'COG.Loot.Sheet.ChargesHint'}}">{{localize "COG.Loot.Sheet.Charges"}}</span>
       <div style="display: flex; gap: 4px; align-items: center;">
@@ -275,7 +275,7 @@
 </div>
 {{/if}}
 
-{{#if (and (not isScratchTicket) (or (eq system.lootType "consumable") (eq system.lootType "wand") (eq system.lootType "scroll")))}}
+{{#if (and (not isScratchTicket) (or (eq system.lootType "consumable") (eq system.lootType "potion") (eq system.lootType "wand") (eq system.lootType "scroll")))}}
 {{!-- Consumable / Wand / Scroll Multi-Effect Builder --}}
 <div class="cog-stat-block cog-bg-surface" style="margin-top: 10px; margin-bottom: 10px; border: 1px solid var(--cog-success);">
   <div class="cog-banner-header cog-bg-grad-success-info cog-text-on-fill" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px;">

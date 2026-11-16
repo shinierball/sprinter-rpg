@@ -4,11 +4,15 @@ import { CHECK_TAGS } from '../tag/tag-mechanics.mjs';
 import { camerasOffered, armedCamera, resolveCameraChoice, cameraAudienceList, cameraText } from './cameras.mjs';
 import { actorSizeNumber } from '../../data/sizes.mjs';
 import { vehicleRollTags, headOnOfferFor } from '../vehicle/vehicle-combat.mjs';
+import { ridingRollTags } from '../pet/pet-riding.mjs';
 import { specialtyOf } from '../skill/skill-specialty.mjs';
 import { partitionTicks } from './ticked-subject.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
-import { USE_TAG_PREFIX, splitRoleTag, ROLE_TAG_PREFIXES, ENGINE_SITUATIONS, SAME_SIZE_SITUATION, healthFractionTags } from '../../data/tag-vocabulary.mjs';
+import { USE_TAG_PREFIX, splitRoleTag, ROLE_TAG_PREFIXES, ENGINE_SITUATIONS, SAME_SIZE_SITUATION, LARGER_FOE_SITUATION, SMALLER_FOE_SITUATION, SIZE_SITUATIONS, FOE_HALF_LEVEL_SITUATION, healthFractionTags } from '../../data/tag-vocabulary.mjs';
+import { isUniversalTagSource } from '../tag/tag-behaviour.mjs';
+import { stockSituationsOpenWindow } from '../attack/stock-situations.mjs';
 import { collectActorTags } from '../../documents/active-tags.mjs';
+import { activeCombatFor } from '../../documents/combat/combatants.mjs';
 import { escapeAttr, jsonAttr } from '../escape-attr.mjs';
 
 /**
@@ -99,6 +103,21 @@ function assemble(fields, tags) {
 }
 
 /**
+ * The size situation two actors are in: `situation.same_size` for equal sizes, else
+ * `situation.larger_foe` (the other is larger) or `situation.smaller_foe` (smaller). Null when either actor is missing.
+ * @param {object|null} actor the roller
+ * @param {object|null} other the other party
+ * @returns {string|null}
+ */
+function sizeSituation(actor, other) {
+  if (!actor || !other) return null;
+  const mine = actorSizeNumber(actor);
+  const theirs = actorSizeNumber(other);
+  if (mine === theirs) return SAME_SIZE_SITUATION;
+  return theirs > mine ? LARGER_FOE_SITUATION : SMALLER_FOE_SITUATION;
+}
+
+/**
  * Build the tag set rows are matched against for one engine moment.
  *
  * @param {object} params
@@ -149,7 +168,7 @@ export function buildRollContext({
       role = otherRole ?? inherited.otherRole ?? role;
     } else if (TARGETED_PHASES.has(phase)) otherActor = firstTargetActor();
 
-    if (inCombat ?? Boolean(globalThis.game?.combat?.started)) out.add(ENGINE_SITUATIONS.inCombat);
+    if (inCombat ?? Boolean(actor && activeCombatFor(actor))) out.add(ENGINE_SITUATIONS.inCombat);
     if (disadvantaged) out.add(ENGINE_SITUATIONS.disadvantaged);
   }
 
@@ -158,9 +177,14 @@ export function buildRollContext({
   for (const t of roleTags(actor, 'self')) out.add(t);
   // 3.44e: the driver of a moving vehicle rolls `situation.driving`; anyone aboard carries `role.<crew role>`.
   if (!derived) for (const t of vehicleRollTags(actor)) out.add(t);
+  // A crawler riding a pet rolls `situation.riding` (the rider Disadvantage on attacks reads it).
+  if (!derived) for (const t of ridingRollTags(actor)) out.add(t);
   if (otherActor) for (const t of roleTags(otherActor, role)) out.add(t);
-  // Engine-set: the two parties are the same size (a technique that needs it). A live actor on each side is required.
-  if (!derived && actor && otherActor && actorSizeNumber(actor) === actorSizeNumber(otherActor)) out.add(SAME_SIZE_SITUATION);
+  // Engine-set: how the two parties' sizes compare (a technique or a perk that needs it). A live actor on each side is required.
+  if (!derived) {
+    const size = sizeSituation(actor, otherActor);
+    if (size) out.add(size);
+  }
   if (!derived) for (const t of otherTags ?? []) if (typeof t === 'string' && t) out.add(`${role}.${t}`);
   // Engine-set: the rolling skill's chosen specialty is among the action tags (a craft's output) or the target's (G4a).
   if (!derived) {
@@ -204,6 +228,20 @@ export function extendContext(context, { situations = [], tags = [], disadvantag
   return assemble({ ...fields, isCrit: crit, appliedRowKeys: [...(context.appliedRowKeys ?? [])] }, out);
 }
 
+/**
+ * A parsed card context (`parseRollContext`) with its Critical Hit set to `isCrit`: `isCrit` and the engine's
+ * `situation.critical_hit` tag follow it. A crit never carries Amazing Success (E6.9), so setting one drops that tag;
+ * clearing one leaves it off (a damage roll judges it per target). The original is untouched; null stays null.
+ * @param {object|null} parsed
+ * @param {boolean} isCrit
+ */
+export function setContextCrit(parsed, isCrit) {
+  if (!parsed) return null;
+  const tags = (parsed.tags ?? []).filter(t => t !== ENGINE_SITUATIONS.criticalHit && !(isCrit && t === ENGINE_SITUATIONS.amazingSuccess));
+  if (isCrit) tags.push(ENGINE_SITUATIONS.criticalHit);
+  return { ...parsed, tags, isCrit: Boolean(isCrit) };
+}
+
 function tagsOf(contextOrTags) {
   const plain = contextOrTags instanceof Set || Array.isArray(contextOrTags);
   const raw = contextOrTags && typeof contextOrTags === 'object' && !plain ? contextOrTags.tags : contextOrTags;
@@ -227,13 +265,32 @@ export function actionTagsOf(contextOrTags) {
  * @param {Iterable<string>} [p.subjectTags]
  */
 export function buildKillContext({ attacker, victim = null, attackTags = [], subjectTags = [] }) {
-  const base = { actor: attacker, phase: 'popularity', tags: [...(attackTags ?? [])] };
-  return buildRollContext({ ...base, other: victim ?? null, otherTags: [...(subjectTags ?? [])] });
+  // The level situation is judged here from the two actors, never taken from the tags a record or a request carries
+  const base = { actor: attacker, phase: 'popularity', tags: [...(attackTags ?? [])].filter(t => t !== FOE_HALF_LEVEL_SITUATION) };
+  const context = buildRollContext({ ...base, other: victim ?? null, otherTags: [...(subjectTags ?? [])] });
+  return withFoeHalfLevel(context, attacker, victim);
+}
+
+/** An actor's Level, or null when it has none to read (a missing actor, or a Level that is not a number above 0). */
+const levelOf = (actor) => {
+  const level = Number(actor?.system?.details?.level);
+  return Number.isFinite(level) && level > 0 ? level : null;
+};
+
+/**
+ * The kill context with `situation.foe_half_level` when the victim's Level times 2 is at least the killer's. A Level either side
+ * does not have counts (Directive 2: the GM adjudicates).
+ */
+function withFoeHalfLevel(context, attacker, victim) {
+  const mine = levelOf(attacker);
+  const theirs = levelOf(victim);
+  if (mine !== null && theirs !== null && theirs * 2 < mine) return context;
+  return extendContext(context, { tags: [FOE_HALF_LEVEL_SITUATION] });
 }
 
 /** What an undo record keeps to rebuild the kill context later: the attack's action tags and the victim's inner tags. */
 export function killContextRecordOf(context) {
-  return { attackTags: [...actionTagsOf(context)].sort(), subjectTags: [...roleTagsOf(context, 'subject')].sort() };
+  return { attackTags: [...actionTagsOf(context)].filter(t => t !== FOE_HALF_LEVEL_SITUATION).sort(), subjectTags: [...roleTagsOf(context, 'subject')].sort() };
 }
 
 /** The inner tags of one role in a context (or a tag list), without the role prefix. */
@@ -311,8 +368,8 @@ export function retargetContext(card, { other = null, isCrit = false, isAmazing 
       if (!asserted) continue;
       if (other) { askedTicks.push(t); continue; }
     }
-    // Same size was judged against the roll's first target; a hand-ticked one (no target at the roll) stays.
-    if (t === SAME_SIZE_SITUATION && !asserted) continue;
+    // The size situations were judged against the roll's first target; a hand-ticked one (no target at the roll) stays.
+    if (SIZE_SITUATIONS.includes(t) && !asserted) continue;
     out.add(t);
   }
   let droppedTicks = [];
@@ -323,7 +380,8 @@ export function retargetContext(card, { other = null, isCrit = false, isAmazing 
     for (const t of targetTags) out.add(t);
     droppedTicks = dropped;
   }
-  if (other && attacker && actorSizeNumber(attacker) === actorSizeNumber(other)) out.add(SAME_SIZE_SITUATION);
+  const size = other && attacker ? sizeSituation(attacker, other) : null;
+  if (size) out.add(size);
   if (isCrit) out.add(ENGINE_SITUATIONS.criticalHit);
   else if (isAmazing) out.add(ENGINE_SITUATIONS.amazingSuccess);
   return assemble({
@@ -447,7 +505,7 @@ async function askRollToggles(actor, context, options, opts) {
   const given = readSituationOptions(options);
 
   // A targeted token answers `subject.*` itself; only an untargeted roll offers the toggle.
-  const offered = given ? [] : getOfferedSituations(actor, context, { ...offerOpts, subjects: context.other ? false : offerOpts.subjects });
+  const offered = given ? [] : getOfferedSituations(actor, context, { ...offerOpts, subjects: context.other ? false : offerOpts.subjects, withRows: true });
   // 3.44e: an Evade aboard a moving vehicle, or an attack on a vehicle or its occupant, may be head-on (the vehicle's speed does not count).
   if (!given) offered.push(...headOnOfferFor(actor, context, options));
   const askCalledPlays = !answered && entries.length > 0;
@@ -457,7 +515,9 @@ async function askRollToggles(actor, context, options, opts) {
   const askCameras = cameraRoll && typeof options?.cameras !== 'string';
   const armed = cameraRoll ? armedCamera(actor) : '';
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
-  if ((offered.length === 0 && !askCalledPlays && !(askCameras && armed)) || options?.interactive === false || typeof DialogV2?.prompt !== 'function') {
+  // With the stock-reasons setting off, an attack Skill's stock lines alone do not open the dialog (nothing detects them here)
+  const opening = stockSituationsOpenWindow() ? offered : offered.filter((o) => !isUniversalTagSource(o.sourceRef));
+  if ((opening.length === 0 && !askCalledPlays && !(askCameras && armed)) || options?.interactive === false || typeof DialogV2?.prompt !== 'function') {
     return { situations: given ?? [], calledPlayIds: defaultIds, ...(cameraRoll ? { cameras: resolveCameraChoice(actor, options, null) } : {}) };
   }
 

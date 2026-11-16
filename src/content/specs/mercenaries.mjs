@@ -73,7 +73,7 @@ export const COG_MERCENARIES = [
           stat: "cha",
           isAttack: false,
           notes: "Draws hostile attention from nearby monsters toward the mercenary.",
-          tags: ["action.interrupt", "kind.skill", "interrupt.redirect_attack", "role.tank", "rule.taunt", "trigger.on_ally_attack", "skillGroup.combat"],
+          tags: ["action.interrupt", "kind.skill", "interrupt.redirect_attack", "role.tank", "action.taunt", "trigger.on_ally_attack", "skillGroup.combat"],
           interrupt: { range: 30, rangeFrom: "attacker" }
         }
       },
@@ -99,6 +99,7 @@ export const COG_MERCENARIES = [
     type: "mercenary",
     img: "icons/svg/aura.svg",
     system: {
+      tags: ["creature.elf"],
       abilities: {
         str: { value: 8, unenhanced: 8, mod: 3 },
         int: { value: 18, unenhanced: 18, mod: 4 },

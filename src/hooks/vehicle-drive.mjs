@@ -9,6 +9,7 @@
  */
 import { postExplosionPrompt } from '../documents/actor/vehicle-ram.mjs';
 import { isActiveGM } from '../utils/gm-relay.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 
 /** The option key the Hit Points before an update ride in. */
 export const HP_BEFORE_OPTION = 'cogVehicleHpBefore';
@@ -36,7 +37,7 @@ export function onPreUpdateVehicle(actor, changes, options) {
  * @returns {Promise<boolean>} true when the prompt was posted
  */
 export async function onUpdateVehicle(actor, changes, options) {
-  if (actor?.type !== 'mount_vehicle' || !touchesHp(changes) || !isActiveGM()) return false;
+  if (isMigrationWrite(options) || actor?.type !== 'mount_vehicle' || !touchesHp(changes) || !isActiveGM()) return false;
   const before = Number(options?.[HP_BEFORE_OPTION]);
   if (!Number.isFinite(before) || before <= 0) return false;
   const after = hpValueOf(actor);

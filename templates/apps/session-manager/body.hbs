@@ -43,6 +43,7 @@
       </div>
 
       {{> "systems/sprinter-rpg/templates/apps/partials/advancement-controls.hbs" advancementControls}}
+      {{#if popularityControls}}{{> "systems/sprinter-rpg/templates/apps/partials/popularity-controls.hbs" popularityControls}}{{/if}}
 
       <div class="cog-party-grid">
         {{#if crawlersList.length}}
@@ -51,8 +52,8 @@
             <div data-action="toggleCrawlerFilter" class="cog-crawler-card-header">
               <img class="cog-crawler-avatar" src="{{this.img}}" alt="{{this.name}}" />
               <div class="cog-crawler-identity">
-                <div class="cog-crawler-name-row">
-                  <h3 class="cog-crawler-name">{{this.name}}</h3>
+                {{!-- The buttons sit above the name so a long name cannot push them out of the card --}}
+                <div class="cog-crawler-card-buttons">
                   {{#if ../advancementControls.isGM}}
                     <button data-action="awardLevels" type="button" class="cog-btn-toggle-track" data-actor-id="{{this.actorId}}" title="Award Levels to this crawler"><i class="fa-solid fa-arrow-up-right-dots"></i> Award</button>
                   {{/if}}
@@ -64,6 +65,7 @@
                     {{/if}}
                   </button>
                 </div>
+                <h3 class="cog-crawler-name" title="{{this.name}}">{{this.name}}</h3>
                 <div class="cog-crawler-meta">
                   <span class="cog-badge-level">LVL {{this.level}}</span>
                   {{#if this.party}}

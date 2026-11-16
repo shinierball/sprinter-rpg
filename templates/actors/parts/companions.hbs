@@ -17,7 +17,7 @@
     <div class="cog-companion-section" style="margin-bottom: 12px;">
       <div class="cog-text-success" style="font-weight: bold; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--cog-success-border); padding-bottom: 3px; margin-bottom: 8px; display: flex; justify-content: space-between;">
         <span><i class="fa-solid fa-paw"></i> Pets &amp; Beasts</span>
-        <span style="font-size: 11px; opacity: 0.8;">({{bondedPets.length}} Active)</span>
+        <span style="font-size: 11px; opacity: 0.8;">({{bondedPets.length}} Active){{#if petCountLabel}} {{petCountLabel}}{{/if}}</span>
       </div>
 
       {{#if bondedPets.length}}
@@ -51,6 +51,16 @@
                 </div>
               </div>
 
+              {{#if pet.taming}}
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding-top: 4px; border-top: 1px dashed var(--cog-divider);">
+                  <span class="cog-text-secondary" style="font-weight: bold;">{{pet.attitudeLabel}}</span>
+                  <span class="cog-text-muted" style="font-size: 10px;">{{#if pet.taming.locked}}{{pet.taming.lockoutText}}{{else if pet.taming.waiting}}{{pet.taming.attemptText}}{{/if}}</span>
+                  <button type="button" class="cog-btn-xs cog-bg-success-fill cog-text-on-fill" data-action="tamePet" data-pet-id="{{pet.id}}" title="Roll an Int-Opposed taming check: 20 minutes of direct contact" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">
+                    Tame
+                  </button>
+                </div>
+              {{/if}}
+
               {{!-- Mount & Riding Status --}}
               <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding-top: 4px; border-top: 1px dashed var(--cog-divider);">
                 {{#if pet.isRidden}}
@@ -64,7 +74,10 @@
                     Mount
                   </button>
                 {{else}}
-                  <span class="cog-text-muted" style="font-size: 10px;">Too small to ride</span>
+                  <span class="cog-text-muted" style="font-size: 10px;">Cannot be ridden by the book</span>
+                  <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="toggleMount" data-pet-id="{{pet.id}}" data-mode="mount" style="border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px;">
+                    Mount
+                  </button>
                 {{/if}}
               </div>
             </div>

@@ -109,7 +109,7 @@ export function sanitizeLootBox(raw, warn = () => {}, path = 'box') {
 }
 
 /**
- * An achievement's `system.rewardBoxes[]`: tier resolved, quantity at least 1, template pointers kept as text.
+ * An achievement's `system.rewardBoxes[]`: tier resolved, quantity at least 1, template pointers kept as text, `whenEmpty` '' or 'keep'.
  * @param {*} raw
  * @param {(path: string, message: string) => void} [warn]
  * @param {string} [path]
@@ -132,7 +132,8 @@ export function sanitizeRewardBoxes(raw, warn = () => {}, path = 'rewardBoxes') 
       quantity: quantity === null ? 1 : Math.max(1, quantity),
       uuid: text(row.uuid),
       identifier: text(row.identifier),
-      name: text(row.name)
+      name: text(row.name),
+      whenEmpty: text(firstScalar(row.whenEmpty)) === 'keep' ? 'keep' : ''
     });
   });
   return out;

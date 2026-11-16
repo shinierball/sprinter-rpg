@@ -82,7 +82,9 @@ defineItemSummaryTemplates({
   'COG.ItemSummary.HealBarsOne': '1 Health Bar',
   'COG.ItemSummary.HealBarsMany': '{n} Health Bars',
   'COG.ItemSummary.TempBarsOne': 'Grants 1 temporary Health Bar of {hp} HP',
-  'COG.ItemSummary.TempBarsMany': 'Grants {slots} temporary Health Bars of {hp} HP'
+  'COG.ItemSummary.TempBarsMany': 'Grants {slots} temporary Health Bars of {hp} HP',
+  'COG.ItemSummary.TempBarsStat': 'Grants {slots} temporary Health Bars, each holding the {stat} Mod in HP',
+  'COG.ItemSummary.TempBarsPass': 'Damage tagged {tag} passes them by.'
 });
 
 /** Localize a key with `{name}` data: Foundry's i18n when it has the key, else the bundled template. */
@@ -221,5 +223,10 @@ export function tempBarsText(tempBars, hp, { actor = null, extra = 0 } = {}) {
     const formula = str(tempBars?.slotsFormula).toUpperCase() || '1';
     slots = extra ? `${formula} ${extra > 0 ? '+' : '-'} ${Math.abs(extra)}` : formula;
   }
-  return slots === '1' ? t('COG.ItemSummary.TempBarsOne', { hp }) : t('COG.ItemSummary.TempBarsMany', { slots, hp });
+  const stat = str(tempBars?.hpPerSlotStat).toUpperCase();
+  const passTag = str(tempBars?.passTag);
+  let text;
+  if (stat) text = t('COG.ItemSummary.TempBarsStat', { slots, stat });
+  else text = slots === '1' ? t('COG.ItemSummary.TempBarsOne', { hp }) : t('COG.ItemSummary.TempBarsMany', { slots, hp });
+  return passTag ? `${text}. ${t('COG.ItemSummary.TempBarsPass', { tag: passTag })}` : text;
 }

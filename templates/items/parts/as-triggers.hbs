@@ -41,6 +41,12 @@
           <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.NameLabel"}}</span>
           <input class="cog-field-input" type="text" name="{{entry.labelName}}" value="{{entry.label}}" placeholder="{{localize 'COG.AmazingSuccess.Editor.NamePlaceholder'}}" />
         </div>
+        {{#if ../asTriggers.ranked}}
+        <div class="cog-field-group small">
+          <span class="cog-field-label">{{localize "COG.AmazingSuccess.Editor.FromRankLabel"}}</span>
+          <input class="cog-field-input" type="number" min="0" step="1" name="{{entry.minRankName}}" value="{{entry.minRank}}" />
+        </div>
+        {{/if}}
         {{#if entry.ruleBreak}}<span class="cog-badge cog-badge-rule-break">[RULE BREAK]</span>{{/if}}
         {{#if entry.enchantment}}<span class="cog-badge cog-badge-info">{{localize "COG.CraftSheet.Badge.Enchantment"}}</span>{{/if}}
         <a class="cog-text-accent" data-action="removeAsTrigger" data-index="{{entry.index}}" data-tooltip="{{localize 'COG.AmazingSuccess.Editor.Remove'}}" style="cursor: pointer;"><i class="fa-solid fa-trash"></i></a>

@@ -1,4 +1,5 @@
 import { SYSTEM_ID } from '../../constants.mjs';
+import { activeCombatFor } from '../combat/combatants.mjs';
 import { getActiveGM } from '../../utils/gm-relay.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { popularityTokens } from '../../utils/floor/popularity.mjs';
@@ -50,6 +51,8 @@ export async function bumpSceneEpoch(reason = SCENE_EPOCH_REASONS.MANUAL) {
     console.warn(`Sprinter RPG | Could not start a new scene (${reason}):`, err);
     return getSceneEpoch();
   }
+  // Tell the effects that end with a scene (duration-expiry.mjs listens; a hook, not an import, to keep the modules apart)
+  globalThis.Hooks?.callAll?.('cogSceneBoundary', { reason, epoch: next });
   return next;
 }
 
@@ -61,18 +64,13 @@ function isActiveGM() {
 }
 
 /**
- * The combat an actor's cooldowns count rounds in: `game.combat` once it has started (`round >= 1`) and `actor` is
- * one of its combatants (any actor when none is given).
+ * The id of the combat a "until combat ends" window belongs to: the actor's own fight when it is in one, else the scene's
+ * current combat (not yet started, or one the actor is not a combatant of), else '' (none running).
+ * @param {object|null} [actor]
+ * @returns {string}
  */
-function activeCombatFor(actor) {
-  const combat = globalThis.game?.combat;
-  if (!combat || !(Number(combat.round) >= 1)) return null;
-  if (actor) {
-    const combatants = combat.combatants?.contents ?? Array.from(combat.combatants ?? []);
-    const inFight = combatants.some(c => c?.actor === actor || (c?.actorId && c.actorId === actor.id) || (c?.actor?.id && c.actor.id === actor.id));
-    if (!inFight) return null;
-  }
-  return { id: combat.id, round: Number(combat.round) };
+export function runningCombatId(actor = null) {
+  return activeCombatFor(actor)?.id ?? globalThis.game?.combat?.id ?? '';
 }
 
 /**

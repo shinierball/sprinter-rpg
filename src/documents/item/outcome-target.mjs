@@ -1,9 +1,10 @@
 import { isGmActor } from '../../utils/document-types.mjs';
 
 /**
- * Target detection helper for item outcomes: closest mob, self, or targeted token.
+ * Target detection helper for item outcomes: closest mob, self, or targeted token. `recipient` is who a `self` outcome
+ * reaches when the item is poured into someone else (9.8).
  */
-export function resolveOutcomeTarget(actor, targetType = 'self') {
+export function resolveOutcomeTarget(actor, targetType = 'self', recipient = null) {
   let targetToken = null;
   let targetActor = null;
   let targetDistFt = null;
@@ -43,7 +44,8 @@ export function resolveOutcomeTarget(actor, targetType = 'self') {
       }
     }
   } else if (tType === 'self') {
-    targetActor = actor;
+    // A potion poured into another crawler: the recipient takes what is meant for the user.
+    targetActor = recipient ?? actor;
   }
 
   if (!targetActor && typeof game !== 'undefined' && game.user?.targets?.size) {

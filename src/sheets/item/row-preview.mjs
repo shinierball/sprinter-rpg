@@ -26,6 +26,7 @@ const PREVIEW_PHASES = Object.freeze({
   manaCostModifiers: 'manaCost',
   recoveryModifiers: 'recovery',
   popularityTriggers: 'popularity',
+  eventTriggers: 'popularity',
   aiFavorRatings: 'toHit',
   statSubstitutions: 'check'
 });

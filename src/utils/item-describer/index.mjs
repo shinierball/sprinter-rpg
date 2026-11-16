@@ -26,7 +26,7 @@ export { ITEM_SUMMARY_BADGES, ITEM_SUMMARY_KINDS, ITEM_SUMMARY_GROUPS, itemSumma
 /** Block ids for the wrapped `DESCRIBERS`, in the same order as that list. */
 const WRAPPED_IDS = Object.freeze([
   'grants-stat', 'stat-caps', 'grants-skill', 'defense', 'rows-damage', 'rows-attack', 'rows-check', 'rows-craft', 'rows-vehicle', 'rows-mana',
-  'rows-recovery', 'rows-substitution', 'rows-popularity', 'rows-ai-favor', 'movement', 'senses', 'requirements',
+  'rows-recovery', 'rows-substitution', 'rows-popularity', 'rows-event', 'rows-ai-favor', 'movement', 'senses', 'requirements',
   'starting-items', 'descriptive-tags'
 ]);
 

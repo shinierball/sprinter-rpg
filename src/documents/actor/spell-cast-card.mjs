@@ -4,7 +4,7 @@
  *
  * The `cast` record is `{ isAura, isSelfLight, isGrantedSpell, cooldownGate, castRange, cost, manaRuleBreak, newMana,
  * healInfo, auraData, nonAuraTempBars, offersAttack, conditionTags, isBurstOrArea, conditionRounds,
- * appliedConditionTargets, summaryHtml }`, where `cost` is the `resolveSpellCost` result.
+ * appliedConditionTargets, summaryHtml, buffBlocks }`, where `cost` is the `resolveSpellCost` result.
  */
 import { attackText } from '../../utils/attack/attack-text.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
@@ -324,6 +324,7 @@ export function spellCastFlags(actor, spell, opts, cast, contestData) {
     conditionSpellId: spell?.id ?? null,
     conditionCasterId: actor?.id ?? null,
     conditionTargetUuids: cast.conditionTargetUuids ?? [],
+    ...(cast.buffBlocks?.flags ?? {}),
     ...(offersAttack ? castLinkFlags(actor, spell) : {})
   }).flags;
 }

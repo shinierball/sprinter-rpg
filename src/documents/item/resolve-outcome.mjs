@@ -6,8 +6,11 @@ import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeStatValue, out
 import { applyEnchantment } from './enchantments.mjs';
 import { applyEnchantTableOutcome } from './enchant-table.mjs';
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
-import { carrySourceStamp, landItems } from '../../utils/content-source.mjs';
+import { carrySourceStamp } from '../../utils/content-source.mjs';
 import { findCatalogEntry, findConditionEntry } from '../../content/catalog-lookup.mjs';
+import { buffCopyData } from '../../utils/effects/applied-buff.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { landBuff } from '../actor/item-buffs.mjs';
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { restoredValue } from '../../utils/damage/resource-restore.mjs';
 import { heldCureHtml } from '../actor/transform-cues.mjs';
@@ -52,12 +55,12 @@ function outcomeEffects(outcomes) {
  * @param {Actor} actor
  * @param {Item} originItem
  * @param {boolean} [isMultiMode=false]
- * @param {{ enchantTarget?: Item|null }} [context] the equipped item an `enchant_item` outcome upgrades, picked by the caller
+ * @param {{ enchantTarget?: Item|null, recipient?: Actor|null }} [context] the equipped item an `enchant_item` outcome upgrades, picked by the caller; the crawler a potion is poured into, who takes every `self` outcome
  * @returns {Promise<object>}
  */
 export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMode = false, context = {}) {
   const { targetActor, targetName, distLabel } =
-    resolveOutcomeTarget(actor, outcome.targetType || (isMultiMode ? 'self' : 'closest_mob'));
+    resolveOutcomeTarget(actor, outcome.targetType || (isMultiMode ? 'self' : 'closest_mob'), context.recipient);
 
   const outType = String(outcome.type || '').toLowerCase().trim();
   let outcomeHtml;
@@ -83,19 +86,8 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
     const appliedOnUse = Boolean(isMultiMode && targetActor);
     if (isMultiMode && targetActor) {
       // A row names its catalog buff by identifier, never by display name; an unreferenced row makes a plain buff.
-      const match = findConditionEntry('buffs', buffIdentifier);
-      const buffData = match ? carrySourceStamp({
-        name: match.name,
-        type: 'buff',
-        img: match.img || 'icons/svg/aura.svg',
-        system: { ...structuredClone(match.system || {}), active: true }
-      }, match) : {
-        name: buffName,
-        type: 'buff',
-        img: 'icons/svg/aura.svg',
-        system: { description: buffDesc, active: true }
-      };
-      await targetActor.createEmbeddedDocuments('Item', landItems([buffData]));
+      const buffData = buffCopyData(buffIdentifier, { fallbackName: buffName, description: buffDesc });
+      await landBuff(targetActor, withFlags(buffData, { appliedBy: { messageId: '', sourceName: originItem?.name ?? buffName } }));
     }
 
     outcomeHtml = `

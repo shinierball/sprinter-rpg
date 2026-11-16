@@ -113,7 +113,7 @@ export async function registerCustomTag(tagDef) {
   return newTag;
 }
 
-/** True when the tag is descriptive: a label the GM adjudicates, which the engine never reads (a behaviour tag never is). */
+/** True when the tag is descriptive. A descriptive tag carries no rows or flags and the system applies nothing for it; a requirement or query may still match it like any tag. */
 export function isDescriptiveTag(tagId) {
   return getTagDefinition(tagId)?.descriptive === true;
 }

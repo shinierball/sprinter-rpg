@@ -38,5 +38,11 @@ export function rowFindings(item, ctx) {
       if (resolveReference(LIST_REFERENCES[key], ref, ctx.resolve).status === 'unresolved') out.push(finding('row.reference-unresolved', 'warning', `system.${key}`, { kind: LIST_REFERENCES[key], ref }));
     }
   }
+
+  // An Amazing Success trigger that inflicts a debuff names it by identifier (a weapon's, and a buff's: Rank-gated)
+  (Array.isArray(sys.asTriggers) ? sys.asTriggers : []).forEach((trigger, i) => {
+    const ref = trigger?.type === 'debuff' ? String(trigger.identifier ?? '').trim() : '';
+    if (ref && resolveReference('debuffs', ref, ctx.resolve).status === 'unresolved') out.push(finding('row.reference-unresolved', 'warning', `system.asTriggers[${i}]`, { kind: 'debuffs', ref }));
+  });
   return out;
 }

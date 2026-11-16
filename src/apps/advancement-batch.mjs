@@ -10,10 +10,10 @@ import { SYSTEM_ID } from '../constants.mjs';
 import { COGSessionEngine } from '../documents/session/session-engine.mjs';
 import { getCurrentFloor, getFloorTimer } from '../documents/actor/actor-environment.mjs';
 import { isPassiveSkill } from '../utils/tag/tag-mechanics.mjs';
-import { hasRuleFlag, RULE_FLAGS } from '../utils/tag/tag-behaviour.mjs';
 import { resolveFloorRows } from '../utils/floor/floor-limited-rows.mjs';
 import { getRankCap } from '../utils/skill/rank-cap.mjs';
-import { ADVANCEMENT_ROUTES, routeLimit } from '../utils/skill/advancement-routes.mjs';
+import { advancingItemsOf } from '../utils/skill/advancing-items.mjs';
+import { ADVANCEMENT_ROUTES, routeAllowsGain, routeLimit } from '../utils/skill/advancement-routes.mjs';
 import { confirmRouteGains } from '../documents/actor/advancement-gates.mjs';
 import { selectBatchSkills, evaluateAdvancement, untrainedTrainingAllowance, UNTRAINED_SKILLS_PER_WINDOW } from '../utils/skill/skill-advancement.mjs';
 import { effectiveFloor, raceClassUnlockFloor } from '../utils/character/race-class-floor.mjs';
@@ -22,17 +22,18 @@ import { escapeAttr } from '../utils/escape-attr.mjs';
 import { buildAdvancementBatchCard, buildLevelAwardCard } from '../chat/advancement-card.mjs';
 import { getLevelAwardPresets, levelsForPreset } from '../data/level-awards.mjs';
 
-/** The actor's skills that can advance (a `no-ranks` core action never does). */
-const skillsOf = (actor) => Array.from(actor?.items ?? []).filter(i => i.type === 'skill' && !hasRuleFlag(i, RULE_FLAGS.noRanks));
+/** The actor's skills, never spells: the untrained-attempt lookups, which a Spell cannot take part in (it needs Ranks to be cast). */
+const skillsOf = (actor) => advancingItemsOf(actor).filter(i => i.type === 'skill');
 
-/** Plain-object view of a skill for the pure selectors. */
+/** Plain-object view of a skill or spell for the pure selectors. */
 const describe = (actor, item) => ({
   item,
   id: item.id,
   name: item.name,
   rank: Number(item.system?.rank) || 0,
   checked: Boolean(item.system?.checked),
-  passive: isPassiveSkill(item),
+  // A Passive Spell is closed to the Used mark by its route limit instead (a hand-ticked one asks a Rule Break)
+  passive: item.type === 'skill' && isPassiveSkill(item),
   limit: routeLimit(item, ADVANCEMENT_ROUTES.use),
   cap: getRankCap(actor, item)
 });
@@ -122,7 +123,7 @@ export function previewBatch(actors) {
   const session = activeSession();
   const out = { twoHour: 0, floor: 0, untrained: 0 };
   for (const actor of actors ?? []) {
-    const skills = skillsOf(actor).map(i => describe(actor, i));
+    const skills = advancingItemsOf(actor).map(i => describe(actor, i));
     const twoHour = selectBatchSkills(skills, 'two-hour');
     out.twoHour += twoHour.length;
     out.floor += selectBatchSkills(skills, 'floor').length;
@@ -159,7 +160,7 @@ export async function runBatchAdvancement(actors, mode, options = {}) {
     if (!actor || actor.type !== 'crawler') continue;
     const base = { actorId: actor.id, actorName: actor.name };
 
-    const described = skillsOf(actor).map(i => describe(actor, i));
+    const described = advancingItemsOf(actor).map(i => describe(actor, i));
     const batch = selectBatchSkills(described, mode);
     // One question per crawler for every marked skill held back by its use limit; the confirmed ones roll below as Rule Breaks
     const confirmed = await confirmRouteGains(actor, batch.filter(s => s.limit !== null && s.rank >= s.limit && s.rank < s.cap).map(s => s.item), ADVANCEMENT_ROUTES.use, { options });
@@ -300,8 +301,9 @@ export function buildAdvancementControls(actors) {
     preview: previewBatch(crawlers),
     skillGroups: crawlers.map(actor => ({
       actorName: actor.name,
-      skills: skillsOf(actor)
-        .filter(s => !isPassiveSkill(s))
+      // A Passive Skill never; a Spell whose use route is closed only while it is not already marked
+      skills: advancingItemsOf(actor)
+        .filter(s => (s.type === 'skill' ? !isPassiveSkill(s) : routeAllowsGain(s, ADVANCEMENT_ROUTES.use) || s.system?.checked))
         .map(s => ({ value: `${actor.id}:${s.id}`, label: `${s.name} (Rank ${Number(s.system?.rank) || 0})${s.system?.checked ? ' *' : ''}` }))
     })).filter(g => g.skills.length)
   };

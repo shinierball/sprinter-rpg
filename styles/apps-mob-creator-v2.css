@@ -1,0 +1,76 @@
+/* The new Mob Creator (.cog-mob-creator-v2-window): the stat block and the stage panel's grids. The stage rail, the footer and the
+   section box are the Crawler Creator's shared classes (apps-floor-vehicle.css, apps-session.css). */
+.cog-mob-creator-v2-window .window-content > [hidden] { display: none; }
+
+.cog-mobv2-title {
+  margin: 0 0 8px;
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--cog-danger);
+}
+
+.cog-mobv2-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.cog-mobv2-roles { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0; }
+
+.cog-mobv2-budget { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 13px; }
+.cog-mobv2-over { color: var(--cog-danger); font-weight: bold; }
+.cog-mobv2-legal { color: var(--cog-success); }
+.cog-mobv2-custom { color: var(--cog-gold); border: 1px solid var(--cog-gold); }
+
+.cog-mobv2-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 10px 0; }
+.cog-mobv2-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: var(--cog-window-bg);
+}
+.cog-mobv2-stat label { font-family: 'Oswald', sans-serif; text-transform: uppercase; font-size: 12px; color: var(--cog-text-secondary); }
+.cog-mobv2-stat input { width: 56px; text-align: center; }
+.cog-mobv2-mod { font-family: 'Oswald', sans-serif; font-size: 12px; color: var(--cog-text-secondary); }
+
+.cog-mobv2-fill { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cog-mobv2-readout { margin: 4px 0; font-family: 'Oswald', sans-serif; font-size: 16px; }
+
+.cog-mobv2-block h3 { margin-bottom: 4px; }
+.cog-mobv2-sub { margin: 0 0 6px; font-size: 12px; color: var(--cog-text-secondary); }
+.cog-mobv2-block-stats { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 6px 0; font-size: 12px; }
+.cog-mobv2-block-stat b { font-family: 'Oswald', sans-serif; text-transform: uppercase; }
+
+/* The Attacks stage: one card per attack, weapon and dropped attack. */
+.cog-mobv2-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.cog-mobv2-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid var(--cog-panel-border);
+  border-radius: 4px;
+  background: var(--cog-window-bg);
+}
+.cog-mobv2-card-head { display: flex; align-items: center; gap: 8px; }
+.cog-mobv2-card-name { flex: 1; }
+.cog-mobv2-icon { width: 24px; height: 24px; object-fit: contain; }
+.cog-mobv2-subtitle { margin: 12px 0 4px; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: 0.6px; }
+.cog-mobv2-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cog-mobv2-notes textarea { width: 100%; }
+
+/* Layout: the rail left, the active stage in the middle, the live stat block right, the footer across the bottom. The shared
+   staged-creator rules (apps-floor-vehicle.css) name the Crawler Creator's `identity` and `panel` parts; here every stage is its
+   own part, so each takes the middle column from the first row. */
+.cog-mob-creator-v2-window.cog-creator-staged .window-content > :not([data-application-part="rail"]):not([data-application-part="preview"]):not([data-application-part="footer"]) {
+  grid-column: 2;
+  grid-row: 1 / span 6;
+}
+.cog-mob-creator-v2-window.cog-creator-staged .window-content > [data-application-part="rail"] { grid-column: 1; grid-row: 1 / span 6; }
+.cog-mob-creator-v2-window.cog-creator-staged .window-content > [data-application-part="preview"] { grid-column: 3; grid-row: 1 / span 6; }
+.cog-mob-creator-v2-window.cog-creator-staged .window-content > [data-application-part="footer"] { grid-column: 1 / -1; grid-row: 7; }

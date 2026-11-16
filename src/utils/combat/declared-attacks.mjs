@@ -9,8 +9,16 @@
  * Imports nothing from documents, so the combat, actor and chat modules may all use it.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { flagPath, readFlag } from '../flags.mjs';
+import { attackerUuidOf, targetResultsOf } from './card-flags.mjs';
 
-export const DECLARED_ATTACKS_FLAG = 'declaredAttacks';
+const DECLARED_ATTACKS_FLAG = 'declaredAttacks';
+
+/** The declarations stored on a combat as written (`{ [attack message id]: record }`), unsanitised; undefined when none. */
+export const declaredAttacksOf = (combat) => readFlag(combat, DECLARED_ATTACKS_FLAG);
+
+/** The update path of one stored declaration (or of a field inside it: append `.status` and the like). */
+export const declaredAttackPath = (declarationId) => flagPath(`${DECLARED_ATTACKS_FLAG}.${declarationId}`);
 
 /** A declaration is open until Step 3 resolves it. */
 export const DECLARATION_STATUS = Object.freeze({ DECLARED: 'declared', RESOLVED: 'resolved' });
@@ -181,10 +189,12 @@ export function sanitizeDeclaration(raw) {
 export function declarationFromMessage(message, { round = 0, now = Date.now() } = {}) {
   const f = message?.flags?.[SYSTEM_ID];
   if (!f || f.isAutoHit !== true || !isDeclarationId(message?.id)) return null;
-  const attackerUuid = typeof f.attackerUuid === 'string' && f.attackerUuid ? f.attackerUuid : null;
+  const rawAttackerUuid = attackerUuidOf(message);
+  const attackerUuid = typeof rawAttackerUuid === 'string' && rawAttackerUuid ? rawAttackerUuid : null;
   if (!attackerUuid) return null;
   const targets = {};
-  const rows = Array.isArray(f.targetResults) ? f.targetResults.slice(0, MAX_TARGETS) : [];
+  const cardRows = targetResultsOf(message);
+  const rows = Array.isArray(cardRows) ? cardRows.slice(0, MAX_TARGETS) : [];
   rows.forEach((tr, i) => {
     const uuid = typeof tr?.actorUuid === 'string' && tr.actorUuid ? tr.actorUuid : null;
     if (!uuid) return;

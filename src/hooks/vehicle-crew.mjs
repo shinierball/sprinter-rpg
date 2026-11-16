@@ -7,6 +7,7 @@ import { changeVehicleCrew, runCrewWrite, vehicleUuidOf, vehiclesCarrying, REFUS
 import { applyOwnershipSync } from '../documents/actor/ownership-relay.mjs';
 import { CREW_OPS, crewCapacity, planCrewChange, readCrew } from '../data/rules/vehicle-crew-rules.mjs';
 import { onVehicleTokenMove } from '../documents/actor/vehicle-follow.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { isActiveGM } from '../utils/gm-relay.mjs';
 import { openApplications } from '../compat.mjs';
 
@@ -154,7 +155,8 @@ export function registerVehicleCrewHooks() {
   Hooks.on('dropCanvasData', onDropCanvasData);
   Hooks.on('deleteActor', onDeleteActor);
   Hooks.on('deleteToken', onDeleteToken);
-  Hooks.on('moveToken', onVehicleTokenMove);
+  // A migration write that moves a vehicle token must not carry its occupants along
+  Hooks.on('moveToken', (tokenDoc, movement, operation) => (isMigrationWrite(operation) ? undefined : onVehicleTokenMove(tokenDoc, movement, operation)));
   Hooks.on('updateActor', closeSheetsOfVehicleLostAccess);
   Hooks.on('updateToken', closeSheetsOfVehicleLostAccess);
 }

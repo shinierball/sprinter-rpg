@@ -7,6 +7,7 @@
  * on the card, because movement data cannot tell a Step from a Move: the GM adjudicates.
  */
 import { SYSTEM_ID } from '../constants.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { isActiveGM } from '../utils/gm-relay.mjs';
 import { positionAfterMovement } from '../utils/combat/movement-position.mjs';
 import { isMarkerActor } from '../utils/area/marker.mjs';
@@ -110,5 +111,6 @@ function queueMovementOffers(tokenDoc, movement) {
 function onMovementOffersTokenMove(tokenDoc, movement) { return queueMovementOffers(tokenDoc, movement); }
 
 export function registerMovementOffersHooks() {
-  Hooks.on('moveToken', onMovementOffersTokenMove);
+  // A migration write that moves a token offers no interrupts
+  Hooks.on('moveToken', (tokenDoc, movement, operation) => (isMigrationWrite(operation) ? undefined : onMovementOffersTokenMove(tokenDoc, movement)));
 }

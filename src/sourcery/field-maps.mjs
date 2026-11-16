@@ -147,7 +147,7 @@ const S = FIELD_CLASS.STORY;
 const N = FIELD_CLASS.NAME;
 const RANKS = [5, 10, 15];
 const LABELS = ['grants', 'startingItems', 'attackModifiers', 'checkModifiers', 'damageModifiers', 'defenseModifiers',
-  'manaCostModifiers', 'recoveryModifiers', 'popularityTriggers'].map(k => [`system.${k}.*.label`, N]);
+  'manaCostModifiers', 'recoveryModifiers', 'popularityTriggers', 'eventTriggers'].map(k => [`system.${k}.*.label`, N]);
 
 /** The human text of a race or class's requirement rows: a row's display label and a note row's text. */
 const REQUIREMENT_TEXT = { 'system.requirements.*.label': N, 'system.requirements.*.text': R };
@@ -155,6 +155,7 @@ const REQUIREMENT_TEXT = { 'system.requirements.*.label': N, 'system.requirement
 /** The embedded items of a pet or a mercenary (skills, spells, gear): hand-written and public, listed so the short-line gate reads them. */
 const EMBEDDED_ROWS = {
   'items.skill.name': N, 'items.skill.system.notes': R, 'items.skill.system.checkNote': R, 'items.skill.system.upgrades': R, 'items.skill.system.range': R,
+  ...Object.fromEntries(RANKS.map(n => [`items.skill.system.rankBreaks.rank${n}.notes`, R])),
   'items.spell.name': N, 'items.spell.system.description': R, 'items.spell.system.notes': R, 'items.spell.system.effects': R,
   'items.spell.system.duration': R, 'items.spell.system.range': R, 'items.spell.system.limitations': R,
   'items.gear.name': N, 'items.gear.system.description': R, 'items.gear.system.notes': R

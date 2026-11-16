@@ -15,7 +15,9 @@ The tagging engine powers:
 
 ## 2. Tag Taxonomy & Namespaces
 
-Tags follow the lowercase dot-separated notation: `<namespace>.<identifier>`.
+Tags follow the lowercase dot-separated notation: `<namespace>.<identifier>`. A core tag's leaf is snake_case (`action.free_interrupt`); only `rule.*` leaves are kebab-case (`rule.no-redirect`). Every tag has its own label: two tags never share one.
+
+A **descriptive** tag carries no rows or flags and the system applies nothing for it; a requirement or query may still match it like any tag, but a row condition never names one.
 
 | Namespace | Purpose | Examples |
 |---|---|---|
@@ -27,12 +29,34 @@ Tags follow the lowercase dot-separated notation: `<namespace>.<identifier>`.
 | `weapon` | Weapon type (typed on a weapon and its Skill) | `weapon.longsword`, `weapon.dagger`, `weapon.bow`, `weapon.rapier` |
 | `weaponGroup` | Optional weapon group (typed, never derived) | `weaponGroup.edge`, `weaponGroup.bashing`, `weaponGroup.reach` |
 | `weaponClass` | Category | `weaponClass.melee`, `weaponClass.ranged`, `weaponClass.unarmed` |
-| `weaponProp` | Handling properties | `weaponProp.reach`, `weaponProp.thrown`, `weaponProp.versatile` |
+| `weaponProp` | Handling properties | `weaponProp.reach`, `weaponProp.thrown` |
 | `skillGroup` | Skill disciplines | `skillGroup.combat`, `skillGroup.magic`, `skillGroup.survival`, `skillGroup.crafting` |
 | `technique` | Combat technique target | `technique.unarmed`, `technique.pugilism`, `technique.wrestling` |
-| `rule` | Special mechanics | `rule.no-damage-effects` (Unarmed Combat rule limitation) |
+| `rule` | Special mechanics the engine enforces: the tag carries rows or flags, or a named engine rule reads it | `rule.no-damage-effects`, `rule.no-redirect`, `rule.requires-weapon`, `rule.aiming-offset` |
+| `perk` | Descriptive perks the engine cannot run: a label with its text, no rows or flags; the GM adjudicates it | `perk.coin_interest`, `perk.no_fall_damage`, `perk.cog.four_arms` |
+| `creature` | What a creature is, on a race, mob, pet or buff; a row can test it on the roller or the target | `creature.beast`, `creature.dog`, `creature.elf`, `creature.undead` |
+| `situation` | Why a roll is easier or harder: stock reasons, engine facts and GM-made situations | `situation.cover`, `situation.darkness`, `situation.higher_ground` |
 | `id` | Unique item identity | `id.skill.pugilism`, `id.spell.fireball`, `id.class.dcccls0000000032` |
 | `custom` | User/Homebrew tags | `custom.quantum-flux`, `custom.infernal-brand` |
+
+---
+
+## 2a. Tag id changes since 8.0.0
+
+Tag ids are stored data, so a world saved on 8.0.0 is converted when it loads (migration `rename-tag-ids`, map in `src/data/tag-rename-map.mjs`). It rewrites ids on items, actors, rows and queries. Two groups of change:
+
+- **Descriptive `rule.*` tags moved.** The perk labels races and classes carry became `perk.*` (`rule.coin_interest` is now `perk.coin_interest`; `rule.cog.four_arms` is now `perk.cog.four_arms`; a `-` in the leaf became `_`). The labels skills and spells carry became `action.*`: `rule.mind-control` is `action.mind_control`, and `rule.summon`, `rule.barrier`, `rule.flight`, `rule.latch`, `rule.extra-attack`, `rule.disadvantage`, `rule.pet-skill` and `rule.taunt` are `action.summon`, `action.barrier` and so on. The `rule` namespace now holds only tags the engine reads.
+- **Twins merged and case unified.** `shape.aura` is `delivery.aura`, `action.ignore_dr` is `action.armor_piercing`, `action.opposed` is `contest.opposed`. `rule.mounted_only` and `rule.extra_pet` are `rule.mounted-only` and `rule.extra-pet`; `resource.hp-bars` and `resource.temp-bars` are `resource.hp_bars` and `resource.temp_bars`. `kind.upgrade` is gone (it was never derived); `kind.space_upgrade` is the tag of a space upgrade.
+
+A module that shipped content with an old id needs to move to the new one. Gates read rule flags, never tag ids, so a renamed tag keeps its rule.
+
+## 2b. Creature types
+
+A `creature.*` tag says what something is. Races, mobs, pets, and buffs that change what a creature is, carry them. The ids: `animal`, `dog`, `beast`, `feline`, `elf`, `fairy`, `dwarf`, `rat_kin`, `troll`, `undead`, `elemental`, `humanoid`, `ooze`, plus the sex tags (`creature.male`, `creature.female`, `creature.nonbinary`, `creature.sex_other`). A row tests one through the role prefix: `subject.creature.elf` is the target of a check, `attacker.creature.dog` is whoever hits the row's owner. A token's creature tags come from its race or mob, so a row that tests `subject.creature.elf` applies against an elf with no hand tick. `creature.animal` also gates animal skills: a crawler whose race lacks it cannot use `skillGroup.animal` skills. The example set Creature Feature shows the tags on mobs.
+
+## 2c. Stock situation tags
+
+Ten stock attack reasons are `situation.*` tags that carry their own rows and the `universal` rule flag, so they apply to everyone's rolls whether or not the roller carries the tag: `situation.in_melee_reach`, `cover`, `darkness`, `dim_light`, `severe_weather`, `shifting_ground`, `target_larger`, `target_smaller`, `unseen_attacker`, `unseen_target` (`situation.higher_ground` has the same kind of row). Each row is an ordinary Advantage or Disadvantage row conditioned on its own tag. The Attack Options window offers them; detectors (`registerSituationDetector`, `src/utils/attack/situation-detectors.mjs`) pre-tick the ones the scene shows (size gap, an unseen attacker or target, token distance, darkness and dim light from the scene) and mark them Suggested. The `unseen` flag says a bearer cannot be seen. A GM who does not want a stock reason removes its `universal` flag in the Tag Manager. `situation.in_combat` is true only for a roller in the running combat.
 
 ---
 
@@ -135,7 +159,7 @@ Aura, interrupt, free-interrupt and reactive-trigger behavior is decided only fr
 
 | Mechanic | Tag(s) | Meaning |
 |---|---|---|
-| Aura | `delivery.aura` or `shape.aura` | Token-following, caster-centred, toggled on and off, cleared on expiry. `delivery: 'aura'` derives both. |
+| Aura | `delivery.aura` | Token-following, caster-centred, toggled on and off, cleared on expiry. `delivery: 'aura'` derives it. |
 | Interrupt-capable | `action.interrupt` | Listed by `getAvailableInterrupts` (costs 1 Action). Only spell, skill, gear and attack items are listed. |
 | Free interrupt | `action.free_interrupt` | Costs 0 Actions. Implies interrupt-capable. |
 | Interrupt trigger | `trigger.on_attack`, `trigger.on_damage`, `trigger.on_foe_leave_reach`, `trigger.on_foe_enter_reach`, `trigger.on_ally_attack`, `trigger.on_ally_hit`, `trigger.on_ally_check`, `trigger.before_ally_action` | Picks when the interrupt is offered. An item may carry several; the first match in that order is its display trigger; no trigger tag means `any` ("Anytime"). Labels come from the tag registry. |

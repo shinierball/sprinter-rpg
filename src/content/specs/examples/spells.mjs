@@ -66,7 +66,7 @@ export const EXAMPLE_SPELL_SPECS = Object.freeze([
       range: 'Self',
       checkType: 'none',
       description: '<p>Temporary Health Bars, generously provided by a sponsor who would like a word: a number of slots equal to your Constitution modifier, 2 Health each.</p>',
-      tags: ['resource.hp-bars', 'school.utility'],
+      tags: ['resource.hp_bars', 'school.utility'],
       tempBars: { hasTempBars: true, slotsFormula: 'con', hpPerSlot: 2 },
       rankBreaks: { rank5: { tempBars: { hpPerSlot: 1, barsGranted: 1 } } }
     }
@@ -105,7 +105,7 @@ export const EXAMPLE_SPELL_SPECS = Object.freeze([
       range: '30 feet',
       checkType: 'none',
       description: '<p>A 20-foot stretch of brass posts and velvet rope appears where you point. It is 1 foot thick, nobody gets past it without an invitation, and it stays for 3 rounds.</p>',
-      tags: ['delivery.placed', 'rule.barrier', 'school.utility'],
+      tags: ['delivery.placed', 'action.barrier', 'school.utility'],
       delivery: 'placed',
       area: { hasArea: true, shape: 'wall', lineLength: 20, lineWidth: 1, targetFilter: 'both' },
       durationConfig: { type: 'rounds', value: 3 },

@@ -409,7 +409,7 @@ export const SPECS = Object.freeze([
       identifier: 'script-doctoring',
       stat: 'int',
       rank: 1,
-      checkType: 'stat',
+      checkType: 'skill',
       checkNote: 'Unopposed',
       description: '<p>Fixing the third act while the cameras are rolling and nobody has yet noticed it was broken. An Intelligence check, unopposed, that you roll when you start the rewrite; it gains Ranks the way any Skill does.</p>',
       tags: ['skillGroup.utility']

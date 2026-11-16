@@ -1,0 +1,52 @@
+{{!-- Identity stage. Controls carry no `name`: each writes one spec path through data-change-action="setField" (data-path, data-type).  The part root is hidden unless this is the active stage (parts: stage ids in app.mjs). --}}
+<section class="cog-creator-section cog-mobv2-panel" data-stage="identity"{{#unless active}} hidden{{/unless}}>
+  <h3 class="cog-mobv2-title">{{localize titleKey}}</h3>
+  {{#if active}}
+    <div class="cog-mobv2-grid">
+    <div class="cog-form-group">
+      <label for="{{rootId}}-name">{{localize 'COG.MobCreator.Identity.Name'}}</label>
+      <input type="text" id="{{rootId}}-name" data-change-action="setField" data-path="name" value="{{spec.name}}" />
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-creature-type">{{localize 'COG.MobCreator.Identity.CreatureType'}}</label>
+      <select id="{{rootId}}-creature-type" data-creature-type data-change-action="setCreatureType">
+        {{#each creatureTypeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      <p class="cog-rule-hint">{{localize 'COG.MobCreator.CreatureType.Hint'}}</p>
+    </div>
+    {{#if typedCreatureType}}
+    <div class="cog-form-group">
+      <label for="{{rootId}}-creature-type-text">{{localize 'COG.MobCreator.CreatureType.OtherLabel'}}</label>
+      <input type="text" id="{{rootId}}-creature-type-text" data-change-action="setField" data-path="creatureType" value="{{spec.creatureType}}" />
+    </div>
+    {{/if}}
+    <div class="cog-form-group">
+      <label for="{{rootId}}-level">{{localize 'COG.MobCreator.Identity.Level'}}</label>
+      <input type="number" id="{{rootId}}-level" min="1" data-change-action="setField" data-path="level" data-type="int" value="{{spec.level}}" />
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-floor">{{localize 'COG.MobCreator.Identity.DesignFloor'}}</label>
+      <input type="number" id="{{rootId}}-floor" min="1" max="18" data-change-action="setField" data-path="designFloor" data-type="int" value="{{spec.designFloor}}" />
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-size">{{localize 'COG.MobCreator.Identity.Size'}}</label>
+      <select id="{{rootId}}-size" data-change-action="setField" data-path="size">
+        {{#each sizeOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-tier">{{localize 'COG.MobCreator.Identity.BossTier'}}</label>
+      <select id="{{rootId}}-tier" data-change-action="setField" data-path="bossTier">
+        {{#each tierOptions}}<option value="{{value}}"{{#if selected}} selected{{/if}}>{{label}}</option>{{/each}}
+      </select>
+      <p class="cog-rule-hint">{{tierHelp}}</p>
+    </div>
+  </div>
+  <div class="cog-mobv2-roles">
+    <label class="cog-checkbox-label"><input type="checkbox" data-change-action="setField" data-path="isUnique" data-type="bool" {{#if spec.isUnique}}checked{{/if}} /> <span>{{localize 'COG.MobCreator.Identity.Unique'}}</span></label>
+    <label class="cog-checkbox-label"><input type="checkbox" data-change-action="setField" data-path="isSummoned" data-type="bool" {{#if spec.isSummoned}}checked{{/if}} /> <span>{{localize 'COG.MobCreator.Identity.Summoned'}}</span></label>
+    <label class="cog-checkbox-label"><input type="checkbox" data-change-action="setField" data-path="isMinion" data-type="bool" {{#if spec.isMinion}}checked{{/if}} /> <span>{{localize 'COG.MobCreator.Identity.Minion'}}</span></label>
+  </div>
+  {{> "systems/sprinter-rpg/templates/items/parts/pick-list.hbs" picker=tagPicker}}
+  {{/if}}
+</section>

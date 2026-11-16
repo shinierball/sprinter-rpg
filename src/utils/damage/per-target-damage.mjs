@@ -244,7 +244,8 @@ export function resolveTargetParts({ parts, targetRows, tags }) {
   input.forEach((p, i) => {
     if (p.standby && !matchedKeys.has(p.rowKey)) return;
     const suppressed = acc.suppressStat || acc.suppressStatTypes.has(typeKey(p.type));
-    const delta = p.standby ? Number(rowByKey.get(p.rowKey)?.valueDelta) || 0 : 0;
+    // A Critical Hit's extra copy is dice only: the row's flat scaled add counts once, on the normal copy.
+    const delta = p.standby && !p.crit ? Number(rowByKey.get(p.rowKey)?.valueDelta) || 0 : 0;
     const base = p.base + delta - (suppressed ? (Number(p.statMod) || 0) : 0);
     const mult = (Number.isFinite(p.mult) ? p.mult : 1) * multiplierFor(multT, p.type);
     out.push({ ...p, amount: Math.max(0, Math.floor(base * mult)) });

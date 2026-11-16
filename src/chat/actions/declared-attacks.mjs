@@ -9,6 +9,7 @@ import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { getTagsOf } from '../../utils/tag/tag-mechanics.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { mobAttackText, TARGET_VIA } from '../../utils/combat/declared-attacks.mjs';
+import { attackerUuidOf, cardCombatIdOf, targetResultsOf } from '../../utils/combat/card-flags.mjs';
 import { combatOfDeclaration } from '../../documents/combat-declarations.mjs';
 import { COG_ACTION_TYPES } from '../../documents/combat/action-ledger.mjs';
 import { resolveActingCrawler } from './roll-evade.mjs';
@@ -26,17 +27,17 @@ function ruleBreakTaunt() {
 
 /** The attack's targets now: the declaration's in combat (after earlier Taunts), else the card's own rows. */
 function currentTargets(message) {
-  const decl = combatOfDeclaration(message?.id, message?.flags?.[SYSTEM_ID]?.combatId)?.getDeclaredAttack?.(message?.id) ?? null;
+  const decl = combatOfDeclaration(message?.id, cardCombatIdOf(message))?.getDeclaredAttack?.(message?.id) ?? null;
   if (decl) return decl.targets.map(t => ({ uuid: t.uuid, actorId: t.actorId, tokenId: t.tokenId, name: t.name }));
-  const rows = message?.flags?.[SYSTEM_ID]?.targetResults;
+  const rows = targetResultsOf(message);
   return (Array.isArray(rows) ? rows : [])
     .filter(r => typeof r?.actorUuid === 'string' && r.actorUuid)
     .map(r => ({ uuid: r.actorUuid, actorId: r.actorId ?? null, tokenId: r.tokenId ?? null, name: String(r.actorName ?? '') }));
 }
 
 /** The attack item behind the card, for its own tags (`rule.no-redirect` behaviour). */
-function attackItemOf(flags) {
-  const attacker = resolveActorByUuid(flags?.attackerUuid);
+function attackItemOf(message, flags) {
+  const attacker = resolveActorByUuid(attackerUuidOf(message));
   const items = attacker?.items;
   if (!items || !flags?.attackItemId) return null;
   return typeof items.get === 'function' ? items.get(flags.attackItemId) : Array.from(items).find(i => i?.id === flags.attackItemId) ?? null;
@@ -88,7 +89,7 @@ export async function handleTauntDeclared(event, button, message) {
     ruleBreak = true;
     interrupt = ruleBreakTaunt();
   }
-  if (hasRuleFlag(getTagsOf(attackItemOf(flags)), RULE_FLAGS.noRedirect)) {
+  if (hasRuleFlag(getTagsOf(attackItemOf(message, flags)), RULE_FLAGS.noRedirect)) {
     const verdict = await confirmRuleBreak({ title, message: mobAttackText('COG.MobAttack.TauntNoRedirect'), options: { ruleBreak } });
     if (!verdict.confirmed) return null;
     ruleBreak = true;
@@ -96,7 +97,7 @@ export async function handleTauntDeclared(event, button, message) {
 
   const autoHit = autoHitContextOf(message);
   const attackContext = {
-    attackerUuid: flags.attackerUuid ?? null,
+    attackerUuid: attackerUuidOf(message) ?? null,
     defenderId: defender.actorId,
     defenderUuid: defender.uuid,
     defenderTokenId: defender.tokenId,

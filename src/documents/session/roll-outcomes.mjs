@@ -1,6 +1,8 @@
 /**
  * The 7-Tier Roll Outcome Definitions for Sprinter RPG
  */
+import { firstScalar } from '../../utils/first-scalar.mjs';
+
 export const COG_ROLL_OUTCOMES = Object.freeze({
   CRITICAL_FAILURE: 'critical_failure',
   MAJOR_FAILURE: 'major_failure',
@@ -92,4 +94,47 @@ export function extractD20Result(roll) {
   }
 
   return null;
+}
+
+/**
+ * The d20 term of a roll as it was rolled: `1d20`, or `2d20kh` / `2d20kl` under Advantage or Disadvantage. Reads the
+ * same term `extractD20Result` reads. Null when the roll has no d20 term (a plain object carrying only `d20Result`).
+ * @param {Roll|object} roll
+ * @returns {string|null}
+ */
+export function d20ExpressionOf(roll) {
+  const terms = Array.isArray(roll?.terms) ? roll.terms : (Array.isArray(roll?.dice) ? roll.dice : []);
+  for (const term of terms) {
+    if (term?.faces !== 20 || !Array.isArray(term.results)) continue;
+    if (typeof term.expression === 'string' && term.expression) return term.expression;
+    const count = Number.isInteger(term.number) && term.number > 0 ? term.number : term.results.length;
+    const modifiers = Array.isArray(term.modifiers) ? term.modifiers.filter((m) => typeof m === 'string').join('') : '';
+    return `${count}d20${modifiers}`;
+  }
+  return null;
+}
+
+const FAIL_DEGREES = [COG_ROLL_OUTCOMES.CRITICAL_FAILURE, COG_ROLL_OUTCOMES.MAJOR_FAILURE, COG_ROLL_OUTCOMES.FAILURE];
+const DEGREE_LADDER = [...FAIL_DEGREES, COG_ROLL_OUTCOMES.NEAR_MISS, COG_ROLL_OUTCOMES.SUCCESS, COG_ROLL_OUTCOMES.AMAZING_SUCCESS, COG_ROLL_OUTCOMES.CRITICAL_SUCCESS];
+
+/**
+ * Shift a check degree by a number of steps (the book's "reduce the level of a Fail by 1"). Upward from a Fail
+ * degree it stops at Near Miss: a shift never turns a fail into a success. With `failOnly` (the default) only a Fail
+ * degree moves; without it Near Miss and the successes move too, and negative steps move down.
+ * @param {string} outcome a COG_ROLL_OUTCOMES id
+ * @param {number} steps
+ * @param {{ failOnly?: boolean }} [opts]
+ * @returns {string} the new degree id (the same id when nothing moves or the id is unknown)
+ */
+export function shiftDegree(outcome, steps, { failOnly = true } = {}) {
+  const raw = firstScalar(outcome);
+  const id = typeof raw === 'string' ? raw.trim() : '';
+  const at = DEGREE_LADDER.indexOf(id);
+  const n = Math.trunc(Number(steps));
+  if (at < 0 || !Number.isFinite(n) || n === 0) return id;
+  if (failOnly && !FAIL_DEGREES.includes(id)) return id;
+  let to = Math.max(0, Math.min(DEGREE_LADDER.length - 1, at + n));
+  const nearMiss = DEGREE_LADDER.indexOf(COG_ROLL_OUTCOMES.NEAR_MISS);
+  if (FAIL_DEGREES.includes(id) && n > 0) to = Math.min(to, nearMiss);
+  return DEGREE_LADDER[to];
 }

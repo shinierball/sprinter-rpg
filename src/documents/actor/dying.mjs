@@ -14,7 +14,8 @@ import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { conditionTagId } from '../../utils/identifier.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
 import { SECONDS_PER_ROUND } from '../../utils/time/timing.mjs';
-import { canWriteCombatant } from '../combat/combatants.mjs';
+import { canWriteCombatant, combatantOfActor } from '../combat/combatants.mjs';
+import { cleanedUpRoundOf } from '../combat/steps.mjs';
 import { conditionItemData } from './condition-data.mjs';
 import { postDyingCard, postStabilisedCard, postDeathCard } from './dying-card.mjs';
 import { creditDeferredKill } from './kill-credit.mjs';
@@ -68,7 +69,7 @@ export function isDying(actor) {
 }
 
 /** Whether the actor carries an in-force Dead debuff. */
-function isDead(actor) {
+export function isDead(actor) {
   return Boolean(deadDebuff(actor));
 }
 
@@ -82,7 +83,7 @@ function combatantsOf(actor) {
   const found = [];
   for (const combat of new Set(list)) {
     if (!(combat.started ?? Number(combat.round) >= 1)) continue;
-    const combatant = Array.from(combat.combatants ?? []).find((c) => (c.actor ?? null) === actor || (actor.id && c.actorId === actor.id));
+    const combatant = combatantOfActor(combat, actor);
     if (combatant) found.push({ combat, combatant });
   }
   return found;
@@ -97,7 +98,7 @@ const flagOf = (doc, key) => doc?.getFlag?.(SYSTEM_ID, key) ?? doc?.flags?.[SYST
 function appliedStamp(actor) {
   for (const { combat } of combatantsOf(actor)) {
     const round = Number(combat.round);
-    if (Number(flagOf(combat, 'cleanedUpRound')) === round && Number(flagOf(combat, 'durationsTickedRound')) !== round) {
+    if (Number(cleanedUpRoundOf(combat)) === round && Number(flagOf(combat, 'durationsTickedRound')) !== round) {
       return { appliedRound: round, appliedCombatId: combat.id ?? '' };
     }
   }

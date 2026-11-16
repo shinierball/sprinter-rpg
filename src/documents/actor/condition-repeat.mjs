@@ -16,10 +16,17 @@ const identifierOf = (item) => String(item?.system?.identifier ?? '').trim();
  * @param {Iterable<object>} actorItems the actor's embedded items
  * @param {object} debuffData the incoming debuff's item data (`system.repeat`)
  * @param {string} tagId the incoming debuff's condition tag
+ * @param {{ match?: (item: object) => boolean }} [opts] `match` makes the verdict about another kind of effect (an applied buff):
+ *   the first item it accepts is the copy already there, and `stack` / refresh are the only modes
  * @returns {{ action: 'create'|'refresh'|'promote'|'ask', existing: object|null, into: string }}
  *   `ask`: `existing` is the debuff the pair would become (the Long-Term form), already on the actor.
  */
-export function repeatVerdict(actorItems, debuffData, tagId) {
+export function repeatVerdict(actorItems, debuffData, tagId, { match = null } = {}) {
+  if (typeof match === 'function') {
+    const there = Array.from(actorItems ?? []).find((i) => match(i)) ?? null;
+    if (debuffData?.system?.repeat?.mode === 'stack' || !there) return { action: 'create', existing: there, into: '' };
+    return { action: 'refresh', existing: there, into: '' };
+  }
   const debuffs = Array.from(actorItems ?? []).filter((i) => i?.type === 'debuff');
   const same = tagId ? (debuffs.find((i) => carriesTag(i, tagId)) ?? null) : null;
   const mode = debuffData?.system?.repeat?.mode;

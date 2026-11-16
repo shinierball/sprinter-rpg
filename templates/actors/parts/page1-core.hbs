@@ -180,8 +180,11 @@
       <div class="cog-hp-input-group">
         <input class="cog-hp-input" name="system.attributes.hp.value" type="number" value="{{system.attributes.hp.value}}" title="Current HP" />
         <span class="cog-hp-slash">/</span>
-        <input class="cog-hp-input" name="system.attributes.hp.max" type="number" value="{{system.attributes.hp.max}}" title="Max HP ({{#if isMob}}{{system.attributes.hp.bars}} bars × {{system.attributes.hp.hpPerBar}} HP{{else}}10 × CON Mod{{/if}})" readonly />
+        <input class="cog-hp-input" name="system.attributes.hp.max" type="number" value="{{system.attributes.hp.max}}" title="Max HP ({{#if (or isMob isPet)}}{{system.attributes.hp.bars}} bars × {{system.attributes.hp.hpPerBar}} HP{{else}}10 × CON Mod{{/if}})" readonly />
       </div>
+      {{#if isPet}}
+      <span class="cog-field-label" style="margin-left: 10px;" data-tooltip-text="{{petSlots.text}}">{{system.attributes.hp.bars}} slots{{#if petSlots.overridden}} <span class="cog-state-badge">[OVERRIDE]</span>{{/if}}</span>
+      {{/if}}
       {{#if isMob}}
       <span class="cog-field-label" style="margin-left: 10px; margin-right: 4px;">Bars:</span>
       <button type="button" data-action="stepMobBars" data-delta="-1" title="Decrease Health Bar Slots (-1)" style="padding: 1px 5px; font-size: 11px; cursor: pointer;">-</button>
@@ -256,6 +259,17 @@
   {{#if system.details.pendingStatPoints}}
   <div class="cog-pending-stat-points" data-tooltip="Earned with Levels (3 each). Spend them in a saferoom.">
     <i class="fa-solid fa-circle-plus"></i> <strong>{{system.details.pendingStatPoints}}</strong> Stat point{{#unless (eq system.details.pendingStatPoints 1)}}s{{/unless}} to spend (saferoom)
+  </div>
+  {{/if}}
+
+  {{#if potionLimits.length}}
+  <div class="cog-pending-stat-points cog-potion-limits" data-tooltip="Potions that raise a Stat or a Skill for good: a crawler may take only two of each in their whole life. A third is a Rule Break.">
+    <i class="fa-solid fa-flask"></i>
+    {{#each potionLimits}}
+    <label class="cog-potion-limit{{#if this.over}} cog-over-cap{{/if}}">{{this.label}}
+      <input class="cog-field-input" name="{{this.path}}" type="number" min="0" value="{{this.value}}" /> / {{this.limit}}
+    </label>
+    {{/each}}
   </div>
   {{/if}}
 

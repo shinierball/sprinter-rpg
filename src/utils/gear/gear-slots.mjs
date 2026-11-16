@@ -34,7 +34,9 @@ export function registerGearSlot(def) {
 
 for (const [id, label] of [
   ['head', 'Head'], ['neck', 'Neck'], ['torso', 'Torso'], ['back', 'Back'], ['arms', 'Arms'], ['hands', 'Hands/Holding'],
-  ['legs', 'Legs'], ['feet', 'Feet'], ['accessory', 'Accessory'], ['tattoo', 'Tattoo'], ['patch', 'Patch']
+  ['legs', 'Legs'], ['feet', 'Feet'], ['accessory', 'Accessory'], ['tattoo', 'Tattoo'], ['patch', 'Patch'],
+  // A pet's or mount's gear (the pet sheet's slots; canon saddles and barding store these)
+  ['collar', 'Collar'], ['barding', 'Barding'], ['saddle', 'Saddle'], ['pack', 'Pack']
 ]) registerGearSlot({ id, label });
 
 /**

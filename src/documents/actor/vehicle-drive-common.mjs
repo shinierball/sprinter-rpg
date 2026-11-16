@@ -7,6 +7,7 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
+import './migrate-vehicle-card-offers.mjs';
 
 export const wholeFeet = (v) => {
   const n = Math.trunc(Number(v));
@@ -18,7 +19,7 @@ export const notify = (level, text) => globalThis.ui?.notifications?.[level]?.(t
 /** The relay action every vehicle-drive write by someone who cannot write the vehicle goes through. */
 export const RELAY_ACTION_VEHICLE_DRIVE = 'vehicleDrive';
 /** Chat-card flags the GM writes on a vehicle check card. */
-export const VEHICLE_CARD_FLAGS = Object.freeze({ result: 'vehicleResult', shifts: 'vehicleShifts', used: 'vehicleUsed', stop: 'vehicleStop' });
+export const VEHICLE_CARD_FLAGS = Object.freeze({ result: 'vehicleResult', stop: 'vehicleStop' });
 
 export const str = (v) => (typeof v === 'string' ? v.trim().slice(0, 200) : '');
 

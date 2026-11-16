@@ -27,6 +27,7 @@ import { COGPatronPicker } from '../apps/patron-picker.mjs';
 import { COGGrindApp } from '../apps/grind-app.mjs';
 import { COGCraftingApp } from '../apps/crafting-app.mjs';
 import { COGAwardLevelsApp } from '../apps/award-levels-app.mjs';
+import { COGPopularityChecklistApp } from '../apps/popularity-checklist-app.mjs';
 import { COGAuthorshipApp } from '../apps/authorship-dialog.mjs';
 import { COGItemFromWordsApp } from '../apps/item-from-words-app.mjs';
 import { COGDraftReviewApp } from '../apps/draft-review-app.mjs';
@@ -41,7 +42,8 @@ import { COGClassCreatorApp } from '../apps/class-creator.mjs';
 import { COGRaceCreatorApp } from '../apps/race-creator.mjs';
 import { COGCrawlerCreatorApp } from '../apps/crawler-creator.mjs';
 import { COGContestTrackerApp } from '../apps/contest-tracker.mjs';
-import { COGMobCreatorApp } from '../apps/mob-creator/mob-creator-app.mjs';
+import { COGMobCreatorV2App } from '../apps/mob-creator-v2/app.mjs';
+import { COGPetCreatorApp } from '../apps/pet-creator.mjs';
 import { COGFloorClockHUD } from '../apps/floor-clock-hud.mjs';
 import { COGCrawlerClockHUD } from '../apps/crawler-clock-hud.mjs';
 import { COGEffectsPanel } from '../apps/effects-panel.mjs';
@@ -92,12 +94,15 @@ export const TEMPLATE_PATHS = Object.freeze([
   `${SYSTEM_PATH}/templates/shared/source-badge.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/page1-core.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/identity-pet.hbs`,
+  `${SYSTEM_PATH}/templates/actors/parts/pet-role.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/identity-mercenary.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/vehicle-role-select.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/hotlist.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/sex-select.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/page3-skills.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/spells.hbs`,
+  `${SYSTEM_PATH}/templates/actors/parts/grind-strip.hbs`,
+  `${SYSTEM_PATH}/templates/actors/parts/advancement-check-button.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/page4-inventory.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/conditions.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/transformation-banner.hbs`,
@@ -144,6 +149,7 @@ export const TEMPLATE_PATHS = Object.freeze([
   `${SYSTEM_PATH}/templates/apps/add-event-dialog.hbs`,
   // Shared GM advancement controls (Session Hub, Grind app)
   `${SYSTEM_PATH}/templates/apps/partials/advancement-controls.hbs`,
+  `${SYSTEM_PATH}/templates/apps/partials/popularity-controls.hbs`,
   `${SYSTEM_PATH}/templates/apps/partials/point-build-params.hbs`,
   `${SYSTEM_PATH}/templates/apps/point-builder/skill-rows.hbs`,
   `${SYSTEM_PATH}/templates/apps/point-builder/perk-rows.hbs`,
@@ -186,6 +192,7 @@ export const TEMPLATE_PATHS = Object.freeze([
   `${SYSTEM_PATH}/templates/items/parts/feature-list.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/pick-list.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/as-triggers.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/applied-buffs.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/blueprint.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/loot-box.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/outcome-cure-filter.hbs`,
@@ -210,9 +217,9 @@ export const TOOL_APP_CLASSES = [
   COGStashApp, COGBuffDebuffManager, COGTagManager, COGAchievementManagerApp, COGSkillManager,
   COGSpellManager, COGItemManager, COGDeityPicker, COGPatronPicker, COGDeityGiftDialog, COGOfferingDialog, COGGrindApp, COGCraftingApp, COGAwardLevelsApp, COGRapidBatchImportApp, COGMercenaryGuildApp,
   COGCombatArchiveApp, COGCombatMetricsApp, COGSessionManagerApp, COGClassCreatorApp,
-  COGRaceCreatorApp, COGCrawlerCreatorApp, COGMobCreatorApp, COGContestTrackerApp,
+  COGRaceCreatorApp, COGCrawlerCreatorApp, COGMobCreatorV2App, COGPetCreatorApp, COGContestTrackerApp,
   COGFloorClockHUD, COGCrawlerClockHUD, COGEffectsPanel,
-  COGCrawlerHotbarHUD, COGCrawlerActionHUD, COGSourceryImporterApp, COGLootBoxShowApp, COGAuthorshipApp, COGThemeCleanupApp, COGSpacePricesApp, COGItemFromWordsApp, COGDraftReviewApp, COGItemSetupApp, COGWeaponBuilderApp
+  COGCrawlerHotbarHUD, COGCrawlerActionHUD, COGSourceryImporterApp, COGLootBoxShowApp, COGAuthorshipApp, COGThemeCleanupApp, COGSpacePricesApp, COGItemFromWordsApp, COGDraftReviewApp, COGItemSetupApp, COGWeaponBuilderApp, COGPopularityChecklistApp
 ];
 
 export function preloadTemplates() {

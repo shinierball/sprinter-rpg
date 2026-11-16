@@ -1,0 +1,31 @@
+{{#if petRole.show}}
+<div class="cog-field-row cog-pet-role">
+  <div class="cog-field-group flex-2">
+    <span class="cog-field-label">Role</span>
+    <div style="display: flex; align-items: center; gap: 6px; min-height: 26px; flex-wrap: wrap;">
+      {{#if petRole.hasRole}}
+        <span class="cog-badge cog-badge-item">[{{petRole.roleBadge}}]</span>
+      {{else}}
+        <span class="cog-text-muted" style="font-style: italic; font-size: 12px;">No role yet</span>
+      {{/if}}
+      <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="petChooseRole" title="A pet has one role: Tank, Aggressive or Utility" style="padding: 1px 6px; border: none; border-radius: 3px; cursor: pointer;">
+        {{#if petRole.hasRole}}Change role{{else}}Choose role{{/if}}
+      </button>
+    </div>
+  </div>
+  <div class="cog-field-group flex-4">
+    <span class="cog-field-label">Special abilities (picks left: {{petRole.picksLeft}})</span>
+    <div style="display: flex; align-items: center; gap: 6px; min-height: 26px; flex-wrap: wrap;">
+      {{#each petRole.abilities}}
+        <span class="cog-badge cog-badge-gear">{{name}}
+          <a data-action="petRemoveAbility" data-item-id="{{id}}" title="Remove this ability"><i class="fa-solid fa-xmark"></i></a>
+        </span>
+      {{/each}}
+      <button type="button" class="cog-btn-xs cog-bg-neutral-fill cog-text-on-fill" data-action="petAddAbility" title="Add a special ability" style="padding: 1px 6px; border: none; border-radius: 3px; cursor: pointer;">
+        Add ability
+      </button>
+      {{#if petRole.matureNote}}<span class="cog-text-muted" style="font-size: 10px;">{{petRole.matureNote}}</span>{{/if}}
+    </div>
+  </div>
+</div>
+{{/if}}

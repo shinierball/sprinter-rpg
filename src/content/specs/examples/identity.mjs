@@ -80,7 +80,7 @@ export const EXAMPLE_IDENTITY_SPECS = Object.freeze([
       {
         name: 'Crowd Work',
         rows: [
-          row('tags', 'rule.mind-control'),
+          row('tags', 'action.mind_control'),
           row('manaCostModifiers', { mode: 'add', value: 1, label: 'Pyrotechnics surcharge', condition: q(['element.fire']) }),
           row('manaCostModifiers', { mode: 'multiply', multiplier: 0.5, label: 'Bard discount', condition: q(['favored.bard']) }),
           row('statSubstitutions', { scope: 'damage', from: 'str', to: 'cha', optional: true, label: 'Hit them with charisma', condition: q(['weaponClass.unarmed']) }),

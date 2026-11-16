@@ -277,6 +277,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
   transition: all 0.15s ease;
 }
 
@@ -309,13 +310,15 @@
 
 .cog-crawler-identity {
   flex: 1;
+  min-width: 0;
 }
 
-.cog-crawler-name-row {
+.cog-crawler-card-buttons {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
+  margin-bottom: 2px;
 }
 
 .cog-crawler-name {
@@ -323,6 +326,9 @@
   font-size: 15px;
   color: var(--cog-text-strong);
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cog-btn-toggle-track {
@@ -374,6 +380,7 @@
 
 .cog-crawler-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   font-size: 10px;
@@ -2042,3 +2049,108 @@
   background: var(--cog-window-bg);
 }
 
+
+/* ==========================================================================
+   POPULARITY CHECKLIST (window and Session Manager buttons)
+   ========================================================================== */
+
+.cog-popularity-checklist-app .window-content {
+  background: var(--cog-window-bg);
+  color: var(--cog-text);
+  font-family: 'Oswald', sans-serif;
+  padding: 0;
+  overflow: hidden;
+}
+
+.cog-pc {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cog-pc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--cog-surface);
+  border-bottom: 2px solid var(--cog-accent);
+}
+
+.cog-pc-moments { display: flex; gap: 6px; }
+.cog-pc-period { font-size: 13px; color: var(--cog-text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.cog-pc-due {
+  background: var(--cog-accent);
+  color: var(--cog-window-bg);
+  border-radius: 3px;
+  padding: 0 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.cog-pc-banner {
+  margin: 8px 14px 0;
+  padding: 6px 10px;
+  border: 1px solid var(--cog-gold-border);
+  background: var(--cog-gold-tint);
+  color: var(--cog-text);
+  font-size: 12px;
+}
+
+.cog-pc-grid-wrap { flex: 1; overflow: auto; padding: 8px 14px; }
+
+.cog-pc-grid { border-collapse: collapse; width: 100%; font-size: 12px; }
+.cog-pc-grid th,
+.cog-pc-grid td { border: 1px solid var(--cog-border); padding: 4px 6px; vertical-align: top; text-align: left; }
+.cog-pc-grid thead th { background: var(--cog-surface); }
+.cog-pc-change-col { min-width: 170px; font-weight: 600; }
+.cog-pc-value { color: var(--cog-gold); margin-left: 4px; }
+.cog-pc-excluded { opacity: 0.45; }
+
+.cog-pc-include { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.cog-pc-portrait { width: 24px; height: 24px; border: 1px solid var(--cog-border); border-radius: 3px; object-fit: cover; }
+.cog-pc-name { color: var(--cog-text-strong); font-weight: 700; }
+.cog-pc-now { margin-top: 2px; color: var(--cog-text-muted); }
+.cog-pc-cross { margin-top: 2px; color: var(--cog-info); font-size: 11px; }
+
+.cog-pc-cell-controls { display: flex; align-items: center; gap: 6px; }
+.cog-pc-cell-controls input[type="text"] { flex: 1; min-width: 70px; }
+.cog-pc-amount { width: 52px; }
+.cog-pc-hint { margin-top: 2px; color: var(--cog-text-muted); font-size: 11px; }
+.cog-pc-used { color: var(--cog-danger); font-weight: 700; font-size: 10px; }
+
+.cog-pc-boxes { margin-top: 12px; }
+.cog-pc-boxes h4 { margin: 0 0 6px; color: var(--cog-text-strong); text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+.cog-pc-box { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.cog-pc-award { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+.cog-pc-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--cog-surface);
+  border-top: 1px solid var(--cog-border);
+}
+
+.cog-popularity-controls {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--cog-border);
+  border-radius: 6px;
+  background: var(--cog-surface);
+  font-family: 'Oswald', sans-serif;
+}
+
+.cog-popularity-controls-title {
+  margin-bottom: 6px;
+  color: var(--cog-gold);
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cog-popularity-controls-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

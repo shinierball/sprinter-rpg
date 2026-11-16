@@ -8,10 +8,16 @@
 
 import { COGCombat } from '../documents/combat.mjs';
 import { COG_ACTION_TYPES } from '../documents/combat/action-ledger.mjs';
+import { metricsOf, roundHistoryOf } from '../documents/combat/combat-flags.mjs';
+import { readFlag, writeFlag, clearFlag } from '../utils/flags.mjs';
 import { getRequiredXPForLevel } from '../documents/actor.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { XP_CONFIG_SETTING, DEFAULT_XP_WEIGHTS } from '../utils/combat/xp-config.mjs';
+
+/** What a live combat stores once its XP is awarded (`{ xpAwarded, awardedCrawlers, ... }`), so an award is not paid twice. */
+const XP_AWARDED_FLAG = 'xpAwarded';
+const xpAwardOf = (combat) => readFlag(combat, XP_AWARDED_FLAG);
 
 export class COGExperienceTracker {
   /**
@@ -84,8 +90,8 @@ export class COGExperienceTracker {
 
     const weights = { ...this.getXPConfig(), ...(customWeights || {}) };
     const combatants = Array.from(combatData.combatants || []);
-    const metrics = combatData.metrics || (combatData.getFlag ? combatData.getFlag(SYSTEM_ID, 'metrics') : null) || {};
-    const roundHistory = combatData.roundHistory || (combatData.getFlag ? combatData.getFlag(SYSTEM_ID, 'roundHistory') : null) || {};
+    const metrics = combatData.metrics || metricsOf(combatData);
+    const roundHistory = combatData.roundHistory || roundHistoryOf(combatData);
 
     const mobs = [];
     const crawlers = [];
@@ -302,7 +308,7 @@ export class COGExperienceTracker {
       throw new Error(`Encounter ${id} not found.`);
     }
 
-    const liveAwardFlag = liveCombat?.getFlag?.(SYSTEM_ID, 'xpAwarded');
+    const liveAwardFlag = xpAwardOf(liveCombat);
     const isAlreadyAwarded = Boolean(combatRecord.xpAwarded || liveAwardFlag?.xpAwarded);
 
     if (isAlreadyAwarded && !options.force) {
@@ -343,7 +349,7 @@ export class COGExperienceTracker {
 
     // Update live combat if active
     if (liveCombat?.setFlag) {
-      await liveCombat.setFlag(SYSTEM_ID, 'xpAwarded', awardMetadata);
+      await writeFlag(liveCombat, XP_AWARDED_FLAG, awardMetadata);
       liveCombat.xpAwarded = true;
       liveCombat.awardedCrawlers = awardedList;
     }
@@ -422,7 +428,7 @@ export class COGExperienceTracker {
     const archives = COGCombat.getArchivedCombats();
     combatRecord = archives.find(a => a.id === id) || liveCombat || (typeof combatOrId === 'object' ? combatOrId : null);
 
-    const liveAwardFlag = liveCombat?.getFlag?.(SYSTEM_ID, 'xpAwarded');
+    const liveAwardFlag = xpAwardOf(liveCombat);
     const isAwarded = Boolean(combatRecord?.xpAwarded || liveAwardFlag?.xpAwarded);
 
     if (!combatRecord || !isAwarded) {
@@ -450,7 +456,7 @@ export class COGExperienceTracker {
 
     // Clear flags
     if (liveCombat?.unsetFlag) {
-      await liveCombat.unsetFlag(SYSTEM_ID, 'xpAwarded');
+      await clearFlag(liveCombat, XP_AWARDED_FLAG);
     }
     if (liveCombat) {
       liveCombat.xpAwarded = false;

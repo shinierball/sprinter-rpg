@@ -8,7 +8,7 @@
 
     {{#if isActorPicker}}
       <button type="button" data-action="addToActor" class="cog-sm-action-btn cog-sm-add-to-actor cog-bg-success-fill">
-        <i class="fa-solid fa-user-plus"></i> Add Selected to {{actor.name}}
+        <i class="fa-solid fa-user-plus"></i> Add Selected{{#if actor}} to {{actor.name}}{{/if}}
       </button>
     {{/if}}
 

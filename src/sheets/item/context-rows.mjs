@@ -31,12 +31,12 @@ function rowBadges(arrayKey, row) {
 }
 
 /** One row's view. */
-function rowView(arrayKey, row, idx, count, item, damageTypes, preview = null) {
+function rowView(arrayKey, row, idx, count, item, damageTypes, preview = null, availableDebuffs = [], availableBuffs = []) {
   const rowPath = `system.${arrayKey}.${idx}`;
   const kind = kindView(arrayKey, row, rowPath);
   const resolved = rowKindOf(arrayKey, row);
   const kindId = kindOf(arrayKey, row);
-  const ctx = { item, arrayKey, kindId, def: resolved.def, rowPath, damageTypes };
+  const ctx = { item, arrayKey, kindId, def: resolved.def, rowPath, damageTypes, availableDebuffs, availableBuffs };
   // A registered kind shows its own fields; a single-kind array shows all of the array's; an unregistered kind none.
   const kindFields = resolved.def ? resolved.def.fields : [];
   const names = [...kindFields, ...commonFieldNames(item, arrayKey)];
@@ -114,7 +114,7 @@ export function buildRowEditorContext(context, item, { preview = null } = {}) {
       titleKey: `${group}.Title`,
       addKey: `${group}.Add`,
       conditionHintKey: `${group}.ConditionHint`,
-      rows: rows.map((row, idx) => rowView(arrayKey, row ?? {}, idx, rows.length, item, damageTypes, previews))
+      rows: rows.map((row, idx) => rowView(arrayKey, row ?? {}, idx, rows.length, item, damageTypes, previews, context.availableDebuffs, context.availableBuffs))
     });
   }
   const { actor, target, ...previewHeader } = dry;

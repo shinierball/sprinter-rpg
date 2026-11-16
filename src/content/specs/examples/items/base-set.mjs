@@ -147,7 +147,7 @@ const SPELLS = [
     // The area carries roll bonuses as attack, evade and damage only, so the allies' "+1" is the attack bonus.
     area: { hasArea: true, radius: 10, targetFilter: 'allies', attackBonus: 1 },
     durationConfig: { type: 'minutes', value: 1 }, duration: '1 minute',
-    tags: ['favored.paladin', 'favored.bard', 'delivery.aura', 'shape.aura'],
+    tags: ['favored.paladin', 'favored.bard', 'delivery.aura'],
     description: '<p>You open with a song nobody asked for, and everyone within 10 feet of you feels slightly better prepared. Allies in the aura get +1 to attack rolls for a minute.</p>'
   }),
   spell(13, 'Applause Sign', 'icons/svg/aura.svg', {
@@ -155,7 +155,7 @@ const SPELLS = [
     // An aura of radius 0 reaches only its caster: the engine puts the Evade bonus on whoever stands in the aura.
     area: { hasArea: true, radius: 0, targetFilter: 'allies', evadeBonus: 1 },
     durationConfig: { type: 'rounds', value: 1 }, duration: '1 round',
-    tags: ['element.fire', 'element.force', 'element.sonic', 'favored.mage', 'favored.bard', 'favored.cleric', 'favored.paladin', 'favored.druid', 'delivery.aura', 'shape.aura'],
+    tags: ['element.fire', 'element.force', 'element.sonic', 'favored.mage', 'favored.bard', 'favored.cleric', 'favored.paladin', 'favored.druid', 'delivery.aura'],
     description: '<p>It lights up. That is the spell. Also +1 Evade until your next turn, because the booth is rooting for you.</p>'
   })
 ];

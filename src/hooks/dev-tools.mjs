@@ -42,6 +42,7 @@ import { openApplications } from '../compat.mjs';
 import { COGActorSheetV2 } from '../sheets/base/actor-sheet-v2.mjs';
 import { COGToolApp } from '../apps/tool-app.mjs';
 import { COGItemSheetV2 } from '../sheets/base/item-sheet-v2.mjs';
+import { runMigrationsFromConsole } from '../documents/migrations/migrate-at-ready.mjs';
 
 /** Every system window: tool apps and the V2 actor / item sheets. */
 const isCOGWindow = (app) => app instanceof COGToolApp || app instanceof COGActorSheetV2 || app instanceof COGItemSheetV2;
@@ -66,6 +67,12 @@ export function buildDevApi() {
     floorClockHUD: COGFloorClockHUD,
     effectsPanel: COGEffectsPanel,
     setupInitialHotbar,
+    // World migrations from the console: `cog.migrations.run({ migrations: [probe], dryRun: true })`.
+    migrations: {
+      run(options = {}) {
+        return runMigrationsFromConsole(options);
+      }
+    },
     openAchievementManager(options = {}) {
       return COGAchievementManagerApp.open(options);
     },

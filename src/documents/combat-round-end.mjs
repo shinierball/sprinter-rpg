@@ -7,7 +7,7 @@
  * round's floor bound. The triggered rows post as one chat card (`postRoundEndEffectsChatCard`).
  */
 
-import { SYSTEM_ID } from '../constants.mjs';
+import { readFlag, writeFlag } from '../utils/flags.mjs';
 import { COGCombatMetrics } from './combat-metrics.mjs';
 import { getCurrentFloor } from './actor/actor-environment.mjs';
 import { zeroHealthOutcome, ZERO_HEALTH } from './actor/dying.mjs';
@@ -409,6 +409,9 @@ export async function postRoundEndEffectsChatCard(results, round) {
   });
 }
 
+/** The last round whose end effects ran, kept on the combat so a reload does not run them twice. */
+const ROUND_END_EFFECTS_ROUND_FLAG = 'roundEndEffectsRound';
+
 /**
  * Automatically trigger all debuffs that cause damage and all buffs that cause healing
  * across all combatants at the end of a combat round. Guarded per round: a second call for the same round (even
@@ -421,12 +424,12 @@ export async function triggerRoundEndEffects(combat, round = combat.round) {
   const r = Number(round) || 1;
   combat._triggeredRoundEndEffects = combat._triggeredRoundEndEffects || new Set();
   const roundKey = `${combat.id || 'active'}-round-${r}`;
-  const doneRound = Number(combat.getFlag?.(SYSTEM_ID, 'roundEndEffectsRound') ?? combat.flags?.[SYSTEM_ID]?.roundEndEffectsRound) || 0;
+  const doneRound = Number(readFlag(combat, ROUND_END_EFFECTS_ROUND_FLAG)) || 0;
   if (combat._triggeredRoundEndEffects.has(roundKey) || doneRound >= r) {
     return [];
   }
   combat._triggeredRoundEndEffects.add(roundKey);
-  if (typeof combat.setFlag === 'function') await combat.setFlag(SYSTEM_ID, 'roundEndEffectsRound', r);
+  await writeFlag(combat, ROUND_END_EFFECTS_ROUND_FLAG, r);
 
   const currentFloor = getCurrentFloor();
 

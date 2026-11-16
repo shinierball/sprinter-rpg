@@ -9,6 +9,8 @@
 import { ROW_ARRAYS, getRowKind, kindOf, listRowKinds, rowKindOf } from '../../utils/row-kinds.mjs';
 import { SCOPED_ARRAYS, isScopedSource } from '../../utils/roll/damage-modifiers.mjs';
 import { choiceOptions } from '../../utils/ui/field-options.mjs';
+import { identifierOptions } from '../../utils/ui/identifier-options.mjs';
+import { buffTargetTags } from '../../utils/effects/applied-buff.mjs';
 import { hasSystemField } from './util.mjs';
 
 /** Per array: banner icon and the `COG.Rows.Array.<key>.*` group. Block order is `ROW_ARRAYS` order. */
@@ -22,6 +24,7 @@ export const ARRAY_UI = Object.freeze({
   manaCostModifiers: { icon: 'fa-flask', key: 'ManaCost' },
   recoveryModifiers: { icon: 'fa-bed', key: 'Recovery' },
   popularityTriggers: { icon: 'fa-star', key: 'Popularity' },
+  eventTriggers: { icon: 'fa-bolt-lightning', key: 'EventTrigger' },
   aiFavorRatings: { icon: 'fa-hand-holding-heart', key: 'AiFavor' },
   statSubstitutions: { icon: 'fa-arrow-right-arrow-left', key: 'Substitution' }
 });
@@ -41,18 +44,24 @@ export const FIELD_UI = Object.freeze({
       'defenseModifiers:tempHp': 'COG.Rows.Field.TempHp',
       'defenseModifiers:evade': 'COG.Rows.Field.EvadeBonus',
       'defenseModifiers:reflect': 'COG.Rows.Field.ReflectMinSlots',
+      'defenseModifiers:retaliate': 'COG.Rows.Field.RetaliateValue',
       attackModifiers: 'COG.Rows.Field.Bonus',
       checkModifiers: 'COG.Rows.Field.Bonus',
       'checkModifiers:degreeShift': 'COG.Rows.Field.ShiftSteps',
       craftModifiers: 'COG.Rows.Field.CraftMaxBonus',
       'craftModifiers:salvage': 'COG.Rows.Field.CraftSalvageSteps',
       'vehicleModifiers:moveAdd': 'COG.Rows.Field.VehicleMoveAdd',
+      'vehicleModifiers:moveSet': 'COG.Rows.Field.VehicleMoveAdd',
       manaCostModifiers: 'COG.Rows.Field.Mana',
       popularityTriggers: 'COG.Rows.Field.PopularityAmount',
+      'eventTriggers:heal': 'COG.Rows.Field.TriggerHealSlots',
+      'eventTriggers:gold': 'COG.Rows.Field.TriggerGold',
+      'eventTriggers:aiFavor': 'COG.Rows.Field.TriggerAiFavor',
+      'defenseModifiers:paidDr': 'COG.Rows.Field.PaidDrPerPoint',
       aiFavorRatings: 'COG.Rows.Field.AiFavorAmount'
     }
   },
-  dice: { placeholder: '1d6' },
+  dice: { placeholder: '1d6', labels: { 'defenseModifiers:reflect': 'COG.Rows.Field.ReflectChance', 'defenseModifiers:retaliate': 'COG.Rows.Field.RetaliateDice' } },
   stat: { options: 'stats' },
   multiplier: { step: 'any', labels: { 'vehicleModifiers:moveMultiply': 'COG.Rows.Field.VehicleMoveMultiplier', 'craftModifiers:batchTime': 'COG.Rows.Field.CraftBatchMultiplier', 'craftModifiers:materials': 'COG.Rows.Field.CraftMaterialMultiplier', craftModifiers: 'COG.Rows.Field.CraftTimeMultiplier' } },
   damageType: {
@@ -69,7 +78,13 @@ export const FIELD_UI = Object.freeze({
   advantage: {},
   resource: {},
   event: {},
+  debuff: { input: 'select', options: 'debuffs', blank: 'COG.Rows.Choice.None' },
+  identifier: { input: 'select', options: 'buffs', blank: 'COG.Rows.Choice.None' },
+  target: { input: 'select', options: 'buffTargets' },
+  range: {},
+  skill: {},
   oncePer: {},
+  limit: {},
   scope: { scopeGated: true },
   from: { options: 'stats' },
   to: { options: 'stats' },
@@ -132,6 +147,18 @@ function selectOptionsFor(field, ui, row, sf, ctx) {
     const typed = choiceOptions(ctx.damageTypes ?? [], current || '');
     return [{ value: '', label: blankKey, selected: !String(current ?? '').trim() }, ...typed];
   }
+  if (ui.options === 'debuffs') {
+    // The debuffs the item sheet lists, by identifier; a stored identifier the list lacks keeps its own option
+    return identifierOptions(ctx.availableDebuffs ?? [], current, { blankLabel: ui.blank });
+  }
+  if (ui.options === 'buffs') return identifierOptions(ctx.availableBuffs ?? [], current, { blankLabel: ui.blank });
+  if (ui.options === 'buffTargets') {
+    // The target tags a buff row may name; a stored tag the list lacks keeps its own option
+    const entries = buffTargetTags().map(({ id, label }) => ({ value: id, label }));
+    const stored = String(current ?? '');
+    if (stored && !entries.some((e) => e.value === stored)) entries.push({ value: stored, label: 'COG.Rows.Choice.NotDeclared', labelValue: stored });
+    return withSelected(entries, stored);
+  }
   if (ui.options === 'kindOption') {
     const option = ctx.def?.option;
     if (!option) return null;
@@ -166,6 +193,8 @@ export function fieldView(field, row, ctx) {
   const sf = elementFieldsOf(ctx.item, ctx.arrayKey)[field];
   if (!sf) return null;
   const ui = FIELD_UI[field] ?? {};
+  // A Level gained has no limit: an `eventTriggers` row of event `levelUp` shows neither "once per" nor "limit"
+  if (ctx.arrayKey === 'eventTriggers' && row?.event === 'levelUp' && (field === 'oncePer' || field === 'limit')) return null;
   if (ui.rankGated && !hasSystemField(ctx.item, 'rank')) return null;
   // E8.7: "Applies to" on a roll array shows only on items whose rows can be scoped to themselves.
   if (ui.scopeGated && SCOPED_ARRAYS.has(ctx.arrayKey) && !isScopedSource(ctx.item)) return null;

@@ -152,6 +152,7 @@ export function buildRewardBoxesContext(context, item) {
       tier,
       tierOptions: lootBoxTierOptions(tier).map((o) => ({ value: o.key, label: o.label, selected: o.selected })),
       quantity: Number(row?.quantity) || 1,
+      whenEmpty: row?.whenEmpty === 'keep',
       templateName: String(row?.name ?? ''),
       hasTemplate: Boolean(row?.uuid || row?.identifier)
     };

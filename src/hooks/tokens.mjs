@@ -4,6 +4,7 @@
  */
 
 import { LINKED_ACTOR_TYPES } from '../utils/document-types.mjs';
+import { numberMobToken } from '../utils/token/mob-token-name.mjs';
 import { relinkCharacterTokens } from '../documents/actor/token-link.mjs';
 
 /**
@@ -21,27 +22,14 @@ function onPreCreateToken(tokenDoc, createData, options, userId) {
     // "Goblin" -> "Goblin 1", "Goblin 2", etc.
     // If copying/pasting "Goblin 2", base name is extracted as "Goblin" and increments to "Goblin 3".
     const rawName = tokenDoc.name || actor.name || 'Mob';
-    const baseMatch = rawName.match(/^(.*?)(?:\s+(\d+))?$/);
-    const baseName = (baseMatch ? baseMatch[1] : rawName).trim();
-
     const scene = tokenDoc.parent || canvas?.scene;
-    let nextNum = 1;
-    if (scene?.tokens) {
-      const escaped = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`^${escaped}(?:\\s+(\\d+))?$`, 'i');
-      const numbers = [];
-      for (const t of scene.tokens) {
-        if (t.id && t.id === tokenDoc.id) continue;
-        const match = (t.name || '').match(regex);
-        if (match) {
-          numbers.push(match[1] ? parseInt(match[1], 10) : 1);
-        }
-      }
-      if (numbers.length > 0) {
-        nextNum = Math.max(...numbers) + 1;
-      }
+    const sceneNames = [];
+    for (const t of scene?.tokens ?? []) {
+      if (t.id && t.id === tokenDoc.id) continue;
+      sceneNames.push(t.name);
     }
-    updates.name = `${baseName} ${nextNum}`;
+    // `options` is the one operation every token of a batch shares, so each counts the ones before it.
+    updates.name = numberMobToken(rawName, sceneNames, options);
     tokenDoc.updateSource(updates);
   }
 }

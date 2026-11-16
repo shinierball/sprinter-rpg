@@ -18,13 +18,18 @@ function rowSummary(row) {
 }
 
 /**
- * Adds `context.asTriggers` for a gear or attack item.
+ * Adds `context.asTriggers` for a gear, attack or buff item.
  * @param {object} context the sheet context (`context.system` is the working copy, `context.item` the document)
  * @returns {object} the added block
  */
 export function buildAsTriggerContext(context) {
   const item = context.item;
   const { entries } = buildAsTriggerEntries(context.system?.asTriggers, context.availableDebuffs);
+  // A buff's triggers each start at their own Rank and carry no one-per-weapon limit: they fire beside a weapon's own.
+  if (item?.type === 'buff') {
+    context.asTriggers = { ...asTriggerView(entries, [], entries.length), overLimit: false, ranked: true };
+    return context.asTriggers;
+  }
   const rows = asTriggerRowsOf(item).map((row) => ({ label: row.label || loc('COG.AmazingSuccess.Editor.DamageRow'), summary: rowSummary(row) }));
   const count = asTriggerCount(item);
   context.asTriggers = asTriggerView(entries, rows, count);
@@ -48,6 +53,8 @@ function buildAsTriggerEntries(triggers, availableDebuffs) {
       identifierName: `system.asTriggers.${index}.identifier`,
       textName: `system.asTriggers.${index}.text`,
       labelName: `system.asTriggers.${index}.label`,
+      minRankName: `system.asTriggers.${index}.minRank`,
+      minRank: Math.max(0, Math.trunc(Number(trigger.minRank)) || 0),
       type,
       isDebuff: type === 'debuff',
       isNarrative: type === 'narrative',

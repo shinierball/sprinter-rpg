@@ -71,7 +71,9 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
       source: new fields.StringField({ initial: '' }),
       sourceUuid: new fields.StringField({ initial: '' }),
       // `element.<type>` tag the pool is limited to; empty = absorbs damage of every type
-      element: new fields.StringField({ initial: '' })
+      element: new fields.StringField({ initial: '' }),
+      // a tag whose damage passes the pool by (`kind.spell` = non-magic only); empty = the pool takes every hit
+      passTag: new fields.StringField({ initial: '' })
     });
   }
 
@@ -167,7 +169,7 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
    * Define standard Sprinter RPG base attributes schema
    * @returns {foundry.data.fields.SchemaField}
    */
-  static defineBaseAttributesField() {
+  static defineBaseAttributesField({ hpFields = {} } = {}) {
     const fields = globalThis.foundry.data.fields;
 
     return new fields.SchemaField({
@@ -176,6 +178,7 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
         max: new fields.NumberField({ required: true, integer: true, initial: 40 }),
         temp: new fields.NumberField({ integer: true, initial: 0 }),
         pct: new fields.NumberField({ integer: true, initial: 100 }),
+        ...hpFields,
         tempBars: BaseActorDataModel.defineTempBarsField()
       }),
       mana: new fields.SchemaField({
@@ -304,6 +307,7 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
     const flooredStats = mergeFloored(buffs.floored, debuffs.floored);
     const buffStatBonuses = Object.fromEntries(Object.keys(buffs.stats).map(k => [k, buffs.stats[k] + debuffs.stats[k]]));
     const buffStatPct = Object.fromEntries(Object.keys(buffs.pct).map(k => [k, buffs.pct[k] + debuffs.pct[k]]));
+    const buffStatEarly = Object.fromEntries(Object.keys(buffs.early).map(k => [k, buffs.early[k] + debuffs.early[k]]));
     const gearStatBonuses = gear.stats;
     const gearDR = gear.dr + gearDefense.dr;
     const gearEvade = gearDefense.evade;
@@ -322,7 +326,7 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
         // Race/class stat cap: shown beside the score, and flagged when the base score is above it.
         ability.statCap = statCaps[key] ?? null;
         ability.overCap = ability.statCap !== null && unenhanced > ability.statCap;
-        const { gearBonus, buffBonus } = statBonuses(unenhanced, gearStatBonuses[key], buffStatBonuses[key], buffStatPct[key]);
+        const { gearBonus, buffBonus } = statBonuses(unenhanced, gearStatBonuses[key], buffStatBonuses[key], buffStatPct[key], buffStatEarly[key]);
         ability.gearBonus = gearBonus;
         // Offline readout: what the worn gear that stopped responding would have added (0 outside a zone)
         ability.offlineGearBonus = offline
@@ -491,8 +495,8 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
     }
     const tagGrants = collectTagBonusGrants({ equippedGear: rankGear, activeBuffs, items });
     const rankRaises = collectRankRaiseGrants({ sources: [...rankGear, ...activeBuffs], items });
-    const opts = { abilities: this.abilities, gearSkillBonuses, tagGrants, rankRaises };
+    const opts = { abilities: this.abilities, gearSkillBonuses, tagGrants, rankRaises, ranksFollowFloor: this.ranksFollowFloor === true };
     deriveSkillRanks(items.filter(i => i.type === 'skill'), { ...opts, animalSkillsLocked: animalSkillsLockedFor(this.tagSet, items), skillSuppressions: suppressionQueries(items, 'skills', { paused: this.gearOffline.active }), highRankActive: highRankActive(this.actor) });
-    deriveSpellRanks(items.filter(i => i.type === 'spell'), opts);
+    deriveSpellRanks(items.filter(i => i.type === 'spell'), { ...opts, highRankActive: highRankActive(this.actor) });
   }
 }

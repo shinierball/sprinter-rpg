@@ -36,6 +36,18 @@ export function clearFlag(doc, key) {
 }
 
 /**
+ * Set one flag of this system on a document through its `setFlag`. Resolves to what `setFlag` resolves to; does nothing
+ * for a document without the method or a key that is not a string.
+ * @param {object} doc a document
+ * @param {string} key the flag key (dotted sub-keys allowed)
+ * @param {*} value the value to store
+ */
+export function writeFlag(doc, key, value) {
+  if (typeof key !== 'string' || typeof doc?.setFlag !== 'function') return Promise.resolve(undefined);
+  return doc.setFlag(SYSTEM_ID, key, value);
+}
+
+/**
  * The whole bag of this system's flags on a document or on plain data; `{}` when there is none. Not exported: no module
  * in src/ reads a bag (7.78a2 ruling, Question 8); a reader that needs several keys exports it and is its owner.
  */
@@ -55,4 +67,16 @@ export function flagPath(key) {
 export function withFlags(data, patch) {
   const flags = isBag(data?.flags) ? data.flags : {};
   return { ...data, flags: { ...flags, [SYSTEM_ID]: { ...(isBag(flags[SYSTEM_ID]) ? flags[SYSTEM_ID] : {}), ...patch } } };
+}
+
+/**
+ * `data` without the named flags of this system (the other flags and scopes are kept). A copy: `data` and its nested
+ * objects are not changed. The conversion of a stored flag that moves or goes uses it, for plain stored sources.
+ */
+export function withoutFlags(data, keys) {
+  const flags = isBag(data?.flags) ? data.flags : null;
+  const bag = flags && isBag(flags[SYSTEM_ID]) ? flags[SYSTEM_ID] : null;
+  if (!bag || !keys.some((key) => key in bag)) return data;
+  const kept = Object.fromEntries(Object.entries(bag).filter(([key]) => !keys.includes(key)));
+  return { ...data, flags: { ...flags, [SYSTEM_ID]: kept } };
 }

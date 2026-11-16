@@ -18,6 +18,7 @@ import { CHECK_TAGS, isOutcomeTag, isFreeInterruptItem } from '../../utils/tag/t
 import { matchesTagQueryIgnoring } from '../../utils/tag/tag-query.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
 import { isNoGmReason, getActiveGM } from '../../utils/gm-relay.mjs';
+import { isCombatantOfActor } from '../combat/combatants.mjs';
 import { getCalledPlays } from '../combat/called-plays.mjs';
 import { assistText } from '../../chat/render/check-assists.mjs';
 import { attackTargetEntries } from './attack-targets.mjs';
@@ -37,7 +38,7 @@ export function warnInvalidAssistOnce(item) {
 
 function combatantOf(combat, actor, tokenId = null) {
   const list = Array.isArray(combat?.combatants) ? combat.combatants : Array.from(combat?.combatants?.values?.() ?? combat?.combatants ?? []);
-  return (tokenId ? list.find((c) => c?.tokenId === tokenId) : null) ?? list.find((c) => c?.actorId === actor?.id) ?? null;
+  return (tokenId ? list.find((c) => c?.tokenId === tokenId) : null) ?? list.find((c) => isCombatantOfActor(c, actor)) ?? null;
 }
 
 // -- Pending Called Plays at the ally's roll ---------------------------------------------------------------------

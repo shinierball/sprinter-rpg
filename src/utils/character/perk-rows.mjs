@@ -23,6 +23,7 @@ export const PERK_ROW_PATHS = Object.freeze({
   'system.recoveryModifiers': 'append',
   'system.statSubstitutions': 'append',
   'system.popularityTriggers': 'append',
+  'system.eventTriggers': 'append',
   'system.aiFavorRatings': 'append',
   'system.startingItems': 'append',
   'system.tags': 'union',

@@ -4,9 +4,13 @@
  * Rules Reference: Chapter 2 (Step-by-Step Combat, pp. 83-89)
  */
 
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, writeFlag } from '../../utils/flags.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { combatText } from '../../utils/combat/combat-round-text.mjs';
+
+const SURPRISE_ROUND_FLAG = 'isSurpriseRound';
+const CURRENT_STEP_FLAG = 'currentStep';
+const CLEANED_UP_ROUND_FLAG = 'cleanedUpRound';
 
 export const COMBAT_STEPS = Object.freeze({
   SURPRISE: 0,
@@ -72,7 +76,12 @@ export function cleanUpSteps() {
  * @returns {boolean}
  */
 export function isSurpriseRound(combat) {
-  return Boolean(combat.getFlag?.(SYSTEM_ID, 'isSurpriseRound') || combat.flags?.[SYSTEM_ID]?.isSurpriseRound);
+  return Boolean(readFlag(combat, SURPRISE_ROUND_FLAG));
+}
+
+/** Store whether the encounter is in a surprise round. */
+export function saveSurpriseRound(combat, state) {
+  return writeFlag(combat, SURPRISE_ROUND_FLAG, state);
 }
 
 /**
@@ -81,7 +90,7 @@ export function isSurpriseRound(combat) {
  * @returns {number}
  */
 export function currentStep(combat) {
-  const raw = combat.getFlag?.(SYSTEM_ID, 'currentStep') ?? combat.flags?.[SYSTEM_ID]?.currentStep;
+  const raw = readFlag(combat, CURRENT_STEP_FLAG);
   if (raw !== undefined && raw !== null) return Number(raw);
   return combat.isSurpriseRound ? 0 : 1;
 }
@@ -113,7 +122,7 @@ export function interruptWindowOpen(combat) {
  */
 export async function toggleSurpriseRound(combat, state = null) {
   const nextState = state !== null ? Boolean(state) : !combat.isSurpriseRound;
-  await combat.setFlag(SYSTEM_ID, 'isSurpriseRound', nextState);
+  await saveSurpriseRound(combat, nextState);
   await combat.setCombatStep(nextState ? 0 : 1);
   await combat.resetRoundActions();
   await combat.assignPhaseInitiative();
@@ -128,7 +137,7 @@ export async function setCombatStep(combat, step) {
   const minStep = combat.isSurpriseRound ? 0 : 1;
   const numStep = Number(step);
   const clamped = Math.max(minStep, Math.min(5, Number.isFinite(numStep) ? numStep : minStep));
-  await combat.setFlag(SYSTEM_ID, 'currentStep', clamped);
+  await writeFlag(combat, CURRENT_STEP_FLAG, clamped);
 }
 
 /**
@@ -144,7 +153,7 @@ export async function setCombatStep(combat, step) {
 export async function nextStep(combat) {
   const cur = combat.currentStep;
   if (cur === COMBAT_STEPS.SURPRISE) {
-    await combat.setFlag(SYSTEM_ID, 'isSurpriseRound', false);
+    await saveSurpriseRound(combat, false);
     await combat.setCombatStep(COMBAT_STEPS.MOB_DECLARATION);
     await combat.resetRoundActions();
     await combat.assignPhaseInitiative();
@@ -217,6 +226,9 @@ export async function previousStep(combat) {
   await combat.setCombatStep(prev);
 }
 
+/** The round whose Step 5 Clean Up last ran on the combat (undefined before the first). */
+export const cleanedUpRoundOf = (combat) => readFlag(combat, CLEANED_UP_ROUND_FLAG);
+
 /**
  * Execute Step 5 Clean Up once per round: every registered step in order (`cleanUpSteps`: debuff damage and HoTs,
  * buff and aura countdown, Evade stance reset, then extensions), then the `sprinter-rpg.combatCleanUp` hook. Going
@@ -228,9 +240,9 @@ export async function previousStep(combat) {
  */
 export async function stepFiveCleanUp(combat, { force = false } = {}) {
   const round = combat.round || 1;
-  const done = combat.getFlag?.(SYSTEM_ID, 'cleanedUpRound') ?? combat.flags?.[SYSTEM_ID]?.cleanedUpRound;
+  const done = cleanedUpRoundOf(combat);
   if (!force && Number(done) === round) return { ran: [], skipped: true, endEffects: [], expiredDurations: [] };
-  await combat.setFlag(SYSTEM_ID, 'cleanedUpRound', round);
+  await writeFlag(combat, CLEANED_UP_ROUND_FLAG, round);
 
   const ran = [];
   const results = {};

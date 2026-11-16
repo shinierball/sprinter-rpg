@@ -22,7 +22,7 @@
           <button type="button" data-action="castSpell" class="btn-cast-spell cog-btn cog-dark cog-bg-header-fill cog-text-on-fill" data-spell-id="{{spell.id}}" title="Cast / Preview Spell" style="font-size: 11px; padding: 4px 8px; border: 1px solid var(--cog-ink); border-radius: 3px; cursor: pointer;">
             <i class="fa-solid fa-comment-dots"></i> Preview
           </button>
-          {{#if ../actor}}
+          {{#if (or ../actor ../isActorPicker)}}
             {{#if spell.isKnown}}
               <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 11px; padding: 4px 8px;">
                 <i class="fa-solid fa-check"></i> Known

@@ -25,7 +25,7 @@ export const SPECS = Object.freeze([
         name: 'Note to Self',
         toHitStat: 'int',
         damageStat: 'int',
-        damageDice: '1d6',
+        dice: 1, die: 'd6',
         damageType: 'Psychic',
         onHit: { evadeFail: { degree: 'fail', debuffs: ['first-warning'] } },
         effects: 'A first note is a First Warning. A second is a Final Warning.'
@@ -34,7 +34,7 @@ export const SPECS = Object.freeze([
         name: 'Overbooked Schedule',
         toHitStat: 'int',
         damageStat: 'int',
-        damageDice: '1d6',
+        dice: 1, die: 'd6',
         damageType: 'Psychic',
         onHit: { evadeFail: { degree: 'fail', debuffs: ['double-booked'] } },
         effects: 'You are needed in two places. One of them is a blooper.'
@@ -43,7 +43,7 @@ export const SPECS = Object.freeze([
         name: 'Cue the Follow-Spot',
         toHitStat: 'int',
         damageStat: 'int',
-        damageDice: '1d6',
+        dice: 1, die: 'd6',
         damageType: 'Psychic',
         onHit: { evadeFail: { degree: 'fail', debuffs: ['spotlit', 'blooper-reel'] } },
         effects: 'The light finds you. Everyone can see exactly what you do next, and the reel keeps it.'
@@ -52,14 +52,14 @@ export const SPECS = Object.freeze([
         name: 'Pyrotechnics Cue',
         toHitStat: 'int',
         damageStat: 'int',
-        damageDice: '1d6',
+        dice: 1, die: 'd6',
         damageType: 'Fire',
         onHit: { evadeFail: { degree: 'fail', debuffs: ['squib-malfunction'] } },
         effects: 'The cue was for someone else. The blood pack did not check.'
       }
     ],
     loot: [
-      { name: 'Annotated Script', quantity: 1, notes: '', description: 'Every page is marked up. Your name is in the margins, with a question mark.' }
+      { name: 'Annotated Script', quantity: 1, lootType: 'consumable', description: 'Every page is marked up. Your name is in the margins, with a question mark.' }
     ]
   }
 ]);

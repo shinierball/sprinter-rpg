@@ -50,6 +50,23 @@
           <input class="cog-field-input" type="number" name="system.tempBars.hpPerSlot" value="{{system.tempBars.hpPerSlot}}" placeholder="2" min="0" style="font-size: 11px;" />
         </div>
       </div>
+      <div class="cog-field-row" style="gap: 6px; margin-top: 4px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label">{{localize "COG.AuraSheet.HpPerSlotStat"}}</span>
+          <select class="cog-field-input" name="system.tempBars.hpPerSlotStat" style="font-size: 11px;">
+            <option value="" {{#unless system.tempBars.hpPerSlotStat}}selected{{/unless}}>{{localize "COG.AuraSheet.HpPerSlotFixed"}}</option>
+            <option value="con" {{#if (eq system.tempBars.hpPerSlotStat "con")}}selected{{/if}}>{{localize "COG.AuraSheet.ConMod"}}</option>
+            <option value="cha" {{#if (eq system.tempBars.hpPerSlotStat "cha")}}selected{{/if}}>{{localize "COG.AuraSheet.ChaMod"}}</option>
+            <option value="int" {{#if (eq system.tempBars.hpPerSlotStat "int")}}selected{{/if}}>{{localize "COG.AuraSheet.IntMod"}}</option>
+            <option value="str" {{#if (eq system.tempBars.hpPerSlotStat "str")}}selected{{/if}}>{{localize "COG.AuraSheet.StrMod"}}</option>
+            <option value="dex" {{#if (eq system.tempBars.hpPerSlotStat "dex")}}selected{{/if}}>{{localize "COG.AuraSheet.DexMod"}}</option>
+          </select>
+        </div>
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label" title="{{localize 'COG.AuraSheet.PassTagHint'}}">{{localize "COG.AuraSheet.PassTag"}}</span>
+          <input class="cog-field-input" type="text" name="system.tempBars.passTag" value="{{system.tempBars.passTag}}" placeholder="kind.spell" style="font-size: 11px;" />
+        </div>
+      </div>
     </div>
 
     {{!-- Aura Combat Bonuses, Resistances & Granted Buffs Sub-Block --}}

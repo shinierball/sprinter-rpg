@@ -9,7 +9,12 @@
 // A spell entry carries no name: `loadoutLabel` shows the name of the catalog spell it references.
 const spell = (id) => ({ id, slot: 'spell', spellIdentifier: id });
 
+// A weaponSkill entry names the book Skill a starter weapon's Skill stands for where the book Skill's identifier is not the
+// weapon's `skillIdentifier`: `importedWeaponName` shows that Skill's imported name for the weapon.
+const weaponSkill = (skillIdentifier, bookSkillId) => ({ id: `weapon-skill:${skillIdentifier}`, slot: 'weaponSkill', skillIdentifier, bookSkillId });
+
 export const COG_CREATION_LOADOUTS = Object.freeze([
+  weaponSkill('herding-tools', 'dccskl0000000030'),
   spell('dccspl0000000007'),
   spell('dccspl0000000011'),
   spell('dccspl0000000013'),

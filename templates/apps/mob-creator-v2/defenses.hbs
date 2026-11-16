@@ -1,0 +1,40 @@
+{{!-- Defenses stage. An override number left blank uses the book's formula (shown as the placeholder).  The part root is hidden unless this is the active stage (parts: stage ids in app.mjs). --}}
+<section class="cog-creator-section cog-mobv2-panel" data-stage="defenses"{{#unless active}} hidden{{/unless}}>
+  <h3 class="cog-mobv2-title">{{localize titleKey}}</h3>
+  {{#if active}}
+    <div class="cog-mobv2-grid">
+    <div class="cog-form-group">
+      <label for="{{rootId}}-bars">{{localize 'COG.MobCreator.Defenses.Bars'}}{{#if bars.custom}} <span class="cog-badge cog-mobv2-custom">{{localize 'COG.MobCreator.Custom'}}</span>{{/if}}</label>
+      <input type="number" id="{{rootId}}-bars" min="1" placeholder="{{bars.derived}}" data-change-action="setField" data-path="bars" data-type="int" value="{{bars.value}}" />
+      <p class="cog-rule-hint">{{barsHelp}}</p>
+    </div>
+    <div class="cog-form-group">
+      <label>{{localize 'COG.MobCreator.Defenses.HpPerBar'}}</label>
+      <p class="cog-mobv2-readout">{{hpPerBar}} &times; {{maxHp}}</p>
+      <p class="cog-rule-hint">{{localize 'COG.MobCreator.Defenses.SlotPercentages'}}: {{slotPercentages}}</p>
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-evade">{{localize 'COG.MobCreator.Defenses.EvadeBase'}}{{#if evade.custom}} <span class="cog-badge cog-mobv2-custom">{{localize 'COG.MobCreator.Custom'}}</span>{{/if}}</label>
+      <input type="number" id="{{rootId}}-evade" placeholder="{{evade.derived}}" data-change-action="setField" data-path="evadeBase" data-type="int" value="{{evade.value}}" />
+      <p class="cog-rule-hint">{{localize 'COG.MobCreator.Defenses.OnFloor'}} {{floor}}: {{evade.dc}}</p>
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-surprise">{{localize 'COG.MobCreator.Defenses.SurpriseBase'}}{{#if surprise.custom}} <span class="cog-badge cog-mobv2-custom">{{localize 'COG.MobCreator.Custom'}}</span>{{/if}}</label>
+      <input type="number" id="{{rootId}}-surprise" placeholder="{{surprise.derived}}" data-change-action="setField" data-path="surpriseBase" data-type="int" value="{{surprise.value}}" />
+      <p class="cog-rule-hint">{{localize 'COG.MobCreator.Defenses.OnFloor'}} {{floor}}: {{surprise.dc}}</p>
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-dr">{{localize 'COG.MobCreator.Defenses.Dr'}}</label>
+      <input type="number" id="{{rootId}}-dr" min="0" data-change-action="setField" data-path="dr" data-type="int" value="{{dr}}" />
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-move">{{localize 'COG.MobCreator.Defenses.Move'}}</label>
+      <input type="number" id="{{rootId}}-move" min="0" data-change-action="setField" data-path="move" data-type="int" value="{{move}}" />
+    </div>
+    <div class="cog-form-group">
+      <label for="{{rootId}}-step">{{localize 'COG.MobCreator.Defenses.Step'}}</label>
+      <input type="number" id="{{rootId}}-step" min="0" data-change-action="setField" data-path="step" data-type="int" value="{{step}}" />
+    </div>
+  </div>
+  {{/if}}
+</section>

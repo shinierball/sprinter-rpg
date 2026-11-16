@@ -28,6 +28,11 @@ import { SPECS as creatorRowsItems } from './items/creator-rows.mjs';
 import { SPECS as plainLabelsItems } from './items/plain-labels.mjs';
 import { SPECS as plainLabelsMobs } from './mobs/plain-labels.mjs';
 import { SPECS as usedUpItems } from './items/used-up.mjs';
+import { SPECS as secondTakesItems } from './items/second-takes.mjs';
+import { SPECS as bottleServiceItems } from './items/bottle-service.mjs';
+import { SPECS as locationShootItems } from './items/location-shoot.mjs';
+import { SPECS as signatureMovesItems } from './items/signature-moves.mjs';
+import { SPECS as sideEffectsMayIncludeItems } from './items/side-effects-may-include.mjs';
 import { SPECS as baseSkillsItems } from './items/base-skills.mjs';
 import { SPECS as baseSetItems } from './items/base-set.mjs';
 import { SPECS as craftingItems } from './items/crafting.mjs';
@@ -50,10 +55,19 @@ import { SPECS as openPlanItems } from './items/open-plan.mjs';
 import { SPECS as openPlanActors } from './actors/open-plan.mjs';
 import { SPECS as primeTimePantheonItems } from './items/prime-time-pantheon.mjs';
 import { SPECS as primeTimePantheonMobs } from './mobs/prime-time-pantheon.mjs';
+import { SPECS as craftServicesItems } from './items/craft-services.mjs';
 import { SPECS as technicalDifficultiesItems } from './items/technical-difficulties.mjs';
 import { SPECS as technicalDifficultiesMobs } from './mobs/technical-difficulties.mjs';
+import { SPECS as fanMailItems } from './items/fan-mail.mjs';
+import { SPECS as bossMapsItems } from './items/boss-maps.mjs';
+import { SPECS as propDepartmentItems } from './items/prop-department.mjs';
+import { SPECS as propDepartmentMobs } from './mobs/prop-department.mjs';
 import { SPECS as racingMobs } from './mobs/racing-and-chasing.mjs';
 import { SPECS as racingTables } from './tables/racing-and-chasing.mjs';
+import { SPECS as animalSegmentItems } from './items/animal-segment.mjs';
+import { SPECS as animalSegmentActors } from './actors/animal-segment.mjs';
+import { SPECS as creatureFeatureItems } from './items/creature-feature.mjs';
+import { SPECS as creatureFeatureMobs } from './mobs/creature-feature.mjs';
 
 export { COVERAGE_SPECS } from './coverage.mjs';
 export { EXAMPLE_EFFECT_SPECS } from './effects.mjs';
@@ -73,6 +87,7 @@ const RELEASE_FILES = Object.freeze([
   { set: 'plain-labels', kind: 'items', specs: plainLabelsItems },
   { set: 'plain-labels', kind: 'mobs', specs: plainLabelsMobs },
   { set: 'used-up', kind: 'items', specs: usedUpItems },
+  { set: 'second-takes', kind: 'items', specs: secondTakesItems },
   { set: 'base-skills', kind: 'items', specs: baseSkillsItems },
   { set: 'base-set', kind: 'items', specs: baseSetItems },
   { set: 'crafting', kind: 'items', specs: craftingItems },
@@ -96,7 +111,20 @@ const RELEASE_FILES = Object.freeze([
   { set: 'green-room', kind: 'actors', specs: greenRoomActors },
   { set: 'weapon-workshop', kind: 'items', specs: weaponWorkshopItems },
   { set: 'technical-difficulties', kind: 'items', specs: technicalDifficultiesItems },
-  { set: 'technical-difficulties', kind: 'mobs', specs: technicalDifficultiesMobs }
+  { set: 'technical-difficulties', kind: 'mobs', specs: technicalDifficultiesMobs },
+  { set: 'animal-segment', kind: 'items', specs: animalSegmentItems },
+  { set: 'animal-segment', kind: 'actors', specs: animalSegmentActors },
+  { set: 'fan-mail', kind: 'items', specs: fanMailItems },
+  { set: 'craft-services', kind: 'items', specs: craftServicesItems },
+  { set: 'boss-maps', kind: 'items', specs: bossMapsItems },
+  { set: 'prop-department', kind: 'items', specs: propDepartmentItems },
+  { set: 'prop-department', kind: 'mobs', specs: propDepartmentMobs },
+  { set: 'bottle-service', kind: 'items', specs: bottleServiceItems },
+  { set: 'location-shoot', kind: 'items', specs: locationShootItems },
+  { set: 'signature-moves', kind: 'items', specs: signatureMovesItems },
+  { set: 'side-effects-may-include', kind: 'items', specs: sideEffectsMayIncludeItems },
+  { set: 'creature-feature', kind: 'items', specs: creatureFeatureItems },
+  { set: 'creature-feature', kind: 'mobs', specs: creatureFeatureMobs }
 ]);
 
 /** Kind order inside a set's `specs`: referenced documents come first. `mobs` are Actors (the examples-actors pack). */

@@ -1,9 +1,11 @@
 /**
- * The ways a Skill gains Ranks ("routes") and the per-skill limits on them (`system.rankLimits`). Pure: no Foundry, no I/O.
+ * The ways a Skill or Spell gains Ranks ("routes") and the per-skill limits on them (`system.rankLimits`). Pure: no Foundry, no I/O.
  * A route limit is a separate check from the Rank cap (`getRankCap` in `rank-cap.mjs`, the one place the cap is read; its
  * pre-Race-and-Class limit and high-Rank rule live in `rank-limits.mjs`): the cap bounds every route, a limit bounds one.
  * Item rank bonuses (gear, buffs, `rank_bonus` grants) are not advancement and are never limited.
  */
+
+import { spellCallsForCheck } from './spells-advance.mjs';
 
 /** Core route ids. */
 export const ADVANCEMENT_ROUTES = Object.freeze({ use: 'use', grind: 'grind', training: 'training', magic: 'magic' });
@@ -62,6 +64,8 @@ export function routeOfSource(source) {
  * Rows with a blank, negative or non-numeric `maxRank` are ignored.
  */
 export function routeLimit(skill, route) {
+  // A Spell that needs no Check when cast is the book's Passive: its Used mark is closed; grinding, training and magic stay open
+  if (skill?.type === 'spell' && route === ADVANCEMENT_ROUTES.use && !spellCallsForCheck(skill)) return 0;
   const rows = skill?.system?.rankLimits ?? skill?.rankLimits;
   if (!Array.isArray(rows)) return null;
   let limit = null;

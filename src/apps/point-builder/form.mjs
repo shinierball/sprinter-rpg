@@ -38,7 +38,7 @@ const rowForm = (key, noun, extra = {}) => Object.freeze({
 const COPIED_EFFECT = Object.freeze({ by: 'identifier', keys: Object.freeze(['name', 'img', 'system']) });
 
 /**
- * The Race and Class Creators' form as data, in the shape of `MOB_CREATOR_FORM`: `state` is the object
+ * The Race and Class Creators' form as data, in the shape the Crawler Creator's descriptor has: `state` is the object
  * every `data-row-field` path is relative to, `rows` the repeating inline rows (`item` the row element carrying
  * `data-row` and `data-index`, `field` the attribute whose value names the row's spec field, `add` and `remove` the
  * action names), `copied` what a catalog pick copies into a row, and `catalogs` the checkbox lists with their actions.

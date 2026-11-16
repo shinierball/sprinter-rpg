@@ -25,6 +25,26 @@
 </div>
 <div class="cog-field-row" style="margin-bottom: 8px; flex-wrap: wrap;">
   {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=durationEditor}}
+  <div class="cog-field-group small">
+    <span class="cog-field-label" title="{{localize 'COG.Buff.Sheet.AppliedRankHint'}}">{{localize "COG.Buff.Sheet.AppliedRank"}}</span>
+    <input class="cog-field-input" type="number" min="0" step="1" name="system.rank" value="{{system.rank}}" title="{{localize 'COG.Buff.Sheet.AppliedRankHint'}}" />
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label" title="{{localize 'COG.Buff.Sheet.RepeatHint'}}">{{localize "COG.Buff.Sheet.Repeat"}}</span>
+    <select name="system.repeat.mode" class="cog-field-input" title="{{localize 'COG.Buff.Sheet.RepeatHint'}}">
+      {{#each repeatModeOptions as |rOpt|}}<option value="{{rOpt.value}}" {{#if rOpt.selected}}selected{{/if}}>{{rOpt.label}}</option>{{/each}}
+    </select>
+  </div>
+  <div class="cog-field-group small">
+    <span class="cog-field-label" title="{{localize 'COG.Buff.Sheet.RepeatMaxHint'}}">{{localize "COG.Buff.Sheet.RepeatMax"}}</span>
+    <input class="cog-field-input" type="number" min="1" step="1" name="system.repeat.max" value="{{system.repeat.max}}" title="{{localize 'COG.Buff.Sheet.RepeatMaxHint'}}" />
+  </div>
+  <div class="cog-field-group small" style="text-align: center;">
+    <span class="cog-field-label" title="{{localize 'COG.Buff.Sheet.RepeatMaxFromRankHint'}}">{{localize "COG.Buff.Sheet.RepeatMaxFromRank"}}</span>
+    <label style="display: flex; align-items: center; justify-content: center; height: 24px; cursor: pointer;">
+      <input class="cog-checkbox-lg" type="checkbox" name="system.repeat.maxFromRank" {{#if system.repeat.maxFromRank}}checked{{/if}} title="{{localize 'COG.Buff.Sheet.RepeatMaxFromRankHint'}}" />
+    </label>
+  </div>
 </div>
 
 {{!-- ACTIVATION: rows apply only inside a window that Use opens (once per day, for 10 minutes, for one use, ...) --}}
@@ -52,6 +72,12 @@
         </select>
       </div>
     </div>
+    {{#if activationView.showAuto}}
+    <label class="cog-field-row" style="margin-bottom: 4px; gap: 6px; cursor: pointer;" title="{{localize 'COG.Activation.Sheet.AutoHint'}}">
+      <input class="cog-checkbox-lg" type="checkbox" name="system.activation.auto" {{#if activationView.auto}}checked{{/if}} />
+      <span class="cog-field-label">{{localize "COG.Activation.Sheet.Auto"}}</span>
+    </label>
+    {{/if}}
     {{#if activationView.showQuery}}
     <div class="cog-field-group">
       <span class="cog-field-label">{{localize "COG.Activation.Sheet.WindowQuery"}}</span>
@@ -67,6 +93,8 @@
 {{> "systems/sprinter-rpg/templates/items/parts/grant-rows.hbs" grants=buffGrantRows}}
 
 {{> "systems/sprinter-rpg/templates/items/parts/limb-modifiers.hbs" noteKey="COG.LimbModifiers.BuffNote"}}
+
+{{> "systems/sprinter-rpg/templates/items/parts/as-triggers.hbs"}}
 
 <div class="cog-field-group">
   <span class="cog-field-label">{{localize "COG.Buff.Sheet.Description"}}</span>
