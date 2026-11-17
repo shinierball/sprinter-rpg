@@ -11,6 +11,7 @@ import { getCurrentFloor } from '../floor/current-floor.mjs';
 import { parseFloorNumber } from '../floor/floor-number.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS, isRuleBreak } from '../rule-break.mjs';
 import { escapeAttr } from '../escape-attr.mjs';
+import { transformationOfItem } from './overlay-state.mjs';
 
 /** Default unlock floor; worlds and modules override it with `CONFIG.COG.raceClassUnlockFloor`. */
 export const RACE_CLASS_UNLOCK_FLOOR = 3;
@@ -74,7 +75,7 @@ function itemsOf(actor) {
 function appliedSource(actor, kind) {
   const flagKey = kind === 'race' ? 'appliedRace' : 'appliedClass';
   const flag = actor?.getFlag?.(SYSTEM_ID, flagKey) || actor?.flags?.[SYSTEM_ID]?.[flagKey] || null; // a view has `flags`, not `getFlag`
-  const items = itemsOf(actor).filter(i => i?.type === kind);
+  const items = itemsOf(actor).filter(i => i?.type === kind && !transformationOfItem(i)); // a form race is no applied race
   const item = (flag?.itemId ? items.find(i => (i.id ?? i._id) === flag.itemId) : null) || items[0] || null;
   return { flag, item };
 }

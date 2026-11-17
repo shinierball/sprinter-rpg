@@ -2,7 +2,7 @@
  * The "Area placed" chat card: posted after a player or GM places an item's area, with a Dismiss Zone
  * button (action delegate `crawlerDismissArea`, no `name` attribute) that ends the placed group.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { areaFlagsOf } from '../utils/area/region-shapes.mjs';
 import { combatText } from '../utils/combat/combat-round-text.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
 
@@ -13,8 +13,8 @@ import { escapeAttr } from '../utils/escape-attr.mjs';
  * @returns {string|null} the card HTML, or null when no placed group is among the regions
  */
 export function buildAreaPlacedCard(regions, { item, scene } = {}) {
-  const core = regions.find(r => r.flags?.[SYSTEM_ID]?.area?.role === 'core') ?? regions[0];
-  const area = core?.flags?.[SYSTEM_ID]?.area;
+  const core = regions.find(r => areaFlagsOf(r)?.role === 'core') ?? regions[0];
+  const area = areaFlagsOf(core);
   if (!area?.groupId) return null;
   let line;
   if (area.kind !== 'zone') line = combatText('COG.ZonePulse.PlacedMarker');

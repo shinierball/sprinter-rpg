@@ -1,0 +1,492 @@
+/* =======================================================
+   PAGE 0, THE PLAY SHEET
+   Everything is scoped under .cog-p0, so a sheet that does not render page 0 is untouched.
+   Layout follows the width of .cog-p0 itself (a container query), not the screen: the root owns the
+   container, and the grid lives on the .cog-p0-grid wrapper inside it (a container cannot restyle itself).
+   320-479px one column; 480-759px seven stat tiles in a row; 760px and up attacks beside the hot bar.
+   ======================================================= */
+
+.cog-p0 {
+  container: cog-p0 / inline-size;
+  display: block;
+  min-width: 0;
+  color: var(--cog-text-strong);
+  font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+}
+
+.cog-p0 *,
+.cog-p0 *::before,
+.cog-p0 *::after {
+  box-sizing: border-box;
+}
+
+.cog-p0 button {
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  margin: 0;
+  min-height: 44px;
+}
+
+.cog-p0 button:focus-visible {
+  outline: 2px solid var(--cog-info);
+  outline-offset: 2px;
+}
+
+.cog-p0 button:active {
+  background: var(--cog-surface-strong);
+}
+
+.cog-p0-grid {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "id" "hp" "stats" "atk" "hot" "last";
+}
+
+/* The shared button rule in sheets.css weighs as much as `a.button`, more than one class, so its small minimum beat
+   the page 0 ones. These, and `.cog-p0 button` above, restate the touch-target minimums at a weight that wins. */
+.cog-p0 button.cog-p0-tile {
+  min-height: 58px;
+}
+
+.cog-p0 button.cog-p0-tile.is-wide {
+  min-height: 50px;
+}
+
+.cog-p0 button.cog-p0-slot {
+  min-height: 52px;
+}
+
+.cog-p0-grid > * {
+  min-width: 0;
+}
+
+.cog-p0-lbl {
+  font: 500 10.5px/1 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cog-text-muted);
+}
+
+/* ---- identity ---- */
+.cog-p0-id {
+  grid-area: id;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.cog-p0-portrait {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 4px;
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font: 700 18px 'Oswald', sans-serif;
+}
+
+.cog-p0 img.cog-p0-portrait {
+  width: 46px;
+  height: 46px;
+  max-width: none;
+  object-fit: cover;
+  border: 0;
+}
+
+.cog-p0-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+}
+
+.cog-p0-who {
+  flex: 1;
+  min-width: 0;
+}
+
+.cog-p0-name {
+  font: 700 19px/1.15 'Oswald', sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.cog-p0-sub {
+  font-size: 13.5px;
+  color: var(--cog-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.cog-p0-move {
+  font-size: 13px;
+  color: var(--cog-text-secondary);
+  margin-top: 1px;
+}
+
+.cog-p0-move b {
+  color: var(--cog-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.cog-p0-full {
+  flex: none;
+  align-self: flex-start;
+  border: 1px solid var(--cog-border);
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+  border-radius: 3px;
+  padding: 7px 9px;
+  font: 500 12px 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-height: 44px;
+}
+
+/* ---- health and mana ---- */
+.cog-p0-hp {
+  grid-area: hp;
+  display: grid;
+  gap: 6px;
+}
+
+.cog-p0-hprow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 3px;
+}
+
+.cog-p0-num {
+  font: 700 17px 'Oswald', sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--cog-text-strong);
+}
+
+.cog-p0-num small {
+  font: 400 12.5px 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  color: var(--cog-text-muted);
+}
+
+.cog-p0-meter {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--cog-meter-health);
+  border: 1px solid var(--cog-border);
+}
+
+.cog-p0-empty {
+  position: absolute;
+  inset: 0 0 0 auto;
+  background: var(--cog-surface-muted);
+}
+
+/* One button per Health bar, drawn over the meter: its right edge is the tick between two bars. */
+.cog-p0 button.cog-p0-bar {
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-right: 2px solid var(--cog-window-bg);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.cog-p0 button.cog-p0-bar:last-child {
+  border-right: 0;
+}
+
+.cog-p0 button.cog-p0-bar:hover,
+.cog-p0 button.cog-p0-bar:focus-visible {
+  background: var(--cog-sheen);
+  outline: 2px solid var(--cog-info);
+  outline-offset: -2px;
+}
+
+.cog-p0-manarow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cog-p0-mana {
+  flex: 1;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--cog-surface-muted);
+  overflow: hidden;
+}
+
+.cog-p0-mana i {
+  display: block;
+  height: 100%;
+  background: var(--cog-info-fill);
+}
+
+.cog-p0-manarow > span {
+  font-size: 12.5px;
+  color: var(--cog-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- stats ---- */
+.cog-p0-stats {
+  grid-area: stats;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cog-p0-tile {
+  grid-column: span 2;
+  border: 1px solid var(--cog-border);
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+  border-radius: 4px;
+  padding: 7px 2px 6px;
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.cog-p0-tile b {
+  font: 700 22px/1 'Oswald', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.cog-p0-tile.is-str { --cog-p0-stat: var(--cog-stat-str); }
+.cog-p0-tile.is-int { --cog-p0-stat: var(--cog-stat-int); }
+.cog-p0-tile.is-cha { --cog-p0-stat: var(--cog-stat-cha); }
+.cog-p0-tile.is-dex { --cog-p0-stat: var(--cog-stat-dex); }
+.cog-p0-tile.is-con { --cog-p0-stat: var(--cog-stat-con); }
+
+.cog-p0-tile:is(.is-str, .is-int, .is-cha, .is-dex, .is-con) {
+  border-bottom: 3px solid var(--cog-p0-stat);
+}
+
+.cog-p0-tile:is(.is-str, .is-int, .is-cha, .is-dex, .is-con) .cog-p0-lbl,
+.cog-p0-tile:is(.is-str, .is-int, .is-cha, .is-dex, .is-con) b {
+  color: var(--cog-p0-stat);
+}
+
+.cog-p0-tile:is(.is-str, .is-int, .is-cha, .is-dex, .is-con) .cog-p0-lbl {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.cog-p0-tile.is-wide {
+  grid-column: span 5;
+  flex-direction: row;
+  gap: 10px;
+  min-height: 50px;
+}
+
+.cog-p0-tile.is-evade {
+  border: 2px solid var(--cog-header-fill);
+}
+
+.cog-p0-tile.is-favor {
+  border: 2px solid var(--cog-gold-fill);
+}
+
+/* ---- sections: attacks and hot bar ---- */
+.cog-p0-sec {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.cog-p0-sechead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: var(--cog-header-fill);
+  color: var(--cog-on-fill);
+  padding: 4px 8px;
+  border-radius: 3px;
+  font: 700 13px 'Oswald', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cog-p0-sechead small {
+  font: 400 11.5px 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.85;
+}
+
+.cog-p0-atk { grid-area: atk; }
+.cog-p0-hot { grid-area: hot; }
+
+.cog-p0-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid var(--cog-border);
+  background: var(--cog-surface);
+  border-radius: 4px;
+  padding: 5px 5px 5px 9px;
+}
+
+.cog-p0-nm {
+  font: 700 14.5px/1.2 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  color: var(--cog-text-strong);
+  overflow-wrap: anywhere;
+}
+
+.cog-p0-row button {
+  min-height: 44px;
+  min-width: 66px;
+  border: 0;
+  border-radius: 3px;
+  color: var(--cog-on-fill);
+  padding: 3px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.cog-p0-row button span {
+  font: 500 10px 'Oswald', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.cog-p0-row button b {
+  font: 700 15px 'Oswald', sans-serif;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cog-p0-hit { background: var(--cog-accent-fill); }
+.cog-p0-dmg { background: var(--cog-accent-strong-fill); }
+
+.cog-p0-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cog-p0-slot {
+  text-align: left;
+  border: 1px solid var(--cog-border);
+  border-left-width: 5px;
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+  border-radius: 4px;
+  padding: 6px 8px;
+  min-height: 52px;
+  display: grid;
+  gap: 2px;
+  align-content: center;
+}
+
+.cog-p0-slot .cog-p0-nm {
+  font-size: 14px;
+}
+
+.cog-p0-dt {
+  font-size: 12px;
+  color: var(--cog-text-secondary);
+}
+
+.cog-p0-slot.is-spell { border-left-color: var(--cog-info-fill); }
+.cog-p0-slot.is-item { border-left-color: var(--cog-success-fill); }
+.cog-p0-slot.is-skill { border-left-color: var(--cog-magic-fill); }
+.cog-p0-slot.is-gear { border-left-color: var(--cog-neutral-fill); }
+.cog-p0-slot.is-attack { border-left-color: var(--cog-accent-fill); }
+
+.cog-p0-slot.is-on .cog-p0-dt {
+  color: var(--cog-success);
+  font-weight: 700;
+}
+
+/* ---- last roll ---- */
+.cog-p0-last {
+  grid-area: last;
+  border: 1px dashed var(--cog-border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  background: var(--cog-surface-alt);
+  color: var(--cog-text-strong);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: 46px;
+}
+
+.cog-p0-last > :not(button) {
+  flex: 1;
+  min-width: 150px;
+  font-size: 14px;
+}
+
+.cog-p0-last b {
+  font: 700 18px 'Oswald', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.cog-p0-last button {
+  min-height: 44px;
+  border-radius: 3px;
+  border: 1px solid var(--cog-border);
+  background: var(--cog-surface);
+  color: var(--cog-text-strong);
+  padding: 4px 12px;
+  font: 500 12.5px 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cog-p0-last button.is-yes {
+  background: var(--cog-accent-fill);
+  border-color: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+}
+
+/* ---- widths: the container is .cog-p0 ---- */
+@container cog-p0 (min-width: 480px) {
+  .cog-p0-stats { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .cog-p0-tile,
+  .cog-p0 button.cog-p0-tile.is-wide { grid-column: span 1; flex-direction: column; gap: 3px; min-height: 58px; }
+  .cog-p0-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@container cog-p0 (min-width: 760px) {
+  .cog-p0-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-areas: "id id" "hp hp" "stats stats" "atk hot" "last last";
+    gap: 12px;
+    padding: 14px;
+  }
+  .cog-p0-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* =======================================================
+   PAGE 0 WINDOW
+   The sheet window carries .cog-p0-window while page 0 is the active tab (set where the tab changes and on render):
+   the tab strip is hidden, and the page's own "Full sheet" button is the way out.
+   ======================================================= */
+
+.cog-p0-window .sheet-tabs.tabs {
+  display: none;
+}

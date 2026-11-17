@@ -12,6 +12,7 @@
 import { SYSTEM_ID } from '../constants.mjs';
 import { escapeHtml, plainText, stripControls, titleCaseHeading } from './text.mjs';
 import { textCheck } from './hash.mjs';
+import { sourceryFlagsOf } from './redacted.mjs';
 import { sizesInOrder } from '../data/sizes.mjs';
 import { sanitizeVehicleKind } from '../data/rules/vehicle-rules.mjs';
 
@@ -125,7 +126,7 @@ export function rollTableSpec(recipe, hydrated, options = {}) {
     tableNumber: recipe.number,
     formula: recipe.formula,
     rows,
-    flags: { [SYSTEM_ID]: { sourcery: provenance(recipe, hydrated, options) } }
+    flags: sourceryFlagsOf(provenance(recipe, hydrated, options))
   };
 }
 
@@ -178,7 +179,7 @@ export function vehicleSpecs(recipe, hydrated, options = {}) {
       _id: vehicleDocId(recipe.id, i),
       name,
       system: { kind: sanitizeVehicleKind(row.vehicleKind), attributes },
-      flags: { [SYSTEM_ID]: { sourcery: provenance(recipe, hydrated, options) } }
+      flags: sourceryFlagsOf(provenance(recipe, hydrated, options))
     });
   });
   return specs;
@@ -223,9 +224,9 @@ export function journalSpec(book, items, options = {}) {
       _id: recipe._id,
       name: tableName(hydrated),
       html: tablePageHtml(recipe, hydrated, { ...options, rollTableUuid: recipe.rollColumn && options.rollTableUuid ? options.rollTableUuid(recipe) : null }),
-      flags: { [SYSTEM_ID]: { sourcery: provenance(recipe, hydrated, options) } }
+      flags: sourceryFlagsOf(provenance(recipe, hydrated, options))
     })),
-    flags: { [SYSTEM_ID]: { sourcery: { book: book.book, source: options.source ?? 'pdf' } } }
+    flags: sourceryFlagsOf({ book: book.book, source: options.source ?? 'pdf' })
   };
 }
 

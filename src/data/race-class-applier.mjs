@@ -15,6 +15,7 @@ import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { PRE_RACE_CLASS_RANK_LIMIT } from '../utils/skill/rank-limits.mjs';
 import { normalizeTiming } from '../utils/time/timing.mjs';
 import { effectiveRace, overlayOf } from '../utils/character/overlay-state.mjs';
+import { pauseOriginalTraits } from '../documents/actor/transformation-traits.mjs';
 import { transformText } from '../utils/character/transform-text.mjs';
 import { grantStartingItems } from './starting-items.mjs';
 import { RACE_CLASS_KINDS, writeKindPlan } from './race-class-grants.mjs';
@@ -368,11 +369,14 @@ export class COGRaceClassApplier {
     }
     for (const warning of plan.warnings) console.warn(`Sprinter RPG | ${warning}`);
     await writeKindPlan(actor, plan, { allowOffTheme: options.allowOffTheme === true, createOptions: options.createOptions });
+    // Under a transformation the new race's traits are set aside like the old race's (D11 c); they return at the revert
+    const overlay = kind === 'race' ? overlayOf(actor.items) : null;
+    if (overlay) await pauseOriginalTraits(actor, overlay);
 
     if (globalThis.ui?.notifications) {
       globalThis.ui.notifications.info(`Applied ${profile.label} "${def.name}" to ${actor.name}.`);
       // Under a transformation the new race is what the victim returns to (the overlay keeps overlaying)
-      if (kind === 'race' && overlayOf(actor.items)) {
+      if (overlay) {
         globalThis.ui.notifications.info(transformText('COG.Transform.RaceReturnsTo', { race: def.name, actor: actor.name }));
       }
     }

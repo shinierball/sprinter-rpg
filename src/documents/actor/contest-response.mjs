@@ -10,7 +10,7 @@ import { incomingEffectTags } from '../../utils/effects/incoming-effect.mjs';
 import { effectImmunityFor, immuneText } from '../../utils/effects/effect-immunity.mjs';
 import { getSkillByIdentifier } from './actor-skills.mjs';
 import { settleAfterCheck } from './condition-expiry.mjs';
-import { trustedHtml } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 
 /**
  * Roll a defensive response to a contested check or opposed check
@@ -88,7 +88,7 @@ export async function rollContestResponse(actor, params = {}) {
     const sources = immunity.sources.join(', ');
     const msg = await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: actor }),
-      content: `<div class="cog-chat-card cog-contest-result-card cog-bg-surface"><strong>${actor.name}</strong>: ${immuneText('Card', { sources }, `Immune (${sources})`)}<div class="cog-text-muted" style="font-size: 11px;">${immuneText('CardNote', { actor: actor.name, item: cleanItemName }, `${actor.name} is immune to ${cleanItemName}'s effect.`)}</div></div>`,
+      content: `<div class="cog-chat-card cog-contest-result-card cog-bg-surface"><strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(immuneText('Card', { sources }, `Immune (${sources})`))}<div class="cog-text-muted" style="font-size: 11px;">${escapeAttr(immuneText('CardNote', { actor: actor.name, item: cleanItemName }, `${actor.name} is immune to ${cleanItemName}'s effect.`))}</div></div>`,
       flags: { [SYSTEM_ID]: { isContestRoll: true, isContestSuccess: true, defenderId: actor.id, initiatorId, immune: true, sourceRank: Number(sourceRank) || 0 } }
     });
     if (msg) { msg.isSuccess = true; msg.success = true; }
@@ -116,8 +116,8 @@ export async function rollContestResponse(actor, params = {}) {
   const diff = roll.total - targetThreshold;
 
   const outcomeBadge = isSuccess
-    ? `<span class="cog-contest-result-badge cog-bg-success-fill cog-text-on-fill">SUCCESS (${roll.total} vs ${targetThreshold})</span>`
-    : `<span class="cog-contest-result-badge cog-bg-accent-fill cog-text-on-fill">FAILED (${roll.total} vs ${targetThreshold})</span>`;
+    ? `<span class="cog-contest-result-badge cog-bg-success-fill cog-text-on-fill">SUCCESS (${escapeAttr(roll.total)} vs ${escapeAttr(targetThreshold)})</span>`
+    : `<span class="cog-contest-result-badge cog-bg-accent-fill cog-text-on-fill">FAILED (${escapeAttr(roll.total)} vs ${escapeAttr(targetThreshold)})</span>`;
 
   const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
 
@@ -135,10 +135,10 @@ export async function rollContestResponse(actor, params = {}) {
     debuffButtonHtml = `
       <div style="margin-top: 6px;">
         <div class="cog-text-accent" style="font-size: 11px; font-weight: bold; margin-bottom: 3px;">
-          <i class="fa-solid fa-skull"></i> Inflicted [${tagLabel}] on ${actor.name}${conditionRounds > 0 ? ` for ${conditionRounds} rounds` : ''}!
+          <i class="fa-solid fa-skull"></i> Inflicted [${escapeAttr(tagLabel)}] on ${escapeAttr(actor.name)}${conditionRounds > 0 ? ` for ${conditionRounds} rounds` : ''}!
         </div>
-        <button type="button" class="cog-apply-condition-btn cog-apply-debuff-btn cog-bg-accent-fill cog-text-on-fill" data-action="crawlerApplyCondition" data-condition-tag="${cleanDebuff}" data-debuff-name="${tagLabel}" data-target-uuid="${actor.uuid}" data-duration-rounds="${conditionRounds}" style="width: 100%; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
-          <i class="fa-solid fa-skull"></i> Re-Apply [${tagLabel}] to ${actor.name}
+        <button type="button" class="cog-apply-condition-btn cog-apply-debuff-btn cog-bg-accent-fill cog-text-on-fill" data-action="crawlerApplyCondition" data-condition-tag="${escapeAttr(cleanDebuff)}" data-debuff-name="${escapeAttr(tagLabel)}" data-target-uuid="${escapeAttr(actor.uuid)}" data-duration-rounds="${conditionRounds}" style="width: 100%; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
+          <i class="fa-solid fa-skull"></i> Re-Apply [${escapeAttr(tagLabel)}] to ${escapeAttr(actor.name)}
         </button>
       </div>
     `;
@@ -152,19 +152,19 @@ export async function rollContestResponse(actor, params = {}) {
     <div class="cog-chat-card cog-contest-result-card cog-bg-surface" style="font-family: var(--font-primary, sans-serif); border: 2px solid ${isSuccess ? 'var(--cog-success)' : 'var(--cog-accent)'}; border-radius: 4px; padding: 8px;">
       <div class="cog-contest-result-header">
         <div class="cog-contest-result-title">
-          <strong class="cog-text" style="font-size: 13px;">${actor.name}</strong>
+          <strong class="cog-text" style="font-size: 13px;">${escapeAttr(actor.name)}</strong>
           <div class="cog-text-muted" style="font-size: 11px;">
-            Contest Response vs <strong>${cleanInitiatorName}</strong>'s <em>${cleanItemName}</em>
+            Contest Response vs <strong>${escapeAttr(cleanInitiatorName)}</strong>'s <em>${escapeAttr(cleanItemName)}</em>
           </div>
         </div>
         <div>${outcomeBadge}</div>
       </div>
       <div class="cog-text-secondary" style="font-size: 11px; margin-bottom: 6px;">
-        Rolled: <strong>${usingSkill ? `${matchedSkill.name} (${statName})` : `${statName} Check`}</strong> (${formula}${modDesc} = <strong>${roll.total}</strong>) vs Target <strong>${targetThreshold}</strong> (Diff: <strong>${diff >= 0 ? `+${diff}` : diff}</strong>)
+        Rolled: <strong>${escapeAttr(usingSkill ? `${matchedSkill.name} (${statName})` : `${statName} Check`)}</strong> (${escapeAttr(formula)}${escapeAttr(modDesc)} = <strong>${escapeAttr(roll.total)}</strong>) vs Target <strong>${escapeAttr(targetThreshold)}</strong> (Diff: <strong>${escapeAttr(diff >= 0 ? `+${diff}` : diff)}</strong>)
       </div>
       ${rollHtml}
-      ${!isSuccess && cleanFailNotes ? `<div class="cog-text-accent cog-bg-warning-tint" style="margin-top: 4px; font-size: 11px; padding: 4px 6px; border-radius: 3px;"><strong>Consequence:</strong> ${cleanFailNotes}</div>` : ''}
-      ${isSuccess && cleanSuccessNotes ? `<div class="cog-text-success cog-bg-success-tint" style="margin-top: 4px; font-size: 11px; padding: 4px 6px; border-radius: 3px;"><strong>Success:</strong> ${cleanSuccessNotes}</div>` : ''}
+      ${!isSuccess && cleanFailNotes ? `<div class="cog-text-accent cog-bg-warning-tint" style="margin-top: 4px; font-size: 11px; padding: 4px 6px; border-radius: 3px;"><strong>Consequence:</strong> ${escapeAttr(cleanFailNotes)}</div>` : ''}
+      ${isSuccess && cleanSuccessNotes ? `<div class="cog-text-success cog-bg-success-tint" style="margin-top: 4px; font-size: 11px; padding: 4px 6px; border-radius: 3px;"><strong>Success:</strong> ${escapeAttr(cleanSuccessNotes)}</div>` : ''}
       ${debuffButtonHtml}
       ${effectSummaryHtml}
     </div>
@@ -172,7 +172,7 @@ export async function rollContestResponse(actor, params = {}) {
 
   const msg = await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor: actor }),
-    flavor: `<strong>${actor.name}</strong>: ${usingSkill ? matchedSkill.name : statName} Contest Roll vs ${cleanInitiatorName}`,
+    flavor: `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(usingSkill ? matchedSkill.name : statName)} Contest Roll vs ${escapeAttr(cleanInitiatorName)}`,
     content: cardContent,
     flags: {
       [SYSTEM_ID]: {

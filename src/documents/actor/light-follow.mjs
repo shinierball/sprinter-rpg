@@ -14,14 +14,14 @@ import { isMarkerActor } from '../../utils/area/marker.mjs';
 import { positionAfterMovement } from '../../utils/combat/movement-position.mjs';
 import { pixelsPerUnit } from '../../utils/area/region-shapes.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { LIGHT_FLAG, lightFlagOf, findLightTokens, extinguishTokens } from './light-source.mjs';
+import { lightFlagOf, findLightTokens, extinguishTokens, withLightFlag } from './light-source.mjs';
 
 /** Operation option marking a move this module issued, so its own `moveToken` echo is ignored. */
 const LIGHT_MOVE_OPTION = 'lightFollow';
 
 const isOwnLightMove = (operation) => Boolean(operation?.[SYSTEM_ID]?.[LIGHT_MOVE_OPTION]);
 
-const lightFlagUpdate = (flag, changes) => ({ flags: { [SYSTEM_ID]: { [LIGHT_FLAG]: { ...flag, ...changes } } } });
+const lightFlagUpdate = (flag, changes) => withLightFlag({}, { ...flag, ...changes });
 
 const sceneTokens = (scene) => {
   const t = scene?.tokens;
@@ -214,7 +214,7 @@ export async function detachLight(lightDoc) {
 function travelData(lightDoc, ownerToken) {
   const size = gridPx(ownerToken.parent);
   const flag = lightFlagOf(lightDoc);
-  return {
+  return withLightFlag({
     name: lightDoc.name,
     actorId: lightDoc.actorId,
     actorLink: false,
@@ -227,9 +227,8 @@ function travelData(lightDoc, ownerToken) {
     displayBars: lightDoc.displayBars,
     displayName: lightDoc.displayName,
     disposition: lightDoc.disposition,
-    light: structuredClone(lightDoc.light ?? {}),
-    flags: { [SYSTEM_ID]: { [LIGHT_FLAG]: structuredClone(flag) } }
-  };
+    light: structuredClone(lightDoc.light ?? {})
+  }, structuredClone(flag));
 }
 
 /**

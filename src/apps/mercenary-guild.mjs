@@ -16,17 +16,21 @@ import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
 import { resolveActor } from '../documents/actor.mjs';
 import { syncActorOwnership } from '../documents/actor/ownership-relay.mjs';
 import { userOwnsActor } from '../documents/actor/personal-space-links.mjs';
-import { SYSTEM_PATH, SYSTEM_ID } from '../constants.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
 import { confirmRuleBreak, markContractRuleBreak } from '../utils/rule-break.mjs';
 import { sourceBadge, isContentOff } from '../utils/content-source.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../utils/rule-break-visibility.mjs';
 import { registerRelayAction, requestRelay } from '../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { runKeyed } from '../utils/keyed-queue.mjs';
+import { readFlag, withFlags } from '../utils/flags.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/mercenary-guild`;
 
-/** The id a catalog mercenary is registered under; stamped on enlisted actors as `flags.sprinter-rpg.catalogId`. */
+/** The flag that stamps an enlisted actor with the id of the catalog mercenary it came from. */
+const CATALOG_ID = 'catalogId';
+
+/** The id a catalog mercenary is registered under; stamped on enlisted actors as the `catalogId` flag. */
 const catalogMercId = (cat) => cat.id || cat._id || cat.name;
 
 /** The GM, or a user who owns one of the mercenary's employer crawlers, may extend or dismiss its contract. */
@@ -295,7 +299,7 @@ export class COGMercenaryGuildApp extends COGToolApp {
     }
 
     // Catalog pre-configured mercenaries (available for instant enlistment if not present in world)
-    const enlistedIds = new Set(worldMercs.map(wm => wm.flags?.[SYSTEM_ID]?.catalogId).filter(Boolean));
+    const enlistedIds = new Set(worldMercs.map(wm => readFlag(wm, CATALOG_ID)).filter(Boolean));
     for (const cat of contentRegistry.getMercenaries()) {
       if (isContentOff(cat)) continue;
       if (!enlistedIds.has(catalogMercId(cat))) {
@@ -647,7 +651,7 @@ export class COGMercenaryGuildApp extends COGToolApp {
       img: cat.img,
       system: structuredClone(cat.system),
       items: structuredClone(cat.items || []),
-      flags: { [SYSTEM_ID]: { catalogId: catalogMercId(cat) } }
+      ...withFlags({}, { [CATALOG_ID]: catalogMercId(cat) })
     };
 
     const created = await ActorClass.create(actorData, { cogSystemMade: true });

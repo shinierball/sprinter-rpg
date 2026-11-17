@@ -11,6 +11,7 @@
  */
 import { SYSTEM_ID } from '../../constants.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
+import { GRANTED_EFFECT_STATE } from '../../data/race-class-grants.mjs';
 import { planRaceClassKind, raceClassView, prefetchKindDocuments } from '../../data/race-class-plan.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
@@ -21,13 +22,16 @@ import { calculateItemHandsRequired } from '../../utils/gear/wielding.mjs';
 import {
   isAffliction, afflictionStage, transformState, formAt, formEntries, overlayOf as overlayOfItems, transformationOfItem, heldByCure
 } from '../../utils/character/transform-rules.mjs';
+import { formOriginOf, grantedRankOf } from '../../utils/character/overlay-state.mjs';
 import { reveal } from '../pending-secrets.mjs';
 import { syncTokenVision } from './actor-vision.mjs';
 import { isEffectItem } from '../../utils/document-types.mjs';
-import { clearFlag } from '../../utils/flags.mjs';
+import { clearFlag, flagPath } from '../../utils/flags.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { pauseOriginalTraits, unpauseTraits, holdsAffliction } from './transformation-traits.mjs';
 
 const FLAG = 'transformation';
-const PERMANENT = Object.freeze({ type: 'permanent', value: 0, scaleBy: null, endsWithCombat: false, remainingRounds: 0, expiresAt: null });
+const PERMANENT = GRANTED_EFFECT_STATE.buff.durationConfig;
 
 /** Actors a transformation is writing right now (a counter per actor id, since the calls nest). */
 const working = new Map();
@@ -81,15 +85,22 @@ const cleanClone = (value) => {
   try { return structuredClone(value); } catch { return JSON.parse(JSON.stringify(value)); }
 };
 
-/** A plain confirmation (never a Rule Break). Headless, with no dialog API, it proceeds. */
-async function confirmPlain(message, options = {}) {
+/**
+ * A plain confirmation (never a Rule Break). Headless, with no dialog API, it proceeds. Closing the dialog without
+ * answering gives `closeAnswer` (declining by default; an offer that costs the player something passes `true`).
+ */
+async function confirmPlain(message, options = {}, { closeAnswer = false, yes, no } = {}) {
   if (options.confirm === false) return true;
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
   if (typeof DialogV2?.confirm !== 'function') return true;
   try {
-    return Boolean(await DialogV2.confirm({ window: { title: 'Transformation' }, content: `<p>${message}</p>`, modal: true }));
+    const answer = await DialogV2.confirm({
+      window: { title: 'Transformation' }, content: `<p>${message}</p>`, modal: true,
+      ...(yes ? { yes: { label: yes } } : {}), ...(no ? { no: { label: no } } : {})
+    });
+    return answer === null || answer === undefined ? closeAnswer : Boolean(answer);
   } catch {
-    return false;
+    return closeAnswer;
   }
 }
 
@@ -120,7 +131,7 @@ const formLabel = (affliction, index, def) => formAt(affliction, index)?.label |
  * `transformationOf`. Planned by the race planner with the starting items, floor gate and prerequisites left out;
  * ranks of skills the victim owns are NOT written (the form's fixed rows raise them in derivation).
  */
-function planForm(actor, affliction, def, selections, lookup) {
+function planForm(actor, affliction, def, selections, lookup, formIndex) {
   const view = raceClassView(actor);
   // The original race's traits would hide a form trait with the same identifier; the form brings its own.
   view.items = view.items.filter((i) => !(isEffectItem(i) && i.flags?.[SYSTEM_ID]?.grantedBy === 'race'));
@@ -129,6 +140,8 @@ function planForm(actor, affliction, def, selections, lookup) {
   const creates = plan.itemCreates.map((data) => {
     const own = { ...(data.flags?.[SYSTEM_ID] ?? {}), transformationOf: owner };
     if (data.type === 'race') delete own.isAppliedRace;
+    // Which form made a skill and what rank the form gave it: a skill that stays when the form changes is judged by these
+    if (data.type === 'skill') { own.transformationForm = formIndex; own.transformationGranted = Number(data.system?.rank) || 0; }
     return { ...data, flags: { ...(data.flags ?? {}), [SYSTEM_ID]: own } };
   });
   return { plan, creates };
@@ -144,29 +157,6 @@ async function createForm(actor, creates) {
   const out = Array.from(await actor.createEmbeddedDocuments('Item', landed, { keepId: true }) ?? []);
   const race = out.find((d) => d.type === 'race');
   return { formItemId: race ? idOf(race) : null, createdIds: out.filter((d) => d.type !== 'race').map(idOf) };
-}
-
-/** The original race's traits get paused (`pausedBy` names the affliction). A trait already off stays as it was. */
-async function pauseOriginalTraits(actor, affliction) {
-  const paused = [];
-  for (const item of actor.items ?? []) {
-    if (item.flags?.[SYSTEM_ID]?.grantedBy !== 'race' || transformationOfItem(item)) continue;
-    if (item.flags?.[SYSTEM_ID]?.pausedBy) continue;
-    if (item.type === 'buff' && item.system?.active !== false) paused.push({ item, change: { 'system.active': false } });
-    else if (item.type === 'debuff' && item.system?.paused !== true) paused.push({ item, change: { 'system.paused': true } });
-  }
-  for (const { item, change } of paused) {
-    await item.update(change);
-    await item.setFlag(SYSTEM_ID, 'pausedBy', idOf(affliction));
-  }
-}
-
-async function unpauseTraits(actor, afflictionId) {
-  for (const item of Array.from(actor.items ?? [])) {
-    if (item.flags?.[SYSTEM_ID]?.pausedBy !== afflictionId) continue;
-    await item.update(item.type === 'buff' ? { 'system.active': true } : { 'system.paused': false });
-    await item.setFlag(SYSTEM_ID, 'pausedBy', '');
-  }
 }
 
 /** A buff or debuff by reference: the catalog, then the world's items. As creation data, or null. */
@@ -225,6 +215,16 @@ async function prepareForm(actor, affliction, formIndex, options) {
 
 const permanentUpdate = (affliction) => affliction.update({ 'system.duration': 'Permanent', 'system.durationConfig': cleanClone(PERMANENT) });
 
+/** D11: a second form race over the victim is a Rule Break; confirming reverts the first overlay as cured. */
+async function confirmSecondOverlay(actor, other, target, options) {
+  const gate = await confirmRuleBreak({
+    title: 'Second transformation',
+    reason: `${actor.name} is already changed by ${other.name}. Revert it and change into ${target} as a Rule Break?`,
+    options
+  });
+  return gate.confirmed;
+}
+
 /**
  * Fire a pending affliction: lay the first form over the victim and add the affliction's effects.
  * Idempotent (a changed affliction does nothing). Only crawlers change race; anyone else gets the effects only.
@@ -248,14 +248,7 @@ export async function changeVictim(actor, affliction, options = {}) {
       : transformText('COG.Transform.ConfirmChangeBy', { actor: actor.name, affliction: affliction.name });
     if (!(await confirmPlain(question, options))) return false;
     const other = raceChange ? overlayOf(actor) : null;
-    if (other && idOf(other) !== idOf(affliction)) {
-      const gate = await confirmRuleBreak({
-        title: 'Second transformation',
-        reason: `${actor.name} is already changed by ${other.name}. Revert it and change into ${target} as a Rule Break?`,
-        options
-      });
-      if (!gate.confirmed) return false;
-    }
+    if (other && idOf(other) !== idOf(affliction) && !(await confirmSecondOverlay(actor, other, target, options))) return false;
 
     // 3-4. Resolve the form and answer its prompts: nothing is written yet
     let prepared = null;
@@ -269,7 +262,7 @@ export async function changeVictim(actor, affliction, options = {}) {
     let formItemId = null;
     let createdIds = [];
     if (prepared) {
-      const { creates } = planForm(actor, affliction, prepared.def, prepared.selections, prepared.lookup);
+      const { creates } = planForm(actor, affliction, prepared.def, prepared.selections, prepared.lookup, 0);
       ({ formItemId, createdIds } = await createForm(actor, creates));
       await pauseOriginalTraits(actor, affliction);
     }
@@ -306,10 +299,61 @@ export async function changeVictim(actor, affliction, options = {}) {
   });
 }
 
-/** Delete the form race item and everything created for it (not the added effects). */
+/**
+ * Delete the form race item and everything created for it (not the added effects). The skills it
+ * created stay, stamped with the form that made them so that they are not in force under another form (1196).
+ */
 async function deleteFormItems(actor, state) {
-  const ids = [state.formItemId, ...(state.createdIds ?? [])].filter(Boolean).filter((id) => actor.items.get(id));
+  await stampFormSkills(actor, state);
+  const ids = [state.formItemId, ...(state.createdIds ?? [])].filter(Boolean).filter((id) => actor.items.get(id) && actor.items.get(id).type !== 'skill');
   if (ids.length) await actor.deleteEmbeddedDocuments('Item', ids);
+}
+
+/** The rank a form's own rows gave a skill: the fixed rows of the form race that name it (0 when none does). */
+function rankGivenBy(formItem, skill) {
+  const identifier = skill?.system?.identifier;
+  if (!formItem || !identifier) return 0;
+  return (formItem.system?.grants ?? [])
+    .filter((g) => g?.kind === 'skill' && g.mode !== 'choice' && g.identifier === identifier)
+    .reduce((sum, g) => sum + (Number(g.rank) || 0), 0);
+}
+
+/** Stamp the skills the current form created with that form and the rank it gave them (items made before the stamp existed). */
+async function stampFormSkills(actor, state) {
+  const formItem = actor.items.get(state.formItemId);
+  for (const id of state.createdIds ?? []) {
+    const item = actor.items.get(id);
+    if (item?.type !== 'skill' || formOriginOf(item) !== null) continue;
+    await item.update({ [flagPath('transformationForm')]: state.formIndex, [flagPath('transformationGranted')]: grantedRankOf(item) ?? rankGivenBy(formItem, item) });
+  }
+}
+
+/** The skills a form created that the victim has trained: each with the ranks earned beyond what the form gave. */
+function trainedFormSkills(actor, afflictionId, state) {
+  const formItem = actor.items.get(state.formItemId);
+  const trained = [];
+  for (const item of actor.items ?? []) {
+    if (item.type !== 'skill' || transformationOfItem(item) !== afflictionId) continue;
+    const given = grantedRankOf(item) ?? (state.createdIds?.includes(idOf(item)) ? rankGivenBy(formItem, item) : 0);
+    const earned = Math.max(0, (Number(item.system?.rank) || 0) - given);
+    if (earned > 0) trained.push({ item, earned });
+  }
+  return trained;
+}
+
+/** Offer the player the skills they trained while changed (1196). Asked nothing and no answer given: they are kept. */
+function offerTrainedSkills(actor, trained, options) {
+  if (options.keepTrained !== undefined) return Promise.resolve(Boolean(options.keepTrained));
+  const skills = trained.map(({ item, earned }) => `${escapeAttr(item.name)} (rank ${earned})`).join(', ');
+  return confirmPlain(transformText('COG.Transform.KeepTrained', { actor: escapeAttr(actor.name), skills }), options, {
+    closeAnswer: true, yes: 'Keep them', no: 'Let them go'
+  });
+}
+
+/** A kept skill becomes the victim's own: the ranks it earned, and nothing of the form's on it. */
+async function releaseSkill(item, earned) {
+  await item.update({ 'system.rank': earned });
+  for (const key of ['transformationOf', 'transformationForm', 'transformationGranted', 'grantedBy']) await clearFlag(item, key);
 }
 
 /**
@@ -329,22 +373,29 @@ export async function switchForm(actor, affliction, formIndex, options = {}) {
   if (actor.type !== 'crawler') return false;
 
   return whileTransforming(actor, async () => {
+    // From the original body into a form while another affliction has its form over the victim is D11's second overlay
+    const other = next >= 0 && state.formIndex === -1 ? overlayOf(actor) : null;
     let prepared = null;
     if (next >= 0) {
       prepared = await prepareForm(actor, affliction, next, options);
       if (!prepared) return false;
     }
+    if (other && idOf(other) !== idOf(affliction)) {
+      const target = formLabel(affliction, next, prepared.def);
+      if (!(await confirmSecondOverlay(actor, other, target, options))) return false;
+      await revertTransformation(actor, other, { ruleBreak: true });
+    }
     await deleteFormItems(actor, state);
     let formItemId = null;
     let createdIds = [];
     if (prepared) {
-      const { creates } = planForm(actor, affliction, prepared.def, prepared.selections, prepared.lookup);
+      const { creates } = planForm(actor, affliction, prepared.def, prepared.selections, prepared.lookup, next);
       ({ formItemId, createdIds } = await createForm(actor, creates));
     }
     // The original body has its race traits back; a form pauses them again (631 a)
     if (next === -1) await unpauseTraits(actor, idOf(affliction));
     else if (state.formIndex === -1) await pauseOriginalTraits(actor, affliction);
-    await writeState(affliction, { ...state, formIndex: next, selections: prepared?.selections ?? {}, formItemId, createdIds });
+    await writeState(affliction, { ...state, formIndex: next, selections: prepared?.selections ?? {}, formItemId, createdIds, ruleBreak: Boolean(state.ruleBreak) || Boolean(other) });
     actor.prepareData?.();
     await postCard(actor, [prepared ? `${actor.name} changed into ${formLabel(affliction, next, prepared.def)}.` : `${actor.name} returned to their own body.`]);
     return true;
@@ -356,10 +407,11 @@ export async function switchForm(actor, affliction, formIndex, options = {}) {
  * original race's traits; delete the affliction. Nothing is restored because nothing was removed. Safe to call twice.
  * @param {Actor} actor
  * @param {Item} affliction
- * @param {{ ruleBreak?: boolean, deleteAffliction?: boolean }} [options]
+ * @param {{ ruleBreak?: boolean, deleteAffliction?: boolean, keepTrained?: boolean }} [options] `keepTrained` answers the
+ *   offer of the skills the victim trained while changed without asking
  * @returns {Promise<boolean>} whether anything was reverted
  */
-export async function revertTransformation(actor, affliction, { ruleBreak = false, deleteAffliction = true } = {}) {
+export async function revertTransformation(actor, affliction, { ruleBreak = false, deleteAffliction = true, keepTrained } = {}) {
   if (!actor || !affliction) return false;
   const afflictionId = idOf(affliction);
   return whileTransforming(actor, async () => {
@@ -368,8 +420,14 @@ export async function revertTransformation(actor, affliction, { ruleBreak = fals
     const ids = new Set([state.formItemId, ...(state.createdIds ?? []), ...(state.effectIds ?? [])].filter(Boolean));
     // Anything still flagged to this affliction goes too (a skill created after a state write that failed)
     for (const item of actor.items ?? []) if (transformationOfItem(item) === afflictionId) ids.add(idOf(item));
+    // The player is offered the skills they trained while changed; what they keep leaves the form with only its ranks
+    let kept = [];
+    const trained = wasChanged ? trainedFormSkills(actor, afflictionId, state) : [];
+    if (trained.length && await offerTrainedSkills(actor, trained, { keepTrained })) kept = trained;
+    for (const { item } of kept) ids.delete(idOf(item));
     const present = [...ids].filter((id) => actor.items.get(id));
     if (present.length) await actor.deleteEmbeddedDocuments('Item', present);
+    for (const { item, earned } of kept) await releaseSkill(item, earned);
     await unpauseTraits(actor, afflictionId);
     const hadAffliction = Boolean(actor.items.get(afflictionId));
     if (deleteAffliction && hadAffliction) await actor.deleteEmbeddedDocuments('Item', [afflictionId]);
@@ -395,9 +453,20 @@ export async function onTransformItemDelete(item, _options, userId) {
   if (!actor) return null;
   const owner = transformationOfItem(item);
   const isChangedAffliction = isAffliction(item) && afflictionStage(item) === 'changed';
-  if (!owner && !isChangedAffliction) return null;
+  // A pending affliction normally owns nothing; one a failed change left things on (a paused trait, a created item)
+  // gives them back when it is deleted (N2)
+  const leftovers = !owner && !isChangedAffliction && isAffliction(item) && holdsAffliction(actor, idOf(item));
+  if (!owner && !isChangedAffliction && !leftovers) return null;
   if (userId && globalThis.game?.user?.id && userId !== globalThis.game.user.id) return false;
   if (isTransforming(actor)) return false;
+  if (leftovers) {
+    try {
+      return await revertTransformation(actor, item, { deleteAffliction: false });
+    } catch (err) {
+      console.error('Sprinter RPG | Could not clean up after a deleted affliction:', err);
+      return false;
+    }
+  }
   const affliction = isChangedAffliction ? item : actor.items.get(owner);
   if (!affliction) return false;
   try {

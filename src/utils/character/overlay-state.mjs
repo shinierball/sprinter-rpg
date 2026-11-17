@@ -4,14 +4,8 @@
  * which imports tags.mjs) re-exports them, so they live here to keep the import graph acyclic.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-
-const sysOf = (item) => (item?.system && typeof item.system === 'object' ? item.system : {});
-
-/** Whether a debuff carries a `transform` block (a plain object), i.e. is an affliction. */
-function hasTransformBlock(item) {
-  const block = sysOf(item).transform;
-  return item?.type === 'debuff' && Boolean(block) && typeof block === 'object' && !Array.isArray(block);
-}
+import { hasTransformBlock } from '../effects/debuff-force.mjs';
+import { readFlag } from '../flags.mjs';
 
 /** The engine state flag of an affliction (a plain object; empty when none was written). */
 export function transformState(item) {
@@ -74,4 +68,34 @@ export function raceInForce(items, raceItem) {
 export function effectiveRace(items) {
   const list = Array.from(items ?? []);
   return list.find((item) => item?.type === 'race' && raceInForce(list, item)) ?? null;
+}
+
+/** Which form (its index in `transform.forms`) created a skill the engine made for a form; null for an unstamped item. */
+export function formOriginOf(item) {
+  const raw = readFlag(item, 'transformationForm');
+  return Number.isInteger(raw) ? raw : null;
+}
+
+/** The rank the form's own row gave a skill it created (what leaves with the form), or null for an unstamped item. */
+export function grantedRankOf(item) {
+  const raw = readFlag(item, 'transformationGranted');
+  return raw === null || raw === undefined || raw === '' || !Number.isFinite(Number(raw)) ? null : Number(raw);
+}
+
+/**
+ * Whether a skill the engine created for a form is in force: its form is the one the victim has now. A skill is kept,
+ * not in force, while another form (or the original body) is current (1196). An unstamped item, one no affliction owns,
+ * and any item that is not a transformation's is in force.
+ * @param {Iterable<object>} items the actor's items
+ * @param {object} item
+ * @returns {boolean}
+ */
+export function formSkillInForce(items, item) {
+  const owner = transformationOfItem(item);
+  const origin = formOriginOf(item);
+  if (!owner || origin === null) return true;
+  const affliction = Array.from(items ?? []).find((i) => (i.id ?? i._id) === owner);
+  if (!affliction) return true;
+  const state = transformState(affliction);
+  return state.stage === 'changed' && Number(state.formIndex) === origin;
 }

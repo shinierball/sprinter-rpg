@@ -7,13 +7,16 @@ import { WORSHIP_TAGS } from '../data/tag-vocabulary.mjs';
 import { WORSHIP_TABLE_RECIPES } from '../utils/deity/worship-tables.mjs';
 import { findBookTable } from '../sourcery/book-tables.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
+import { chatButtonDataHtml } from '../utils/card/chat-button-data.mjs';
 
 const DIVINE_DEBUFF_TAG = WORSHIP_TAGS.divine;
 
-/** One chat button. `attrs` are data attributes, already escaped values by key. */
-const button = (action, icon, label, attrs = {}) => {
-  const data = Object.entries(attrs).filter(([, v]) => v !== '' && v !== undefined).map(([k, v]) => ` data-${k}="${escapeAttr(v)}"`).join('');
-  return `<button type="button" class="cog-btn" data-action="${action}"${data}><i class="fa-solid ${icon}"></i> ${escapeAttr(label)}</button>`;
+/** One chat button as data: its markup is built (and escaped) by `buttonHtml`. `attrs` are data attributes by key. */
+const button = (action, icon, label, attrs = {}) => ({ action, icon, label, attrs });
+
+/** The markup of one button. */
+const buttonHtml = ({ action, icon, label, attrs }) => {
+  return `<button type="button" class="cog-btn" data-action="${escapeAttr(action)}"${chatButtonDataHtml(attrs)}><i class="fa-solid ${escapeAttr(icon)}"></i> ${escapeAttr(label)}</button>`;
 };
 
 /** A [Boon] or [Smite] button that opens the gift dialog for this actor and god. */
@@ -114,7 +117,7 @@ function buildWorshipNotice(kind, ctx = {}, tableUuid = null) {
   if (!notice) return null;
   const rows = notice.rows(ctx, tableUuid);
   if (!rows.length) return null;
-  const body = rows.map((row) => `<div class="cog-worship-line"><div class="cog-text-muted">${escapeAttr(row.text)}</div>${row.buttons.filter(Boolean).length ? `<div class="cog-card-actions">${row.buttons.filter(Boolean).join('')}</div>` : ''}</div>`).join('');
+  const body = rows.map((row) => `<div class="cog-worship-line"><div class="cog-text-muted">${escapeAttr(row.text)}</div>${row.buttons.filter(Boolean).length ? `<div class="cog-card-actions">${row.buttons.filter(Boolean).map(buttonHtml).join('')}</div>` : ''}</div>`).join('');
   return `<div class="cog-chat-card cog-worship-card">
     <header class="cog-card-header"><h3><i class="fa-solid ${escapeAttr(notice.icon)}"></i> ${escapeAttr(say(notice.title[0], notice.title[1]))}</h3></header>
     <div class="cog-card-body">${body}</div>

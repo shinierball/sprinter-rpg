@@ -11,6 +11,7 @@
 import { cardPartOf, damageCardDataAttrs } from '../damage/damage-parts.mjs';
 import { rollContextDataAttr } from '../roll/roll-context.mjs';
 import { escapeAttr } from '../escape-attr.mjs';
+import { chatButtonDataHtml } from '../card/chat-button-data.mjs';
 
 
 /**
@@ -22,10 +23,10 @@ import { escapeAttr } from '../escape-attr.mjs';
  * @param {Array<{ type: string, finalDamage: number, baseTotal?: number, formula?: string, source?: string }>} p.parts
  * @param {object} p.rollContext the damage roll's RollContext (its tags decide which defenses apply)
  * @param {string[]} [p.notes] extra lines under the total (the occupants an explosion targets, for example)
- * @param {string} [p.extraButtonsHtml] more buttons (the ram's "Apply collision")
+ * @param {{ label: string, action: string, data?: object, className?: string }[]} [p.extraButtons] more buttons (the ram's "Apply collision"), built by `vehicleButtonHtml`
  * @returns {string}
  */
-export function vehicleDamageCardHtml({ attackerUuid, itemName, title, parts, rollContext, notes = [], extraButtonsHtml = '' }) {
+export function vehicleDamageCardHtml({ attackerUuid, itemName, title, parts, rollContext, notes = [], extraButtons = [] }) {
   const list = Array.isArray(parts) ? parts : [];
   const typed = {};
   for (const p of list) typed[p.type] = (typed[p.type] || 0) + (Number(p.finalDamage) || 0);
@@ -38,12 +39,12 @@ export function vehicleDamageCardHtml({ attackerUuid, itemName, title, parts, ro
     <div class="cog-chat-card cog-damage-card cog-vehicle-damage-card"
       data-attacker-uuid="${escapeAttr(attackerUuid)}"
       data-item-name="${escapeAttr(itemName)}"
-      data-damage-value="${total}"
+      data-damage-value="${escapeAttr(total)}"
       data-typed-damage='${escapeAttr(JSON.stringify(typed))}'${damageCardDataAttrs(cardParts, rollContextDataAttr(rollContext))}
       data-attack-type="vehicle"
       data-is-armor-piercing="false">
       <div class="cog-damage-card-header"><strong>${escapeAttr(title)}</strong></div>
-      <div class="cog-damage-card-result"><span class="cog-damage-value cog-text-accent">${total}</span> <span class="cog-damage-formula">Total Damage</span></div>
+      <div class="cog-damage-card-result"><span class="cog-damage-value cog-text-accent">${escapeAttr(total)}</span> <span class="cog-damage-formula">Total Damage</span></div>
       <div class="cog-typed-breakdown">${rows}</div>
       ${noteHtml}
       <div class="cog-damage-actions">
@@ -51,7 +52,7 @@ export function vehicleDamageCardHtml({ attackerUuid, itemName, title, parts, ro
         <div class="cog-damage-sub-actions">
           <button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="0.5" title="Apply half damage">Half</button>
           <button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-ignore-dr="true" title="Apply ignoring DR">Ignore DR</button>
-          ${extraButtonsHtml}
+          ${extraButtons.map(({ label, action, data, className }) => vehicleButtonHtml(label, action, data, { className })).join('')}
         </div>
       </div>
     </div>`;
@@ -59,8 +60,7 @@ export function vehicleDamageCardHtml({ attackerUuid, itemName, title, parts, ro
 
 /** A button that runs a chat action, with its data attributes. Values are escaped. */
 export function vehicleButtonHtml(label, action, data = {}, { className = 'cog-apply-damage-btn' } = {}) {
-  const attrs = Object.entries(data).map(([k, v]) => ` data-${k}="${escapeAttr(v)}"`).join('');
-  return `<button type="button" class="${className}" data-action="${escapeAttr(action)}"${attrs}>${escapeAttr(label)}</button>`;
+  return `<button type="button" class="${escapeAttr(className)}" data-action="${escapeAttr(action)}"${chatButtonDataHtml(data)}>${escapeAttr(label)}</button>`;
 }
 
 /** The card a ram opens with when the driver is a mob: it never rolls, the attack is an auto-hit against the target's Evade. */

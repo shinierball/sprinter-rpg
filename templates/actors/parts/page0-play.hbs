@@ -1,0 +1,69 @@
+{{!-- PAGE 0: THE PLAY SHEET. No typed fields: no `name` attribute anywhere here, every control is a data-action. --}}
+<section class="tab {{tab.cssClass}}" data-group="primary" data-tab="page0">
+<div class="cog-p0">
+<div class="cog-p0-grid">
+  <header class="cog-p0-id">
+    <img class="cog-p0-portrait cog-bg-icon-box" src="{{pageZero.identity.img}}" alt="" />
+    <div class="cog-p0-who">
+      <div class="cog-p0-name">{{pageZero.identity.name}}</div>
+      <div class="cog-p0-sub">{{pageZero.identity.sub}}</div>
+      <div class="cog-p0-move">Move <b>{{pageZero.move.value}}</b> ft{{#if pageZero.move.now}} (now <b title="{{pageZero.move.nowTitle}}">{{pageZero.move.now}}</b>){{/if}} &middot; Step <b>{{pageZero.move.step}}</b> ft</div>
+    </div>
+    <button type="button" class="cog-p0-full" data-action="tab" data-group="primary" data-tab="page1">Full sheet &rsaquo;</button>
+  </header>
+
+  <section class="cog-p0-hp">
+    <div class="cog-p0-hprow"><span class="cog-p0-lbl">Health &middot; tap a bar to set</span><span class="cog-p0-num">{{pageZero.health.value}} <small>/ {{pageZero.health.max}}</small></span></div>
+    <div class="cog-p0-meter" role="group" aria-label="Health bars">
+      <div class="cog-p0-empty" style="width: {{pageZero.health.emptyPercent}}%;"></div>
+      {{#each pageZero.health.bars as |bar|}}<button type="button" class="cog-p0-bar" data-action="pageZeroHpBar" data-bar="{{bar.index}}" aria-label="{{bar.label}}"></button>{{/each}}
+    </div>
+    {{#if pageZero.mana.show}}
+      <div class="cog-p0-manarow"><span class="cog-p0-lbl">Mana</span><div class="cog-p0-mana"><i style="width: {{pageZero.mana.percent}}%;"></i></div><span>{{pageZero.mana.value}} / {{pageZero.mana.max}}</span></div>
+    {{/if}}
+  </section>
+
+  <section class="cog-p0-stats" aria-label="Stats">
+    {{#each pageZero.stats as |stat|}}
+      <button type="button" class="cog-p0-tile {{stat.cssKey}}" data-action="rollStat" data-stat="{{stat.key}}"><span class="cog-p0-lbl">{{stat.label}}</span><b>{{stat.mod}}</b></button>
+    {{/each}}
+    <button type="button" class="cog-p0-tile is-evade is-wide" data-action="rollEvade"><span class="cog-p0-lbl">Evade</span><b>{{pageZero.evade.total}}</b></button>
+    <button type="button" class="cog-p0-tile is-favor is-wide" data-action="pageZeroFavorReroll"><span class="cog-p0-lbl">AI Favor</span><b>{{pageZero.favor.count}}</b></button>
+  </section>
+
+  <section class="cog-p0-sec cog-p0-atk">
+    <div class="cog-p0-sechead"><span>Attacks</span><small>readied only</small></div>
+    <div class="cog-p0-sec">
+      {{#each pageZero.attacks as |attack|}}
+        <div class="cog-p0-row" data-item-id="{{attack.id}}">
+          <div class="cog-p0-nm">{{attack.name}}</div>
+          <button type="button" class="cog-p0-hit" data-action="rollAttackHit"><span>To hit</span><b>{{attack.toHit}}</b></button>
+          <button type="button" class="cog-p0-dmg" data-action="rollAttackDamage"><span>Damage</span><b>{{attack.damage}}</b></button>
+        </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <section class="cog-p0-sec cog-p0-hot">
+    <div class="cog-p0-sechead"><span>Hot bar</span><small>{{pageZero.hotbar.label}}</small></div>
+    <div class="cog-p0-slots">
+      {{#each pageZero.hotbar.slots as |slot|}}
+        {{#if slot.action}}
+          <button type="button" class="cog-p0-slot {{slot.cssClass}}" data-action="{{slot.action}}" data-item-id="{{slot.itemId}}" data-slot="{{slot.key}}"><span class="cog-p0-nm">{{slot.name}}</span><span class="cog-p0-dt">{{slot.detail}}</span></button>
+        {{else}}
+          <div class="cog-p0-slot {{slot.cssClass}}"><span class="cog-p0-nm">{{slot.name}}</span><span class="cog-p0-dt">{{slot.detail}}</span></div>
+        {{/if}}
+      {{/each}}
+    </div>
+  </section>
+
+  <div class="cog-p0-last" aria-live="polite">
+    {{#if pageZero.last.has}}
+      <span>Last roll: {{pageZero.last.name}} <b>{{pageZero.last.total}}</b></span>
+    {{else}}
+      <span>Your last roll shows here.</span>
+    {{/if}}
+  </div>
+</div>
+</div>
+</section>

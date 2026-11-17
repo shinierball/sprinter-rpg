@@ -221,7 +221,7 @@ export function newCameraRecord(choiceId, { actorUuid = '', floor = 1 } = {}) {
 
 
 /** The one-line static note a camera card carries ("Playing to the Audience (Disadvantage)"); '' for no choice. */
-function cameraNoteHtml(choiceId) {
+export function cameraNoteHtml(choiceId) {
   const reason = cameraReasonLabel(choiceId);
   return reason ? `<div class="cog-camera-note">${escapeAttr(cameraText('COG.Cameras.Note', { reason }))}</div>` : '';
 }

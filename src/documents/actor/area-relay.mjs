@@ -8,10 +8,10 @@
  * the payload. A create request names only the source item, the scene and a placement; the GM rebuilds the regions
  * from the item and sets the requester as their owner.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveAreaGeometry } from '../../utils/area/area-geometry.mjs';
-import { buildAreaRegions, findAreaRegions, findAuraRegions, sceneRegions, deleteRegions } from '../../utils/area/region-shapes.mjs';
+import { areaFlagsOf, buildAreaRegions, findAreaRegions, findAuraRegions, sceneRegions, deleteRegions } from '../../utils/area/region-shapes.mjs';
+import { auraSourceUuidOf } from '../../utils/area/aura-flags.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { auraRank } from './aura-effects.mjs';
 import { ownsAuraSource } from './aura-relay.mjs';
@@ -115,8 +115,7 @@ export async function createAreaRegions(item, { scene, origin, rotation = 0, mes
 
 /** The item a region was placed from, by uuid (an area or an aura). */
 function regionSourceUuid(region) {
-  const f = region?.flags?.[SYSTEM_ID];
-  return f?.area?.sourceItemUuid || f?.auraSourceUuid || '';
+  return areaFlagsOf(region)?.sourceItemUuid || auraSourceUuidOf(region) || '';
 }
 
 /** A GM, or an owner of the actor holding the region's source item. */
@@ -187,8 +186,8 @@ async function deleteAreaRegions(scene, regions) {
 
   const requests = new Map();
   for (const region of rest) {
-    const f = region.flags?.[SYSTEM_ID];
-    const key = f?.area?.groupId ? { groupId: f.area.groupId } : { auraSourceUuid: f?.auraSourceUuid || '' };
+    const groupId = areaFlagsOf(region)?.groupId;
+    const key = groupId ? { groupId } : { auraSourceUuid: auraSourceUuidOf(region) || '' };
     if (!key.groupId && !key.auraSourceUuid) continue;
     requests.set(`${key.groupId ?? ''}|${key.auraSourceUuid ?? ''}`, key);
   }

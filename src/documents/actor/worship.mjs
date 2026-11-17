@@ -21,6 +21,7 @@ import { postWorshipNotice } from '../../chat/worship-card.mjs';
 import { noticeRivalPatron } from './patron-notices.mjs';
 import { collectActorTags } from '../active-tags.mjs';
 import { say } from './vehicle-drive-common.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { RACE_CLASS_TYPES, isEffectItem } from '../../utils/document-types.mjs';
 
 const MAX_TIER = WORSHIP_TIERS.zealot;
@@ -82,11 +83,11 @@ const deityItems = (actor) => Array.from(actor?.items ?? []).filter((i) => i?.ty
 const now = () => Number(globalThis.game?.time?.worldTime) || 0;
 
 /** Ask one question with a button per answer. Resolves the pressed action, or null (closed, or no dialog available). */
-async function askChoice({ title, content, buttons }) {
+async function askChoice(title, content, buttons) {
   const Dialog = globalThis.foundry?.applications?.api?.DialogV2;
   if (typeof Dialog?.wait !== 'function') return null;
   try {
-    return await Dialog.wait({ window: { title }, content: `<p>${content}</p>`, buttons, rejectClose: false });
+    return await Dialog.wait({ window: { title }, content: `<p>${escapeAttr(content)}</p>`, buttons, rejectClose: false });
   } catch {
     return null;
   }
@@ -196,15 +197,15 @@ export async function startWorship(actor, deityItem, { options } = {}) {
   let leaving = [];
   const others = deityItems(actor).filter((i) => i.id !== deityItem.id && bondOf(i).status === 'worshipper');
   if (others.length) {
-    const choice = await askChoice({
-      title: say('COG.Deity.Worship.SecondTitle', 'Another god'),
-      content: say('COG.Deity.Worship.SecondBody', '{actor} already worships {others}. Leave that faith (a smite is due), keep both as a Rule Break, or cancel?', { actor: actor.name, others: others.map((o) => o.name).join(', ') }),
-      buttons: [
+    const choice = await askChoice(
+      say('COG.Deity.Worship.SecondTitle', 'Another god'),
+      say('COG.Deity.Worship.SecondBody', '{actor} already worships {others}. Leave that faith (a smite is due), keep both as a Rule Break, or cancel?', { actor: actor.name, others: others.map((o) => o.name).join(', ') }),
+      [
         { action: 'leave', label: say('COG.Deity.Worship.Leave', 'Leave the old faith') },
         { action: 'both', label: say('COG.Deity.Worship.KeepBoth', 'Keep both') },
         { action: 'cancel', label: say('COG.Deity.Worship.Cancel', 'Cancel') }
       ]
-    });
+    );
     if (choice === 'leave') {
       leaving = others;
     } else if (choice === 'both') {
@@ -308,11 +309,11 @@ export async function setWorshipTier(actor, deityItem, tier, { zealotSkill, opti
     else if (bond.zealotSkill && skills.includes(bond.zealotSkill)) chosen = bond.zealotSkill;
     else if (skills.length === 1) chosen = skills[0];
     else if (skills.length > 1) {
-      const answer = await askChoice({
-        title: say('COG.Deity.Worship.ZealotSkillTitle', 'Zealot skill'),
-        content: say('COG.Deity.Worship.ZealotSkillBody', 'Which of {deity}\'s signature Skills gains the higher Rank cap?', { deity: deityItem.name }),
-        buttons: [...skills.map((skill) => ({ action: skill, label: skill })), { action: 'cancel', label: say('COG.Deity.Worship.Cancel', 'Cancel') }]
-      });
+      const answer = await askChoice(
+        say('COG.Deity.Worship.ZealotSkillTitle', 'Zealot skill'),
+        say('COG.Deity.Worship.ZealotSkillBody', 'Which of {deity}\'s signature Skills gains the higher Rank cap?', { deity: deityItem.name }),
+        [...skills.map((skill) => ({ action: skill, label: skill })), { action: 'cancel', label: say('COG.Deity.Worship.Cancel', 'Cancel') }]
+      );
       if (!skills.includes(answer)) return { ok: false, ruleBreak: false, reason: 'cancelled' };
       chosen = answer;
     }

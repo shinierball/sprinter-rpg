@@ -28,7 +28,7 @@ import { describeAreaEffects } from './blocks-spell-skill.mjs';
 import { getUsedForm } from '../../data/rules/used-forms.mjs';
 import { enchantOutcomeEffect } from './blocks-crafting.mjs';
 import { ENCHANT_ITEM_OUTCOME } from '../loot/outcome-defaults.mjs';
-import { isWeaponCapable } from '../document-types.mjs';
+import { isRankedItem, isWeaponCapable } from '../document-types.mjs';
 
 const K = 'COG.ItemSummary.GearLoot.';
 
@@ -223,7 +223,7 @@ const ignoreDR = {
 const asTriggers = {
   id: 'as-triggers',
   group: 'effect',
-  applies: (item) => (isGear(item) || item?.type === 'attack' || item?.type === 'buff') && Array.isArray(sysOf(item).asTriggers) && sysOf(item).asTriggers.length > 0,
+  applies: (item) => (isGear(item) || item?.type === 'attack' || item?.type === 'buff' || isRankedItem(item)) && Array.isArray(sysOf(item).asTriggers) && sysOf(item).asTriggers.length > 0,
   describe: (item, ctx) => {
     const triggers = sysOf(item).asTriggers.filter((x) => x && typeof x === 'object'
       && ((x.type === 'debuff' && str(x.identifier)) || (x.type === 'narrative' && str(x.text))));
@@ -231,8 +231,8 @@ const asTriggers = {
     for (const trig of triggers) {
       if (trig.type === 'debuff' && trig.identifier) found.set(trig.identifier, conditionName('debuffs', trig.identifier, ctx));
     }
-    // A buff's row starts at its own Rank (`minRank`); asTriggerLines keeps the order of `triggers`, one line each
-    const ranked = item.type === 'buff' ? triggers.map((x) => num(x.minRank)) : [];
+    // A buff's, skill's or spell's row starts at its own Rank (`minRank`); asTriggerLines keeps the order of `triggers`, one line each
+    const ranked = item.type === 'buff' || isRankedItem(item) ? triggers.map((x) => num(x.minRank)) : [];
     return asTriggerLines(triggers, { found }).map((l, i) => itemLine('on-hit',
       ranked[i] > 0 ? t(`${K}AsTriggerFromRank`, { text: l.text, rank: ranked[i] }) : l.text, 'system.asTriggers'));
   }

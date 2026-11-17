@@ -13,17 +13,21 @@ import { COGItemManager } from '../apps/item-manager.mjs';
 import { COGBuffDebuffManager } from '../apps/buff-manager.mjs';
 import { COGAchievementManagerApp } from '../apps/achievement-manager.mjs';
 import { COGGrindApp } from '../apps/grind-app.mjs';
-import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
+import { ensureCompendiumId } from '../utils/compendium/link-flags.mjs';
 import { prepareItemLists, prepareItemSummaries, prepareGrantedSummaries } from './crawler/context-items.mjs';
 import { prepareCoreContext } from './crawler/context-core.mjs';
 import { prepareSkillsAndSpells } from './crawler/context-skills.mjs';
 import { prepareInventory } from './crawler/context-inventory.mjs';
 import { prepareCombat } from './crawler/context-combat.mjs';
 import { prepareHotlist, prepareExternalBuffs } from './crawler/context-slots.mjs';
+import { preparePageZero, pageZeroOffered, PAGE_ZERO_PART_ID, PAGE_ZERO_TAB, PAGE_ZERO_TEMPLATE } from './crawler/context-page-zero.mjs';
+import { configurePageZeroOpening, onPageZeroPosition, onPageZeroTabChange, pageZeroInitialTab, syncPageZeroWindowClass } from './crawler/page-zero-window.mjs';
 import { prepareAchievements } from './crawler/context-achievements.mjs';
 import { prepareStory } from './crawler/context-story.mjs';
 import { coreActions, GM_ONLY_LIMB_FIELDS } from './crawler/actions-core.mjs';
 import { combatActions } from './crawler/actions-combat.mjs';
+import { pageZeroActions } from './crawler/actions-page-zero.mjs';
 import { itemActions } from './crawler/actions-items.mjs';
 import { transformationActions } from './crawler/actions-transformation.mjs';
 import { slotActions } from './crawler/actions-slots.mjs';
@@ -92,6 +96,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
     actions: {
       ...coreActions,
       ...combatActions,
+      ...pageZeroActions,
       ...itemActions,
       ...transformationActions,
       ...slotActions,
@@ -167,10 +172,50 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
     prepareInventory(context, actor, this._inventorySort);
     prepareCombat(context, actor, { showStowedAttacks: this._showStowedAttacks });
     prepareHotlist(context, actor);
+    if (context.tabs?.[PAGE_ZERO_PART_ID]) preparePageZero(context, actor, this);
     await prepareExternalBuffs(context, actor);
     prepareAchievements(context, actor, this._achievementFilter);
     prepareStory(context, actor);
     return context;
+  }
+
+  /* -------------------------------------------- */
+  /*  Page 0                                      */
+  /* -------------------------------------------- */
+
+  /** The static TABS stay as they were; page 0 is put first only where it is offered (a crawler). @override */
+  _getTabsConfig(group) {
+    const config = super._getTabsConfig(group);
+    if (!config || group !== 'primary' || !pageZeroOffered(this.actor)) return config;
+    return { ...config, initial: pageZeroInitialTab(this, config.initial), tabs: [PAGE_ZERO_TAB, ...config.tabs] };
+  }
+
+  /** A sheet opening on page 0 opens at the page 0 size. @override */
+  _configureRenderOptions(options) {
+    super._configureRenderOptions(options);
+    configurePageZeroOpening(this, options);
+  }
+
+  /** The window class and size follow the tab. @override */
+  changeTab(tab, group, options) {
+    const before = this.tabGroups[group];
+    const result = super.changeTab(tab, group, options);
+    if (group === 'primary') onPageZeroTabChange(this, before);
+    return result;
+  }
+
+  /** A resize on page 0 is remembered. @override */
+  _onPosition(position) {
+    super._onPosition?.(position);
+    onPageZeroPosition(this, position);
+  }
+
+  /** The static PARTS stay as they were; the page 0 part follows the tab strip where it is offered. @override */
+  _configureRenderParts(options) {
+    const parts = super._configureRenderParts?.(options) ?? { ...this.constructor.PARTS };
+    if (!pageZeroOffered(this.actor)) return parts;
+    const { tabs, ...rest } = parts;
+    return { tabs, [PAGE_ZERO_PART_ID]: { template: PAGE_ZERO_TEMPLATE, templates: [], scrollable: [''] }, ...rest };
   }
 
   /* -------------------------------------------- */
@@ -180,6 +225,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
   /** @override */
   async _onRender(context, options) {
     await super._onRender(context, options);
+    syncPageZeroWindowClass(this);
     this.element.querySelector?.('.cog-actor-tags-section [data-tag-entry] input')?.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter') return;
       event.preventDefault();
@@ -249,9 +295,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
   async _onDropItemCreate(itemData, event) {
     const list = [itemData].flat().filter(Boolean);
     for (const data of list) {
-      data.flags ??= {};
-      data.flags[SYSTEM_ID] ??= {};
-      if (data._id && !data.flags[SYSTEM_ID].compendiumId) data.flags[SYSTEM_ID].compendiumId = data._id;
+      ensureCompendiumId(data, data._id);
     }
     return super._onDropItemCreate(list, event);
   }

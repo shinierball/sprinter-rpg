@@ -5,7 +5,7 @@ import { ENGINE_SITUATIONS } from '../../data/tag-vocabulary.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
 import { sourceDamageBonusParts } from '../../utils/roll/check-assists.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
-import { amazingPreviewHtml, amazingSubActionHtml, amazingSourceMessage } from '../../utils/roll/amazing-success.mjs';
+import { asTriggersDataAttr, amazingPreviewHtml, amazingSubActionHtml, amazingSourceMessage } from '../../utils/roll/amazing-success.mjs';
 import { DEFAULT_CRIT_MULTIPLIER, configuredCritMultiplier } from './actor-constants.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
@@ -23,6 +23,7 @@ import { collectOnHitEffects, hasOnHitDebuff, onHitCardAttrs } from '../../utils
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
 import { isTechniqueApplicable } from './actor-techniques.mjs';
+import { attackAsTriggers } from '../../utils/roll/buff-as-triggers.mjs';
 import { getItemInflictedConditions } from './inflicted-conditions.mjs';
 import { getSpellDamageData, spellRank1BaseFormula } from './actor-spells.mjs';
 import { withFlags } from '../../utils/flags.mjs';
@@ -274,13 +275,14 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
   const optionsLineHtml = await attackOptionsLineHtml(attackChoicesFlag);
   // What each offered condition does: only the effects, never the spell's own lines.
   const effectSummaryHtml = await cardSummary(spellItem, OMIT_ALL, { actor, effects: conditionTags.map((ref) => ({ kind: 'debuffs', ref })) });
+  const asTriggers = attackAsTriggers(actor, spellItem, rollContext);
   const cardContent = `
     <div class="cog-chat-card cog-damage-card"
       data-attacker-uuid="${actor.uuid}"
       data-item-id="${spellItem.id}"
       data-item-name="${escapeAttr(spellItem.name)}"
       data-damage-value="${totalRawDamage}"
-      data-typed-damage='${jsonAttr(typedDamage)}'${damageCardDataAttrs(allParts, rollContextDataAttr({ ...rollContext, appliedRowKeys: dmod.appliedKeys }), critDebuffs, targetRowsDataAttr(dmod.targetRows), sourceId)}${spellBaseAttr}
+      data-typed-damage='${jsonAttr(typedDamage)}'${damageCardDataAttrs(allParts, rollContextDataAttr({ ...rollContext, appliedRowKeys: dmod.appliedKeys }), critDebuffs, targetRowsDataAttr(dmod.targetRows), sourceId)}${spellBaseAttr}${asTriggersDataAttr(asTriggers)}
       data-attack-type="spell"
       data-is-armor-piercing="${isArmorPiercing}"
       data-condition-tags='${jsonAttr(normalConditionTags)}'${onHitCardAttrs(collectOnHitEffects({ sources: [{ item: spellItem, rank }] }))}
@@ -302,7 +304,7 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
       </div>
       ${critDiceNoteHtml(allParts, isCrit)}
       ${perTargetBoxHtml(dmod.targetRows, evaluatedParts)}
-      ${amazingPreviewHtml(amazingMessage)}
+      ${amazingPreviewHtml(amazingMessage, { triggers: asTriggers })}
       ${effectsStr ? `<div class="cog-damage-effects"><em>${effectsStr}</em></div>` : ''}
       <div class="cog-damage-actions">
         <button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-crit="${Boolean(isCrit)}" ${isArmorPiercing ? 'data-ignore-dr="true"' : ''} title="Apply ${isCrit ? 'critical ' : ''}damage to targeted token(s)${isArmorPiercing ? ' (Armor-Piercing: Ignores DR)' : ', deducting their DR'}">

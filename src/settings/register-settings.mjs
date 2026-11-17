@@ -16,6 +16,7 @@ import { PERCENT_STAT_SETTING, PERCENT_STAT_MODES } from '../utils/character/sta
 import { PAID_DR_STAT_SETTING, PAID_DR_STAT_MODES } from '../utils/character/paid-dr-stat.mjs';
 import { lockOwnedPercentRows } from '../documents/actor/percent-lock.mjs';
 import { ACTION_HUD_POSITION_SETTING } from '../utils/ui/action-hud-position.mjs';
+import { PAGE_ZERO_OPENING, PAGE_ZERO_OPENING_SETTING, PAGE_ZERO_SIZE_SETTING } from '../utils/ui/page-zero-window.mjs';
 import { PENDING_SECRETS_SETTING } from '../documents/pending-secrets.mjs';
 import { ACTIVE_SESSION_SETTING, SESSIONS_SETTING } from '../documents/session/session-store.mjs';
 import { ARCHIVED_COMBATS_SETTING } from '../documents/combat/archive.mjs';
@@ -83,6 +84,29 @@ export function registerSettings({ launchers, onAiContentChange }) {
     config: false,
     type: Object,
     default: null
+  });
+
+  game.settings.register(SYSTEM_ID, PAGE_ZERO_SIZE_SETTING, {
+    name: 'Play Page Size',
+    hint: 'The window size this client last gave the character sheet on the play page.',
+    scope: 'client',
+    config: false,
+    type: Object,
+    default: null
+  });
+
+  game.settings.register(SYSTEM_ID, PAGE_ZERO_OPENING_SETTING, {
+    name: 'Open character sheets on the play page',
+    hint: 'Which page a crawler sheet opens on. The default follows your role: players open on the play page, the GM on the full sheet.',
+    scope: 'client',
+    config: true,
+    type: String,
+    choices: {
+      [PAGE_ZERO_OPENING.DEFAULT]: 'Default (players: play page, GM: full sheet)',
+      [PAGE_ZERO_OPENING.PLAY]: 'Play page',
+      [PAGE_ZERO_OPENING.FULL]: 'Full sheet'
+    },
+    default: PAGE_ZERO_OPENING.DEFAULT
   });
 
   game.settings.register(SYSTEM_ID, HUD_HIDDEN_SETTING, {

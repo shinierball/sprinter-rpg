@@ -107,7 +107,7 @@ export async function rollRamDamage(vehicle, driver, target) {
   const title = say('COG.VehicleRam.CardTitle', '{name} rams {target}: Ram Damage', { name: vehicle.name ?? '', target: target?.name ?? '' });
   const content = vehicleDamageCardHtml({
     attackerUuid: roller.uuid, itemName: 'Ram', title, parts, rollContext: { ...context, appliedRowKeys: dmod.appliedKeys },
-    extraButtonsHtml: vehicleButtonHtml(say('COG.VehicleRam.ApplyCollision', 'Apply collision'), 'crawlerVehicleCollision', { 'vehicle-uuid': vehicle.uuid })
+    extraButtons: [{ label: say('COG.VehicleRam.ApplyCollision', 'Apply collision'), action: 'crawlerVehicleCollision', data: { 'vehicle-uuid': vehicle.uuid } }]
   });
   return globalThis.ChatMessage.create({
     speaker: speakerOf(roller),

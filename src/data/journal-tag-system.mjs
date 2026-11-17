@@ -1,4 +1,4 @@
-import { SYSTEM_ID } from '../constants.mjs';
+import { flagPath, readFlag, withFlags } from '../utils/flags.mjs';
 import { PAGE_SORT_STEP } from './builders/journal-payload.mjs';
 import { AUTHORING_PAGES } from './journal-tag-system/pages-authoring.mjs';
 import { ENGINE_PAGES } from './journal-tag-system/pages-engine.mjs';
@@ -13,14 +13,16 @@ import { REFERENCE_PAGES } from './journal-tag-system/pages-reference.mjs';
  * Fully supports light mode and dark mode via semantic CSS classes.
  */
 
+/** The key the world copy of the guide is found by (a GM may rename it), stored as the `guideKey` flag. */
+const GUIDE_KEY = "tagSystemGuide";
+
+/** Whether `journal` is the guide, by its `guideKey` flag. */
+const isGuide = (journal) => readFlag(journal, 'guideKey') === GUIDE_KEY;
+
 export const TAG_SYSTEM_JOURNAL_DATA = {
   name: "Sprinter RPG — Tag System & Content Creation Guide",
   // `version` is stamped from the installed system's manifest when the payload is built (tagSystemJournalPayload).
-  flags: {
-    [SYSTEM_ID]: {
-      guideKey: "tagSystemGuide"
-    }
-  },
+  flags: withFlags({}, { guideKey: GUIDE_KEY }).flags,
   pages: [...AUTHORING_PAGES, ...ENGINE_PAGES, ...REFERENCE_PAGES]
 };
 
@@ -33,10 +35,9 @@ export const TAG_SYSTEM_JOURNAL_DATA = {
  * @returns {{ name: string, flags: object, pages: object[] }}
  */
 export function tagSystemJournalPayload() {
-  const flags = foundry.utils.deepClone(TAG_SYSTEM_JOURNAL_DATA.flags);
   // The guide is stamped with the installed system's version (system.json), not a string kept here.
   const version = globalThis.game?.system?.version;
-  if (version) flags[SYSTEM_ID].version = String(version);
+  const flags = withFlags({ flags: foundry.utils.deepClone(TAG_SYSTEM_JOURNAL_DATA.flags) }, version ? { version: String(version) } : {}).flags;
   return {
     name: TAG_SYSTEM_JOURNAL_DATA.name,
     flags,
@@ -68,7 +69,7 @@ export async function ensureTagSystemJournal() {
   if (globalThis.game?.user && !globalThis.game.user.isGM) {
     const existing = globalThis.game.journal.find(j =>
       j.name === TAG_SYSTEM_JOURNAL_DATA.name ||
-      j.flags?.[SYSTEM_ID]?.guideKey === "tagSystemGuide"
+      isGuide(j)
     );
     return existing || null;
   }
@@ -77,18 +78,18 @@ export async function ensureTagSystemJournal() {
   if (typeof globalThis.game.journal.find === "function") {
     existing = globalThis.game.journal.find(j =>
       j.name === TAG_SYSTEM_JOURNAL_DATA.name ||
-      j.flags?.[SYSTEM_ID]?.guideKey === "tagSystemGuide"
+      isGuide(j)
     );
   } else if (Array.isArray(globalThis.game.journal)) {
     existing = globalThis.game.journal.find(j =>
       j.name === TAG_SYSTEM_JOURNAL_DATA.name ||
-      j.flags?.[SYSTEM_ID]?.guideKey === "tagSystemGuide"
+      isGuide(j)
     );
   }
 
   if (existing) {
     const version = globalThis.game?.system?.version;
-    const stored = existing.flags?.[SYSTEM_ID]?.version;
+    const stored = readFlag(existing, 'version');
     const refresh = version && String(version) !== String(stored ?? '');
     // Only the active GM writes; a GM edit to the pages is overwritten when the system version changes.
     if (refresh && globalThis.game?.user?.isActiveGM !== false) {
@@ -97,7 +98,7 @@ export async function ensureTagSystemJournal() {
         const oldIds = Array.from(existing.pages ?? [], (page) => page.id ?? page._id);
         if (oldIds.length) await existing.deleteEmbeddedDocuments('JournalEntryPage', oldIds);
         await existing.createEmbeddedDocuments('JournalEntryPage', payload.pages);
-        await existing.update({ [`flags.${SYSTEM_ID}.version`]: payload.flags[SYSTEM_ID].version });
+        await existing.update({ [flagPath('version')]: readFlag(payload, 'version') });
       } catch (err) {
         console.warn("Sprinter RPG | Could not refresh Tag System Journal:", err);
       }
@@ -136,12 +137,12 @@ export async function openTagSystemJournal() {
     if (typeof globalThis.game.journal.find === "function") {
       entry = globalThis.game.journal.find(j =>
         j.name === TAG_SYSTEM_JOURNAL_DATA.name ||
-        j.flags?.[SYSTEM_ID]?.guideKey === "tagSystemGuide"
+        isGuide(j)
       );
     } else if (Array.isArray(globalThis.game.journal)) {
       entry = globalThis.game.journal.find(j =>
         j.name === TAG_SYSTEM_JOURNAL_DATA.name ||
-        j.flags?.[SYSTEM_ID]?.guideKey === "tagSystemGuide"
+        isGuide(j)
       );
     }
   }

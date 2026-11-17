@@ -3,7 +3,7 @@
  * The merged list itself is `unifiedCatalog` (src/content); this mixin is the AppV2 side: the search contract, the
  * list with row lookup by id, add-to-actor, blank-document creation, the drag payload and the common context keys.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { withCompendiumLink } from '../utils/compendium/link-flags.mjs';
 import { unifiedCatalog } from '../content/unified-catalog.mjs';
 import { resolveFullItemData, resolveManagerSource } from '../content/catalog-source.mjs';
 import { carrySourceStamp } from '../utils/content-source.mjs';
@@ -140,10 +140,7 @@ export function CatalogBrowserMixin(Base) {
         system: data?.system ? structuredClone(data.system) : {}
       };
       if (flags) {
-        payload.flags = {
-          core: { sourceId: uuid },
-          [SYSTEM_ID]: { compendiumId: data?._id || data?.id, sourceUuid: uuid }
-        };
+        payload.flags = withCompendiumLink({ flags: { core: { sourceId: uuid } } }, data?._id || data?.id, uuid).flags;
       }
       return { type: 'Item', name, uuid, data: carrySourceStamp(payload, data) };
     }

@@ -59,6 +59,8 @@ export function buildDialogContext(model, prefilled) {
     suggested: o.detected === 'yes',
     detectedText: typeof o.note === 'string' ? o.note : ''
   });
+  const maneuvers = (model.maneuvers ?? []).map(o => ({ ...row(o), rankText: o.rank ? rankText(o.rank) : '', note: o.note || '' }));
+  const situations = (model.situations ?? []).map(row);
   const isDamage = model.mode === 'damage';
   // The weapon's Skills in list order; the remembered (else the default) one is selected. Shown from two up.
   const skillPick = choices.skill || model.defaultSkill || '';
@@ -74,6 +76,7 @@ export function buildDialogContext(model, prefilled) {
     defaultSkill: String(model.defaultSkill ?? ''),
     skills,
     showCameras: (model.cameras ?? []).length > 0,
+    camerasOpen: Boolean(cameraPick),
     cameras,
     attackName: model.attackName,
     plainFormula: model.plainFormula || '',
@@ -82,14 +85,18 @@ export function buildDialogContext(model, prefilled) {
     noneChecked: picked.size === 0,
     aiFavorIfNone: model.aiFavorIfNone > 0 ? model.aiFavorIfNone : 0,
     effects,
-    maneuvers: (model.maneuvers ?? []).map(o => ({ ...row(o), rankText: o.rank ? rankText(o.rank) : '', note: o.note || '' })),
-    situations: (model.situations ?? []).map(row),
+    maneuvers,
+    maneuversOpen: maneuvers.some(m => m.checked),
+    maneuversSuggested: maneuvers.some(m => m.suggested),
+    situations,
+    situationsOpen: situations.some(s => s.checked),
+    situationsSuggested: situations.some(s => s.suggested),
     calledPlays: (model.calledPlays ?? []).map(e => ({ id: e.id, label: calledPlayLabel(e) })),
     markAttack: choices.markTarget === 'attack',
     isDamage,
     text: {
       formula: t('Formula', { formula: model.plainFormula || '' }),
-      damageEffect: t('DamageEffect'), maneuvers: t('Maneuvers'), situations: t('Situations'), calledPlay: t('CalledPlay'),
+      damageEffect: t('DamageEffect'), maneuvers: t('Maneuvers'), situations: t('Situations'), calledPlay: t('CalledPlay'), calledPlayPending: t('CalledPlayPending', { n: (model.calledPlays ?? []).length }),
       mark: t('Mark'), markAttack: t('MarkAttack'), markEffect: t('MarkEffect'),
       none: t('None'), noneDesc: t('NoneDesc'), aiFavor: t('AiFavor', { n: model.aiFavorIfNone }),
       untrained: t('Untrained'), addAnother: t('AddAnother'), variantNormal: t('VariantNormal'), used: t('Used'),

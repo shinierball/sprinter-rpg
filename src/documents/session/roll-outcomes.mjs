@@ -62,6 +62,20 @@ export function evaluateRollOutcome({ total, d20Result = null, targetDC = null }
 }
 
 /**
+ * Whether an attack hits (the core rulebook's worked combat example): a Natural 1 always misses, a Natural 20 always hits,
+ * any other face hits when the total reaches the Difficulty. The one place a hit is decided.
+ * @param {number} total attack total including modifiers
+ * @param {number|null} dc the target's Difficulty (Evade)
+ * @param {number|null} [d20] natural die face, when known
+ * @returns {boolean}
+ */
+export function attackHits(total, dc, d20 = null) {
+  if (d20 === 1) return false;
+  if (d20 === 20) return true;
+  return total >= dc;
+}
+
+/**
  * Extract natural d20 die face from a Foundry Roll instance if available
  * @param {Roll|object} roll
  * @returns {number|null}

@@ -52,14 +52,14 @@ export function asTriggerField(fields) {
     label: new fields.StringField({ initial: '' }),
     // stored past the one-per-weapon limit after a confirm
     ruleBreak: new fields.BooleanField({ initial: false }),
-    // a buff's row: the trigger fires only from this Rank of the buff (0: always); inert on gear, attack items and templates
+    // a ranked carrier's row (buff, skill, spell): the trigger fires only from this Rank of its carrier (0: always); inert on gear, attack items and templates
     minRank: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
     enchantment: enchantmentRef(fields)
   });
 }
 
 /**
- * Array of Amazing Success triggers (gear, attack and buff).
+ * Array of Amazing Success triggers (gear, attack, buff, skill and spell).
  * @param {object} fields foundry.data.fields
  */
 export function asTriggersField(fields) {

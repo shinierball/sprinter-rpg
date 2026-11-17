@@ -5,7 +5,7 @@
  */
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { resolveReachedRankBreaks, getItemRank } from '../../utils/skill/rank-breaks.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, withFlags } from '../../utils/flags.mjs';
 import { isMigrationWrite } from '../migrations/world-migration.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
@@ -82,7 +82,7 @@ export function resolveEffectiveLight(item, { doubled = false, defaults } = {}) 
 // Players lack TOKEN_CREATE/TOKEN_DELETE by default, so both go through GM relays when the user cannot write directly.
 // ---------------------------------------------------------------------------------------------------------------
 
-export const LIGHT_FLAG = 'lightSource';
+const LIGHT_FLAG = 'lightSource';
 export const RELAY_ACTION_CREATE_LIGHT_TOKEN = 'createLightToken';
 export const RELAY_ACTION_DELETE_LIGHT_TOKENS = 'deleteLightTokens';
 
@@ -100,9 +100,12 @@ const tokenList = (scene) => {
 
 /** The `lightSource` flag of a token document, or null when it is not a light token. */
 export function lightFlagOf(tokenDoc) {
-  const flag = tokenDoc?.flags?.[SYSTEM_ID]?.[LIGHT_FLAG] ?? tokenDoc?.getFlag?.(SYSTEM_ID, LIGHT_FLAG);
+  const flag = readFlag(tokenDoc, LIGHT_FLAG);
   return flag && typeof flag === 'object' ? flag : null;
 }
+
+/** `data` (token data) carrying `flag` as its `lightSource` flag, other flags kept. */
+export const withLightFlag = (data, flag) => withFlags(data, { [LIGHT_FLAG]: flag });
 
 /**
  * Every light token on every scene whose flag matches.
@@ -159,7 +162,7 @@ export function buildLightTokenData({ marker, item, light, ownerUuid, ownerToken
   const modes = globalThis.CONST?.TOKEN_DISPLAY_MODES;
   const expiresAt = lightExpiryStamp(item, { actor, now });
   const disposition = Number.isFinite(Number(ownerToken?.disposition)) ? Number(ownerToken.disposition) : (globalThis.CONST?.TOKEN_DISPOSITIONS?.FRIENDLY ?? 1);
-  return {
+  return withLightFlag({
     name: item?.name || 'Light',
     actorId: marker.id,
     actorLink: false,
@@ -177,27 +180,22 @@ export function buildLightTokenData({ marker, item, light, ownerUuid, ownerToken
       dim: light.dim,
       color: light.color || null,
       animation: { type: light.animation || null }
-    },
-    flags: {
-      [SYSTEM_ID]: {
-        [LIGHT_FLAG]: {
-          ownerUuid,
-          sourceItemUuid: item?.uuid ?? '',
-          mode: light.mode,
-          leash: light.leash,
-          canDouble: light.canDouble,
-          canAttach: light.canAttach,
-          doubled: light.doubled,
-          baseBright: light.baseBright,
-          baseDim: light.baseDim,
-          consumed: Boolean(consumed),
-          // What the owner gets when this independent light ends (3.76 B3): a used-form id, resolved while the item still exists.
-          ...(consumed ? { usedInto: resolveUsedFormId(item, { light: true }) } : {}),
-          ...(expiresAt === null ? {} : { expiresAt })
-        }
-      }
     }
-  };
+  }, {
+    ownerUuid,
+    sourceItemUuid: item?.uuid ?? '',
+    mode: light.mode,
+    leash: light.leash,
+    canDouble: light.canDouble,
+    canAttach: light.canAttach,
+    doubled: light.doubled,
+    baseBright: light.baseBright,
+    baseDim: light.baseDim,
+    consumed: Boolean(consumed),
+    // What the owner gets when this independent light ends (3.76 B3): a used-form id, resolved while the item still exists.
+    ...(consumed ? { usedInto: resolveUsedFormId(item, { light: true }) } : {}),
+    ...(expiresAt === null ? {} : { expiresAt })
+  });
 }
 
 /** Create the token on the scene the owner's token is on. Runs on whoever may write tokens (the user or the GM). */

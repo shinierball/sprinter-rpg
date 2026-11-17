@@ -24,6 +24,7 @@ import { askRepeatRuling } from './condition-repeat-ask.mjs';
 import { toStringList } from '../../utils/first-scalar.mjs';
 import { incomingEffectTags } from '../../utils/effects/incoming-effect.mjs';
 import { effectImmunityFor, immuneText } from '../../utils/effects/effect-immunity.mjs';
+import { landedAtOf, landedAtUpdate, withLandedAt } from '../../utils/time/duration-flags.mjs';
 import { isDyingDebuff, isDeadDebuff } from './dying.mjs';
 import { settleForfeitsOf } from './condition-expiry.mjs';
 import { confirmHealing, settleHealed } from './healing.mjs';
@@ -527,7 +528,7 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
   }
 
   // When it landed, on the clock a ledger slot's `timestamp` uses: Clean Up compares them for `next_action` debuffs.
-  debuffData.flags = { ...debuffData.flags, [SYSTEM_ID]: { ...debuffData.flags?.[SYSTEM_ID], landedAt: Date.now() } };
+  debuffData = withLandedAt(debuffData, Date.now());
 
   const durationRounds = Math.floor(Number(options.durationRounds) || 0);
   if (durationRounds > 0) {
@@ -567,7 +568,7 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
         'system.duration': debuffData.system.duration,
         ...(durationRounds > 0 ? { 'system.durationConfig': debuffData.system.durationConfig } : {}),
         'system.active': true,
-        [`flags.${SYSTEM_ID}.landedAt`]: debuffData.flags[SYSTEM_ID].landedAt,
+        ...landedAtUpdate(landedAtOf(debuffData)),
         'system.description': debuffData.system.description || existing.system.description || '',
         ...(immunity.immune ? ruleBreakUpdate() : {})
       });

@@ -63,8 +63,13 @@
   {{/if}}
 
   {{#if maneuvers.length}}
-  <fieldset class="cog-attack-options-section cog-attack-maneuvers">
-    <legend>{{text.maneuvers}}</legend>
+  {{!-- Closed by default like Situations (the human, 2026-11-17): opens itself when a maneuver arrives ticked. --}}
+  <details class="cog-collapsible-block cog-attack-collapsible cog-attack-maneuvers" {{#if maneuversOpen}}open{{/if}}>
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> {{text.maneuvers}}</span>
+      {{#if maneuversSuggested}}<span class="cog-toggle-indicator active">{{text.suggested}}</span>{{/if}}
+    </summary>
+    <div class="cog-collapsible-content">
     {{#each maneuvers}}
     <label class="cog-situation-toggle cog-attack-maneuver" data-maneuver="{{tag}}">
       <input type="checkbox" name="maneuver" value="{{tag}}" {{#if checked}}checked{{/if}}>
@@ -75,12 +80,18 @@
       {{#if readsText}}<small class="cog-situation-source">{{readsText}}</small>{{/if}}
     </label>
     {{/each}}
-  </fieldset>
+    </div>
+  </details>
   {{/if}}
 
   {{#if situations.length}}
-  <fieldset class="cog-attack-options-section cog-attack-situations">
-    <legend>{{text.situations}}</legend>
+  {{!-- Closed by default (the human, 2026-11-17): opens itself when a situation arrives ticked. --}}
+  <details class="cog-collapsible-block cog-attack-collapsible cog-attack-situations" {{#if situationsOpen}}open{{/if}}>
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> {{text.situations}}</span>
+      {{#if situationsSuggested}}<span class="cog-toggle-indicator active">{{text.suggested}}</span>{{/if}}
+    </summary>
+    <div class="cog-collapsible-content">
     {{#each situations}}
     <label class="cog-situation-toggle">
       <input type="checkbox" name="situation" value="{{tag}}" {{#if checked}}checked{{/if}}>
@@ -92,30 +103,42 @@
       {{#if readsText}}<small class="cog-situation-source">{{readsText}}</small>{{/if}}
     </label>
     {{/each}}
-  </fieldset>
+    </div>
+  </details>
   {{/if}}
 
   {{#if calledPlays.length}}
-  <fieldset class="cog-attack-options-section cog-called-play-toggles">
-    <legend>{{text.calledPlay}}</legend>
+  {{!-- Closed by default (the human, 2026-11-17); every pending Called Play arrives ticked, so the bar counts them. --}}
+  <details class="cog-collapsible-block cog-attack-collapsible cog-called-play-toggles">
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> {{text.calledPlay}}</span>
+      <span class="cog-toggle-indicator active">{{text.calledPlayPending}}</span>
+    </summary>
+    <div class="cog-collapsible-content">
     {{#each calledPlays}}
     <label class="cog-situation-toggle cog-called-play-toggle">
       <input type="checkbox" name="calledPlay" value="{{id}}" checked> {{label}}
     </label>
     {{/each}}
-  </fieldset>
+    </div>
+  </details>
   {{/if}}
 
   {{#if showCameras}}
-  <fieldset class="cog-attack-options-section cog-camera-toggles">
-    <legend>{{text.cameras}}</legend>
+  {{!-- Closed by default (the human, 2026-11-17): opens itself when an audience is armed. --}}
+  <details class="cog-collapsible-block cog-attack-collapsible cog-camera-toggles" {{#if camerasOpen}}open{{/if}}>
+    <summary class="cog-collapsible-summary">
+      <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> {{text.cameras}}</span>
+    </summary>
+    <div class="cog-collapsible-content">
     {{#each cameras}}
     <label class="cog-situation-toggle cog-camera-toggle">
       <input type="radio" name="cameras" value="{{id}}" {{#if checked}}checked{{/if}}> {{label}}
     </label>
     {{/each}}
     <small class="cog-situation-source">{{text.camerasHint}}</small>
-  </fieldset>
+    </div>
+  </details>
   {{/if}}
 
   {{#if showEffects}}

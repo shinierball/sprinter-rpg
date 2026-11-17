@@ -2,6 +2,7 @@
  * Race and class stat, damage-reduction and movement deltas: the pure writes the applier makes into an update payload
  * when it applies a race or class and when it reverts one.
  */
+import { storedBaseScore } from '../models/actors/actor-derivation.mjs';
 import { storedAttributes } from '../utils/character/overlay-state.mjs';
 
 /**
@@ -17,7 +18,8 @@ export function addAbilityDeltas(actor, updates, stats, sign) {
   for (const [stat, delta] of Object.entries(stats)) {
     if (delta !== 0 && actor.system?.abilities?.[stat]) {
       const curVal = Number(actor.system.abilities[stat].value ?? 10);
-      const curUnenh = Number(actor.system.abilities[stat].unenhanced ?? curVal);
+      // The stored base: while changed the derived score is the form's body (1193 a)
+      const curUnenh = storedBaseScore(actor, stat);
       updates[`system.abilities.${stat}.value`] = curVal + sign * delta;
       updates[`system.abilities.${stat}.unenhanced`] = curUnenh + sign * delta;
     }

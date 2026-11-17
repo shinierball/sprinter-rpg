@@ -12,6 +12,7 @@ import { resolveLootBoxTier } from '../../data/loot-box-tiers.mjs';
 import { BOX_TABLE_AS, sanitizeBoxRow, sanitizeRewardBoxes } from '../../data/loot-box-rows.mjs';
 import { isLootBoxType } from '../../models/items/loot-model.mjs';
 import { itemIdentifier } from '../../utils/identifier.mjs';
+import { tableKeyOf, withTableKey } from '../../utils/rolltable/table-flags.mjs';
 import { tableRowEntry } from '../../utils/row-kinds.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { choiceTextKey, promptChoicePicks } from '../../utils/ui/choice-picker.mjs';
@@ -158,7 +159,7 @@ export async function dropBoxTable(box, table) {
   const row = {
     kind: 'table',
     uuid: String(table.uuid ?? ''),
-    tableKey: String(table.flags?.[SYSTEM_ID]?.tableKey ?? '').trim(),
+    tableKey: String(tableKeyOf(table) ?? '').trim(),
     name: String(table.name),
     img: String(table.img ?? ''),
     quantity: 1
@@ -398,7 +399,7 @@ export const LOOT_BOX_ACTIONS = {
     if (!uuid) return;
     const table = (await getAvailableRollTables({ packs: true })).find((t) => t.uuid === uuid);
     if (!table) return;
-    await dropBoxTable(this.item, { uuid: table.uuid, name: table.name, img: table.img, flags: { [SYSTEM_ID]: { tableKey: table.key } } });
+    await dropBoxTable(this.item, { uuid: table.uuid, name: table.name, img: table.img, ...withTableKey({}, table.key) });
   },
 
   /** change: a `table` row's select points the row at another roll table. */

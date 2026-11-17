@@ -11,6 +11,7 @@ import { gainLevels } from '../../documents/actor/actor-advancement.mjs';
 import { settleFloorUses } from '../../utils/floor/floor-row-usage.mjs';
 import { useTagFor } from '../../data/tag-vocabulary.mjs';
 import { say, speakerOf } from '../../documents/actor/vehicle-drive-common.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** The actor and its deity item a button names (`data-actor-uuid`, `data-item-id`); null when either is missing. */
 async function targetOf(button) {
@@ -49,8 +50,8 @@ export async function handleDeitySmiteChance(event, button, message) {
   await roll.toMessage({
     speaker: speakerOf(target.actor),
     flavor: smitten
-      ? say('COG.Deity.Notice.Smitten', '{actor} is smitten by {deity} ({percent}% chance).', names)
-      : say('COG.Deity.Notice.NotSmitten', '{actor} is spared by {deity} ({percent}% chance).', names)
+      ? escapeAttr(say('COG.Deity.Notice.Smitten', '{actor} is smitten by {deity} ({percent}% chance).', names))
+      : escapeAttr(say('COG.Deity.Notice.NotSmitten', '{actor} is spared by {deity} ({percent}% chance).', names))
   });
   return { smitten, total: roll.total };
 }

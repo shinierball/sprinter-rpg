@@ -104,13 +104,13 @@ export function buildContestCardHtml(wrapper, { resolve } = {}) {
       const canRoll = leg.status === 'open' && p.mode === 'roll' && !out && p.actorUuid && resolve?.(p.actorUuid)?.type !== 'mob';
       const move = contestMoveOf(p, leg, resolve, contestMoveOptions);
       const roll = canRoll
-        ? `<button type="button" class="cog-contest-roll" data-action="${CONTEST_ACTIONS.roll}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">${result ? 'Reroll' : 'Roll'} (Move Rate ${signed(moveRateMod(move.move))})</button>`
+        ? `<button type="button" class="cog-contest-roll" data-action="${escapeAttr(CONTEST_ACTIONS.roll)}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">${result ? 'Reroll' : 'Roll'} (Move Rate ${escapeAttr(signed(moveRateMod(move.move)))})</button>`
         : '';
       const drop = leg.status === 'open' && !p.out && p.mode === 'roll' && p.actorUuid
-        ? `<button type="button" class="cog-contest-drop" data-action="${CONTEST_ACTIONS.drop}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">Drop out</button>`
+        ? `<button type="button" class="cog-contest-drop" data-action="${escapeAttr(CONTEST_ACTIONS.drop)}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">Drop out</button>`
         : '';
       const propose = drop
-        ? `<button type="button" class="cog-contest-propose" data-action="${CONTEST_ACTIONS.propose}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">Propose skill</button>`
+        ? `<button type="button" class="cog-contest-propose" data-action="${escapeAttr(CONTEST_ACTIONS.propose)}" data-leg-id="${escapeAttr(leg.id)}" data-participant-id="${escapeAttr(p.id)}" data-actor-uuid="${escapeAttr(p.actorUuid)}">Propose skill</button>`
         : '';
       const assigned = participantLegSkill(p, leg);
       const overrideTag = assigned.overridden ? ` <span class="cog-contest-override">[${escapeAttr(assigned.skill)}]</span>` : '';

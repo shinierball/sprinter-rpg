@@ -5,7 +5,7 @@
  * rebuild the same result when it applies a relayed request, so a payload never carries the amounts or
  * the effect items themselves (see aura-relay.mjs).
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withAuraStamp } from '../../utils/area/aura-flags.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { tempBarBaseSlots, tempBarHpPerSlot, tempBarPassTag } from '../../utils/damage/temp-bars.mjs';
 import { normalizeElementTag } from '../../data/tag-vocabulary.mjs';
@@ -59,12 +59,7 @@ export function computeAuraTempBars(holder, item) {
  */
 export function buildAuraEffectItems(holder, item) {
   const areaConfig = item?.system?.area;
-  const stamp = {
-    [SYSTEM_ID]: {
-      auraSourceUuid: item?.uuid || '',
-      sourceAura: item?.name
-    }
-  };
+  const stamp = () => withAuraStamp({}, item).flags;
   const items = [];
 
   const hasCombatProtections = (Array.isArray(areaConfig?.grantedResistances) && areaConfig.grantedResistances.length > 0) ||
@@ -96,7 +91,7 @@ export function buildAuraEffectItems(holder, item) {
           ...(Array.isArray(areaConfig?.grantedImmunities) ? areaConfig.grantedImmunities.map(imm => ({ kind: 'immunity', damageType: imm })) : [])
         ]
       },
-      flags: structuredClone(stamp)
+      flags: stamp()
     });
   }
 
@@ -114,7 +109,7 @@ export function buildAuraEffectItems(holder, item) {
           duration: `${item.name} Aura`,
           source: item.name
         },
-        flags: structuredClone(stamp)
+        flags: stamp()
       });
     }
   }
@@ -148,21 +143,12 @@ export function buildAuraDebuffItem(item, debuffName) {
     flags: {}
   };
   const data = conditionItemData(debuffName, { requireKnown: true, sourceItem: item }) ?? fallback;
-  return {
+  return withAuraStamp({
     ...data,
     system: {
       ...data.system,
       duration: `${item.name} Aura`,
       description: `Inflicted while in ${item.name} radius.`
-    },
-    flags: {
-      ...data.flags,
-      [SYSTEM_ID]: {
-        ...data.flags?.[SYSTEM_ID],
-        auraSourceUuid: item.uuid || '',
-        auraDebuffRef: debuffName,
-        sourceAura: item.name
-      }
     }
-  };
+  }, item, { debuffRef: debuffName });
 }

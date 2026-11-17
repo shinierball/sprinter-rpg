@@ -176,14 +176,10 @@ export async function askOpposed(message, record = readCheckRecord(message)) {
   const others = (globalThis.canvas?.tokens?.placeables ?? []).map((t) => t.actor).filter((a) => a && a.uuid !== record.rollerUuid && !seen.has(a.uuid));
   const foes = [...known, ...others.filter((a) => !seen.has(a.uuid) && seen.add(a.uuid))];
   const rolled = STATS.includes(record.stat) ? record.stat : STATS[0];
-  const foeOptions = [
-    ...foes.map((a, i) => `<option value="${escapeAttr(a.uuid)}"${i === 0 ? ' selected' : ''}>${escapeAttr(a.name)}</option>`),
-    `<option value="${OTHER}"${foes.length ? '' : ' selected'}>${escapeAttr(dialogText('Other'))}</option>`
-  ].join('');
-  const statOptions = [
-    ...STATS.map((s) => `<option value="${s}"${s === rolled ? ' selected' : ''}>${s.toUpperCase()}${foes[0] ? ` ${modOf(foes[0], s) >= 0 ? '+' : ''}${modOf(foes[0], s)}` : ''}</option>`),
-    `<option value="${OTHER}">${escapeAttr(dialogText('OtherValue'))}</option>`
-  ].join('');
+  const foeRows = foes.map((a, i) => `<option value="${escapeAttr(a.uuid)}"${i === 0 ? ' selected' : ''}>${escapeAttr(a.name)}</option>`).join('');
+  const foeOptions = `${foeRows}<option value="${OTHER}"${foes.length ? '' : ' selected'}>${escapeAttr(dialogText('Other'))}</option>`;
+  const statRows = STATS.map((s) => `<option value="${escapeAttr(s)}"${s === rolled ? ' selected' : ''}>${escapeAttr(s.toUpperCase())}${foes[0] ? ` ${modOf(foes[0], s) >= 0 ? '+' : ''}${modOf(foes[0], s)}` : ''}</option>`).join('');
+  const statOptions = `${statRows}<option value="${OTHER}">${escapeAttr(dialogText('OtherValue'))}</option>`;
   const answer = await DialogV2.prompt({
     window: { title: dialogText('Title') },
     content: `<div class="form-group"><label>${escapeAttr(dialogText('Foe'))}<select name="foe">${foeOptions}</select></label></div>`

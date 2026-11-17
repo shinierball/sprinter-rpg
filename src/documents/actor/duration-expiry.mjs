@@ -1,4 +1,3 @@
-import { SYSTEM_ID } from '../../constants.mjs';
 import { isActiveGM } from '../../utils/gm-relay.mjs';
 import { clearDispelsForCombat } from '../../utils/effects/dispel.mjs';
 import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
@@ -12,6 +11,7 @@ import { activeAurasOnScene } from './aura-pulse.mjs';
 import { isDyingDebuff, die, sweepDyingClock, restampDyingClock } from './dying.mjs';
 import { isRankedItem } from '../../utils/document-types.mjs';
 import { readFlag } from '../../utils/flags.mjs';
+import { appliedInRound, durationsTickedRoundOf, markDurationsTicked } from '../../utils/time/duration-flags.mjs';
 
 /**
  * Duration stamping and expiry.
@@ -241,16 +241,14 @@ function roundTimedEffects(combat) {
  * @returns {Promise<object[]>} the effects that ended
  */
 export async function tickRoundEffects(combat, round) {
-  const done = combat.getFlag?.(SYSTEM_ID, 'durationsTickedRound') ?? combat.flags?.[SYSTEM_ID]?.durationsTickedRound;
-  if (Number(done) === Number(round)) return [];
-  await combat.setFlag?.(SYSTEM_ID, 'durationsTickedRound', round);
+  if (Number(durationsTickedRoundOf(combat)) === Number(round)) return [];
+  await markDurationsTicked(combat, round);
 
   const expired = [];
   for (const { actor, item, combatantId } of roundTimedEffects(combat)) {
     const cfg = item.system.durationConfig;
     // Applied during this very Clean Up (a zone's condition): its first round counts from the next one.
-    const stamp = item.flags?.[SYSTEM_ID];
-    if (Number(stamp?.appliedRound) === Number(round) && stamp?.appliedCombatId === (combat.id ?? '')) continue;
+    if (appliedInRound(item, round, combat.id ?? '')) continue;
     const remaining = Number(cfg.remainingRounds) > 0 ? cfg.remainingRounds : (durationStampPatch(item)?.['system.durationConfig.remainingRounds'] ?? 0);
     if (!(remaining > 0)) continue;
     const tick = tickRoundDuration({ remainingRounds: remaining });

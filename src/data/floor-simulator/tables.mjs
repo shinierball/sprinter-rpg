@@ -14,6 +14,7 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
+import { TABLE_KEY_FIELD, optionOf, tableKeyOf } from '../../utils/rolltable/table-flags.mjs';
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
@@ -84,7 +85,7 @@ export function tableSnapshotFromRollTable(data, options = {}) {
   const warnings = Array.isArray(options?.warnings) ? options.warnings : null;
   const warn = (path, message) => { if (warnings) warnings.push({ path, message, code: 'spec' }); };
   const table = isPlainObject(data) ? data : {};
-  const key = text(flagsOf(table).tableKey);
+  const key = text(tableKeyOf(table));
   const byRange = new Map();
 
   listOf(table.results).forEach((result, i) => {
@@ -105,7 +106,7 @@ export function tableSnapshotFromRollTable(data, options = {}) {
       row.narrative = row.narrative ? `${row.narrative} ${line}` : line;
       return;
     }
-    const flagged = isPlainObject(flags.option) ? structuredClone(flags.option) : null;
+    const flagged = isPlainObject(optionOf(result)) ? structuredClone(optionOf(result)) : null;
     if (uuid && (flagged?.kind === 'tableRef' || isRollTableUuid(uuid))) {
       row.tableRef = uuid;
       return;
@@ -176,14 +177,14 @@ export async function findFloorTableData(key, sources = foundryFloorTableSources
   if (!wanted) return null;
   const toData = (doc) => (typeof doc?.toObject === 'function' ? doc.toObject() : doc);
   for (const table of listOf(sources?.world)) {
-    if (flagsOf(table).tableKey === wanted) return { source: 'world', data: toData(table) };
+    if (tableKeyOf(table) === wanted) return { source: 'world', data: toData(table) };
   }
   for (const entry of listOf(sources?.packs)) {
     const pack = entry?.pack;
     if (!pack) continue;
     try {
-      const index = typeof pack.getIndex === 'function' ? await pack.getIndex({ fields: [`flags.${SYSTEM_ID}.tableKey`] }) : pack.index;
-      const hit = listOf(index).find(e => flagsOf(e).tableKey === wanted);
+      const index = typeof pack.getIndex === 'function' ? await pack.getIndex({ fields: [TABLE_KEY_FIELD] }) : pack.index;
+      const hit = listOf(index).find(e => tableKeyOf(e) === wanted);
       if (!hit) continue;
       const doc = typeof pack.getDocument === 'function' ? await pack.getDocument(hit._id ?? hit.id) : hit;
       if (doc) return { source: entry.packId, data: toData(doc) };

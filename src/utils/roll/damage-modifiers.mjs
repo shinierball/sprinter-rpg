@@ -113,8 +113,8 @@ export function meetsMinRank(origin, row) {
   return rankOf(source) >= (Number(row.minRank) || 0);
 }
 
-/** The row arrays whose rows honour `scope` (E8.7): the roll arrays and `use` event triggers. Defense, mana cost and the rest are not tied to an action. */
-export const SCOPED_ARRAYS = new Set(['damageModifiers', 'attackModifiers', 'checkModifiers', 'craftModifiers', 'eventTriggers']);
+/** The row arrays whose rows honour `scope` (E8.7): the roll arrays, `use` event triggers and Amazing Success trigger rows. Defense, mana cost and the rest are not tied to an action. */
+export const SCOPED_ARRAYS = new Set(['damageModifiers', 'attackModifiers', 'checkModifiers', 'craftModifiers', 'eventTriggers', 'asTriggers']);
 
 /**
  * Sources whose rows can be scoped to themselves (E8.7): skills, spells, attack items, and gear that is a weapon

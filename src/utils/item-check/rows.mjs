@@ -39,8 +39,17 @@ export function rowFindings(item, ctx) {
     }
   }
 
-  // An Amazing Success trigger that inflicts a debuff names it by identifier (a weapon's, and a buff's: Rank-gated)
-  (Array.isArray(sys.asTriggers) ? sys.asTriggers : []).forEach((trigger, i) => {
+  out.push(...asTriggerFindings(item, ctx));
+  return out;
+}
+
+/**
+ * An Amazing Success trigger that inflicts a debuff names it by identifier (a weapon's, and a ranked carrier's: Rank-gated).
+ * @param {object} item @param {{ resolve: object }} ctx @returns {Array<import('./registry.mjs').Finding>}
+ */
+export function asTriggerFindings(item, ctx) {
+  const out = [];
+  (Array.isArray(item.system?.asTriggers) ? item.system.asTriggers : []).forEach((trigger, i) => {
     const ref = trigger?.type === 'debuff' ? String(trigger.identifier ?? '').trim() : '';
     if (ref && resolveReference('debuffs', ref, ctx.resolve).status === 'unresolved') out.push(finding('row.reference-unresolved', 'warning', `system.asTriggers[${i}]`, { kind: 'debuffs', ref }));
   });

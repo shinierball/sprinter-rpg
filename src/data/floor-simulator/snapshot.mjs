@@ -17,6 +17,7 @@ import { collectGearBonuses, statBonuses, collectBuffBonuses, collectDebuffEffec
 import { getStatCaps } from '../../utils/character/stat-caps.mjs';
 import { getCOGStatModifier } from '../../documents/actor/actor-constants.mjs';
 import { parseFloorNumber } from '../../utils/floor/floor-number.mjs';
+import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
 
 const STATS = ['str', 'dex', 'con', 'int', 'cha'];
 
@@ -79,7 +80,7 @@ export function snapshotForFloorSim(actor, { floorRun = null } = {}) {
         grants: structuredClone(Array.from(item.system?.grants ?? [])), damageModifiers: structuredClone(Array.from(item.system?.damageModifiers ?? [])),
         enchantments: structuredClone(Array.from(item.system?.enchantments ?? []))
       });
-    } else if (item.type === 'race') hasRace = true;
+    } else if (item.type === 'race') hasRace ||= !transformationOfItem(item); // a form race an affliction embeds is no race of the crawler's own
     else if (item.type === 'class') hasClass = true;
   }
   // A weapon's pre-filled AI Favor also counts the linked skill's rows (3.25d-3b); aiFavorRatings stays the gear's own.

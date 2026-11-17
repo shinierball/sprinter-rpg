@@ -45,6 +45,14 @@ export function overlayContext(actor, items) {
   const rows = (formItem.system?.grants ?? [])
     .filter((g) => (g?.kind === 'skill' || g?.kind === 'spell') && g.mode !== 'choice')
     .map((g) => ({ ...g, value: Number(g.rank) || 0 }));
+  // A choice row is a fixed row once the answer is in (the answers the change recorded): a skill the victim owns takes
+  // its rank, as when the same race is applied normally
+  const choices = COGRaceClassApplier.detectChoices(formItem);
+  if (choices.length) {
+    const picked = COGRaceClassApplier.resolveChoices(formItem, choices, state.selections?.choices ?? {});
+    for (const row of picked.chosenSkills) rows.push({ kind: 'skill', mode: 'fixed', identifier: row.identifier, label: row.name, value: row.rank });
+    for (const row of picked.chosenSpells) rows.push({ kind: 'spell', mode: 'fixed', identifier: row.identifier, label: row.name, rank: row.rank, value: row.rank });
+  }
   return {
     overlay, state, formItem, applied, form,
     skillGear: { id: formItem.id ?? formItem._id, name: formItem.name, system: { grants: rows } },

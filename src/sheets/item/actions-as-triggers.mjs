@@ -3,6 +3,7 @@
  * a Rule Break confirm (never a block), stored with `ruleBreak: true`. Every handler runs with `this` = the item sheet.
  */
 import { asTriggerCount } from '../../utils/roll/amazing-success.mjs';
+import { isWeaponCapable } from '../../utils/document-types.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { rowIndex, toArray } from './util.mjs';
 
@@ -16,7 +17,8 @@ export const AS_TRIGGER_ACTIONS = {
     // A template host (an enchantment template's rows) counts its own triggers; the item type check would read none.
     const count = item.templatePath ? stored(item).length : asTriggerCount(item);
     let ruleBreak = false;
-    if (count >= 1) {
+    // The book's limit is one per weapon: a buff, skill or spell adds with no question.
+    if (count >= 1 && (item.templatePath || isWeaponCapable(item))) {
       const res = await confirmRuleBreak({
         title: loc('COG.AmazingSuccess.Editor.RuleBreakTitle'),
         message: loc('COG.AmazingSuccess.Editor.RuleBreakMessage', { count }),

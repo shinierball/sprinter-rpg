@@ -11,34 +11,9 @@
  * when the GM reveals it, that code creates the item and calls `postCue` like any landing.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { transformText } from '../../utils/character/transform-text.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { afflictionStage, transformState, cueOf, isAffliction, formEntries } from '../../utils/character/transform-rules.mjs';
-
-/** English defaults, identical to the `COG.TransformCard` entries in lang/en.json (Foundry's i18n wins when it has the key). */
-const TRANSFORM_CARD_TEXT = Object.freeze({
-  'COG.TransformCard.Landed': '{affliction} landed on {actor}.',
-  'COG.TransformCard.Death': '{actor} is at 0 Health with {affliction} pending.',
-  'COG.TransformCard.Change': 'Change {actor} now',
-  'COG.TransformCard.NoRace': 'Only crawlers change race; the added effects still apply.',
-  'COG.TransformCard.Held': '{actor} is held by {affliction}: its cure window is closed.',
-  'COG.TransformCard.Revert': 'Revert as a Rule Break',
-  'COG.TransformCard.NotPending': '{affliction} is no longer waiting to change {actor}.',
-  'COG.TransformCard.NotAllowed': 'Only the GM or an owner of {actor} can do that.',
-  'COG.TransformCard.NotFound': 'That character or affliction could not be found.',
-  'COG.TransformCard.RefusePolicy': 'This world does not allow Rule Breaks.',
-  'COG.TransformCard.Secret': '{affliction} landed on {actor}. It is held secret.',
-  'COG.TransformCard.Reveal': 'Reveal to the player',
-  'COG.TransformCard.Keep': 'Keep secret',
-  'COG.TransformCard.SecretKept': '{affliction} stays secret on {actor}. Reveal it from the Session Manager Secrets tab.',
-  'COG.TransformCard.SecretGone': 'That secret is no longer held.',
-  'COG.TransformCard.GMOnly': 'Only the GM can do that.'
-});
-
-export function transformCardText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return String(TRANSFORM_CARD_TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
 
 const idOf = (doc) => doc?.id ?? doc?._id ?? '';
 
@@ -56,15 +31,15 @@ function viewerIds(actor, { gmOnly }) {
 
 /** The Change button: `data-action` is the chat action, the rest names the carrier and the affliction. */
 function changeButton(actor, affliction) {
-  const label = transformCardText('COG.TransformCard.Change', { actor: actor.name, affliction: affliction.name });
+  const label = transformText('COG.TransformCard.Change', { actor: actor.name, affliction: affliction.name });
   return `<button type="button" class="cog-transform-change-btn" data-action="crawlerChangeVictim" data-target-uuid="${escapeAttr(actor.uuid ?? '')}" data-affliction-id="${escapeAttr(idOf(affliction))}">${escapeAttr(label)}</button>`;
 }
 
 const cardOf = (kind, lines, button) => `<div class="cog-chat-card cog-transform-card" data-transform-card="${kind}">${lines.map((l) => `<p>${l}</p>`).join('')}${button}</div>`;
 
 function cardLines(actor, affliction, key) {
-  const lines = [escapeAttr(transformCardText(key, { actor: actor.name, affliction: affliction.name }))];
-  if (formEntries(affliction).length && actor.type !== 'crawler') lines.push(escapeAttr(transformCardText('COG.TransformCard.NoRace')));
+  const lines = [escapeAttr(transformText(key, { actor: actor.name, affliction: affliction.name }))];
+  if (formEntries(affliction).length && actor.type !== 'crawler') lines.push(escapeAttr(transformText('COG.TransformCard.NoRace')));
   return lines;
 }
 
@@ -150,9 +125,9 @@ export async function postSecretCard(actor, held, secretId) {
   if (!actor || !whisper) return null;
   const data = { actor: actor.name, affliction: held?.name ?? '' };
   const attrs = `data-secret-id="${escapeAttr(secretId)}"`;
-  const reveal = `<button type="button" class="cog-transform-reveal-btn" data-action="crawlerRevealSecret" ${attrs}>${escapeAttr(transformCardText('COG.TransformCard.Reveal', data))}</button>`;
-  const keep = `<button type="button" class="cog-transform-keep-btn" data-action="crawlerKeepSecret" ${attrs}>${escapeAttr(transformCardText('COG.TransformCard.Keep', data))}</button>`;
-  return post(actor, cardOf('secret', [escapeAttr(transformCardText('COG.TransformCard.Secret', data))], reveal + keep), whisper);
+  const reveal = `<button type="button" class="cog-transform-reveal-btn" data-action="crawlerRevealSecret" ${attrs}>${escapeAttr(transformText('COG.TransformCard.Reveal', data))}</button>`;
+  const keep = `<button type="button" class="cog-transform-keep-btn" data-action="crawlerKeepSecret" ${attrs}>${escapeAttr(transformText('COG.TransformCard.Keep', data))}</button>`;
+  return post(actor, cardOf('secret', [escapeAttr(transformText('COG.TransformCard.Secret', data))], reveal + keep), whisper);
 }
 
 /**
@@ -164,5 +139,5 @@ export async function postSecretCard(actor, held, secretId) {
  */
 export function heldCureHtml(actor, held) {
   if (!held?.length) return '';
-  return held.map((affliction) => `<div class="cog-transform-held" data-affliction-id="${escapeAttr(idOf(affliction))}"><p>${escapeAttr(transformCardText('COG.TransformCard.Held', { actor: actor.name, affliction: affliction.name }))}</p><button type="button" class="cog-transform-revert-btn" data-action="crawlerRevertTransformation" data-target-uuid="${escapeAttr(actor.uuid ?? '')}" data-affliction-id="${escapeAttr(idOf(affliction))}">${escapeAttr(transformCardText('COG.TransformCard.Revert'))}</button></div>`).join('');
+  return held.map((affliction) => `<div class="cog-transform-held" data-affliction-id="${escapeAttr(idOf(affliction))}"><p>${escapeAttr(transformText('COG.TransformCard.Held', { actor: actor.name, affliction: affliction.name }))}</p><button type="button" class="cog-transform-revert-btn" data-action="crawlerRevertTransformation" data-target-uuid="${escapeAttr(actor.uuid ?? '')}" data-affliction-id="${escapeAttr(idOf(affliction))}">${escapeAttr(transformText('COG.TransformCard.Revert'))}</button></div>`).join('');
 }

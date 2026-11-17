@@ -9,6 +9,7 @@ import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
 import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
 import { getAttackDifficultyState } from './attack-targets.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /**
  * Evaluate contested/opposed check parameters and DC for an item (spell or skill)
@@ -101,11 +102,10 @@ export function renderAttackContestBlock(actor, attackItem, targetResults = [], 
   if (actors.length > 0 && actors.every(a => a.type === 'mob')) {
     const stat = contestData.targetStat.toUpperCase();
     const dcText = contestData.contestType === 'opposed' ? `opposed vs ${initiatorTotal}` : `DC ${contestData.dc}`;
-    return `<div class="cog-contested-challenge cog-text-muted" style="margin: 6px 0; font-size: 11px;"><i class="fa-solid fa-scale-balanced"></i> ${stat} check, ${dcText}.${shiftNote} Mobs do not roll: the GM adjudicates the save.</div>`;
+    return `<div class="cog-contested-challenge cog-text-muted" style="margin: 6px 0; font-size: 11px;"><i class="fa-solid fa-scale-balanced"></i> ${escapeAttr(stat)} check, ${escapeAttr(dcText)}.${escapeAttr(shiftNote)} Mobs do not roll: the GM adjudicates the save.</div>`;
   }
-  const challengeHtml = renderContestChallengeBlock(actor, attackItem, contestData, initiatorTotal)
-    .replace('data-action="crawlerRollContest"', 'data-action="crawlerRollContest" data-no-mob-roll="1"');
-  return shiftNote ? `${challengeHtml}<div class="cog-contest-dc-shift cog-text-muted" style="font-size: 10px;">${shiftNote.trim()}</div>` : challengeHtml;
+  const challengeHtml = renderContestChallengeBlock(actor, attackItem, contestData, initiatorTotal, { noMobRoll: true });
+  return shiftNote ? `${challengeHtml}<div class="cog-contest-dc-shift cog-text-muted" style="font-size: 10px;">${escapeAttr(shiftNote.trim())}</div>` : challengeHtml;
 }
 
 /**
@@ -113,9 +113,10 @@ export function renderAttackContestBlock(actor, attackItem, targetResults = [], 
  * @param {COGItem} item
  * @param {object} contestData
  * @param {number} [initiatorTotal=10]
+ * @param {{ noMobRoll?: boolean }} [opts] the button carries `data-no-mob-roll` (the handler skips mob defenders)
  * @returns {string}
  */
-export function renderContestChallengeBlock(actor, item, contestData, initiatorTotal = 10) {
+export function renderContestChallengeBlock(actor, item, contestData, initiatorTotal = 10, { noMobRoll = false } = {}) {
   if (!contestData || !contestData.hasContest) return '';
   const isOpposed = contestData.contestType === 'opposed';
   const targetLabel = contestData.targetSkill
@@ -127,13 +128,13 @@ export function renderContestChallengeBlock(actor, item, contestData, initiatorT
 
   const failRounds = Math.max(0, Math.floor(Number(contestData.durationRounds) || 0));
   const failDebuffHtml = contestData.onFailDebuff
-    ? `<div class="cog-text-accent" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-skull"></i> <strong>On Failure:</strong> Inflicts <strong>[${contestData.onFailDebuff}]</strong>${failRounds > 0 ? ` for ${failRounds} rounds` : ''}</div>`
+    ? `<div class="cog-text-accent" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-skull"></i> <strong>On Failure:</strong> Inflicts <strong>[${escapeAttr(contestData.onFailDebuff)}]</strong>${failRounds > 0 ? ` for ${failRounds} rounds` : ''}</div>`
     : '';
   const failNotesHtml = contestData.onFailNotes
-    ? `<div class="cog-text-accent-strong" style="font-size: 11px; margin-top: 2px;"><em>Failure: ${contestData.onFailNotes}</em></div>`
+    ? `<div class="cog-text-accent-strong" style="font-size: 11px; margin-top: 2px;"><em>Failure: ${escapeAttr(contestData.onFailNotes)}</em></div>`
     : '';
   const successNotesHtml = contestData.onSuccessNotes
-    ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><em>Success: ${contestData.onSuccessNotes}</em></div>`
+    ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><em>Success: ${escapeAttr(contestData.onSuccessNotes)}</em></div>`
     : '';
 
   return `
@@ -143,33 +144,33 @@ export function renderContestChallengeBlock(actor, item, contestData, initiatorT
           <i class="fa-solid fa-scale-balanced"></i> ${isOpposed ? 'OPPOSED CONTEST' : 'CONTESTED CHECK'}
         </div>
         <span class="cog-bg-magic-fill cog-text-on-fill" style="font-weight: bold; font-size: 10px; padding: 2px 6px; border-radius: 3px; text-transform: uppercase;">
-          ${thresholdLabel}
+          ${escapeAttr(thresholdLabel)}
         </span>
       </div>
       <div class="cog-text" style="font-size: 11px; margin-top: 2px;">
-        Opposing Roll: <strong>${targetLabel}</strong>
-        ${isOpposed ? ` • Initiator Score: <strong>${initiatorTotal}</strong>` : ` • Challenge DC: <strong>${contestData.dc}</strong>`}
+        Opposing Roll: <strong>${escapeAttr(targetLabel)}</strong>
+        ${isOpposed ? ` • Initiator Score: <strong>${escapeAttr(initiatorTotal)}</strong>` : ` • Challenge DC: <strong>${escapeAttr(contestData.dc)}</strong>`}
       </div>
       ${failDebuffHtml}
       ${failNotesHtml}
       ${successNotesHtml}
-      <button type="button" class="cog-btn cog-roll-contest-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerRollContest"
-        data-initiator-uuid="${actor.uuid}"
-        data-initiator-name="${encodeURIComponent(actor.name)}"
-        data-item-name="${encodeURIComponent(item?.name || 'Ability')}"
-        data-item-id="${item?.id || item?._id || ''}"
-        data-contest-type="${contestData.contestType}"
-        data-target-stat="${contestData.targetStat}"
-        data-target-skill="${encodeURIComponent(contestData.targetSkill || '')}"
-        data-dc="${contestData.dc}"
-        data-initiator-total="${initiatorTotal}"
-        data-on-fail-debuff="${encodeURIComponent(contestData.onFailDebuff || '')}"
+      <button type="button" class="cog-btn cog-roll-contest-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerRollContest"${noMobRoll ? ' data-no-mob-roll="1"' : ''}
+        data-initiator-uuid="${escapeAttr(actor.uuid)}"
+        data-initiator-name="${escapeAttr(encodeURIComponent(actor.name))}"
+        data-item-name="${escapeAttr(encodeURIComponent(item?.name || 'Ability'))}"
+        data-item-id="${escapeAttr(item?.id || item?._id || '')}"
+        data-contest-type="${escapeAttr(contestData.contestType)}"
+        data-target-stat="${escapeAttr(contestData.targetStat)}"
+        data-target-skill="${escapeAttr(encodeURIComponent(contestData.targetSkill || ''))}"
+        data-dc="${escapeAttr(contestData.dc)}"
+        data-initiator-total="${escapeAttr(initiatorTotal)}"
+        data-on-fail-debuff="${escapeAttr(encodeURIComponent(contestData.onFailDebuff || ''))}"
         data-source-rank="${Number(contestData.rank) || 0}"
         data-duration-rounds="${failRounds}"
-        data-on-fail-notes="${encodeURIComponent(contestData.onFailNotes || '')}"
-        data-on-success-notes="${encodeURIComponent(contestData.onSuccessNotes || '')}"
+        data-on-fail-notes="${escapeAttr(encodeURIComponent(contestData.onFailNotes || ''))}"
+        data-on-success-notes="${escapeAttr(encodeURIComponent(contestData.onSuccessNotes || ''))}"
         style="width: 100%; margin-top: 6px; border: 1px solid var(--cog-magic-fill); border-radius: 3px; padding: 5px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif); display: flex; align-items: center; justify-content: center; gap: 6px;">
-        <i class="fa-solid fa-dice-d20"></i> Roll Opposed Contest (${targetLabel})
+        <i class="fa-solid fa-dice-d20"></i> Roll Opposed Contest (${escapeAttr(targetLabel)})
       </button>
     </div>
   `;

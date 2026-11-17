@@ -2,11 +2,11 @@
  * Catalog lookups for the item sheet's pickers: skills, buffs, debuffs, spells and roll tables. The first four are the
  * managers' merged lists (`unifiedCatalog`: keyed by id and identifier, never by name), sorted by name.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { unifiedCatalog } from '../../content/unified-catalog.mjs';
 import { skillGroupLabel } from '../../utils/tag/tag-mechanics.mjs';
 import { SOURCE_INDEX_FIELD } from '../../utils/content-source.mjs';
+import { TABLE_KEY_FIELD, tableKeyOf } from '../../utils/rolltable/table-flags.mjs';
 
 /** Index fields `skillEntry` reads from a pack skill (a pack index returns only what is requested). */
 const SKILL_PICKER_INDEX_FIELDS = Object.freeze([
@@ -71,9 +71,8 @@ export async function getAvailableSpells() {
   return definitionsOf('spell', 'spell', { pack: false });
 }
 
-const TABLE_KEY_FLAG = `flags.${SYSTEM_ID}.tableKey`;
 const keyOf = (doc) => {
-  const raw = doc?.flags?.[SYSTEM_ID]?.tableKey;
+  const raw = tableKeyOf(doc);
   return typeof raw === 'string' ? raw.trim() : '';
 };
 
@@ -97,7 +96,7 @@ export async function getAvailableRollTables({ packs = false } = {}) {
     if (!pack || seen.has(packId)) continue;
     seen.add(packId);
     try {
-      const index = typeof pack.getIndex === 'function' ? await pack.getIndex({ fields: [TABLE_KEY_FLAG] }) : pack.index;
+      const index = typeof pack.getIndex === 'function' ? await pack.getIndex({ fields: [TABLE_KEY_FIELD] }) : pack.index;
       const group = pack.title || pack.metadata?.label || packId;
       const entries = [];
       for (const e of index ?? []) {

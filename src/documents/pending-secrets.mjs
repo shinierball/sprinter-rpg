@@ -12,7 +12,8 @@ import { registerRelayAction, dispatchRelay } from '../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { itemIdentifier } from '../utils/identifier.mjs';
 import { getCurrentFloor } from './actor/actor-environment.mjs';
-import { postSecretCard, transformCardText } from './actor/transform-cues.mjs';
+import { postSecretCard } from './actor/transform-cues.mjs';
+import { transformText } from '../utils/character/transform-text.mjs';
 import { registerStoredCopy } from '../utils/migrations/stored-copies.mjs';
 
 export const PENDING_SECRETS_SETTING = 'pendingSecrets';
@@ -106,11 +107,11 @@ const warn = (message) => globalThis.ui?.notifications?.warn?.(message);
  * @returns {Promise<Item|null>}
  */
 export async function reveal(id, { cue = true } = {}) {
-  if (!globalThis.game?.user?.isGM) { warn(transformCardText('COG.TransformCard.GMOnly')); return null; }
+  if (!globalThis.game?.user?.isGM) { warn(transformText('COG.TransformCard.GMOnly')); return null; }
   const record = recordOf(id);
-  if (!record) { warn(transformCardText('COG.TransformCard.SecretGone')); return null; }
+  if (!record) { warn(transformText('COG.TransformCard.SecretGone')); return null; }
   const actor = resolveActorByUuid(record.actorUuid);
-  if (!actor) { warn(transformCardText('COG.TransformCard.NotFound')); return null; }
+  if (!actor) { warn(transformText('COG.TransformCard.NotFound')); return null; }
   const created = await actor.applyCondition(record.debuffData, { source: record.source, reveal: true, postCue: cue });
   if (!created) return null;
   await save(listPending().filter((r) => r.id !== id));
@@ -119,7 +120,7 @@ export async function reveal(id, { cue = true } = {}) {
 
 /** Drop a held secret without ever creating it (the GM's cure: you cannot cure what the player does not have). */
 export async function cure(id) {
-  if (!globalThis.game?.user?.isGM) { warn(transformCardText('COG.TransformCard.GMOnly')); return false; }
+  if (!globalThis.game?.user?.isGM) { warn(transformText('COG.TransformCard.GMOnly')); return false; }
   if (!recordOf(id)) return false;
   await save(listPending().filter((r) => r.id !== id));
   return true;

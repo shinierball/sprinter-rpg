@@ -28,7 +28,7 @@ import { buildPayload } from '../data/builders/item-payload.mjs';
 import { CrawlerCreatorController, INDUCTION_STOP, RACE_CLASS_STOP, unsavedActorSnapshot } from './crawler-creator/controller.mjs';
 import { readControl, stageFooter, stagePanel, stagePreview, stageRail } from './crawler-creator/stage-context.mjs';
 // The builder module also registers the `crawler` payload delegate that `buildPayload('crawler')` reaches.
-import { resolveCreatorSpecies, starterHotlist } from '../data/builders/crawler-payload.mjs';
+import { missingCatalogRefOf, resolveCreatorSpecies, starterHotlist } from '../data/builders/crawler-payload.mjs';
 
 /** A background's selection key: its `id` when the matrix row has one, else its name. */
 const bgKey = (bg) => bg?.id ?? bg?.name;
@@ -819,7 +819,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     for (const w of payloadWarnings) ui.notifications?.warn(`${w.path}: ${w.message}`);
     // A background skill whose catalog entry is missing was added as a plain skill: say so (never a silent stub).
     for (const item of actorPayload.items ?? []) {
-      const missing = item?.flags?.[SYSTEM_ID]?.missingCatalogRef;
+      const missing = missingCatalogRefOf(item);
       if (missing) ui.notifications?.warn(`Skill "${item.name}" is not in the skill catalog (${missing}); added as a plain skill.`);
     }
 

@@ -8,12 +8,13 @@
  *
  * Plain functions taking the actor first. This module reaches the actor's debuffs through `actor.applyCondition`.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { flagPath, readFlag } from '../../utils/flags.mjs';
 import { debuffInForce } from '../../utils/effects/debuff-force.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { conditionTagId } from '../../utils/identifier.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
 import { SECONDS_PER_ROUND } from '../../utils/time/timing.mjs';
+import { appliedRoundUpdate, durationsTickedRoundOf } from '../../utils/time/duration-flags.mjs';
 import { canWriteCombatant, combatantOfActor } from '../combat/combatants.mjs';
 import { cleanedUpRoundOf } from '../combat/steps.mjs';
 import { conditionItemData } from './condition-data.mjs';
@@ -89,17 +90,18 @@ function combatantsOf(actor) {
   return found;
 }
 
-const flagOf = (doc, key) => doc?.getFlag?.(SYSTEM_ID, key) ?? doc?.flags?.[SYSTEM_ID]?.[key];
+const DYING_FLAG = 'dying';
+const DEATH_FLAG = 'death';
 
 /**
  * The stamp that makes a debuff that landed during this round's Clean Up (after Step 5 began, before the countdown
- * ticked) start counting from the next round.
+ * ticked) start counting from the next round. It is an update fragment (empty when no combat is in that window).
  */
 function appliedStamp(actor) {
   for (const { combat } of combatantsOf(actor)) {
     const round = Number(combat.round);
-    if (Number(cleanedUpRoundOf(combat)) === round && Number(flagOf(combat, 'durationsTickedRound')) !== round) {
-      return { appliedRound: round, appliedCombatId: combat.id ?? '' };
+    if (Number(cleanedUpRoundOf(combat)) === round && Number(durationsTickedRoundOf(combat)) !== round) {
+      return appliedRoundUpdate({ round, combatId: combat.id ?? '' });
     }
   }
   return {};
@@ -125,8 +127,8 @@ async function beginDying(actor, { downedBy = null } = {}) {
   const debuff = await actor.applyCondition(conditionData(DYING_CONDITION, { duration }), { durationRounds: rounds, duration });
   if (!debuff) return null;
   await debuff.update({
-    [`flags.${SYSTEM_ID}.dying`]: { clockAt: worldTime(), downedBy },
-    ...Object.fromEntries(Object.entries(appliedStamp(actor)).map(([key, value]) => [`flags.${SYSTEM_ID}.${key}`, value]))
+    [flagPath(DYING_FLAG)]: { clockAt: worldTime(), downedBy },
+    ...appliedStamp(actor)
   });
   await postDyingCard(actor, { rounds });
   return debuff;
@@ -157,7 +159,7 @@ export async function untickDying(actor) {
   return remaining;
 }
 
-const writeClock = (debuff, at) => debuff.update({ [`flags.${SYSTEM_ID}.dying.clockAt`]: at });
+const writeClock = (debuff, at) => debuff.update({ [flagPath(`${DYING_FLAG}.clockAt`)]: at });
 
 /**
  * The out-of-combat countdown (D11): every `SECONDS_PER_ROUND` of world time that passes while a Dying actor is not a
@@ -171,7 +173,7 @@ export async function sweepDyingClock(now, actors) {
   for (const actor of actors) {
     const debuff = dyingDebuff(actor);
     if (!debuff) continue;
-    const stamp = Number(flagOf(debuff, 'dying')?.clockAt);
+    const stamp = Number(readFlag(debuff, DYING_FLAG)?.clockAt);
     if (combatantsOf(actor).length || !Number.isFinite(stamp) || time < stamp) {
       await writeClock(debuff, time);
       continue;
@@ -218,12 +220,12 @@ async function markDefeated(actor) {
 export async function die(actor, { cause = 'countdown', applicationId = null, downedBy = null } = {}) {
   if (isDead(actor)) return null;
   const dying = dyingDebuff(actor);
-  const downing = downedBy ?? flagOf(dying, 'dying')?.downedBy ?? null;
+  const downing = downedBy ?? readFlag(dying, DYING_FLAG)?.downedBy ?? null;
   await dying?.delete();
   const data = conditionData(DEAD_CONDITION, { duration: 'Permanent' });
   data.system.durationConfig = { type: 'permanent', value: 0 };
   const dead = await actor.applyCondition(data, {});
-  await dead?.update({ [`flags.${SYSTEM_ID}.death`]: { at: worldTime(), cause, applicationId } });
+  await dead?.update({ [flagPath(DEATH_FLAG)]: { at: worldTime(), cause, applicationId } });
   await markDefeated(actor);
   const credit = await creditDeferredKill(actor, downing);
   await postDeathCard(actor, { cause, killByHand: credit === 'no-record' });

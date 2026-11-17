@@ -12,7 +12,7 @@ import {
   getTagsOf, isOfferedOnAttack, isOfferedOnCheck, isOfferedOnMove, MOVE_EVENTS, TOUCH_REACH_FEET, OFFER_ROLES, isAreaTagSet
 } from '../tag/tag-mechanics.mjs';
 import { resolveActorByUuid } from '../actor-uuid.mjs';
-import { evaluateRollOutcome, COG_ROLL_OUTCOMES } from '../../documents/session/roll-outcomes.mjs';
+import { attackHits, evaluateRollOutcome, COG_ROLL_OUTCOMES } from '../../documents/session/roll-outcomes.mjs';
 import { effectiveCheck, getAssistSpec, assistOfferMatches } from '../roll/check-assists.mjs';
 import { mobAttackText } from './declared-attacks.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
@@ -33,8 +33,8 @@ const ATTACK_OUTCOME_LABELS = Object.freeze({
  * @returns {{ isHit: boolean, diff: number, outcome: string, outcomeId: string }}
  */
 export function classifyAttackOutcome(total, dc, d20Face = null) {
-  // A Natural 1 is a Critical Miss and misses even when the total reaches the DC (E6.5); a Natural 20 is judged by its total.
-  const isHit = d20Face !== 1 && total >= dc;
+  // A Natural 1 misses at any total and a Natural 20 hits at any total (the book's combat example).
+  const isHit = attackHits(total, dc, d20Face);
   const diff = total - dc;
   const outcomeId = evaluateRollOutcome({ total, d20Result: d20Face, targetDC: dc });
   let outcome = isHit ? 'Hit' : 'Miss';

@@ -1,7 +1,15 @@
+import { readFlag, withFlags } from '../utils/flags.mjs';
+
 /**
  * System Macros
  * Available to all players and administrators.
  */
+
+/** The flags that mark a world macro as one the system ships, by key (never by name). */
+const macroFlags = (macroKey) => withFlags({}, { macroKey }).flags;
+
+/** The key a shipped macro is found by, as stored on a world macro or on this module's data (undefined for a GM's own). */
+export const macroKeyOf = (macro) => readFlag(macro, 'macroKey');
 
 export const COG_MACROS = [
   {
@@ -21,11 +29,7 @@ if (typeof window.cog?.openCrawlerCreator === 'function') {
     ownership: {
       default: 2 // Observer: available to all users to view and execute
     },
-    flags: {
-      "sprinter-rpg": {
-        macroKey: "crawler-creator"
-      }
-    }
+    flags: macroFlags("crawler-creator")
   },
   {
     _id: "dccmacro00000002",
@@ -44,11 +48,7 @@ if (typeof window.cog?.openCombatMetrics === 'function') {
     ownership: {
       default: 2 // Observer: available to all users to view and execute
     },
-    flags: {
-      "sprinter-rpg": {
-        macroKey: "combat-metrics"
-      }
-    }
+    flags: macroFlags("combat-metrics")
   },
   {
     _id: "dccmacro00000003",
@@ -67,11 +67,7 @@ if (typeof window.cog?.openSessionManager === 'function') {
     ownership: {
       default: 2 // Observer: available to all users to view and execute
     },
-    flags: {
-      "sprinter-rpg": {
-        macroKey: "session-manager"
-      }
-    }
+    flags: macroFlags("session-manager")
   },
   {
     _id: "dccmacro00000004",
@@ -90,11 +86,7 @@ if (typeof window.cog?.openGrindApp === 'function') {
     ownership: {
       default: 2
     },
-    flags: {
-      "sprinter-rpg": {
-        macroKey: "grind-hub"
-      }
-    }
+    flags: macroFlags("grind-hub")
   },
   {
     _id: "dccmacro00000005",
@@ -115,11 +107,7 @@ if (typeof window.cog?.openClassCreator === 'function') {
     ownership: {
       default: 2 // Observer: available to all users to view and execute
     },
-    flags: {
-      "sprinter-rpg": {
-        macroKey: "class-creator"
-      }
-    }
+    flags: macroFlags("class-creator")
   },
   {
     _id: "dccmacro00000006",
@@ -140,10 +128,6 @@ if (typeof window.cog?.openRaceCreator === 'function') {
     ownership: {
       default: 2 // Observer: available to all users to view and execute
     },
-    flags: {
-      "sprinter-rpg": {
-        macroKey: "race-creator"
-      }
-    }
+    flags: macroFlags("race-creator")
   }
 ];

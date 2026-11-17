@@ -5,6 +5,7 @@
  */
 import { AS_TRIGGER_TYPES, asTriggerCount, asTriggerRowsOf } from '../../utils/roll/amazing-success.mjs';
 import { identifierOptions } from '../../utils/ui/identifier-options.mjs';
+import { isRankedItem } from '../../utils/document-types.mjs';
 import { toArray } from './util.mjs';
 
 const loc = (key) => globalThis.game?.i18n?.localize?.(key) ?? key;
@@ -18,15 +19,15 @@ function rowSummary(row) {
 }
 
 /**
- * Adds `context.asTriggers` for a gear, attack or buff item.
+ * Adds `context.asTriggers` for a gear, attack, buff, skill or spell item.
  * @param {object} context the sheet context (`context.system` is the working copy, `context.item` the document)
  * @returns {object} the added block
  */
 export function buildAsTriggerContext(context) {
   const item = context.item;
   const { entries } = buildAsTriggerEntries(context.system?.asTriggers, context.availableDebuffs);
-  // A buff's triggers each start at their own Rank and carry no one-per-weapon limit: they fire beside a weapon's own.
-  if (item?.type === 'buff') {
+  // A buff's, skill's or spell's triggers each start at their own Rank and carry no one-per-weapon limit: they fire beside a weapon's own.
+  if (item?.type === 'buff' || isRankedItem(item)) {
     context.asTriggers = { ...asTriggerView(entries, [], entries.length), overLimit: false, ranked: true };
     return context.asTriggers;
   }

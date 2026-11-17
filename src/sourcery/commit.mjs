@@ -9,7 +9,8 @@ import { buildPayload } from '../data/builders/item-payload.mjs';
 import { bookTableSpecs, defaultDocUuid } from './table-builders.mjs';
 import { BOOKS, IMPORT_PACKS, TABLE_PACK, JOURNAL_PACK, VEHICLE_PACK, worldPackId, worldPackName } from './canon.mjs';
 import { isLeftOut } from './import-plan.mjs';
-import { SYSTEM_ID } from '../constants.mjs';
+import { setSourceStamp } from '../utils/content-source.mjs';
+import { sourceryOf } from './redacted.mjs';
 
 const CATALOG_VERSION = 1;
 const CHUNK = 50;
@@ -20,8 +21,7 @@ const isRecord = v => !!v && typeof v === 'object' && !Array.isArray(v);
 
 /** A document carrying the source stamp of the book that filled it (7.7c): `{ theme: 'cog', set: <book id>, authorship: 'human' }` (7.16), replacing `bundled`. */
 function stampedWithBook(doc, book) {
-  const flags = isRecord(doc.flags) ? doc.flags : {};
-  return { ...doc, flags: { ...flags, [SYSTEM_ID]: { ...(isRecord(flags[SYSTEM_ID]) ? flags[SYSTEM_ID] : {}), source: { theme: COG_THEME, set: book, authorship: 'human' } } } };
+  return setSourceStamp(doc, { theme: COG_THEME, set: book, authorship: 'human' });
 }
 
 /** `Compendium.world.sourcery-skills.Item.<id>` for a canon document link; the system pack for packs the importer does not own. */
@@ -138,8 +138,6 @@ export function buildCatalog(plan, set, { now = new Date().toISOString() } = {})
   });
 }
 
-const sourceryFlag = doc => (isRecord(doc?.flags?.[SYSTEM_ID]?.sourcery) ? doc.flags[SYSTEM_ID].sourcery : {});
-
 /** A book record of an earlier import that reads better than this run's: from its own PDF, or a closer match. */
 const readBetter = (before, now) => !!before && !now?.own && (before.own || before.fraction > (now?.fraction ?? 0));
 
@@ -153,7 +151,7 @@ function keptIds(def, docs, set, betterBefore) {
   const tables = def.pack === TABLE_PACK.pack || def.pack === JOURNAL_PACK.pack || def.pack === VEHICLE_PACK.pack;
   const keep = new Set();
   for (const doc of docs) {
-    const flag = sourceryFlag(doc);
+    const flag = sourceryOf(doc);
     const book = set.borrowed?.get(doc._id);
     const canon = flag.resolved === true && (set.keepable?.has(doc._id) || (!!book && betterBefore(book)));
     if (tables ? typeof flag.book === 'string' && !set.tableBooks?.has(flag.book) : canon) keep.add(doc._id);

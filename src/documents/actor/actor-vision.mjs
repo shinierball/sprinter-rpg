@@ -9,13 +9,15 @@
  * A user who cannot write the actor asks the active GM through the socketlib relay; the GM recomputes
  * everything from the documents, so the request carries only the actor's UUID.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { clearFlag, readFlag, writeFlag } from '../../utils/flags.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { isMigrationWrite } from '../migrations/world-migration.mjs';
 import { collectSenses, hasSenseOverride } from '../../utils/character/senses.mjs';
 
 export const SYNC_TOKEN_VISION = 'syncTokenVision';
+
+const VISION_BACKUP_FLAG = 'visionBackup';
 
 /** Item types whose senses feed the actor (the same sources as the typed modifier rows). */
 const SENSE_ITEM_TYPES = ['race', 'class', 'gear', 'buff'];
@@ -79,17 +81,17 @@ function activeTokenDocuments(actor) {
 export async function applyTokenVision(actor) {
   if (!actor || typeof actor.update !== 'function') return false;
   const senses = collectSenses(actor);
-  const backup = actor.getFlag?.(SYSTEM_ID, 'visionBackup') ?? null;
+  const backup = readFlag(actor, VISION_BACKUP_FLAG) ?? null;
   const current = pickSight(actor.prototypeToken?.sight);
 
   let target;
   if (hasSenseOverride(senses)) {
     const base = backup ?? current;
     target = deriveSight(senses, base);
-    if (!backup) await actor.setFlag?.(SYSTEM_ID, 'visionBackup', base);
+    if (!backup) await writeFlag(actor, VISION_BACKUP_FLAG, base);
   } else if (backup) {
     target = pickSight(backup);
-    await actor.unsetFlag?.(SYSTEM_ID, 'visionBackup');
+    await clearFlag(actor, VISION_BACKUP_FLAG);
   } else {
     return false;
   }

@@ -2,15 +2,18 @@ import { COGCombatMetrics, getHpPerBar } from '../combat-metrics.mjs';
 import { getRequiredGrindingHours, getAdvancementTarget, getEnduranceDC, getSafeGrindingThreshold } from '../../data/rules/grinding-rules.mjs';
 import { getCurrentFloor, getFloorTimer, decrementFloorTimer } from './actor-environment.mjs';
 import { SYSTEM_ID } from '../../constants.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { carrySourceStamp, findOffReference, landItems } from '../../utils/content-source.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { rollGrindComplication } from '../../content/grind-complications.mjs';
 import { getStatCaps } from '../../utils/character/stat-caps.mjs';
+import { storedBaseScore } from '../../models/actors/actor-derivation.mjs';
 import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
 import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
 import { isAdvancingType } from '../../utils/skill/spells-advance.mjs';
 import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
 import { buildRollContext, extendContext } from '../../utils/roll/roll-context.mjs';
+import { cameraNoteHtml } from '../../utils/roll/cameras.mjs';
 import { extractD20Result } from '../session/roll-outcomes.mjs';
 import { restCooldownUpdates } from './cooldown-gate.mjs';
 import { getRecoveryMultiplier, resolveRecoverySituations, scaleRecovery } from '../../utils/roll/narrow-modifiers.mjs';
@@ -20,7 +23,7 @@ import { collectCheckModifiers } from '../../utils/roll/damage-modifiers.mjs';
 import { restoredValue } from '../../utils/damage/resource-restore.mjs';
 import {
   dismissSkillAura, gateSkillUse, skillRankParts, earlySkillMessage, prepareSkillCheck,
-  rollSkillCheckDice, skillUseParts, postSkillCheckMessage
+  rollSkillCheckDice, skillUseParts, skillCardTailHtml, postSkillCheckMessage
 } from './skill-roll.mjs';
 import { applyCondition } from './actor-conditions.mjs';
 import { recordGrind } from './grind-log.mjs';
@@ -67,10 +70,10 @@ export async function rollFatigueCheck(crawler, dc) {
 
 function buildGrindLevelLine(progress) {
   if (!progress?.levelsGained) return '';
-  const bonus = progress.bonusRolled ? ` (1d2 bonus: ${progress.d2})` : '';
+  const bonus = progress.bonusRolled ? ` (1d2 bonus: ${escapeAttr(progress.d2)})` : '';
   return `
     <div class="cog-text-gold" style="font-size: 11px; margin-top: 4px;">
-      <i class="fa-solid fa-angles-up"></i> <strong>LEVEL UP${bonus}:</strong> Level ${progress.previousLevel} &rarr; <strong>${progress.newLevel}</strong> (+${progress.pointsGained} Stat points to spend)
+      <i class="fa-solid fa-angles-up"></i> <strong>LEVEL UP${bonus}:</strong> Level ${escapeAttr(progress.previousLevel)} &rarr; <strong>${escapeAttr(progress.newLevel)}</strong> (+${escapeAttr(progress.pointsGained)} Stat points to spend)
       ${buildPetLevelLines(progress.pets)}
     </div>`;
 }
@@ -114,8 +117,9 @@ export async function rollSkill(actor, skillItem, options = {}) {
   const check = await prepareSkillCheck(actor, skillItem, options, { rank, rangeGate: gates.rangeGate });
   // Every check, trained or not, runs the same stages; an untrained one at net Disadvantage only changes the dice and flavor (3.54)
   const { roll, flavorText, rollId } = await rollSkillCheckDice(actor, skillItem, options, { check, rank });
-  const parts = await skillUseParts(actor, skillItem, options, { check, rank, auraData, roll });
-  const message = await postSkillCheckMessage(actor, skillItem, options, { check, gates, roll, flavorText, parts, rollId });
+  const { hasDmg, dmgBtnHtml, auraHtml, healHtml, tempBarsHtml, aoeBtnHtml, rangeHtml, buffHtml, buffFlags } = await skillUseParts(actor, skillItem, options, { check, rank, auraData, roll });
+  const tailHtml = skillCardTailHtml(rangeHtml, gates.rangeGate.outOfRange, dmgBtnHtml, aoeBtnHtml, auraHtml, healHtml, tempBarsHtml, buffHtml);
+  const message = await postSkillCheckMessage(actor, skillItem, options, { check, gates, roll, hasDmg, buffFlags, rollId }, `${flavorText}${cameraNoteHtml(check.camera.choice)}`, tailHtml);
   await fireUseTriggers(actor, skillItem, { context: check.rollContext, roll, options });
   return message;
 }
@@ -203,7 +207,8 @@ export async function increaseUnenhancedStat(actor, stat, delta = 1, options = {
   }
 
   await actor.update({
-    [`system.abilities.${s}.unenhanced`]: newUnenhanced,
+    // The stored base, not the body in force: while changed the derived score is the form's (1193 a)
+    [`system.abilities.${s}.unenhanced`]: storedBaseScore(actor, s) + delta,
     [`system.abilities.${s}.value`]: newVal
   });
   if (ruleBreak) await markRuleBreak(actor);
@@ -351,21 +356,21 @@ export async function rest(actor, restType = 'long', options = {}) {
   const fatigueCleared = clearedConditions.filter(c => isFatigueDebuff(c)).length;
 
   if (!options.silent) {
-    const conditionLines = clearedConditions.map(c => `<li>Cleared: <strong>${c.name}</strong></li>`).join('');
+    const conditionLines = clearedConditions.map(c => `<li>Cleared: <strong>${escapeAttr(c.name)}</strong></li>`).join('');
     const card = `
       <div class="cog-chat-card cog-rest-card cog-bg-window cog-text-strong" style="border: 2px solid ${color}; border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif;">
         <div class="cog-bg-dyn cog-text-on-fill" style="--cog-bg-dyn: ${color}; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 5px 8px; border-radius: 3px; font-weight: bold; text-align: center; margin-bottom: 8px;">
-          <i class="${icon}"></i> ${title} COMPLETE
+          <i class="${icon}"></i> ${escapeAttr(title)} COMPLETE
         </div>
         <div class="cog-text-secondary" style="display: flex; justify-content: space-between; font-size: 11px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 6px;">
-          <span>Crawler: <strong class="cog-text-strong">${actor.name}</strong></span>
+          <span>Crawler: <strong class="cog-text-strong">${escapeAttr(actor.name)}</strong></span>
           <span>Duration: <strong class="cog-text-gold">${hours} Hours</strong></span>
         </div>
         <ul class="cog-text" style="margin: 8px 0 0 0; padding-left: 18px; font-size: 12px; line-height: 1.6;">
           <li><strong>Health:</strong> ${hpDesc} &rarr; <strong>${newHP} / ${maxHP} HP</strong></li>
-          <li><strong>Mana:</strong> ${manaDesc} &rarr; <strong>${newMana} / ${maxMana} MP</strong></li>
+          <li><strong>Mana:</strong> ${escapeAttr(manaDesc)} &rarr; <strong>${newMana} / ${maxMana} MP</strong></li>
           ${conditionLines ? conditionLines : (hours >= 8 ? '<li><strong>Conditions:</strong> No lingering fatigue or rest conditions.</li>' : '')}
-          ${options.inPersonalSpace ? `<li class="cog-text-success"><strong>Safe Space Perks:</strong> Rest completed in ${hours}h with luxury amenities in ${options.spaceName || 'Personal Space'}.</li>` : ''}
+          ${options.inPersonalSpace ? `<li class="cog-text-success"><strong>Safe Space Perks:</strong> Rest completed in ${hours}h with luxury amenities in ${escapeAttr(options.spaceName || 'Personal Space')}.</li>` : ''}
         </ul>
       </div>
     `;
@@ -724,12 +729,12 @@ async function postPartyGrindChatCard(data) {
   let compHtml = '';
   if (data.complication) {
     compHtml = `
-      <div class="cog-bg-surface-muted" style="border-left: 3px solid ${data.complication.color}; border-radius: 2px; padding: 6px 10px; margin-top: 8px;">
-        <div class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${data.complication.color}; font-weight: bold; font-size: 11px; text-transform: uppercase;">
-          <i class="${data.complication.icon}"></i> Party Event (d20: ${data.complication.roll}): ${data.complication.title}
+      <div class="cog-bg-surface-muted" style="border-left: 3px solid ${escapeAttr(data.complication.color)}; border-radius: 2px; padding: 6px 10px; margin-top: 8px;">
+        <div class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${escapeAttr(data.complication.color)}; font-weight: bold; font-size: 11px; text-transform: uppercase;">
+          <i class="${escapeAttr(data.complication.icon)}"></i> Party Event (d20: ${escapeAttr(data.complication.roll)}): ${escapeAttr(data.complication.title)}
         </div>
         <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px; line-height: 1.3;">
-          ${data.complication.description}
+          ${escapeAttr(data.complication.description)}
         </div>
       </div>
     `;
@@ -742,7 +747,7 @@ async function postPartyGrindChatCard(data) {
         <div style="margin-top: 3px; font-size: 10px;">
           ${cr.enduranceChecks.map(c => `
             <span class="cog-bg-dyn ${c.passed ? 'cog-text-success' : 'cog-text-danger'}" style="--cog-bg-dyn: ${c.passed ? 'var(--cog-success-tint)' : 'var(--cog-danger-tint)'}; display: inline-block; padding: 1px 4px; border-radius: 2px; margin-right: 4px; border: 1px solid ${c.passed ? 'var(--cog-success)' : 'var(--cog-accent)'};">
-              H${c.hour} (${c.rollTotal} vs DC${c.dc}): ${c.passed ? 'PASS' : 'FAIL (+1 Fatigue)'}
+              H${escapeAttr(c.hour)} (${escapeAttr(c.rollTotal)} vs DC${escapeAttr(c.dc)}): ${c.passed ? 'PASS' : 'FAIL (+1 Fatigue)'}
             </span>
           `).join('')}
         </div>
@@ -752,17 +757,17 @@ async function postPartyGrindChatCard(data) {
     }
 
     const forfeitNotice = cr.forfeitedHours > 0
-      ? `<span class="cog-text-muted" style="font-size: 10px; margin-left: 4px;">(${cr.forfeitedHours} unspent hrs forfeited)</span>`
+      ? `<span class="cog-text-muted" style="font-size: 10px; margin-left: 4px;">(${escapeAttr(cr.forfeitedHours)} unspent hrs forfeited)</span>`
       : '';
 
     return `
       <div class="cog-bg-sheen-03" style="display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border: 1px solid var(--cog-panel-border); border-radius: 4px; margin-top: 4px;">
-        <img class="cog-bg-icon-box" src="${cr.img}" width="32" height="32" style="border-radius: 3px; object-fit: cover; border: 1px solid var(--cog-border-muted);" />
+        <img class="cog-bg-icon-box" src="${escapeAttr(cr.img)}" width="32" height="32" style="border-radius: 3px; object-fit: cover; border: 1px solid var(--cog-border-muted);" />
         <div style="flex: 1;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <strong class="cog-text-strong" style="font-size: 12px;">${cr.name}</strong>
+            <strong class="cog-text-strong" style="font-size: 12px;">${escapeAttr(cr.name)}</strong>
             <span class="cog-text-gold" style="font-size: 11px; font-weight: bold;">
-              <i class="fa-solid fa-vault"></i> +${cr.totalEarnedHours}h (Pool: ${cr.bankedHours}h) ${forfeitNotice}
+              <i class="fa-solid fa-vault"></i> +${escapeAttr(cr.totalEarnedHours)}h (Pool: ${escapeAttr(cr.bankedHours)}h) ${forfeitNotice}
             </span>
           </div>
           ${checksStr}
@@ -775,15 +780,15 @@ async function postPartyGrindChatCard(data) {
   const card = `
     <div class="cog-chat-card cog-party-grind-card cog-bg-window cog-text-strong" style="border: 2px solid var(--cog-warning); border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif;">
       <div class="cog-bg-grad-accent-warning cog-text-on-fill" style="text-transform: uppercase; font-size: 12px; letter-spacing: 1.5px; padding: 5px 8px; border-radius: 3px; font-weight: bold; text-align: center; margin-bottom: 8px;">
-        <i class="fa-solid fa-people-group"></i> PARTY GRINDING SESSION: ${data.hours} HOURS
+        <i class="fa-solid fa-people-group"></i> PARTY GRINDING SESSION: ${escapeAttr(data.hours)} HOURS
       </div>
       <div class="cog-text-secondary" style="display: flex; justify-content: space-between; font-size: 11px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 6px;">
-        <span>Floor: <strong class="cog-text-gold">${data.floorNumber}</strong></span>
+        <span>Floor: <strong class="cog-text-gold">${escapeAttr(data.floorNumber)}</strong></span>
         <span>Participants: <strong class="cog-text-strong">${data.crawlerResults.length} Crawlers</strong></span>
-        <span>Safe Limit: <strong class="cog-text-success">${data.safeThreshold} hrs${data.hasGuideBonus ? ' (+1 Guide)' : ''}${data.mapBonus === 1 ? ' (+1 Neighborhood Map)' : data.mapBonus === 2 ? ' (+2 Borough Map)' : data.mapBonus > 0 ? ` (+${data.mapBonus} Map)` : ''}</strong></span>
+        <span>Safe Limit: <strong class="cog-text-success">${escapeAttr(data.safeThreshold)} hrs${data.hasGuideBonus ? ' (+1 Guide)' : ''}${data.mapBonus === 1 ? ' (+1 Neighborhood Map)' : data.mapBonus === 2 ? ' (+2 Borough Map)' : data.mapBonus > 0 ? ` (+${escapeAttr(data.mapBonus)} Map)` : ''}</strong></span>
       </div>
       <div class="cog-text" style="margin-top: 6px; font-size: 12px;">
-        <i class="fa-solid fa-hourglass-half cog-text-warning"></i> <strong>Floor Timer Clock:</strong> Decremented by <strong>-${data.nonBonusHours} Hours</strong> (${data.previousFloorTimer} &rarr; <strong class="cog-text-warning">${data.newFloorTimer} hrs remaining</strong>).
+        <i class="fa-solid fa-hourglass-half cog-text-warning"></i> <strong>Floor Timer Clock:</strong> Decremented by <strong>-${escapeAttr(data.nonBonusHours)} Hours</strong> (${escapeAttr(data.previousFloorTimer)} &rarr; <strong class="cog-text-warning">${escapeAttr(data.newFloorTimer)} hrs remaining</strong>).
       </div>
       <div class="cog-text-secondary" style="margin-top: 4px; font-size: 11px;">
         <i class="fa-solid fa-circle-info cog-text-info"></i> Hours in pool reset at start of grind (use it or lose it). Earned hours added to each crawler's pool.

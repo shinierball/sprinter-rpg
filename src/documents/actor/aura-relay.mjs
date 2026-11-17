@@ -18,7 +18,7 @@
  * formula's maximum. Known limit: the GM cannot confirm the target is inside the aura radius or is an
  * ally/enemy.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { auraSourceUuidOf } from '../../utils/area/aura-flags.mjs';
 import { registerRelayAction, dispatchRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { maxOfDiceFormula } from '../../utils/roll/dice-max.mjs';
@@ -50,7 +50,7 @@ export function findAuraEffects(actor, auraUuid) {
   if (!auraUuid) return { hasBars: false, itemIds: [] };
   const hasBars = actor?.system?.attributes?.hp?.tempBars?.sourceUuid === auraUuid;
   const itemIds = itemsOf(actor)
-    .filter(it => it.flags?.[SYSTEM_ID]?.auraSourceUuid === auraUuid)
+    .filter(it => auraSourceUuidOf(it) === auraUuid)
     .map(it => it.id || it._id);
   return { hasBars, itemIds };
 }
@@ -240,7 +240,7 @@ export async function removeAuraItems(actor, sourceItem, { types = [], keepTimed
   const auraUuid = sourceItem?.uuid || '';
   if (!auraUuid) return true;
   const itemIds = itemsOf(actor)
-    .filter(it => types.includes(it.type) && it.flags?.[SYSTEM_ID]?.auraSourceUuid === auraUuid)
+    .filter(it => types.includes(it.type) && auraSourceUuidOf(it) === auraUuid)
     .filter(it => !(keepTimed && it.type === 'debuff' && hasAuthoredDuration(it)))
     .map(it => it.id || it._id);
   if (itemIds.length > 0) {

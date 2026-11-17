@@ -5,6 +5,7 @@
  * document its result points at), never from the narrative text.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { optionOf } from '../rolltable/table-flags.mjs';
 
 const MAX_LABEL = 120;
 
@@ -38,7 +39,7 @@ export function legFromResults(results, options = {}) {
       if (!label) label = plain(result.description ?? result.text) || plain(result.name);
       continue;
     }
-    const option = isObject(flags.option) ? flags.option : null;
+    const option = isObject(optionOf(result)) ? optionOf(result) : null;
     if (!skill && option?.kind === 'named' && text(option.docKind) === 'skill') {
       let identifier = text(option.identifier);
       if (!identifier) {

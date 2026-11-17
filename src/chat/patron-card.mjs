@@ -6,11 +6,11 @@
 import { speakerOf, gmWhisper } from '../documents/actor/vehicle-drive-common.mjs';
 import { ownerAndGmIds } from '../utils/owner-recipients.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
+import { chatButtonDataHtml } from '../utils/card/chat-button-data.mjs';
 
 /** One chat button. `data` keys are the attribute names after `data-` (`'actor-uuid'`), empty values are left out. */
 function buttonHtml({ label, action, data = {}, gmOnly = false, icon = 'fa-arrow-right' }) {
-  const attrs = Object.entries(data).filter(([, v]) => v !== '' && v !== undefined && v !== null).map(([k, v]) => ` data-${k}="${escapeAttr(v)}"`).join('');
-  return `<button type="button" class="cog-btn" data-action="${escapeAttr(action)}"${attrs}${gmOnly ? ' data-gm-only="true"' : ''}><i class="fa-solid ${escapeAttr(icon)}"></i> ${escapeAttr(label)}</button>`;
+  return `<button type="button" class="cog-btn" data-action="${escapeAttr(action)}"${chatButtonDataHtml(data)}${gmOnly ? ' data-gm-only="true"' : ''}><i class="fa-solid ${escapeAttr(icon)}"></i> ${escapeAttr(label)}</button>`;
 }
 
 /** The card's inner markup: escaped text, one button row per line that has buttons. */

@@ -11,14 +11,15 @@
  * flag on a Region they create, and a non-owner's Place click on a cast card makes a real zone. None of this does more
  * harm than a mob actor of their own could, and adjudication stays with the GM, who can dismiss any zone.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { isActiveGM } from '../../utils/gm-relay.mjs';
 import { combatText } from '../../utils/combat/combat-round-text.mjs';
-import { findAreaRegions, tokensInRegion } from '../../utils/area/region-shapes.mjs';
+import { areaFlagsOf, areaUpdate, findAreaRegions, tokensInRegion } from '../../utils/area/region-shapes.mjs';
+import { isAuraRegion, stampAuraDebuff } from '../../utils/area/aura-flags.mjs';
+import { markAppliedRound } from '../../utils/time/duration-flags.mjs';
 import { isMarkerActor } from '../../utils/area/marker.mjs';
 import { positionAfterMovement } from '../../utils/combat/movement-position.mjs';
 import { pulseRows } from '../combat-aura-pulse.mjs';
-import { applyAuraPulse, auraSideOf, markAppliedRound, normalizeAuraFilter, withAuraLock } from './aura-pulse.mjs';
+import { applyAuraPulse, auraSideOf, normalizeAuraFilter, withAuraLock } from './aura-pulse.mjs';
 import { findAuraEffects, removeAuraItems } from './aura-relay.mjs';
 import { findHolderToken, deleteAreaGroup } from './area-relay.mjs';
 import { debuffHasConditionRef } from './actor-conditions.mjs';
@@ -26,7 +27,6 @@ import { conditionLabel } from './condition-data.mjs';
 import { EFFECT_ITEM_TYPES } from '../../utils/document-types.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 
-const areaFlags = (region) => region?.flags?.[SYSTEM_ID]?.area ?? null;
 const resolve = (uuid) => (uuid && typeof uuid === 'string' ? globalThis.fromUuidSync?.(uuid) ?? null : null);
 
 /**
@@ -92,9 +92,7 @@ async function clearStaleEffects(scene, sourceItemUuid, exceptRegionId = '', { p
 
 /** Mark a pulse condition as this zone item's (by UUID, like an aura debuff), so leaving the zone can find it. */
 async function stampZoneEffect(debuff, item, ref) {
-  if (typeof debuff?.setFlag !== 'function') return;
-  await debuff.setFlag(SYSTEM_ID, 'auraSourceUuid', item.uuid || '');
-  await debuff.setFlag(SYSTEM_ID, 'auraDebuffRef', ref);
+  await stampAuraDebuff(debuff, item, ref);
 }
 
 /**
@@ -107,7 +105,7 @@ async function stampZoneEffect(debuff, item, ref) {
 export async function onZoneTokenMove(tokenDoc, movement = null) {
   if (!isActiveGM() || !tokenDoc?.actor || isMarkerActor(tokenDoc.actor)) return;
   const scene = tokenDoc.parent ?? globalThis.canvas?.scene;
-  const uuids = new Set(findAreaRegions(scene, { kind: 'zone', role: 'core' }).map(r => areaFlags(r).sourceItemUuid).filter(Boolean));
+  const uuids = new Set(findAreaRegions(scene, { kind: 'zone', role: 'core' }).map(r => areaFlagsOf(r).sourceItemUuid).filter(Boolean));
   if (!uuids.size) return;
   const positions = new Map([[tokenDoc.id, positionAfterMovement(tokenDoc, movement)]]);
   for (const uuid of uuids) {
@@ -130,7 +128,7 @@ function endAreaGroup(scene, groupId) {
  *   conditions, removed, expired }`, or null when the zone was skipped
  */
 async function pulseZone(region, { combat, round = combat?.round } = {}) {
-  const flags = areaFlags(region);
+  const flags = areaFlagsOf(region);
   if (!flags || flags.kind !== 'zone' || flags.role !== 'core' || !combat) return null;
   const scene = region.parent;
   const when = Number(round ?? combat.round) || 0;
@@ -178,9 +176,11 @@ async function pulseZone(region, { combat, round = combat?.round } = {}) {
       await endAreaGroup(scene, flags.groupId);
     } else {
       await region.update({
-        [`flags.${SYSTEM_ID}.area.lastPulsedRound`]: when,
-        [`flags.${SYSTEM_ID}.area.combatId`]: combat.id ?? null,
-        ...(remaining !== null ? { [`flags.${SYSTEM_ID}.area.remainingRounds`]: remaining } : {})
+        ...areaUpdate({
+          lastPulsedRound: when,
+          combatId: combat.id ?? null,
+          ...(remaining !== null ? { remainingRounds: remaining } : {})
+        })
       });
     }
   });
@@ -231,7 +231,7 @@ export async function pulseZones(combat, { round = combat?.round } = {}) {
   // One-shot markers placed in this combat are cleared at the Clean Up of the round they were placed in.
   const done = new Set();
   for (const region of findAreaRegions(scene, { kind: 'marker' })) {
-    const f = areaFlags(region);
+    const f = areaFlagsOf(region);
     if (f.combatId !== combat.id || done.has(f.groupId) || !(Number(f.placedRound) <= when)) continue;
     done.add(f.groupId);
     await endAreaGroup(scene, f.groupId);
@@ -247,8 +247,8 @@ export async function pulseZones(combat, { round = combat?.round } = {}) {
  * not place are ignored.
  */
 export async function onAreaRegionDeleted(region) {
-  const flags = areaFlags(region);
-  if (!flags || region.flags?.[SYSTEM_ID]?.isAura || flags.role !== 'core' || !isActiveGM()) return;
+  const flags = areaFlagsOf(region);
+  if (!flags || isAuraRegion(region) || flags.role !== 'core' || !isActiveGM()) return;
   const scene = region.parent;
   const siblings = findAreaRegions(scene, { groupId: flags.groupId }).filter(r => r.id !== region.id);
   if (siblings.length) {
@@ -267,7 +267,7 @@ export async function endCombatZones(combat) {
   for (const scene of scenes) {
     const groups = new Set();
     for (const region of findAreaRegions(scene, { role: 'core' })) {
-      const f = areaFlags(region);
+      const f = areaFlagsOf(region);
       if (f.combatId !== combat.id) continue;
       if (f.kind === 'zone' && (f.remainingRounds === null || f.remainingRounds === undefined)) continue;
       groups.add(f.groupId);

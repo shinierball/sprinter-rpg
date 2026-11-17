@@ -3,10 +3,9 @@
  * the first scene of an empty world.
  * The system's own compendiums are compiled at build time (`npm run build:packs`); nothing here writes to them.
  */
-import { COG_MACROS } from '../data/macros.mjs';
+import { COG_MACROS, macroKeyOf } from '../data/macros.mjs';
 import { ensureBackgroundTables } from '../data/rules/background-table-rules.mjs';
 import { ensureTagSystemJournal } from '../data/journal-tag-system.mjs';
-import { SYSTEM_ID } from '../constants.mjs';
 
 export async function runGMWorldSetup() {
   // 0. Ensure default background RollTables (Tables 11, 12, 13) and Tag System Journal exist in the world
@@ -20,7 +19,7 @@ export async function runGMWorldSetup() {
   // 1. Ensure default macros exist in world with Observer ownership (default: 2) so all users can execute them
   if (game.macros && MacroDocClass) {
     for (const mData of COG_MACROS) {
-      const existing = game.macros.find ? game.macros.find(m => m.flags?.[SYSTEM_ID]?.macroKey === mData.flags?.[SYSTEM_ID]?.macroKey || m.name === mData.name) : null;
+      const existing = game.macros.find ? game.macros.find(m => macroKeyOf(m) === macroKeyOf(mData) || m.name === mData.name) : null;
       if (!existing) {
         try {
           await MacroDocClass.create({
@@ -38,8 +37,8 @@ export async function runGMWorldSetup() {
       } else {
         // A world macro carrying the system macroKey follows the code: stale command/img are rewritten.
         // A GM's own macro that merely shares the name has no matching key and is left alone.
-        const key = mData.flags?.[SYSTEM_ID]?.macroKey;
-        const isSystemMacro = !!key && existing.flags?.[SYSTEM_ID]?.macroKey === key;
+        const key = macroKeyOf(mData);
+        const isSystemMacro = !!key && macroKeyOf(existing) === key;
         const changes = {};
         if (isSystemMacro && existing.command !== mData.command) changes.command = mData.command;
         if (isSystemMacro && existing.img !== mData.img) changes.img = mData.img;

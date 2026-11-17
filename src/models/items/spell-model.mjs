@@ -1,6 +1,6 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
 import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField, appliedBuffsField, itemTempBarsField } from '../fields/effect-fields.mjs';
-import { rollModifiersField, damageModifiersField, defenseModifiersField, eventTriggersField } from '../fields/modifier-fields.mjs';
+import { rollModifiersField, damageModifiersField, defenseModifiersField, eventTriggersField, asTriggersField } from '../fields/modifier-fields.mjs';
 import { advancementStateFields, cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
 import { rankBreaksField } from '../../utils/skill/rank-breaks.mjs';
 
@@ -53,6 +53,7 @@ export class SpellDataModel extends BaseItemDataModel {
       attackModifiers: rollModifiersField(fields),
       // Rows that fire on an event (a kill this spell's owner makes, a cast of this spell); a row meant for one spell's kills conditions on its identity tag
       eventTriggers: eventTriggersField(fields),
+      asTriggers: asTriggersField(fields),
       checkModifiers: rollModifiersField(fields),
       quote: new fields.StringField({ initial: '' }),
       notes: new fields.StringField({ initial: '' }),

@@ -4,9 +4,9 @@
  * The write passes `cogAuthorship: false`, so a GM's choice is never turned into `edited` by the edit hook.
  */
 import { COGToolApp } from './tool-app.mjs';
-import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
 import { contentRegistry } from '../content/registry.mjs';
-import { readSourceStamp } from '../utils/content-source.mjs';
+import { readSourceStamp, sourceStampUpdate } from '../utils/content-source.mjs';
 import { worldStamp } from '../hooks/stamp-new-documents.mjs';
 
 const t = (key, data) => {
@@ -65,7 +65,7 @@ export class COGAuthorshipApp extends COGToolApp {
 
   static async #onApply() {
     if (!this.choice || !contentRegistry.getAuthorship(this.choice)) return this.close();
-    await this.document.update({ [`flags.${SYSTEM_ID}.source`]: COGAuthorshipApp.stampWith(this.document, this.choice) }, { cogAuthorship: false });
+    await this.document.update(sourceStampUpdate(COGAuthorshipApp.stampWith(this.document, this.choice)), { cogAuthorship: false });
     return this.close();
   }
 

@@ -1,7 +1,11 @@
 /**
  * Default macro hotbar setup.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { macroKeyOf } from '../data/macros.mjs';
+import { readFlag, writeFlag } from '../utils/flags.mjs';
+
+/** The flag on a user that records the starter hotbar has been set up. */
+const HOTBAR_CONFIGURED = 'initialHotbarConfigured';
 
 /**
  * Setup default macro bar shortcuts (slots 1-3) for a given user.
@@ -14,17 +18,17 @@ import { SYSTEM_ID } from '../constants.mjs';
  */
 export async function setupInitialHotbar(user = globalThis.game?.user, { force = false } = {}) {
   if (!user) return;
-  if (!force && typeof user.getFlag === 'function' && user.getFlag(SYSTEM_ID, 'initialHotbarConfigured')) {
+  if (!force && readFlag(user, HOTBAR_CONFIGURED)) {
     return;
   }
 
   const findMacro = (key, altNames) => {
     if (globalThis.game?.macros?.find) {
-      const found = globalThis.game.macros.find(m => m.flags?.[SYSTEM_ID]?.macroKey === key || altNames.includes(m.name));
+      const found = globalThis.game.macros.find(m => macroKeyOf(m) === key || altNames.includes(m.name));
       if (found) return found;
     }
     if (Array.isArray(globalThis.game?.macros)) {
-      const found = globalThis.game.macros.find(m => m.flags?.[SYSTEM_ID]?.macroKey === key || altNames.includes(m.name));
+      const found = globalThis.game.macros.find(m => macroKeyOf(m) === key || altNames.includes(m.name));
       if (found) return found;
     }
     return null;
@@ -54,7 +58,5 @@ export async function setupInitialHotbar(user = globalThis.game?.user, { force =
     }
   }
 
-  if (typeof user.setFlag === 'function') {
-    await user.setFlag(SYSTEM_ID, 'initialHotbarConfigured', true);
-  }
+  await writeFlag(user, HOTBAR_CONFIGURED, true);
 }

@@ -23,6 +23,13 @@ import { registerPayloadDelegate } from './item-payload.mjs';
 import { compileFloorStart } from '../floor-simulator/pipeline.mjs';
 import { contentIds } from '../../utils/stable-id.mjs';
 import { withRuleBreak } from '../../utils/rule-break.mjs';
+import { readFlag, withFlags } from '../../utils/flags.mjs';
+
+/** The flag on a background skill whose catalog entry was missing: the reference it asked for. */
+const MISSING_CATALOG_REF = 'missingCatalogRef';
+
+/** The catalog reference a background skill asked for and did not find (empty when it was found). */
+export const missingCatalogRefOf = (item) => readFlag(item, MISSING_CATALOG_REF);
 
 /**
  * The starter hotlist for a crawler's items, read from their `starterRole` flags only. A starter spell
@@ -161,7 +168,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         name: s.name,
         type: 'skill',
         img: 'icons/svg/book.svg',
-        ...(s.primary || catalogMiss ? { flags: { [SYSTEM_ID]: { ...(s.primary ? { starterRole: 'primarySkill' } : {}), ...(catalogMiss ? { missingCatalogRef: s.ref } : {}) } } } : {}),
+        ...(s.primary || catalogMiss ? withFlags({}, { ...(s.primary ? { starterRole: 'primarySkill' } : {}), ...(catalogMiss ? { [MISSING_CATALOG_REF]: s.ref } : {}) }) : {}),
         system: {
           rank: s.rank,
           stat: (s.stat || 'str').toLowerCase(),

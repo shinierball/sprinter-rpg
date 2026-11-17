@@ -1,5 +1,10 @@
 {
   "COG": {
+    "PotionLimits": {
+      "Heading": "Lifetime potion limits",
+      "Explanation": "A crawler may take only two Stat-raising and two Skill-raising potions in their whole life. A third of either is a Rule Break.",
+      "Label": { "stat": "Stat potions taken", "skill": "Skill potions taken" }
+    },
     "WeaponBuilder": {
       "Title": "Advanced Weapon Builder",
       "Step": {
@@ -916,6 +921,9 @@
       "NotApplied": "This reroll has not reached its check yet. The GM can apply it.",
       "LedgerReason": "Reroll: {check}",
       "LedgerNote": "Rerolled: was {old}",
+      "SpendPrompt": "Spend {cost} AI Favor to reroll {check}?",
+      "SpendTitle": "Reroll with AI Favor",
+      "NothingToReroll": "There is no roll to reroll with AI Favor.",
       "RuleBreakTitle": "Reroll Rule Break",
       "Anyway": "Reroll anyway as a Rule Break?",
       "Reason": {
@@ -1927,6 +1935,7 @@
       "HeldRevertInto": "{actor} has already changed into {form}. Revert anyway as a Rule Break?",
       "HeldRevertBy": "{actor} is changed by {affliction}. Revert anyway as a Rule Break?",
       "RaceReturnsTo": "{race} is what {actor} returns to when the change ends.",
+      "KeepTrained": "The change is ending. Keep the skills {actor} trained while changed, at the ranks earned: {skills}?",
       "RaceNotInForce": "Not in force while changed into {form}. It returns when the change ends.",
       "NotInForceBadge": "[NOT IN FORCE]",
       "NotInForceTooltip": "Not in force while changed; it returns when the change ends."
@@ -3950,6 +3959,7 @@
       "Maneuvers": "Maneuvers",
       "Situations": "Situations",
       "CalledPlay": "Called Play",
+      "CalledPlayPending": "{n} pending",
       "Mark": "Mark for advancement",
       "MarkAttack": "Attack skill",
       "MarkEffect": "Damage Effect skill",

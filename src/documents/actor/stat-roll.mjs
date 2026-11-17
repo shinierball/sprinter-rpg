@@ -13,7 +13,7 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { attackTargetEntries } from './attack-targets.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
 import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from './action-block.mjs';
-import { trustedHtml } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 
 /**
  * Roll a stat check
@@ -79,8 +79,8 @@ export async function rollStat(actor, statKey, options = {}) {
   const modLines = moveLine(contest) ? [...checkMods.breakdown, moveLine(contest)] : checkMods.breakdown;
   const modDesc = modLines.length > 0 ? ` [${modLines.join(', ')}]` : '';
   const flavor = advState.label
-    ? `<strong>${actor.name}</strong>: ${statName} Check (<strong>${advState.label}</strong>: ${advState.formula} + ${statName} Mod ${mod >= 0 ? `+${mod}` : mod}${modDesc})`
-    : `<strong>${actor.name}</strong>: ${statName} Check${modDesc}`;
+    ? `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(statName)} Check (<strong>${escapeAttr(advState.label)}</strong>: ${escapeAttr(advState.formula)} + ${escapeAttr(statName)} Mod ${escapeAttr(mod >= 0 ? `+${mod}` : mod)}${escapeAttr(modDesc)})`
+    : `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(statName)} Check${escapeAttr(modDesc)}`;
 
   const perTarget = await rollCheckTargets(roll, targetRows, rollContext, targetActors);
   // A plain check card with no Difficulty of its own takes the standing one, when the GM put it up.

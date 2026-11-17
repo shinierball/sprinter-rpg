@@ -11,7 +11,7 @@ import { durationRounds } from '../../utils/time/durations.mjs';
 import { getCOGStatModifier } from './actor-constants.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { statCheckDifficulty } from '../../data/rules/difficulty-rules.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { auraRegionFlags, madeByAura } from '../../utils/area/aura-flags.mjs';
 import { buildRegionData, buildAuraRingData, withoutCoverageFill, createRegion } from '../../utils/area/region-shapes.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { findActorToken } from '../../utils/combat/interrupts.mjs';
@@ -241,9 +241,8 @@ export async function activateAura(actor, spellItem, options = {}) {
       level: token.document?.level,
       color: '#d4af37',
       flags: {
-        auraSourceUuid: spellItem.uuid || '',
+        ...auraRegionFlags(spellItem.uuid),
         actorId: actor.id,
-        isAura: true,
         target: 'self'
       }
     };
@@ -301,7 +300,7 @@ export async function deactivateAura(actor, spellItem, options = {}) {
   const auraUuid = spellItem.uuid || '';
   // Provenance is matched by the source item UUID only (embedded _ids are not unique across actors); names are display labels and may collide between items.
   const isAuraTempBars = (actor) => Boolean(auraUuid) && actor?.system?.attributes?.hp?.tempBars?.sourceUuid === auraUuid;
-  const isAuraEffect = (it) => Boolean(auraUuid) && it.flags?.[SYSTEM_ID]?.auraSourceUuid === auraUuid;
+  const isAuraEffect = (it) => madeByAura(it, auraUuid);
   const sys = spellItem.system || {};
   const appliedAllyUuids = new Set(Array.isArray(sys.appliedAllyUuids) ? sys.appliedAllyUuids : []);
   // Everyone the aura tracks: members, plus allies whose temp bars are put away

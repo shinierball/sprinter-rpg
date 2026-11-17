@@ -8,7 +8,7 @@ import { canWriteTarget } from '../chat-relay.mjs';
 import { afflictionStage } from '../../utils/character/transform-rules.mjs';
 import { changeVictim, revertTransformation } from '../../documents/actor/transformations.mjs';
 import { reveal, listPending } from '../../documents/pending-secrets.mjs';
-import { transformCardText } from '../../documents/actor/transform-cues.mjs';
+import { transformText } from '../../utils/character/transform-text.mjs';
 
 const warn = (message) => globalThis.ui?.notifications?.warn?.(message);
 
@@ -16,8 +16,8 @@ const warn = (message) => globalThis.ui?.notifications?.warn?.(message);
 function resolve(button) {
   const actor = resolveActorByUuid(button.dataset?.targetUuid);
   const affliction = actor?.items.get(button.dataset?.afflictionId) ?? null;
-  if (!actor || !affliction) { warn(transformCardText('COG.TransformCard.NotFound')); return null; }
-  if (!canWriteTarget(actor)) { warn(transformCardText('COG.TransformCard.NotAllowed', { actor: actor.name })); return null; }
+  if (!actor || !affliction) { warn(transformText('COG.TransformCard.NotFound')); return null; }
+  if (!canWriteTarget(actor)) { warn(transformText('COG.TransformCard.NotAllowed', { actor: actor.name })); return null; }
   return { actor, affliction };
 }
 
@@ -32,7 +32,7 @@ export async function handleChangeVictim(event, button) {
   if (!found) return false;
   const { actor, affliction } = found;
   if (afflictionStage(affliction) !== 'pending') {
-    warn(transformCardText('COG.TransformCard.NotPending', { actor: actor.name, affliction: affliction.name }));
+    warn(transformText('COG.TransformCard.NotPending', { actor: actor.name, affliction: affliction.name }));
     return false;
   }
   return changeVictim(actor, affliction);
@@ -49,11 +49,11 @@ export async function handleRevertTransformation(event, button) {
   if (!found) return false;
   const { actor, affliction } = found;
   if (afflictionStage(affliction) !== 'changed') {
-    warn(transformCardText('COG.TransformCard.NotPending', { actor: actor.name, affliction: affliction.name }));
+    warn(transformText('COG.TransformCard.NotPending', { actor: actor.name, affliction: affliction.name }));
     return false;
   }
   if (getRuleBreakMode() === RULE_BREAK_MODES.REFUSE) {
-    warn(transformCardText('COG.TransformCard.RefusePolicy'));
+    warn(transformText('COG.TransformCard.RefusePolicy'));
     return false;
   }
   return revertTransformation(actor, affliction, { ruleBreak: true });
@@ -66,7 +66,7 @@ export async function handleRevertTransformation(event, button) {
  * @param {HTMLElement} button
  */
 export async function handleRevealSecret(event, button) {
-  if (!globalThis.game?.user?.isGM) { warn(transformCardText('COG.TransformCard.GMOnly')); return false; }
+  if (!globalThis.game?.user?.isGM) { warn(transformText('COG.TransformCard.GMOnly')); return false; }
   return Boolean(await reveal(button.dataset?.secretId));
 }
 
@@ -76,9 +76,9 @@ export async function handleRevealSecret(event, button) {
  * @param {HTMLElement} button
  */
 export async function handleKeepSecret(event, button) {
-  if (!globalThis.game?.user?.isGM) { warn(transformCardText('COG.TransformCard.GMOnly')); return false; }
+  if (!globalThis.game?.user?.isGM) { warn(transformText('COG.TransformCard.GMOnly')); return false; }
   const record = listPending().find((r) => r.id === button.dataset?.secretId);
-  if (!record) { warn(transformCardText('COG.TransformCard.SecretGone')); return false; }
-  globalThis.ui?.notifications?.info?.(transformCardText('COG.TransformCard.SecretKept', { actor: record.actorName, affliction: record.name }));
+  if (!record) { warn(transformText('COG.TransformCard.SecretGone')); return false; }
+  globalThis.ui?.notifications?.info?.(transformText('COG.TransformCard.SecretKept', { actor: record.actorName, affliction: record.name }));
   return true;
 }

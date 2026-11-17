@@ -103,6 +103,7 @@ export const TEMPLATE_PATHS = Object.freeze([
   `${SYSTEM_PATH}/templates/actors/parts/spells.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/grind-strip.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/advancement-check-button.hbs`,
+  `${SYSTEM_PATH}/templates/actors/parts/page0-play.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/page4-inventory.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/conditions.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/transformation-banner.hbs`,

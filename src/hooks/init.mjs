@@ -48,6 +48,7 @@ import {
 } from '../models/index.mjs';
 import { registerCompendiumSyncHooks } from '../data/compendium-sync.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
+import { SOURCE_INDEX_FIELD } from '../utils/content-source.mjs';
 import { registerChatMessageHook } from '../chat/register-chat-hook.mjs';
 import { registerSettings } from '../settings/register-settings.mjs';
 import { captureStoredSourcesAtInit } from '../documents/migrations/stored-sources.mjs';
@@ -163,8 +164,6 @@ export async function onInit() {
 }
 
 /** Index fields the compendium badge (7.7e) reads from, appended to whatever Foundry or a module already lists. */
-export const SOURCE_INDEX_FIELD = `flags.${SYSTEM_ID}.source`;
-
 export function registerCompendiumIndexFields() {
   for (const cls of ['Item', 'Actor', 'RollTable']) {
     const config = CONFIG[cls];

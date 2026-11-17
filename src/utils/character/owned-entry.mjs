@@ -2,12 +2,12 @@
  * Whether an owned skill or spell is the same entry as incoming creation data. Shared by `COGActor#createEmbeddedDocuments`,
  * the crawler drop handler and the race / class planner, so all three match exactly alike. Pure: no document class.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { sourceUuidOf } from '../compendium/link-flags.mjs';
 import { itemIdentifier } from '../identifier.mjs';
 
 /** The compendium entry a document or creation data came from (`_stats.compendiumSource`, else the managers' flag). */
 function compendiumSourceOf(doc) {
-  return String(doc?._stats?.compendiumSource || doc?.flags?.[SYSTEM_ID]?.sourceUuid || '');
+  return String(doc?._stats?.compendiumSource || sourceUuidOf(doc) || '');
 }
 
 /**

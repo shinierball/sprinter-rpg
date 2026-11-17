@@ -134,8 +134,8 @@ export class COGItemSheet extends COGItemSheetV2 {
 
   /** Type-specific context, keyed by `item.type`, run after the shared context. */
   static CONTEXT_BUILDERS = Object.freeze({
-    skill: buildSkillContext,
-    spell: buildSpellContext,
+    skill: (context, item) => { buildSkillContext(context, item); buildAsTriggerContext(context); },
+    spell: (context, item) => { buildSpellContext(context, item); buildAsTriggerContext(context); },
     attack: buildAttackContext,
     gear: buildGearContext,
     loot: (context, item) => { buildLootContext(context, item); buildLootBoxContext(context, item); },

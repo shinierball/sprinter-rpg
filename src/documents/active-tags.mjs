@@ -104,7 +104,8 @@ export function collectActorTags(actor, { identityOnly = false } = {}) {
       } else if (type === 'gear') {
         shouldInclude = Boolean(item.system?.equipped) && !isGearSuppressed(actor, item, 'tags');
       } else if (type === 'buff') {
-        shouldInclude = !isBuffSuppressed(actor, item);
+        // A paused buff (the original race's trait while changed, D2) is switched off and adds no tags
+        shouldInclude = item.system?.active !== false && !isBuffSuppressed(actor, item);
       } else if (type === 'debuff') {
         shouldInclude = debuffInForce(item, { paused: isEffectPaused(actor) });
       }

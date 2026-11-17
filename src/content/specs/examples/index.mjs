@@ -56,6 +56,7 @@ import { SPECS as openPlanActors } from './actors/open-plan.mjs';
 import { SPECS as primeTimePantheonItems } from './items/prime-time-pantheon.mjs';
 import { SPECS as primeTimePantheonMobs } from './mobs/prime-time-pantheon.mjs';
 import { SPECS as craftServicesItems } from './items/craft-services.mjs';
+import { SPECS as secondUnitItems } from './items/second-unit.mjs';
 import { SPECS as technicalDifficultiesItems } from './items/technical-difficulties.mjs';
 import { SPECS as technicalDifficultiesMobs } from './mobs/technical-difficulties.mjs';
 import { SPECS as fanMailItems } from './items/fan-mail.mjs';
@@ -124,7 +125,8 @@ const RELEASE_FILES = Object.freeze([
   { set: 'signature-moves', kind: 'items', specs: signatureMovesItems },
   { set: 'side-effects-may-include', kind: 'items', specs: sideEffectsMayIncludeItems },
   { set: 'creature-feature', kind: 'items', specs: creatureFeatureItems },
-  { set: 'creature-feature', kind: 'mobs', specs: creatureFeatureMobs }
+  { set: 'creature-feature', kind: 'mobs', specs: creatureFeatureMobs },
+  { set: 'second-unit', kind: 'items', specs: secondUnitItems }
 ]);
 
 /** Kind order inside a set's `specs`: referenced documents come first. `mobs` are Actors (the examples-actors pack). */

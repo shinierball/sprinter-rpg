@@ -65,6 +65,19 @@ export function resolveBaseScore(ability) {
   return Number.isFinite(v) ? v : 10;
 }
 
+/**
+ * The base score as stored (`_source`), whatever a transformation overlay makes of the derived `unenhanced`. Anything
+ * that reads a score to write it back, or to show it in an input a save will submit, reads this (1193 a: while changed
+ * the derived `unenhanced` is the form's body, the stored one still holds the original race's numbers).
+ * @param {object} actor
+ * @param {string} key a stat key
+ * @returns {number}
+ */
+export function storedBaseScore(actor, key) {
+  const stat = String(key ?? '').toLowerCase().trim();
+  return resolveBaseScore(actor?.system?._source?.abilities?.[stat] ?? actor?.system?.abilities?.[stat]);
+}
+
 function addLimbs(sys, limbs) {
   const l = sys.limbModifiers || {};
   if (l.arms) limbs.arms += Number(l.arms) || 0;
@@ -411,7 +424,7 @@ const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
  * The one place a skill's acting Rank is derived: with `highRankActive` false (a crawler above the Sixth Floor's
  * reach), a stored Rank past the soft cap acts as the soft cap, so every reader of `modifiedRank` follows.
  */
-export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map(), tagGrants = [], rankRaises = [], animalSkillsLocked = false, skillSuppressions = [], highRankActive = true, ranksFollowFloor = false } = {}) {
+export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map(), tagGrants = [], rankRaises = [], animalSkillsLocked = false, skillSuppressions = [], highRankActive = true, ranksFollowFloor = false, formLocked = () => false } = {}) {
   // Each skill's itemBonus (gear + tag grants) is computed once and used in both passes.
   const bonuses = new Map();
   for (const item of skills) {
@@ -457,10 +470,11 @@ export function deriveSkillRanks(skills, { abilities, gearSkillBonuses = new Map
     item.itemSources = gearData ? gearData.sources.join(', ') : '';
 
     // Animal skills (`skillGroup.animal`) are kept but unusable while the actor is locked out of them, and a skill a smite
-    // suppresses is unusable too (permissive: both are a Rule Break)
+    // suppresses is unusable too, and so is one a form created that is not the form in force (permissive: all are a Rule Break)
     const tags = getItemAllTags(item);
     const unusableReason = animalSkillsLocked && tags.has?.(ANIMAL_TAGS.skill) ? 'animal'
-      : matchesAnySuppression(tags, skillSuppressions) ? 'smite' : '';
+      : matchesAnySuppression(tags, skillSuppressions) ? 'smite'
+        : formLocked(item) ? 'form' : '';
     const unusable = unusableReason !== '';
     if (item.system) { item.system.unusable = unusable; item.system.unusableReason = unusableReason; }
     item.unusable = unusable;

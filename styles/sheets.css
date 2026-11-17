@@ -678,6 +678,54 @@ textarea::placeholder,
   text-align: center;
 }
 
+.cog-potion-limits {
+  margin: 0 0 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--cog-accent);
+  border-radius: 3px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+}
+
+.cog-potion-limits-heading {
+  color: var(--cog-accent);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cog-potion-limits-hint {
+  margin: 2px 0 4px;
+}
+
+.cog-potion-limits-rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.cog-potion-limit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cog-potion-limit-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.cog-potion-limit-count .cog-field-input {
+  width: 3em;
+  flex: none;
+}
+
+.cog-potion-limit.cog-over-cap {
+  color: var(--cog-accent);
+  font-weight: 600;
+}
+
 .cog-stat-spend {
   color: var(--cog-accent);
   cursor: pointer;

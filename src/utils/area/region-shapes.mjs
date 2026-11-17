@@ -6,9 +6,18 @@
  * line, rectangle, and an emanation with a hole for the splash ring) in pixels. Directions are degrees, 0 = east,
  * increasing clockwise on screen (canvas y points down).
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { flagPath, readFlag, withFlags } from '../flags.mjs';
 import { resolveSplashRing } from './area-geometry.mjs';
 import { isMarkerActor } from './marker.mjs';
+import { auraSourceUuidOf, isAuraRegion } from './aura-flags.mjs';
+
+const AREA_FLAG = 'area';
+
+/** The placed-area flag of a region (`kind`, `role`, `groupId`, `sourceItemUuid`, ...), or null when it is not a placed area. */
+export const areaFlagsOf = (region) => readFlag(region, AREA_FLAG) ?? null;
+
+/** The update fragment that changes fields of a region's area flag. */
+export const areaUpdate = (patch) => Object.fromEntries(Object.entries(patch).map(([key, value]) => [flagPath(`${AREA_FLAG}.${key}`), value]));
 
 /** Cone angle used when a shape definition carries none (the cone is a 60 degree arc). */
 const DEFAULT_CONE_ANGLE = 60;
@@ -202,16 +211,15 @@ export function buildAreaRegions(geometry, ctx = {}) {
     lastPulsedRound: null,
     messageId: ctx.messageId ?? null
   });
-  const make = (role, regionName, shapes) => ({
+  const make = (role, regionName, shapes) => withFlags({
     name: regionName,
     color,
     shapes,
     behaviors: [],
     locked: true,
     ...defaults,
-    ...(attachToken ? { attachment: { token: attachToken } } : {}),
-    flags: { [SYSTEM_ID]: { ...(ctx.flags ?? {}), area: areaFlags(role) } }
-  });
+    ...(attachToken ? { attachment: { token: attachToken } } : {})
+  }, { ...(ctx.flags ?? {}), [AREA_FLAG]: areaFlags(role) });
 
   const regions = [];
   const splashShapes = buildSplashShapes(geometry, core, scene);
@@ -235,15 +243,14 @@ export function buildAreaRegions(geometry, ctx = {}) {
  * @returns {object}
  */
 export function buildRegionData({ name = 'Area of Effect', color = '#e67e22', flags = {}, scene, x, y, distance, gridBased = false, attachToken = '', level, userId } = {}) {
-  return {
+  return withFlags({
     name,
     color,
     shapes: [{ type: 'circle', x, y, radius: round2((Number(distance) || 0) * pixelsPerUnit(scene)), hole: false, ...(gridBased ? { gridBased: true } : {}) }],
     behaviors: [],
     ...regionDefaults({ scene, userId, level }),
-    ...(attachToken ? { attachment: { token: attachToken } } : {}),
-    flags: { [SYSTEM_ID]: { ...flags } }
-  };
+    ...(attachToken ? { attachment: { token: attachToken } } : {})
+  }, flags);
 }
 
 /**
@@ -255,13 +262,12 @@ export function buildRegionData({ name = 'Area of Effect', color = '#e67e22', fl
 export function buildAuraRingData(params = {}) {
   if (!params.gridBased) return null;
   const data = buildRegionData(params);
-  return {
+  return withFlags({
     ...data,
     name: `${data.name} (ring)`,
     shapes: data.shapes.map(s => ringShapeOf(s) ?? s),
-    highlightMode: RING_HIGHLIGHT_MODE,
-    flags: { [SYSTEM_ID]: { ...data.flags[SYSTEM_ID], ring: true } }
-  };
+    highlightMode: RING_HIGHLIGHT_MODE
+  }, { ring: true });
 }
 
 /* -------------------------------------------- */
@@ -283,9 +289,8 @@ export function sceneRegions(scene) {
  */
 export function findAuraRegions(scene, auraUuid) {
   return sceneRegions(scene).filter(r => {
-    const f = r.flags?.[SYSTEM_ID];
-    if (!f?.isAura) return false;
-    return auraUuid === undefined || (!!auraUuid && f.auraSourceUuid === auraUuid);
+    if (!isAuraRegion(r)) return false;
+    return auraUuid === undefined || (!!auraUuid && auraSourceUuidOf(r) === auraUuid);
   });
 }
 
@@ -306,7 +311,7 @@ function allScenes() {
 export function findAreaRegions(scene, { kind, role, groupId, sourceItemUuid } = {}) {
   const scenes = scene ? [scene] : allScenes();
   return scenes.flatMap(sc => sceneRegions(sc)).filter(r => {
-    const f = r.flags?.[SYSTEM_ID]?.area;
+    const f = areaFlagsOf(r);
     if (!f) return false;
     return (kind === undefined || f.kind === kind)
       && (role === undefined || f.role === role)

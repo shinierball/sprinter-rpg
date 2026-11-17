@@ -15,9 +15,8 @@
  * - an actor made with embedded items stamps the ones that have no stamp;
  * - an item made on an actor by the sheet's own "new" buttons passes `cogHomebrew: true` and is stamped.
  */
-import { SYSTEM_ID } from '../constants.mjs';
 import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
-import { readSourceStamp } from '../utils/content-source.mjs';
+import { authorshipUpdatePath, readSourceStamp, setSourceStamp } from '../utils/content-source.mjs';
 
 /** Dotted paths whose change counts as rewriting the words of a document. */
 const TEXT_PATHS = ['name', 'system.description', 'system.details.description'];
@@ -47,7 +46,7 @@ const isTopLevelWorld = (doc) => !doc?.parent && !doc?.pack;
 const isEmbeddedWorldItem = (doc) => doc?.documentName === 'Item' && doc.parent?.documentName === 'Actor' && !doc.pack && !doc.parent.pack && !doc.parent.parent;
 
 /** The stamp as a flags update. */
-const stampFlags = (stamp) => ({ flags: { [SYSTEM_ID]: { source: stamp } } });
+const stampFlags = (stamp) => ({ flags: setSourceStamp({}, stamp).flags });
 
 /** Stamp the embedded items of a new actor that have none (`_id` keyed, so the update merges with the built items). */
 function stampEmbeddedItems(doc, data, stamp) {
@@ -104,7 +103,7 @@ export function flipEditedAuthorship(doc, changes, options) {
       return next !== undefined && next !== foundry.utils.getProperty(doc, path);
     });
     if (!touched) return false;
-    changes[`flags.${SYSTEM_ID}.source.authorship`] = 'edited';
+    changes[authorshipUpdatePath()] = 'edited';
     return true;
   } catch (err) {
     console.warn('Sprinter RPG | could not mark an edit of written-with-AI text', err);

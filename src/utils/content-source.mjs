@@ -6,7 +6,7 @@
  * or a picker shows. The display data lives in the content registry, keyed by id (`registerTheme` badge,
  * `registerSourceSet`); an unregistered theme or set still gets a badge.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { flagPath, readFlag, withFlags } from './flags.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { catalogEntries } from '../content/catalog-lookup.mjs';
 import { celestialAiPoopPayload, replacedRecordOf } from '../data/rules/celestial-ai-poop.mjs';
@@ -15,7 +15,7 @@ import { celestialAiPoopPayload, replacedRecordOf } from '../data/rules/celestia
 export const BUNDLED_SET_ID = 'bundled';
 
 /** The pack-index field a list asks for to read a pack entry's stamp (a pack index returns only what is requested). */
-export const SOURCE_INDEX_FIELD = `flags.${SYSTEM_ID}.source`;
+export const SOURCE_INDEX_FIELD = flagPath('source');
 
 const ID = /^[a-z0-9._-]{1,40}$/;
 const USER_ID = /^[A-Za-z0-9]{16}$/;
@@ -45,9 +45,8 @@ const t = (key, data) => {
 export function readSourceStamp(doc) {
   let raw;
   try {
-    raw = typeof doc?.getFlag === 'function' ? doc.getFlag(SYSTEM_ID, 'source') : undefined;
-  } catch { raw = undefined; }
-  raw ??= doc?.flags?.[SYSTEM_ID]?.source;
+    raw = readFlag(doc, 'source');
+  } catch { raw = readFlag({ flags: doc?.flags }, 'source'); }
   if (!isPlain(raw)) return null;
   const theme = validId(raw.theme);
   const set = validId(raw.set);
@@ -157,7 +156,27 @@ export function findOffReference(kind, ref, registry = contentRegistry) {
 
 /** `{ theme, set }` plus a valid `authorship`. */
 function cleanStamp(stamp) {
-  return readSourceStamp({ flags: { [SYSTEM_ID]: { source: stamp } } });
+  return readSourceStamp(withFlags({}, { source: stamp }));
+}
+
+/** `data` with `stamp` as its source stamp, replacing any it has (a copy; the stamp is stored as given). */
+export function setSourceStamp(data, stamp) {
+  return withFlags(data, { source: stamp });
+}
+
+/** The flags patch (for `withFlags`, or merged with other flags) that carries `stamp` as a document's source stamp. */
+export function sourceStampPatch(stamp) {
+  return { source: stamp };
+}
+
+/** The `flags` update that writes `stamp` as a document's source stamp: `doc.update(sourceStampUpdate(stamp))`. */
+export function sourceStampUpdate(stamp) {
+  return { [flagPath('source')]: stamp };
+}
+
+/** The key of the update that sets a stamp's `authorship` (`changes[authorshipUpdatePath()] = 'edited'`). */
+export function authorshipUpdatePath() {
+  return flagPath('source.authorship');
 }
 
 /**
@@ -169,9 +188,7 @@ function cleanStamp(stamp) {
 export function withSourceStamp(data, stamp) {
   if (!isPlain(data) || !validId(stamp?.theme) || !validId(stamp?.set)) return data;
   if (readSourceStamp(data)) return data;
-  const flags = isPlain(data.flags) ? data.flags : {};
-  const own = isPlain(flags[SYSTEM_ID]) ? flags[SYSTEM_ID] : {};
-  return { ...data, flags: { ...flags, [SYSTEM_ID]: { ...own, source: cleanStamp(stamp) } } };
+  return withFlags(data, { source: cleanStamp(stamp) });
 }
 
 /**
@@ -184,8 +201,7 @@ export function withSourceStamp(data, stamp) {
 export function carrySourceStamp(data, def) {
   const stamp = readSourceStamp(def);
   if (!stamp || !isPlain(data) || readSourceStamp(data)) return data;
-  const flags = isPlain(data.flags) ? data.flags : {};
-  data.flags = { ...flags, [SYSTEM_ID]: { ...(isPlain(flags[SYSTEM_ID]) ? flags[SYSTEM_ID] : {}), source: stamp } };
+  data.flags = withFlags(data, { source: stamp }).flags;
   return data;
 }
 

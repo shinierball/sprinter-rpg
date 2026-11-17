@@ -91,7 +91,7 @@ export function cameraAwardPlan(message) {
   return { record, actor, trusted: isTrustedAssist(message, actor), row, cell, delta, withhold, needsPrompt, pending };
 }
 
-function lineCard(actor, { content, ruleBreak = false, flags = {} }) {
+function lineCard(actor, content, { ruleBreak = false, flags = {} } = {}) {
   const data = withFlags({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }),
     content: `<div class="cog-chat-card cog-camera-award">${content}</div>`
@@ -148,7 +148,7 @@ async function settleNow(message) {
       ? cameraText('COG.Cameras.Line', { reason: cameraReasonLabel(record.choice), name: actor.name, changes, row: cameraRowLabel(row) })
       : cameraText('COG.Cameras.LineNone', { reason: cameraReasonLabel(record.choice), name: actor.name, row: cameraRowLabel(row) });
     const text = cell?.text ? `<p>${escapeAttr(cell.text)}</p>` : '';
-    await lineCard(actor, { content: lineHtml(base) + text });
+    await lineCard(actor, lineHtml(base) + text);
   }
   if (plan.needsPrompt) await postPrompt(message, plan);
   return { settled, withheld };
@@ -249,9 +249,7 @@ export async function handleCameraChoice(event, button, message) {
   if (aiFavor) aiWritten = await addAiFavor(actor, aiFavor, reason);
   if (choice.bar) await setAiFavorBar(actor);
   const changes = cameraChangesText({ popularity, aiFavor: aiWritten ? aiFavor : 0 });
-  await lineCard(actor, {
-    content: lineHtml(cameraText('COG.Cameras.ChoiceLine', { reason: cameraReasonLabel(record.choice), name: actor.name, choice: changes ? `${choice.label} (${changes})` : choice.label }))
-  });
+  await lineCard(actor, lineHtml(cameraText('COG.Cameras.ChoiceLine', { reason: cameraReasonLabel(record.choice), name: actor.name, choice: changes ? `${choice.label} (${changes})` : choice.label })));
   if (choice.note) await logSponsor(actor, choice.note);
 }
 
@@ -273,8 +271,5 @@ export async function handleCameraWithheld(event, button, message) {
   });
   const reason = `${cameraReasonLabel(record.choice)} (Rule Break)`;
   await addAiFavor(actor, amount, reason, { ruleBreak: true });
-  await lineCard(actor, {
-    ruleBreak: true,
-    content: lineHtml(cameraText('COG.Cameras.Line', { reason: cameraReasonLabel(record.choice), name: actor.name, changes: cameraChangesText({ aiFavor: amount }), row: plan.row ? cameraRowLabel(plan.row) : '' }), true)
-  });
+  await lineCard(actor, lineHtml(cameraText('COG.Cameras.Line', { reason: cameraReasonLabel(record.choice), name: actor.name, changes: cameraChangesText({ aiFavor: amount }), row: plan.row ? cameraRowLabel(plan.row) : '' }), true), { ruleBreak: true });
 }

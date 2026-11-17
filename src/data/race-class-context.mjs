@@ -6,7 +6,7 @@
 import { offeredEntries } from '../utils/content-source.mjs';
 import { ARCHETYPE_TO_TAG } from './tag-vocabulary.mjs';
 import { companionHeritageId, heritageGroups, heritageLabel, sanitizeHeritageId } from './rules/heritages.mjs';
-import { isFormRace } from '../utils/character/transform-rules.mjs';
+import { isFormRace, transformationOfItem } from '../utils/character/transform-rules.mjs';
 import { worldRaces as worldRaceItems } from './race-class-plan.mjs';
 import { checkRequirements, requirementSubject } from '../utils/character/requirements.mjs';
 
@@ -27,7 +27,8 @@ export function getRaceClassContext(applier, actor, { requirements = false } = {
   // `details.race` / `details.class` hold a reference (the item identifier) or, for an uncataloged
   // write-in, the text itself. A race or class item embedded directly (dropped, imported, scripted)
   // never wrote the detail, so its own reference stands in; otherwise the Core selects read "None" beside real items.
-  const embeddedRef = (type) => String(actor?.items?.find((i) => i.type === type)?.system?.identifier ?? '');
+  // (never a form race a transformation laid over the crawler: the selects show what the crawler returns to)
+  const embeddedRef = (type) => String(actor?.items?.find((i) => i.type === type && !transformationOfItem(i))?.system?.identifier ?? '');
   const currentRace = String(actor?.system?.details?.race || '').trim() || embeddedRef('race');
   const currentClass = String(actor?.system?.details?.class || '').trim() || embeddedRef('class');
   // One reader set for every option of this render; the picked option's rows are kept for the badge list.

@@ -13,7 +13,7 @@
  * Ending is `item.delete()` by the client that rolled or wrote the slot (owner or GM), and by the GM at Clean Up.
  * Imports no chat or sheet code, so the ledger and the session engine can import it.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { landedAtOf } from '../../utils/time/duration-flags.mjs';
 import { RULE_FLAGS, hasRuleFlag } from '../../utils/tag/tag-behaviour.mjs';
 import { NEXT_CHECK_UNIT, NEXT_ACTION_UNIT } from '../../utils/time/timing.mjs';
 import { durationSpec } from '../../utils/time/durations.mjs';
@@ -86,7 +86,7 @@ export async function settleNextActionsAtCleanUp(combat) {
     const slots = (combat.getCombatantActions?.(combatant)?.slots ?? []).filter(slot => slot && !slot.forfeited);
     if (!slots.length) continue;
     for (const item of debuffsEndingAt(actor, NEXT_ACTION_UNIT)) {
-      const landedAt = Number(item.flags?.[SYSTEM_ID]?.landedAt);
+      const landedAt = Number(landedAtOf(item));
       if (!Number.isFinite(landedAt) || !slots.some(slot => Number(slot.timestamp) > landedAt)) continue;
       if (await end(item)) ended.push(item);
     }

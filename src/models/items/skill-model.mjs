@@ -1,6 +1,6 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
 import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField, appliedBuffsField, itemTempBarsField } from '../fields/effect-fields.mjs';
-import { damageModifiersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, popularityTriggersField, eventTriggersField, aiFavorRatingsField } from '../fields/modifier-fields.mjs';
+import { damageModifiersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, popularityTriggersField, eventTriggersField, aiFavorRatingsField, asTriggersField } from '../fields/modifier-fields.mjs';
 import { advancementStateFields, cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
 import { rankBreaksField } from '../../utils/skill/rank-breaks.mjs';
 
@@ -43,6 +43,7 @@ export class SkillDataModel extends BaseItemDataModel {
       damageModifiers: damageModifiersField(fields),
       popularityTriggers: popularityTriggersField(fields),
       eventTriggers: eventTriggersField(fields),
+      asTriggers: asTriggersField(fields),
       defenseModifiers: defenseModifiersField(fields),
       attackModifiers: rollModifiersField(fields),
       checkModifiers: rollModifiersField(fields),

@@ -21,6 +21,7 @@ import { worshipBonds } from '../deity/worship-state.mjs';
 import { patronBonds } from '../patron/patronage-state.mjs';
 import { confirmRuleBreak } from '../rule-break.mjs';
 import { isRankedItem } from '../document-types.mjs';
+import { overlayOf, raceInForce } from './overlay-state.mjs';
 
 const ARRAY = 'requirements';
 
@@ -63,9 +64,11 @@ const once = (read) => {
  */
 export function requirementSubject(subject) {
   const items = itemsOf(subject);
-  const identityOf = (type) => items.filter((i) => i?.type === type);
-  const refsOf = (type, detailsKey) => [
-    String(subject?.system?.details?.[detailsKey] ?? '').trim(),
+  // The race in force: a form race laid over the subject stands in for the original, whose own reference
+  // (`details.race`) is not in force either while it is
+  const identityOf = (type) => items.filter((i) => i?.type === type && (type !== 'race' || raceInForce(items, i)));
+  const refsOf = (type, detailsKey, { skipDetails = false } = {}) => [
+    skipDetails ? '' : String(subject?.system?.details?.[detailsKey] ?? '').trim(),
     ...identityOf(type).map((i) => itemIdentifier(i))
   ].filter(Boolean);
   const tagsOfType = (type) => {
@@ -80,7 +83,7 @@ export function requirementSubject(subject) {
     }))),
     popularity: () => Number(subject?.system?.details?.popularity) || 0,
     floor: () => parseFloorNumber(subject?.system?.details?.floor),
-    raceRefs: once(() => refsOf('race', 'race')),
+    raceRefs: once(() => refsOf('race', 'race', { skipDetails: Boolean(overlayOf(items)) })),
     classRefs: once(() => refsOf('class', 'class')),
     raceTags: once(() => tagsOfType('race')),
     classTags: once(() => tagsOfType('class')),

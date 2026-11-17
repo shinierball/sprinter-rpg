@@ -39,6 +39,7 @@ const TEXT = Object.freeze({
   'COG.AttackOptions.Maneuvers': 'Maneuvers',
   'COG.AttackOptions.Situations': 'Situations',
   'COG.AttackOptions.CalledPlay': 'Called Play',
+  'COG.AttackOptions.CalledPlayPending': '{n} pending',
   'COG.AttackOptions.Mark': 'Mark for advancement',
   'COG.AttackOptions.MarkAttack': 'Attack skill',
   'COG.AttackOptions.MarkEffect': 'Damage Effect skill',

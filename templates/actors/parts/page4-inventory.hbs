@@ -198,6 +198,20 @@
     <input id="{{id}}-gold" class="cog-field-input cog-gold-input" name="system.currency.gold" type="number" min="0" step="1" value="{{system.currency.gold}}" />
   </div>
 
+  {{#if potionLimits}}
+  <div class="cog-potion-limits">
+    <div class="cog-potion-limits-heading"><i class="fa-solid fa-flask"></i> {{potionLimits.heading}}</div>
+    <p class="cog-potion-limits-hint">{{potionLimits.explanation}}</p>
+    <div class="cog-potion-limits-rows">
+      {{#each potionLimits.rows}}
+      <label class="cog-potion-limit{{#if this.over}} cog-over-cap{{/if}}">{{this.label}}
+        <span class="cog-potion-limit-count"><input class="cog-field-input" name="{{this.path}}" type="number" min="0" value="{{this.value}}" /> / {{this.limit}}</span>
+      </label>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
   {{!-- BOTTOM GROUPING: INVENTORY & BACKPACK ITEMS (FULL WIDTH, BELOW GEAR SLOTS) --}}
   <div class="cog-stat-block cog-inventory-backpack-block" style="width: 100%; box-sizing: border-box;">
     <div class="cog-banner-header">

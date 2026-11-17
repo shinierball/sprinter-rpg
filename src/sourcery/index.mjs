@@ -17,7 +17,7 @@ export { paragraphs } from './slicer.mjs';
 export { readAnchor, readAnchorsEntry, readPicks, readNameEdits } from './anchors.mjs';
 export { fetchBlock, candidatesFor, pickCandidate, blockForHit, prefixSource, sourceText, blockPrefixHash, findLine, applyPicks, keepOnly } from './resolver.mjs';
 export { FIELD_MAPS, fieldMapFor } from './field-maps.mjs';
-export { hydrate, hydrateWithReport, FLAG_SCOPE } from './hydrator.mjs';
+export { hydrate, hydrateWithReport } from './hydrator.mjs';
 export { sliceTable } from './table-slicer.mjs';
 export { hydrateTable, similarity } from './tables.mjs';
 export { readTableRecipe } from './table-recipes.mjs';

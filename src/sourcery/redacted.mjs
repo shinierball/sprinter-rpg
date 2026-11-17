@@ -9,20 +9,39 @@
  */
 
 import { MOB_TIER_PREFIX } from '../utils/tag/tag-mechanics.mjs';
+import { flagPath, readFlag, withFlags } from '../utils/flags.mjs';
 
-/** Flag scope (the system id; kept literal so the builders can use it). */
-const SCOPE = 'sprinter-rpg';
+const SOURCERY = 'sourcery';
 
 const isRecord = v => !!v && typeof v === 'object' && !Array.isArray(v);
 
+/**
+ * The `sourcery` flag of a spec, payload or document: what the importer recorded about it (`redacted`, `resolved`,
+ * `source`, `generated`, `emptied`, ...). `{}` when it has none or it is not an object. Callers read, never change, it.
+ */
+export function sourceryOf(doc) {
+  if (!isRecord(doc)) return {};
+  const value = readFlag(doc, SOURCERY);
+  return isRecord(value) ? value : {};
+}
+
+/** `data` with its `sourcery` flag set to `value` (a copy; see `withFlags`). */
+export const withSourcery = (data, value) => withFlags(data, { [SOURCERY]: value });
+
+/** The `flags` object (system scope included) that carries `value` as the `sourcery` flag, for a builder's `flags` field. */
+export const sourceryFlagsOf = (value) => withSourcery({}, value).flags;
+
+/** The pack-index field and query path of a document's recipe id (`sourcery.id`), which the import writes on a table. */
+export const SOURCERY_ID_PATH = flagPath('sourcery.id');
+
 /** Whether a spec, payload or document carries the redacted marker. */
 export function isRedacted(doc) {
-  return isRecord(doc) && isRecord(doc.flags) && isRecord(doc.flags[SCOPE]) && isRecord(doc.flags[SCOPE].sourcery) && doc.flags[SCOPE].sourcery.redacted === true;
+  return sourceryOf(doc).redacted === true;
 }
 
 /** Whether a hydrated document carries `sourcery.resolved === false`: the importer could not parse its entry, so it is left empty. */
 export function isUnresolved(doc) {
-  return isRecord(doc) && isRecord(doc.flags) && isRecord(doc.flags[SCOPE]) && isRecord(doc.flags[SCOPE].sourcery) && doc.flags[SCOPE].sourcery.resolved === false;
+  return sourceryOf(doc).resolved === false;
 }
 
 /**
@@ -33,14 +52,14 @@ export function isUnresolved(doc) {
  */
 export function noBookTextReason(doc) {
   if (isUnresolved(doc)) return 'unresolved';
-  if (emptiedPaths(doc).length && doc.flags[SCOPE].sourcery.source === 'pdf') return 'partial';
+  if (emptiedPaths(doc).length && sourceryOf(doc).source === 'pdf') return 'partial';
   if (isRedacted(doc) || emptiedPaths(doc).length) return 'redacted';
   return null;
 }
 
 /** The marker as a `flags` value, for a redacted spec. */
 export function redactedFlags() {
-  return { [SCOPE]: { sourcery: { redacted: true } } };
+  return sourceryFlagsOf({ redacted: true });
 }
 
 /**
@@ -80,7 +99,7 @@ export function placeholderName(base, id) {
  * @returns {string[]}
  */
 export function generatedPaths(doc) {
-  const g = isRecord(doc) && isRecord(doc.flags) && isRecord(doc.flags[SCOPE]) && isRecord(doc.flags[SCOPE].sourcery) ? doc.flags[SCOPE].sourcery.generated : null;
+  const g = sourceryOf(doc).generated;
   return Array.isArray(g) ? g.filter(p => typeof p === 'string' && p) : [];
 }
 
@@ -92,7 +111,7 @@ export function generatedPaths(doc) {
  * @returns {string[]}
  */
 export function emptiedPaths(doc) {
-  const e = isRecord(doc) && isRecord(doc.flags) && isRecord(doc.flags[SCOPE]) && isRecord(doc.flags[SCOPE].sourcery) ? doc.flags[SCOPE].sourcery.emptied : null;
+  const e = sourceryOf(doc).emptied;
   return Array.isArray(e) ? e.filter(p => typeof p === 'string' && p) : [];
 }
 
@@ -108,5 +127,29 @@ export function sourceryFlags(doc) {
   if (generated.length) sourcery.generated = generated;
   const emptied = emptiedPaths(doc);
   if (emptied.length) sourcery.emptied = emptied;
-  return Object.keys(sourcery).length ? { [SCOPE]: { sourcery } } : {};
+  return Object.keys(sourcery).length ? sourceryFlagsOf(sourcery) : {};
+}
+
+/**
+ * The `sourcery` flag a synced copy should carry once its compendium document is current, or `undefined` when the copy's
+ * own flag stays as it is. A copy marked `redacted` whose source is no longer redacted drops the marker, and one that
+ * lists `emptied` paths while the source lists none drops them. Each dropped key is written as Foundry's `-=key` deletion
+ * so the merge removes the stale value and keeps the rest of the flag.
+ * @param {object} target the world copy (document or data)
+ * @param {object} source the compendium document it is synced from
+ */
+export function syncedSourcery(target, source) {
+  const own = sourceryOf(target);
+  let next;
+  if (own.redacted && !isRedacted(source)) {
+    next = { ...own };
+    delete next.redacted;
+    next['-=redacted'] = null;
+  }
+  if (own.emptied && !emptiedPaths(source).length) {
+    next = { ...(next || own) };
+    delete next.emptied;
+    next['-=emptied'] = null;
+  }
+  return next;
 }

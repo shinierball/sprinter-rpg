@@ -27,12 +27,9 @@ import { fieldMapFor, fieldClass, askedPaths, FIELD_CLASS } from './field-maps.m
 import { isSourceKey, readTargetPath } from './anchors.mjs';
 import { displayName, paragraphsHtml, stripControls, titleCaseHeading } from './text.mjs';
 import { schemaFieldKind } from './schema-kind.mjs';
-import { isRedacted, generatedPaths, emptiedPaths } from './redacted.mjs';
+import { isRedacted, generatedPaths, emptiedPaths, withSourcery } from './redacted.mjs';
 import { GENERATORS } from './generators.mjs';
 import { textCheck } from './hash.mjs';
-
-/** System id used as the flags scope (`sprinter-rpg`, the system id in system.json). */
-export const FLAG_SCOPE = 'sprinter-rpg';
 
 const isEmpty = v => v === undefined || v === null || (typeof v === 'string' && v.trim() === '');
 
@@ -158,8 +155,7 @@ export function hydrateWithReport(spec, block, options = {}) {
       if (!item) continue;
       const name = r.name ? stripControls(r.name) : '';
       if (name) { item.name = name; itemNames.push(id); continue; }
-      item.flags = item.flags && typeof item.flags === 'object' ? item.flags : {};
-      item.flags[FLAG_SCOPE] = { ...(item.flags[FLAG_SCOPE] ?? {}), sourcery: { kept: r.missed ? 'missed' : 'unprinted' } };
+      item.flags = withSourcery(item, { kept: r.missed ? 'missed' : 'unprinted' }).flags;
       itemsKept.push(id);
     }
   }
@@ -172,8 +168,6 @@ export function hydrateWithReport(spec, block, options = {}) {
     if (typeof text === 'string' && text) { loc.parent[loc.key] = text; checks[path] = checkOf(text); filled.push(path); }
   }
 
-  out.flags = out.flags && typeof out.flags === 'object' ? out.flags : {};
-  out.flags[FLAG_SCOPE] = out.flags[FLAG_SCOPE] && typeof out.flags[FLAG_SCOPE] === 'object' ? out.flags[FLAG_SCOPE] : {};
   // A document whose placeholder name found no replacement stays marked redacted.
   const stillRedacted = redacted && !filled.includes('name');
   const stillGenerated = [...generated].filter(p => !filled.includes(p));
@@ -186,13 +180,13 @@ export function hydrateWithReport(spec, block, options = {}) {
   const stillEmptied = [...new Set([...emptiedPaths(out), ...emptiedNow])].filter(p => !filled.includes(p));
   // A document whose entry does not provide its name keeps the public one: flagged, so the sheet can say so.
   const nameKept = !!block && !asked.has('name');
-  out.flags[FLAG_SCOPE].sourcery = {
+  out.flags = withSourcery(out, {
     resolved: !!resolved, source: typeof source === 'string' ? source.slice(0, 32) : 'pdf',
     ...(stillRedacted ? { redacted: true } : {}), ...(stillGenerated.length ? { generated: stillGenerated } : {}),
     ...(stillEmptied.length ? { emptied: stillEmptied } : {}),
     ...(unverified.length ? { unverified } : {}),
     ...(nameKept ? { nameKept: true } : {})
-  };
+  }).flags;
   return { spec: out, filled, emptiedNow, itemNames, itemsKept, skipped, verified, unverified, checks };
 }
 

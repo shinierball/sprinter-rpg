@@ -2,8 +2,10 @@ import { SYSTEM_ID } from '../constants.mjs';
 import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { recordedPicks } from '../utils/character/recorded-picks.mjs';
-import { readSourceStamp } from '../utils/content-source.mjs';
-import { isRedacted, emptiedPaths } from '../sourcery/redacted.mjs';
+import { readSourceStamp, sourceStampPatch } from '../utils/content-source.mjs';
+import { compendiumIdOf, compendiumLinkPatch, sourceUuidOf, syncedLinkPatch } from '../utils/compendium/link-flags.mjs';
+import { withFlags } from '../utils/flags.mjs';
+import { syncedSourcery } from '../sourcery/redacted.mjs';
 import { firstScalar } from '../utils/first-scalar.mjs';
 import { catalogKindOfItemType } from '../content/registry/catalogs.mjs';
 import { RACE_CLASS_TYPES } from '../utils/document-types.mjs';
@@ -63,34 +65,27 @@ export function isRegisteredCompendiumDocument(docOrPack, registry = contentRegi
  * @param {object|null} def a pack document, catalog entry or world item (document or data)
  * @returns {{ flags: object, stats: object }} `flags` merges into `flags['sprinter-rpg']`, `stats` into `_stats`
  */
-export function compendiumLinkFor(def) {
+export function compendiumLinkFor(def, { stamp: withStamp = true } = {}) {
   if (!def || typeof def !== 'object') return { flags: {}, stats: {} };
   const uuid = typeof def.uuid === 'string' ? def.uuid : '';
   const fromPack = uuid.startsWith('Compendium.');
-  const own = def.flags?.[SYSTEM_ID]?.compendiumId;
+  const own = compendiumIdOf(def);
   const isWorld = uuid.startsWith('Item.') && !own;
   const id = own || (isWorld ? '' : (def._id || def.id || ''));
-  const flags = {};
-  const stats = {};
-  if (id) flags.compendiumId = id;
-  if (fromPack) {
-    flags.sourceUuid = uuid;
-    stats.compendiumSource = uuid;
-  }
-  // The source stamp (7.7c) travels with the copy; a copy that already has one keeps it (see `stampCompendiumLink`).
-  const source = readSourceStamp(def);
-  if (source) flags.source = source;
-  return { flags, stats };
+  // The source stamp (7.7c) travels with the copy unless `stamp` is false (see `stampCompendiumLink`).
+  const stamp = withStamp ? readSourceStamp(def) : null;
+  return {
+    flags: { ...compendiumLinkPatch({ id, sourceUuid: fromPack ? uuid : '' }), ...(stamp ? sourceStampPatch(stamp) : {}) },
+    stats: fromPack ? { compendiumSource: uuid } : {}
+  };
 }
 
 /** Merges the {@link compendiumLinkFor} link into item creation data (`flags` and `_stats`), in place. */
 export function stampCompendiumLink(data, def) {
-  const link = compendiumLinkFor(def);
-  if (readSourceStamp(data)) delete link.flags.source;
-  if (Object.keys(link.flags).length) {
-    data.flags = { ...(data.flags || {}), [SYSTEM_ID]: { ...(data.flags?.[SYSTEM_ID] || {}), ...link.flags } };
-  }
-  if (Object.keys(link.stats).length) data._stats = { ...(data._stats || {}), ...link.stats };
+  // A copy that already has a stamp keeps it
+  const { flags, stats } = compendiumLinkFor(def, { stamp: !readSourceStamp(data) });
+  if (Object.keys(flags).length) data.flags = withFlags(data, flags).flags;
+  if (Object.keys(stats).length) data._stats = { ...(data._stats || {}), ...stats };
   return data;
 }
 
@@ -191,24 +186,12 @@ function sanitizeIdentifier(raw) {
  * is cleared the same way when the compendium document lists no emptied path.
  */
 function syncedFlags(target, id, sourceUuid, compendiumItem) {
-  const own = target.flags?.[SYSTEM_ID] || {};
-  const flags = {
-    core: { ...(target.flags?.core || {}), sourceId: target.flags?.core?.sourceId || sourceUuid },
-    [SYSTEM_ID]: { ...own, compendiumId: id, sourceUuid: own.sourceUuid || sourceUuid }
-  };
-  if (own.sourcery?.redacted && !isRedacted(compendiumItem)) {
-    // Foundry's `-=key` deletes the stale marker; the rest of the `sourcery` flag is left to the merge
-    flags[SYSTEM_ID].sourcery = { ...own.sourcery };
-    delete flags[SYSTEM_ID].sourcery.redacted;
-    flags[SYSTEM_ID].sourcery['-=redacted'] = null;
-  }
-  if (own.sourcery?.emptied && !emptiedPaths(compendiumItem).length) {
-    // the same for the emptied-paths list: the compendium document no longer lists any, so the world copy drops it
-    flags[SYSTEM_ID].sourcery = { ...(flags[SYSTEM_ID].sourcery || own.sourcery) };
-    delete flags[SYSTEM_ID].sourcery.emptied;
-    flags[SYSTEM_ID].sourcery['-=emptied'] = null;
-  }
-  return flags;
+  // The copy's own flags are written back with the link on top; `core` keeps its other keys.
+  const core = { ...(target.flags?.core || {}), sourceId: target.flags?.core?.sourceId || sourceUuid };
+  // Foundry's `-=key` deletes a stale `sourcery` marker; the rest of the flag is left to the merge
+  const sourcery = syncedSourcery(target, compendiumItem);
+  const link = { ...syncedLinkPatch(target, id, sourceUuid), ...(sourcery ? { sourcery } : {}) };
+  return { ...withFlags({ flags: target.flags }, link).flags, core };
 }
 
 /**
@@ -248,8 +231,8 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
       if (item.flags?.[SYSTEM_ID]?.transformationOf) return false;
 
       // Check explicit source references
-      const sourceId = item.flags?.core?.sourceId || item.flags?.[SYSTEM_ID]?.sourceUuid;
-      const compId = item.flags?.[SYSTEM_ID]?.compendiumId;
+      const sourceId = item.flags?.core?.sourceId || sourceUuidOf(item);
+      const compId = compendiumIdOf(item);
 
       if (canonicalSourceId && sourceId === canonicalSourceId) return true;
       if (id && compId === id) return true;
@@ -310,8 +293,8 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
   for (const wItem of worldItems) {
     if (wItem.type !== type) continue;
 
-    const sourceId = wItem.flags?.core?.sourceId || wItem.flags?.[SYSTEM_ID]?.sourceUuid;
-    const compId = wItem.flags?.[SYSTEM_ID]?.compendiumId;
+    const sourceId = wItem.flags?.core?.sourceId || sourceUuidOf(wItem);
+    const compId = compendiumIdOf(wItem);
     const isMatch = (canonicalSourceId && sourceId === canonicalSourceId) ||
       (id && compId === id) ||
       (canonicalSourceId && wItem._stats?.compendiumSource === canonicalSourceId);

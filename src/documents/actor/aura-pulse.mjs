@@ -16,7 +16,6 @@
  *
  * State lives on the aura item (`system.auraState`). Nothing here reads names or descriptions.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { measureTokenFeet } from '../../utils/combat/interrupts.mjs';
@@ -24,6 +23,8 @@ import { isMobSide } from '../../utils/combat/combat-sides.mjs';
 import { isAuraItem } from '../../utils/tag/tag-mechanics.mjs';
 import { isMarkerActor } from '../../utils/area/marker.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { auraSourceUuidOf, madeByAuraFor } from '../../utils/area/aura-flags.mjs';
+import { markAppliedRound } from '../../utils/time/duration-flags.mjs';
 import { auraRank, computeAuraTempBars, buildAuraEffectItems, inflictedDebuffsOf } from './aura-effects.mjs';
 import {
   canWriteActor, grantAllyTempBars, createAllyEffects, healAllyFromAura, cleanseAllyFromAura,
@@ -262,7 +263,7 @@ async function commitState(item, before, after) {
 }
 
 function holdsAuraItem(actor, item, type) {
-  return asArray(actor?.items).some(it => it.type === type && it.flags?.[SYSTEM_ID]?.auraSourceUuid === item.uuid);
+  return asArray(actor?.items).some(it => it.type === type && auraSourceUuidOf(it) === item.uuid);
 }
 
 /** Put an ally's stored bars back at the level they were put away. True when done (or nothing to restore). */
@@ -438,21 +439,10 @@ async function rollAuraDamage(formula) {
   return parseInt(formula, 10) || 4;
 }
 
-/**
- * Record the round (and combat) a pulse inflicted an aura debuff in, so the same Clean Up's durations step does not
- * count its first round down (3.40 g). Local write: the pulse runs on the GM, and an unowned actor's relayed debuff
- * simply keeps no mark.
- */
-export async function markAppliedRound(debuff, { round, combatId }) {
-  if (typeof debuff?.setFlag !== 'function') return;
-  await debuff.setFlag(SYSTEM_ID, 'appliedRound', Number(round) || 0);
-  await debuff.setFlag(SYSTEM_ID, 'appliedCombatId', combatId ?? '');
-}
-
 /** The debuff an aura stamped on an actor for a condition ref (by the aura's UUID and the ref, never by name). */
 function stampedAuraDebuff(actor, item, ref) {
   return asArray(actor.items).find(i => i.type === 'debuff' &&
-    i.flags?.[SYSTEM_ID]?.auraSourceUuid === item.uuid && i.flags?.[SYSTEM_ID]?.auraDebuffRef === ref);
+    madeByAuraFor(i, item.uuid, ref));
 }
 
 /**
@@ -503,8 +493,7 @@ export async function applyAuraPulse(holder, item, { allies = [], enemies = [], 
         await damageTargetFromAura(actor, item, damage);
       }
       for (const ref of fx.hostile.debuffs) {
-        const present = asArray(actor.items).some(i => i.type === 'debuff' &&
-          i.flags?.[SYSTEM_ID]?.auraSourceUuid === item.uuid && i.flags?.[SYSTEM_ID]?.auraDebuffRef === ref);
+        const present = asArray(actor.items).some(i => i.type === 'debuff' && madeByAuraFor(i, item.uuid, ref));
         if (!present && await inflictAuraDebuff(actor, item, ref)) {
           inflicted.push(ref);
           if (stamp) await markAppliedRound(stampedAuraDebuff(actor, item, ref), stamp);

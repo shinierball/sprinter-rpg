@@ -1,4 +1,5 @@
-import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
+import { auraSourceUuidOf, sourceAuraOf } from '../utils/area/aura-flags.mjs';
 import { HIDEABLE_HUD_CLASS } from '../utils/effects/hud-visibility.mjs';
 import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
 import { isAuraItem } from '../utils/tag/tag-mechanics.mjs';
@@ -200,7 +201,7 @@ export class COGEffectsPanel extends COGToolApp {
         durationLabel: sys.duration || 'Combat',
         fullDurationText: durationConfigText(sys.durationConfig) || sys.duration || 'Until Cleansed',
         detailsText: htmlSnippet(sys.description) || 'Inflicts penalty or damage.',
-        canDismiss: Boolean(globalThis.game?.user?.isGM) && !item.flags?.[SYSTEM_ID]?.auraSourceUuid,
+        canDismiss: Boolean(globalThis.game?.user?.isGM) && !auraSourceUuidOf(item),
         sortPriority: 1
       });
     }
@@ -229,14 +230,14 @@ export class COGEffectsPanel extends COGToolApp {
         isAuraReceiver: false,
         isBuff: true,
         isDebuff: false,
-        sourceName: item.flags?.[SYSTEM_ID]?.sourceAura || 'Self',
+        sourceName: sourceAuraOf(item) || 'Self',
         remainingRounds,
         remainingText: durationRemainingLabel(sys.durationConfig, worldTime),
         durationLabel,
         fullDurationText: sys.duration || 'Active',
         detailsText: htmlSnippet(sys.description) || 'Grants enhancement.',
         // An effect received from an aura ends with the aura (its holder dismisses that), not by itself (3.40 m).
-        canDismiss: !item.flags?.[SYSTEM_ID]?.auraSourceUuid,
+        canDismiss: !auraSourceUuidOf(item),
         sortPriority: 4
       });
     }

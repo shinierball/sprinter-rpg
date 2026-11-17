@@ -5,6 +5,7 @@
  * the human's own and is used verbatim.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag } from '../../utils/flags.mjs';
 import { buildPayload } from '../builders/item-payload.mjs';
 import { USAGE_KINDS } from '../../utils/tag/tag-mechanics.mjs';
 
@@ -32,7 +33,7 @@ function copyData(data) {
  */
 export function replacedRecordOf(data, { replacedAt = Date.now() } = {}) {
   const copy = copyData(data);
-  const stamp = copy?.flags?.[SYSTEM_ID]?.source;
+  const stamp = readFlag(copy, 'source');
   return {
     source: { theme: text(stamp?.theme, 40), set: text(stamp?.set, 40) },
     name: text(copy?.name),

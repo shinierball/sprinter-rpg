@@ -564,7 +564,8 @@ async function askRollToggles(actor, context, options, opts) {
 /** The Playing to the Cameras radio group of the roll dialog: None plus each audience; the armed one is checked. */
 function cameraFieldsetHtml(armed) {
   const radio = (value, label, checked) => `<label class="cog-situation-toggle cog-camera-toggle"><input type="radio" name="cameras" value="${escapeAttr(value)}"${checked ? ' checked' : ''}> ${escapeAttr(label)}</label>`;
-  const rows = [radio('', cameraText('COG.Cameras.None'), !armed), ...cameraAudienceList().map(a => radio(a.id, a.label || a.id, a.id === armed))].join('');
+  const audienceRows = cameraAudienceList().map(a => radio(a.id, a.label || a.id, a.id === armed)).join('');
+  const rows = `${radio('', cameraText('COG.Cameras.None'), !armed)}${audienceRows}`;
   return `<fieldset class="cog-camera-toggles"><legend>${escapeAttr(cameraText('COG.Cameras.Title'))}</legend>${rows}<small class="cog-situation-source">${escapeAttr(cameraText('COG.Cameras.Hint'))}</small></fieldset>`;
 }
 

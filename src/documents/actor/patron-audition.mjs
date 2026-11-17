@@ -17,6 +17,7 @@ import { findBookTable } from '../../sourcery/book-tables.mjs';
 import { postPatronCard } from '../../chat/patron-card.mjs';
 import { becomePatron, becomeReasons, writePatronage } from './patronage.mjs';
 import { say, notify } from './vehicle-drive-common.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 const now = () => Number(globalThis.game?.time?.worldTime) || 0;
 const label = (key, fallback) => say(`COG.Patron.Audition.${key}`, fallback);
@@ -106,7 +107,7 @@ async function askDifficulty() {
   if (typeof DialogV2?.prompt !== 'function') return null;
   const answer = await DialogV2.prompt({
     window: { title: label('DifficultyTitle', 'Audition Difficulty') },
-    content: `<label>${label('Difficulty', 'Difficulty')} <input type="number" name="dc" min="0" step="1" value="" autofocus /></label>`,
+    content: `<label>${escapeAttr(label('Difficulty', 'Difficulty'))} <input type="number" name="dc" min="0" step="1" value="" autofocus /></label>`,
     ok: { label: label('DifficultyOk', 'Judge'), callback: (event, button) => button.form.elements.dc?.value ?? '' },
     rejectClose: false
   });

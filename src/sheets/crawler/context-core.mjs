@@ -5,6 +5,7 @@
 import { buildTagPills } from '../base/tag-editor.mjs';
 import { actorTagEditVerdict, isDerivedActorTag } from '../../utils/tag/actor-tag-permissions.mjs';
 import { collectActorTags } from '../../documents/active-tags.mjs';
+import { storedBaseScore, STAT_KEYS } from '../../models/actors/actor-derivation.mjs';
 import { sexSelectView } from '../../utils/tag/sex.mjs';
 import { camerasOffered, cameraArmView } from '../../utils/roll/cameras.mjs';
 import { creatureMoveOf } from '../../documents/actor/actor-move.mjs';
@@ -15,7 +16,7 @@ import { getHpPerBar } from '../../documents/combat-metrics.mjs';
 import { DEFAULT_SIZE, getSizeInfo, sizeOptions } from '../../data/sizes.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { BOSS_TIERS, bossActionBudget } from '../../data/mob-creation-rules.mjs';
-import { overlayOf, effectiveRace, storedAttributes } from '../../utils/character/overlay-state.mjs';
+import { overlayOf, effectiveRace, storedAttributes, transformationOfItem } from '../../utils/character/overlay-state.mjs';
 import { isRaceClassLocked, raceClassText, raceClassUnlockFloor } from '../../utils/character/race-class-floor.mjs';
 import { LIFETIME_POTION_LIMIT, potionsTakenOf } from '../../data/rules/potion-rules.mjs';
 import { isRaceOrClass } from '../../utils/document-types.mjs';
@@ -32,16 +33,22 @@ const MOB_CREATURE_TYPES = [
 ];
 
 /** Select options for a fixed list, plus a "(Custom)" entry when the stored value is not in it. */
-/** The lifetime potion readout: one row per kind with the count taken, the limit and whether the count is past it (p. 226). */
+/** The lifetime potion readout: a heading, a line of explanation, and one row per kind with the count taken, the limit and whether the count is past it. */
 function potionLimitRows(actor) {
   const taken = potionsTakenOf(actor);
-  return Object.entries(LIFETIME_POTION_LIMIT).map(([kind, limit]) => {
+  const t = (key) => game.i18n?.localize?.(key) ?? key;
+  const rows = Object.entries(LIFETIME_POTION_LIMIT).map(([kind, limit]) => {
     const value = taken[kind];
     return {
       kind, path: `system.details.potionsTaken.${kind}`, value, limit, over: value > limit,
-      label: kind === 'stat' ? 'Stat potions' : 'Skill potions'
+      label: t(`COG.PotionLimits.Label.${kind}`)
     };
   });
+  return {
+    heading: t('COG.PotionLimits.Heading'),
+    explanation: t('COG.PotionLimits.Explanation'),
+    rows
+  };
 }
 
 function optionsWithCustom(values, current) {
@@ -171,6 +178,9 @@ function raceNotInForceHint(actor) {
   if (!overlayOf(actor.items)) return '';
   const form = effectiveRace(actor.items);
   if (!form) return '';
+  // A crawler with no race of its own has nothing to return to, so nothing is "not in force"
+  const hasOwnRace = Array.from(actor.items ?? []).some((i) => i.type === 'race' && !transformationOfItem(i));
+  if (!hasOwnRace && !String(actor.system?.details?.race ?? '').trim()) return '';
   return globalThis.game?.i18n?.format?.('COG.Transform.RaceNotInForce', { form: form.name }) ?? '';
 }
 
@@ -207,7 +217,7 @@ export function prepareCoreContext(context, actor) {
   context.crawlerCount = COGActor.getCrawlerCount();
   context.formattedCrawlerCount = Number(context.crawlerCount).toLocaleString();
   context.bankedGrindHours = Number(system?.details?.bankedGrindHours ?? system?.bankedGrindHours) || 0;
-  context.potionLimits = actor.type === 'crawler' ? potionLimitRows(actor) : [];
+  context.potionLimits = actor.type === 'crawler' ? potionLimitRows(actor) : null;
 
   // Health bar segments: crawlers always have 10 bars; mobs set their own count.
   const derivedBars = Number(system.attributes?.hp?.bars) || 0;
@@ -229,6 +239,17 @@ export function prepareCoreContext(context, actor) {
   const stored = storedAttributes(actor);
   context.sizeOptions = sizeOptions(stored.size ?? system.attributes?.size ?? DEFAULT_SIZE);
   context.storedMove = stored.speed?.move ?? system.attributes?.speed?.move;
+  // The Unenhanced inputs are saved with the sheet too: they show the stored base. While changed the derived score is the
+  // form's body (1193 a), named in the tooltip.
+  context.storedScores = {};
+  context.scoreTitles = {};
+  for (const key of STAT_KEYS) {
+    const base = storedBaseScore(actor, key);
+    const now = system.abilities?.[key]?.unenhanced;
+    context.storedScores[key] = base;
+    context.scoreTitles[key] = now !== undefined && now !== base
+      ? `Base Unenhanced Score as stored. Changed body: ${now}.` : 'Base Unenhanced Score';
+  }
 
   context.cameraArm = camerasOffered(actor) ? cameraArmView(actor) : null;
   context.floorOptions = optionsWithCustom(FLOOR_OPTIONS, String(system?.details?.floor || '').trim());

@@ -4,7 +4,7 @@
  * The fragments `rollSpell` shares live in `use-card-parts.mjs`.
  */
 import { rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { checkTypeLabel } from '../../data/rules/check-types.mjs';
 import { auraActiveBlockHtml, damageSourcesPreviewHtml } from './use-card-parts.mjs';
 
@@ -29,14 +29,14 @@ export function skillAuraActivationCardHtml(actor, skill, auraData, summaryHtml 
   return `
         <div class="cog-chat-card cog-skill-card cog-aura-active" style="font-family: var(--font-primary, sans-serif); border: 2px solid var(--cog-gold);">
           <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-gold); padding-bottom: 4px; margin-bottom: 6px;">
-            <img class="cog-bg-icon-box" src="${skill.img || 'icons/svg/aura.svg'}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
+            <img class="cog-bg-icon-box" src="${escapeAttr(skill.img || 'icons/svg/aura.svg')}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
             <div>
-              <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${skill.name}</h3>
+              <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${escapeAttr(skill.name)}</h3>
               <span class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Skill Aura Activated</span>
             </div>
           </div>
           ${auraActiveBlockHtml(actor, skill, shown, { itemIdAttr: true })}
-          ${sys.description ? `<div style="font-size: 12px; line-height: 1.4; margin-top: 6px;">${sys.description}</div>` : ''}
+          ${sys.description ? `<div style="font-size: 12px; line-height: 1.4; margin-top: 6px;">${trustedHtml(skill.system.description)}</div>` : ''}
           ${sys.notes ? `<div class="cog-text-muted" style="font-size: 11px; margin-top: 4px;"><em>${escapeAttr(sys.notes)}</em></div>` : ''}
           ${summaryHtml}
         </div>
@@ -54,9 +54,9 @@ export function skillAuraActivationCardHtml(actor, skill, auraData, summaryHtml 
 export function passiveSkillCardHtml(actor, skill, { modifiedRank, baseRank, itemBonus, boonBonus }, summaryHtml = '') {
   const sys = skill.system || {};
   return `<div class="cog-chat-card">
-          <h4><strong>${actor.name}</strong>: ${skill.name}</h4>
+          <h4><strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)}</h4>
           <p><em>Passive Skill (No roll required)</em></p>
-          <p><strong>Modified Rank:</strong> ${modifiedRank} (Base ${baseRank}${itemBonus ? `, Items +${itemBonus}` : ''}${boonBonus ? `, Boons +${boonBonus}` : ''})</p>
+          <p><strong>Modified Rank:</strong> ${escapeAttr(modifiedRank)} (Base ${escapeAttr(baseRank)}${itemBonus ? `, Items +${escapeAttr(itemBonus)}` : ''}${boonBonus ? `, Boons +${escapeAttr(boonBonus)}` : ''})</p>
           <p>${escapeAttr(sys.notes) || 'Static bonus active.'}</p>
           ${summaryHtml}
         </div>`;
@@ -70,7 +70,7 @@ export function passiveSkillCardHtml(actor, skill, { modifiedRank, baseRank, ite
  * @returns {string}
  */
 export function untrainedSkillFlavor(actor, skill, { advState, statName, untMod, modDesc }) {
-  return `<strong>${actor.name}</strong>: ${skill.name} (<strong>${advState.label || 'Disadvantage (Untrained Check)'}</strong>: ${advState.formula} + ${statName} Mod ${untMod >= 0 ? `+${untMod}` : untMod}${modDesc})`;
+  return `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)} (<strong>${escapeAttr(advState.label || 'Disadvantage (Untrained Check)')}</strong>: ${escapeAttr(advState.formula)} + ${escapeAttr(statName)} Mod ${escapeAttr(untMod >= 0 ? `+${untMod}` : untMod)}${escapeAttr(modDesc)})`;
 }
 
 /**
@@ -81,18 +81,20 @@ export function untrainedSkillFlavor(actor, skill, { advState, statName, untMod,
  * @returns {string}
  */
 export function skillCheckFlavor(actor, skill, { advState, statName: stat, breakdown, effectiveTotal, statOnly = false }) {
-  const statName = statOnly ? `${stat} ${checkTypeLabel('statOnly')}` : `${stat} Check`;
-  const total = `<strong>Total ${effectiveTotal >= 0 ? `+${effectiveTotal}` : effectiveTotal}</strong>`;
+  const statName = escapeAttr(statOnly ? `${stat} ${checkTypeLabel('statOnly')}` : `${stat} Check`);
+  const total = `<strong>Total ${escapeAttr(effectiveTotal >= 0 ? `+${effectiveTotal}` : effectiveTotal)}</strong>`;
+  const who = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)}`;
+  const sum = breakdown.map(escapeAttr).join(' + ');
   if (advState.mode === 'disadvantage') {
-    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} [<strong>${advState.label || 'Disadvantage'}</strong>]: ${advState.formula} + ${breakdown.join(' + ')} = ${total})`;
+    return `${who} (${statName} [<strong>${escapeAttr(advState.label || 'Disadvantage')}</strong>]: ${escapeAttr(advState.formula)} + ${sum} = ${total})`;
   }
   if (advState.mode === 'advantage') {
-    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} [<strong>${advState.label}</strong>]: ${advState.formula} + ${breakdown.join(' + ')} = ${total})`;
+    return `${who} (${statName} [<strong>${escapeAttr(advState.label)}</strong>]: ${escapeAttr(advState.formula)} + ${sum} = ${total})`;
   }
   if (advState.mode === 'cancelled') {
-    return `<strong>${actor.name}</strong>: ${skill.name} (${statName} [<strong>${advState.label}</strong>]: 1d20 + ${breakdown.join(' + ')} = ${total})`;
+    return `${who} (${statName} [<strong>${escapeAttr(advState.label)}</strong>]: 1d20 + ${sum} = ${total})`;
   }
-  return `<strong>${actor.name}</strong>: ${skill.name} (${statName}: 1d20 + ${breakdown.join(' + ')} = ${total})`;
+  return `${who} (${statName}: 1d20 + ${sum} = ${total})`;
 }
 
 /**
@@ -110,8 +112,8 @@ export function skillDamageButtonHtml(actor, skill, { dmgData, parts, cardContex
   return `
         <div style="margin-top: 6px;">
           ${previewHtml}
-          <button type="button" class="cog-attack-roll-btn roll-skill-dmg roll-skill-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollItemDamage" data-actor-uuid="${actor.uuid}" data-item-id="${skill.id}" data-skill-id="${skill.id}" data-item-type="skill" data-formula="${dmgData.formula}"${rollContextDataAttr(cardContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif); margin-top: 4px;">
-            <i class="fa-solid fa-burst"></i> ${escapeAttr(label)}(${dmgData.formulaWithStat || dmgData.formula})
+          <button type="button" class="cog-attack-roll-btn roll-skill-dmg roll-skill-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollItemDamage" data-actor-uuid="${escapeAttr(actor.uuid)}" data-item-id="${escapeAttr(skill.id)}" data-skill-id="${escapeAttr(skill.id)}" data-item-type="skill" data-formula="${escapeAttr(dmgData.formula)}"${rollContextDataAttr(cardContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif); margin-top: 4px;">
+            <i class="fa-solid fa-burst"></i> ${escapeAttr(label)}(${escapeAttr(dmgData.formulaWithStat || dmgData.formula)})
           </button>
         </div>
       `;
@@ -134,26 +136,26 @@ export function skillHealBlockHtml(actor, skill, heal) {
             <i class="fa-solid fa-heart-pulse cog-text-success" style="font-size: 20px;"></i>
             <div style="flex: 1;">
               <div style="font-weight: bold; font-size: 13px;">
-                ${isSelfTarget ? (isHoT ? `Applied HoT: +${barsToHeal} Bars/Round for ${hotRounds} Rounds` : (actualHealed > 0 ? `Healed +${actualHealed} HP` : 'Already at Full Health')) : `Restores +${barsToHeal} Health Bar Slots (${barsToHeal * hpPerBar} HP)`}
-                <span class="cog-text-success" style="font-weight: normal; font-size: 11px;">(${barsToHeal} Bar${barsToHeal > 1 ? 's' : ''} • Target: ${sys.healing?.targetFilter || 'allies'})</span>
+                ${isSelfTarget ? (isHoT ? `Applied HoT: +${escapeAttr(barsToHeal)} Bars/Round for ${escapeAttr(hotRounds)} Rounds` : (actualHealed > 0 ? `Healed +${escapeAttr(actualHealed)} HP` : 'Already at Full Health')) : `Restores +${escapeAttr(barsToHeal)} Health Bar Slots (${escapeAttr(barsToHeal * hpPerBar)} HP)`}
+                <span class="cog-text-success" style="font-weight: normal; font-size: 11px;">(${escapeAttr(barsToHeal)} Bar${barsToHeal > 1 ? 's' : ''} • Target: ${escapeAttr(sys.healing?.targetFilter || 'allies')})</span>
               </div>
-              ${cleansedDebuffs.length ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-sparkles"></i> Cleansed: <strong>[${cleansedDebuffs.join(', ')}]</strong></div>` : ''}
-              ${debuffsToCleanse.length && !cleansedDebuffs.length ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-sparkles"></i> Cures: <strong>[${debuffsToCleanse.join(', ')}]</strong></div>` : ''}
+              ${cleansedDebuffs.length ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-sparkles"></i> Cleansed: <strong>[${cleansedDebuffs.map(escapeAttr).join(', ')}]</strong></div>` : ''}
+              ${debuffsToCleanse.length && !cleansedDebuffs.length ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-sparkles"></i> Cures: <strong>[${debuffsToCleanse.map(escapeAttr).join(', ')}]</strong></div>` : ''}
             </div>
           </div>
           <div class="cog-healing-actions" style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
             ${!isHoT ? `
-              <button type="button" class="cog-apply-healing-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerApplyHealing" data-bars="${barsToHeal}" data-target-uuid="${actor.uuid}" style="width: 100%; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
-                <i class="fa-solid fa-heart-pulse"></i> Apply Healing (+${barsToHeal} Health Bar${barsToHeal > 1 ? 's' : ''})
+              <button type="button" class="cog-apply-healing-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerApplyHealing" data-bars="${escapeAttr(barsToHeal)}" data-target-uuid="${escapeAttr(actor.uuid)}" style="width: 100%; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
+                <i class="fa-solid fa-heart-pulse"></i> Apply Healing (+${escapeAttr(barsToHeal)} Health Bar${barsToHeal > 1 ? 's' : ''})
               </button>
             ` : `
-              <button type="button" class="cog-apply-hot-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyHoT" data-bars="${barsToHeal}" data-rounds="${hotRounds}" data-name="${skill.name}" data-target-uuid="${actor.uuid}" style="width: 100%; border: 1px solid var(--cog-info-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
-                <i class="fa-solid fa-clock-rotate-left"></i> Apply HoT (+${barsToHeal} Bars/Round for ${hotRounds} Rounds)
+              <button type="button" class="cog-apply-hot-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyHoT" data-bars="${escapeAttr(barsToHeal)}" data-rounds="${escapeAttr(hotRounds)}" data-name="${escapeAttr(skill.name)}" data-target-uuid="${escapeAttr(actor.uuid)}" style="width: 100%; border: 1px solid var(--cog-info-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
+                <i class="fa-solid fa-clock-rotate-left"></i> Apply HoT (+${escapeAttr(barsToHeal)} Bars/Round for ${escapeAttr(hotRounds)} Rounds)
               </button>
             `}
             ${debuffsToCleanse.map(deb => `
-              <button type="button" class="cog-cleanse-debuff-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerCleanseDebuff" data-debuff-name="${deb}" data-target-uuid="${actor.uuid}" style="width: 100%; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
-                <i class="fa-solid fa-sparkles"></i> Cleanse [${deb}]
+              <button type="button" class="cog-cleanse-debuff-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerCleanseDebuff" data-debuff-name="${escapeAttr(deb)}" data-target-uuid="${escapeAttr(actor.uuid)}" style="width: 100%; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
+                <i class="fa-solid fa-sparkles"></i> Cleanse [${escapeAttr(deb)}]
               </button>
             `).join('')}
           </div>
@@ -169,6 +171,6 @@ export function skillHealBlockHtml(actor, skill, heal) {
  */
 export function skillRangeLineHtml(rangeFeet, rangeBonus) {
   return rangeFeet > 0
-    ? `<div class="cog-skill-range" style="margin-top: 4px; font-size: 11px;"><strong>Range:</strong> ${rangeFeet} feet${rangeBonus > 0 ? ` (+${rangeBonus}ft)` : ''}</div>`
+    ? `<div class="cog-skill-range" style="margin-top: 4px; font-size: 11px;"><strong>Range:</strong> ${escapeAttr(rangeFeet)} feet${rangeBonus > 0 ? ` (+${escapeAttr(rangeBonus)}ft)` : ''}</div>`
     : '';
 }

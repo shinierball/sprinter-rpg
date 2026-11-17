@@ -1,13 +1,12 @@
 /**
  * Template membership feeds targets (E2.2). A card's "Place Area of Effect" button stamps the card's message id on
- * every Region it creates (`flags[SYSTEM_ID].area.messageId`, set by `handlePlaceTemplate`). When "Apply to targets"
+ * every Region it creates (the area flag's `messageId`, set by `handlePlaceTemplate`). When "Apply to targets"
  * runs on that card, or on a damage card whose `sourceMessageId` names it, and the user has no targets of their own,
  * the targets are the tokens inside those Regions at that moment (Foundry's own `testInsideRegion`, so a token that
  * moved in after placement counts). The area is placed on the caster and dragged afterwards, hence apply time.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { resolveAreaGeometry } from '../../utils/area/area-geometry.mjs';
-import { findAreaRegions, tokensInRegion } from '../../utils/area/region-shapes.mjs';
+import { areaFlagsOf, findAreaRegions, tokensInRegion } from '../../utils/area/region-shapes.mjs';
 import { auraRank } from '../../documents/actor/aura-effects.mjs';
 
 /**
@@ -20,10 +19,10 @@ export function tokensInLinkedArea({ messageIds = [] } = {}) {
   const scene = globalThis.canvas?.scene;
   const ids = new Set(messageIds.filter(id => typeof id === 'string' && id));
   if (!scene || !ids.size) return [];
-  const regions = findAreaRegions(scene).filter(r => ids.has(r.flags?.[SYSTEM_ID]?.area?.messageId));
+  const regions = findAreaRegions(scene).filter(r => ids.has(areaFlagsOf(r)?.messageId));
   const inside = new Map();
   for (const region of regions) {
-    const flags = region.flags[SYSTEM_ID].area;
+    const flags = areaFlagsOf(region);
     const item = flags.sourceItemUuid ? globalThis.fromUuidSync?.(flags.sourceItemUuid) : null;
     const geometry = item ? resolveAreaGeometry(item, { rank: auraRank(item.parent, item) }) : null;
     const skipCaster = geometry?.anchor === 'caster' && geometry.targetFilter !== 'allies';

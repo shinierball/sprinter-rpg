@@ -1,4 +1,5 @@
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { tableKeyOf, tableKeyPatch } from '../../utils/rolltable/table-flags.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { BUNDLED_SET_ID, withSourceStamp } from '../../utils/content-source.mjs';
 
@@ -147,12 +148,7 @@ export function createBackgroundRollTableData(tableKey) {
       documentCollection: null,
       documentId: null
     })),
-    flags: {
-      [SYSTEM_ID]: {
-        tableKey: tableDef.key,
-        tableNumber: tableDef.tableNumber
-      }
-    }
+    flags: withFlags({}, { ...tableKeyPatch(tableDef.key), tableNumber: tableDef.tableNumber }).flags
   };
 }
 
@@ -186,7 +182,7 @@ export async function ensureBackgroundTables() {
   for (const tableKey of tableKeys) {
     const tableDef = tables[tableKey] || getBackgroundTable(tableKey);
     if (!tableDef) continue;
-    const existing = game.tables.find(t => t.flags?.[SYSTEM_ID]?.tableKey === tableKey);
+    const existing = game.tables.find(t => tableKeyOf(t) === tableKey);
 
     if (existing) {
       // If table exists but has 0 results, populate them

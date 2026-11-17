@@ -21,6 +21,8 @@
  * Written in the v14 TableResult shape: `type`, `name`, `description`, `documentUuid`, `range`, `weight`, `flags`.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, withFlags } from '../../utils/flags.mjs';
+import { tableKeyOf, withOption, withTableKey } from '../../utils/rolltable/table-flags.mjs';
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
@@ -88,7 +90,7 @@ function optionResult(option, range, types, warn, path) {
     weight: 1,
     range: [...range],
     drawn: false,
-    flags: { [SYSTEM_ID]: { option: opt } }
+    ...withOption({}, opt)
   };
 }
 
@@ -109,7 +111,7 @@ export function buildRollTablePayload(spec = {}, options = {}) {
   const input = isPlainObject(spec) ? spec : {};
   const types = resultTypes(options);
 
-  const key = text(input.key ?? input.tableKey ?? input.flags?.[SYSTEM_ID]?.tableKey);
+  const key = text(input.key ?? input.tableKey ?? tableKeyOf(input));
   if (!key) warn('key', 'table has no key; it cannot be discovered by tableKey');
   const name = text(input.name) || key || 'New Floor Table';
 
@@ -164,10 +166,9 @@ export function buildRollTablePayload(spec = {}, options = {}) {
     results,
     flags: isPlainObject(input.flags) ? structuredClone(input.flags) : {}
   };
-  const flagBlock = isPlainObject(payload.flags[SYSTEM_ID]) ? payload.flags[SYSTEM_ID] : {};
-  payload.flags[SYSTEM_ID] = { ...flagBlock, tableKey: key };
-  const tableNumber = input.tableNumber ?? flagBlock.tableNumber;
-  if (tableNumber !== undefined && tableNumber !== null) payload.flags[SYSTEM_ID].tableNumber = tableNumber;
+  const tableNumber = input.tableNumber ?? readFlag(payload, 'tableNumber');
+  payload.flags = withTableKey(payload, key).flags;
+  if (tableNumber !== undefined && tableNumber !== null) payload.flags = withFlags(payload, { tableNumber }).flags;
   if (text(input._id)) payload._id = text(input._id);
   if (text(input.folder)) payload.folder = text(input.folder);
   return payload;

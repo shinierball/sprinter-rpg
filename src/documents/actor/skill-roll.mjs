@@ -39,6 +39,7 @@ import {
   skillHealBlockHtml, skillRangeLineHtml
 } from './skill-roll-card.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import {
   auraDismissedMessage, auraActiveBlockHtml, tempBarsLineHtml, grantItemTempBars, areaTemplateButtonHtml, healingBarsFor, healBonusSlots, isSingleTargetHeal, cleanseListFor,
   buffApplyBlocks
@@ -72,7 +73,7 @@ export async function dismissSkillAura(actor, skill) {
  * @param {Actor} actor
  * @param {Item} skill
  * @param {object} options
- * @returns {Promise<null | { unusableGate: object, rangeGate: object, rangeFlags: object, outOfRangeHtml: string, cooldownGate: object, zeroZoneGate: object, actionBlockGate: object }>}
+ * @returns {Promise<null | { unusableGate: object, rangeGate: object, rangeFlags: object, cooldownGate: object, zeroZoneGate: object, actionBlockGate: object }>}
  *   null when the roller declined a gate
  */
 export async function gateSkillUse(actor, skill, options) {
@@ -101,14 +102,13 @@ export async function gateSkillUse(actor, skill, options) {
     : await gateAttackRange(actor, skill, attackTargetEntries(actor, options), { options });
   if (!rangeGate.proceed) return null;
   const rangeFlags = { ...(rangeGate.flags.ruleBreak ? { ruleBreak: true } : {}), ...(rangeGate.flags.rangeRuleBreak ? { rangeRuleBreak: true } : {}), ...(rangeGate.flags.outOfRange ? { outOfRange: rangeGate.flags.outOfRange } : {}) };
-  const outOfRangeHtml = outOfRangeLineHtml(rangeGate.outOfRange);
 
   // The skill's own cooldown: on cooldown asks for a Rule Break; the timer starts now, hit or miss (3.12c)
   const cooldownGate = await gateItemCooldown(actor, skill, { options });
   if (!cooldownGate.proceed) return null;
   await cooldownGate.commit();
   await spendActivationUses(actor, [skill]);
-  return { unusableGate, rangeGate, rangeFlags, outOfRangeHtml, cooldownGate, zeroZoneGate, actionBlockGate };
+  return { unusableGate, rangeGate, rangeFlags, cooldownGate, zeroZoneGate, actionBlockGate };
 }
 
 /**
@@ -432,27 +432,46 @@ export async function skillUseParts(actor, skill, options, { check, rank, auraDa
 }
 
 /**
+ * The card's block between the per-target lines and the contest block: the range line, the out-of-range line, then the damage
+ * button, the area button, the aura, heal and temp-bar blocks and the buff blocks. Plain parameters so each call site's value is checked.
+ * @param {string} rangeHtml
+ * @param {object[]} outOfRange the targets beyond the skill's range (`gateAttackRange`)
+ * @param {string} dmgBtnHtml
+ * @param {string} aoeBtnHtml
+ * @param {string} auraHtml
+ * @param {string} healHtml
+ * @param {string} tempBarsHtml
+ * @param {string} buffHtml
+ * @returns {string}
+ */
+export function skillCardTailHtml(rangeHtml, outOfRange, dmgBtnHtml, aoeBtnHtml, auraHtml, healHtml, tempBarsHtml, buffHtml) {
+  return `${rangeHtml}${outOfRangeLineHtml(outOfRange)}${dmgBtnHtml || ''}${aoeBtnHtml || ''}${auraHtml || ''}${healHtml || ''}${tempBarsHtml || ''}${buffHtml}`;
+}
+
+/**
  * Render the roll, add the contest and per-target blocks, post the card with its flags, then settle the Called Plays
  * and the armed camera.
  * @param {Actor} actor
  * @param {Item} skill
  * @param {object} options
- * @param {{ check: object, gates: object, roll: Roll, flavorText: string, parts: object }} state `parts` from `skillUseParts`
+ * @param {{ check: object, gates: object, roll: Roll, hasDmg: boolean, buffFlags: object }} state `hasDmg` and `buffFlags` from `skillUseParts`
+ * @param {string} flavor the card's flavor line with the camera note (escaped HTML, a parameter of its own so every caller's value is checked)
+ * @param {string} tailHtml `skillCardTailHtml`, the card's blocks after the per-target lines (a parameter of its own, like `flavor`)
  * @returns {Promise<ChatMessage>}
  */
-export async function postSkillCheckMessage(actor, skill, options, { check, gates, roll, flavorText, parts, rollId = '' }) {
+export async function postSkillCheckMessage(actor, skill, options, { check, gates, roll, hasDmg, buffFlags = {}, rollId = '' }, flavor, tailHtml) {
   const { floorRuleBreak, rollContext, targetRows, targetActors, calledEntries, calledPlayIds, camera } = check;
-  const { unusableGate, rangeFlags, outOfRangeHtml, cooldownGate } = gates;
-  const { dmgBtnHtml, hasDmg, auraHtml, healHtml, tempBarsHtml, aoeBtnHtml, rangeHtml, buffHtml = '', buffFlags = {} } = parts;
-  const rollHtml = typeof roll.render === 'function' ? await roll.render() : '';
+  const { unusableGate, rangeFlags, cooldownGate } = gates;
+  const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
   const contestData = getContestData(actor, skill, options);
   const contestHtml = contestData ? renderContestChallengeBlock(actor, skill, contestData, roll.total) : '';
   const perTarget = await rollCheckTargets(roll, targetRows, rollContext, targetActors);
   // A crafting check is graded against its Difficulty with Table 47's tiers (3.15)
   const rerollStamp = checkRerollStamp(rollContext, skill);
   const craftResult = check.craft ? craftOutcome({ total: roll.total, d20: extractD20Result(roll), dc: check.craft.dc }) : null;
-  const craftHtml = craftResult ? `<p class="cog-craft-difficulty">${craftDifficultyLine(check.craft, craftResult)}</p>` : '';
-  const content = `${rollHtml || ''}${craftHtml}${floorRuleBreak.html}${perTarget.html}${rangeHtml}${outOfRangeHtml}${dmgBtnHtml || ''}${aoeBtnHtml || ''}${auraHtml || ''}${healHtml || ''}${tempBarsHtml || ''}${buffHtml}${contestHtml || ''}`.trim() || undefined;
+  const craftHtml = craftResult ? `<p class="cog-craft-difficulty">${escapeAttr(craftDifficultyLine(check.craft, craftResult))}</p>` : '';
+  const cardHtml = `${rollHtml || ''}${craftHtml}${floorRuleBreakCard({ floorRuleBreak: floorRuleBreak.flags.ruleBreak === true }).html}${perTarget.html}${tailHtml}${contestHtml || ''}`;
+  const content = cardHtml.trim() ? cardHtml : undefined;
 
   // A plain check card with no Difficulty of its own takes the standing one, when the GM put it up.
   const floor = getCurrentFloor();
@@ -470,7 +489,7 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
   });
   const message = await roll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `${flavorText}${camera.noteHtml}`,
+    flavor,
     content
   }, {
     isSkillRoll: true,

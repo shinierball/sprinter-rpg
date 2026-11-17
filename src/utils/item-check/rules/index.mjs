@@ -6,6 +6,7 @@ import './weapon.mjs';
 import './gear.mjs';
 import './buff.mjs';
 import './applied-buffs.mjs';
+import './as-triggers.mjs';
 import './debuff.mjs';
 import './technique.mjs';
 import './deity.mjs';

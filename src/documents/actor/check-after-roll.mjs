@@ -164,7 +164,7 @@ async function embarkAfterReroll(info, rolled) {
 
 
 /** A name for the check on a reroll card: the skill, weapon or spell rolled, else the Stat, else the kind. */
-function checkNameOf(record) {
+export function checkNameOf(record) {
   return globalThis.fromUuidSync?.(record.itemUuid || '')?.name || record.stat || record.kind;
 }
 

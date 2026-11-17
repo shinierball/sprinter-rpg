@@ -4,7 +4,7 @@
  * as a note, and turn a checked draft into the spec Create passes on. Every change is made to the draft and the draft is
  * checked again; nothing is spliced into the checked spec by hand. Pure.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { setSourceStamp } from '../content-source.mjs';
 import { toStringList } from '../first-scalar.mjs';
 import { isPlainObject } from './check-reading.mjs';
 
@@ -118,6 +118,5 @@ export function reviewSpec(check, { stamp, keepNotes }) {
   const spec = structuredClone(check.spec);
   const notes = keepNotes ? check.unexpressed.filter((line) => typeof line === 'string' && line.trim()) : [];
   if (notes.length) spec.system.description = `${spec.system.description ?? ''}<p>${notes.join(' ')}</p>`;
-  spec.flags = { ...(spec.flags ?? {}), [SYSTEM_ID]: { ...(spec.flags?.[SYSTEM_ID] ?? {}), source: { ...stamp } } };
-  return { type: check.type, spec };
+  return { type: check.type, spec: setSourceStamp(spec, { ...stamp }) };
 }

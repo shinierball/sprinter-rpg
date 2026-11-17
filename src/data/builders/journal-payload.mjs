@@ -9,7 +9,10 @@
  * `html` is trusted markup: the caller builds it from escaped text (Sourcery builds every page itself). Written in the
  * v14 JournalEntryPage shape: `type: 'text'`, `title`, `text: { format: 1, content }`, `sort`.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, withFlags } from '../../utils/flags.mjs';
+
+/** The flag a journal is discovered by. */
+const JOURNAL_KEY = 'journalKey';
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 /** Foundry's sort density: the gap between pages (and any sorted documents), so one can be dropped between two. */
@@ -35,7 +38,7 @@ export function buildJournalPayload(spec = {}, options = {}) {
     else console.warn(`Sprinter RPG | ${path}: ${message}`);
   };
   const input = isPlainObject(spec) ? spec : {};
-  const key = text(input.key ?? input.journalKey ?? input.flags?.[SYSTEM_ID]?.journalKey);
+  const key = text(input.key ?? input.journalKey ?? readFlag(input, JOURNAL_KEY));
   if (!key) warn('key', 'journal has no key; it cannot be discovered by journalKey');
   const name = text(input.name) || key || 'New Journal';
   if (input.pages !== undefined && !Array.isArray(input.pages)) warn('pages', 'pages must be an array; treated as empty');
@@ -58,8 +61,7 @@ export function buildJournalPayload(spec = {}, options = {}) {
     pages.push(out);
   });
   const payload = { name, pages, flags: isPlainObject(input.flags) ? structuredClone(input.flags) : {} };
-  const flagBlock = isPlainObject(payload.flags[SYSTEM_ID]) ? payload.flags[SYSTEM_ID] : {};
-  payload.flags[SYSTEM_ID] = { ...flagBlock, ...(key ? { journalKey: key } : {}) };
+  payload.flags = withFlags(payload, key ? { [JOURNAL_KEY]: key } : {}).flags;
   if (text(input._id)) payload._id = text(input._id);
   if (text(input.folder)) payload.folder = text(input.folder);
   return payload;

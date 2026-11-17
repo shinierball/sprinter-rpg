@@ -16,6 +16,7 @@ import { readCatalog } from '../sourcery/commit.mjs';
 import { COG_THEME_ID } from './default-content-provider.mjs';
 import { TABLE_PACK } from '../sourcery/canon.mjs';
 import { registerUserQuery } from '../utils/gm-relay.mjs';
+import { optionOf, tableKeyOf } from '../utils/rolltable/table-flags.mjs';
 
 export const SOURCERY_PROVIDER = 'sprinter-rpg-sourcery';
 export const SOURCERY_CATALOG_SETTING = 'sourceryCatalog';
@@ -136,7 +137,7 @@ export function matrixFromRollTable(doc, key, nameByRef = () => undefined) {
     if (!Number.isInteger(lo)) continue;
     const row = rows.get(lo) ?? { lo, name: '', skills: [] };
     rows.set(lo, row);
-    const option = r.flags?.[SYSTEM_ID]?.option;
+    const option = optionOf(r);
     if (option && typeof option === 'object') {
       if (option.kind !== 'named' || option.docKind !== 'skill' || typeof option.ref !== 'string' || !option.ref) continue;
       row.skills.push({ order: Number.isFinite(option.order) ? option.order : row.skills.length, ref: option.ref, name: String(nameByRef(option.ref) || option.name || ''), stat: String(option.stat ?? 'none') });
@@ -194,7 +195,7 @@ function registerSourceryStoryTables(registry, docs, packId) {
   for (const tableKey of Object.keys(SOURCERY_STORY_TABLES)) {
     const key = SOURCERY_STORY_TABLES[tableKey];
     if (done.has(key)) continue;
-    const doc = docs.find(d => d?.flags?.[SYSTEM_ID]?.tableKey === tableKey);
+    const doc = docs.find(d => tableKeyOf(d) === tableKey);
     const def = doc ? storyTableFromRollTable(doc, key) : null;
     if (!def) continue;
     registry.registerBackgroundTable(key, def, options);
@@ -223,7 +224,7 @@ function registerSourceryBackgroundMatrices(registry, docs, packId) {
   for (const { key, species, stage } of SOURCERY_BACKGROUND_TABLES) {
     const slot = `${species}.${stage}`;
     if (done.has(slot)) continue;
-    const doc = docs.find(d => d?.flags?.[SYSTEM_ID]?.tableKey === key);
+    const doc = docs.find(d => tableKeyOf(d) === key);
     const rows = doc ? matrixFromRollTable(doc, key, ref => names.get(ref)) : null;
     if (!rows) continue;
     registry.registerBackgroundMatrix(species, stage, rows, options);

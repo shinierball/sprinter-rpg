@@ -1,5 +1,15 @@
 # Changelog
 
+## 8.2.0
+
+Worlds from 8.0.0 or 8.1.0 upgrade on load; nothing stored changed shape in this release.
+
+- **The play page.** A crawler sheet opens on a new first page, a one-screen view to run a turn from, built to fit a phone or a narrow window beside the map. It shows portrait, name, race, class, Level and Move; the 10 Health Bars (tap a bar to set Health to it) and Mana; the five Stat modifiers and Evade, each a roll button; AI Favor, which rerolls the last roll for 1 Favor; readied attacks with To Hit and Damage buttons; the filled hot bar slots; and a line with the last roll. It has no typed fields, so nothing changes by accident. **Full sheet** goes to the usual pages. The play page keeps its own window size per user, and the client setting **Open character sheets on the play page** picks where a sheet opens (by default players on the play page, the GM on the full sheet).
+- **Attack Options window.** Maneuvers, Situations, Called Play and Cameras each collapse behind a bar, one entry per line, and open on their own when something in them arrives ticked; the Called Play bar counts pending plays.
+- **Amazing Success on skills and spells.** A skill's or spell's own Amazing Success effects fire on its attacks, as a weapon's and a buff's do, and can be set from a Rank. A Natural 20 always hits. New example set: Second Unit.
+- **Transformations.** A skill a form created is kept, not in force, across form switches, and at the revert the player is offered to keep any such skill they trained, at the Ranks earned. While changed, the original race's traits are paused (a race chosen while changed too), paused buffs add no tags, percent rows, caps and requirements read the changed body, and gear and buff bonuses count on a form's skills. Switching forms from the original body while another change is active asks a Rule Break.
+- **Fixes.** The staged creators (Mob Creator, Crawler Creator) scroll on every stage with the footer always visible. The lifetime potion limits moved to the Inventory tab with a heading and an explanation, and the counts no longer wrap. Typed text such as a document name is escaped in skill, Stat, contest, patron, worship and vehicle damage cards.
+
 ## 8.1.0
 
 Worlds saved on 8.0.0 upgrade when the GM loads them: the system converts the stored data once and keeps it intact. Pack document ids are unchanged.

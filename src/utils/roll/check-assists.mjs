@@ -10,7 +10,7 @@
 import { SYSTEM_ID } from '../../constants.mjs';
 import { CHECK_TAGS, OUTCOME_TAGS, isOutcomeTag, getTagsOf, getInterruptTriggersFromTags, isOfferedOnCheck, calledAssistTrigger } from '../tag/tag-mechanics.mjs';
 import { matchesTagQuery, matchesTagQueryIgnoring } from '../tag/tag-query.mjs';
-import { COG_ROLL_OUTCOMES, evaluateRollOutcome, extractD20Result, shiftDegree } from '../../documents/session/roll-outcomes.mjs';
+import { COG_ROLL_OUTCOMES, attackHits, evaluateRollOutcome, extractD20Result, shiftDegree } from '../../documents/session/roll-outcomes.mjs';
 import { maxOfDiceFormula } from './dice-max.mjs';
 import { sanitizePatronCheckRef } from '../patron/patron-check-ref.mjs';
 import { sanitizePetCheckRef } from '../pet/pet-check-ref.mjs';
@@ -461,8 +461,8 @@ export function effectiveCheck(record) {
   };
   const targets = rec.targets.map((t) => {
     const j = judge(t.bonus, t.dc);
-    // A Natural 1 always misses, a Natural 20 is judged by its total (E6.5), as the attack card does.
-    const isHit = t.dc !== null && rec.d20 !== 1 && j.total >= t.dc;
+    // A Natural 1 always misses and a Natural 20 always hits, as the attack card does.
+    const isHit = t.dc !== null && attackHits(j.total, t.dc, rec.d20);
     return { actorId: t.actorId, actorUuid: t.actorUuid, name: t.name, dc: t.dc, total: j.total, outcome: j.outcome, outcomeBefore: j.outcomeBefore, outcomeRolled: j.outcomeRolled, isHit };
   });
   const single = judge(0, rec.dc);

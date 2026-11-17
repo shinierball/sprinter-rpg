@@ -4,7 +4,7 @@
  * marked with what the bound actor already owns. Pure: no application, no sheet. Rows are keyed by document id,
  * source link or `system.identifier`, never by name.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { compendiumIdOf, sourceUuidOf } from '../utils/compendium/link-flags.mjs';
 import { getCompendiumEntries } from './catalog-source.mjs';
 import { sourceBadge, isContentOff, offeredEntries } from '../utils/content-source.mjs';
 import { itemIdentifier } from '../utils/identifier.mjs';
@@ -83,7 +83,7 @@ const worldItems = (cfg) => [...(globalThis.game?.items ?? [])].filter((item) =>
 
 const ownedItems = (cfg, actor) => [...(actor?.items ?? [])].filter((item) => cfg.types.includes(item.type));
 
-const flagId = (doc) => doc?.flags?.[SYSTEM_ID]?.compendiumId;
+const flagId = compendiumIdOf;
 
 /** reference: pack and catalog share a row per identifier (pack wins); world rows stay separate. */
 async function mergeReference(cfg, fields, withPack) {
@@ -137,7 +137,7 @@ async function mergeSourceLink(cfg, fields) {
     register(key, makeRow(cfg, def, { id: id || key, type, source: cfg.catalogSource, identifier: ident }));
   }
   for (const item of worldItems(cfg)) {
-    const sourceUuid = item._stats?.compendiumSource || item.flags?.core?.sourceId || item.flags?.[SYSTEM_ID]?.sourceUuid || '';
+    const sourceUuid = item._stats?.compendiumSource || item.flags?.core?.sourceId || sourceUuidOf(item) || '';
     const sourceId = flagId(item) || (sourceUuid ? tail(sourceUuid) : '');
     if ((sourceUuid && aliases.has(`src:${sourceUuid}`)) || (sourceId && aliases.has(idAlias(sourceId)))) continue;
     const wid = item.id || item._id;

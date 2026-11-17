@@ -16,7 +16,7 @@ import { gearOfflineState, workingGear, offlineGear } from '../../utils/effects/
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { collectSenses } from '../../utils/character/senses.mjs';
 import { resolveStatSubstitution } from '../../utils/roll/narrow-modifiers.mjs';
-import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
+import { transformationOfItem, formSkillInForce } from '../../utils/character/overlay-state.mjs';
 import { highRankActive } from '../../utils/skill/rank-limits.mjs';
 import { overlayContext, applyOverlayToAttributes } from './transform-overlay.mjs';
 import { isRankedItem } from '../../utils/document-types.mjs';
@@ -321,7 +321,15 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
     if (this.abilities) {
       const statCaps = getStatCaps(actor);
       for (const [key, ability] of Object.entries(this.abilities)) {
-        const unenhanced = resolveBaseScore(ability);
+        // Overlay: the form's body, not the original race's, is the score percent rows, caps and prerequisites read
+        // (1193 a): the stored base plus what the form gives minus what the original race wrote
+        const transformBonus = overlayCtx?.statDeltas?.[key] ?? 0;
+        // (a prepare that runs again without Foundry resetting the model must not stack the shift, nor keep one after the revert)
+        const shifted = transformBonus || this._unenhancedShift?.[key];
+        const unenhanced = shifted
+          ? resolveBaseScore(this._source?.abilities?.[key] ?? ability) + transformBonus
+          : resolveBaseScore(ability);
+        this._unenhancedShift = { ...this._unenhancedShift, [key]: transformBonus };
         ability.unenhanced = unenhanced;
         // Race/class stat cap: shown beside the score, and flagged when the base score is above it.
         ability.statCap = statCaps[key] ?? null;
@@ -334,8 +342,8 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
           : 0;
         ability.buffBonus = buffBonus;
         // Overlay: the form's stat minus what the original race wrote, on top of the stored base
-        ability.transformBonus = overlayCtx?.statDeltas?.[key] ?? 0;
-        ability.value = unenhanced + ability.gearBonus + ability.buffBonus + ability.transformBonus;
+        ability.transformBonus = transformBonus;
+        ability.value = unenhanced + ability.gearBonus + ability.buffBonus;
         // A negative row with a minimum (D5) never takes the score below it; fed the inclusive score, as flooredScore wants
         const floorRow = flooredStats[key];
         if (floorRow && floorRow.sum < 0) {
@@ -488,15 +496,21 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
     // The form race's fixed skill and spell rows read like gear rows (a skill the engine created for it carries its rank already)
     const formGear = this.overlayCtx?.skillGear ? [this.overlayCtx.skillGear] : [];
     const gearSkillBonuses = collectGearSkillBonuses([...rankGear, ...formGear, ...activeBuffs]);
-    for (const item of items) {
-      if (!formGear.length || !transformationOfItem(item) || !isRankedItem(item)) continue;
-      const id = item.system?.identifier;
-      if (id) gearSkillBonuses.delete(gearGrantKey(item.type, id));
+    if (formGear.length) {
+      // A skill the engine created for the form carries the form's rank already, so only the form's row is left out of
+      // its entry: equipped gear and buffs still add their bonus
+      const others = collectGearSkillBonuses([...rankGear, ...activeBuffs]);
+      for (const item of items) {
+        if (!transformationOfItem(item) || !isRankedItem(item) || !formSkillInForce(items, item)) continue;
+        const key = item.system?.identifier ? gearGrantKey(item.type, item.system.identifier) : '';
+        if (!key) continue;
+        if (others.has(key)) gearSkillBonuses.set(key, others.get(key)); else gearSkillBonuses.delete(key);
+      }
     }
     const tagGrants = collectTagBonusGrants({ equippedGear: rankGear, activeBuffs, items });
     const rankRaises = collectRankRaiseGrants({ sources: [...rankGear, ...activeBuffs], items });
     const opts = { abilities: this.abilities, gearSkillBonuses, tagGrants, rankRaises, ranksFollowFloor: this.ranksFollowFloor === true };
-    deriveSkillRanks(items.filter(i => i.type === 'skill'), { ...opts, animalSkillsLocked: animalSkillsLockedFor(this.tagSet, items), skillSuppressions: suppressionQueries(items, 'skills', { paused: this.gearOffline.active }), highRankActive: highRankActive(this.actor) });
+    deriveSkillRanks(items.filter(i => i.type === 'skill'), { ...opts, formLocked: (item) => !formSkillInForce(items, item), animalSkillsLocked: animalSkillsLockedFor(this.tagSet, items), skillSuppressions: suppressionQueries(items, 'skills', { paused: this.gearOffline.active }), highRankActive: highRankActive(this.actor) });
     deriveSpellRanks(items.filter(i => i.type === 'spell'), { ...opts, highRankActive: highRankActive(this.actor) });
   }
 }

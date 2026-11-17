@@ -106,10 +106,14 @@
   grid-auto-rows: min-content;
   align-content: start;
   gap: 10px;
+  /* Foundry's `.application .window-content` is `overflow: hidden`; without this the stages past the window's height cannot be reached. */
+  overflow-y: auto;
 }
 .cog-creator-staged .window-content > * { grid-column: 2; }
 .cog-creator-staged .window-content > [data-application-part="identity"],
 .cog-creator-staged .window-content > [data-application-part="footer"] { grid-column: 1 / -1; }
+/* The footer (Back / Next / Create) stays at the bottom edge of the scrolling window. */
+.cog-creator-staged .window-content > [data-application-part="footer"] { position: sticky; bottom: 0; z-index: 1; background: var(--cog-window-bg); }
 .cog-creator-staged .window-content > [data-application-part="panel"] { grid-column: 2; grid-row: 2 / span 6; }
 .cog-creator-staged .window-content > [data-application-part="rail"],
 .cog-creator-staged .window-content > [data-application-part="preview"] { grid-row: 2 / span 6; position: sticky; top: 0; align-self: start; max-height: 70vh; }
@@ -414,6 +418,13 @@
   padding: 4px 8px;
   border: 1px solid var(--cog-divider);
   border-radius: 4px;
+}
+
+/* The collapsible lists (Maneuvers, Situations, Called Play, Cameras): one option per line, as the fieldsets showed them. */
+.cog-attack-collapsible > .cog-collapsible-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .cog-attack-options-section > legend {

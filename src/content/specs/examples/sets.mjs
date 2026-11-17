@@ -183,6 +183,11 @@ export const EXAMPLE_SET_META = Object.freeze([
     id: 'creature-feature', symbol: 'CT', code: 'ct', label: 'Creature Feature', release: '8.1.0',
     authorship: 'ai',
     premise: 'Four mobs made the way the Mob Creator makes them: picked weapons, spells, buffs and Skills with their Ranks, quick Resistance, Immunity and Multiplier rows, Mana, picked loot and typed trophies.'
+  }),
+  Object.freeze({
+    id: 'second-unit', symbol: 'SU', code: 'su', label: 'Second Unit', release: '8.2.0',
+    authorship: 'ai',
+    premise: 'A flash spell and a stunt Skill whose own Amazing Success effects fire on their attacks: a debuff from Rank 5, a narrated take from Rank 10.'
   })
 ]);
 

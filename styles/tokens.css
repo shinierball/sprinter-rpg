@@ -15,6 +15,8 @@
    - Document sheets carry `themed theme-<scheme>` on the window itself when a per-sheet theme is chosen.
    Custom properties inherit, so each class re-declares the tokens on its own element and the nearest
    themed ancestor wins. Light values are the default (:root); `.theme-dark` swaps them.
+   Stat colours (--cog-stat-str|int|cha|dex|con) alias the accent, info, gold, success and magic roles. A custom property that
+   references another resolves where it is declared, so the aliases are re-declared in each block that declares the roles.
    Roles, not hexes: text (strong, default, secondary, muted), surfaces, borders, and the hues accent,
    danger, success, warning, gold, info, magic each with a text colour, a -tint and a -border; fills and
    text-on-fill are fixed and identical in both themes (first block).
@@ -83,6 +85,11 @@
   --cog-gold: #87641d;
   --cog-info: #1e6fa7;
   --cog-magic: #8e44ad;
+  --cog-stat-str: var(--cog-accent);
+  --cog-stat-int: var(--cog-info);
+  --cog-stat-cha: var(--cog-gold);
+  --cog-stat-dex: var(--cog-success);
+  --cog-stat-con: var(--cog-magic);
   --cog-danger-tint: #fdedec;
   --cog-success-tint: #eafaf1;
   --cog-warning-tint: #fdf2e9;
@@ -119,6 +126,11 @@
   --cog-gold: #f1c40f;
   --cog-info: #5dade2;
   --cog-magic: #bb86fc;
+  --cog-stat-str: var(--cog-accent);
+  --cog-stat-int: var(--cog-info);
+  --cog-stat-cha: var(--cog-gold);
+  --cog-stat-dex: var(--cog-success);
+  --cog-stat-con: var(--cog-magic);
   --cog-danger-tint: #3d1f1d;
   --cog-success-tint: #1f402d;
   --cog-warning-tint: #3f2d1e;
@@ -192,6 +204,8 @@
 .cog-action-section-header,
 .cog-action-item,
 .cog-trophy-step-btn,
+.cog-p0-portrait,
+.cog-p0-sechead,
 .cog-hud-time-input,
 .cog-hud-adj-btn,
 .cog-hud-scene-btn,
@@ -258,6 +272,11 @@
   --cog-gold: #f1c40f;
   --cog-info: #5dade2;
   --cog-magic: #bb86fc;
+  --cog-stat-str: var(--cog-accent);
+  --cog-stat-int: var(--cog-info);
+  --cog-stat-cha: var(--cog-gold);
+  --cog-stat-dex: var(--cog-success);
+  --cog-stat-con: var(--cog-magic);
   --cog-danger-tint: #3d1f1d;
   --cog-success-tint: #1f402d;
   --cog-warning-tint: #3f2d1e;
