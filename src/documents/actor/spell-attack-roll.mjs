@@ -14,7 +14,7 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { isAmazingOutcome } from '../../utils/roll/amazing-success.mjs';
 import { gateAttackRange, allOutOfRange } from '../../utils/attack/attack-range.mjs';
 import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { floorRuleBreakCard } from '../../utils/floor/floor-rule-break.mjs';
 import { buildRollContext, extendContext, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
 import { pendingCalledPlaysFor, rollCalledPlays, consumeCalledPlays } from './call-play.mjs';
@@ -127,8 +127,8 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
       const autoHitContext = mobSituationContext;
       dmgBtnHtml = `
         <div style="margin-top: 6px;">
-          <button type="button" class="cog-attack-roll-btn roll-spell-dmg-from-card cog-bg-magic-fill cog-text-on-fill" data-action="crawlerRollSpellDamage" data-actor-uuid="${actor.uuid}" data-spell-id="${spellItem.id}"${rollContextDataAttr(autoHitContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-magic-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
-            <i class="fa-solid fa-burst"></i> ${dmgLabel}
+          <button type="button" class="cog-attack-roll-btn roll-spell-dmg-from-card cog-bg-magic-fill cog-text-on-fill" data-action="crawlerRollSpellDamage" data-actor-uuid="${escapeAttr(actor.uuid)}" data-spell-id="${escapeAttr(spellItem.id)}"${rollContextDataAttr(autoHitContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-magic-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
+            <i class="fa-solid fa-burst"></i> ${escapeAttr(dmgLabel)}
           </button>
         </div>
       `;
@@ -140,7 +140,7 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     const contestData = getContestData(actor, spellItem, options);
     const contestHtml = contestData && !allOutOfRange(targetResults) ? renderContestChallengeBlock(actor, spellItem, contestData, evadeDC) : '';
     const content = [autoHitBannerHtml, mobFloorRuleBreak.html, mobOptionsLineHtml, targetResultsHtml, dmgBtnHtml, evadeBtnHtml, contestHtml, interruptPromptsHtml, controlsHtml].filter(Boolean).join('');
-    const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (Spell Auto-Hit vs Target Evade DC ${evadeDC})`;
+    const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (Spell Auto-Hit vs Target Evade DC ${escapeAttr(evadeDC)})`;
 
     COGSessionEngine.recordRoll({
       actor,
@@ -251,25 +251,25 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
   const total = rank + statMod + toHit.flatBonus;
   const toHitDice = toHit.diceParts.length > 0 ? ` + ${toHit.diceParts.join(' + ')}` : '';
 
-  const toHitBreakStr = (toHit.breakdown.length > 0 ? ` + ${toHit.breakdown.join(', ')}` : '');
+  const toHitBreakStr = toHit.breakdown.length > 0 ? ` + ${escapeAttr(toHit.breakdown.join(', '))}` : '';
   let roll;
   let flavorText;
   if (advState.mode === 'disadvantage') {
     const formula = `2d20kl + ${total}${toHitDice}`;
     roll = await new Roll(formula, { rank, mod: statMod }).evaluate();
-    flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (<strong>${advState.label || 'Disadvantage'}</strong>: 2d20kl + Rank ${rank} + ${statKey.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${toHitBreakStr} vs Target Evade)`;
+    flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (<strong>${escapeAttr(advState.label || 'Disadvantage')}</strong>: 2d20kl + Rank ${rank} + ${escapeAttr(statKey.toUpperCase())} Mod ${escapeAttr(statMod >= 0 ? `+${statMod}` : statMod)}${toHitBreakStr} vs Target Evade)`;
   } else if (advState.mode === 'advantage') {
     const formula = `2d20kh + ${total}${toHitDice}`;
     roll = await new Roll(formula, { rank, mod: statMod }).evaluate();
-    flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (<strong>${advState.label}</strong>: 2d20kh + Rank ${rank} + ${statKey.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${toHitBreakStr} vs Target Evade)`;
+    flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (<strong>${escapeAttr(advState.label)}</strong>: 2d20kh + Rank ${rank} + ${escapeAttr(statKey.toUpperCase())} Mod ${escapeAttr(statMod >= 0 ? `+${statMod}` : statMod)}${toHitBreakStr} vs Target Evade)`;
   } else if (advState.mode === 'cancelled') {
     const formula = `1d20 + ${total}${toHitDice}`;
     roll = await new Roll(formula, { rank, mod: statMod }).evaluate();
-    flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (<strong>${advState.label}</strong>: 1d20 + Rank ${rank} + ${statKey.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${toHitBreakStr} vs Target Evade)`;
+    flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (<strong>${escapeAttr(advState.label)}</strong>: 1d20 + Rank ${rank} + ${escapeAttr(statKey.toUpperCase())} Mod ${escapeAttr(statMod >= 0 ? `+${statMod}` : statMod)}${toHitBreakStr} vs Target Evade)`;
   } else {
     const formula = `1d20 + ${total}${toHitDice}`;
     roll = await new Roll(formula, { rank, mod: statMod }).evaluate();
-    flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (Spell Attack / To Hit: 1d20 + Rank ${rank} + ${statKey.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${toHitBreakStr} vs Target Evade)`;
+    flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (Spell Attack / To Hit: 1d20 + Rank ${rank} + ${escapeAttr(statKey.toUpperCase())} Mod ${escapeAttr(statMod >= 0 ? `+${statMod}` : statMod)}${toHitBreakStr} vs Target Evade)`;
   }
 
   const rollId = newRollId();
@@ -304,7 +304,7 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
   if (isFumble && fumbleDebuff) {
     fumbleTag = `
       <div class="cog-fumble-warning cog-bg-warning-tint cog-text-warning" style="margin-top: 6px; padding: 4px 6px; border: 1px solid var(--cog-warning); border-radius: 3px; font-size: 11px;">
-        <i class="fa-solid fa-triangle-exclamation"></i> <strong>FUMBLE!</strong> Spell critical miss inflicts <strong>${fumbleDebuff}</strong> on caster!
+        <i class="fa-solid fa-triangle-exclamation"></i> <strong>FUMBLE!</strong> Spell critical miss inflicts <strong>${escapeAttr(fumbleDebuff)}</strong> on caster!
       </div>
     `;
   }
@@ -317,8 +317,8 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     const dmgFormula = dmgData.formulaWithStat || dmgData.formula;
     dmgBtnHtml = `
       <div style="margin-top: 6px;">
-        <button type="button" class="cog-attack-roll-btn roll-spell-dmg-from-card cog-bg-magic-fill cog-text-on-fill" data-action="crawlerRollSpellDamage" data-actor-uuid="${actor.uuid}" data-spell-id="${spellItem.id}"${rollContextDataAttr(cardContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-magic-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
-          <i class="fa-solid fa-burst"></i> Roll Spell Damage (${dmgFormula})
+        <button type="button" class="cog-attack-roll-btn roll-spell-dmg-from-card cog-bg-magic-fill cog-text-on-fill" data-action="crawlerRollSpellDamage" data-actor-uuid="${escapeAttr(actor.uuid)}" data-spell-id="${escapeAttr(spellItem.id)}"${rollContextDataAttr(cardContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-magic-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
+          <i class="fa-solid fa-burst"></i> Roll Spell Damage (${escapeAttr(dmgFormula)})
         </button>
       </div>
     `;
@@ -341,14 +341,14 @@ export async function rollSpellAttack(actor, spellItem, options = {}) {
     const hitTargets = targetResults.filter(tr => tr.isHit && tr.actor).map(tr => tr.actor);
     conditionTargetUuids = hitTargets.filter(t => !spellSkipsCaster(actor, spellItem, t, isBurstOrArea)).map(t => t.uuid).filter(Boolean);
     appliedActors = await applySpellConditions(actor, spellItem, hitTargets, { conditionTags: hitConditionTags, isBurstOrArea, conditionRounds, pending: pendingConditions });
-    conditionActionsHtml = spellConditionActionsHtml(actor, spellItem, hitConditionTags, {
-      isBurstOrArea, conditionRounds, appliedTargets: appliedActors,
-      effectSummaryHtml: await spellConditionSummary(actor, spellItem, hitConditionTags)
-    });
+    conditionActionsHtml = spellConditionActionsHtml(
+      actor, spellItem, hitConditionTags, { isBurstOrArea, conditionRounds, appliedTargets: appliedActors },
+      await spellConditionSummary(actor, spellItem, hitConditionTags)
+    );
     conditionsApplied = { tags: hitConditionTags, targets: appliedActors.map(a => a.id) };
   }
 
-  const rollHtml = typeof roll.render === 'function' ? await roll.render() : '';
+  const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
   const contestData = getContestData(actor, spellItem, options);
   const contestHtml = contestData && !allOutOfRange(targetResults) ? renderContestChallengeBlock(actor, spellItem, contestData, roll.total) : '';
   // The pop-up's answers ride on the card: the spell damage that answers it rolls from this snapshot (3.22-11).

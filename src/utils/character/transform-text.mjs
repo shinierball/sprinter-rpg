@@ -2,6 +2,7 @@
  * Localized prompt text of the transformation engine and the race applier, with an English fallback when no i18n
  * catalogue is loaded (the same arrangement as `raceClassText`). A leaf module.
  */
+import { langText } from '../lang-text.mjs';
 const TEMPLATES = {
   'COG.Transform.ConfirmChangeInto': 'Change {actor} into {form} now?',
   'COG.Transform.ConfirmChangeBy': '{actor} is changed by {affliction}. Apply it now?',
@@ -16,6 +17,7 @@ const TEMPLATES = {
   'COG.TransformCard.NoRace': 'Only crawlers change race; the added effects still apply.',
   'COG.TransformCard.Held': '{actor} is held by {affliction}: its cure window is closed.',
   'COG.TransformCard.Revert': 'Revert as a Rule Break',
+  'COG.TransformCard.HiddenEffect': 'A hidden effect',
   'COG.TransformCard.NotPending': '{affliction} is no longer waiting to change {actor}.',
   'COG.TransformCard.NotAllowed': 'Only the GM or an owner of {actor} can do that.',
   'COG.TransformCard.NotFound': 'That character or affliction could not be found.',
@@ -25,7 +27,19 @@ const TEMPLATES = {
   'COG.TransformCard.Keep': 'Keep secret',
   'COG.TransformCard.SecretKept': '{affliction} stays secret on {actor}. Reveal it from the Session Manager Secrets tab.',
   'COG.TransformCard.SecretGone': 'That secret is no longer held.',
-  'COG.TransformCard.GMOnly': 'Only the GM can do that.'
+  'COG.TransformCard.GMOnly': 'Only the GM can do that.',
+  'COG.TransformCard.FloorStill': 'The floor changed. {actor} still carries {affliction}.',
+  'COG.TransformCard.RestStill': '{actor} rested. {affliction} is still waiting to change them.',
+  'COG.TransformCard.HeldFloor': 'The floor changed. {affliction} is held secret on {actor}.',
+  'COG.TransformCard.HeldRest': '{actor} rested. {affliction} is held secret.',
+  'COG.TransformCard.ChangeNow': 'Change now',
+  'COG.TransformCard.WindowClosed': '{affliction} on {actor} can no longer be cured freely.',
+  'COG.TransformCard.TakenOff': 'Taken off: {items}.',
+  'COG.TransformCard.PutBack': 'Put back on: {items}.',
+  'COG.TransformCard.LeftOff': 'Left off: {items}.',
+  'COG.TransformCard.LeftOffFit': 'does not fit',
+  'COG.TransformCard.LeftOffBroken': 'broken',
+  'COG.TransformCard.LeftOffRuleBreak': 'needs a Rule Break'
 };
 
 /**
@@ -33,8 +47,15 @@ const TEMPLATES = {
  * @param {object} [data]
  * @returns {string}
  */
-export function transformText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (TEMPLATES[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
+export const transformText = langText(TEMPLATES);
+
+/**
+ * The name a public card shows for a debuff entry: a secret one is "A hidden effect" so no card names it before the GM
+ * reveals it. `fallback` is the label the card would show otherwise (default: the entry's own name).
+ * @param {{ name?: string, system?: { secret?: boolean } }|null|undefined} entry
+ * @param {string} [fallback]
+ * @returns {string}
+ */
+export function effectCardName(entry, fallback = entry?.name ?? '') {
+  return entry?.system?.secret === true ? transformText('COG.TransformCard.HiddenEffect') : String(fallback ?? '');
 }

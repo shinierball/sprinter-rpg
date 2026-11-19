@@ -238,3 +238,15 @@
 .cog-check-difficulty-typed input[type="number"] { width: 60px; }
 .cog-check-difficulty-typed .cog-assist-offer-btn { width: auto; margin-top: 0; }
 
+/* Party check card (core pp. 59-60) */
+.cog-party-card { font-family: 'Oswald', sans-serif; color: var(--cog-text); background: var(--cog-surface); border: 1px solid var(--cog-divider); border-left: 3px solid var(--cog-accent); border-radius: 4px; padding: 6px 8px; }
+.cog-party-card .cog-party-title { font-size: 14px; font-weight: bold; text-transform: uppercase; color: var(--cog-accent-strong); border-bottom: 1px solid var(--cog-divider); padding-bottom: 4px; margin-bottom: 6px; }
+.cog-party-card .cog-party-difficulty,
+.cog-party-card .cog-party-tally { font-size: 12px; color: var(--cog-text-secondary); margin: 4px 0; }
+.cog-party-card .cog-party-table { width: 100%; border-collapse: collapse; }
+.cog-party-card .cog-party-row td { padding: 2px 4px; border-top: 1px solid var(--cog-divider); }
+.cog-party-card .cog-party-waiting { color: var(--cog-text-muted); }
+.cog-party-card .cog-party-verdict { margin-top: 6px; padding: 4px 6px; text-align: center; font-weight: bold; letter-spacing: 0.5px; border-radius: 3px; color: var(--cog-on-fill); }
+.cog-party-card .cog-party-success { background: var(--cog-success-fill); }
+.cog-party-card .cog-party-failure { background: var(--cog-accent-fill); }
+

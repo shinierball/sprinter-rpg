@@ -1,6 +1,17 @@
 <section class="cog-creator-section cog-stats-section">
   <div class="cog-section-header flexrow">
-    <h3><i class="fa-solid fa-gauge-high"></i> ABILITY SCORES (STANDARD ARRAY: 2, 3, 4, 5, 6)</h3>
+    <h3><i class="fa-solid fa-gauge-high"></i> {{#if isChanceStats}}ABILITY SCORES (ROLL FOR STATS){{else}}ABILITY SCORES (STANDARD ARRAY: 2, 3, 4, 5, 6){{/if}}</h3>
+    <div class="cog-stat-method flexrow">
+      <label>{{localize "COG.CrawlerCreator.StatMethod.Label"}}
+        <select class="cog-stat-method-select" name="creator-stat-method" data-change-action="setStatMethod">
+          {{#each statMethods}}<option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>{{/each}}
+        </select>
+      </label>
+      {{#if isChanceStats}}
+        <button type="button" class="cog-roll-stats-btn" data-action="rollStats"><i class="fa-solid fa-dice-d6"></i> {{localize "COG.CrawlerCreator.StatMethod.Roll"}}</button>
+      {{/if}}
+    </div>
+    {{#unless isChanceStats}}
     <div class="cog-array-pool flexrow">
       <span class="pool-label">Standard Array Pool:</span>
       {{#each availableNumbers}}
@@ -9,6 +20,7 @@
         </span>
       {{/each}}
     </div>
+    {{/unless}}
   </div>
 
   {{#unless statValidation.valid}}

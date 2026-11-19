@@ -7,7 +7,7 @@
  */
 import { buildPayload } from '../../data/builders/item-payload.mjs';
 import { firstScalar } from '../first-scalar.mjs';
-import { paragraphsHtml, plainText } from '../../sourcery/text.mjs';
+import { paragraphsHtml, stripControls } from '../../sourcery/text.mjs';
 import {
   DRAFT_TYPES, DRAFT_FIELDS, MODIFIER_ARRAYS, LIST_REFERENCES, SCALAR_REFERENCES, fieldChoices, fieldSpec
 } from './draft-fields.mjs';
@@ -20,13 +20,9 @@ const DRAFT_NAME_MAX = 100;
 /** Most `unexpressed` lines a draft keeps. */
 const UNEXPRESSED_MAX = 50;
 
-/** `text` cleaned for a field, cut to `max` characters without splitting an entity (`&lt;`) the cleaning wrote. */
+/** `text` for a `StringField`: control characters removed, the rest as typed, cut to `max` characters. */
 function cleanedName(text, max) {
-  const cleaned = plainText(text.trim()).trim();
-  if (cleaned.length <= max) return cleaned;
-  const cut = cleaned.slice(0, max);
-  const amp = cut.lastIndexOf('&');
-  return (amp > cut.lastIndexOf(';') ? cut.slice(0, amp) : cut).trim();
+  return stripControls(text.trim()).trim().slice(0, max).trim();
 }
 
 /** The keys a draft carries at its top level; any other (`img`, `flags`, `_id`, `items`, `folder`) is dropped. */
@@ -128,7 +124,7 @@ function run(check, draft, result, expectedType) {
   const drafted = [];
   for (const note of notes) {
     if (drafted.length >= UNEXPRESSED_MAX) break;
-    const text = typeof note === 'string' ? plainText(note).trim() : '';
+    const text = typeof note === 'string' ? stripControls(note).trim() : '';
     if (text) drafted.push(text);
   }
   check.unexpressed = drafted.concat(check.unexpressed);

@@ -6,45 +6,29 @@
  * A limb count that is not a number reads as unlimited, so a caller without limbs gets no problem.
  */
 import { calculateItemHandsRequired } from './wielding.mjs';
+import { isWeaponGear } from './wield-mode.mjs';
+import { GEAR_SLOT_LIMBS } from './gear-slot-limbs.mjs';
 
-const LIMBS = Object.freeze(['arms', 'hands', 'legs']);
-const SLOT = /^[A-Za-z][\w.-]*$/;
-
-/** @type {Record<string, string>} Gear slot to the limb it needs. `CONFIG.COG.gearSlotLimbs === GEAR_SLOT_LIMBS`. A slot not listed needs nothing. */
-export const GEAR_SLOT_LIMBS = {};
+/** Actor types with no body: nothing they equip is checked against limbs (a vehicle's upgrades, a marker, a personal space). */
+const BODILESS_ACTOR_TYPES = Object.freeze(['mount_vehicle', 'marker', 'personal_space']);
 
 /**
- * Map a gear slot to the limb it needs (`arms`, `hands`, `legs`), or clear the mapping with an empty limb.
- * @param {string} slot
- * @param {string} limb
- * @returns {boolean} whether the registry changed
+ * The derived limbs an actor's gear is fitted to, or null for an actor with no body (null reads as "no limit").
+ * @param {object|null|undefined} actor
+ * @returns {object|null}
  */
-export function registerGearSlotLimb(slot, limb) {
-  const id = typeof slot === 'string' ? slot.trim().toLowerCase() : '';
-  if (!SLOT.test(id)) {
-    console.warn(`Sprinter RPG | Gear slot ${String(slot)} was not mapped: it needs an id.`);
-    return false;
-  }
-  if (limb === '' || limb === null) {
-    delete GEAR_SLOT_LIMBS[id];
-    return true;
-  }
-  if (!LIMBS.includes(limb)) {
-    console.warn(`Sprinter RPG | Gear slot ${id} was not mapped: the limb must be one of ${LIMBS.join(', ')}.`);
-    return false;
-  }
-  GEAR_SLOT_LIMBS[id] = limb;
-  return true;
+export function bodyLimbsOf(actor) {
+  if (!actor || BODILESS_ACTOR_TYPES.includes(actor.type)) return null;
+  return actor.system?.attributes?.limbs ?? null;
 }
-
-for (const [slot, limb] of [['arms', 'arms'], ['hands', 'hands'], ['legs', 'legs'], ['feet', 'legs']]) registerGearSlotLimb(slot, limb);
 
 const capOf = (limbs, limb) => {
   const cap = limbs?.[`max${limb[0].toUpperCase()}${limb.slice(1)}`] ?? limbs?.[limb];
   return cap !== null && cap !== undefined && cap !== '' && Number.isFinite(Number(cap)) ? Number(cap) : Infinity;
 };
 
-const isEquipped = (item) => (item?.type === 'attack' ? item.system?.equipped !== false : item?.system?.equipped === true);
+/** Whether the item is equipped: gear when `equipped` is true, an attack item unless it is false. */
+export const isEquipped = (item) => (item?.type === 'attack' ? item.system?.equipped !== false : item?.system?.equipped === true);
 
 /** The item as if it were equipped, keeping its getters (prototype shim; the original is untouched). */
 function asEquipped(item) {
@@ -55,8 +39,8 @@ function asEquipped(item) {
   return shim;
 }
 
-/** Hands the item takes while equipped (0 for anything not hand-held). */
-function handsOf(item) {
+/** Hands the item takes as if it were equipped (0 for anything not hand-held). */
+export function handsWhenEquipped(item) {
   if (!item) return 0;
   return calculateItemHandsRequired(isEquipped(item) ? item : asEquipped(item));
 }
@@ -89,7 +73,7 @@ export function bodyFitProblem(item, { items = [], limbs = null } = {}) {
   if (!item) return null;
   const slot = slotProblem(item, limbs);
   if (slot) return slot;
-  const need = handsOf(item);
+  const need = handsWhenEquipped(item);
   if (need <= 0) return null;
   const max = capOf(limbs, 'hands');
   const others = Array.from(items ?? []).filter((other) => other !== item && (!idOf(item) || idOf(other) !== idOf(item)) && isEquipped(other));
@@ -98,11 +82,12 @@ export function bodyFitProblem(item, { items = [], limbs = null } = {}) {
   return null;
 }
 
-const modified = (item) => Number(item?._stats?.modifiedTime) || 0;
+const sortOf = (item) => Number(item?.sort) || 0;
 
 /**
- * The ids to unequip so the equipped items fit the body: every slot misfit, then hand-held items newest first (by
- * `_stats.modifiedTime`, then id) until the hands fit.
+ * The ids to unequip so the equipped items fit the body: every slot misfit, then hand-held items until the hands fit:
+ * held gear that is not a weapon first (a shield, a lantern), then weapons; within each, from the bottom of the inventory
+ * order up (`sort` descending, then id), so a body that loses a hand keeps its weapon.
  * @param {object[]} items
  * @param {object} limbs
  * @returns {string[]}
@@ -119,7 +104,7 @@ export function planUnequip(items, limbs) {
   }
   const max = capOf(limbs, 'hands');
   const held = equipped.filter((item) => !taken.has(item) && calculateItemHandsRequired(item) > 0)
-    .sort((a, b) => modified(b) - modified(a) || idOf(a).localeCompare(idOf(b)));
+    .sort((a, b) => Number(isWeaponGear(a)) - Number(isWeaponGear(b)) || sortOf(b) - sortOf(a) || idOf(a).localeCompare(idOf(b)));
   let used = held.reduce((sum, item) => sum + calculateItemHandsRequired(item), 0);
   for (const item of held) {
     if (used <= max) break;

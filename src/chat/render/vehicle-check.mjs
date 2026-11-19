@@ -6,12 +6,11 @@
  * (reroll, degree shift) and the GM's "Board anyway" after a failed boarding check. Markup is built with
  * createElement/textContent: names and labels are user text and never go through innerHTML.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { readCheckRecord, isSuccessOutcome } from '../../utils/roll/check-assists.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { resultEffect, VEHICLE_CHECK_KINDS } from '../../data/rules/vehicle-rules.mjs';
-import { VEHICLE_CARD_FLAGS } from '../../documents/actor/vehicle-drive-common.mjs';
-import { RAM_FLAGS } from '../../documents/actor/vehicle-ram.mjs';
+import { vehicleResultOf } from '../../documents/actor/vehicle-drive-common.mjs';
+import { ramRolledOf } from '../../documents/actor/vehicle-ram.mjs';
 import { vehicleCardInfo } from '../../documents/actor/vehicle-after-roll.mjs';
 import { userOwnsActor } from '../../documents/actor/personal-space-links.mjs';
 
@@ -72,7 +71,6 @@ function button(doc, label, action, data) {
   return b;
 }
 
-const cardResult = (message) => message?.flags?.[SYSTEM_ID]?.[VEHICLE_CARD_FLAGS.result] ?? null;
 
 /**
  * Add the vehicle block to a rendered check card (nothing for any other card).
@@ -98,7 +96,7 @@ export function renderVehicleCheck(root, message) {
   const user = globalThis.game?.user;
   const stored = info?.vehicle?.system?.drive?.result ?? {};
   const isStored = Boolean(info) && stored.messageId === message.id;
-  const settled = cardResult(message);
+  const settled = vehicleResultOf(message);
 
   if (outcome && def?.resolve === 'table6') {
     const choice = isStored ? stored.choice : (settled?.choice ?? '');
@@ -116,7 +114,7 @@ export function renderVehicleCheck(root, message) {
   } else if (outcome && def?.resolve === 'ram') {
     const hit = isSuccessOutcome(outcome);
     block.append(el(doc, 'p', 'cog-vehicle-check__result', vcText(hit ? 'RamHit' : 'RamMiss')));
-    const rolled = Boolean(message?.flags?.[SYSTEM_ID]?.[RAM_FLAGS.rolled]);
+    const rolled = ramRolledOf(message);
     if (hit && !rolled && (user?.isGM || userOwnsActor(info.roller, user))) block.append(button(doc, vcText('RamDamage'), 'crawlerVehicleRamDamage', {}));
   } else if (outcome && def?.resolve === 'evade') {
     block.append(el(doc, 'p', 'cog-vehicle-check__result', vcText(isSuccessOutcome(outcome) ? 'EvadeClear' : 'EvadeHit')));

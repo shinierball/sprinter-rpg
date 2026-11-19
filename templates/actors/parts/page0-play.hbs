@@ -14,10 +14,17 @@
 
   <section class="cog-p0-hp">
     <div class="cog-p0-hprow"><span class="cog-p0-lbl">Health &middot; tap a bar to set</span><span class="cog-p0-num">{{pageZero.health.value}} <small>/ {{pageZero.health.max}}</small></span></div>
-    <div class="cog-p0-meter" role="group" aria-label="Health bars">
-      <div class="cog-p0-empty" style="width: {{pageZero.health.emptyPercent}}%;"></div>
-      {{#each pageZero.health.bars as |bar|}}<button type="button" class="cog-p0-bar" data-action="pageZeroHpBar" data-bar="{{bar.index}}" aria-label="{{bar.label}}"></button>{{/each}}
+    <div class="cog-p0-meter" role="group" aria-label="Health bars" style="--p0-bars: {{pageZero.health.bars.length}}; --p0-cols: {{pageZero.health.cols}};">
+      {{#each pageZero.health.bars as |bar|}}<button type="button" class="cog-p0-bar" data-action="pageZeroHpBar" data-bar="{{bar.index}}" aria-label="{{bar.label}}" style="--p0-fill: {{bar.fill}}%; --p0-pos: {{bar.pos}}%;"></button>{{/each}}
     </div>
+    {{#if pageZero.temp.has}}
+      <div class="cog-p0-temp" role="group" aria-label="{{pageZero.temp.label}}" data-tooltip-text="{{pageZero.temp.label}}">
+        <span class="cog-p0-lbl"><i class="fa-solid fa-shield-halved"></i> {{pageZero.temp.source}}</span>
+        <div class="cog-p0-tslots" style="--p0-tslots: {{pageZero.temp.slots.length}};">
+          {{#each pageZero.temp.slots as |slot|}}<div class="cog-p0-tslot{{#if slot.isDepleted}} is-empty{{/if}}" data-tooltip-text="Slot {{slot.index}}: {{slot.label}} Health"><i style="width: {{slot.fillPct}}%;"></i><span>{{slot.label}}</span></div>{{/each}}
+        </div>
+      </div>
+    {{/if}}
     {{#if pageZero.mana.show}}
       <div class="cog-p0-manarow"><span class="cog-p0-lbl">Mana</span><div class="cog-p0-mana"><i style="width: {{pageZero.mana.percent}}%;"></i></div><span>{{pageZero.mana.value}} / {{pageZero.mana.max}}</span></div>
     {{/if}}
@@ -28,6 +35,7 @@
       <button type="button" class="cog-p0-tile {{stat.cssKey}}" data-action="rollStat" data-stat="{{stat.key}}"><span class="cog-p0-lbl">{{stat.label}}</span><b>{{stat.mod}}</b></button>
     {{/each}}
     <button type="button" class="cog-p0-tile is-evade is-wide" data-action="rollEvade"><span class="cog-p0-lbl">Evade</span><b>{{pageZero.evade.total}}</b></button>
+    <div class="cog-p0-tile is-dr is-wide" data-tooltip-text="{{pageZero.dr.label}}"><span class="cog-p0-lbl">DR</span><b>{{pageZero.dr.total}}</b></div>
     <button type="button" class="cog-p0-tile is-favor is-wide" data-action="pageZeroFavorReroll"><span class="cog-p0-lbl">AI Favor</span><b>{{pageZero.favor.count}}</b></button>
   </section>
 

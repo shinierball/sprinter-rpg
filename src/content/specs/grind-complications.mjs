@@ -1,13 +1,14 @@
 /**
  * src/content/specs/grind-complications.mjs
  * Bundled grinding complications: one 1d20 table. Registered by the cog provider under the
- * `grindComplications` catalog kind; the engine reads `bonusHours` only, never the title or description.
+ * `grindComplications` catalog kind; the engine reads `effects` only, never the title or description.
  */
 export const COG_GRIND_COMPLICATION_TABLES = [
   {
     id: 'grind.complications',
     name: 'Grinding Complications',
     formula: '1d20',
+    grind: { scope: 'floor', floors: [] },
     results: [
     {
       range: [1, 1],
@@ -71,7 +72,7 @@ export const COG_GRIND_COMPLICATION_TABLES = [
       icon: 'fa-solid fa-person-walking-luggage',
       severity: 'success',
       color: '#16a085',
-      bonusHours: 1,
+      effects: [{ kind: 'grindHours', formula: '1' }],
       description: 'The party encounters a helpful friendly entity, such as a guide. Grants advice allowing +1 bonus grinding hour to allocate to skills or a chance to purchase consumables.'
     },
     {

@@ -17,17 +17,21 @@
  *   { kind: 'gold', formula, label? }                      loot box prize: gold, an integer or a Roll formula (7.3)
  *   { kind: 'magicBase', base, label? }                    magic item generator: on an item type row, a `magicItemBases` id (7.3)
  *   { kind: 'magic', property, damageTypes?, label? }      magic item generator: on a property row, a `magicProperties` kind id (7.3)
+ *   { kind: 'grindHours', formula, label? }                grinding table: a signed change to the credited hours (`1d4`, `-2`)
+ *   { kind: 'floorTime', formula, per: 'hours'|'percent', label? }   grinding table: floor time lost (`1d4*10` percent)
+ *   { kind: 'seeTable', label? }                           grinding floor table: this row is the neighborhood table's row for the same roll
+ * A table may carry `grind: { scope: 'floor'|'neighborhood', floors: number[] }` (flags.sprinter-rpg.grindTable; no floors = any floor).
  * Every result of a row shares that row's range, so Foundry's own multi-result draw returns the whole row.
  * Written in the v14 TableResult shape: `type`, `name`, `description`, `documentUuid`, `range`, `weight`, `flags`.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { readFlag, withFlags } from '../../utils/flags.mjs';
-import { tableKeyOf, withOption, withTableKey } from '../../utils/rolltable/table-flags.mjs';
+import { tableKeyOf, tableNumberOf, withGrindTable, withNarrativeRole, withOption, withRowFlags, withTableKey, withTableNumber } from '../../utils/rolltable/table-flags.mjs';
+import { GRIND_EFFECT_KINDS, effectLabel, normalizeEffect, normalizeGrindScope } from '../../utils/grind/grind-effects.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 /** Option kinds the builder knows. Anything else is kept as a custom option with a warning. */
-export const FLOOR_OPTION_KINDS = Object.freeze(['named', 'choice', 'custom', 'lootSlot', 'asTrigger', 'spell', 'tableRef', 'gold', 'magicBase', 'magic']);
+export const FLOOR_OPTION_KINDS = Object.freeze(['named', 'choice', 'custom', 'lootSlot', 'asTrigger', 'spell', 'tableRef', 'gold', 'magicBase', 'magic', ...GRIND_EFFECT_KINDS]);
 
 /** Text value: first array entry, trimmed (commas are kept: names may contain them). */
 function text(raw) {
@@ -68,6 +72,14 @@ function optionResult(option, range, types, warn, path) {
   if (!FLOOR_OPTION_KINDS.includes(opt.kind)) {
     warn(path, `unknown option kind "${text(opt.kind)}"; kept as a custom option`);
     opt = { kind: 'custom', label: text(opt.label ?? opt.name) };
+  }
+  if (GRIND_EFFECT_KINDS.includes(opt.kind)) {
+    const effect = normalizeEffect(opt);
+    if (effect) opt = { ...effect, label: effectLabel(effect) };
+    else {
+      warn(path, `${opt.kind} option is outside the effect grammar; kept as a custom option`);
+      opt = { kind: 'custom', label: text(opt.label) };
+    }
   }
   const uuid = text(opt.uuid ?? opt.documentUuid);
   delete opt.uuid;
@@ -132,10 +144,10 @@ export function buildRollTablePayload(spec = {}, options = {}) {
     const narrative = text(row.narrative);
     const rowName = text(row.name);
     if (narrative || rowName) {
-      results.push({
+      results.push(withNarrativeRole({
         type: types.text, name: rowName, description: narrative, documentUuid: null, img: null, weight: 1,
-        range: [...range], drawn: false, flags: { [SYSTEM_ID]: { role: 'narrative' } }
-      });
+        range: [...range], drawn: false
+      }));
     }
     if (row.options !== undefined && !Array.isArray(row.options)) warn(`${path}.options`, 'options must be an array; treated as empty');
     const rowOptions = Array.isArray(row.options) ? row.options : [];
@@ -146,7 +158,7 @@ export function buildRollTablePayload(spec = {}, options = {}) {
     // Row flags (booleans and numbers only) ride on every result of the row, under `flags.<system>.rowFlags`.
     const rowFlags = isPlainObject(row.flags) ? Object.fromEntries(Object.entries(row.flags).filter(([, v]) => typeof v === 'boolean' || Number.isFinite(v))) : {};
     if (Object.keys(rowFlags).length) {
-      for (const result of results.slice(firstResult)) result.flags[SYSTEM_ID] = { ...result.flags[SYSTEM_ID], rowFlags: { ...rowFlags } };
+      for (let k = firstResult; k < results.length; k++) results[k] = withRowFlags(results[k], { ...rowFlags });
     }
   });
 
@@ -159,16 +171,21 @@ export function buildRollTablePayload(spec = {}, options = {}) {
   const payload = {
     name,
     img: text(input.img) || 'icons/svg/d20-grey.svg',
-    description: text(input.description) ? `<p>${text(input.description)}</p>` : '',
+    description: text(input.description) ? `<p>${escapeAttr(text(input.description))}</p>` : '',
     formula,
     replacement: true,
     displayRoll: true,
     results,
     flags: isPlainObject(input.flags) ? structuredClone(input.flags) : {}
   };
-  const tableNumber = input.tableNumber ?? readFlag(payload, 'tableNumber');
+  const tableNumber = input.tableNumber ?? tableNumberOf(payload);
   payload.flags = withTableKey(payload, key).flags;
-  if (tableNumber !== undefined && tableNumber !== null) payload.flags = withFlags(payload, { tableNumber }).flags;
+  if (tableNumber !== undefined && tableNumber !== null) payload.flags = withTableNumber(payload, tableNumber).flags;
+  if (input.grind !== undefined) {
+    const grind = normalizeGrindScope(input.grind);
+    if (grind) payload.flags = withGrindTable(payload, grind).flags;
+    else warn('grind', 'grind needs a scope of "floor" or "neighborhood"; ignored');
+  }
   if (text(input._id)) payload._id = text(input._id);
   if (text(input.folder)) payload.folder = text(input.folder);
   return payload;

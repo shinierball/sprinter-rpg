@@ -1,0 +1,15 @@
+{{!--
+  The charges timeline editor (src/sheets/item/context-timing.mjs rechargeEditor): the shared timing editor over
+  `system.charges.recharge.{value,unit,scaleBy}`, the Amount input (blank refills to max) and the next-charge readout.
+  Parameter: recharge = rechargeEditor. `nextAt` has no input.
+--}}
+{{#if recharge}}
+<div class="cog-charges-recharge">
+  {{> "systems/sprinter-rpg/templates/items/parts/timing.hbs" timing=recharge}}
+  <div class="cog-field-group small">
+    <span class="cog-field-label" title="{{localize 'COG.Charges.Recharge.AmountHint'}}">{{localize "COG.Charges.Recharge.Amount"}}</span>
+    <input class="cog-field-input" type="number" min="1" step="1" name="{{recharge.amountName}}" value="{{recharge.amount}}" placeholder="{{localize 'COG.Charges.Recharge.AmountBlank'}}" style="font-size: 11px;" />
+  </div>
+  {{#if recharge.next}}<div class="cog-modifier-hint cog-text-secondary" style="font-size: 10px;">{{recharge.next}}</div>{{/if}}
+</div>
+{{/if}}

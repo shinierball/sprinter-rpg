@@ -15,6 +15,7 @@ import { renderVehicleCheck } from './render/vehicle-check.mjs';
 import { renderPetCheck } from './render/pet-check.mjs';
 import { renderPatronCheck } from './render/patron-check.mjs';
 import { hideForeignContestButtons } from './render/contest.mjs';
+import { hideForeignPartyCheckButtons } from './render/party-check.mjs';
 import { hideSpentInflictButtons } from './render/spell-condition-buttons.mjs';
 import { hideForeignItemBuffButtons, renderItemBuffApplied } from './render/item-buff-buttons.mjs';
 import { hideGmRuleBreakBadges } from '../utils/rule-break-visibility.mjs';
@@ -40,6 +41,7 @@ export function onRenderChatMessage(message, root, data) {
   renderDamageApplications(root, message);
   hideForeignInterruptButtons(root);
   hideForeignContestButtons(root);
+  hideForeignPartyCheckButtons(root);
   hideGmOnlyButtons(root);
   addSenderBadges(root, message);
   hideGmRuleBreakBadges(root, message);

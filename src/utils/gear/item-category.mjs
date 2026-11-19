@@ -1,14 +1,15 @@
 /**
  * Item categories: the groups the item picker filters by and the crawler inventory lists its items under. Gear splits
- * into weapons, armor, accessories, tattoos and patches (a tattoo is not an accessory and does not fill the accessory
- * pool; a patch is applied to another item); loot into consumables, scrolls, wands, lottery tickets, blueprints and other
+ * into weapons, armor, accessories, tattoos and patches (a tattoo and a patch are listed apart from the other
+ * accessories; a belt is an accessory); loot into consumables, scrolls, wands, lottery tickets, blueprints and other
  * items. One classifier serves both. Pure: reads only the item's type and system fields.
  */
 import { isWeaponGear } from './wield-mode.mjs';
+import { isAccessorySlot } from './gear-slots.mjs';
 import { isScratchLootType, isBlueprintLootType } from '../../models/items/loot-model.mjs';
 
-/** Gear slots with a category of their own; any other non-weapon slot is armor. */
-const SLOT_CATEGORIES = Object.freeze({ accessory: 'accessories', tattoo: 'tattoos', patch: 'patches' });
+/** Gear slots with a category of their own; any other slot that is not an accessory slot is armor. */
+const SLOT_CATEGORIES = Object.freeze({ tattoo: 'tattoos', patch: 'patches' });
 
 /** Loot types the picker's Potions / Consumables tab holds. */
 const CONSUMABLE_LOOT_TYPES = new Set(['consumable', 'potion']);
@@ -45,7 +46,8 @@ export function itemCategoryOf(item) {
   const sys = item?.system ?? {};
   if (item?.type === 'gear') {
     if (isWeaponGear(item)) return 'weapons';
-    return SLOT_CATEGORIES[String(sys.slot || '').toLowerCase().trim()] ?? 'armor';
+    const slot = String(sys.slot || '').toLowerCase().trim();
+    return SLOT_CATEGORIES[slot] ?? (isAccessorySlot(slot) ? 'accessories' : 'armor');
   }
   if (item?.type !== 'loot') return null;
   const lootType = String(sys.lootType || 'consumable').toLowerCase().trim();

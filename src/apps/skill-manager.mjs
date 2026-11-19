@@ -11,6 +11,7 @@ import { SOURCE_INDEX_FIELD } from '../utils/content-source.mjs';
 import { getOrCreateItemFolder } from '../utils/ui/world-folder.mjs';
 import { isCombatSkill, isPassiveSkill, skillGroupLabel } from '../utils/tag/tag-mechanics.mjs';
 import { addGearGrant, isGearBonusGrant } from '../sheets/item/gear-grants.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 
 /** `flags.sprinter-rpg.folderKey` of the world folder the skill manager files created skills in. */
@@ -215,7 +216,7 @@ export class COGSkillManager extends CatalogBrowserMixin(COGToolApp) {
 
     await foundry.applications.api.DialogV2.confirm({
       window: { title: `Delete Skill: ${item.name}` },
-      content: `<p>Are you sure you want to permanently delete the custom skill <strong>${item.name}</strong> from the world skills library?</p>`,
+      content: `<p>Are you sure you want to permanently delete the custom skill <strong>${escapeAttr(item.name)}</strong> from the world skills library?</p>`,
       yes: {
         callback: async () => {
           await item.delete();

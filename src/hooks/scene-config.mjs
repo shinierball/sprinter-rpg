@@ -10,8 +10,7 @@
  * Its change writes `flags.sprinter-rpg.tags` straight away with `render: false`, so the open form keeps what the GM
  * has typed but not saved. Only a user who can edit the scene sees it.
  */
-import { SYSTEM_ID } from '../constants.mjs';
-import { isSafeRoomScene, sceneTagsWithSafeRoom } from '../utils/floor/safe-room.mjs';
+import { isSafeRoomScene, sceneTagsUpdate, sceneTagsWithSafeRoom } from '../utils/floor/safe-room.mjs';
 
 /** The attribute that marks the injected field (and keeps the injection idempotent). */
 export const SAFE_ROOM_FIELD_ATTR = 'data-cog-safe-room';
@@ -32,7 +31,7 @@ function safeRoomText(key) {
 /** Turn a scene's safe-room tag on or off, keeping its other tags. */
 async function setSceneSafeRoom(scene, on) {
   if (!scene || typeof scene.update !== 'function') return null;
-  return scene.update({ [`flags.${SYSTEM_ID}.tags`]: sceneTagsWithSafeRoom(scene, Boolean(on)) }, { render: false });
+  return scene.update(sceneTagsUpdate(sceneTagsWithSafeRoom(scene, Boolean(on))), { render: false });
 }
 
 /** The root element of a render hook: AppV2 passes an HTMLElement; an older caller may pass a jQuery-like list. */

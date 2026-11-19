@@ -1,6 +1,6 @@
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
 import { normalizeTransform } from '../../utils/character/transform-rules.mjs';
-import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeLearnRank, outcomeStatValue, outcomeEnchantments, outcomeEnchantTable, ENCHANT_ITEM_OUTCOME } from '../../utils/loot/outcome-defaults.mjs';
+import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeLearnRank, outcomeStatValue, outcomeEnchantments, outcomeEnchantTable, ENCHANT_ITEM_OUTCOME, RECHARGE_OUTCOME, outcomeRecharge } from '../../utils/loot/outcome-defaults.mjs';
 import { normalizeGrants, toRowArray } from './grant-validation.mjs';
 import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES, WEAPON_CAPABLE_TYPES } from '../../utils/document-types.mjs';
 
@@ -46,6 +46,11 @@ export function normalizeOutcome(out) {
     out.tableKey = table?.key ?? '';
     out.tableUuid = table?.uuid ?? '';
     out.tableName = table?.name ?? '';
+  }
+  if (out.type === RECHARGE_OUTCOME) {
+    const recharge = outcomeRecharge(out);
+    out.amount = recharge.full ? 'full' : recharge.amount;
+    out.query = recharge.query;
   }
   return out;
 }

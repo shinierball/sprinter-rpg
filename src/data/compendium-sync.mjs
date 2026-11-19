@@ -1,4 +1,5 @@
-import { SYSTEM_ID } from '../constants.mjs';
+import { appliedRecordOf } from '../utils/character/race-class-flags.mjs';
+import { hasTransformationOwner } from '../utils/character/overlay-state.mjs';
 import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { recordedPicks } from '../utils/character/recorded-picks.mjs';
@@ -90,6 +91,21 @@ export function stampCompendiumLink(data, def) {
 }
 
 /**
+ * Keep the owned item's charges in play: the current `value` and, for a charges timeline, the `nextAt` stamp of the
+ * next charge on the clock. The timeline's authored `value`, `unit`, `scaleBy` and `amount` come from the compendium.
+ * @param {object} merged the system data being built (mutated)
+ * @param {object} existingSystem the owned item's system data
+ */
+function keepChargesState(merged, existingSystem) {
+  const owned = existingSystem.charges;
+  if (owned?.value === undefined) return;
+  merged.charges = { ...(merged.charges || {}), value: owned.value };
+  if (owned.recharge?.nextAt !== undefined) {
+    merged.charges.recharge = { ...(merged.charges.recharge || {}), nextAt: owned.recharge.nextAt };
+  }
+}
+
+/**
  * Preserves actor-specific progression and state when syncing a compendium item.
  * @param {object} existingItem - The embedded item currently on the actor
  * @param {object} compendiumSystem - The system data from the compendium
@@ -119,12 +135,7 @@ function preserveItemActorState(existingItem, compendiumSystem, itemType) {
       if (existingSystem.slot !== undefined && existingSystem.slot !== '') {
         merged.slot = existingSystem.slot;
       }
-      if (existingSystem.charges?.value !== undefined) {
-        merged.charges = {
-          ...(merged.charges || {}),
-          value: existingSystem.charges.value
-        };
-      }
+      keepChargesState(merged, existingSystem);
       break;
 
     case 'loot':
@@ -132,12 +143,7 @@ function preserveItemActorState(existingItem, compendiumSystem, itemType) {
       if (existingSystem.quantity !== undefined) {
         merged.quantity = existingSystem.quantity;
       }
-      if (existingSystem.charges?.value !== undefined) {
-        merged.charges = {
-          ...(merged.charges || {}),
-          value: existingSystem.charges.value
-        };
-      }
+      keepChargesState(merged, existingSystem);
       break;
 
     case 'skill':
@@ -228,7 +234,7 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
     const matchingItems = actorItems.filter(item => {
       if (item.type !== type) return false;
       // A transformation's item belongs to its affliction, not to the sync
-      if (item.flags?.[SYSTEM_ID]?.transformationOf) return false;
+      if (hasTransformationOwner(item)) return false;
 
       // Check explicit source references
       const sourceId = item.flags?.core?.sourceId || sourceUuidOf(item);
@@ -242,8 +248,7 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
     });
 
     // The picks the crawler made when this race or class was applied, read before the sync overwrites the embedded item
-    const appliedFlag = RACE_CLASS_TYPES.includes(type)
-      ? actor.getFlag?.(SYSTEM_ID, type === 'race' ? 'appliedRace' : 'appliedClass') : null;
+    const appliedFlag = RACE_CLASS_TYPES.includes(type) ? appliedRecordOf(actor, type) : null;
     const appliedItem = appliedFlag?.itemId ? matchingItems.find(item => (item.id || item._id) === appliedFlag.itemId) : null;
     const embeddedBefore = appliedItem ? structuredCloneSafe(appliedItem.system?.toObject?.() ?? appliedItem.system) : null;
 
@@ -270,7 +275,7 @@ export async function syncCompendiumItemToWorld(compendiumItem, options = {}) {
     // A synced race or class is re-applied only to an actor whose applier flag points at one of the matched
     // embedded items, never by the `details.race` / `details.class` text
     if (RACE_CLASS_TYPES.includes(type)) {
-      const applied = actor.getFlag?.(SYSTEM_ID, type === 'race' ? 'appliedRace' : 'appliedClass');
+      const applied = appliedRecordOf(actor, type);
       const isApplied = Boolean(applied?.itemId) && matchingItems.some(item => (item.id || item._id) === applied.itemId);
       const apply = type === 'race' ? actor.applyRace : actor.applyClass;
       if (isApplied && typeof apply === 'function') {

@@ -3,10 +3,12 @@ import { COGMercenaryGuildApp } from '../apps/mercenary-guild.mjs';
 import { COGRapidBatchImportApp } from '../apps/rapid-batch-import.mjs';
 import { COGRapidTextParser } from '../apps/rapid-text-parser.mjs';
 import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
+import { openPartyCheckDialog } from '../chat/actions/party-check.mjs';
 
 export const chatCommandApps = Object.freeze({
   openRapidBatchImport: () => COGRapidBatchImportApp.open(),
   openMercenaryGuild: () => COGMercenaryGuildApp.open(),
   openThemeCleanup: () => COGThemeCleanupApp.open(),
+  openPartyCheck: () => openPartyCheckDialog(),
   parseRapidLine: (raw, crawlers) => COGRapidTextParser.parseLine(raw, crawlers)
 });

@@ -6,7 +6,7 @@
  * Offers only, never blocks (CONTRIBUTING rule 2). The book's exceptions (the foe used its Step; once per round) are text
  * on the card, because movement data cannot tell a Step from a Move: the GM adjudicates.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { withFlags } from '../utils/flags.mjs';
 import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { isActiveGM } from '../utils/gm-relay.mjs';
 import { positionAfterMovement } from '../utils/combat/movement-position.mjs';
@@ -66,12 +66,11 @@ async function offerForMover({ tokenDoc, origin, destination }) {
   if (!combat || (combat.scene?.id && tokenDoc.parent?.id && combat.scene.id !== tokenDoc.parent.id)) return null;
   const offers = collectMoveInterruptOffers({ moverToken: tokenDoc, origin, destination, combat });
   if (!offers.length || !globalThis.ChatMessage?.create) return null;
-  return globalThis.ChatMessage.create({
+  return globalThis.ChatMessage.create(withFlags({
     speaker: { alias: tokenDoc.actor?.name ?? 'Movement' },
     whisper: ownerAndGmIds(offers.map(o => o.actor)),
-    content: movementOfferHtml(offers),
-    flags: { [SYSTEM_ID]: { movementOffer: { moverUuid: tokenDoc.uuid ?? '', events: [...new Set(offers.map(o => o.event))] } } }
-  });
+    content: movementOfferHtml(offers)
+  }, { movementOffer: { moverUuid: tokenDoc.uuid ?? '', events: [...new Set(offers.map(o => o.event))] } }));
 }
 
 /**

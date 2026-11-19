@@ -9,7 +9,7 @@
  * triggers never overlap), and the state is re-read from the message inside the queue. Only a GM writes the card.
  * Nothing here blocks (CONTRIBUTING rule 2): callers ask the Rule Break where it matters.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { flagPath, withFlags, forcedReplacement } from '../utils/flags.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { sanitizeContest, contestMoveOf, moveRateMod, fixedResult, participantLegSkill } from '../utils/contest/contest-engine.mjs';
 import { CONTEST_TAGS } from '../data/tag-vocabulary.mjs';
@@ -20,12 +20,7 @@ import { contestMoveOptions } from '../documents/actor/vehicle-contest.mjs';
 import { CONTEST_FLAG, readContest, sanitizeContestWrapper, buildContestCardHtml } from './contest-card.mjs';
 
 /** Read lazily: contest-card.mjs and this module sit in one import cycle, so the constant may not be initialised at load. */
-const contestFlagPath = () => `flags.${SYSTEM_ID}.${CONTEST_FLAG}`;
-
-/** A replace-not-merge value for a message update (Foundry v14 ForcedReplacement); the plain value outside Foundry. */
-function replaceValue(value) {
-  return globalThis.foundry?.data?.operators?.ForcedReplacement?.create?.(value) ?? value;
-}
+const contestFlagPath = () => flagPath(CONTEST_FLAG);
 
 /** A new contest id. */
 function newContestId() {
@@ -69,11 +64,10 @@ export function getContest(contestId) {
   return message ? readContest(message) : null;
 }
 
+const cardHtml = (wrapper) => buildContestCardHtml(wrapper, { resolve: resolveActorByUuid });
+
 function cardData(wrapper) {
-  return {
-    content: buildContestCardHtml(wrapper, { resolve: resolveActorByUuid }),
-    flags: { [SYSTEM_ID]: { [CONTEST_FLAG]: wrapper } }
-  };
+  return withFlags({ content: cardHtml(wrapper) }, { [CONTEST_FLAG]: wrapper });
 }
 
 /**
@@ -112,8 +106,7 @@ export function updateContest(contestId, reducer) {
     const out = await reducer(draft, { resolve: resolveActorByUuid });
     if (out === false) return { ok: false, reason: 'unchanged' };
     const next = { id: wrapper.id, state: sanitizeContest(out ?? draft) };
-    const data = cardData(next);
-    await message.update({ content: data.content, [contestFlagPath()]: replaceValue(next) });
+    await message.update({ content: cardHtml(next), [contestFlagPath()]: forcedReplacement(next) });
     return { ok: true, state: next.state };
   });
   queues.set(contestId, run);

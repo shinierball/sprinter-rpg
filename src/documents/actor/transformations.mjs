@@ -9,28 +9,32 @@
  *
  * Writes are ordered so that nothing is written before every prompt is answered and every document is resolved.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { GRANTED_EFFECT_STATE } from '../../data/race-class-grants.mjs';
 import { planRaceClassKind, raceClassView, prefetchKindDocuments } from '../../data/race-class-plan.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
-import { confirmRuleBreak } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, withRuleBreak } from '../../utils/rule-break.mjs';
 import { transformText } from '../../utils/character/transform-text.mjs';
 import { carrySourceStamp, landItems } from '../../utils/content-source.mjs';
-import { calculateItemHandsRequired } from '../../utils/gear/wielding.mjs';
 import {
-  isAffliction, afflictionStage, transformState, formAt, formEntries, overlayOf as overlayOfItems, transformationOfItem, heldByCure
+  isAffliction, afflictionStage, transformState, formAt, formEntries, overlayOf as overlayOfItems, transformationOfItem, heldByCure, cureWindowOpen
 } from '../../utils/character/transform-rules.mjs';
-import { formOriginOf, grantedRankOf } from '../../utils/character/overlay-state.mjs';
+import {
+  formOriginOf, grantedRankOf, writeTransformState, clearTransformState, withTransformationOf, withFormStamp, formStampUpdate, clearFormStamp
+} from '../../utils/character/overlay-state.mjs';
+import { grantedByOf, clearGrantedBy, withoutAppliedMarker } from '../../utils/character/race-class-flags.mjs';
+import { engineCreateOptions } from './debuff-landing.mjs';
 import { reveal } from '../pending-secrets.mjs';
 import { syncTokenVision } from './actor-vision.mjs';
+import { refitBody, fitLines } from './transform-fit.mjs';
+import { followBodySize } from './token-size.mjs';
 import { isEffectItem } from '../../utils/document-types.mjs';
-import { clearFlag, flagPath } from '../../utils/flags.mjs';
+import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
+import { isMigrationWrite } from '../migrations/world-migration.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { pauseOriginalTraits, unpauseTraits, holdsAffliction } from './transformation-traits.mjs';
 
-const FLAG = 'transformation';
 const PERMANENT = GRANTED_EFFECT_STATE.buff.durationConfig;
 
 /** Actors a transformation is writing right now (a counter per actor id, since the calls nest). */
@@ -48,6 +52,7 @@ async function whileTransforming(actor, fn) {
     }
     // The item hooks sync vision while the affliction is still pending, so a form's senses count only from here
     if (!isTransforming(actor)) await syncVision(actor);
+    if (!isTransforming(actor)) await followBodySize(actor);
   }
 }
 
@@ -67,18 +72,6 @@ export function overlayOf(actor) {
   return overlayOfItems(Array.from(actor?.items ?? []));
 }
 
-/**
- * Stamp the landing on an affliction's creation data: pending, when (world time) and on which floor.
- * @param {object} debuffData creation data (mutated)
- * @returns {object} the same data
- */
-export function stampLanding(debuffData) {
-  const flags = debuffData.flags ?? (debuffData.flags = {});
-  const own = flags[SYSTEM_ID] ?? (flags[SYSTEM_ID] = {});
-  own[FLAG] = { stage: 'pending', landedAt: Number(globalThis.game?.time?.worldTime) || 0, landedFloor: getCurrentFloor() };
-  return debuffData;
-}
-
 const idOf = (doc) => doc?.id ?? doc?._id ?? '';
 
 const cleanClone = (value) => {
@@ -86,7 +79,7 @@ const cleanClone = (value) => {
 };
 
 /**
- * A plain confirmation (never a Rule Break). Headless, with no dialog API, it proceeds. Closing the dialog without
+ * A plain confirmation (never a Rule Break). `message` is plain text: it is escaped here. Headless, with no dialog API, it proceeds. Closing the dialog without
  * answering gives `closeAnswer` (declining by default; an offer that costs the player something passes `true`).
  */
 async function confirmPlain(message, options = {}, { closeAnswer = false, yes, no } = {}) {
@@ -95,7 +88,7 @@ async function confirmPlain(message, options = {}, { closeAnswer = false, yes, n
   if (typeof DialogV2?.confirm !== 'function') return true;
   try {
     const answer = await DialogV2.confirm({
-      window: { title: 'Transformation' }, content: `<p>${message}</p>`, modal: true,
+      window: { title: 'Transformation' }, content: `<p>${escapeAttr(message)}</p>`, modal: true,
       ...(yes ? { yes: { label: yes } } : {}), ...(no ? { no: { label: no } } : {})
     });
     return answer === null || answer === undefined ? closeAnswer : Boolean(answer);
@@ -104,25 +97,21 @@ async function confirmPlain(message, options = {}, { closeAnswer = false, yes, n
   }
 }
 
-async function postCard(actor, lines) {
+/**
+ * Post a transformation card. `lines` are plain text, escaped here. A Rule Break card carries the
+ * flag and the badge, so the GM-badge setting hides it from players like every other Rule Break card.
+ */
+async function postCard(actor, lines, { ruleBreak = false } = {}) {
   const ChatMessage = globalThis.ChatMessage;
   if (typeof ChatMessage?.create !== 'function') return;
   try {
-    const content = lines.map((line) => `<p>${line}</p>`).join('');
-    await ChatMessage.create({ speaker: ChatMessage.getSpeaker?.({ actor }), content });
+    const body = lines.map((line) => `<p>${escapeAttr(line)}</p>`).join('');
+    const data = { speaker: ChatMessage.getSpeaker?.({ actor }), content: ruleBreak ? `${body}${ruleBreakBadgeHtml()}` : body };
+    await ChatMessage.create(ruleBreak ? withRuleBreak(data) : data);
   } catch (err) {
     console.warn('Sprinter RPG | Could not post the transformation card:', err);
   }
 }
-
-/** Equipped items held in hands that no longer fit once the body has changed (D6: listed, never unequipped). */
-function misfits(actor) {
-  const limbs = actor.system?.attributes?.limbs;
-  if (!limbs?.exceededHands) return [];
-  return Array.from(actor.items ?? []).filter((i) => calculateItemHandsRequired(i) > 0).map((i) => i.name);
-}
-
-const writeState = (affliction, state) => affliction.setFlag(SYSTEM_ID, FLAG, state);
 
 const formLabel = (affliction, index, def) => formAt(affliction, index)?.label || def?.name || 'a new form';
 
@@ -134,15 +123,15 @@ const formLabel = (affliction, index, def) => formAt(affliction, index)?.label |
 function planForm(actor, affliction, def, selections, lookup, formIndex) {
   const view = raceClassView(actor);
   // The original race's traits would hide a form trait with the same identifier; the form brings its own.
-  view.items = view.items.filter((i) => !(isEffectItem(i) && i.flags?.[SYSTEM_ID]?.grantedBy === 'race'));
+  view.items = view.items.filter((i) => !(isEffectItem(i) && grantedByOf(i) === 'race'));
   const plan = planRaceClassKind(view, 'race', def, selections, { lookup, worldFloor: getCurrentFloor(), startingItems: false });
   const owner = idOf(affliction);
   const creates = plan.itemCreates.map((data) => {
-    const own = { ...(data.flags?.[SYSTEM_ID] ?? {}), transformationOf: owner };
-    if (data.type === 'race') delete own.isAppliedRace;
+    let made = withTransformationOf(data, owner);
+    if (data.type === 'race') made = withoutAppliedMarker(made, 'race');
     // Which form made a skill and what rank the form gave it: a skill that stays when the form changes is judged by these
-    if (data.type === 'skill') { own.transformationForm = formIndex; own.transformationGranted = Number(data.system?.rank) || 0; }
-    return { ...data, flags: { ...(data.flags ?? {}), [SYSTEM_ID]: own } };
+    if (data.type === 'skill') made = withFormStamp(made, formIndex, Number(data.system?.rank) || 0);
+    return made;
   });
   return { plan, creates };
 }
@@ -150,11 +139,10 @@ function planForm(actor, affliction, def, selections, lookup, formIndex) {
 /** Create the planned documents (an off theme arrives as its replacement, which keeps the flag and the id). */
 async function createForm(actor, creates) {
   const landed = landItems(creates).map((data, i) => (data === creates[i] ? data : {
-    ...data,
-    _id: creates[i]._id,
-    flags: { ...(data.flags ?? {}), [SYSTEM_ID]: { ...(data.flags?.[SYSTEM_ID] ?? {}), transformationOf: creates[i].flags[SYSTEM_ID].transformationOf } }
+    ...withTransformationOf(data, transformationOfItem(creates[i])),
+    _id: creates[i]._id
   }));
-  const out = Array.from(await actor.createEmbeddedDocuments('Item', landed, { keepId: true }) ?? []);
+  const out = Array.from(await actor.createEmbeddedDocuments('Item', landed, engineCreateOptions({ keepId: true })) ?? []);
   const race = out.find((d) => d.type === 'race');
   return { formItemId: race ? idOf(race) : null, createdIds: out.filter((d) => d.type !== 'race').map(idOf) };
 }
@@ -191,10 +179,9 @@ async function addEffects(actor, affliction) {
     const identifier = effect.system?.identifier;
     const owned = identifier && Array.from(actor.items ?? []).some((i) => i.type === effect.type && i.system?.identifier === identifier);
     if (owned) { skipped.push(`${effect.name} (already there)`); continue; }
-    effect.flags = { ...effect.flags, [SYSTEM_ID]: { ...(effect.flags?.[SYSTEM_ID] ?? {}), transformationOf: owner } };
-    data.push(effect);
+    data.push(withTransformationOf(effect, owner));
   }
-  const made = data.length ? Array.from(await actor.createEmbeddedDocuments('Item', landItems(data)) ?? []) : [];
+  const made = data.length ? Array.from(await actor.createEmbeddedDocuments('Item', landItems(data), engineCreateOptions()) ?? []) : [];
   return { ids: made.map(idOf), skipped };
 }
 
@@ -219,7 +206,7 @@ const permanentUpdate = (affliction) => affliction.update({ 'system.duration': '
 async function confirmSecondOverlay(actor, other, target, options) {
   const gate = await confirmRuleBreak({
     title: 'Second transformation',
-    reason: `${actor.name} is already changed by ${other.name}. Revert it and change into ${target} as a Rule Break?`,
+    message: `${actor.name} is already changed by ${other.name}. Revert it and change into ${target} as a Rule Break?`,
     options
   });
   return gate.confirmed;
@@ -272,7 +259,9 @@ export async function changeVictim(actor, affliction, options = {}) {
 
     // 7. State
     const previous = transformState(affliction);
-    await writeState(affliction, {
+    // Landed with the cure window open and changed with it closed: the card says so, and the floor-change notice is not repeated
+    const windowClosed = cureWindowOpen(affliction, { floor: previous.landedFloor }) && !cureWindowOpen(affliction, { floor: getCurrentFloor() });
+    await writeTransformState(affliction, {
       ...previous,
       stage: 'changed',
       changedAt: Number(globalThis.game?.time?.worldTime) || 0,
@@ -283,18 +272,20 @@ export async function changeVictim(actor, affliction, options = {}) {
       formItemId,
       createdIds,
       effectIds: effects.ids,
-      deathCards: previous.deathCards ?? []
+      deathCards: previous.deathCards ?? [],
+      ...(windowClosed ? { windowNoticed: true } : {})
     });
     await permanentUpdate(affliction);
     actor.prepareData?.();
 
     // 8. Card
-    const lines = [prepared ? `${actor.name} changed into ${formLabel(affliction, 0, prepared.def)}.` : `${actor.name} is changed by ${affliction.name}.`];
+    const who = actor.name;
+    const lines = [prepared ? `${who} changed into ${formLabel(affliction, 0, prepared.def)}.` : `${who} is changed by ${affliction.name}.`];
     if (forms.length && !raceChange) lines.push('Only crawlers change race; the added effects still apply.');
     for (const note of effects.skipped) lines.push(`Not added: ${note}.`);
-    const fit = misfits(actor);
-    if (fit.length) lines.push(`No longer fit: ${fit.join(', ')}.`);
-    await postCard(actor, lines);
+    lines.push(...fitLines(await refitBody(actor, { affliction })));
+    if (windowClosed) lines.push(transformText('COG.TransformCard.WindowClosed', { actor: who, affliction: affliction.name }));
+    await postCard(actor, lines, { ruleBreak: Boolean(options.ruleBreak) || Boolean(other && idOf(other) !== idOf(affliction)) });
     return true;
   });
 }
@@ -324,7 +315,7 @@ async function stampFormSkills(actor, state) {
   for (const id of state.createdIds ?? []) {
     const item = actor.items.get(id);
     if (item?.type !== 'skill' || formOriginOf(item) !== null) continue;
-    await item.update({ [flagPath('transformationForm')]: state.formIndex, [flagPath('transformationGranted')]: grantedRankOf(item) ?? rankGivenBy(formItem, item) });
+    await item.update(formStampUpdate(state.formIndex, grantedRankOf(item) ?? rankGivenBy(formItem, item)));
   }
 }
 
@@ -344,8 +335,8 @@ function trainedFormSkills(actor, afflictionId, state) {
 /** Offer the player the skills they trained while changed (1196). Asked nothing and no answer given: they are kept. */
 function offerTrainedSkills(actor, trained, options) {
   if (options.keepTrained !== undefined) return Promise.resolve(Boolean(options.keepTrained));
-  const skills = trained.map(({ item, earned }) => `${escapeAttr(item.name)} (rank ${earned})`).join(', ');
-  return confirmPlain(transformText('COG.Transform.KeepTrained', { actor: escapeAttr(actor.name), skills }), options, {
+  const skills = trained.map(({ item, earned }) => `${item.name} (rank ${earned})`).join(', ');
+  return confirmPlain(transformText('COG.Transform.KeepTrained', { actor: actor.name, skills }), options, {
     closeAnswer: true, yes: 'Keep them', no: 'Let them go'
   });
 }
@@ -353,7 +344,8 @@ function offerTrainedSkills(actor, trained, options) {
 /** A kept skill becomes the victim's own: the ranks it earned, and nothing of the form's on it. */
 async function releaseSkill(item, earned) {
   await item.update({ 'system.rank': earned });
-  for (const key of ['transformationOf', 'transformationForm', 'transformationGranted', 'grantedBy']) await clearFlag(item, key);
+  await clearFormStamp(item);
+  await clearGrantedBy(item);
 }
 
 /**
@@ -395,9 +387,12 @@ export async function switchForm(actor, affliction, formIndex, options = {}) {
     // The original body has its race traits back; a form pauses them again (631 a)
     if (next === -1) await unpauseTraits(actor, idOf(affliction));
     else if (state.formIndex === -1) await pauseOriginalTraits(actor, affliction);
-    await writeState(affliction, { ...state, formIndex: next, selections: prepared?.selections ?? {}, formItemId, createdIds, ruleBreak: Boolean(state.ruleBreak) || Boolean(other) });
+    await writeTransformState(affliction, { ...state, formIndex: next, selections: prepared?.selections ?? {}, formItemId, createdIds, ruleBreak: Boolean(state.ruleBreak) || Boolean(other) });
     actor.prepareData?.();
-    await postCard(actor, [prepared ? `${actor.name} changed into ${formLabel(affliction, next, prepared.def)}.` : `${actor.name} returned to their own body.`]);
+    const lines = [prepared ? `${actor.name} changed into ${formLabel(affliction, next, prepared.def)}.` : `${actor.name} returned to their own body.`];
+    lines.push(...fitLines(await refitBody(actor, { affliction })));
+    await postCard(actor, lines,
+      { ruleBreak: Boolean(options.ruleBreak) || Boolean(other && idOf(other) !== idOf(affliction)) });
     return true;
   });
 }
@@ -433,7 +428,9 @@ export async function revertTransformation(actor, affliction, { ruleBreak = fals
     if (deleteAffliction && hadAffliction) await actor.deleteEmbeddedDocuments('Item', [afflictionId]);
     actor.prepareData?.();
     const reverted = present.length > 0 || (deleteAffliction && hadAffliction);
-    if (wasChanged && reverted) await postCard(actor, [`${actor.name} is back to normal.${ruleBreak ? ' (Rule Break)' : ''}`]);
+    const lines = [`${actor.name} is back to normal.`];
+    if (wasChanged && reverted) lines.push(...fitLines(await refitBody(actor, { affliction, reverting: true })));
+    if (wasChanged && reverted) await postCard(actor, lines, { ruleBreak });
     return reverted;
   });
 }
@@ -448,7 +445,9 @@ export async function revertTransformation(actor, affliction, { ruleBreak = fals
  * @param {string} [userId]
  * @returns {Promise<boolean|null>} true reverted, false nothing to revert, null not a transformation item
  */
-export async function onTransformItemDelete(item, _options, userId) {
+export async function onTransformItemDelete(item, options, userId) {
+  // A world migration's deletion converts the actor's data itself: nothing to revert
+  if (isMigrationWrite(options)) return null;
   const actor = item?.parent;
   if (!actor) return null;
   const owner = transformationOfItem(item);
@@ -546,6 +545,8 @@ export async function cureByWindow(actor, matched, options = {}) {
   const held = [];
   const seen = new Set();
   for (const debuff of matched) {
+    // An earlier revert in this loop may have deleted this one (a form's trait); it is gone, not an ordinary debuff to remove.
+    if (!actor.items.get(idOf(debuff))) continue;
     const affliction = transformationOwner(actor, debuff);
     if (!affliction || afflictionStage(affliction) !== 'changed') { plain.push(debuff); continue; }
     const id = idOf(affliction);
@@ -601,8 +602,8 @@ export async function confirmAfflictionEdit(actor, affliction, { keep = 'pending
   }
   const { landedAt, landedFloor } = transformState(affliction);
   await revertTransformation(actor, affliction, { ruleBreak: gate.ruleBreak, deleteAffliction: false });
-  if (keep === 'plain') await clearFlag(affliction, FLAG);
-  else await writeState(affliction, { stage: 'pending', landedAt, landedFloor });
+  if (keep === 'plain') await clearTransformState(affliction);
+  else await writeTransformState(affliction, { stage: 'pending', landedAt, landedFloor });
   return true;
 }
 

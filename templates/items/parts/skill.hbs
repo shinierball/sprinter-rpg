@@ -150,6 +150,15 @@
         {{#if assist.invalid}}<span class="cog-assist-invalid cog-text-accent" style="font-size: 10px;">{{localize "COG.Assist.Invalid"}}</span>{{/if}}
       </div>
     </div>
+    {{#if assist.showUntrained}}
+      <div class="cog-field-row" style="margin-bottom: 6px;">
+        <div class="cog-field-group" style="flex: 1;">
+          <span class="cog-field-label" title="{{localize "COG.Assist.UntrainedFormulaHint"}}">{{localize "COG.Assist.UntrainedFormula"}}</span>
+          <input class="cog-field-input" type="text" name="system.assist.untrainedFormula" value="{{assist.untrainedFormula}}" placeholder="1d2" />
+          {{#if assist.untrainedInvalid}}<span class="cog-assist-invalid cog-text-accent" style="font-size: 10px;">{{localize "COG.Assist.Invalid"}}</span>{{/if}}
+        </div>
+      </div>
+    {{/if}}
     {{#if assist.hasFormula}}
       <div class="cog-field-group">
         <span class="cog-field-label" title="{{localize "COG.Assist.WhenHint"}}">{{localize "COG.Assist.When"}}</span>

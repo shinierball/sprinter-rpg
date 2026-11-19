@@ -11,6 +11,7 @@ import { postChecklistDue } from '../../documents/actor/popularity-checklist-due
 import { buildSecretRows, openRowActor, revealRow, changeRow, cureRow, saveRowNote } from './secrets-tab.mjs';
 import { findCheckMessageByRollId, setCheckDifficulty, askOpposed } from '../../chat/actions/check-difficulty.mjs';
 import { difficultyText, readStandingDifficulty, standingLineText, STANDING_DIFFICULTY_SETTING } from '../../utils/roll/check-difficulty.mjs';
+import { openPartyCheckDialog } from '../../chat/actions/party-check.mjs';
 import { sessionEventDialogMixin, sessionEventDialogMixinStatic } from './app-event-dialog.mjs';
 
 /** Ledger entry types whose chat card can be given a Difficulty from the row. */
@@ -98,6 +99,7 @@ export class COGSessionManagerApp extends COGToolApp {
       runSkillCheck: COGSessionManagerApp.#onRunSkillCheck,
       awardLevels: COGSessionManagerApp.#onAwardLevels,
       openPopularityChecklist: COGSessionManagerApp.#onOpenPopularityChecklist,
+      startPartyCheck: COGSessionManagerApp.#onStartPartyCheck,
       distributeXP: COGSessionManagerApp.#onDistributeXP,
       broadcastReview: COGSessionManagerApp.#onBroadcastReview,
       openSecret: COGSessionManagerApp.#onOpenSecret,
@@ -326,6 +328,7 @@ export class COGSessionManagerApp extends COGToolApp {
       partyOptions,
       ledger,
       standingStrip: standingStripFor(),
+      showPartyCheck: Boolean(game.user?.isGM),
       untrainedSkillsReview,
       filterCrawlerId: this.filterCrawlerId,
       filterType: this.filterType,
@@ -586,6 +589,11 @@ export class COGSessionManagerApp extends COGToolApp {
   /** GM: open the Popularity checklist on the moment the button names, for the session the tab is showing. */
   static async #onOpenPopularityChecklist(event, target) {
     await COGPopularityChecklistApp.open({ moment: target.dataset.moment, sessionId: this.#sessionId() || '' });
+  }
+
+  /** The GM's Party Check button: the start dialog. */
+  static async #onStartPartyCheck() {
+    await openPartyCheckDialog();
   }
 
   /** Wrap-up: distribute session XP, with an optional milestone bonus. */

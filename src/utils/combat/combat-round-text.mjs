@@ -2,6 +2,7 @@
  * Text of the five-step combat round: Rule Break prompts and the tracker's declarations list.
  * The phase is called "Interrupt" in every new string.
  */
+import { langText } from '../lang-text.mjs';
 
 /** English fallbacks of the `COG.Combat.*` lang keys (lang/en.json holds the same text). */
 export const COMBAT_ROUND_TEXT = Object.freeze({
@@ -49,8 +50,4 @@ export const COMBAT_ROUND_TEXT = Object.freeze({
 });
 
 /** Localized text with a built-in English fallback (the test harness has no i18n). */
-export function combatText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (COMBAT_ROUND_TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const combatText = langText(COMBAT_ROUND_TEXT);

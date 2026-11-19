@@ -10,6 +10,7 @@
  * v14 JournalEntryPage shape: `type: 'text'`, `title`, `text: { format: 1, content }`, `sort`.
  */
 import { readFlag, withFlags } from '../../utils/flags.mjs';
+import { trustedHtml } from '../../utils/escape-attr.mjs';
 
 /** The flag a journal is discovered by. */
 const JOURNAL_KEY = 'journalKey';
@@ -52,7 +53,7 @@ export function buildJournalPayload(spec = {}, options = {}) {
       name: text(page.name) || `Page ${i + 1}`,
       type: 'text',
       title: { show: true, level },
-      text: { format: 1, content: typeof page.html === 'string' ? page.html : '' },
+      text: { format: 1, content: typeof page.html === 'string' ? trustedHtml(page.html) : '' },
       sort: (i + 1) * PAGE_SORT_STEP,
       flags: isPlainObject(page.flags) ? structuredClone(page.flags) : {}
     };

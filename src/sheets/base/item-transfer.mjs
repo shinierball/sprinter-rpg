@@ -6,6 +6,8 @@
  */
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { afflictionStage } from '../../utils/character/transform-rules.mjs';
+import { hasTransformationOwner } from '../../utils/character/overlay-state.mjs';
 import { isGmOnlyItem, refuseGmOnlyItem, refuseStashedBox } from '../../documents/actor/gm-only-items.mjs';
 
 const ITEM_TRANSFER_RELAY = 'transferItemDelete';
@@ -20,6 +22,12 @@ function sourceActorOf(item) {
 function isCrossActorDrop(item, targetActor) {
   const source = sourceActorOf(item);
   return Boolean(source && source.uuid !== targetActor?.uuid);
+}
+
+/** True when the dropped item is already embedded on `targetActor` (a re-sort, not a new item). */
+function isOwnItem(item, targetActor) {
+  const source = sourceActorOf(item);
+  return Boolean(source && source.uuid === targetActor?.uuid);
 }
 
 function resolveRequest(payload) {
@@ -47,7 +55,8 @@ registerRelayAction(ITEM_TRANSFER_RELAY, {
 
 /**
  * Whether a drop onto `targetActor` must be refused before the copy is made: a loot box going into or out of a
- * personal space (anyone), or a loot box or achievement dragged from another actor by a non-GM. Warns once.
+ * personal space (anyone), or a loot box or achievement dropped by a non-GM from anywhere but the target actor itself
+ * (a compendium, the Items sidebar, another actor: awards are the GM's). Warns once.
  * @param {Item} item the dragged (source) item
  * @param {Actor} targetActor
  * @returns {boolean} true when refused
@@ -55,7 +64,12 @@ registerRelayAction(ITEM_TRANSFER_RELAY, {
 export function refuseGmOnlyDrop(item, targetActor) {
   const stash = targetActor?.type === 'personal_space' || sourceActorOf(item)?.type === 'personal_space';
   if (stash && targetActor?.uuid !== sourceActorOf(item)?.uuid && refuseStashedBox(item)) return true;
-  return isCrossActorDrop(item, targetActor) && refuseGmOnlyItem(item);
+  return !isOwnItem(item, targetActor) && refuseGmOnlyItem(item);
+}
+
+/** Whether the item belongs to a transformation: an affliction that has changed its victim, or an item the change made. */
+function belongsToTransformation(item) {
+  return afflictionStage(item) === 'changed' || hasTransformationOwner(item);
 }
 
 /**
@@ -66,6 +80,8 @@ export function refuseGmOnlyDrop(item, targetActor) {
  */
 export async function completeItemTransfer(item, targetActor) {
   if (!isCrossActorDrop(item, targetActor)) return false;
+  // A transformation's item is copied, never moved: deleting it from the source would revert the source's change.
+  if (belongsToTransformation(item)) return false;
   const source = sourceActorOf(item);
   const payload = { sourceActorUuid: source.uuid, targetActorUuid: targetActor.uuid, itemId: item.id };
   const res = await requestRelay(ITEM_TRANSFER_RELAY, payload, { direct: Boolean(source.isOwner) });

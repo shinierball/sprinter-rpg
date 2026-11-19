@@ -12,8 +12,9 @@ import { measureTokenFeet } from '../combat/interrupts.mjs';
 import { escapeAttr } from '../escape-attr.mjs';
 import { confirmRuleBreak } from '../rule-break.mjs';
 import { resolveReachedRankBreaks } from '../skill/rank-breaks.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag } from '../flags.mjs';
 import { isRankedItem } from '../document-types.mjs';
+import { langText } from '../lang-text.mjs';
 
 const TEXT = Object.freeze({
   'COG.AttackRange.Title': 'Target Out of Range',
@@ -27,11 +28,7 @@ const TEXT = Object.freeze({
 });
 
 /** Localized text with the same fallback pattern as `attack-mechanics.mjs`. */
-export function rangeText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const rangeText = langText(TEXT);
 
 /** The attacker's token (a placeable with a centre): an explicit one, the actor's own token, else its first on the canvas. */
 export function attackerTokenOf(attacker, explicit) {
@@ -128,7 +125,7 @@ export async function gateAttackRange(attacker, item, targets, { options = {}, r
 
 /** The out-of-range rows a card records (`flags.outOfRange`), sanitized; [] when none. */
 function outOfRangeOfMessage(message) {
-  const raw = message?.flags?.[SYSTEM_ID]?.outOfRange;
+  const raw = readFlag(message, 'outOfRange');
   return (Array.isArray(raw) ? raw : []).filter(r => r && typeof r === 'object');
 }
 

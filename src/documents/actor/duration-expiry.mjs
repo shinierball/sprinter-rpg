@@ -11,6 +11,7 @@ import { activeAurasOnScene } from './aura-pulse.mjs';
 import { isDyingDebuff, die, sweepDyingClock, restampDyingClock } from './dying.mjs';
 import { isRankedItem } from '../../utils/document-types.mjs';
 import { readFlag } from '../../utils/flags.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { appliedInRound, durationsTickedRoundOf, markDurationsTicked } from '../../utils/time/duration-flags.mjs';
 
 /**
@@ -40,7 +41,8 @@ function isInForce(item) {
   return item.system?.active === true;
 }
 
-const readChanged = (changed, path) => {
+/** A path's value in an update's `changed` object, flat (`'system.x.y'`) or nested; undefined when the update leaves it. */
+export const readChanged = (changed, path) => {
   if (changed && Object.hasOwn(changed, path)) return changed[path];
   return globalThis.foundry?.utils?.getProperty?.(changed, path);
 };
@@ -192,10 +194,10 @@ export async function endEmptiedSource(actor, sourceUuid) {
 
 async function postExpiryCard(title, rows) {
   if (!rows.length || typeof ChatMessage === 'undefined' || typeof ChatMessage.create !== 'function') return;
-  const msgs = rows.map(e => `<li><strong>${e.actorName}</strong>: <em>${e.itemName}</em> has faded.</li>`).join('');
+  const msgs = rows.map(e => `<li><strong>${escapeAttr(e.actorName)}</strong>: <em>${escapeAttr(e.itemName)}</em> has faded.</li>`).join('');
   await ChatMessage.create({
     speaker: { alias: 'Combat Clock' },
-    content: `<div class="cog-chat-card cog-expiration-card"><header class="cog-card-header"><span class="cog-badge">[DURATION EXPIRED]</span><h3>${title}</h3></header><div class="cog-card-body"><ul>${msgs}</ul></div></div>`
+    content: `<div class="cog-chat-card cog-expiration-card"><header class="cog-card-header"><span class="cog-badge">[DURATION EXPIRED]</span><h3>${escapeAttr(title)}</h3></header><div class="cog-card-body"><ul>${msgs}</ul></div></div>`
   });
 }
 

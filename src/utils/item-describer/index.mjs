@@ -19,7 +19,6 @@ import { BLOCKS as EFFECT_BLOCKS } from './blocks-effects.mjs';
 import { BLOCKS as IDENTITY_BLOCKS } from './blocks-identity.mjs';
 import { BLOCKS as CRAFTING_BLOCKS } from './blocks-crafting.mjs';
 import { isRaceOrClass, isWeaponCapable } from '../document-types.mjs';
-import { escapeAttr } from '../escape-attr.mjs';
 
 export { ITEM_SUMMARY_BADGES, ITEM_SUMMARY_KINDS, ITEM_SUMMARY_GROUPS, itemSummaryTemplates, defineItemSummaryTemplates } from './shared.mjs';
 
@@ -122,12 +121,12 @@ export function summaryText(lines) {
 
 
 /**
- * The lines as the HTML of a Foundry tooltip (`data-tooltip`, which Foundry sets as HTML): one escaped line per row,
- * joined with `<br>`. '' for none. Put it in the attribute through Handlebars `{{ }}`, which escapes it once more.
+ * The lines as the plain text of a Foundry tooltip (`data-tooltip-text`, which Foundry sets as text): one trimmed line per row,
+ * joined with a newline; "" for none. The element carries `data-tooltip-class="cog-tooltip-lines"` so the newlines show.
  */
 export function summaryTooltip(lines) {
   if (!Array.isArray(lines)) return '';
-  return lines.map((l) => (typeof l?.text === 'string' ? l.text.trim() : '')).filter(Boolean).map(escapeAttr).join('<br>');
+  return lines.map((l) => (typeof l?.text === 'string' ? l.text.trim() : '')).filter(Boolean).join('\n');
 }
 
 /** The muted line shown for an item with no structured effects (plan D6). Built from the empty result, never from text. */

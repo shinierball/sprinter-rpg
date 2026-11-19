@@ -5,6 +5,7 @@
  */
 import { SYSTEM_PATH } from '../../constants.mjs';
 import { attackText } from './attack-text.mjs';
+import { trustedHtml } from '../escape-attr.mjs';
 
 const LINE_TEMPLATE = `${SYSTEM_PATH}/templates/shared/attack-options-line.hbs`;
 
@@ -68,9 +69,9 @@ export function optionsChips(flag) {
 export async function attackOptionsLineHtml(flag) {
   const chips = optionsChips(flag);
   if (chips.length === 0) return '';
-  const render = globalThis.foundry?.applications?.handlebars?.renderTemplate;
-  if (typeof render !== 'function') return '';
-  return String(await render(LINE_TEMPLATE, { chips }));
+  const renderTemplate = globalThis.foundry?.applications?.handlebars?.renderTemplate;
+  if (typeof renderTemplate !== 'function') return '';
+  return trustedHtml(await renderTemplate(LINE_TEMPLATE, { chips }));
 }
 
 /**

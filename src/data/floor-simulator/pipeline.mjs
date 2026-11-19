@@ -9,7 +9,6 @@
  * Open values (D7): a die the spec leaves unrolled is rolled through `options.rng` when given (the creator passes
  * Foundry's), otherwise it takes the lowest face and a warning says so, so a build is deterministic.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { runForStartFloor, getFloorArrival } from '../floor-arrivals.mjs';
 import { parseFloorNumber } from '../../utils/floor/floor-number.mjs';
 import { setPath } from '../../utils/set-path.mjs';
@@ -17,19 +16,14 @@ import { contentIds } from '../../utils/stable-id.mjs';
 import { levelGainDelta, statSpendDelta } from '../../utils/character/advancement-delta.mjs';
 import { getStatCaps } from '../../utils/character/stat-caps.mjs';
 import { simulateFloorArrival } from './compile.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { floorHistoryOf, isFloorRunPath, withFloorHistory } from './run-flag.mjs';
 import { planRaceClass, applyKindPlan } from '../race-class-plan.mjs';
 import { snapshotFromPayload, derivedStatsFromPayload, buildFloorSimContext } from './snapshot.mjs';
 import { RACE_CLASS_TYPES } from '../../utils/document-types.mjs';
 import { withRuleBreak } from '../../utils/rule-break.mjs';
 
 const cloneData = (value) => structuredClone(value);
-const FLOOR_RUN_PATH = `flags.${SYSTEM_ID}.floorRun`;
-
-const flagsOf = (payload) => {
-  payload.flags = payload.flags ?? {};
-  payload.flags[SYSTEM_ID] = { ...(payload.flags[SYSTEM_ID] ?? {}) };
-  return payload.flags[SYSTEM_ID];
-};
 
 /**
  * Fold one compiled arrival into a crawler payload and return the new payload (the input is untouched). Applies, in the
@@ -69,12 +63,16 @@ export function mergeArrivalIntoPayload(payload, result, { ids } = {}) {
   }
 
   for (const [path, value] of Object.entries(result.actorUpdate ?? {})) {
-    if (path === FLOOR_RUN_PATH) continue;
+    if (isFloorRunPath(path)) continue;
     setPath(out, path, cloneData(value));
   }
 
-  const flags = flagsOf(out);
-  if (result.history?.length) flags.floorHistory = [...(Array.isArray(flags.floorHistory) ? flags.floorHistory : []), ...cloneData(result.history)];
+  // The payload leaves here with a flags bag of this system, empty when the arrival wrote none.
+  out.flags = withFlags(out, {}).flags;
+  if (result.history?.length) {
+    const kept = floorHistoryOf(out);
+    out.flags = withFloorHistory(out, [...(Array.isArray(kept) ? kept : []), ...cloneData(result.history)]).flags;
+  }
   if ((result.ruleBreaks?.confirmed?.length ?? 0) > 0) out.flags = withRuleBreak(out).flags;
   return out;
 }

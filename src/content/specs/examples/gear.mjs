@@ -160,7 +160,7 @@ export const EXAMPLE_GEAR_SPECS = Object.freeze([
     system: {
       identifier: 'mirror-sequin-cape',
       description: '<p>Every sequin is a tiny mirror. Damage Reflection 3:1 against melee: if one blow costs you at least 3 Health Bar slots, you may make the attacker lose 1 Health Bar slot. The reflected loss is 1 slot and your player chooses whether to use it; it costs no Action, and it does not work against ranged attacks.</p>',
-      slot: 'accessory',
+      slot: 'back',
       defenseModifiers: [
         { kind: 'reflect', label: 'Damage Reflection 3:1 vs. melee', value: 3, flat: 1, condition: q(['kind.attack'], [], ['weaponClass.ranged']) }
       ]

@@ -57,7 +57,7 @@ export function deriveSight(senses, base) {
 const sameSight = (a, b) => SIGHT_KEYS.every(k => (a[k] ?? null) === (b[k] ?? null));
 
 /** The actor's linked tokens on every scene (not only the viewed one), plus any the canvas reports. */
-function activeTokenDocuments(actor) {
+export function activeTokenDocuments(actor) {
   const found = new Set();
   const scenes = globalThis.game?.scenes;
   const sceneList = !scenes ? [] : (Array.isArray(scenes.contents) ? scenes.contents : Array.from(scenes.values?.() ?? scenes));
@@ -146,7 +146,8 @@ registerRelayAction(SYNC_TOKEN_VISION, {
  * `createItem` / `deleteItem` hook handler (`(item, options, userId)`); `updateItem` has its own wrapper below. Runs only on the client that made the change,
  * and only for item types that carry senses on an actor.
  */
-export async function onItemChangeSyncVision(item, _options, userId) {
+export async function onItemChangeSyncVision(item, options, userId) {
+  if (isMigrationWrite(options)) return false;
   const parent = item?.parent;
   if (parent?.documentName !== 'Actor' || !SENSE_ITEM_TYPES.includes(item.type)) return false;
   const me = globalThis.game?.user?.id;

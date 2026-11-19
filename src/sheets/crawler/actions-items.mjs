@@ -2,9 +2,9 @@
  * Embedded item actions (create, edit, delete, use, inline field edits, equip) and the
  * library pickers. Every handler runs with `this` bound to the sheet.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { COGItemSetupApp } from '../../apps/item-setup-app.mjs';
 import { rowItem, controlValue } from './dom.mjs';
+import { storeInventorySort } from './context-inventory.mjs';
 import { getRankCap } from '../../utils/skill/rank-cap.mjs';
 import { slotReferencesTo } from '../../utils/ui/slot-references.mjs';
 import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
@@ -138,7 +138,7 @@ export const itemActions = {
     this._inventorySort = target.value;
     if (this.isEditable) {
       try {
-        await this.actor.setFlag(SYSTEM_ID, 'inventorySort', target.value);
+        await storeInventorySort(this.actor, target.value);
         return;
       } catch (_err) { /* fall through to a local re-render */ }
     }

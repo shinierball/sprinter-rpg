@@ -4,7 +4,6 @@ import { syncActorOwnership } from './ownership-relay.mjs';
 import { rideProblems } from '../../utils/pet/pet-combat.mjs';
 import { confirmRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
 import { petLimitFor } from './pet-checks.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { combatantOfActor } from '../combat/combatants.mjs';
 
 
@@ -44,7 +43,7 @@ export async function bondCompanion(actor, companion) {
     const overLimit = !existing.includes(compActor.id) && compActor.system?.details?.isMount !== true
       ? petLimitExceeded(actor) : null;
     if (overLimit) {
-      const verdict = await confirmRuleBreak({ title: 'Pet limit', message: escapeAttr(overLimit), reason: overLimit });
+      const verdict = await confirmRuleBreak({ title: 'Pet limit', message: overLimit, reason: overLimit });
       if (!verdict.confirmed) return false;
     }
     if (!existing.includes(compActor.id)) existing.push(compActor.id);
@@ -238,7 +237,7 @@ export async function assignRider(actor, crawler) {
   if (problems.length) {
     const verdict = await confirmRuleBreak({
       title: 'Ride this pet?',
-      message: `${problems.map(escapeAttr).join(' ')} Ride anyway as a Rule Break?`,
+      message: `${problems.join(' ')} Ride anyway as a Rule Break?`,
       reason: `${problems.join(' ')} Ride anyway as a Rule Break?`
     });
     if (!verdict.confirmed) return false;

@@ -6,6 +6,7 @@
  */
 import { lightFlagOf, findLightTokens, extinguishTokens } from '../documents/actor/light-source.mjs';
 import { toggleDouble, attachLight, detachLight } from '../documents/actor/light-follow.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 /** The light tokens the HUD's token controls: itself when it is a light, else the lights its actor owns. */
 function lightsForHud(tokenDoc) {
@@ -19,9 +20,9 @@ function addControl(root, { cls, label, icon, onClick }) {
   const button = root.ownerDocument.createElement('button');
   button.type = 'button';
   button.className = `control-icon ${cls}`;
-  button.dataset.tooltip = label;
+  button.dataset.tooltip = escapeAttr(label); // Foundry parses a tooltip as HTML
   button.setAttribute('aria-label', label);
-  button.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+  button.innerHTML = `<i class="fa-solid ${escapeAttr(icon)}"></i>`;
   button.addEventListener('click', async (ev) => {
     ev.preventDefault();
     await onClick();

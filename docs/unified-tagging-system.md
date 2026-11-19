@@ -162,7 +162,7 @@ Aura, interrupt, free-interrupt and reactive-trigger behavior is decided only fr
 | Aura | `delivery.aura` | Token-following, caster-centred, toggled on and off, cleared on expiry. `delivery: 'aura'` derives it. |
 | Interrupt-capable | `action.interrupt` | Listed by `getAvailableInterrupts` (costs 1 Action). Only spell, skill, gear and attack items are listed. |
 | Free interrupt | `action.free_interrupt` | Costs 0 Actions. Implies interrupt-capable. |
-| Interrupt trigger | `trigger.on_attack`, `trigger.on_damage`, `trigger.on_foe_leave_reach`, `trigger.on_foe_enter_reach`, `trigger.on_ally_attack`, `trigger.on_ally_hit`, `trigger.on_ally_check`, `trigger.before_ally_action` | Picks when the interrupt is offered. An item may carry several; the first match in that order is its display trigger; no trigger tag means `any` ("Anytime"). Labels come from the tag registry. |
+| Interrupt trigger | `trigger.on_attack`, `trigger.on_damage`, `trigger.on_foe_leave_reach`, `trigger.on_foe_enter_reach`, `trigger.on_ally_attack`, `trigger.on_ally_hit`, `trigger.on_ally_check`, `trigger.before_ally_action`, `trigger.before_ally_check` | Picks when the interrupt is offered. An item may carry several; the first match in that order is its display trigger; no trigger tag means `any` ("Anytime"). Labels come from the tag registry. |
 | Interrupt effect | `interrupt.redirect_attack`, `interrupt.intercept_hit`, `interrupt.not_vs_area` | Redirect moves the attack to the interrupter and re-checks the hit against the interrupter's Evade. Intercept makes the interrupter take the hit. `not_vs_area` hides the interrupt when the source attack is an area attack (`shape.aoe`). |
 | No redirect | `rule.no-redirect` (on the attack) | No interrupt with a redirect or intercept effect is offered against this attack. |
 
@@ -179,6 +179,7 @@ Offers are chosen only by trigger tags (`INTERRUPT_TRIGGERS` in `src/utils/tag/t
 | `trigger.on_foe_leave_reach`, `trigger.on_foe_enter_reach` | offered when a foe's token moves out of or into reach, not on attack cards | n/a |
 | `trigger.on_ally_check` | offered on an ally's d20 check card, not on attack cards | n/a |
 | `trigger.before_ally_action` | offered on the assisting actor's own turn, not on attack cards | n/a |
+| `trigger.before_ally_check` | offered in an ally's pre-roll dialog before a Skill Check outside combat (Help), not on attack or check cards | n/a |
 
 Ally means a living combatant on the same side as the attacked actor, other than the attacker. Side comes from the single rule `isMobSide` in `src/utils/combat/combat-sides.mjs` (crawlers and pets are crawler side; mounts, vehicles and mercenaries follow token disposition and default to the crawler side; npcs are mob side). Each button is shown only to the interrupter's owners and the GM.
 

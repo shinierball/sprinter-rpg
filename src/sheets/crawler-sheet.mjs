@@ -29,6 +29,7 @@ import { coreActions, GM_ONLY_LIMB_FIELDS } from './crawler/actions-core.mjs';
 import { combatActions } from './crawler/actions-combat.mjs';
 import { pageZeroActions } from './crawler/actions-page-zero.mjs';
 import { itemActions } from './crawler/actions-items.mjs';
+import { lootBoxActions, lootBoxDragData, dropLootBoxEntry, dropBoxTemplate, isLootBoxDragData } from './crawler/actions-loot-boxes.mjs';
 import { transformationActions } from './crawler/actions-transformation.mjs';
 import { slotActions } from './crawler/actions-slots.mjs';
 import { grindActions } from './crawler/actions-grind.mjs';
@@ -43,11 +44,13 @@ import { PATRON_MENTOR_ACTIONS } from './crawler/actions-patron-mentor.mjs';
 import { buildDeityRows } from './crawler/context-deities.mjs';
 import { buildPatronRows } from './crawler/context-patrons.mjs';
 import { achievementActions, applyAchievementFilter } from './crawler/actions-achievements.mjs';
-import { dropItem, dropActor } from './crawler/drop.mjs';
+import { dropItem, dropActor, isOwnedBy } from './crawler/drop.mjs';
+import { isBoxTemplate } from '../documents/actor/gm-only-items.mjs';
 import { completeItemTransfer, refuseGmOnlyDrop } from './base/item-transfer.mjs';
 import { MOB_TIER_PREFIX } from '../utils/tag/tag-mechanics.mjs';
 import { MOB_BOSS_TAG } from '../data/tag-vocabulary.mjs';
 import { isInventoryItem, isRaceOrClass } from '../utils/document-types.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const PARTS_PATH = `${SYSTEM_PATH}/templates/actors/parts`;
 
@@ -98,6 +101,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
       ...combatActions,
       ...pageZeroActions,
       ...itemActions,
+      ...lootBoxActions,
       ...transformationActions,
       ...slotActions,
       ...grindActions,
@@ -170,7 +174,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
     this._grantedSpells = grantedSpells;
     await prepareGrantedSummaries([...grantedSkills.values(), ...grantedSpells.values()], actor);
     prepareInventory(context, actor, this._inventorySort);
-    prepareCombat(context, actor, { showStowedAttacks: this._showStowedAttacks });
+    prepareCombat(context, actor, { showStowedAttacks: this._showStowedAttacks, showImprovisedAttacks: this._showImprovisedAttacks });
     prepareHotlist(context, actor);
     if (context.tabs?.[PAGE_ZERO_PART_ID]) preparePageZero(context, actor, this);
     await prepareExternalBuffs(context, actor);
@@ -279,9 +283,37 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
   /*  Drag and drop                               */
   /* -------------------------------------------- */
 
+  /** A GM's strip tile drags as a held box (`LootBox` drag data); anything else drags as before. @override */
+  async _onDragStart(event) {
+    const data = lootBoxDragData(this, event);
+    if (!data) return super._onDragStart(event);
+    event.dataTransfer.setData('text/plain', JSON.stringify(data));
+  }
+
+  /**
+   * A held box dragged from a crawler's strip moves here (from another crawler; onto its own crawler it does nothing, and
+   * it is never handed on as a document drop); any other drop is handled as before. @override
+   */
+  async _onDrop(event) {
+    const TE = globalThis.foundry?.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+    const data = TE?.getDragEventData?.(event);
+    if (!isLootBoxDragData(data)) return super._onDrop(event);
+    if (this.actor.isOwner && (await dropLootBoxEntry(this, data))) return this.render();
+    return null;
+  }
+
   /** @override */
   async _onDropItem(event, item) {
     if (!this.actor.isOwner || refuseGmOnlyDrop(item, this.actor)) return null;
+    // A box template lands as a held box (an entry), and so does a stray box item of this crawler dropped onto its strip
+    const own = isOwnedBy(item, this.actor);
+    if (isBoxTemplate(item) && (!own || event?.target?.closest?.('[data-loot-box-strip]'))) {
+      const boxes = await dropBoxTemplate(this, item, { own });
+      if (boxes) {
+        if (!own && boxes.length) await completeItemTransfer(item, this.actor);
+        return boxes;
+      }
+    }
     const result = await dropItem(this, event, item);
     // Race / class drops apply the item rather than embedding a copy, so only embedded results transfer.
     if (result && !isRaceOrClass(item)) await completeItemTransfer(item, this.actor);
@@ -335,8 +367,8 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
     const hours = REST_HOURS[restType] ?? 8;
     const answer = await foundry.applications.api.DialogV2.wait({
       window: { title: label },
-      content: `<p>Take a <strong>${label}</strong>?</p><p class="cog-text-muted" style="font-size: 13px;">${desc}</p>`
-        + `<div class="form-group"><label><input type="checkbox" name="advanceClock" checked> Let the dungeon clock run (${hours} ${hours === 1 ? 'hour' : 'hours'} off the Collapse Clock). A party resting together unticks this for all but one crawler.</label></div>`,
+      content: `<p>Take a <strong>${escapeAttr(label)}</strong>?</p><p class="cog-text-muted" style="font-size: 13px;">${escapeAttr(desc)}</p>`
+        + `<div class="form-group"><label><input type="checkbox" name="advanceClock" checked> Let the dungeon clock run (${Number(hours)} ${hours === 1 ? 'hour' : 'hours'} off the Collapse Clock). A party resting together unticks this for all but one crawler.</label></div>`,
       buttons: [
         { action: 'yes', icon: 'fa-solid fa-check', label: 'Rest', default: true, callback: (event, button) => ({ advanceClock: isChecked(button.form?.elements?.advanceClock) }) },
         { action: 'no', icon: 'fa-solid fa-xmark', label: 'Cancel' }

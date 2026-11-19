@@ -6,6 +6,7 @@ import { getCurrentFloor } from '../../documents/actor/actor-environment.mjs';
 import { appliedBeforeEvade, listEvadesFor, classifyNextEvade } from '../../utils/attack/evade-link.mjs';
 import { getDamageApplications } from '../damage-applications.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { gateActionBlock, actionBlockApplies } from '../../documents/actor/action-block.mjs';
 import { mobTargetDifficulty } from '../../documents/actor/attack-targets.mjs';
@@ -39,7 +40,7 @@ export async function resolveActingCrawler({ title, hint, none }) {
   if (owned.length <= 1) return owned[0] ?? null;
   const picked = await foundry.applications.api.DialogV2.wait({
     window: { title },
-    content: `<p>${hint}</p>`,
+    content: `<p>${escapeAttr(hint)}</p>`,
     buttons: owned.map(a => ({ action: a.id, label: a.name })),
     rejectClose: false
   });

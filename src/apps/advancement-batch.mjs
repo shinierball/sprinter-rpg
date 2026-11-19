@@ -6,7 +6,7 @@
  * A crawler's marked skills whose use route is closed at their Rank are asked about once, as one Rule Break: confirmed they
  * roll, declined they are skipped like a capped skill. Skipped skills' marks clear and the card lists them.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { withFlags } from '../utils/flags.mjs';
 import { COGSessionEngine } from '../documents/session/session-engine.mjs';
 import { getCurrentFloor, getFloorTimer } from '../documents/actor/actor-environment.mjs';
 import { isPassiveSkill } from '../utils/tag/tag-mechanics.mjs';
@@ -242,15 +242,10 @@ export async function runBatchAdvancement(actors, mode, options = {}) {
 
   let message = null;
   if (results.length && !options.silent) {
-    message = await ChatMessage.create({
-      content: buildAdvancementBatchCard({ mode, floor: getCurrentFloor(), timer: getFloorTimer(), results }),
-      flags: {
-        [SYSTEM_ID]: {
-          isSkillAdvancement: true,
-          advancement: { mode, ruleBreak: results.some(r => r.ruleBreak), results }
-        }
-      }
-    });
+    message = await ChatMessage.create(withFlags(
+      { content: buildAdvancementBatchCard({ mode, floor: getCurrentFloor(), timer: getFloorTimer(), results }) },
+      { isSkillAdvancement: true, advancement: { mode, ruleBreak: results.some(r => r.ruleBreak), results } }
+    ));
   }
   return { mode, results, message };
 }
@@ -279,10 +274,10 @@ export async function runAwardLevels(actors, { presetId, amount, victimLevel, d6
   }
   let message = null;
   if (results.length) {
-    message = await ChatMessage.create({
-      content: buildLevelAwardCard({ label: title, results }),
-      flags: { [SYSTEM_ID]: { levelAward: { presetId: presetId ?? 'custom', label: title, results } } }
-    });
+    message = await ChatMessage.create(withFlags(
+      { content: buildLevelAwardCard({ label: title, results }) },
+      { levelAward: { presetId: presetId ?? 'custom', label: title, results } }
+    ));
   }
   return { label: title, results, message };
 }

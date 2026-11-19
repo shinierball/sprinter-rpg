@@ -31,6 +31,8 @@ import { STANDING_DIFFICULTY_SETTING } from '../utils/roll/check-difficulty.mjs'
 import { DELIBERATE_PAUSE_SETTING, UNPAUSE_BY_DEFAULT_SETTING } from '../utils/time/pause-settings.mjs';
 import { XP_CONFIG_SETTING, DEFAULT_XP_WEIGHTS } from '../utils/combat/xp-config.mjs';
 import { SHEET_PDF_SETTING } from '../utils/ui/sheet-pdf-setting.mjs';
+import { HELP_PROMPT_SETTING } from '../utils/roll/help-dice.mjs';
+import { GRIND_TABLES_SETTING } from '../content/grind-tables.mjs';
 import { LIVE_FLAGS, registerLiveFlags } from '../utils/live-flags.mjs';
 import { POPULARITY_CHECKLIST_SETTING, emptyChecklistState } from '../documents/actor/popularity-checklist.mjs';
 import { MIGRATED_VERSION_SETTING, isMigrationWrite } from '../documents/migrations/world-migration.mjs';
@@ -119,6 +121,15 @@ export function registerSettings({ launchers, onAiContentChange }) {
     onChange: () => refreshHudVisibility()
   });
 
+  game.settings.register(SYSTEM_ID, HELP_PROMPT_SETTING, {
+    name: 'COG.Assist.HelpPromptName',
+    hint: 'COG.Assist.HelpPromptHint',
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(SYSTEM_ID, ZERO_ZONE_SETTING, {
     name: 'COG.Hud.ZeroZoneSettingName',
     hint: 'COG.Hud.ZeroZoneSettingHint',
@@ -163,6 +174,14 @@ export function registerSettings({ launchers, onAiContentChange }) {
     config: false,
     type: Object,
     default: null
+  });
+
+  // The grinding tables the GM picked for the Grind app (a ref each; '' = the default for the current floor).
+  game.settings.register(SYSTEM_ID, GRIND_TABLES_SETTING, {
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: { floor: '', neighborhood: '' }
   });
 
   game.settings.register(SYSTEM_ID, FLOOR_TIMER_SETTING, {

@@ -2,7 +2,8 @@
  * Combat: weapon skill resolution and attack damage part calculation.
  */
 
-import { conditionLabel } from './condition-data.mjs';
+import { conditionLabel, conditionItemData } from './condition-data.mjs';
+import { effectCardName } from '../../utils/character/transform-text.mjs';
 import { getGrantedRankDamageDie, getEffectRankDice } from '../../data/rank-dice.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
 import { ENGINE_SITUATIONS } from '../../data/tag-vocabulary.mjs';
@@ -17,7 +18,6 @@ import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { workingGear } from '../../utils/effects/gear-suppression.mjs';
 import { escapeAttr, jsonAttr } from '../../utils/escape-attr.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
 import { attackAsTriggers } from '../../utils/roll/buff-as-triggers.mjs';
 import { asTriggersDataAttr, amazingPreviewHtml, amazingSubActionHtml, amazingSourceMessage } from '../../utils/roll/amazing-success.mjs';
@@ -25,7 +25,7 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { sourceDamageBonusParts } from '../../utils/roll/check-assists.mjs';
 import { techniqueConditionMet, techniqueHealthRows, techniqueBonusDiceList, techniqueConditionPerTarget, techniqueConditionRow, techniqueConditionRowKey, isTechniqueApplicable, getAiFavorRating, resolveDamageEffect } from './actor-techniques.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
-import { buildAttackOptions, resolveAttackChoices, settleChoiceToggles, readChoiceOptions, emptyChoices, ruleBreakReasons, confirmChoiceRuleBreaks , choicesToDamageOptions, choicesFromMessage, choicesFlag, commitPick } from '../../utils/attack/attack-options.mjs';
+import { buildAttackOptions, resolveAttackChoices, settleChoiceToggles, readChoiceOptions, emptyChoices, ruleBreakReasons, confirmChoiceRuleBreaks , choicesToDamageOptions, choicesFromMessage, attackChoicesFlagOf, choicesFlag, commitPick } from '../../utils/attack/attack-options.mjs';
 import { getAttackPick } from '../../utils/attack/attack-picks.mjs';
 import { attackOptionsLineHtml } from '../../utils/attack/attack-options-line.mjs';
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
@@ -33,6 +33,7 @@ import { scaleWeaponBase } from '../../utils/damage/weapon-base-scaling.mjs';
 import { collectOnHitEffects, onHitCardAttrs } from '../../utils/attack/on-hit.mjs';
 import { attackEffectsText } from '../../utils/attack/attack-mechanics.mjs';
 import { resolveWeaponSkills } from './weapon-skills.mjs';
+import { weaponSystemFor } from '../../utils/skill/weapon-skill-options.mjs';
 import { getSkillDamageData } from './combat-skill-damage.mjs';
 import { actingRank } from '../../utils/skill/rank-source.mjs';
 import { withFlags } from '../../utils/flags.mjs';
@@ -40,6 +41,12 @@ import { registerStoredCopy } from '../../utils/migrations/stored-copies.mjs';
 
 // The damage card copies the hit card's `attackChoices` flag (the snapshot of what was declared) into its own flags.
 registerStoredCopy({ of: 'ChatMessage.base', at: 'flag:attackChoices' });
+
+
+/** A debuff ref as this public card names it: a secret debuff is "A hidden effect" until the GM reveals it, any other the label `name` gives. */
+function cardConditionLabel(ref, name) {
+  return effectCardName(conditionItemData(ref), name(ref));
+}
 
 /**
  * Equipped gear that may add flat damage parts to an attack. Weapons are excluded: an equipped
@@ -238,7 +245,7 @@ export function getAttackDamageParts(actor, attackItem, options = {}) {
 
   // The base is the chosen Skill's Base Damage with the weapon's own override filling the sub-fields it sets,
   // grown by the Rank breaks reached (shared with the weapon builder's Rank readout)
-  const scaled = scaleWeaponBase({ skill: matchingSkill ? (matchingSkill.system || {}) : null, weapon: sys, rank: skillRank });
+  const scaled = scaleWeaponBase({ skill: matchingSkill ? (matchingSkill.system || {}) : null, weapon: weaponSystemFor(attackItem) || sys, rank: skillRank });
   const offSizeBreakDice = scaled.offSize;
   const extraWeaponRankDiceCount = scaled.rankDieGrants;
   const base = scaled.base;
@@ -470,7 +477,7 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
 
   const sys = attackItem?.system || {};
   // The attack's mechanics line plus its prose; other item types (a skill or gear damage roll) keep their stored text.
-  const effectsText = attackItem?.type === 'attack' ? attackEffectsText(attackItem, { labelOf: conditionLabel }) : String(sys.effects || '');
+  const effectsText = attackItem?.type === 'attack' ? attackEffectsText(attackItem, { labelOf: (ref) => cardConditionLabel(ref, conditionLabel) }) : String(sys.effects || '');
 
   // One damage context per roll: inherited from the attack card (its situations, subject and crit), or built from the
   // live targets. Parts, stat substitutions and modifiers all read it.
@@ -611,17 +618,17 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
 
   // Construct rich breakdown HTML for chat card
   const partPills = evaluatedParts.map(p => {
-    const multTag = p.multiplier !== 1 ? ` <span class="cog-mult-tag">(x${p.multiplier})</span>` : '';
+    const multTag = p.multiplier !== 1 ? ` <span class="cog-mult-tag">(x${escapeAttr(p.multiplier)})</span>` : '';
     const sourceTag = p.source ? ` <span class="cog-source-tag">[${escapeAttr(p.source)}]</span>` : '';
     return `
       <div class="cog-damage-part-row" style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px; font-size: 11px; border-bottom: 1px dashed var(--cog-divider);">
         <div>
-          <strong class="cog-text-accent">${p.perTargetPending ? 'per target' : p.finalDamage}</strong>
-          <span style="font-weight: bold; text-transform: uppercase; margin-left: 4px;">${p.type}</span>
+          <strong class="cog-text-accent">${escapeAttr(p.perTargetPending ? 'per target' : p.finalDamage)}</strong>
+          <span style="font-weight: bold; text-transform: uppercase; margin-left: 4px;">${escapeAttr(p.type)}</span>
           ${sourceTag}
         </div>
         <div class="cog-text-muted" style="font-size: 10px;">
-          <span>(${p.formula})</span>${multTag}
+          <span>(${escapeAttr(p.formula)})</span>${multTag}
         </div>
       </div>
     `;
@@ -691,12 +698,12 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
   }
 
   const multSourceHtml = dmod.multiplierSources.length > 0
-    ? `<div class="cog-multiplier-sources cog-text-muted" style="font-size: 10px; margin-top: 2px;">Multipliers: ${dmod.multiplierSources.join(', ')}</div>`
+    ? `<div class="cog-multiplier-sources cog-text-muted" style="font-size: 10px; margin-top: 2px;">Multipliers: ${escapeAttr(dmod.multiplierSources.join(', '))}</div>`
     : '';
 
   // The snapshot of the hit card is copied, so the damage card shows what was declared.
   const attackChoicesFlag = snapshot
-    ? amazingMessage.flags[SYSTEM_ID].attackChoices
+    ? attackChoicesFlagOf(amazingMessage)
     : choicesFlag(choices, model ?? buildAttackOptions(actor, attackItem, baseContext, { mode: 'damage' }), { ruleBreak, reasons });
   const optionsLineHtml = await attackOptionsLineHtml(attackChoicesFlag);
 
@@ -705,22 +712,22 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
   const effectSummaryHtml = await cardSummary(attackItem, OMIT_ALL, { actor, effects: onHitDebuffs.map((ref) => ({ kind: 'debuffs', ref })) });
   const cardContent = `
     <div class="cog-chat-card cog-damage-card"
-      data-attacker-uuid="${actor.uuid}"
-      data-item-id="${attackItem?.id || ''}"
+      data-attacker-uuid="${escapeAttr(actor.uuid)}"
+      data-item-id="${escapeAttr(attackItem?.id || '')}"
       data-item-name="${escapeAttr(attackItem?.name || '')}"
-      data-damage-value="${totalRawDamage}"
+      data-damage-value="${escapeAttr(totalRawDamage)}"
       data-typed-damage='${typedDamageJson}'${damageCardDataAttrs(allParts, rollContextDataAttr({ ...rollContext, appliedRowKeys: dmod.appliedKeys }), critDebuffs, targetRowsDataAttr(dmod.targetRows), sourceId)}${asTriggersDataAttr(asTriggers)}
-      data-attack-type="${attackItem?.type || 'attack'}"
+      data-attack-type="${escapeAttr(attackItem?.type || 'attack')}"
       data-is-armor-piercing="${isArmorPiercing}"
       data-debuffs='${jsonAttr(onHitDebuffs.filter(d => !critDebuffs.includes(d)))}'${onHitCardAttrs(onHitEffects)}>
       <div class="cog-damage-card-header">
         <strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(attackItem?.name || 'Attack')} Damage
-        ${favorBonus > 0 ? `<span class="cog-bg-success-fill cog-text-on-fill" style="font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 6px; text-transform: uppercase;">AI Favor rating ${favorBonus}</span>` : ''}
+        ${favorBonus > 0 ? `<span class="cog-bg-success-fill cog-text-on-fill" style="font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 6px; text-transform: uppercase;">AI Favor rating ${escapeAttr(favorBonus)}</span>` : ''}
         ${isArmorPiercing ? `<span class="cog-armor-piercing-badge cog-dark cog-bg-header-fill cog-text-gold" style="border: 1px solid var(--cog-gold); font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; text-transform: uppercase;"><i class="fa-solid fa-shield-halved"></i> [ARMOR-PIERCING]</span>` : ''}
       </div>
       ${optionsLineHtml}
       <div class="cog-damage-card-result" style="margin: 6px 0;">
-        <span class="cog-damage-value cog-text-accent" style="font-size: 20px; font-weight: bold;">${totalRawDamage}</span>
+        <span class="cog-damage-value cog-text-accent" style="font-size: 20px; font-weight: bold;">${escapeAttr(totalRawDamage)}</span>
         <span class="cog-damage-formula">${hasMult ? `(Multiplied Total)` : `Total Damage`}</span>
         ${multSourceHtml}
       </div>
@@ -745,7 +752,7 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
           ${ignoreEvadeButtonHtml({ sourceId, attackerType: actor.type, multiplier: 1, isCrit: Boolean(rollContext.isCrit), armorPiercing: isArmorPiercing })}
           ${critSubButtonHtml(Boolean(rollContext.isCrit), critTotal)}
           `}
-          ${onHitDebuffs.map(deb => `<button type="button" class="cog-apply-condition-btn cog-apply-debuff-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerApplyCondition" data-condition-name="${escapeAttr(deb)}" data-debuff-name="${escapeAttr(deb)}" data-item-id="${attackItem?.id || ''}" data-item-name="${escapeAttr(attackItem?.name || '')}" data-actor-uuid="${actor.uuid}" data-condition-type="debuff" title="Inflict ${escapeAttr(conditionRefName(deb))} on target(s)" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; border: none; cursor: pointer;"><i class="fa-solid fa-droplet"></i> Inflict [${escapeAttr(conditionRefName(deb))}]</button>`).join(' ')}
+          ${onHitDebuffs.map(deb => `<button type="button" class="cog-apply-condition-btn cog-apply-debuff-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerApplyCondition" data-condition-name="${escapeAttr(deb)}" data-debuff-name="${escapeAttr(deb)}" data-item-id="${escapeAttr(attackItem?.id || '')}" data-item-name="${escapeAttr(attackItem?.name || '')}" data-actor-uuid="${escapeAttr(actor.uuid)}" data-condition-type="debuff" title="Inflict ${escapeAttr(cardConditionLabel(deb, conditionRefName))} on target(s)" style="font-size: 10px; padding: 2px 6px; border-radius: 3px; border: none; cursor: pointer;"><i class="fa-solid fa-droplet"></i> Inflict [${escapeAttr(cardConditionLabel(deb, conditionRefName))}]</button>`).join(' ')}
         </div>
       </div>
       ${effectSummaryHtml}
@@ -753,10 +760,10 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
   `;
 
   let effectFlavorTag = '';
-  if (favorBonus > 0) effectFlavorTag += ` [AI Favor rating ${favorBonus}]`;
+  if (favorBonus > 0) effectFlavorTag += ` [AI Favor rating ${escapeAttr(favorBonus)}]`;
 
   const flavorBreakdown = replacesDamage ? (variantEffect.variant.label || variantEffect.variant.id) : Object.entries(typedDamage).map(([t, val]) => `${val} ${t}`).join(', ');
-  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(attackItem?.name || 'Attack')} (Damage: ${flavorBreakdown}${hasMult ? ` [x${globalMult * effectMult}]` : ''})${effectFlavorTag}${effectsText ? ` - <em>${effectsText}</em>` : ''}`;
+  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(attackItem?.name || 'Attack')} (Damage: ${escapeAttr(flavorBreakdown)}${hasMult ? ` [x${globalMult * effectMult}]` : ''})${effectFlavorTag}${effectsText ? ` - <em>${escapeAttr(effectsText)}</em>` : ''}`;
 
   const mainRoll = await new Roll(`${totalRawDamage}`).evaluate();
 

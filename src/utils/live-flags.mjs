@@ -48,15 +48,17 @@ export function registerLiveFlags(settings, flags = LIVE_FLAGS) {
 
 /**
  * Whether a live flag is on. Read at call time. An id that is not in the table is a programming error and throws; a
- * flag whose setting is not registered or not readable (before `init`, a unit test that never registered it) is off.
+ * flag whose setting is not registered (before `init`, a unit test that never registered it) is off; any other fault in the read throws.
  * @param {string} id
  * @param {typeof LIVE_FLAGS} [flags] a fixture table, for the unit test; never passed under `src/`
  */
 export function liveFlag(id, flags = LIVE_FLAGS) {
   if (!flags.some((f) => f.id === id)) throw new Error(`Unknown live flag "${id}"`);
-  try {
-    return globalThis.game?.settings?.get?.(SYSTEM_ID, liveFlagKey(id)) === true;
-  } catch {
-    return false;
-  }
+  const settings = globalThis.game?.settings;
+  if (!settings?.get) return false;
+  const key = `${SYSTEM_ID}.${liveFlagKey(id)}`;
+  // Foundry's `settings.get` throws for an unregistered key and for nothing a flag read could recover from; ask the
+  // registry first so any other fault surfaces instead of reading as "off". A host with no registry map reads directly.
+  if (typeof settings.settings?.has === 'function' && !settings.settings.has(key)) return false;
+  return settings.get(SYSTEM_ID, liveFlagKey(id)) === true;
 }

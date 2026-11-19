@@ -10,7 +10,7 @@
  * what is dropped because using it now would be a Rule Break (a rule-breaking choice is never proposed). The module
  * is pure apart from `rememberAttackPick`, the only writer.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { clearFlag, readFlag, writeFlag } from '../flags.mjs';
 import { attackText } from './attack-text.mjs';
 import { DETECTED } from '../../data/rules/attack-situation-rules.mjs';
 import { firstScalar } from '../first-scalar.mjs';
@@ -76,7 +76,7 @@ export function readAttackPick(raw) {
 function storedPicks(user) {
   let all;
   try {
-    all = typeof user?.getFlag === 'function' ? user.getFlag(SYSTEM_ID, ATTACK_PICKS_FLAG) : user?.flags?.[SYSTEM_ID]?.[ATTACK_PICKS_FLAG];
+    all = readFlag(user, ATTACK_PICKS_FLAG);
   } catch {
     all = undefined;
   }
@@ -198,12 +198,12 @@ export async function rememberAttackPick(user, actor, item, choices, { keepSkill
   if (keepSkill && stored) next.skill = stored.skill;
   if (stored ? sameInterior(stored, next) : (!next.effect && next.maneuvers.length === 0 && next.markTarget === 'effect' && !next.skill)) return false;
   try {
-    await user.setFlag(SYSTEM_ID, `${ATTACK_PICKS_FLAG}.${key.actorId}.${key.itemId}`, { ...next, at: Date.now() });
+    await writeFlag(user, `${ATTACK_PICKS_FLAG}.${key.actorId}.${key.itemId}`, { ...next, at: Date.now() });
     const rows = pickRows(storedPicks(user));
     if (rows.length > MAX_ATTACK_PICKS && typeof user.unsetFlag === 'function') {
       const own = (r) => r.actorId === key.actorId && r.itemId === key.itemId;
       const oldest = rows.filter(r => !own(r)).sort((a, b) => a.at - b.at).slice(0, rows.length - MAX_ATTACK_PICKS);
-      for (const r of oldest) await user.unsetFlag(SYSTEM_ID, `${ATTACK_PICKS_FLAG}.${r.actorId}.${r.itemId}`);
+      for (const r of oldest) await clearFlag(user, `${ATTACK_PICKS_FLAG}.${r.actorId}.${r.itemId}`);
     }
     return true;
   } catch (err) {

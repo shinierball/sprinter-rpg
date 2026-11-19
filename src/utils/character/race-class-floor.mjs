@@ -6,12 +6,12 @@
  * The floor that counts is the higher of the world floor clock and the actor's own `details.floor`,
  * so a crawler created on Floor 3 is never prompted while the world clock still reads Floor 1.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { appliedRecordOf } from './race-class-flags.mjs';
 import { getCurrentFloor } from '../floor/current-floor.mjs';
 import { parseFloorNumber } from '../floor/floor-number.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS, isRuleBreak } from '../rule-break.mjs';
-import { escapeAttr } from '../escape-attr.mjs';
 import { transformationOfItem } from './overlay-state.mjs';
+import { langText } from '../lang-text.mjs';
 
 /** Default unlock floor; worlds and modules override it with `CONFIG.COG.raceClassUnlockFloor`. */
 export const RACE_CLASS_UNLOCK_FLOOR = 3;
@@ -31,11 +31,7 @@ const TEMPLATES = {
  * @param {object} [data]
  * @returns {string}
  */
-export function raceClassText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (TEMPLATES[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const raceClassText = langText(TEMPLATES);
 
 
 const norm = (v) => (typeof v === 'string' ? v.trim().toLowerCase() : '');
@@ -73,8 +69,7 @@ function itemsOf(actor) {
  * @returns {{ flag: object|null, item: object|null }}
  */
 function appliedSource(actor, kind) {
-  const flagKey = kind === 'race' ? 'appliedRace' : 'appliedClass';
-  const flag = actor?.getFlag?.(SYSTEM_ID, flagKey) || actor?.flags?.[SYSTEM_ID]?.[flagKey] || null; // a view has `flags`, not `getFlag`
+  const flag = appliedRecordOf(actor, kind) || null; // a view has `flags`, not `getFlag`; `readFlag` reads both
   const items = itemsOf(actor).filter(i => i?.type === kind && !transformationOfItem(i)); // a form race is no applied race
   const item = (flag?.itemId ? items.find(i => (i.id ?? i._id) === flag.itemId) : null) || items[0] || null;
   return { flag, item };
@@ -138,7 +133,7 @@ export async function confirmRaceClassFloor(actor, kind, def, options = {}) {
   const { data, reason } = gate;
   const res = await confirmRuleBreak({
     title: raceClassText('COG.RaceClass.RuleBreakTitle'),
-    message: raceClassText('COG.RaceClass.RuleBreakMessage', { ...data, actor: escapeAttr(data.actor), name: escapeAttr(data.name) }),
+    message: raceClassText('COG.RaceClass.RuleBreakMessage', data),
     reason,
     options
   });

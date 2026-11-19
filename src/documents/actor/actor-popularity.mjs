@@ -11,7 +11,6 @@
  * context the GM builds from that application's undo record (3.56o), never on the request's tags.
  */
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { evaluateRows } from '../../utils/roll/damage-modifiers.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
@@ -26,7 +25,7 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { findDamageUndoRecord, isApplicationId, markDamageUndoKillAwarded } from '../../utils/damage/damage-undo.mjs';
-import { withFlags, readFlag, flagPath } from '../../utils/flags.mjs';
+import { withFlags, readFlag, flagPath, writeFlag } from '../../utils/flags.mjs';
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 
@@ -71,7 +70,7 @@ export function currentTokens(actor, combatHint = '') {
 /** What `event` would award this actor right now (rows matched, once-per split), before any prompt or write. */
 export function resolvePopularityAward(actor, event, context, tokens = currentTokens(actor)) {
   const entries = evaluateRows(actor, 'popularityTriggers', context);
-  const usage = usedKeys(actor?.flags?.[SYSTEM_ID]?.[USAGE_FLAG], tokens);
+  const usage = usedKeys(readFlag(actor, USAGE_FLAG), tokens);
   return matchPopularityTriggers(entries, event, context.tags, usage);
 }
 
@@ -98,9 +97,9 @@ async function writePopularityAward(actor, { event, context, confirmedKeys = [],
   ];
   if (awarded.length === 0) return { total: 0, awarded };
   const total = awarded.reduce((sum, a) => sum + a.value, 0);
-  const usage = recordUsage(actor.flags?.[SYSTEM_ID]?.[USAGE_FLAG], tokens, awarded);
+  const usage = recordUsage(readFlag(actor, USAGE_FLAG), tokens, awarded);
   await actor.update({ 'system.details.popularity': (Number(actor.system?.details?.popularity) || 0) + total });
-  await actor.setFlag(SYSTEM_ID, USAGE_FLAG, usage);
+  await writeFlag(actor, USAGE_FLAG, usage);
   const lines = awarded.map(a => {
     const label = a.row.label || a.source?.name || 'Popularity';
     const value = a.value > 0 ? `+${a.value}` : `${a.value}`;
@@ -118,10 +117,10 @@ async function writePopularityAward(actor, { event, context, confirmedKeys = [],
 /** Drop the stored once-per record for a scope (`combat` at combat end) on every actor in `actors`. */
 export async function clearPopularityUsage(actors, scope = 'combat') {
   for (const actor of actors ?? []) {
-    const slot = actor?.flags?.[SYSTEM_ID]?.[USAGE_FLAG]?.[scope];
+    const slot = readFlag(actor, USAGE_FLAG)?.[scope];
     if (!slot) continue;
     // an empty record, not a deletion: setFlag merges objects, and a blank token never matches
-    await actor.setFlag(SYSTEM_ID, USAGE_FLAG, { [scope]: { token: '', keys: [] } });
+    await writeFlag(actor, USAGE_FLAG, { [scope]: { token: '', keys: [] } });
   }
 }
 

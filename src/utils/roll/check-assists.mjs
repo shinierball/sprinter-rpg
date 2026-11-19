@@ -7,14 +7,15 @@
  * cannot leave a stale sum. A pure leaf: it imports only constants, the tag vocabulary, the tag query and the
  * outcome classifier, and names no tag literal.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { CHECK_TAGS, OUTCOME_TAGS, isOutcomeTag, getTagsOf, getInterruptTriggersFromTags, isOfferedOnCheck, calledAssistTrigger } from '../tag/tag-mechanics.mjs';
+import { flagPath, readFlag } from '../flags.mjs';
+import { CHECK_TAGS, OUTCOME_TAGS, isOutcomeTag, getTagsOf, getInterruptTriggersFromTags, isOfferedOnCheck, isOfferedBeforeCheck, calledAssistTrigger } from '../tag/tag-mechanics.mjs';
 import { matchesTagQuery, matchesTagQueryIgnoring } from '../tag/tag-query.mjs';
 import { COG_ROLL_OUTCOMES, attackHits, evaluateRollOutcome, extractD20Result, shiftDegree } from '../../documents/session/roll-outcomes.mjs';
 import { maxOfDiceFormula } from './dice-max.mjs';
 import { sanitizePatronCheckRef } from '../patron/patron-check-ref.mjs';
 import { sanitizePetCheckRef } from '../pet/pet-check-ref.mjs';
 import { DIFFICULTY_MODES } from '../../data/rules/difficulty-rules.mjs';
+import { sanitizePartyCheckRef } from './party-ref.mjs';
 
 export const CHECK_RECORD_FLAG = 'check';
 const CHECK_RECORD_VERSION = 1;
@@ -25,7 +26,7 @@ const MAX_RECORD_OFFERS_USED = 20;
 const MAX_CONTEXT_TAGS = 120;
 
 const RECORD_KINDS = Object.freeze(['skill', 'attack', 'spell', 'evade', 'stat']);
-const ASSIST_SOURCES = Object.freeze(['interrupt', 'called_play']);
+const ASSIST_SOURCES = Object.freeze(['interrupt', 'called_play', 'help']);
 const REROLL_SOURCES = Object.freeze(['ai_favor', 'row']);
 const APPLIED_TO = Object.freeze(['check', 'damage', 'none', 'unresolved']);
 const SUCCESS_OUTCOMES = Object.freeze([COG_ROLL_OUTCOMES.SUCCESS, COG_ROLL_OUTCOMES.AMAZING_SUCCESS, COG_ROLL_OUTCOMES.CRITICAL_SUCCESS]);
@@ -49,8 +50,8 @@ function sanitizeAssist(raw, fallbackId = '') {
   if (!source) return null;
   const amount = typeof raw.amount === 'number' ? raw.amount : Number(raw.amount);
   if (!Number.isFinite(amount)) return null;
-  // An Intervene is always added to the check; a record written without the field means exactly that.
-  const appliedTo = raw.appliedTo === undefined && source === 'interrupt' ? 'check' : raw.appliedTo;
+  // An Intervene and a Help die are always added to the check; a record written without the field means exactly that.
+  const appliedTo = raw.appliedTo === undefined && (source === 'interrupt' || source === 'help') ? 'check' : raw.appliedTo;
   if (!APPLIED_TO.includes(appliedTo)) return null;
   const id = str(raw.id) || fallbackId;
   if (!id) return null;
@@ -250,6 +251,7 @@ function sanitizeRecord(raw) {
     evade: sanitizeEvade(raw.evade),
     assists: sanitizeAssists(raw.assists),
     contest: sanitizeContestRefRecord(raw.contest),
+    party: sanitizePartyCheckRef(raw.party),
     vehicle: sanitizeVehicleRefRecord(raw.vehicle),
     patron: sanitizePatronCheckRef(raw.patron),
     pet: sanitizePetCheckRef(raw.pet),
@@ -275,6 +277,7 @@ function sanitizeRecord(raw) {
  * @param {{ isArea?: boolean, areaOutcome?: string, floor?: number }|null} [p.evade]
  * @param {object[]} [p.assists]
  * @param {{ messageId?: string, legId?: string, participantId?: string }|null} [p.contest] the race or chase leg this check was rolled for (3.45)
+ * @param {{ messageId?: string, participantId?: string }|null} [p.party] the party check card this check was rolled for
  * @param {{ vehicleUuid?: string, kind?: string, dc?: number|null, skill?: string, stat?: string, advantage?: boolean, rerollOf?: string, rerollKey?: string }|null} [p.vehicle] the vehicle this check was rolled for (3.44d)
  * @param {{ kind?: string, itemId?: string, skill?: string, rank?: number, dc?: number|null }|null} [p.patron] the patron item this check was rolled for, an audition or a gig (pp. 315-316)
  * @param {string} [p.itemUuid] the skill, weapon or spell rolled; '' for a stat check or an Evade
@@ -285,7 +288,7 @@ function sanitizeRecord(raw) {
  * @param {boolean} [p.statOnly] a skill card rolled as a Stat Check (no Rank): the kind stays `skill`, this marks it
  * @param {Iterable<string>} [p.contextTags] the roll's whole context tags (kept on a skill or Stat card only)
  */
-export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, combat = null, tags = [], targets = [], dc = null, hasDamage = false, evade = null, assists = [], contest = null, vehicle = null, patron = null, pet = null, itemUuid = '', rollId = '', stat = '', floor = null, difficulty = null, statOnly = false, contextTags = [] } = {}) {
+export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, combat = null, tags = [], targets = [], dc = null, hasDamage = false, evade = null, assists = [], contest = null, party = null, vehicle = null, patron = null, pet = null, itemUuid = '', rollId = '', stat = '', floor = null, difficulty = null, statOnly = false, contextTags = [] } = {}) {
   const contextTagsKept = kind === 'skill' || kind === 'stat' ? sanitizeContextTags([...(contextTags ?? [])]) : [];
   const record = {
     v: CHECK_RECORD_VERSION,
@@ -314,6 +317,7 @@ export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, com
     evade: evade ? sanitizeEvade(evade) : null,
     assists: {},
     contest: sanitizeContestRefRecord(contest),
+    party: sanitizePartyCheckRef(party),
     vehicle: sanitizeVehicleRefRecord(vehicle),
     patron: sanitizePatronCheckRef(patron),
     pet: sanitizePetCheckRef(pet),
@@ -341,15 +345,15 @@ export function rollerTokenIdOf(actor) {
   return typeof id === 'string' && id ? id : null;
 }
 
+/** The update path of the check record, or of one part of it (`checkRecordPath('assists.<id>.appliedTo')`). */
+export const checkRecordPath = (part) => flagPath(part ? `${CHECK_RECORD_FLAG}.${part}` : CHECK_RECORD_FLAG);
+
 /**
  * The sanitised record on a chat message (assists as an array sorted by `at`), or null when it has none.
  * @param {object} message a ChatMessage (or anything with `flags`)
  */
 export function readCheckRecord(message) {
-  const raw = typeof message?.getFlag === 'function'
-    ? message.getFlag(SYSTEM_ID, CHECK_RECORD_FLAG)
-    : message?.flags?.[SYSTEM_ID]?.[CHECK_RECORD_FLAG];
-  return sanitizeRecord(raw);
+  return sanitizeRecord(readFlag(message, CHECK_RECORD_FLAG));
 }
 
 // -- Outcomes -------------------------------------------------------------------------------------------------
@@ -609,20 +613,25 @@ const cleanList = (v) => (Array.isArray(v) ? v.filter((t) => typeof t === 'strin
 
 /**
  * What a skill says about being an assist: its dice, its offer query, whether the dice are usable, and the moment its
- * trigger tag gives it (`check` = offered on an ally's card, `turn` = called on the caller's turn, null = sheet only).
- * @returns {{ formula: string, when: { all: string[], any: string[], none: string[] }, valid: boolean, moment: 'check'|'turn'|null, actionType: string|null }}
+ * trigger tag gives it (`check` = offered on an ally's card, `before_check` = offered in an ally's pre-roll dialog,
+ * `turn` = called on the caller's turn, null = sheet only). `untrainedFormula` is what a helper without Ranks rolls instead.
+ * @returns {{ formula: string, untrainedFormula: string, untrainedValid: boolean, when: { all: string[], any: string[], none: string[] }, valid: boolean, moment: 'check'|'before_check'|'turn'|null, actionType: string|null }}
  */
 export function getAssistSpec(item) {
   const assist = isPlain(item?.system?.assist) ? item.system.assist : {};
   const formula = typeof assist.formula === 'string' ? assist.formula.trim() : '';
+  const untrainedFormula = typeof assist.untrainedFormula === 'string' ? assist.untrainedFormula.trim() : '';
   const when = isPlain(assist.when) ? assist.when : {};
   const ids = getInterruptTriggersFromTags(getTagsOf(item)).map((t) => t.id);
   const called = calledAssistTrigger(ids);
   let moment = null;
   if (isOfferedOnCheck(ids)) moment = 'check';
+  else if (isOfferedBeforeCheck(ids)) moment = 'before_check';
   else if (called) moment = 'turn';
   return {
     formula,
+    untrainedFormula,
+    untrainedValid: !untrainedFormula || isValidAssistFormula(untrainedFormula),
     when: { all: cleanList(when.all), any: cleanList(when.any), none: cleanList(when.none) },
     valid: isValidAssistFormula(formula),
     moment,

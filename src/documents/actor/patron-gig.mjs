@@ -4,7 +4,7 @@
  * counts toward the termination fee. Permissive adjudication: a patron who is not active, or a second payment, each ask a
  * Rule Break.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { flagPath, readFlag } from '../../utils/flags.mjs';
 import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
 import { COG_OUTCOME_CONFIG } from '../session/roll-outcomes.mjs';
 import { readCheckRecord, effectiveCheck, outcomeIdOf } from '../../utils/roll/check-assists.mjs';
@@ -17,7 +17,12 @@ import { decrementFloorTimer } from './actor-environment.mjs';
 import { say, notify } from './vehicle-drive-common.mjs';
 
 /** The message flag set once a gig card has been paid. */
-export const GIG_PAID_FLAG = 'patronGigPaid';
+const GIG_PAID_FLAG = 'patronGigPaid';
+
+/** The payout record a paid gig card carries (`{ net, gross, cut, outcome }`), or null while the gig is unpaid. */
+export function gigPaidOf(message) {
+  return readFlag(message, GIG_PAID_FLAG) || null;
+}
 
 const canWrite = (actor) => Boolean(globalThis.game?.user?.isGM || actor?.testUserPermission?.(globalThis.game?.user, 'OWNER'));
 
@@ -66,7 +71,7 @@ export async function payGig(message, { modifier = 0, dc = null, options } = {})
   const item = actor?.items.get(ref.itemId) ?? null;
   if (!actor || !item) return { ok: false, reason: 'no-patron' };
   const data = { patron: item.name, actor: actor.name };
-  if (message.flags?.[SYSTEM_ID]?.[GIG_PAID_FLAG]) {
+  if (gigPaidOf(message)) {
     const answer = await confirmRuleBreak({
       title: say('COG.Patron.Gig.Title', 'Gig'),
       message: say('COG.Patron.Gig.PaidAsk', 'This gig is already paid. Pay it again as a Rule Break?', data),
@@ -85,7 +90,7 @@ export async function payGig(message, { modifier = 0, dc = null, options } = {})
   const gold = Number(actor.system?.currency?.gold) || 0;
   await actor.update({ 'system.currency.gold': gold + payout.net });
   await writePatronage(item, { earned: patronageOf(item).earned + payout.cut });
-  await message.update({ [`flags.${SYSTEM_ID}.${GIG_PAID_FLAG}`]: { net: payout.net, gross: payout.gross, cut: payout.cut, outcome } });
+  await message.update({ [flagPath(GIG_PAID_FLAG)]: { net: payout.net, gross: payout.gross, cut: payout.cut, outcome } });
   await postPatronCard(actor, {
     title: say('COG.Patron.Gig.CardTitle', 'Gig: {patron}', data),
     icon: 'fa-sack-dollar',

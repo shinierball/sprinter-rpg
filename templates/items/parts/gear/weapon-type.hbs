@@ -8,13 +8,13 @@
   </div>
   <div class="cog-gear-chips">
     {{#each weapon.typeChips as |chip|}}
-    <button type="button" class="cog-badge cog-gear-chip {{#if chip.selected}}cog-bg-header-fill cog-text-on-fill cog-dark selected{{else}}cog-bg-surface-alt{{/if}}" data-action="toggleWeaponTag" data-tag="{{chip.id}}" data-tooltip="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}">{{chip.label}}</button>
+    <button type="button" class="cog-badge cog-gear-chip {{#if chip.selected}}cog-bg-header-fill cog-text-on-fill cog-dark selected{{else}}cog-bg-surface-alt{{/if}}" data-action="toggleWeaponTag" data-tag="{{chip.id}}" data-tooltip-text="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}">{{chip.label}}</button>
     {{/each}}
   </div>
   <span class="cog-field-label">{{localize "COG.GearSheet.Type.GroupTitle"}}</span>
   <div class="cog-gear-chips">
     {{#each weapon.groupChips as |chip|}}
-    <button type="button" class="cog-badge cog-gear-chip {{#if chip.selected}}cog-bg-header-fill cog-text-on-fill cog-dark selected{{else}}cog-bg-surface-alt{{/if}}" data-action="toggleWeaponTag" data-tag="{{chip.id}}" data-tooltip="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}">{{chip.label}}</button>
+    <button type="button" class="cog-badge cog-gear-chip {{#if chip.selected}}cog-bg-header-fill cog-text-on-fill cog-dark selected{{else}}cog-bg-surface-alt{{/if}}" data-action="toggleWeaponTag" data-tag="{{chip.id}}" data-tooltip-text="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}">{{chip.label}}</button>
     {{/each}}
   </div>
   {{#each weapon.selectedChips as |chip|}}

@@ -13,11 +13,12 @@ import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { readFlag, flagPath, withFlags } from '../../utils/flags.mjs';
+import { craftGradeOf, craftRegradeUpdate } from '../../utils/crafting/craft-flags.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { messageList } from '../../utils/card/recent-cards.mjs';
 import { buildRollContext, extendContext, parseRollContext } from '../../utils/roll/roll-context.mjs';
-import { readCheckRecord, effectiveCheck, isSuccessOutcome, CHECK_RECORD_FLAG, MAX_RECORD_REROLLS } from '../../utils/roll/check-assists.mjs';
+import { readCheckRecord, effectiveCheck, isSuccessOutcome, checkRecordPath, MAX_RECORD_REROLLS } from '../../utils/roll/check-assists.mjs';
 import { afterRollOffers, offerByKey } from '../../utils/roll/after-roll.mjs';
 import { rerollEntryFrom, isCurrentCard, rerollFormula, aiFavorReasons, rejudgedCalledPlays, AI_FAVOR_OFFER_KEY, AI_FAVOR_REROLL_COST } from '../../utils/roll/check-offers.mjs';
 import { checkOfferText } from '../../utils/roll/check-offer-text.mjs';
@@ -26,12 +27,13 @@ import { OUTCOME_TAGS } from '../../utils/tag/tag-mechanics.mjs';
 import { vehicleCheckSetup, vehicleCheckKeys, withVehicleSources } from '../../utils/vehicle/vehicle-check.mjs';
 import { VEHICLE_CHECK_KINDS } from '../../data/rules/vehicle-rules.mjs';
 import { canModifyMessage, damageAlreadyApplied, damageCardAnswers } from '../../chat/damage-applications.mjs';
+import { findContestMessage } from '../../chat/contest-service.mjs';
 import { addAiFavor } from '../../chat/actions/ai-favor-tally.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { craftOutcome } from '../../utils/crafting/crafting-engine.mjs';
 import { patronageOf } from '../../utils/patron/patronage-state.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
-import { GIG_PAID_FLAG } from './patron-gig.mjs';
+import { gigPaidOf } from './patron-gig.mjs';
 import { isTrustedAssist } from '../../chat/actions/use-assist.mjs';
 import { gateItemCooldown } from './cooldown-gate.mjs';
 import { changeVehicleCrew } from './vehicle-crew.mjs';
@@ -42,8 +44,6 @@ import { CHECK_CONTEXT_FLAG } from './check-reroll-stamp.mjs';
 
 const CHECK_OFFER_RELAY = 'checkOffer';
 const CHECK_REROLL_FLAG = 'checkReroll';
-/** A crafting check card's grade (`flags.sprinter-rpg.craft`: dc, tableTier, outcome, margin). */
-const CRAFT_FLAG = 'craft';
 const OPS = Object.freeze(['reroll', 'shift', 'useItem']);
 /** Message ids and row keys become flag values and keys; anything else could address another path. */
 const ENTRY_ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -53,7 +53,7 @@ const notify = (level, text) => globalThis.ui?.notifications?.[level]?.(text);
 const messageById = (id) => (typeof id === 'string' && id ? globalThis.game?.messages?.get?.(id) ?? null : null);
 
 /** The context a vehicle check's rows are matched against, rebuilt from its reference (a card with no stored context). */
-export function vehicleAfterRollContext({ roller, ref, setup, outcomeTag }) {
+function vehicleAfterRollContext({ roller, ref, setup, outcomeTag }) {
   const skill = ref.skill ? roller.getSkillByIdentifier?.(ref.skill) ?? null : null;
   return withVehicleSources(buildRollContext({
     actor: roller, phase: 'check', item: skill, check: vehicleCheckKeys(ref.skill ? 'skill' : 'stat', ref), other: null,
@@ -86,7 +86,7 @@ function resultApplied(message, record) {
     const item = resolveActorByUuid(record.rollerUuid)?.items.get(ref.itemId);
     return Boolean(item) && patronageOf(item).audition.checks.some((c) => c.messageId === message.id);
   }
-  return ref?.kind === 'gig' && readFlag(message, GIG_PAID_FLAG) === true;
+  return ref?.kind === 'gig' && Boolean(gigPaidOf(message));
 }
 
 /** AI Favor on hand: a crawler's number, null for an actor that holds none (a vehicle). */
@@ -139,14 +139,17 @@ export function checkCardInfo(message) {
       // A shift needs a degree to move, and on a vehicle check only Table 6 has one that matters.
       .filter((o) => o.kind !== 'degreeShift' || (outcome !== null && (!def || def.resolve === 'table6')));
   }
+  // A contest leg whose contest card is gone: a reroll would be spent on a result the contest ignores as an orphan.
+  const orphanedLeg = record.contest && !findContestMessage(record.contest.messageId);
+  if (orphanedLeg) info.offers = info.offers.filter((o) => o.kind !== 'reroll');
   // The AI Favor reroll needs no stored context: any check card the roller may still reroll offers it.
-  const ai = aiFavorOffer(info);
+  const ai = orphanedLeg ? null : aiFavorOffer(info);
   if (ai) info.offers = [...info.offers, ai];
   return info;
 }
 
 /** The item that carries an offer: on the roller, else on the vehicle. */
-export const findCarrier = (info, offer) => {
+const findCarrier = (info, offer) => {
   for (const actor of [info.roller, info.vehicle]) {
     const item = Array.from(actor?.items ?? []).find((i) => (offer.itemUuid && i.uuid === offer.itemUuid) || (offer.itemId && i.id === offer.itemId));
     if (item) return item;
@@ -224,20 +227,19 @@ async function writeCheckReroll(payload = {}) {
     byName: str(roller.name), messageId: rerollMessageId, ruleBreak: meta.ruleBreak === true, reasons: Array.isArray(meta.reasons) ? meta.reasons : []
   });
   if (!entry) return { ok: false, reason: 'bad-roll' };
-  const update = { [flagPath(`${CHECK_RECORD_FLAG}.rerolls.${rerollMessageId}`)]: entry };
+  const update = { [checkRecordPath(`rerolls.${rerollMessageId}`)]: entry };
   // A row's reroll is spent on this card in the same write.
-  if (source === 'row' && rowKey && !record.offersUsed.includes(rowKey)) update[flagPath(`${CHECK_RECORD_FLAG}.offersUsed`)] = [...record.offersUsed, rowKey];
+  if (source === 'row' && rowKey && !record.offersUsed.includes(rowKey)) update[checkRecordPath('offersUsed')] = [...record.offersUsed, rowKey];
   const rerolled = { ...record, total: entry.total, d20: entry.d20 };
   // Called Plays are re-judged on the new roll until a damage card answers the check.
   if (!damageCardAnswers(checkMessage)) {
-    for (const [id, appliedTo] of Object.entries(rejudgedCalledPlays(rerolled))) update[flagPath(`${CHECK_RECORD_FLAG}.assists.${id}.appliedTo`)] = appliedTo;
+    for (const [id, appliedTo] of Object.entries(rejudgedCalledPlays(rerolled))) update[checkRecordPath(`assists.${id}.appliedTo`)] = appliedTo;
   }
   // A crafting check's tier follows the new total.
-  const craft = readFlag(checkMessage, CRAFT_FLAG);
+  const craft = craftGradeOf(checkMessage);
   if (craft && typeof craft === 'object' && Number.isFinite(Number(craft.dc))) {
     const graded = craftOutcome({ total: entry.total, d20: entry.d20, dc: Number(craft.dc) });
-    update[flagPath(`${CRAFT_FLAG}.outcome`)] = graded.outcome;
-    update[flagPath(`${CRAFT_FLAG}.margin`)] = graded.margin;
+    Object.assign(update, craftRegradeUpdate(graded));
   }
   await checkMessage.update(update);
   await syncRerollLedger(record, entry);
@@ -299,7 +301,7 @@ async function writeCheckShift(payload = {}) {
     flags = Object.fromEntries(Object.entries(gate.flags).map(([k, v]) => [flagPath(k), v]));
   }
   const shifts = [...info.record.shifts, { rowKey: offer.rowKey, steps: offer.steps, failOnly: offer.failOnly }];
-  await message.update({ [flagPath(`${CHECK_RECORD_FLAG}.shifts`)]: shifts, ...flags });
+  await message.update({ [checkRecordPath('shifts')]: shifts, ...flags });
   // The card is the truth: a vehicle card settles from it, whether or not the update hook has run yet.
   if (info.vehicle) await ingestVehicleCheckNow(message);
   return { ok: true };
@@ -378,7 +380,7 @@ async function spendAiFavorReroll(info, options) {
     const why = checkOfferText(`Reason.${reason}`, data);
     const answer = await confirmRuleBreak({
       title: checkOfferText('RuleBreakTitle'),
-      message: `${escapeAttr(why)} ${escapeAttr(checkOfferText('Anyway'))}`,
+      message: `${why} ${checkOfferText('Anyway')}`,
       reason: why,
       options
     });

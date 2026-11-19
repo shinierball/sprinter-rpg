@@ -7,6 +7,7 @@
 import { setSourceStamp } from '../content-source.mjs';
 import { toStringList } from '../first-scalar.mjs';
 import { isPlainObject } from './check-reading.mjs';
+import { escapeHtml } from '../../sourcery/text.mjs';
 
 /** One step of a reported path: `grants[0]` is `{ key: 'grants', index: 0 }`, `onHit` is `{ key: 'onHit' }`. */
 function steps(path) {
@@ -106,9 +107,7 @@ export function noteReference(draft, entry, line) {
 
 /**
  * The spec Create passes to `createAndEditItem(type, spec)`: the checked spec, the source stamp the user chose, and the
- * unexpressed lines the user kept as one last paragraph of the description. `checkDraft` already cleaned each line with
- * `plainText` (angle brackets and enricher syntax neutralised), so the paragraph is that text between `<p>` tags and is
- * never escaped a second time (which would turn `&lt;` into `&amp;lt;`).
+ * unexpressed lines the user kept as one last paragraph of the description, each escaped once (`escapeHtml`).
  * @param {{ type: string, spec: object, unexpressed: string[] }} check a `checkDraft` result that is `ok`
  * @param {{ stamp: object, keepNotes: boolean }} options `stamp` is the full source stamp (`{ theme, set, authorship, ... }`);
  *   `keepNotes` appends `check.unexpressed` to the description
@@ -117,6 +116,9 @@ export function noteReference(draft, entry, line) {
 export function reviewSpec(check, { stamp, keepNotes }) {
   const spec = structuredClone(check.spec);
   const notes = keepNotes ? check.unexpressed.filter((line) => typeof line === 'string' && line.trim()) : [];
-  if (notes.length) spec.system.description = `${spec.system.description ?? ''}<p>${notes.join(' ')}</p>`;
+  if (notes.length) {
+    const paragraph = `<p>${notes.map(escapeHtml).join(' ')}</p>`;
+    spec.system.description = (spec.system.description ?? '') + paragraph;
+  }
   return { type: check.type, spec: setSourceStamp(spec, { ...stamp }) };
 }

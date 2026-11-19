@@ -3,7 +3,7 @@
  * Reverts only what the applier recorded in the actor's applied flag.
  */
 
-import { SYSTEM_ID } from '../constants.mjs';
+import { appliedRecordOf, clearAppliedRecord, grantedByOf } from '../utils/character/race-class-flags.mjs';
 import { transformationOfItem } from '../utils/character/transform-rules.mjs';
 import { DEFAULT_SIZE } from './sizes.mjs';
 import { addAbilityDeltas, revertDrAndMovementBonuses } from './race-class-bonuses.mjs';
@@ -28,7 +28,7 @@ function findAppliedItem(actor, type, record) {
  * adds ranks, so either one's mark means the item goes when its last rank does.
  */
 function grantedByRaceOrClass(item) {
-  return RACE_CLASS_TYPES.includes(item?.getFlag?.(SYSTEM_ID, 'grantedBy'));
+  return RACE_CLASS_TYPES.includes(grantedByOf(item));
 }
 
 /** True for an item a transformation made (a form race, its traits, a created skill, an added effect): the applier leaves it alone. */
@@ -53,7 +53,7 @@ export async function removeAppliedRace(actor) {
 
   // 1. Revert only what the applier recorded. With no flag there is nothing to revert: the
   // string and any stray race items are cleared, but a race name is never looked up and subtracted.
-  const applied = actor.getFlag?.(SYSTEM_ID, 'appliedRace');
+  const applied = appliedRecordOf(actor, 'race');
   const currentRaceName = (actor.system?.details?.race || '').trim();
   const hasRaceItem = Boolean(actor.items?.some(i => i.type === 'race' && !isTransformationItem(i)));
 
@@ -78,7 +78,7 @@ export async function removeAppliedRace(actor) {
   const condIdsToDelete = [];
   if (actor.items) {
     for (const item of actor.items) {
-      if (isEffectItem(item) && item.getFlag?.(SYSTEM_ID, 'grantedBy') === 'race' && !isTransformationItem(item)) {
+      if (isEffectItem(item) && grantedByOf(item) === 'race' && !isTransformationItem(item)) {
         if (!condIdsToDelete.includes(item.id)) condIdsToDelete.push(item.id);
       }
     }
@@ -151,9 +151,7 @@ export async function removeAppliedRace(actor) {
   }
 
   // 10. Clear flag
-  if (typeof actor.unsetFlag === 'function') {
-    await actor.unsetFlag(SYSTEM_ID, 'appliedRace');
-  }
+  await clearAppliedRecord(actor, 'race');
 
   // 11. Commit actor updates
   if (Object.keys(updates).length > 0 && typeof actor.update === 'function') {
@@ -173,7 +171,7 @@ export async function removeAppliedClass(actor) {
   if (!actor) return false;
 
   // 1. Revert only what the applier recorded; with no flag only the string and stray class items go.
-  const applied = actor.getFlag?.(SYSTEM_ID, 'appliedClass');
+  const applied = appliedRecordOf(actor, 'class');
   const currentClassName = (actor.system?.details?.class || '').trim();
   const hasClassItem = Boolean(actor.items?.some(i => i.type === 'class'));
 
@@ -192,7 +190,7 @@ export async function removeAppliedClass(actor) {
   const condIdsToDelete = [];
   if (actor.items) {
     for (const item of actor.items) {
-      if (isEffectItem(item) && item.getFlag?.(SYSTEM_ID, 'grantedBy') === 'class') {
+      if (isEffectItem(item) && grantedByOf(item) === 'class') {
         if (!condIdsToDelete.includes(item.id)) condIdsToDelete.push(item.id);
       }
     }
@@ -265,9 +263,7 @@ export async function removeAppliedClass(actor) {
   }
 
   // 9. Clear flag
-  if (typeof actor.unsetFlag === 'function') {
-    await actor.unsetFlag(SYSTEM_ID, 'appliedClass');
-  }
+  await clearAppliedRecord(actor, 'class');
 
   // 10. Commit actor updates
   if (Object.keys(updates).length > 0 && typeof actor.update === 'function') {

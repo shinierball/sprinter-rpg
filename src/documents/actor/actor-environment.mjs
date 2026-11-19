@@ -8,6 +8,7 @@ import { SECONDS_PER_HOUR } from '../../utils/time/timing.mjs';
 import { captureFloorExit } from './popularity-checklist.mjs';
 import { postFloorPetReminder } from './pet-floor-reminder.mjs';
 import { postChecklistDue } from './popularity-checklist-due.mjs';
+import { onFloorChanged } from './transform-cue-events.mjs';
 
 /** World setting: how many crawlers are left alive. */
 export const CRAWLER_COUNT_SETTING = 'crawlerCount';
@@ -184,6 +185,7 @@ export function onCurrentFloorChange() {
   }
   refreshEnvironmentDisplays();
   globalThis.Hooks?.callAll?.('cogFloorChanged', { floor: getCurrentFloor() });
+  void onFloorChanged();
 }
 
 export function refreshEnvironmentDisplays() {

@@ -3,7 +3,7 @@
    Everything is scoped under .cog-p0, so a sheet that does not render page 0 is untouched.
    Layout follows the width of .cog-p0 itself (a container query), not the screen: the root owns the
    container, and the grid lives on the .cog-p0-grid wrapper inside it (a container cannot restyle itself).
-   320-479px one column; 480-759px seven stat tiles in a row; 760px and up attacks beside the hot bar.
+   320-479px one column; 480-759px eight stat tiles in a row; 760px and up attacks beside the hot bar.
    ======================================================= */
 
 .cog-p0 {
@@ -160,6 +160,45 @@
   margin-bottom: 3px;
 }
 
+/* temporary Health bars: drawn only while the crawler has some (live flag page-zero-temp-guard) */
+.cog-p0-temp {
+  display: grid;
+  gap: 3px;
+}
+
+.cog-p0-tslots {
+  display: grid;
+  grid-template-columns: repeat(var(--p0-tslots), minmax(0, 1fr));
+  gap: 3px;
+  height: 20px;
+}
+
+.cog-p0-tslot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--cog-gold);
+  background: var(--cog-surface-muted);
+}
+
+.cog-p0-tslot.is-empty {
+  border-color: var(--cog-panel-border);
+  opacity: 0.5;
+}
+
+.cog-p0-tslot i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--cog-meter-shield);
+}
+
+.cog-p0-tslot span {
+  position: relative;
+  font: 700 11px 'Oswald', sans-serif;
+  color: var(--cog-text-strong);
+}
+
 .cog-p0-num {
   font: 700 17px 'Oswald', sans-serif;
   font-variant-numeric: tabular-nums;
@@ -174,40 +213,34 @@
 .cog-p0-meter {
   position: relative;
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(var(--p0-cols), minmax(0, 1fr));
+  gap: 2px;
   border-radius: 3px;
   overflow: hidden;
-  background: var(--cog-meter-health);
+  background: var(--cog-window-bg);
   border: 1px solid var(--cog-border);
 }
 
-.cog-p0-empty {
-  position: absolute;
-  inset: 0 0 0 auto;
-  background: var(--cog-surface-muted);
-}
-
-/* One button per Health bar, drawn over the meter: its right edge is the tick between two bars. */
+/* One button per Health bar. Each draws its own fill over its own slice of the colour ramp, so the bars read as one
+   meter in a single row and still read right when a narrow sheet wraps them to two rows; the gap is the tick. */
 .cog-p0 button.cog-p0-bar {
   position: relative;
   min-width: 0;
   padding: 0;
   border: 0;
-  border-right: 2px solid var(--cog-window-bg);
   border-radius: 0;
-  background: none;
+  background:
+    linear-gradient(to right, transparent var(--p0-fill, 0%), var(--cog-surface-muted) var(--p0-fill, 0%)),
+    var(--cog-meter-health);
+  background-size: 100% 100%, calc(var(--p0-bars, 1) * 100%) 100%;
+  background-position: 0 0, var(--p0-pos, 0%) 0;
   box-shadow: none;
   cursor: pointer;
 }
 
-.cog-p0 button.cog-p0-bar:last-child {
-  border-right: 0;
-}
-
 .cog-p0 button.cog-p0-bar:hover,
 .cog-p0 button.cog-p0-bar:focus-visible {
-  background: var(--cog-sheen);
+  box-shadow: inset 0 0 0 100vmax var(--cog-sheen);
   outline: 2px solid var(--cog-info);
   outline-offset: -2px;
 }
@@ -298,8 +331,15 @@
   border: 2px solid var(--cog-header-fill);
 }
 
+/* Evade and DR share a row; AI Favor takes the next whole row (from 480px all eight tiles share one row). */
 .cog-p0-tile.is-favor {
+  grid-column: 1 / -1;
   border: 2px solid var(--cog-gold-fill);
+}
+
+/* Damage Resistance is a readout, not a button: the same tile look, a plain border. */
+.cog-p0-tile.is-dr {
+  border: 2px solid var(--cog-border);
 }
 
 /* ---- sections: attacks and hot bar ---- */
@@ -434,7 +474,7 @@
   min-height: 46px;
 }
 
-.cog-p0-last > :not(button) {
+.cog-p0-last > * {
   flex: 1;
   min-width: 150px;
   font-size: 14px;
@@ -445,28 +485,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-.cog-p0-last button {
-  min-height: 44px;
-  border-radius: 3px;
-  border: 1px solid var(--cog-border);
-  background: var(--cog-surface);
-  color: var(--cog-text-strong);
-  padding: 4px 12px;
-  font: 500 12.5px 'Oswald', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.cog-p0-last button.is-yes {
-  background: var(--cog-accent-fill);
-  border-color: var(--cog-accent-fill);
-  color: var(--cog-on-fill);
-}
-
 /* ---- widths: the container is .cog-p0 ---- */
 @container cog-p0 (min-width: 480px) {
-  .cog-p0-stats { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .cog-p0-meter { grid-template-columns: repeat(var(--p0-bars), minmax(0, 1fr)); }
+  .cog-p0-stats { grid-template-columns: repeat(8, minmax(0, 1fr)); }
   .cog-p0-tile,
+  .cog-p0 .cog-p0-tile.is-wide,
   .cog-p0 button.cog-p0-tile.is-wide { grid-column: span 1; flex-direction: column; gap: 3px; min-height: 58px; }
   .cog-p0-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

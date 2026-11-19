@@ -111,7 +111,7 @@ export function CatalogBrowserMixin(Base) {
         return payload;
       }
       const created = (await this.actor.createEmbeddedDocuments('Item', [payload]))?.[0] ?? null;
-      if (notify && message) globalThis.ui?.notifications?.info?.(message);
+      if (created && notify && message) globalThis.ui?.notifications?.info?.(message);
       if (render && typeof this.render === 'function') this.render();
       return created;
     }

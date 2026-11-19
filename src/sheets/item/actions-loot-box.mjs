@@ -7,7 +7,6 @@
  * Filling a box is the GM's job: a player who owns a copy sees the tier and "Sealed" and every write here is refused quietly.
  * Nothing here hard-blocks a rule: granting a trophy's boxes a second time asks a Rule Break confirm.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { resolveLootBoxTier } from '../../data/loot-box-tiers.mjs';
 import { BOX_TABLE_AS, sanitizeBoxRow, sanitizeRewardBoxes } from '../../data/loot-box-rows.mjs';
 import { isLootBoxType } from '../../models/items/loot-model.mjs';
@@ -19,8 +18,10 @@ import { choiceTextKey, promptChoicePicks } from '../../utils/ui/choice-picker.m
 import { getOrCreateItemFolder } from '../../utils/ui/world-folder.mjs';
 import { boxText, boxOpenServices, choiceCandidates } from '../../documents/actor/loot-box-open.mjs';
 import { rollMagicItem } from '../../documents/item/magic-item-roll.mjs';
-import { grantLootBoxes, REWARD_BOXES_FLAG } from '../../documents/actor/achievement-award.mjs';
+import { withPreroll } from '../../utils/loot/loot-flags.mjs';
+import { grantLootBoxes, rewardBoxesGrantedOf, markRewardBoxesGranted } from '../../documents/actor/achievement-award.mjs';
 import { getAvailableRollTables } from './catalogs.mjs';
+import { asBoxHost, itemBoxHost } from './box-host.mjs';
 import { rowIndex, toArray } from './util.mjs';
 import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES } from '../../utils/document-types.mjs';
 
@@ -70,29 +71,33 @@ function valueOf(control) {
 
 // --- the box's prize rows ---------------------------------------------------------------------------------------------
 
-/** Whether this sheet may edit the box's contents: the GM, on an editable box. */
-const canFill = (sheet) => Boolean(sheet?.isEditable) && isGM() && isLootBoxType(sheet.item?.system?.lootType);
+/**
+ * The host of the box this window edits: the Loot Box editor's held box (`boxHost`), else the item sheet's box item.
+ * `host.canFill` says whether this window may edit the contents (the GM, on an editable box).
+ */
+const sheetHost = (sheet) => sheet?.boxHost ?? itemBoxHost(sheet?.item, { editable: Boolean(sheet?.isEditable) });
 
 /** A blank prize row of `kind`, every field typed. */
 function blankBoxRow(kind, extra = {}) {
   return sanitizeBoxRow({ kind, ...extra });
 }
 
-const boxRows = (item) => toArray(item.system?.box?.contents).map((row) => sanitizeBoxRow({ ...row }) ?? blankBoxRow('item'));
-const writeBoxRows = (item, rows) => item.update({ 'system.box.contents': rows });
+const boxRows = (host) => host.read().contents.map((row) => ({ ...row }));
+const writeBoxRows = (host, rows) => host.write({ contents: rows });
 
 /**
  * Replace the row at `index` with `rows` (zero or more, sanitized), in place, and write the box.
- * @param {object} item the box
+ * @param {object} box the box host, or the box item
  * @param {number} index
  * @param {object[]} rows
  * @returns {Promise<object[]|null>} the new rows, or null when `index` is not a row
  */
-export async function replaceBoxRow(item, index, rows) {
-  const all = boxRows(item);
+export async function replaceBoxRow(box, index, rows) {
+  const host = asBoxHost(box);
+  const all = boxRows(host);
   if (!Number.isInteger(index) || index < 0 || index >= all.length) return null;
   all.splice(index, 1, ...toArray(rows).map((r) => sanitizeBoxRow({ ...r })).filter(Boolean));
-  await writeBoxRows(item, all);
+  await writeBoxRows(host, all);
   return all;
 }
 
@@ -119,16 +124,16 @@ const ROW_FIELD_READERS = Object.freeze({
 
 /**
  * Add a prize row, or add one to the quantity of the same document already listed.
- * @param {object} item the box
+ * @param {object} host the box host
  * @param {object} row a prize row (sanitized here)
  * @param {(a: object, b: object) => boolean} [same] whether `a` is the same prize as `b`
  */
-async function addBoxRow(item, row, same = null) {
-  const rows = boxRows(item);
+async function addBoxRow(host, row, same = null) {
+  const rows = boxRows(host);
   const mate = same ? rows.find((r) => same(r, row)) : null;
   if (mate) mate.quantity += 1;
   else rows.push(sanitizeBoxRow(row));
-  await writeBoxRows(item, rows);
+  await writeBoxRows(host, rows);
   return rows;
 }
 
@@ -137,8 +142,9 @@ async function addBoxRow(item, row, same = null) {
  * @returns {Promise<object[]|null>} the new rows, or null when nothing was written
  */
 export async function dropBoxItem(box, doc) {
+  const host = asBoxHost(box);
   if (!isGM()) return null;
-  if (!doc?.name || (doc.uuid && doc.uuid === box.uuid)) return null;
+  if (!doc?.name || (doc.uuid && doc.uuid === host.uuid)) return null;
   const spell = doc.type === 'spell';
   const row = {
     kind: spell ? 'spell' : 'item',
@@ -150,11 +156,12 @@ export async function dropBoxItem(box, doc) {
     quantity: 1
   };
   const same = (a, b) => a.kind === b.kind && (b.uuid ? a.uuid === b.uuid : (b.identifier && a.identifier === b.identifier));
-  return addBoxRow(box, row, same);
+  return addBoxRow(host, row, same);
 }
 
 /** A dropped RollTable becomes a `table` row (looked up by its table key first, then its uuid). */
 export async function dropBoxTable(box, table) {
+  const host = asBoxHost(box);
   if (!isGM() || !table?.name) return null;
   const row = {
     kind: 'table',
@@ -165,15 +172,13 @@ export async function dropBoxTable(box, table) {
     quantity: 1
   };
   const same = (a, b) => a.kind === 'table' && (b.tableKey ? a.tableKey === b.tableKey : a.uuid === b.uuid);
-  return addBoxRow(box, row, same);
+  return addBoxRow(host, row, same);
 }
 
 // --- Pre-roll and Choose now (GM) -----------------------------------------------------------------------------------------
 
 /** `flags.sprinter-rpg.folderKey` of the world folder that holds pre-rolled and chosen prizes. */
 export const PREROLL_FOLDER_KEY = 'loot-box-prizes';
-/** The world item flag naming the box a prize was rolled or chosen for. */
-export const PREROLL_FLAG = 'lootBoxPreroll';
 
 /** An `item` row pointing at a world document. */
 function itemRowFor(doc, extra = {}) {
@@ -190,16 +195,12 @@ function itemRowFor(doc, extra = {}) {
 }
 
 /** Create one prize document in the Loot Box Prizes world folder, flagged with the box it was made for. */
-async function createPrizeItem(box, data) {
+async function createPrizeItem(host, data) {
   const folder = await getOrCreateItemFolder(PREROLL_FOLDER_KEY, text('COG.LootBoxSheet.PrerollFolder'));
   const out = structuredClone(data ?? {});
   delete out._id;
   out.folder = folder?.id ?? null;
-  const own = out.flags?.[SYSTEM_ID] ?? {};
-  out.flags = {
-    ...(out.flags ?? {}),
-    [SYSTEM_ID]: { ...own, [PREROLL_FLAG]: { boxUuid: String(box.uuid ?? ''), boxName: String(box.name ?? ''), at: Date.now(), by: globalThis.game?.user?.id ?? '' } }
-  };
+  out.flags = withPreroll(out, { boxUuid: String(host.uuid ?? ''), boxName: String(host.name ?? ''), at: Date.now(), by: globalThis.game?.user?.id ?? '' }).flags;
   return globalThis.Item.create(out, { cogSystemMade: true });
 }
 
@@ -208,17 +209,18 @@ async function createPrizeItem(box, data) {
  * one `item` row per unit, in place. A generator error stops the roll: the units already made are kept and the rest
  * stays one `magicItem` row; with none made the row is left as it was and the GM is warned. A crawler's copy rolls
  * with that crawler as the actor (owned skills); a template has none.
- * @param {object} box the box (an Item)
+ * @param {object} box the box host, or the box item
  * @param {number} index the row
  * @param {{ roll?: Function }} [opts] `roll`: the generator (default `rollMagicItem`)
  * @returns {Promise<object[]|null>} the new rows, or null when nothing changed
  */
 export async function prerollRow(box, index, { roll = rollMagicItem } = {}) {
+  const host = asBoxHost(box);
   if (!isGM()) return null;
-  const row = boxRows(box)[index];
+  const row = boxRows(host)[index];
   if (!row || row.kind !== 'magicItem') return null;
-  const tier = row.tier || resolveLootBoxTier(box.system?.box?.tier);
-  const actor = box.parent?.documentName === 'Actor' ? box.parent : null;
+  const tier = row.tier || resolveLootBoxTier(host.read().tier);
+  const actor = host.actor;
   const total = whole(row.quantity);
   const made = [];
   let failure = '';
@@ -227,7 +229,7 @@ export async function prerollRow(box, index, { roll = rollMagicItem } = {}) {
     if (!result || result.error) { failure = result?.error ?? 'failed'; break; }
     for (const w of toArray(result.warnings)) warn(w);
     let doc = null;
-    try { doc = await createPrizeItem(box, result.data); } catch (err) { console.warn('Sprinter RPG | Pre-roll could not create an item:', err); }
+    try { doc = await createPrizeItem(host, result.data); } catch (err) { console.warn('Sprinter RPG | Pre-roll could not create an item:', err); }
     if (!doc) { failure = 'failed'; break; }
     made.push(doc);
   }
@@ -237,11 +239,11 @@ export async function prerollRow(box, index, { roll = rollMagicItem } = {}) {
   }
   if (!made.length) return null;
   // The row may have been edited while the generator ran; replace it only if it is still this row
-  if (boxRows(box)[index]?.kind !== 'magicItem') return null;
+  if (boxRows(host)[index]?.kind !== 'magicItem') return null;
   const rows = made.map((doc) => itemRowFor(doc, row.label ? { label: row.label } : {}));
   if (made.length < total) rows.push({ ...row, quantity: total - made.length });
-  const written = await replaceBoxRow(box, index, rows);
-  const data = { count: made.length, made: made.length, total, box: box.name ?? '' };
+  const written = await replaceBoxRow(host, index, rows);
+  const data = { count: made.length, made: made.length, total, box: host.name };
   if (made.length < total) warn(text('COG.LootBoxSheet.PrerollPartial', data));
   else info(text('COG.LootBoxSheet.PrerollDone', data));
   return written;
@@ -251,15 +253,16 @@ export async function prerollRow(box, index, { roll = rollMagicItem } = {}) {
  * GM: pick a `choice` row's prize now (the book's "choose" mode). The picker lists the same candidates the opener would
  * see. An item becomes an `item` row, a spell a `spell` row at the row's Rank, a skill a skill potion made in the Loot
  * Box Prizes folder (an `item` row). Cancel changes nothing.
- * @param {object} box the box (an Item)
+ * @param {object} box the box host, or the box item
  * @param {number} index the row
  * @param {{ pick?: Function }} [opts] `pick`: the picker (default `promptChoicePicks`)
  * @returns {Promise<object[]|null>} the new rows, or null when nothing changed
  */
 export async function chooseRow(box, index, { pick = promptChoicePicks } = {}) {
+  const host = asBoxHost(box);
   if (!isGM()) return null;
-  const row = boxRows(box)[index];
-  if (row?.kind === 'table' && row.as === 'skillPotion') return chooseTableHobby(box, index, row, { pick });
+  const row = boxRows(host)[index];
+  if (row?.kind === 'table' && row.as === 'skillPotion') return chooseTableHobby(host, index, row, { pick });
   if (!row || row.kind !== 'choice') return null;
   const itemType = String(row.itemType ?? '');
   const candidates = choiceCandidates({ query: row.query ?? null, itemType });
@@ -270,7 +273,7 @@ export async function chooseRow(box, index, { pick = promptChoicePicks } = {}) {
   const key = '0';
   const picks = await pick({
     title: text('COG.LootBoxSheet.ChooseNowTitle'),
-    intro: text('COG.LootBoxSheet.ChooseNowIntro', { box: box.name ?? '' }),
+    intro: text('COG.LootBoxSheet.ChooseNowIntro', { box: host.name }),
     entries: [{ key, label: row.label || row.name || text('COG.LootBoxSheet.ChooseNowLabel'), candidates: candidates.map((c) => ({ value: c.uuid, label: c.name || c.uuid })) }],
     confirmLabel: text('COG.LootBoxSheet.ChooseNowConfirm'),
     cancelLabel: text('COG.LootBoxSheet.ChooseNowCancel')
@@ -283,18 +286,18 @@ export async function chooseRow(box, index, { pick = promptChoicePicks } = {}) {
   } else if (itemType === 'skill') {
     const prize = boxOpenServices().skillPotionPrize({ name: chosen.name, identifier: chosen.identifier }, row.rank ?? 1, row.name || '');
     let doc = null;
-    try { doc = await createPrizeItem(box, prize.data); } catch (err) { console.warn('Sprinter RPG | Choose now could not create the potion:', err); }
+    try { doc = await createPrizeItem(host, prize.data); } catch (err) { console.warn('Sprinter RPG | Choose now could not create the potion:', err); }
     if (!doc) {
-      warn(text('COG.LootBoxSheet.ChooseNowFailed', { box: box.name ?? '' }));
+      warn(text('COG.LootBoxSheet.ChooseNowFailed', { box: host.name }));
       return null;
     }
     next = itemRowFor(doc, row.label ? { label: row.label } : {});
   } else {
     next = { kind: 'item', uuid: chosen.uuid, identifier: chosen.identifier, itemType: chosen.type, name: chosen.name, img: chosen.img, quantity: row.quantity ?? 1, ...(row.label ? { label: row.label } : {}) };
   }
-  if (boxRows(box)[index]?.kind !== 'choice') return null;
-  const written = await replaceBoxRow(box, index, [next]);
-  info(text('COG.LootBoxSheet.ChooseNowDone', { name: chosen.name, box: box.name ?? '' }));
+  if (boxRows(host)[index]?.kind !== 'choice') return null;
+  const written = await replaceBoxRow(host, index, [next]);
+  info(text('COG.LootBoxSheet.ChooseNowDone', { name: chosen.name, box: host.name }));
   return written;
 }
 
@@ -303,14 +306,14 @@ export async function chooseRow(box, index, { pick = promptChoicePicks } = {}) {
  * name instead; the row becomes an `item` row for a skill potion of a custom Skill with that name, made in the Loot Box
  * Prizes folder. Cancel (or nothing picked and nothing typed) changes nothing.
  */
-async function chooseTableHobby(box, index, row, { pick }) {
+async function chooseTableHobby(host, index, row, { pick }) {
   const services = boxOpenServices();
   const snapshot = await services.loadTable({ key: row.tableKey, uuid: row.uuid });
   const names = [...new Set((snapshot?.rows ?? []).map((r) => tableRowEntry(r).entry).filter(Boolean))];
   const key = '0';
   const picks = await pick({
     title: text('COG.LootBoxSheet.ChooseNowTitle'),
-    intro: text('COG.LootBoxSheet.ChooseNowIntro', { box: box.name ?? '' }),
+    intro: text('COG.LootBoxSheet.ChooseNowIntro', { box: host.name }),
     entries: [{
       key, label: row.label || text('COG.LootBoxSheet.ChooseNowTableEntry'),
       candidates: names.map((n) => ({ value: n, label: n })),
@@ -324,15 +327,15 @@ async function chooseTableHobby(box, index, row, { pick }) {
   if (!name) return null;
   const prize = services.customSkillPotionPrize(name, row.rank ?? 1, row.name || '');
   let doc = null;
-  try { doc = await createPrizeItem(box, prize.data); } catch (err) { console.warn('Sprinter RPG | Choose now could not create the potion:', err); }
+  try { doc = await createPrizeItem(host, prize.data); } catch (err) { console.warn('Sprinter RPG | Choose now could not create the potion:', err); }
   if (!doc) {
-    warn(text('COG.LootBoxSheet.ChooseNowFailed', { box: box.name ?? '' }));
+    warn(text('COG.LootBoxSheet.ChooseNowFailed', { box: host.name }));
     return null;
   }
-  const now = boxRows(box)[index];
+  const now = boxRows(host)[index];
   if (now?.kind !== 'table' || now.as !== 'skillPotion') return null;
-  const written = await replaceBoxRow(box, index, [itemRowFor(doc, row.label ? { label: row.label } : {})]);
-  info(text('COG.LootBoxSheet.ChooseNowDone', { name, box: box.name ?? '' }));
+  const written = await replaceBoxRow(host, index, [itemRowFor(doc, row.label ? { label: row.label } : {})]);
+  info(text('COG.LootBoxSheet.ChooseNowDone', { name, box: host.name }));
   return written;
 }
 
@@ -361,52 +364,96 @@ export async function dropRewardBoxTemplate(achievement, doc) {
   return rows;
 }
 
-export const LOOT_BOX_ACTIONS = {
+/** The query path of a choice row's tag query, as the row editor names it: `system.box.contents.<index>.query`. */
+const ROW_QUERY_PREFIX = 'system.box.contents.';
+const ROW_QUERY_SUFFIX = '.query';
+
+/** The row index a row query path names, or -1. */
+function rowOfQueryPath(path) {
+  const text = String(path ?? '');
+  if (!text.startsWith(ROW_QUERY_PREFIX) || !text.endsWith(ROW_QUERY_SUFFIX)) return -1;
+  const index = text.slice(ROW_QUERY_PREFIX.length, -ROW_QUERY_SUFFIX.length);
+  return index !== '' && String(Math.trunc(Number(index))) === index ? Number(index) : -1;
+}
+
+/**
+ * Change one bucket of a choice row's tag query on any host (the item sheet's tag actions write the item at that path; a
+ * held box has no such path, so the Loot Box editor writes through here).
+ * @param {object} box the box host, or the box item
+ * @param {string} path `system.box.contents.<index>.query`
+ * @param {'all'|'any'|'none'} bucket
+ * @param {(ids: string[]) => string[]} change the new tag list from the old one
+ * @returns {Promise<object[]|null>} the new rows, or null when nothing changed
+ */
+export async function editBoxRowQuery(box, path, bucket, change) {
+  const host = asBoxHost(box);
+  const index = rowOfQueryPath(path);
+  if (index < 0 || !['all', 'any', 'none'].includes(bucket)) return null;
+  const rows = boxRows(host);
+  const row = rows[index];
+  if (!row || row.kind !== 'choice') return null;
+  const before = Array.isArray(row.query?.[bucket]) ? row.query[bucket] : [];
+  const after = change([...before]);
+  if (after.length === before.length && after.every((id, i) => id === before[i])) return null;
+  row.query = { ...row.query, [bucket]: after };
+  await writeBoxRows(host, rows);
+  return rows;
+}
+
+/** The actions of a box's prize rows: the item sheet's Box part and the Loot Box editor both use these. */
+export const BOX_ROW_ACTIONS = {
   /** Add a gold row (the formula is typed in the row). */
   async addBoxGold() {
-    if (!canFill(this)) return;
-    await addBoxRow(this.item, blankBoxRow('gold', { formula: '10' }));
+    const host = sheetHost(this);
+    if (!host.canFill) return;
+    await addBoxRow(host, blankBoxRow('gold', { formula: '10' }));
   },
 
   /** Add a generated magic item row; its tier select blank means this box's tier. */
   async addBoxMagicItem() {
-    if (!canFill(this)) return;
-    await addBoxRow(this.item, blankBoxRow('magicItem'));
+    const host = sheetHost(this);
+    if (!host.canFill) return;
+    await addBoxRow(host, blankBoxRow('magicItem'));
   },
 
   /** Add a choice row: the opener picks one item (or a skill potion, or a spell tome) from a tag query. */
   async addBoxChoice() {
-    if (!canFill(this)) return;
-    await addBoxRow(this.item, blankBoxRow('choice', { itemType: '' }));
+    const host = sheetHost(this);
+    if (!host.canFill) return;
+    await addBoxRow(host, blankBoxRow('choice', { itemType: '' }));
   },
 
   /** GM: roll a generated magic item row now; it becomes world item(s) the row points at. */
   async prerollBoxRow(event, target) {
-    if (!canFill(this)) return;
-    await prerollRow(this.item, rowIndex(target));
+    const host = sheetHost(this);
+    if (!host.canFill) return;
+    await prerollRow(host, rowIndex(target));
   },
 
   /** GM: pick a choice row's prize now; the row becomes that prize. */
   async chooseBoxRow(event, target) {
-    if (!canFill(this)) return;
-    await chooseRow(this.item, rowIndex(target));
+    const host = sheetHost(this);
+    if (!host.canFill) return;
+    await chooseRow(host, rowIndex(target));
   },
 
   /** change: the table picker adds a `table` row for the chosen roll table. */
   async addBoxTable(event, target) {
-    if (!canFill(this)) return;
+    const host = sheetHost(this);
+    if (!host.canFill) return;
     const uuid = String(valueOf(target) ?? '');
     if (!uuid) return;
     const table = (await getAvailableRollTables({ packs: true })).find((t) => t.uuid === uuid);
     if (!table) return;
-    await dropBoxTable(this.item, { uuid: table.uuid, name: table.name, img: table.img, ...withTableKey({}, table.key) });
+    await dropBoxTable(host, { uuid: table.uuid, name: table.name, img: table.img, ...withTableKey({}, table.key) });
   },
 
   /** change: a `table` row's select points the row at another roll table. */
   async pickBoxTable(event, target) {
-    if (!canFill(this)) return;
+    const host = sheetHost(this);
+    if (!host.canFill) return;
     const idx = rowIndex(target);
-    const rows = boxRows(this.item);
+    const rows = boxRows(host);
     const row = rows[idx];
     const uuid = String(valueOf(target) ?? '');
     if (!row || row.kind !== 'table' || !uuid) return;
@@ -414,38 +461,45 @@ export const LOOT_BOX_ACTIONS = {
     if (!table) return;
     // A hobby-potion row keeps its name stem; any other table row is named for its table
     Object.assign(row, { uuid: table.uuid, tableKey: table.key, img: table.img }, row.as === 'skillPotion' ? {} : { name: table.name });
-    await writeBoxRows(this.item, rows);
+    await writeBoxRows(host, rows);
   },
 
   /** change: an inline field of a prize row (`data-index`, `data-field`: quantity, formula, label, rank, tier, itemType, name). */
   async editBoxRow(event, target) {
-    if (!canFill(this)) return;
+    const host = sheetHost(this);
+    if (!host.canFill) return;
     const field = String(target?.dataset?.field ?? '');
     if (!Object.hasOwn(ROW_FIELD_READERS, field)) return;
-    const rows = boxRows(this.item);
+    const rows = boxRows(host);
     const row = rows[rowIndex(target)];
     if (!row) return;
     const next = ROW_FIELD_READERS[field](valueOf(target));
     // A table row's name is its table's until its rolls become something; then it is a potion's name stem (blank to start)
     if (field === 'as' && next && row.as !== next && row.kind === 'table') row.name = '';
     row[field] = next;
-    await writeBoxRows(this.item, rows);
+    await writeBoxRows(host, rows);
   },
 
   async removeBoxRow(event, target) {
-    if (!canFill(this)) return;
-    const rows = boxRows(this.item);
+    const host = sheetHost(this);
+    if (!host.canFill) return;
+    const rows = boxRows(host);
     const idx = rowIndex(target);
     if (idx < 0 || idx >= rows.length) return;
     rows.splice(idx, 1);
-    await writeBoxRows(this.item, rows);
+    await writeBoxRows(host, rows);
   },
 
   /** change: the GM checkbox "Keep sealed until filled" writes `system.box.whenEmpty` ('keep' or ''). */
   async toggleBoxKeepSealed(event, target) {
-    if (!canFill(this)) return;
-    await this.item.update({ 'system.box.whenEmpty': valueOf(target) === true ? 'keep' : '' });
-  },
+    const host = sheetHost(this);
+    if (!host.canFill) return;
+    await host.write({ whenEmpty: valueOf(target) === true ? 'keep' : '' });
+  }
+};
+
+export const LOOT_BOX_ACTIONS = {
+  ...BOX_ROW_ACTIONS,
 
   /** Achievement: add a generic reward box row (Bronze, 1). */
   async addRewardBox() {
@@ -497,7 +551,7 @@ export const LOOT_BOX_ACTIONS = {
     const rows = rewardRows(achievement);
     if (!rows.length) return;
     let ruleBreak = false;
-    if (achievement.flags?.[SYSTEM_ID]?.[REWARD_BOXES_FLAG]) {
+    if (rewardBoxesGrantedOf(achievement)) {
       const res = await confirmRuleBreak({
         title: text('COG.RewardBoxes.GrantAgainTitle'),
         message: text('COG.RewardBoxes.GrantAgainMessage', { name: achievement.name, actor: actor.name })
@@ -506,7 +560,7 @@ export const LOOT_BOX_ACTIONS = {
       ruleBreak = true;
     }
     const boxes = await grantLootBoxes(actor, rows, { sourceName: achievement.name });
-    await achievement.setFlag(SYSTEM_ID, REWARD_BOXES_FLAG, { at: Date.now(), by: globalThis.game?.user?.id ?? '', ruleBreak });
+    await markRewardBoxesGranted(achievement, ruleBreak);
     info(text('COG.RewardBoxes.Granted', { count: rows.reduce((sum, r) => sum + r.quantity, 0), actor: actor.name }));
     return boxes;
   }

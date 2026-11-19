@@ -26,6 +26,7 @@ import { SOURCERY_CATALOG_SETTING, applySourceryCatalog, readStoredCatalog } fro
 import { COG_THEME_ID } from '../content/default-content-provider.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { PRIMARY_THEME_SETTING, DISABLED_THEMES_SETTING } from '../content/registry/themes.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/sourcery-importer`;
 const KIND_LABELS = { skill: 'Skills', spell: 'Spells', race: 'Races', class: 'Classes', mob: 'Mobs', gear: 'Items', buff: 'Buffs', debuff: 'Debuffs', achievement: 'Achievements', space: 'Space upgrades', table: 'Tables' };
@@ -71,7 +72,7 @@ function foundryImportIO() {
   };
 }
 
-const bookLabels = ids => ids.map(id => BOOKS.find(b => b.id === id)?.label ?? id).join(', ');
+const bookLabels = ids => ids.map(id => escapeAttr(BOOKS.find(b => b.id === id)?.label ?? id)).join(', ');
 
 /** The confirm a commit asks when Sourcery compendiums exist: which books the run adds, replaces and keeps. */
 export function importConfirmHtml(existing, { added = [], replaced = [], kept = [] } = {}) {
@@ -80,7 +81,7 @@ export function importConfirmHtml(existing, { added = [], replaced = [], kept = 
     replaced.length ? `<li>Replaces what the last import read from: ${bookLabels(replaced)}</li>` : '',
     kept.length ? `<li>Keeps from the last import: ${bookLabels(kept)}</li>` : ''
   ].join('');
-  return `<p>${existing.length} Sourcery compendium(s) already exist. This import adds to them.</p>${rows ? `<ul>${rows}</ul>` : ''}<p>Continue?</p>`;
+  return `<p>${Number(existing.length)} Sourcery compendium(s) already exist. This import adds to them.</p>${rows ? `<ul>${rows}</ul>` : ''}<p>Continue?</p>`;
 }
 
 /** Default collaborators; tests pass their own through `options.services`. */
@@ -101,7 +102,7 @@ function defaultServices() {
     }),
     confirmSync: async (count) => globalThis.foundry.applications.api.DialogV2.confirm({
       window: { title: 'Update existing items' },
-      content: `<p>Update the world items and the actors' items that came from these ${count} imported documents with the imported text?</p><p>Items are matched by their compendium id. Nothing changes if you decline.</p>`
+      content: `<p>Update the world items and the actors' items that came from these ${Number(count)} imported documents with the imported text?</p><p>Items are matched by their compendium id. Nothing changes if you decline.</p>`
     }),
     syncDocument: (doc) => syncCompendiumItemToWorld(doc),
     primaryTheme: () => contentRegistry.getPrimaryThemeId(),

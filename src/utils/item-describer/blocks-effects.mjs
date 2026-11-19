@@ -10,7 +10,7 @@
  */
 import { itemLine, t, conditionName, defineItemSummaryTemplates, str, num, signed, integer, humanizeId } from './shared.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag } from '../flags.mjs';
 import { typeIn, isEffectItem } from '../document-types.mjs';
 import { normalizeTransform, TRANSFORM_CUES, CURE_WINDOWS } from '../character/transform-rules.mjs';
 import { durationConfigText } from '../time/durations.mjs';
@@ -237,7 +237,7 @@ const debuffTransform = {
     // The secret and switched-off lines carry no hidden data of their own, but `secret` is a GM note: GM-only.
     if (sys.secret === true) lines.push({ ...itemLine('mod', t(`${K}Secret`), 'system.secret'), gmOnly: true });
     if (sys.paused === true) lines.push(itemLine('mod', t(`${K}Paused`), 'system.paused'));
-    if (item?.flags?.[SYSTEM_ID]?.hidden === true) for (const line of lines) line.gmOnly = true;
+    if (readFlag(item, 'hidden') === true) for (const line of lines) line.gmOnly = true;
     return lines;
   }
 };

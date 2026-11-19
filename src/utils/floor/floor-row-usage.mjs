@@ -3,19 +3,18 @@
  * `advancementUsage`, in the same `{ floor: { token, keys } }` shape as popularity's, so a new floor resets it.
  * Shared by the End-of-floor batch (`floor-limited-rows.mjs`) and the ordinary roll dialog (`roll-context.mjs`).
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, writeFlag } from '../flags.mjs';
 import { popularityTokens, usedKeys, recordUsage } from './popularity.mjs';
 import { confirmRuleBreak } from '../rule-break.mjs';
 import { getCurrentFloor } from './current-floor.mjs';
 import { USE_TAG_PREFIX } from '../../data/tag-vocabulary.mjs';
-import { escapeAttr } from '../escape-attr.mjs';
 
 export const ADVANCEMENT_USAGE_FLAG = 'advancementUsage';
 
 
 /** The row keys already spent on the current floor. */
 export function floorRowsUsed(actor) {
-  const record = actor?.flags?.[SYSTEM_ID]?.[ADVANCEMENT_USAGE_FLAG];
+  const record = readFlag(actor, ADVANCEMENT_USAGE_FLAG);
   return new Set(usedKeys(record, popularityTokens({ floor: getCurrentFloor() })).floor);
 }
 
@@ -41,7 +40,7 @@ export async function settleFloorUses(actor, situations, { labels = new Map(), o
       const label = labels.get(key) || key;
       const res = await confirmRuleBreak({
         title: 'Once Per Floor',
-        message: escapeAttr(`${label} was already used this floor. Use it again as a Rule Break?`),
+        message: `${label} was already used this floor. Use it again as a Rule Break?`,
         options
       });
       if (!res.confirmed) { drop.add(tag); continue; }
@@ -51,7 +50,7 @@ export async function settleFloorUses(actor, situations, { labels = new Map(), o
   }
   if (fired.length && typeof actor?.setFlag === 'function') {
     const tokens = popularityTokens({ floor: getCurrentFloor() });
-    await actor.setFlag(SYSTEM_ID, ADVANCEMENT_USAGE_FLAG, recordUsage(actor.flags?.[SYSTEM_ID]?.[ADVANCEMENT_USAGE_FLAG], tokens, fired));
+    await writeFlag(actor, ADVANCEMENT_USAGE_FLAG, recordUsage(readFlag(actor, ADVANCEMENT_USAGE_FLAG), tokens, fired));
   }
   return { situations: situations.filter(t => !drop.has(t)), ruleBreak };
 }

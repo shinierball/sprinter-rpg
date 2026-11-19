@@ -1,4 +1,19 @@
 /**
+ * The slot-limit readout: `slotUse` with, for each slot over its limit, the tooltip text naming what fills it.
+ * @param {Iterable<object>} items the actor's items
+ * @returns {Record<string, { count: number, limit: number, over: boolean, names: string[], tip: string }>}
+ */
+function slotUseView(items) {
+  const use = slotUse(Array.from(items ?? []));
+  const i18n = globalThis.game?.i18n;
+  for (const entry of Object.values(use)) {
+    const data = { count: entry.count, limit: entry.limit, names: entry.names.join(', ') };
+    entry.tip = entry.over ? (i18n?.format?.('COG.SlotLimit.OverTip', data) ?? '') : '';
+  }
+  return use;
+}
+
+/**
  * Sorts the actor's embedded items into the lists every crawler-sheet tab reads,
  * and decorates them with display-only fields (summaries, tier colours, attack rows).
  */
@@ -19,6 +34,8 @@ import { htmlSnippet } from '../../utils/ui/html-snippet.mjs';
 import { sourceBadge } from '../../utils/content-source.mjs';
 import { decorateOfflineGear, offlineReadouts } from './gear-offline-display.mjs';
 import { isRaceOrClass } from '../../utils/document-types.mjs';
+import { isAccessorySlot, GEAR_SLOTS } from '../../utils/gear/gear-slots.mjs';
+import { slotUse } from '../../utils/gear/equip-rules.mjs';
 
 /** Sort by the manual `sort` key, then by name. */
 export const sortItems = (a, b) => (a.sort || 0) - (b.sort || 0) || a.name.localeCompare(b.name);
@@ -52,7 +69,7 @@ export function prepareItemLists(context, actor) {
     debuffs: [],
     achievements: [],
     equippedBySlot: {
-      head: null, torso: null, arms: null, hands: null, legs: null, feet: null,
+      head: null, neck: null, torso: null, back: null, arms: null, hands: null, legs: null, feet: null,
       collar: null, barding: null, saddle: null, pack: null,
       accessory: [], tattoo: [], patch: []
     }
@@ -75,6 +92,10 @@ export function prepareItemLists(context, actor) {
         if (item.system?.equipped) {
           const slot = (item.system.slot || 'torso').toLowerCase();
           if (Array.isArray(context.equippedBySlot[slot])) context.equippedBySlot[slot].push(item);
+          else if (!(slot in context.equippedBySlot) && isAccessorySlot(slot)) {
+            item.slotLabel = slot === 'accessory' ? '' : GEAR_SLOTS[slot]?.label ?? '';
+            context.equippedBySlot.accessory.push(item);
+          }
           else context.equippedBySlot[slot] = item;
         }
         break;
@@ -133,6 +154,7 @@ export function prepareItemLists(context, actor) {
     }
   }
 
+  context.slotUse = slotUseView(actor.items);
   decorateOfflineGear(actor, context.gear);
   context.offlineReadouts = offlineReadouts(actor.system);
 
@@ -153,7 +175,7 @@ const TOOLTIP_TYPES = new Set(['spell', 'skill', 'gear', 'attack', 'loot', 'buff
 
 /**
  * Describe the actor's items once (`describeItem`, owner = the actor) and attach the results:
- * `featureLines` on races and classes, `summaryTip` (tooltip HTML) on every spell, skill, gear, attack, loot, buff and
+ * `featureLines` on races and classes, `summaryTip` (tooltip text, lines joined by newlines) on every spell, skill, gear, attack, loot, buff and
  * debuff row, and `summary` (the " • " line; a debuff's is its effect and stat groups) on buffs and debuffs. Nothing is stored on a document and nothing is
  * cached; the lines are rebuilt on every render. Also sets `context.summaryEmptyText`, the muted line for an item
  * with no structured effects.

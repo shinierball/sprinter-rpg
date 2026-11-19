@@ -9,7 +9,6 @@
  * The planner is sync. The grant documents it needs come from `ctx.lookup`; `prefetchKindDocuments` fills one ahead of
  * time (packs are async). It never reads `game` or `document` itself, except through the defaults of `ctx`.
  */
-import { SYSTEM_ID } from '../constants.mjs';
 import { DEFAULT_SIZE } from './sizes.mjs';
 import { COGRaceClassApplier } from './race-class-applier.mjs';
 import { addAbilityDeltas, addDrAndMovementBonuses } from './race-class-bonuses.mjs';
@@ -19,7 +18,7 @@ import {
   prefetchGrantDocuments, resolveGrantDocumentSync
 } from './race-class-grants.mjs';
 import { stampCompendiumLink } from './compendium-sync.mjs';
-import { STARTING_ITEMS_FLAG, planStartingItemsSync, startingEntriesOf, recordFor } from './starting-items.mjs';
+import { startingRecordsOf, startingRecordsUpdate, planStartingItemsSync, startingEntriesOf, recordFor } from './starting-items.mjs';
 import { detectStatPools, evaluateStatPool, defaultPoolAllocation } from '../utils/character/stat-pool.mjs';
 import { raceClassFloorBreak, isRaceClassLocked } from '../utils/character/race-class-floor.mjs';
 import { checkRequirements } from '../utils/character/requirements.mjs';
@@ -29,7 +28,10 @@ import { PRE_RACE_CLASS_RANK_LIMIT } from '../utils/skill/rank-limits.mjs';
 import { RACE_CLASS_TYPES } from '../utils/document-types.mjs';
 import { isRuleBreak, withRuleBreak } from '../utils/rule-break.mjs';
 import { withFlags } from '../utils/flags.mjs';
+import { appliedFlagKey, withAppliedMarker, withGrantedBy } from '../utils/character/race-class-flags.mjs';
 import { isAdvancingType } from '../utils/skill/spells-advance.mjs';
+import { isBoxTemplate } from '../documents/actor/gm-only-items.mjs';
+import { stackLootBoxes, startingBoxEntry } from '../documents/actor/loot-box-entries.mjs';
 
 const KINDS = RACE_CLASS_TYPES;
 
@@ -112,9 +114,7 @@ export function applyKindPlan(view, plan) {
     if (item) item.system = { ...item.system, rank: update['system.rank'] };
   }
   for (const create of plan?.itemCreates ?? []) out.items.push(cloneData(create));
-  out.flags = out.flags ?? {};
-  out.flags[SYSTEM_ID] = { ...(out.flags[SYSTEM_ID] ?? {}) };
-  for (const [key, value] of Object.entries(plan?.flagUpdates ?? {})) out.flags[SYSTEM_ID][key] = cloneData(value);
+  out.flags = withFlags(out, Object.fromEntries(Object.entries(plan?.flagUpdates ?? {}).map(([key, value]) => [key, cloneData(value)]))).flags;
   return out;
 }
 
@@ -193,26 +193,21 @@ function grantItemData(kind, itemType, row, resolvedDoc) {
   const mergedSystem = GRANT_SYSTEM[itemType](row, resolvedSys);
   if (row.identifier || resolvedDoc?.system?.identifier) mergedSystem.identifier = row.identifier || resolvedDoc?.system?.identifier;
   if (Array.isArray(resolvedDoc?.tags) && !mergedSystem.tags?.length) mergedSystem.tags = [...resolvedDoc.tags];
-  return stampCompendiumLink({
+  const flags = resolvedDoc?.flags ? structuredClone(resolvedDoc.flags) : {};
+  const data = withFlags({
     name: resolvedDoc?.name || row.name || row.identifier,
     type: itemType,
     img: resolvedDoc?.img || row.img || GRANT_DEFAULT_IMG[itemType],
     system: mergedSystem,
-    flags: {
-      ...(resolvedDoc?.flags ? structuredClone(resolvedDoc.flags) : {}),
-      [SYSTEM_ID]: {
-        ...(resolvedDoc?.flags?.[SYSTEM_ID] || {}),
-        grantedBy: kind,
-        isChoice: Boolean(row.choiceId)
-      }
-    }
-  }, resolvedDoc);
+    flags
+  }, { isChoice: Boolean(row.choiceId) });
+  return stampCompendiumLink(withGrantedBy(data, kind), resolvedDoc);
 }
 
 /** The creation data of the embedded race or class item, carrying the chosen skills and spells. */
 function kindItemData(kind, { def, grantDef, bonuses, resolved, ruleBreak }) {
   const profile = RACE_CLASS_KINDS[kind];
-  const marked = withFlags({
+  const marked = withAppliedMarker({
     name: def.name,
     type: profile.itemType,
     img: def.img || profile.defaultImg,
@@ -222,7 +217,7 @@ function kindItemData(kind, { def, grantDef, bonuses, resolved, ruleBreak }) {
       chosenSkills: resolved.chosenSkills || [],
       chosenSpells: resolved.chosenSpells || []
     }
-  }, { [profile.markerFlag]: true });
+  }, kind);
   return stampCompendiumLink(ruleBreak ? withRuleBreak(marked) : marked, def);
 }
 
@@ -344,10 +339,10 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
       type: entry.type,
       img: entry.img,
       system: { ...structuredClone(entry.system), ...structuredClone(state) },
-      flags: { [SYSTEM_ID]: { grantedBy: kind } }
     };
-    itemCreates.push(data);
-    work.items.push(cloneData(data));
+    const stamped = withGrantedBy(data, kind);
+    itemCreates.push(stamped);
+    work.items.push(cloneData(stamped));
   }
 
   // 8. The race or class item. Every key of this kind that was confirmed stamps it (a re-apply inherits the old stamp).
@@ -361,7 +356,7 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
 
   // 9. The record
   const flagUpdates = {
-    [profile.flagKey]: appliedKindRecord(kind, {
+    [appliedFlagKey(kind)]: appliedKindRecord(kind, {
       def, bonuses, appliedSkills: applied.skill, appliedSpells: applied.spell, resolvedChoices: resolved, embeddedId: kindItem._id, originalSize
     })
   };
@@ -372,7 +367,7 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
     const source = { type: kind, def: grantDef };
     const answer = sel.startingItems && typeof sel.startingItems === 'object' ? sel.startingItems : null;
     const startPlan = planStartingItemsSync(source, { choices: answer?.choices }, lookup);
-    const records = view.flags?.[SYSTEM_ID]?.[STARTING_ITEMS_FLAG] ?? {};
+    const records = startingRecordsOf(view);
     const previous = startPlan.sourceKey ? records[startPlan.sourceKey] : undefined;
     const againKey = raceClassBreakKey(kind, 'startingItemsAgain');
     let givenAgain = false;
@@ -389,12 +384,18 @@ export function planRaceClassKind(view, kind, def, selections = {}, ctx = {}) {
     startingForm.skipped = startPlan.skipped;
     startingForm.accepted = chosen.map(i => i.index);
     if (chosen.length) {
+      // A box template on a crawler is a held box (`system.lootBoxes`), never an item
+      const boxes = view.type === 'crawler' ? chosen.filter(i => isBoxTemplate(i.data)) : [];
       for (const item of chosen) {
+        if (boxes.includes(item)) continue;
         const created = { ...item.data, _id: ids(item.data) };
         const data = givenAgain ? withRuleBreak(created) : created;
         itemCreates.push(data);
       }
-      flagUpdates[STARTING_ITEMS_FLAG] = { ...records, [startPlan.sourceKey]: recordFor({ items: chosen }, givenAgain, previous) };
+      if (boxes.length) {
+        actorUpdate['system.lootBoxes'] = stackLootBoxes(view.system?.lootBoxes, boxes.map(i => startingBoxEntry(i, { id: ids(i.data) }))).list;
+      }
+      Object.assign(flagUpdates, startingRecordsUpdate({ ...records, [startPlan.sourceKey]: recordFor({ items: chosen }, givenAgain, previous) }));
     }
   }
 

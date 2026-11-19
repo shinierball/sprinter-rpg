@@ -11,6 +11,28 @@ import { worldRaces as worldRaceItems } from './race-class-plan.mjs';
 import { checkRequirements, requirementSubject } from '../utils/character/requirements.mjs';
 
 /**
+ * The catalog races this actor cannot get by reference: two races share a reference (the crawler Cat and the pet Cat
+ * share `cat`), and the applier resolves it, for this actor, to the other one. A select lists only the one it would get,
+ * so no two options carry one value.
+ * @returns {Set<object>}
+ */
+function shadowedRaces(applier, actor, catalog) {
+  const counts = new Map();
+  for (const r of catalog) {
+    const ref = applier.definitionRef(r);
+    if (ref) counts.set(ref, (counts.get(ref) ?? 0) + 1);
+  }
+  const out = new Set();
+  for (const r of catalog) {
+    const ref = applier.definitionRef(r);
+    if ((counts.get(ref) ?? 0) < 2) continue;
+    const found = applier.findRace(ref, { actor });
+    if (found && found !== r && found._id !== r._id) out.add(r);
+  }
+  return out;
+}
+
+/**
  * Generates precomputed select options for Race and Class dropdowns.
  *
  * With `requirements`, each option is judged against the actor (or actor view) it is given: an option with unmet
@@ -53,7 +75,9 @@ export function getRaceClassContext(applier, actor, { requirements = false } = {
 
   const companionId = companionHeritageId();
   const raceCatalog = offeredEntries('races');
+  const shadowed = shadowedRaces(applier, actor, raceCatalog);
   for (const r of raceCatalog) {
+    if (shadowed.has(r)) continue;
     const opt = option(r);
     if (opt.selected) raceFound = true; else if (isFormRace(r)) continue; // a form race is listed only when it is the actor's (7.1g)
     const tags = r.system?.tags || [];

@@ -8,8 +8,7 @@
  */
 import { firstScalar } from '../first-scalar.mjs';
 import { FORM_RACE_TAG } from '../../data/tag-vocabulary.mjs';
-import { hasTransformBlock } from '../effects/debuff-force.mjs';
-import { transformState, transformationOfItem, overlayOf, raceInForce } from './overlay-state.mjs';
+import { transformState, transformationOfItem, overlayOf, raceInForce, hasTransformBlock } from './overlay-state.mjs';
 
 // The pause and overlay predicates live in leaf modules (tags.mjs reads them); they are part of this module's API
 export { transformState, transformationOfItem, overlayOf, raceInForce };
@@ -69,8 +68,8 @@ export function registerCureWindow(def) {
 for (const def of [
   { id: 'apply', label: 'When it lands', hint: 'A card with a Change button right after it lands.' },
   { id: 'death', label: 'At 0 Health', hint: 'A GM-only card with a Change button when damage takes the victim to 0 Health.' },
-  { id: 'rest', label: 'After a long rest', hint: 'A card with a Change button after a long or full-day rest (posts in a later release).' },
-  { id: 'floor', label: 'On a floor change', hint: 'A GM card with a Change button when the current floor changes (posts in a later release).' }
+  { id: 'rest', label: 'After a long rest', hint: 'A card with a Change button after a long or full-day rest.' },
+  { id: 'floor', label: 'On a floor change', hint: 'A GM card with a Change button when the current floor changes.' }
 ]) registerTransformCue(def);
 
 for (const def of [

@@ -5,7 +5,7 @@
  *
  * Book: tiers and the missed-offering ladder pp. 163-164; Shunned and penitence p. 312.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, flagPath, withFlags } from '../flags.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 import { freshPatronage } from '../patron/patronage-state.mjs';
 import { WORSHIP_TAGS, WORSHIP_TIER_TAG_PREFIX, WORSHIPS_TAG_PREFIX } from '../../data/tag-vocabulary.mjs';
@@ -99,12 +99,20 @@ export function worshipDerivedTags(item) {
   return tags;
 }
 
+const DEITY_GIFT_FLAG = 'deityGift';
+
+/** Creation data of a buff or debuff stamped with its `deityGift` record (a copy). */
+export const withDeityGift = (data, gift) => withFlags(data, { [DEITY_GIFT_FLAG]: gift });
+
+/** The update path of one field of the `deityGift` record (`tier`), for `item.update({ [path]: value })`. */
+export const deityGiftPath = (field) => flagPath(`${DEITY_GIFT_FLAG}.${field}`);
+
 /**
  * The `deityGift` flag of a buff or debuff, sanitised; `null` for anything absent or malformed.
  * @returns {{ deity: string, kind: string, key: string, tier?: number, at: number, by: string }|null}
  */
 export function deityGiftOf(item) {
-  const raw = item?.flags?.[SYSTEM_ID]?.deityGift;
+  const raw = readFlag(item, DEITY_GIFT_FLAG);
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const deity = text(raw.deity);
   const kind = text(raw.kind);

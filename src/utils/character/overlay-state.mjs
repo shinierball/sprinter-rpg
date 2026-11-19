@@ -3,14 +3,36 @@
  * on. A leaf module: tags.mjs and tag-behaviour.mjs read these, and `transform-rules.mjs` (which imports tag-mechanics,
  * which imports tags.mjs) re-exports them, so they live here to keep the import graph acyclic.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { hasTransformBlock } from '../effects/debuff-force.mjs';
-import { readFlag } from '../flags.mjs';
+import { clearFlag, flagPath, readFlag, withFlags, withoutFlags, writeFlag } from '../flags.mjs';
+
+// The stored keys of the transformation engine: this module is the one place that names them.
+const STATE_KEY = 'transformation';
+const OWNER_KEY = 'transformationOf';
+const FORM_KEY = 'transformationForm';
+const GRANTED_KEY = 'transformationGranted';
+const PAUSED_BY_KEY = 'pausedBy';
+const TAKEN_OFF_KEY = 'takenOffBy';
+
+/** Whether a debuff carries a `transform` block (an object; null or a non-object is not an affliction). */
+export function hasTransformBlock(item) {
+  const block = item?.system && typeof item.system === 'object' ? item.system.transform : undefined;
+  return item?.type === 'debuff' && Boolean(block) && typeof block === 'object' && !Array.isArray(block);
+}
 
 /** The engine state flag of an affliction (a plain object; empty when none was written). */
 export function transformState(item) {
-  const flag = item?.flags?.[SYSTEM_ID]?.transformation;
+  const flag = readFlag(item, STATE_KEY);
   return flag && typeof flag === 'object' && !Array.isArray(flag) ? flag : {};
+}
+
+/** Store an affliction's engine state (the whole object replaces the old one). */
+export function writeTransformState(affliction, state) {
+  return writeFlag(affliction, STATE_KEY, state);
+}
+
+/** Remove an affliction's engine state. */
+export function clearTransformState(affliction) {
+  return clearFlag(affliction, STATE_KEY);
 }
 
 /**
@@ -26,8 +48,53 @@ export function storedAttributes(actor) {
 
 /** The id of the affliction an item belongs to (a form race, its traits, a created skill, an added effect), or ''. */
 export function transformationOfItem(item) {
-  const id = item?.flags?.[SYSTEM_ID]?.transformationOf;
+  const id = readFlag(item, OWNER_KEY);
   return typeof id === 'string' ? id : '';
+}
+
+/** Whether an item belongs to an affliction: the same rule as `transformationOfItem`, a stamp that is a non-empty string. */
+export function hasTransformationOwner(item) {
+  return transformationOfItem(item) !== '';
+}
+
+/** `data` stamped as made for the affliction `owner`. A copy. */
+export function withTransformationOf(data, owner) {
+  return withFlags(data, { [OWNER_KEY]: owner });
+}
+
+/** `data` stamped with the form that created a skill and the rank that form gave it. A copy. */
+export function withFormStamp(data, formIndex, granted) {
+  return withFlags(data, { [FORM_KEY]: formIndex, [GRANTED_KEY]: granted });
+}
+
+/** The update that stamps an existing skill with its form and the rank the form gave it. */
+export function formStampUpdate(formIndex, granted) {
+  return { [flagPath(FORM_KEY)]: formIndex, [flagPath(GRANTED_KEY)]: granted };
+}
+
+/** Remove everything that ties a skill to an affliction's form (the owner, the form and the granted rank). */
+export async function clearFormStamp(item) {
+  for (const key of [OWNER_KEY, FORM_KEY, GRANTED_KEY]) await clearFlag(item, key);
+}
+
+/** The id of the affliction that paused a trait, or ''. */
+export function pausedByOf(item) {
+  return String(readFlag(item, PAUSED_BY_KEY) ?? '');
+}
+
+/** The update fields that record (an id) or clear (`''`) the affliction that paused a trait. */
+export function pausedByUpdate(owner) {
+  return { [flagPath(PAUSED_BY_KEY)]: owner };
+}
+
+/** The id of the affliction whose fit pass took a piece of gear off, or ''. */
+export function takenOffByOf(item) {
+  return String(readFlag(item, TAKEN_OFF_KEY) ?? '');
+}
+
+/** The update fields that record (an id) or clear (`''`) the affliction that took a piece of gear off. */
+export function takenOffByUpdate(owner) {
+  return { [flagPath(TAKEN_OFF_KEY)]: owner };
 }
 
 /**
@@ -43,6 +110,20 @@ export function overlayOf(items) {
     if (state.stage === 'changed' && Number(state.formIndex) >= 0) return item;
   }
   return null;
+}
+
+/**
+ * The token image of the form in force: the `tokenImg` of the current form's row while an affliction is changed into a
+ * form (`overlayOf`), else `''` (the original body, a pending affliction, a form with a blank image).
+ * @param {Iterable<object>} items the actor's items
+ * @returns {string}
+ */
+export function formTokenImage(items) {
+  const overlay = overlayOf(items);
+  if (!overlay) return '';
+  const forms = overlay.system?.transform?.forms;
+  const row = Array.isArray(forms) ? forms[Number(transformState(overlay).formIndex)] : null;
+  return typeof row?.tokenImg === 'string' ? row.tokenImg.trim() : '';
 }
 
 /**
@@ -72,13 +153,13 @@ export function effectiveRace(items) {
 
 /** Which form (its index in `transform.forms`) created a skill the engine made for a form; null for an unstamped item. */
 export function formOriginOf(item) {
-  const raw = readFlag(item, 'transformationForm');
+  const raw = readFlag(item, FORM_KEY);
   return Number.isInteger(raw) ? raw : null;
 }
 
 /** The rank the form's own row gave a skill it created (what leaves with the form), or null for an unstamped item. */
 export function grantedRankOf(item) {
-  const raw = readFlag(item, 'transformationGranted');
+  const raw = readFlag(item, GRANTED_KEY);
   return raw === null || raw === undefined || raw === '' || !Number.isFinite(Number(raw)) ? null : Number(raw);
 }
 
@@ -98,4 +179,43 @@ export function formSkillInForce(items, item) {
   if (!affliction) return true;
   const state = transformState(affliction);
   return state.stage === 'changed' && Number(state.formIndex) === origin;
+}
+
+/** The item flags the transformation engine owns (what a copy must not carry). */
+const ENGINE_ITEM_FLAGS = Object.freeze([OWNER_KEY, PAUSED_BY_KEY, TAKEN_OFF_KEY, FORM_KEY, GRANTED_KEY]);
+
+/**
+ * Creation data stamped as a pending affliction: `transformation` replaced by `{ stage: 'pending', landedAt, landedFloor }`,
+ * whatever was there. A copy.
+ * @param {object} data creation data
+ * @param {{ landedAt: number, landedFloor: number }} landing
+ */
+export function withPendingStamp(data, { landedAt, landedFloor }) {
+  return withFlags(data, { [STATE_KEY]: { stage: 'pending', landedAt, landedFloor } });
+}
+
+/**
+ * Creation data without the engine flags that name no affliction on the carrier. `owns(id)` answers "is `id` an
+ * affliction on the carrier". `transformationForm` / `transformationGranted` go with `transformationOf`; `takenOffBy` is judged like `pausedBy`. When `pausedBy`
+ * goes, the pause goes too (a buff `system.active: true`, a debuff `system.paused: false`, as `unpauseTraits` writes).
+ * @param {object} data creation data (`type`, `flags`, `system`)
+ * @param {(id: string) => boolean} owns
+ * @returns {{ data: object, changed: boolean }} `data` is a copy
+ */
+export function withoutEngineFlags(data, owns) {
+  const ownerOf = readFlag(data, OWNER_KEY);
+  const keepOwner = typeof ownerOf === 'string' && ownerOf !== '' && owns(ownerOf);
+  const pausedBy = readFlag(data, PAUSED_BY_KEY);
+  const keepPause = typeof pausedBy === 'string' && pausedBy !== '' && owns(pausedBy);
+  const takenOffBy = readFlag(data, TAKEN_OFF_KEY);
+  const keepTakenOff = typeof takenOffBy === 'string' && takenOffBy !== '' && owns(takenOffBy);
+  const keeps = { [PAUSED_BY_KEY]: keepPause, [TAKEN_OFF_KEY]: keepTakenOff };
+  const strip = ENGINE_ITEM_FLAGS.filter((key) => !(key in keeps ? keeps[key] : keepOwner));
+  let next = withoutFlags(data, strip);
+  const changed = next !== data;
+  if (pausedBy && !keepPause) {
+    const unpause = data.type === 'buff' ? { active: true } : { paused: false };
+    next = { ...next, system: { ...(next.system ?? {}), ...unpause } };
+  }
+  return { data: next, changed };
 }

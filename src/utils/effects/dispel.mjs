@@ -8,7 +8,7 @@
  * - `count` N took the first N matching Buffs; `buffKeys` names them and only they are suppressed.
  * - It ends when its combat is gone. With no combat (`combatId` empty) it stays until the GM restores it.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { clearFlag, readFlag, writeFlag } from '../flags.mjs';
 import { matchesTagQuery } from '../tag/tag-query.mjs';
 import { isEffectPaused, keptByWorkingGear } from './gear-suppression.mjs';
 import { transformationBody } from './debuff-force.mjs';
@@ -50,7 +50,7 @@ function isLive(entry) {
 
 /** Every stored entry of an actor (live or not). */
 export function storedDispels(actor) {
-  return asArray(actor?.flags?.[SYSTEM_ID]?.[FLAG]).map(cleanEntry).filter(Boolean);
+  return asArray(readFlag(actor, FLAG)).map(cleanEntry).filter(Boolean);
 }
 
 /** The entries still in force on an actor. */
@@ -117,9 +117,9 @@ export function isBuffDispelled(actor, buff) {
 }
 
 async function writeEntries(actor, entries) {
-  if (entries.length) await actor.setFlag(SYSTEM_ID, FLAG, entries);
-  else if (typeof actor.unsetFlag === 'function') await actor.unsetFlag(SYSTEM_ID, FLAG);
-  else await actor.setFlag(SYSTEM_ID, FLAG, []);
+  if (entries.length) await writeFlag(actor, FLAG, entries);
+  else if (typeof actor.unsetFlag === 'function') await clearFlag(actor, FLAG);
+  else await writeFlag(actor, FLAG, []);
 }
 
 /**

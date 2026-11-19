@@ -7,12 +7,15 @@ import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { canWriteTarget, messageAuthorId, parseMessageContent } from '../../chat/chat-relay.mjs';
 import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
+import { flagPath, readFlag } from '../../utils/flags.mjs';
+import { spellCardOf } from '../../utils/attack/spell-cast-link.mjs';
 import { attackerIdOf } from '../../utils/combat/card-flags.mjs';
 import { ownsAuraSource } from './aura-relay.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
+import { conditionItemData } from './condition-data.mjs';
+import { effectCardName } from '../../utils/character/transform-text.mjs';
 import { getItemInflictedConditions } from './inflicted-conditions.mjs';
 
 export const SPELL_CONDITION_RELAY = 'spellApplyCondition';
@@ -54,8 +57,8 @@ function idString(raw) {
  * (or a GM) wrote, whose flags name this spell and its caster and list the target.
  */
 function cardAuthorizes(message, spell, targetUuid, user) {
-  const f = message?.flags?.[SYSTEM_ID];
-  if (!f || typeof f !== 'object') return false;
+  const f = spellCardOf(message);
+  if (!f) return false;
   const authorId = messageAuthorId(message);
   const author = authorId ? globalThis.game?.users?.get?.(authorId) : null;
   if (!(user?.isGM || (authorId && authorId === user?.id) || author?.isGM)) return false;
@@ -134,7 +137,7 @@ async function relayOne(targetActor, spell, tag, messageId) {
 /** The "Applied to" notice for these actors ('' for none). */
 function appliedNoticeInner(actors) {
   return actors.length > 0
-    ? `<div class="cog-condition-applied-notice cog-text-success" style="font-size: 11px; margin-bottom: 4px; font-weight: bold;"><i class="fa-solid fa-check"></i> Applied to: ${actors.map(a => a.name).join(', ')}</div>`
+    ? `<div class="cog-condition-applied-notice cog-text-success" style="font-size: 11px; margin-bottom: 4px; font-weight: bold;"><i class="fa-solid fa-check"></i> Applied to: ${escapeAttr(actors.map(a => a.name).join(', '))}</div>`
     : '';
 }
 
@@ -166,8 +169,8 @@ export async function relayPendingSpellConditions(message, spell, pending, appli
 
 /** Where a spell card lists its applied actor ids: `appliedTargets` on a cast card, `conditionsApplied.targets` on a hit card; null for any other card. */
 export function spellCardFlagKey(message) {
-  const f = message?.flags?.[SYSTEM_ID];
-  if (!f || typeof f !== 'object') return null;
+  const f = spellCardOf(message);
+  if (!f) return null;
   if (f.isSpellAttack === true) return 'conditionsApplied.targets';
   if (f.isSpellCast === true) return 'appliedTargets';
   return null;
@@ -183,8 +186,8 @@ export function spellCardFlagKey(message) {
  */
 export async function recordSpellApplied(message, actors, flagKey) {
   if (!message || !flagKey || typeof message.update !== 'function') return false;
-  const f = message.flags?.[SYSTEM_ID] ?? {};
-  const listed = globalThis.foundry?.utils?.getProperty?.(f, flagKey);
+  const f = spellCardOf(message);
+  const listed = readFlag(message, flagKey);
   const ids = Array.isArray(listed) ? listed.filter(id => typeof id === 'string') : [];
   const merged = [...ids];
   for (const a of actors ?? []) if (a?.id && !merged.includes(a.id)) merged.push(a.id);
@@ -196,12 +199,12 @@ export async function recordSpellApplied(message, actors, flagKey) {
   }
   for (const a of actors ?? []) if (a?.id) byId.set(a.id, a);
   const named = merged.map(id => byId.get(id) ?? globalThis.game?.actors?.get?.(id)).filter(Boolean);
-  const update = { [`flags.${SYSTEM_ID}.${flagKey}`]: merged };
+  const update = { [flagPath(flagKey)]: merged };
   const doc = parseMessageContent(message.content);
   const slot = doc.querySelector(`.${NOTICE_SLOT}`);
   if (slot) {
     slot.innerHTML = appliedNoticeInner(named);
-    update.content = doc.body.innerHTML;
+    update.content = trustedHtml(doc.body.innerHTML);
   }
   try {
     await message.update(update);
@@ -285,11 +288,11 @@ export async function applySpellConditions(actor, spell, targets, opts = {}) {
  * @param {object} actor the caster
  * @param {object} spell
  * @param {string[]} conditionTags
- * @param {{ isBurstOrArea?: boolean, conditionRounds?: number, appliedTargets?: object[], effectSummaryHtml?: string }} [opts]
- *   `effectSummaryHtml` is `spellConditionSummary`'s result, computed by the async caller (this function is synchronous)
+ * @param {{ isBurstOrArea?: boolean, conditionRounds?: number, appliedTargets?: object[] }} [opts]
+ * @param {string} [effectSummaryHtml] `spellConditionSummary`'s result, computed by the async caller (this function is synchronous)
  * @returns {string}
  */
-export function spellConditionActionsHtml(actor, spell, conditionTags, { isBurstOrArea = false, conditionRounds = 0, appliedTargets = [], effectSummaryHtml = '' } = {}) {
+export function spellConditionActionsHtml(actor, spell, conditionTags, { isBurstOrArea = false, conditionRounds = 0, appliedTargets = [] } = {}, effectSummaryHtml = '') {
   if (!conditionTags?.length) return '';
   const sys = spell.system || {};
   const radiusLabel = sys.area?.radius ? `${sys.area.radius}ft ` : '';
@@ -298,18 +301,18 @@ export function spellConditionActionsHtml(actor, spell, conditionTags, { isBurst
 
   const buttonsHtml = conditionTags.map(tag => {
     const tagDef = getTagDefinition(tag) || { label: tag.replace(/^condition\./, '') };
-    const label = tagDef.label || tag;
+    const label = effectCardName(conditionItemData(tag, { requireKnown: true }), tagDef.label || tag);
     return `
           <button type="button" class="cog-apply-condition-btn cog-apply-debuff-btn cog-bg-accent-fill cog-text-on-fill" data-action="crawlerApplyCondition"
-            data-condition-tag="${tag}"
-            data-duration-rounds="${conditionRounds}"
+            data-condition-tag="${escapeAttr(tag)}"
+            data-duration-rounds="${escapeAttr(conditionRounds)}"
             data-debuff-name="${escapeAttr(label)}"
-            data-item-id="${spell.id || spell._id}"
+            data-item-id="${escapeAttr(spell.id || spell._id)}"
             data-item-name="${escapeAttr(spell.name)}"
-            data-actor-uuid="${actor.uuid}"
-            data-is-burst="${isBurstOrArea}"
-            data-radius="${sys.area?.radius || 5}"
-            data-target-filter="${sys.area?.targetFilter || 'enemies'}"
+            data-actor-uuid="${escapeAttr(actor.uuid)}"
+            data-is-burst="${escapeAttr(isBurstOrArea)}"
+            data-radius="${escapeAttr(sys.area?.radius || 5)}"
+            data-target-filter="${escapeAttr(sys.area?.targetFilter || 'enemies')}"
             style="width: 100%; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
             <i class="fa-solid fa-skull"></i> Inflict [${escapeAttr(label)}] ${isBurstOrArea ? '(Burst Area)' : 'on Target(s)'}
           </button>
@@ -320,7 +323,7 @@ export function spellConditionActionsHtml(actor, spell, conditionTags, { isBurst
         <div class="cog-spell-condition-actions cog-bg-danger-tint" style="margin-top: 8px; padding: 6px 8px; border: 1px solid var(--cog-danger); border-radius: 4px;">
           <div class="cog-text-accent" style="font-size: 11px; font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
             <i class="fa-solid fa-skull-crossbones"></i>
-            ${isBurstOrArea ? `Inflicts in Burst Area (${radiusLabel}${filterLabel}):` : `Inflicts Condition on Target:`}
+            ${isBurstOrArea ? `Inflicts in Burst Area (${escapeAttr(`${radiusLabel}${filterLabel}`)}):` : `Inflicts Condition on Target:`}
           </div>
           ${appliedNotice}
           <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -339,7 +342,10 @@ export function spellConditionActionsHtml(actor, spell, conditionTags, { isBurst
  * @param {string[]} conditionTags
  * @returns {Promise<string>}
  */
-export function spellConditionSummary(actor, spell, conditionTags) {
-  const effects = (Array.isArray(conditionTags) ? conditionTags : []).map((ref) => ({ kind: 'debuffs', ref }));
-  return cardSummary(spell, OMIT_ALL, { actor, effects });
+export async function spellConditionSummary(actor, spell, conditionTags) {
+  // a secret debuff's rules are not printed on a public card
+  const effects = (Array.isArray(conditionTags) ? conditionTags : [])
+    .filter((ref) => conditionItemData(ref, { requireKnown: true })?.system?.secret !== true)
+    .map((ref) => ({ kind: 'debuffs', ref }));
+  return await cardSummary(spell, OMIT_ALL, { actor, effects });
 }

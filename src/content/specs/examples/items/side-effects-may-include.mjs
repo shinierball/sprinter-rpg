@@ -44,8 +44,7 @@ export const SPECS = Object.freeze([
       identifier: 'understudy-contract',
       description: '<p>Performs Heckler Management at the Rank of whoever briefed you, or at your own if that is higher. The network calls this consistency.</p>',
       grants: [
-        { kind: 'skill', identifier: 'heckler-management', value: 0 },
-        { kind: 'rank_raise', identifier: 'heckler-management', floor: 1, floorFrom: 'rank', value: 0 }
+        { kind: 'rank_raise', identifier: 'heckler-management', floor: 1, floorFrom: 'rank', giveIfMissing: true, value: 0 }
       ],
       durationConfig: { type: 'minutes', value: 10 }
     }

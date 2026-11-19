@@ -4,7 +4,9 @@
  * standard stat array [2, 3, 4, 5, 6], species rules, and floor starting options.
  */
 
-import { COG_STANDARD_ARRAY, STAGE_SKILL_PICKS, validateStatArray, generateRandomCrawler } from '../data/rules/crawler-creation-rules.mjs';
+import {
+  COG_STANDARD_ARRAY, STAGE_SKILL_PICKS, STAT_METHODS, CHANCE_STAT_ORDER, validateStats, rollChanceStats, starterLoadoutBreaks, generateRandomCrawler
+} from '../data/rules/crawler-creation-rules.mjs';
 import {
   STARTER_RANK, STARTER_POTION_COUNT, loadoutOptions, loadoutLabel, findLoadout, defaultLoadout, resolveLoadoutId, getStarterWeaponDefinition,
   starterUnarmedPayloads
@@ -17,7 +19,10 @@ import { sourceBadge } from '../utils/content-source.mjs';
 import { whenSourceryCatalogsSettled } from '../content/sourcery-content-provider.mjs';
 import { getCOGStatModifier } from '../documents/actor.mjs';
 import { COGToolApp } from './tool-app.mjs';
-import { SYSTEM_PATH, SYSTEM_ID } from '../constants.mjs';
+import { SYSTEM_PATH } from '../constants.mjs';
+import { withFlags } from '../utils/flags.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
+import { langText } from '../utils/lang-text.mjs';
 import { requestRelay, registerRelayAction } from '../utils/gm-relay.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { floorLabel } from '../documents/actor/actor-environment.mjs';
@@ -56,6 +61,11 @@ const STORY_CARDS = Object.freeze({
   looseEnds: { label: 'Loose Ends', icon: 'fa-hourglass-half', inputName: 'creator-loose-ends', placeholder: 'Enter or edit crawler loose end...' },
   regrets: { label: 'Regrets', icon: 'fa-clock-rotate-left', inputName: 'creator-regrets', placeholder: 'Enter or edit crawler regret...' }
 });
+const methodText = langText({
+  'COG.CrawlerCreator.StatMethod.Array': 'Standard Array',
+  'COG.CrawlerCreator.StatMethod.Chance': 'Roll for Stats'
+});
+
 const TPL = `${SYSTEM_PATH}/templates/apps/crawler-creator`;
 const FLOOR_TPL = `${SYSTEM_PATH}/templates/apps/floor-simulator`;
 /** The Induction parts: the whole page for a Floor 1 or 2 start, the first stage of a floor start. */
@@ -99,6 +109,10 @@ function creatorSpec(options = {}) {
       cha: options.stats?.cha ?? null
     },
 
+    // How the Stats are set (core p. 109) and the rolls of the chance method; creator-only, never built into the actor
+    statMethod: options.statMethod === STAT_METHODS.CHANCE ? STAT_METHODS.CHANCE : STAT_METHODS.ARRAY,
+    statRolls: options.statRolls ?? null,
+
     // Life Stage Tier Selections: a background by id (`backgroundId`) and its skills by ref
     tierSelections: {
       tier1: { backgroundId: '', background: '', skills: [] },
@@ -122,6 +136,8 @@ export class COGCrawlerCreatorApp extends COGToolApp {
       setSize: COGCrawlerCreatorApp.#onSetSize,
       setFloor: COGCrawlerCreatorApp.#onSetFloor,
       setStat: COGCrawlerCreatorApp.#onSetStat,
+      setStatMethod: COGCrawlerCreatorApp.#onSetStatMethod,
+      rollStats: COGCrawlerCreatorApp.#onRollStats,
       setTierBackground: COGCrawlerCreatorApp.#onSetTierBackground,
       toggleSkill: COGCrawlerCreatorApp.#onToggleSkill,
       setStarterMode: COGCrawlerCreatorApp.#onSetStarterMode,
@@ -230,8 +246,9 @@ export class COGCrawlerCreatorApp extends COGToolApp {
    */
   _ruleBreakReasons() {
     const reasons = [];
-    const statValidation = validateStatArray(this.spec.stats);
+    const statValidation = validateStats(this.spec);
     if (!statValidation.valid) reasons.push(`${String(statValidation.error || 'Invalid stat array').replace(/\.$/, '')}.`);
+    reasons.push(...starterLoadoutBreaks(this.spec));
     const matrix = resolveCreatorSpecies(this.spec.species)?.matrices || {};
     const incomplete = [];
     const noBackgrounds = [];
@@ -258,7 +275,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     const tierRanks = speciesData?.tierRanks || { tier1: 1, tier2: 1, tier3: 3, tier4: 2 };
 
     // Stat array validation & remaining pool numbers
-    const statValidation = validateStatArray(this.spec.stats);
+    const statValidation = validateStats(this.spec);
     const assignedValues = Object.values(this.spec.stats).map(Number).filter(n => Number.isInteger(n) && n > 0);
     const availableNumbers = COG_STANDARD_ARRAY.map(num => ({
       value: num,
@@ -421,6 +438,11 @@ export class COGCrawlerCreatorApp extends COGToolApp {
       standardArray: COG_STANDARD_ARRAY,
       statValidation,
       availableNumbers,
+      isChanceStats: this.spec.statMethod === STAT_METHODS.CHANCE,
+      statMethods: [
+        { value: STAT_METHODS.ARRAY, label: methodText('COG.CrawlerCreator.StatMethod.Array'), selected: this.spec.statMethod !== STAT_METHODS.CHANCE },
+        { value: STAT_METHODS.CHANCE, label: methodText('COG.CrawlerCreator.StatMethod.Chance'), selected: this.spec.statMethod === STAT_METHODS.CHANCE }
+      ],
       startingHp,
       startingMana,
       tiers,
@@ -524,6 +546,32 @@ export class COGCrawlerCreatorApp extends COGToolApp {
   static #onSetStat(event, target) {
     const val = parseInt(target.value, 10);
     this.spec.stats[target.dataset.stat] = Number.isInteger(val) ? val : null;
+    return this.render({ parts: this._withStages(['stats', 'summary', 'footer']) });
+  }
+
+  static #onSetStatMethod(event, target) {
+    this.spec.statMethod = target.value === STAT_METHODS.CHANCE ? STAT_METHODS.CHANCE : STAT_METHODS.ARRAY;
+    return this.render({ parts: this._withStages(['stats', 'summary', 'footer']) });
+  }
+
+  static #onRollStats() { return this.rollStats(); }
+
+  /**
+   * "Leaving it to Chance" (core p. 109): roll every Stat, keep the rolls as the draft's scores, post the five Rolls to chat.
+   * Rolling again before Create replaces them and adds no reason.
+   */
+  async rollStats() {
+    const { rolls, dice } = await rollChanceStats();
+    this.spec.statRolls = { ...rolls };
+    this.spec.stats = { ...rolls };
+    const mode = globalThis.game?.settings?.get?.('core', 'rollMode');
+    const data = {
+      speaker: globalThis.ChatMessage?.getSpeaker?.(),
+      flavor: escapeAttr(CHANCE_STAT_ORDER.map(k => `${k.toUpperCase()} ${rolls[k]}`).join(', ')),
+      rolls: dice
+    };
+    if (mode && typeof globalThis.ChatMessage?.applyMode === 'function') globalThis.ChatMessage.applyMode(data, mode);
+    await globalThis.ChatMessage.create(data);
     return this.render({ parts: this._withStages(['stats', 'summary', 'footer']) });
   }
 
@@ -888,22 +936,19 @@ export class COGCrawlerCreatorApp extends COGToolApp {
       try {
         const draft = this.controller.drafts.get(floor);
         const rolls = [...(draft?.rolls?.values() ?? [])].filter(Boolean);
-        const data = {
+        const data = withFlags({
           speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }),
           content: buildFloorArrivalCard(result, { actorUuid: actor.uuid }),
           rolls,
-          flags: {
-            // Dice So Nice already animated these dice when the player rolled them in the creator; its own per-message
-            // flag (`dice-so-nice.skip`) keeps the card from animating them a second time.
-            ...(rolls.length ? { 'dice-so-nice': { skip: true } } : {}),
-            [SYSTEM_ID]: {
-              floorArrival: {
-                actorUuid: actor.uuid ?? null, floor, startFloor: this.controller.startFloor,
-                history: result.history ?? [], ruleBreak: (result.ruleBreaks?.confirmed?.length ?? 0) > 0
-              }
-            }
+          // Dice So Nice already animated these dice when the player rolled them in the creator; its own per-message
+          // flag (`dice-so-nice.skip`) keeps the card from animating them a second time.
+          flags: rolls.length ? { 'dice-so-nice': { skip: true } } : {}
+        }, {
+          floorArrival: {
+            actorUuid: actor.uuid ?? null, floor, startFloor: this.controller.startFloor,
+            history: result.history ?? [], ruleBreak: (result.ruleBreaks?.confirmed?.length ?? 0) > 0
           }
-        };
+        });
         if (mode && typeof globalThis.ChatMessage?.applyMode === 'function') globalThis.ChatMessage.applyMode(data, mode);
         await globalThis.ChatMessage.create(data);
       } catch (err) {

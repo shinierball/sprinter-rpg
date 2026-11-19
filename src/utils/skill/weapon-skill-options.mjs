@@ -10,6 +10,8 @@
  */
 import { DEFAULT_RESOLVER } from '../item-from-words/check-references.mjs';
 import { itemIdentifier, slugifyIdentifier } from '../identifier.mjs';
+import { isWeaponGear } from '../gear/wield-mode.mjs';
+import { loadoutOptions } from '../../content/creation-loadouts.mjs';
 
 const SKILL_ID_PREFIX = 'id.skill.';
 
@@ -100,4 +102,46 @@ export function listedSkillEntries(itemSystem, resolver = DEFAULT_RESOLVER) {
  */
 export function readableSkillName(identifier) {
   return String(identifier ?? '').split('-').filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+/** The Skill a non-weapon item is swung on (core p. 178, Improvised Weapons). */
+const IMPROVISED_WEAPONS_SKILL = 'improvised-weapons';
+
+/** Whether attacking with this item is an improvised swing: gear that is not a weapon. */
+export function isImprovisedSwing(item) {
+  return item?.type === 'gear' && !isWeaponGear(item);
+}
+
+/**
+ * The system the attack path reads for an item: `item.system`, or for an improvised swing a copy whose weapon fields a
+ * swing must not take from the item are replaced (the Skill list is the one Improvised Weapons entry, Base Damage, rank
+ * breaks, fumble debuff and To-Hit Stat are blank so the Skill's own are used).
+ * @param {object} item
+ * @returns {object}
+ */
+export function weaponSystemFor(item) {
+  const sys = item?.system;
+  if (!sys || !isImprovisedSwing(item)) return sys;
+  // Object.create keeps every other read live (a DataModel's prototype getters); the item's weapon-only fields are blanked
+  return Object.assign(Object.create(sys), { associatedSkills: [IMPROVISED_WEAPONS_SKILL], baseDamage: {}, rankBreaks: {}, toHitStat: '', fumbleDebuff: '' });
+}
+
+/**
+ * The definition a stand-in uses when this world has no Improvised Weapons Skill: the starter loadout entry's name,
+ * stat, tags and Base Damage.
+ * @returns {{ name: string, system: object }|null} null when the loadout has no such entry (no stand-in definition)
+ */
+export function improvisedFallbackDefinition() {
+  // The book's Improvised Weapons numbers (core p. 178) are stored once, in the starter weapon loadout entry
+  const e = loadoutOptions('weapon').find((entry) => entry.skillIdentifier === IMPROVISED_WEAPONS_SKILL);
+  if (!e) return null;
+  return {
+    name: e.name,
+    system: {
+      identifier: IMPROVISED_WEAPONS_SKILL,
+      stat: e.toHitStat,
+      tags: [...e.tags],
+      baseDamage: { dice: e.damageDice, stat: e.damageStat, damageType: e.damageType }
+    }
+  };
 }

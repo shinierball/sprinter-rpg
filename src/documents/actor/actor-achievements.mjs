@@ -1,9 +1,9 @@
 import { COG_BOSS_TIERS, getBossTierFromClassification } from './actor-constants.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 import { COG_ACHIEVEMENT_TIERS } from '../../data/rules/achievement-tiers.mjs';
 import { lootBoxName } from './achievement-award.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 
 
 
@@ -21,7 +21,7 @@ export async function announceAchievement(actor, achievement) {
   const sys = item.system || {};
   const title = item.name || 'UNNAMED ACHIEVEMENT';
   // The quote is typed as plain text (escaped); the fallback description is rich text (HTML as the editor stored it).
-  const quote = sys.quote ? escapeAttr(sys.quote) : (sys.description || 'The Dungeon AI watches in silent, amused judgment.');
+  const quote = sys.quote ? escapeAttr(sys.quote) : (item.system.description ? trustedHtml(item.system.description) : 'The Dungeon AI watches in silent, amused judgment.');
   const reward = sys.reward || 'Special Recognition';
   const contents = escapeAttr(sys.rewardContents);
   const tier = (sys.tier || 'bronze').toLowerCase();
@@ -31,8 +31,6 @@ export async function announceAchievement(actor, achievement) {
   const tierDef = (globalThis.CONFIG?.COG?.achievementTiers ?? COG_ACHIEVEMENT_TIERS)[tier] ?? {};
   const icon = tierDef.icon || 'fa-solid fa-trophy';
   const color = tierDef.color || '#e74c3c';
-  const boxLines = (Array.isArray(sys.rewardBoxes) ? sys.rewardBoxes : [])
-    .map(row => `${Math.max(1, Number(row?.quantity) || 1)}x ${escapeAttr(row?.name || lootBoxName(row?.tier))}`);
 
   const chatContent = `
     <div class="cog-chat-card cog-ai-announcement-card cog-achievement-card cog-bg-window cog-text-strong" style="border: 2px solid var(--cog-accent); border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
@@ -40,14 +38,14 @@ export async function announceAchievement(actor, achievement) {
         <i class="fa-solid fa-bullhorn"></i> NEW ACHIEVEMENT UNLOCKED!
       </div>
       <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 8px; margin-bottom: 8px;">
-        <img class="cog-bg-icon-box" src="${actor.img || 'icons/svg/mystery-man.svg'}" style="width: 44px; height: 44px; border-radius: 4px; border: 2px solid ${color}; object-fit: cover;" />
+        <img class="cog-bg-icon-box" src="${escapeAttr(actor.img || 'icons/svg/mystery-man.svg')}" style="width: 44px; height: 44px; border-radius: 4px; border: 2px solid ${escapeAttr(color)}; object-fit: cover;" />
         <div style="flex: 1;">
-          <div class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Crawler: <strong class="cog-text-strong">${actor.name}</strong> • ${floor}</div>
+          <div class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Crawler: <strong class="cog-text-strong">${escapeAttr(actor.name)}</strong> • ${floor}</div>
           <h3 class="cog-text-strong" style="margin: 2px 0 0 0; font-size: 17px; font-weight: bold; line-height: 1.2;">
-            <i class="${icon} cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${color};"></i> ${escapeAttr(title)}
+            <i class="${escapeAttr(icon)} cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${escapeAttr(color)};"></i> ${escapeAttr(title)}
           </h3>
         </div>
-        <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${color}; border: 1px solid ${color}; font-size: 10px; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; font-weight: bold;">
+        <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${escapeAttr(color)}; border: 1px solid ${escapeAttr(color)}; font-size: 10px; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; font-weight: bold;">
           ${escapeAttr(tier)}
         </span>
       </div>
@@ -59,28 +57,25 @@ export async function announceAchievement(actor, achievement) {
           <span class="cog-text-secondary" style="text-transform: uppercase; font-size: 11px;"><i class="fa-solid fa-gift"></i> Reward:</span>
           <span class="cog-text-success" style="font-weight: bold; font-size: 13px;">${escapeAttr(reward)}</span>
         </div>
-        ${boxLines.map(line => `<div class="cog-text-secondary" style="font-size: 11px;"><i class="fa-solid fa-box-open"></i> ${line}</div>`).join('')}
+        ${(Array.isArray(sys.rewardBoxes) ? sys.rewardBoxes : []).map(row => `<div class="cog-text-secondary" style="font-size: 11px;"><i class="fa-solid fa-box-open"></i> ${Math.max(1, Number(row?.quantity) || 1)}x ${escapeAttr(row?.name || lootBoxName(row?.tier))}</div>`).join('')}
         ${contents ? `<div class="cog-text-secondary" style="font-size: 11px; border-top: 1px solid var(--cog-panel-border); padding-top: 4px;"><strong>Contents:</strong> ${contents}</div>` : ''}
-        ${sys.favor ? `<div class="cog-text-gold" style="font-size: 11px;"><i class="fa-solid fa-hand-sparkles"></i> AI Favor: +${sys.favor}</div>` : ''}
-        ${sys.xp ? `<div class="cog-text-info" style="font-size: 11px;"><i class="fa-solid fa-bolt"></i> XP: +${sys.xp}</div>` : ''}
+        ${sys.favor ? `<div class="cog-text-gold" style="font-size: 11px;"><i class="fa-solid fa-hand-sparkles"></i> AI Favor: +${escapeAttr(sys.favor)}</div>` : ''}
+        ${sys.xp ? `<div class="cog-text-info" style="font-size: 11px;"><i class="fa-solid fa-bolt"></i> XP: +${escapeAttr(sys.xp)}</div>` : ''}
       </div>
     </div>
   `;
 
-  return ChatMessage.create({
+  return ChatMessage.create(withFlags({
     speaker: { alias: 'THE DUNGEON AI' },
-    content: chatContent,
-    flags: {
-      [SYSTEM_ID]: {
-        isAchievement: true,
-        actorId: actor.id,
-        achievementId: item.id,
-        title,
-        tier,
-        reward
-      }
-    }
-  });
+    content: chatContent
+  }, {
+    isAchievement: true,
+    actorId: actor.id,
+    achievementId: item.id,
+    title,
+    tier,
+    reward
+  }));
 }
 
 
@@ -116,7 +111,7 @@ export function getBadgeSummary(actor) {
         color: tierDef.color,
         icon: tierDef.icon,
         class: tierDef.cssClass,
-        title: `${tierDef.label} (${tierDef.bossLevel})`
+        title: `${escapeAttr(tierDef.label)} (${escapeAttr(tierDef.bossLevel)})`
       });
       textStars += '★';
     }
@@ -158,16 +153,16 @@ export function getBadgeSummary(actor) {
 
   let starsHtml = '';
   for (const star of stars) {
-    starsHtml += `<i class="${star.icon} ${star.class} cog-tier-chip cog-fg-dyn" data-tooltip="${star.title}" style="--cog-fg-dyn: ${star.color}; margin: 0 1px;"></i>`;
+    starsHtml += `<i class="${escapeAttr(star.icon)} ${escapeAttr(star.class)} cog-tier-chip cog-fg-dyn" data-tooltip-text="${escapeAttr(star.title)}" style="--cog-fg-dyn: ${escapeAttr(star.color)}; margin: 0 1px;"></i>`;
   }
 
   let skullsHtml = '';
   for (const skull of skulls) {
-    skullsHtml += `<i class="${skull.icon} ${skull.class} cog-tier-chip cog-fg-dyn" data-tooltip="${skull.title}" style="--cog-fg-dyn: ${skull.color}; margin: 0 1px;"></i>`;
+    skullsHtml += `<i class="${escapeAttr(skull.icon)} ${escapeAttr(skull.class)} cog-tier-chip cog-fg-dyn" data-tooltip-text="${escapeAttr(skull.title)}" style="--cog-fg-dyn: ${escapeAttr(skull.color)}; margin: 0 1px;"></i>`;
   }
 
   const html = hasBadges
-    ? `<span class="cog-badge-strip" data-tooltip="${fullTooltip}"><span class="cog-star-cluster">${starsHtml}</span>${skullsHtml ? `<span class="cog-skull-cluster" style="margin-left: 4px;">${skullsHtml}</span>` : ''}</span>`
+    ? `<span class="cog-badge-strip" data-tooltip-text="${escapeAttr(fullTooltip)}"><span class="cog-star-cluster">${starsHtml}</span>${skullsHtml ? `<span class="cog-skull-cluster" style="margin-left: 4px;">${skullsHtml}</span>` : ''}</span>`
     : '';
 
   const text = [textStars, textSkulls].filter(Boolean).join(' ');
@@ -371,44 +366,41 @@ export async function postBossKillCard(actor, killEntry) {
   const totalStars = summary.totalBossKills;
 
   const chatContent = `
-    <div class="cog-chat-card cog-ai-announcement-card cog-boss-kill-card cog-bg-window cog-text-strong" style="border: 2px solid ${tierDef.color}; border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,0.7);">
-      <div class="cog-bg-dyn cog-text-on-bright" style="--cog-bg-dyn: ${tierDef.color}; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 5px 8px; border-radius: 3px; font-weight: bold; text-align: center; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+    <div class="cog-chat-card cog-ai-announcement-card cog-boss-kill-card cog-bg-window cog-text-strong" style="border: 2px solid ${escapeAttr(tierDef.color)}; border-radius: 6px; padding: 12px; font-family: 'Oswald', sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,0.7);">
+      <div class="cog-bg-dyn cog-text-on-bright" style="--cog-bg-dyn: ${escapeAttr(tierDef.color)}; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; padding: 5px 8px; border-radius: 3px; font-weight: bold; text-align: center; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
         <i class="fa-solid fa-star"></i> NEW BOSS STAR AWARDED!
       </div>
       <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 8px; margin-bottom: 8px;">
-        <img class="cog-bg-icon-box" src="${actor.img || 'icons/svg/mystery-man.svg'}" style="width: 44px; height: 44px; border-radius: 4px; border: 2px solid ${tierDef.color}; object-fit: cover;" />
+        <img class="cog-bg-icon-box" src="${escapeAttr(actor.img || 'icons/svg/mystery-man.svg')}" style="width: 44px; height: 44px; border-radius: 4px; border: 2px solid ${escapeAttr(tierDef.color)}; object-fit: cover;" />
         <div style="flex: 1;">
-          <div class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Crawler: <strong class="cog-text-strong">${actor.name}</strong> • ${killEntry.floor}</div>
+          <div class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Crawler: <strong class="cog-text-strong">${escapeAttr(actor.name)}</strong> • ${escapeAttr(killEntry.floor)}</div>
           <h3 class="cog-text-strong" style="margin: 2px 0 0 0; font-size: 17px; font-weight: bold; line-height: 1.2;">
-            <i class="fa-solid fa-star cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${tierDef.color};"></i> ${tierDef.label} (${tierDef.bossLevel})
+            <i class="fa-solid fa-star cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${escapeAttr(tierDef.color)};"></i> ${escapeAttr(tierDef.label)} (${escapeAttr(tierDef.bossLevel)})
           </h3>
         </div>
-        <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${tierDef.color}; border: 1px solid ${tierDef.color}; font-size: 11px; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; font-weight: bold;">
-          ${tierDef.bossLevel}
+        <span class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${escapeAttr(tierDef.color)}; border: 1px solid ${escapeAttr(tierDef.color)}; font-size: 11px; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; font-weight: bold;">
+          ${escapeAttr(tierDef.bossLevel)}
         </span>
       </div>
-      <div class="cog-bg-surface-muted cog-text" style="border-left: 3px solid ${tierDef.color}; padding: 8px 12px; font-style: italic; font-size: 13px; margin-bottom: 10px; line-height: 1.4;">
-        “ATTENTION CRAWLERS! A boss has been slaughtered! <strong>${actor.name}</strong> dealt the final blow to <strong>${killEntry.name}</strong>! A brand new ${tierDef.label} has been pinned to their name for the entire dungeon to see.”
+      <div class="cog-bg-surface-muted cog-text" style="border-left: 3px solid ${escapeAttr(tierDef.color)}; padding: 8px 12px; font-style: italic; font-size: 13px; margin-bottom: 10px; line-height: 1.4;">
+        “ATTENTION CRAWLERS! A boss has been slaughtered! <strong>${escapeAttr(actor.name)}</strong> dealt the final blow to <strong>${escapeAttr(killEntry.name)}</strong>! A brand new ${escapeAttr(tierDef.label)} has been pinned to their name for the entire dungeon to see.”
       </div>
       <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); padding: 8px 10px; border-radius: 4px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
         <span class="cog-text-secondary" style="text-transform: uppercase; font-size: 11px;"><i class="fa-solid fa-trophy"></i> Total Boss Stars:</span>
-        <span class="cog-text-gold" style="font-weight: bold; font-size: 14px;">${totalStars} ⭐</span>
+        <span class="cog-text-gold" style="font-weight: bold; font-size: 14px;">${escapeAttr(totalStars)} ⭐</span>
       </div>
     </div>
   `;
 
-  return ChatMessage.create({
+  return ChatMessage.create(withFlags({
     speaker: { alias: 'THE DUNGEON AI' },
-    content: chatContent,
-    flags: {
-      [SYSTEM_ID]: {
-        isBossKill: true,
-        actorId: actor.id,
-        bossName: killEntry.name,
-        tier: killEntry.tier
-      }
-    }
-  });
+    content: chatContent
+  }, {
+    isBossKill: true,
+    actorId: actor.id,
+    bossName: killEntry.name,
+    tier: killEntry.tier
+  }));
 }
 
 
@@ -426,11 +418,11 @@ export async function postCrawlerKillCard(actor, killEntry) {
         <i class="fa-solid fa-skull"></i> COLD-BLOODED CRAWLER KILL!
       </div>
       <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 8px; margin-bottom: 8px;">
-        <img class="cog-bg-icon-box" src="${actor.img || 'icons/svg/mystery-man.svg'}" style="width: 44px; height: 44px; border-radius: 4px; border: 2px solid var(--cog-accent); object-fit: cover;" />
+        <img class="cog-bg-icon-box" src="${escapeAttr(actor.img || 'icons/svg/mystery-man.svg')}" style="width: 44px; height: 44px; border-radius: 4px; border: 2px solid var(--cog-accent); object-fit: cover;" />
         <div style="flex: 1;">
-          <div class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Killer: <strong class="cog-text-strong">${actor.name}</strong> • ${killEntry.floor}</div>
+          <div class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Killer: <strong class="cog-text-strong">${escapeAttr(actor.name)}</strong> • ${escapeAttr(killEntry.floor)}</div>
           <h3 class="cog-text-danger" style="margin: 2px 0 0 0; font-size: 17px; font-weight: bold; line-height: 1.2;">
-            <i class="fa-solid fa-skull cog-text-strong"></i> Slain: ${killEntry.name} ${killEntry.crawlerNumber ? `(${killEntry.crawlerNumber})` : ''}
+            <i class="fa-solid fa-skull cog-text-strong"></i> Slain: ${escapeAttr(killEntry.name)} ${escapeAttr(killEntry.crawlerNumber ? `(${killEntry.crawlerNumber})` : '')}
           </h3>
         </div>
         <span class="cog-text-danger" style="border: 1px solid var(--cog-accent); font-size: 11px; text-transform: uppercase; padding: 3px 8px; border-radius: 3px; font-weight: bold;">
@@ -438,24 +430,21 @@ export async function postCrawlerKillCard(actor, killEntry) {
         </span>
       </div>
       <div class="cog-bg-surface-muted cog-text" style="border-left: 3px solid var(--cog-accent); padding: 8px 12px; font-style: italic; font-size: 13px; margin-bottom: 10px; line-height: 1.4;">
-        “Someone call the clean-up crew! <strong>${actor.name}</strong> just eliminated <strong>${killEntry.name}</strong>. A new skull has been freshly carved beside their name. Watch your back around actor one, folks!”
+        “Someone call the clean-up crew! <strong>${escapeAttr(actor.name)}</strong> just eliminated <strong>${escapeAttr(killEntry.name)}</strong>. A new skull has been freshly carved beside their name. Watch your back around actor one, folks!”
       </div>
       <div class="cog-bg-surface" style="border: 1px solid var(--cog-panel-border); padding: 8px 10px; border-radius: 4px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
         <span class="cog-text-secondary" style="text-transform: uppercase; font-size: 11px;"><i class="fa-solid fa-skull"></i> Total Crawler Skulls:</span>
-        <span class="cog-text-danger" style="font-weight: bold; font-size: 14px;">${totalSkulls} 💀</span>
+        <span class="cog-text-danger" style="font-weight: bold; font-size: 14px;">${escapeAttr(totalSkulls)} 💀</span>
       </div>
     </div>
   `;
 
-  return ChatMessage.create({
+  return ChatMessage.create(withFlags({
     speaker: { alias: 'THE DUNGEON AI' },
-    content: chatContent,
-    flags: {
-      [SYSTEM_ID]: {
-        isCrawlerKill: true,
-        actorId: actor.id,
-        slainName: killEntry.name
-      }
-    }
-  });
+    content: chatContent
+  }, {
+    isCrawlerKill: true,
+    actorId: actor.id,
+    slainName: killEntry.name
+  }));
 }

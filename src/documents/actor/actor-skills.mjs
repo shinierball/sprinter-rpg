@@ -1,11 +1,11 @@
 import { COGCombatMetrics, getHpPerBar } from '../combat-metrics.mjs';
 import { getRequiredGrindingHours, getAdvancementTarget, getEnduranceDC, getSafeGrindingThreshold } from '../../data/rules/grinding-rules.mjs';
 import { getCurrentFloor, getFloorTimer, decrementFloorTimer } from './actor-environment.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { carrySourceStamp, findOffReference, landItems } from '../../utils/content-source.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
-import { rollGrindComplication } from '../../content/grind-complications.mjs';
+import { rollGrindTables } from '../../content/grind-tables.mjs';
 import { getStatCaps } from '../../utils/character/stat-caps.mjs';
 import { storedBaseScore } from '../../models/actors/actor-derivation.mjs';
 import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
@@ -16,6 +16,7 @@ import { buildRollContext, extendContext } from '../../utils/roll/roll-context.m
 import { cameraNoteHtml } from '../../utils/roll/cameras.mjs';
 import { extractD20Result } from '../session/roll-outcomes.mjs';
 import { restCooldownUpdates } from './cooldown-gate.mjs';
+import { mergeItemUpdates, restRechargeUpdates } from './charge-recharge.mjs';
 import { getRecoveryMultiplier, resolveRecoverySituations, scaleRecovery } from '../../utils/roll/narrow-modifiers.mjs';
 import { isFatigueDebuff, restLevelOf, clearedOnRest } from '../../utils/time/rest-durations.mjs';
 import { ruleSkillOf, ruleSkillRank } from '../../utils/skill/rule-skills.mjs';
@@ -26,12 +27,14 @@ import {
   rollSkillCheckDice, skillUseParts, skillCardTailHtml, postSkillCheckMessage
 } from './skill-roll.mjs';
 import { applyCondition } from './actor-conditions.mjs';
+import { postRestCues } from './transform-cue-events.mjs';
 import { recordGrind } from './grind-log.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
 import { runGrindAdvancement, postAdvancementCard, creditGrindLevelHours } from './actor-advancement.mjs';
 import { buildPetLevelLines } from '../../chat/advancement-card.mjs';
 import { settleHealed } from './healing.mjs';
 import { mapFindOf, mapFindOffers, postMapFindCard } from './grind-map-find.mjs';
+import { postFloorTimeCard } from './grind-floor-time.mjs';
 import { fireUseTriggers } from './event-triggers.mjs';
 import { expireRestEffects } from './duration-expiry.mjs';
 import { confirmMagicGain, confirmGrindAllocation } from './advancement-gates.mjs';
@@ -338,7 +341,9 @@ export async function rest(actor, restType = 'long', options = {}) {
 
   // The rest resets the cooldowns that end at a rest of this level or below; the 1-hour rest resets none (3.12c)
   const isHourRest = ['1hour', '1h', 'hour'].includes(normType);
-  const cooldownResets = restCooldownUpdates(actor, isHourRest ? 0 : restLevelOf(normType));
+  // Items whose charges come back at a rest (`charges.recharge`) join the same per-item update.
+  const restLevel = isHourRest ? 0 : restLevelOf(normType);
+  const cooldownResets = mergeItemUpdates(restCooldownUpdates(actor, restLevel), restRechargeUpdates(actor, restLevel));
   if (cooldownResets.length) await actor.updateEmbeddedDocuments('Item', cooldownResets);
   await expireRestEffects(actor, isHourRest ? 0 : restLevelOf(normType));
 
@@ -374,21 +379,20 @@ export async function rest(actor, restType = 'long', options = {}) {
         </ul>
       </div>
     `;
-    await ChatMessage.create({
+    await ChatMessage.create(withFlags({
       speaker: ChatMessage.getSpeaker({ actor: actor }),
-      content: card,
-      flags: {
-        [SYSTEM_ID]: {
-          isRest: true,
-          restType: normType,
-          hours,
-          hpRestored,
-          manaRestored,
-          conditionsCleared: conditionsClearedCount
-        }
-      }
-    });
+      content: card
+    }, {
+      isRest: true,
+      restType: normType,
+      hours,
+      hpRestored,
+      manaRestored,
+      conditionsCleared: conditionsClearedCount
+    }));
   }
+
+  await postRestCues(actor, normType);
 
   return {
     restType: normType,
@@ -591,12 +595,12 @@ export async function executePartyGrindSession(partyActors, options = {}) {
   const floorNumber = Number(options.floor) || (getCurrentFloor());
 
   // 1. Roll Complications once for the party
-  const complication = await rollGrindComplication(options);
+  const complication = await rollGrindTables({ ...options, floor: floorNumber });
   const eventBonusHours = complication?.bonusHours ?? 0;
 
   const mapBonusHours = mapBonus > 0 ? mapBonus : 0;
   const totalBonusHours = eventBonusHours + mapBonusHours;
-  const totalEarnedHours = hours + totalBonusHours;
+  const totalEarnedHours = Math.max(0, hours + totalBonusHours);
   const nonBonusHours = hours;
 
   // 2. Decrement global Floor timer clock once by non-bonus hours accrued
@@ -731,11 +735,12 @@ async function postPartyGrindChatCard(data) {
     compHtml = `
       <div class="cog-bg-surface-muted" style="border-left: 3px solid ${escapeAttr(data.complication.color)}; border-radius: 2px; padding: 6px 10px; margin-top: 8px;">
         <div class="cog-tier-chip cog-fg-dyn" style="--cog-fg-dyn: ${escapeAttr(data.complication.color)}; font-weight: bold; font-size: 11px; text-transform: uppercase;">
-          <i class="${escapeAttr(data.complication.icon)}"></i> Party Event (d20: ${escapeAttr(data.complication.roll)}): ${escapeAttr(data.complication.title)}
+          <i class="${escapeAttr(data.complication.icon)}"></i> Party Event (${escapeAttr(data.complication.formula)}: ${escapeAttr(data.complication.roll)}): ${escapeAttr(data.complication.title)}
         </div>
         <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px; line-height: 1.3;">
-          ${escapeAttr(data.complication.description)}
+          ${escapeAttr(data.complication.description)}${data.complication.html ? trustedHtml(data.complication.html) : ''}
         </div>
+        ${(data.complication.lines ?? []).map(line => `<div class="cog-text-secondary" style="font-size: 11px;">${escapeAttr(line)}</div>`).join('')}
       </div>
     `;
   }
@@ -804,20 +809,20 @@ async function postPartyGrindChatCard(data) {
   `;
 
   if (typeof ChatMessage !== 'undefined' && typeof ChatMessage.create === 'function') {
-    await ChatMessage.create({
+    await ChatMessage.create(withFlags({
       content: card,
-      speaker: { alias: 'Dungeon Grinding Master' },
-      flags: {
-        [SYSTEM_ID]: {
-          isPartyGrindSession: true,
-          hours: data.hours,
-          nonBonusHours: data.nonBonusHours,
-          bonusHours: data.totalBonusHours,
-          floorTimer: data.newFloorTimer
-        }
-      }
-    });
+      rolls: data.complication?.rolls ?? [],
+      speaker: { alias: 'Dungeon Grinding Master' }
+    }, {
+      isPartyGrindSession: true,
+      hours: data.hours,
+      nonBonusHours: data.nonBonusHours,
+      bonusHours: data.totalBonusHours,
+      floorTimer: data.newFloorTimer
+    }));
     // a City Boss Map's find: its own card, one line and button per holder
     await postMapFindCard(data.mapFinds);
+    // floor time a table row offers: a line for everyone, a button for the GM
+    await postFloorTimeCard(data.complication?.floorTimeOffers);
   }
 }

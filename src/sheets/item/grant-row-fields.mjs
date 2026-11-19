@@ -29,7 +29,7 @@ export const GRANT_ROW_FIELDS = Object.freeze({
   'spell:fixed':      Object.freeze(['identifier', 'rank', 'label']),
   'spell:choice':     Object.freeze(['rank', 'count', 'distinct', 'query', 'options', 'category', 'label']),
   'rank_bonus:fixed': Object.freeze(['value', 'tag', 'query', 'floor', 'onlyIfOwned', 'label']),
-  'rank_raise:fixed': Object.freeze(['identifier', 'tag', 'query', 'floorFrom', 'floor', 'value', 'label']),
+  'rank_raise:fixed': Object.freeze(['identifier', 'tag', 'query', 'floorFrom', 'giveIfMissing', 'floor', 'value', 'label']),
   'rank_cap:fixed':   Object.freeze(['value', 'identifier', 'tag', 'label']),
   'rank_cap:choice':  Object.freeze(['value', 'query', 'options', 'category', 'label'])
 });
@@ -209,7 +209,7 @@ export function grantRowView(row, rowPath, ctx = {}) {
     modeOptions: key ? grantModesOf(kind).map((value) => ({ value, labelKey: `COG.Rows.Grant.Mode.${value}`, selected: value === mode })) : [],
     showModes: key ? grantModesOf(kind).length > 1 : false,
     // `floorFrom` reads a buff's stored Rank, so only a buff's editor offers it
-    fields: key ? (ctx.fieldsByKey?.[key] ?? GRANT_ROW_FIELDS[key]).filter((field) => field !== 'floorFrom' || ctx.item?.type === 'buff').map((field) => fieldView(field, source, key, rowPath, ctx)) : [],
+    fields: key ? (ctx.fieldsByKey?.[key] ?? GRANT_ROW_FIELDS[key]).filter((field) => (field !== 'floorFrom' && field !== 'giveIfMissing') || ctx.item?.type === 'buff').map((field) => fieldView(field, source, key, rowPath, ctx)) : [],
     incomplete: errors.length > 0,
     problem: errors.join('; ')
   };

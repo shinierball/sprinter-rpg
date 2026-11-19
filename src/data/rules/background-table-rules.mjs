@@ -2,6 +2,7 @@ import { withFlags } from '../../utils/flags.mjs';
 import { tableKeyOf, tableKeyPatch } from '../../utils/rolltable/table-flags.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { BUNDLED_SET_ID, withSourceStamp } from '../../utils/content-source.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** Background table lookup, rolling and RollTable creation (code). The table rows are content: registered by a provider (samples, a theme, the Sourcery import), none bundled. */
 
@@ -134,7 +135,7 @@ export function createBackgroundRollTableData(tableKey) {
   return {
     name: tableDef.name,
     img: 'icons/svg/d20-grey.svg',
-    description: `<p>${tableDef.description}</p>`,
+    description: `<p>${escapeAttr(tableDef.description)}</p>`,
     formula: tableDef.formula,
     replacement: true,
     displayRoll: true,

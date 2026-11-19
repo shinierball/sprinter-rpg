@@ -1,9 +1,5 @@
 import { WEAPON_PAGE } from './page-weapon.mjs';
-
-/** Localized lore text, resolved when the page content is read (after i18n is ready), not at import. */
-function localizeGuide(key) {
-  return globalThis.game?.i18n?.localize?.(key) ?? key;
-}
+import { trustedHtml } from '../../utils/escape-attr.mjs';
 
 export const AUTHORING_PAGES = [
     {
@@ -178,7 +174,7 @@ Disadvantage Attack: 2d20kl + 12 (DEX +4 + Bow Rank 5 + Aiming Rank 3)
 <div class="cog-journal-page">
   <h2>Custom Spells & Favored Archetypes</h2>
   <p>
-    ${localizeGuide('COG.Content.JournalMagicIntro')}
+    ${trustedHtml(globalThis.game?.i18n?.localize('COG.Content.JournalMagicIntro'))}
   </p>
 
   <h3>The Favored Spell Tag System</h3>

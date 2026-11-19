@@ -8,7 +8,7 @@
  * - size and speed are single stored fields, so `applyOverlayToAttributes` swaps them in memory and remembers what it
  *   replaced, putting it back on the next prepare (idempotent whether or not Foundry reset the model in between).
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { appliedRecordOf } from '../../utils/character/race-class-flags.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { overlayOf, transformState } from '../../utils/character/transform-rules.mjs';
 import { STAT_KEYS } from './actor-derivation.mjs';
@@ -39,7 +39,7 @@ export function overlayContext(actor, items) {
   const state = transformState(overlay);
   const formItem = items.find((i) => i.type === 'race' && (i.id ?? i._id) === state.formItemId) ?? null;
   if (!formItem) return null;
-  const applied = actor?.getFlag?.(SYSTEM_ID, 'appliedRace') ?? null;
+  const applied = appliedRecordOf(actor, 'race') ?? null;
   const form = COGRaceClassApplier.parseRaceBonuses(formItem);
   // The form's fixed skill and spell rows, read like gear rows: a race row's `rank` is a gear row's `value`
   const rows = (formItem.system?.grants ?? [])

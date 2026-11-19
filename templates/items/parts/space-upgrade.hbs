@@ -117,7 +117,7 @@
       </div>
       {{#if craftingActions.visible}}
         <div class="cog-field-row cog-crafting-tier-actions">
-          <button type="button" class="cog-btn" data-action="buyTableTier" data-tooltip="{{localize 'COG.CraftSheet.Table.BuyHint' cost=craftingActions.cost}}"><i class="fa-solid fa-coins"></i> {{localize "COG.CraftSheet.Table.Buy" cost=craftingActions.cost}}</button>
+          <button type="button" class="cog-btn" data-action="buyTableTier" data-tooltip-text="{{localize 'COG.CraftSheet.Table.BuyHint' cost=craftingActions.cost}}"><i class="fa-solid fa-coins"></i> {{localize "COG.CraftSheet.Table.Buy" cost=craftingActions.cost}}</button>
           <button type="button" class="cog-btn" data-action="applyTableCoupon" data-tooltip="{{localize 'COG.CraftSheet.Table.CouponHint'}}"><i class="fa-solid fa-ticket"></i> {{localize "COG.CraftSheet.Table.Coupon" count=craftingActions.coupons}}</button>
           <span class="cog-text-secondary">{{#if craftingActions.hasPayer}}{{localize "COG.CraftSheet.Table.Payer" name=craftingActions.payerName}}{{else}}{{localize "COG.CraftSheet.Table.NoPayer"}}{{/if}}</span>
         </div>

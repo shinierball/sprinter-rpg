@@ -5,6 +5,7 @@
  * beyond rank + stat. Written for this system; nothing here comes from a rulebook. The samples provider compiles them
  * through `buildPayload` and registers them as the `shiny` skill catalog (`shiny-content-provider.mjs`).
  */
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const def = (identifier, name, stat, text) => ({ identifier, name, stat, text });
 
@@ -17,7 +18,7 @@ const DEFS = [
   def('endurance', 'Endurance', 'con', 'You keep going well past the point where a reasonable person would sit down and file a complaint.'),
   def('repair', 'Repair', 'int', 'Given tape, a screwdriver and a little contempt, a broken thing becomes a slightly different thing.'),
   def('electronics', 'Electronics', 'int', 'You know which wire does what, and you have a theory about the wire that does not.'),
-  def('scavenging', 'Scavenging', 'int', 'One crawler\'s rubble is your shopping list. You always check the second drawer.'),
+  def('scavenging', 'Scavenging', 'int', 'One crawler’s rubble is your shopping list. You always check the second drawer.'),
   def('intimidate', 'Intimidate', 'cha', 'You can look at someone until they remember an appointment elsewhere.'),
   def('bookkeeping', 'Bookkeeping', 'int', 'The numbers always add up eventually. You are the reason they do it quietly.'),
   def('climbing', 'Climbing', 'str', 'Walls are only floors that have gotten ideas. You use the ideas.'),
@@ -62,5 +63,5 @@ export const SAMPLE_SKILLS = Object.freeze(Object.fromEntries(DEFS.map(d => [d.i
 export const SAMPLE_SKILL_SPECS = Object.freeze(Object.values(SAMPLE_SKILLS).map(sk => Object.freeze({
   type: 'skill',
   name: sk.name,
-  system: { identifier: sk.identifier, stat: sk.stat, description: `<p>${sk.text}</p>` }
+  system: { identifier: sk.identifier, stat: sk.stat, description: `<p>${escapeAttr(sk.text)}</p>` }
 })));

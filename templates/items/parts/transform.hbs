@@ -76,6 +76,7 @@
           <select name="system.transform.cue" class="cog-field-input" data-tooltip="{{localize "COG.Transform.CueTooltip"}}">
             {{#each transform.cueOptions as |opt|}}<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>{{/each}}
           </select>
+          {{#if transform.cueHint}}<div class="cog-text" data-cue-hint style="font-size: 10px; font-style: italic;">{{transform.cueHint}}</div>{{/if}}
         </div>
         <div class="cog-field-group small">
           <span class="cog-field-label">{{localize "COG.Transform.Curable"}}</span>

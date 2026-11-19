@@ -275,7 +275,8 @@ export function collectTagBonusGrants({ equippedGear = [], activeBuffs = [], ite
 
 /**
  * rank_raise grants: the sources' rows (equipped gear and active buffs) plus the embedded class and race items in force.
- * @returns {Array<{identifier?: string, tag?: string, query?: object, floor: number, value: number}>}
+ * A row whose Rank comes from its carrier (`floorFrom: 'rank'`) is marked `fromCarrier` when it also opts in (`giveIfMissing`) to give the skill to a holder who has none.
+ * @returns {Array<{identifier?: string, tag?: string, query?: object, floor: number, value: number, fromCarrier?: boolean}>}
  */
 export function collectRankRaiseGrants({ sources = [], items = [] } = {}) {
   const out = [];
@@ -288,7 +289,7 @@ export function collectRankRaiseGrants({ sources = [], items = [] } = {}) {
       // Rank N is the stored Rank of the buff carrying the row; a carrier with no Rank (any other item, a buff nothing
       // applied) drops the row, since with floor 0 its value would raise every Rank.
       const rank = item.type === 'buff' ? Number(item.system?.rank) || 0 : 0;
-      if (rank >= 1) out.push({ ...g, floor: rank });
+      if (rank >= 1) out.push({ ...g, floor: rank, fromCarrier: g.giveIfMissing === true });
     }
   };
   for (const s of sources) take(s);

@@ -3,6 +3,7 @@
  */
 
 import { isRankedItem } from '../document-types.mjs';
+import { TUTORIAL_UPGRADE_LIMIT, tutorialUpgradesLocked } from './rank-limits.mjs';
 
 /**
  * Formats one rank-break entry of a skill/spell for display in a chat card.
@@ -147,18 +148,28 @@ export function getReachedRankBreaks(item, rank = getItemRank(item)) {
     .sort((x, y) => x.threshold - y.threshold);
 }
 
+/** The crawler holding an item, or the actor of a bare `system` through its item; null when there is none. */
+function ownerOf(itemOrSystem) {
+  const near = itemOrSystem?.actor ?? itemOrSystem?.parent;
+  return near?.type === 'crawler' ? near : (near?.actor ?? near?.parent ?? null);
+}
+
 /**
  * Evaluates reached rank-break tiers for an item or system object and aggregates all bonuses cumulatively.
  * @param {object} itemOrSystem
  * @param {number} [currentRank] Optional explicit current rank override
+ * @param {{ owner?: object }} [options] `owner`: the actor holding the item, for a caller with no item to pass. Without it
+ *   the owner is read from the item (`actor` / `parent`), or through a bare `system`'s item.
  * @returns {object} Aggregated rank break bonuses
  */
-export function resolveReachedRankBreaks(itemOrSystem, currentRank) {
+export function resolveReachedRankBreaks(itemOrSystem, currentRank, { owner } = {}) {
   const sys = itemOrSystem?.system || itemOrSystem || {};
   const rank = currentRank !== undefined
     ? Number(currentRank)
     : (Number(sys.modifiedRank ?? sys.totalRank ?? sys.rank) || 1);
   const rb = sys.rankBreaks || {};
+  // Crawlers p. 22: a Tutorial Floor crawler's Upgrades above Rank 5 wait for the Third Floor (the Rank itself is untouched)
+  const holdBack = tutorialUpgradesLocked(owner ?? ownerOf(itemOrSystem));
 
   // Standard keys fall back to their default threshold; custom keys (attack/gear ObjectField) need an explicit `rank`.
   const DEFAULT_THRESHOLDS = { rank5: 5, rank10: 10, rank15: 15, rank20: 20 };
@@ -229,6 +240,7 @@ export function resolveReachedRankBreaks(itemOrSystem, currentRank) {
     if (!tier) continue;
     const thresh = Number(tier.rank) || defThresh;
     if (rank < thresh) continue;
+    if (holdBack && thresh > TUTORIAL_UPGRADE_LIMIT) continue;
 
     result.reachedTiers.push({ key, tier, rank: thresh });
 

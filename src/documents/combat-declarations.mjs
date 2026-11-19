@@ -10,7 +10,6 @@
  * The record never holds a number from a relay payload: the GM rebuilds the declaration from its copy of the attack
  * message and each Evade from its copy of the Evade message. 3.19 drives these from its five-step round.
  */
-import { SYSTEM_ID } from '../constants.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { readEvadeRecord, findEvadeFor, appliedBeforeEvade } from '../utils/attack/evade-link.mjs';
@@ -26,7 +25,7 @@ import {
   declarationFromMessage, listDeclarations, sanitizeDeclaration, findDeclarationTarget, evadeSummaryOf,
   isDeclarationId, mobAttackText
 } from '../utils/combat/declared-attacks.mjs';
-import { attackerUuidOf, targetResultsOf } from '../utils/combat/card-flags.mjs';
+import { attackCardOf, attackerUuidOf, targetResultsOf } from '../utils/combat/card-flags.mjs';
 
 /** Relay action for every declaration write; `payload.op` names the write. */
 export const DECLARED_ATTACK_RELAY = 'declaredAttack';
@@ -63,7 +62,7 @@ const owns = (user, actor) => Boolean(user?.isGM || actor?.testUserPermission?.(
  * @returns {{ ok: true, attacker: object, message: object }|{ ok: false, reason: string }}
  */
 function verifyMobAttackMessage(message) {
-  const flags = message?.flags?.[SYSTEM_ID];
+  const flags = attackCardOf(message);
   if (!message || flags?.isAutoHit !== true) return { ok: false, reason: 'not-attack' };
   const attacker = resolveActorByUuid(attackerUuidOf(message));
   if (!attacker) return { ok: false, reason: 'no-attacker' };

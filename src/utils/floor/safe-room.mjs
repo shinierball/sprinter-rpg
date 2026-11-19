@@ -8,7 +8,7 @@
  *
  * Reads only tags and flags, never a name (GEMINI §2).
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { flagPath, readFlag } from '../flags.mjs';
 import { SAFE_ROOM_TAG } from '../tag/tag-mechanics.mjs';
 import { crawlerDoc } from '../../documents/actor/personal-space-links.mjs';
 
@@ -21,6 +21,11 @@ function listOf(collection) {
   return [];
 }
 
+const SCENE_TAGS_FLAG = 'tags';
+
+/** The update that stores a scene's system tags (read back by `sceneTags`). */
+export const sceneTagsUpdate = (tags) => ({ [flagPath(SCENE_TAGS_FLAG)]: tags });
+
 /**
  * A scene's system tags (`flags.sprinter-rpg.tags`), sanitized: an array of trimmed strings, a comma string split, anything
  * else empty.
@@ -28,10 +33,8 @@ function listOf(collection) {
  * @returns {string[]}
  */
 export function sceneTags(scene) {
-  let raw = scene?.flags?.[SYSTEM_ID]?.tags;
-  if (raw === undefined && typeof scene?.getFlag === 'function') {
-    try { raw = scene.getFlag(SYSTEM_ID, 'tags'); } catch { raw = undefined; }
-  }
+  let raw;
+  try { raw = readFlag(scene, SCENE_TAGS_FLAG); } catch { raw = undefined; }
   if (typeof raw === 'string') raw = raw.split(',');
   if (!Array.isArray(raw)) return [];
   return [...new Set(raw.filter((t) => typeof t === 'string').map((t) => t.trim()).filter(Boolean))];

@@ -6,10 +6,10 @@
  */
 import { SYSTEM_ID } from '../constants.mjs';
 import { readFlag, flagPath, withFlags } from './flags.mjs';
+import { escapeAttr } from './escape-attr.mjs';
 
 const RULE_BREAK_FLAG = 'ruleBreak';
 const RULE_BREAK_REASON_FLAG = 'ruleBreakReason';
-const CONTRACT_RULE_BREAK_FLAG = 'contractRuleBreak';
 
 /** Whether a document (or plain data) is stamped as acquired or produced by a Rule Break. */
 export function isRuleBreak(doc) {
@@ -34,11 +34,6 @@ export function withRuleBreak(data, reason) {
 /** Stamp an existing document as a Rule Break. */
 export function markRuleBreak(doc, reason) {
   return doc?.update?.(ruleBreakUpdate(reason));
-}
-
-/** Stamp a hired mercenary's contract as made through a Rule Break. */
-export function markContractRuleBreak(doc) {
-  return doc?.update?.({ [flagPath(CONTRACT_RULE_BREAK_FLAG)]: true });
 }
 
 /** World setting: how a broken rule is handled (RULE_BREAK_MODES). */
@@ -72,6 +67,12 @@ export function getRuleBreakMode() {
   return Object.values(RULE_BREAK_MODES).includes(mode) ? mode : RULE_BREAK_MODES.ASK;
 }
 
+/** The list under a Rule Break question: one escaped `<li>` per plain-text line, or nothing. */
+function ruleBreakDetailHtml(lines) {
+  if (!Array.isArray(lines) || !lines.length) return '';
+  return `<ul>${lines.map((line) => `<li>${escapeAttr(line)}</li>`).join('')}</ul>`;
+}
+
 /**
  * Prompt or adjudicate a permissive Rule Break when a player or GM action exceeds
  * a rulebook limit (action budget, mana, grind hours, crafting workstation/materials,
@@ -91,9 +92,9 @@ export function getRuleBreakMode() {
  *
  * @param {object} [params={}]
  * @param {string} [params.title='Rule Break Confirmation']
- * @param {string} [params.message='Exceed official rule limits and proceed as a Rule Break?'] The dialog question
+ * @param {string} [params.message='Exceed official rule limits and proceed as a Rule Break?'] The dialog question, plain text (escaped here; a newline shows as a line break)
  * @param {string} [params.reason] What limit was exceeded, as a plain statement (defaults to `message`)
- * @param {string} [params.detail] HTML shown under the question (a list the question refers to); the caller escapes it
+ * @param {string[]} [params.detailLines] Plain-text lines shown as a list under the question; escaped here
  * @param {object} [params.options={}]
  * @returns {Promise<{ confirmed: boolean, ruleBreak: boolean, refusal?: string, reason?: string }>}
  */
@@ -101,7 +102,7 @@ export async function confirmRuleBreak({
   title = 'Rule Break Confirmation',
   message = 'Exceed official rule limits and proceed as a Rule Break?',
   reason,
-  detail = '',
+  detailLines = [],
   options = {}
 } = {}) {
   const safeOptions = options || {};
@@ -128,7 +129,7 @@ export async function confirmRuleBreak({
   try {
     const confirmed = await DialogV2.confirm({
       window: { title },
-      content: `<p>${message}</p>${detail}`,
+      content: `<p>${String(message).split('\n').map(escapeAttr).join('<br>')}</p>${ruleBreakDetailHtml(detailLines)}`,
       modal: true
     });
     return confirmed ? { confirmed: true, ruleBreak: true } : refuse(RULE_BREAK_REFUSALS.CANCELLED);

@@ -8,7 +8,7 @@ import { COG_OUTCOME_CONFIG, shiftDegree } from '../../documents/session/roll-ou
 import { checkCardInfo, readCheckReroll } from '../../documents/actor/check-after-roll.mjs';
 import { readCheckRecord } from '../../utils/roll/check-assists.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { readFlag } from '../../utils/flags.mjs';
+import { craftGradeOf } from '../../utils/crafting/craft-flags.mjs';
 import { craftDifficultyLine } from '../../utils/crafting/crafting-engine.mjs';
 import { checkOfferText } from '../../utils/roll/check-offer-text.mjs';
 import { userOwnsActor } from '../../documents/actor/personal-space-links.mjs';
@@ -61,7 +61,7 @@ function historyLines(doc, info) {
     lines.push(line);
     before = entry.total;
   }
-  const craft = readFlag(info.message, 'craft');
+  const craft = craftGradeOf(info.message);
   if (record.rerolls.length && craft && typeof craft.dc === 'number') lines.push(el(doc, 'li', 'cog-check-offer-line', craftDifficultyLine(craft, craft)));
   let degree = eff.outcomeRolled;
   for (const shift of record.shifts) {

@@ -15,6 +15,8 @@ import { cleanRankLimits } from '../utils/skill/advancement-routes.mjs';
 import { isSameOwnedEntry } from '../utils/character/owned-entry.mjs';
 import { landItems } from '../utils/content-source.mjs';
 import { isEffectItem } from '../utils/document-types.mjs';
+import { appliedFlagKey, isStartingItem } from '../utils/character/race-class-flags.mjs';
+import { writeFlag } from '../utils/flags.mjs';
 
 /** The cooldown a merged skill row carries: the row's own when it has one, else the catalog skill's, else none. */
 const pickCooldown = (own, fallback) => (normalizeTiming(own).unit ? own : (normalizeTiming(fallback).unit ? fallback : { value: 0, unit: '' }));
@@ -214,8 +216,6 @@ export const RACE_CLASS_KINDS = {
   race: {
     label: 'Race',
     detailsKey: 'race',
-    flagKey: 'appliedRace',
-    markerFlag: 'isAppliedRace',
     createdKey: 'createdByRace',
     itemType: 'race',
     defaultImg: 'icons/svg/mystery-man.svg',
@@ -233,8 +233,6 @@ export const RACE_CLASS_KINDS = {
   class: {
     label: 'Class',
     detailsKey: 'class',
-    flagKey: 'appliedClass',
-    markerFlag: 'isAppliedClass',
     createdKey: 'createdByClass',
     itemType: 'class',
     defaultImg: 'icons/svg/book.svg',
@@ -280,15 +278,14 @@ export const GRANTED_EFFECT_STATE = Object.freeze({
 
 /** The creates of a plan that make up one write call, in write order: skills, spells, granted effects, the race or class item, starting items. */
 function createGroups(plan) {
-  const startingOf = (d) => Boolean(d?.flags?.[SYSTEM_ID]?.startingItemOf);
   const creates = plan.itemCreates || [];
   const pick = (test) => creates.filter(test);
   return [
-    pick(d => d.type === 'skill' && !startingOf(d)),
-    pick(d => d.type === 'spell' && !startingOf(d)),
-    pick(d => isEffectItem(d) && !startingOf(d)),
-    pick(d => d.type === RACE_CLASS_KINDS[plan.kind].itemType && !startingOf(d)),
-    pick(startingOf)
+    pick(d => d.type === 'skill' && !isStartingItem(d)),
+    pick(d => d.type === 'spell' && !isStartingItem(d)),
+    pick(d => isEffectItem(d) && !isStartingItem(d)),
+    pick(d => d.type === RACE_CLASS_KINDS[plan.kind].itemType && !isStartingItem(d)),
+    pick(isStartingItem)
   ].filter(group => group.length > 0);
 }
 
@@ -332,10 +329,10 @@ export async function writeKindPlan(actor, plan, { allowOffTheme = false, create
   const swap = (entries) => (entries || []).map(e => (idMap.has(e.id) ? { ...e, id: idMap.get(e.id) } : e));
   for (const [key, value] of Object.entries(plan.flagUpdates || {})) {
     if (typeof actor.setFlag !== 'function') break;
-    const patched = key === profile.flagKey
+    const patched = key === appliedFlagKey(plan.kind)
       ? { ...value, skills: swap(value.skills), spells: swap(value.spells), itemId: idMap.get(value.itemId) ?? value.itemId }
       : value;
-    await actor.setFlag(SYSTEM_ID, key, patched);
+    await writeFlag(actor, key, patched);
   }
 
   if (Object.keys(plan.actorUpdate || {}).length > 0 && typeof actor.update === 'function') {

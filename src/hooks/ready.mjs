@@ -13,7 +13,9 @@ import { runGMWorldSetup } from './world-setup.mjs';
 import { checkDefaultUnpause } from './pause.mjs';
 import { registerSceneEpochHooks } from '../documents/actor/dungeon-time.mjs';
 import { migrateWorldAtReady } from '../documents/migrations/migrate-at-ready.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { registerDurationHooks } from '../documents/actor/duration-expiry.mjs';
+import { registerRechargeHooks } from '../documents/actor/charge-recharge.mjs';
 import { registerDevotionHooks } from '../documents/actor/devotion-sweep.mjs';
 import { registerPopularityChecklistHooks } from '../documents/actor/popularity-checklist.mjs';
 import { registerFanBoxAlertHooks } from '../documents/actor/fan-box-alert.mjs';
@@ -23,7 +25,9 @@ import { registerLightExpiry } from '../documents/actor/light-source.mjs';
 import { registerActivationHooks } from '../documents/actor/buff-activation.mjs';
 import { registerCameraHooks } from '../chat/actions/cameras.mjs';
 import { registerContestHooks } from '../chat/contest-ingest.mjs';
+import { registerPartyCheckHooks } from '../chat/party-check-ingest.mjs';
 import { registerVehicleDriveHooks } from '../documents/actor/vehicle-drive.mjs';
+import { moveWaitingSecrets } from '../documents/pending-secrets.mjs';
 import { registerPetCheckHooks } from '../documents/actor/pet-checks.mjs';
 import { getActiveGM, isActiveGM } from '../utils/gm-relay.mjs';
 import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
@@ -36,6 +40,7 @@ import { reconcilePersonalSpaceOwnership } from '../documents/actor/personal-spa
 import { reconcileVehicleOwnership } from '../documents/actor/vehicle-crew.mjs';
 import { sourceryCatalogsReady } from '../content/sourcery-content-provider.mjs';
 import { refreshHudVisibility } from '../utils/effects/hud-visibility.mjs';
+import { syncAllTokenSizes } from '../documents/actor/token-size.mjs';
 import { reconcileAllOnReady, refreshOnCanvasReady } from '../utils/effects/gear-offline-refresh.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { registerDeityTagHooks } from './deity-tags.mjs';
@@ -55,6 +60,17 @@ export function noticePrimaryListedOff(registry = contentRegistry) {
   return true;
 }
 
+/** The `ready` sweep: the active GM's client files the secrets that waited on their carriers while no GM was connected. */
+async function sweepWaitingSecretsAtReady() {
+  await moveWaitingSecrets().catch(err => console.warn('Sprinter RPG | Could not move the waiting secrets:', err));
+}
+
+/** A carrier was updated: a player's client may have written its waiting list after a failed relay (the GM's client files it). */
+function sweepWaitingSecretsOfActor(actor, _changes, options) {
+  if (isMigrationWrite(options)) return;
+  moveWaitingSecrets([actor]).catch(err => console.warn('Sprinter RPG | Could not move the waiting secrets:', err));
+}
+
 export async function onReady() {
   // The crawler token HUD listens for token control before the awaits below: a token controlled while ready is still
   // running must get its HUD, so the listener cannot wait for the end of this hook.
@@ -69,6 +85,8 @@ export async function onReady() {
   registerSceneEpochHooks();
   // Timed effects end on the world clock and at the end of a combat (the active GM only).
   registerDurationHooks();
+  // Charges that come back on the clock, at a rest, or when a scene or floor ends (the active GM only).
+  registerRechargeHooks();
   // Missed offerings are counted when the world clock crosses into a new day (active GM only).
   registerDevotionHooks();
   // Each crawler's Popularity at the start of the dungeon day is recorded when the clock crosses a day (active GM only).
@@ -91,6 +109,8 @@ export async function onReady() {
   registerCameraHooks();
   // A leg roll reaches its contest card on the active GM's client; a contest card asks before it is deleted.
   registerContestHooks();
+  // A participant's roll reaches its party check card on the active GM's client.
+  registerPartyCheckHooks();
   // A vehicle check card reaches its vehicle (Table 6, braking) on the active GM's client.
   registerVehicleDriveHooks();
   registerPetCheckHooks();
@@ -108,6 +128,10 @@ export async function onReady() {
     await reconcileVehicleOwnership();
     await relinkAtReady().catch(err => console.warn('Sprinter RPG | Token relink failed:', err));
   }
+  // Secret debuffs that landed while no GM was connected wait on their carriers; the active GM's client files them.
+  await sweepWaitingSecretsAtReady();
+  await syncAllTokenSizes().catch(err => console.warn('Sprinter RPG | Token size sweep failed:', err));
+  Hooks.on('updateActor', sweepWaitingSecretsOfActor);
   await checkDefaultUnpause();
   await setupInitialHotbar(game.user);
   if (ui.actors?.element?.length) injectActorDirectoryButtons(ui.actors, ui.actors.element);

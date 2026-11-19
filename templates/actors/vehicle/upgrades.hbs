@@ -22,7 +22,7 @@
                       {{#if item.system.equipped}}<i class="fa-solid fa-screwdriver-wrench cog-text-accent"></i>{{else}}<i class="fa-regular fa-circle cog-text-secondary"></i>{{/if}}
                     </button>
                     <div>
-                      <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} class="cog-vehicle-upgrade-title">{{item.name}}</span>
+                      <span{{#if item.summaryTip}} data-tooltip-text="{{item.summaryTip}}" data-tooltip-class="cog-tooltip-lines"{{/if}} class="cog-vehicle-upgrade-title">{{item.name}}</span>
                       {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=item.cooldownBadge}}
                       {{#if item.system.equipped}}<span class="cog-badge cog-bg-accent-fill cog-text-on-fill">INSTALLED</span>{{/if}}
                       {{#if item.brokenState}}<span class="cog-badge cog-bg-danger-fill cog-text-on-fill">{{item.brokenLabel}}</span>{{/if}}

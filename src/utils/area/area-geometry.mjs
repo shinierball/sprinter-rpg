@@ -46,7 +46,7 @@ export function resolveAreaGeometry(item, { rank } = {}) {
   if (!area.hasArea && !(Number(area.radius) > 0) && !(Number(area.lineLength) > 0)) return null;
 
   const { id, def } = resolveAreaShape(area.shape);
-  const bonus = resolveReachedRankBreaks(sys, rank).area;
+  const bonus = resolveReachedRankBreaks(item, rank).area;
   const defaults = def.defaults || {};
   const size = def.size === 'length' ? 'length' : 'radius';
 
@@ -61,7 +61,7 @@ export function resolveAreaGeometry(item, { rank } = {}) {
   let durationRounds = null;
   if (isInstant) durationRounds = 0;
   else if (type === 'rounds') {
-    durationRounds = feet(configRounds(sys.durationConfig)) + feet(resolveReachedRankBreaks(sys, rank).durationBonus);
+    durationRounds = feet(configRounds(sys.durationConfig)) + feet(resolveReachedRankBreaks(item, rank).durationBonus);
   }
 
   return {

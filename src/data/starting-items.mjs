@@ -12,8 +12,8 @@
  * Entries reference their item by `uuid` or `identifier` (never by name). `mode: 'choice'` entries are
  * answered from a tag `query` over the TagIndex. Companion entries (`actor:pet`, `actor:mount`) wait for the
  * companion creation path and are reported as skipped. Entries that reference crafting tables wait for 3.15 S3.
+ * A box template given to a crawler becomes a held box (an entry of `system.lootBoxes`), never an item.
  */
-import { SYSTEM_ID } from '../constants.mjs';
 import { landItems } from '../utils/content-source.mjs';
 import { tagIndex } from '../utils/tag/tag-index.mjs';
 import { dialogAnswer } from '../utils/ui/dialog-answer.mjs';
@@ -22,8 +22,22 @@ import { confirmRuleBreak, withRuleBreak } from '../utils/rule-break.mjs';
 import { resolveGrantDocument } from './race-class-grants.mjs';
 import { stampCompendiumLink } from './compendium-sync.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
+import { readFlag, writeFlag } from '../utils/flags.mjs';
+import { withStartingItemOf } from '../utils/character/race-class-flags.mjs';
+import { isBoxTemplate } from '../documents/actor/gm-only-items.mjs';
+import { addLootBoxes, canHoldLootBoxes, startingBoxEntry } from '../documents/actor/loot-box-entries.mjs';
 
-export const STARTING_ITEMS_FLAG = 'startingItemsGranted';
+const STARTING_ITEMS_KEY = 'startingItemsGranted';
+
+/** The records of the sources an actor (or a plain view of one) has received starting items from, by source key. */
+export function startingRecordsOf(actor) {
+  return readFlag(actor, STARTING_ITEMS_KEY) ?? {};
+}
+
+/** The flag update that stores the starting-items records (a plan's `flagUpdates` entry). */
+export function startingRecordsUpdate(records) {
+  return { [STARTING_ITEMS_KEY]: records };
+}
 
 
 /** The stable key a race or class is recorded under (`race:<id>`), from its uuid, identifier or id. */
@@ -56,9 +70,9 @@ function itemDataFor(doc, entry, sourceKey) {
   delete raw.id;
   raw.system = raw.system ?? {};
   if (Number(entry.quantity) > 1 || 'quantity' in raw.system) raw.system.quantity = Math.max(1, Number(entry.quantity) || 1);
-  raw.flags = { ...(raw.flags ?? {}), [SYSTEM_ID]: { ...(raw.flags?.[SYSTEM_ID] ?? {}), startingItemOf: sourceKey } };
-  stampCompendiumLink(raw, doc);
-  return raw;
+  const stamped = withStartingItemOf(raw, sourceKey);
+  stampCompendiumLink(stamped, doc);
+  return stamped;
 }
 
 /**
@@ -96,7 +110,7 @@ export function planStartingItemsSync(source, options, lookup) {
       skipped.push({ index, entry, reason: 'unresolved' });
       continue;
     }
-    items.push({ index, entry, label: entry.label || doc.name || ref.identifier, data: itemDataFor(doc, entry, sourceKey) });
+    items.push({ index, entry, label: entry.label || doc.name || ref.identifier, data: itemDataFor(doc, entry, sourceKey), uuid: String(doc.uuid ?? '') });
   }
   return { sourceKey, items, pending, skipped };
 }
@@ -135,14 +149,14 @@ async function promptStartingItems(source, plan) {
   const name = escapeAttr(source.def?.name);
   const rows = plan.items.map(i => `
     <label class="cog-starting-item" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-      <input type="checkbox" name="starting-${i.index}" checked />
+      <input type="checkbox" name="starting-${Number(i.index)}" checked />
       <span>${escapeAttr(i.label)}${Number(i.entry.quantity) > 1 ? ` x${Number(i.entry.quantity)}` : ''}</span>
     </label>`);
   const picks = plan.pending.map(p => ({ key: p.index, candidates: p.candidates.map(c => ({ value: c.uuid, label: c.name })) }));
   for (const [i, p] of plan.pending.entries()) {
     rows.push(`
     <label class="cog-starting-item" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-      <input type="checkbox" name="starting-${p.index}" checked />
+      <input type="checkbox" name="starting-${Number(p.index)}" checked />
       <span>${escapeAttr(p.label)}</span>
       ${choiceSelectHtml(picks[i])}
     </label>`);
@@ -198,7 +212,7 @@ export async function grantStartingItems(actor, source, options = {}) {
   const answer = options.startingItems && typeof options.startingItems === 'object' ? options.startingItems : null;
   const interactive = Boolean(options.interactive || (typeof document !== 'undefined' && !options.skipDialog));
 
-  const records = actor.getFlag?.(SYSTEM_ID, STARTING_ITEMS_FLAG) ?? {};
+  const records = startingRecordsOf(actor);
   const previous = records[sourceKey];
   let ruleBreak = false;
   if (previous) {
@@ -230,12 +244,16 @@ export async function grantStartingItems(actor, source, options = {}) {
   if (ruleBreak) {
     for (const i of chosen) i.data = withRuleBreak(i.data);
   }
-  const created = typeof actor.createEmbeddedDocuments === 'function'
-    ? await actor.createEmbeddedDocuments('Item', options.allowOffTheme === true ? chosen.map(i => i.data) : landItems(chosen.map(i => i.data)))
+  // A box template on a crawler is a held box, not an item
+  const boxes = canHoldLootBoxes(actor) ? chosen.filter(i => isBoxTemplate(i.data)) : [];
+  const items = chosen.filter(i => !boxes.includes(i));
+  const created = typeof actor.createEmbeddedDocuments === 'function' && items.length
+    ? await actor.createEmbeddedDocuments('Item', options.allowOffTheme === true ? items.map(i => i.data) : landItems(items.map(i => i.data)))
     : [];
   result.granted = created ?? [];
+  result.lootBoxes = boxes.length ? await addLootBoxes(actor, boxes.map(i => startingBoxEntry(i))) : [];
   result.ruleBreak = ruleBreak;
-  await actor.setFlag?.(SYSTEM_ID, STARTING_ITEMS_FLAG, {
+  await writeFlag(actor, STARTING_ITEMS_KEY, {
     ...records,
     [sourceKey]: recordFor({ items: chosen }, ruleBreak, previous)
   });

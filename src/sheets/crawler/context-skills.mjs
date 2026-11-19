@@ -7,7 +7,8 @@
  * `system.identifier`; names are display text only.
  */
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
-import { HIGH_RANK_FLOOR } from '../../utils/skill/rank-limits.mjs';
+import { HIGH_RANK_FLOOR, TUTORIAL_HELD_UPGRADE_RANK,tutorialUpgradesLocked } from '../../utils/skill/rank-limits.mjs';
+import { raceClassUnlockFloor } from '../../utils/character/race-class-floor.mjs';
 import { ADVANCEMENT_ROUTE_DEFS, ADVANCEMENT_ROUTES, openRoutes, routeAllowsGain } from '../../utils/skill/advancement-routes.mjs';
 import { isSkillUnusable } from '../../utils/skill/animal-skills.mjs';
 import { getRequiredGrindingHours, getAdvancementTarget } from '../../data/rules/grinding-rules.mjs';
@@ -27,6 +28,7 @@ import { collectGearSkillBonuses, collectRankRaiseGrants, gearGrantKey, raiseRow
 import { sourceBadge } from '../../utils/content-source.mjs';
 import { workingGear } from '../../utils/effects/gear-suppression.mjs';
 import { offlineTip } from './gear-offline-display.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 
 const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -36,15 +38,25 @@ function asList(raw) {
 }
 
 const SKILL_TEXT = {
-  'COG.Skill.HighRankBadge': 'Rank 16+ from the Sixth Floor',
-  'COG.Skill.HighRankTip': 'Rank {rank} is kept, and acts as 15 until the crawler reaches Floor {floor}.'
+  'COG.Skill.HighRankBadge': 'Acts as 15',
+  'COG.Skill.HighRankTip': 'Rank {rank} is kept, and acts as 15 until the crawler reaches Floor {floor}.',
+  'COG.Skill.TutorialUpgradeBadge': 'Upgrades: Floor 3',
+  'COG.Skill.TutorialUpgradeTip': 'Rank {rank} counts for checks; its Rank 10 and 15 Upgrades start on Floor {floor}.'
 };
 
 /** Localized sheet text, with the English default when no i18n is loaded. */
-function skillText(key, data) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return SKILL_TEXT[key].replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
+const skillText = langText(SKILL_TEXT);
+
+/**
+ * The badge of a Rank 10+ skill whose Upgrades above Rank 5 are held back on the Tutorial Floors (Crawlers p. 22). The
+ * Rank itself still counts; the badge says when the Upgrades start.
+ */
+function tutorialUpgradeView(skill, actor, rank) {
+  const held = rank >= TUTORIAL_HELD_UPGRADE_RANK && tutorialUpgradesLocked(actor);
+  return {
+    tutorialUpgradeBadge: held ? skillText('COG.Skill.TutorialUpgradeBadge', {}) : '',
+    tutorialUpgradeTip: held ? skillText('COG.Skill.TutorialUpgradeTip', { rank, floor: raceClassUnlockFloor() }) : ''
+  };
 }
 
 /**
@@ -98,6 +110,7 @@ function decorateOwnedSkill(skill, actor, context) {
     isChecked: Boolean(skill.system?.checked),
     highRankBadge: inactiveHighRank ? skillText('COG.Skill.HighRankBadge', {}) : '',
     highRankTip: inactiveHighRank ? skillText('COG.Skill.HighRankTip', { rank: skill.storedRank, floor: HIGH_RANK_FLOOR }) : '',
+    ...tutorialUpgradeView(skill, actor, baseRank),
     isUnusable: isSkillUnusable(skill),
     ...advanceView(skill, baseRank),
     ...grindView(skill, baseRank, context)

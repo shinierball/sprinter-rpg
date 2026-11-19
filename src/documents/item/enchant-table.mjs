@@ -87,7 +87,7 @@ export async function chooseUpgrade(target, rolled, tableName, { interactive = t
 
   const options = choices.map((c, i) => {
     const label = c.kind === 'record' ? craftText('COG.EnchantTable.Record') : (c.label || craftText('COG.Upgrade.TriggerLabel'));
-    return `<option value="${i}">${escapeAttr(label)}</option>`;
+    return `<option value="${escapeAttr(i)}">${escapeAttr(label)}</option>`;
   }).join('');
   const narrative = rolled.row?.narrative ? `<p>${escapeAttr(rolled.row.narrative)}</p>` : '';
   const content = `<p>${escapeAttr(craftText('COG.EnchantTable.Rolled', { total: rolled.total, formula: rolled.formula }))}</p>${narrative}`
@@ -125,20 +125,19 @@ export async function chooseUpgrade(target, rolled, tableName, { interactive = t
  */
 export async function applyEnchantTableOutcome(outcome, target, { interactive = true, sources, bonusLevel = 1 } = {}) {
   const ref = outcomeEnchantTable(outcome);
-  const none = { attempted: false, applied: false, destroyed: false, line: '' };
-  if (!ref) return none;
+  if (!ref) return { attempted: false, applied: false, destroyed: false, line: '' };
   const tableLabel = ref.name || ref.key || ref.uuid;
-  if (!target) return { ...none, attempted: true, line: `${escapeAttr(tableLabel)}: no item chosen.` };
+  if (!target) return { attempted: true, applied: false, destroyed: false, line: `${escapeAttr(tableLabel)}: no item chosen.` };
 
   const snapshot = await loadEnchantTable(ref, { sources });
   if (!snapshot) {
     globalThis.ui?.notifications?.warn?.(craftText('COG.EnchantTable.NotFound', { name: tableLabel }));
-    return { ...none, attempted: true, line: escapeAttr(craftText('COG.EnchantTable.NotFound', { name: tableLabel })) };
+    return { attempted: true, applied: false, destroyed: false, line: escapeAttr(craftText('COG.EnchantTable.NotFound', { name: tableLabel })) };
   }
   const table = snapshot.name || tableLabel;
   const rolled = await rollEnchantTable(snapshot);
   if (!rolled.row) {
-    return { ...none, attempted: true, line: escapeAttr(craftText('COG.EnchantTable.NoRow', { table, total: rolled.total })) };
+    return { attempted: true, applied: false, destroyed: false, line: escapeAttr(craftText('COG.EnchantTable.NoRow', { table, total: rolled.total })) };
   }
 
   const rolledText = escapeAttr(craftText('COG.EnchantTable.Rolled', { total: rolled.total, formula: rolled.formula }));
@@ -152,7 +151,7 @@ export async function applyEnchantTableOutcome(outcome, target, { interactive = 
       message: craftText('COG.EnchantTable.NotWeapon', { item: target.name }),
       options: { interactive }
     });
-    if (!res.confirmed) return { ...none, attempted: true, line: `${rolledText}: ${escapeAttr(label)}, not applied` };
+    if (!res.confirmed) return { attempted: true, applied: false, destroyed: false, line: `${rolledText}: ${escapeAttr(label)}, not applied` };
     ruleBreak = true;
   }
   const res = await applyEnchantment(target, upgradeTemplate(choice, { bonusLevel }), {

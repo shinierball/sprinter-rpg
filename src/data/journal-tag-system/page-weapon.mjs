@@ -4,6 +4,7 @@
  * `tests/content/journal-worked-examples.test.mjs` against what the engine rolls.
  */
 import { SPECS as WEAPON_WORKSHOP } from '../../content/specs/examples/items/weapon-workshop.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { exampleUuid } from '../../content/specs/examples/refs.mjs';
 
 /** The examples pack the Weapon Workshop documents compile into. */
@@ -13,7 +14,7 @@ const WEAPON_EXAMPLES_PACK = 'examples-items';
 function link(identifier) {
   const spec = WEAPON_WORKSHOP.find((s) => s.system.identifier === identifier);
   if (!spec) throw new Error(`Tag System journal: no Weapon Workshop document "${identifier}"`);
-  return `@UUID[${exampleUuid(WEAPON_EXAMPLES_PACK, 'Item', spec._id)}]{${spec.name}}`;
+  return `@UUID[${escapeAttr(exampleUuid(WEAPON_EXAMPLES_PACK, 'Item', spec._id))}]{${escapeAttr(spec.name)}}`;
 }
 
 export const WEAPON_PAGE = {

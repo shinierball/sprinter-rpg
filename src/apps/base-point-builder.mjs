@@ -11,8 +11,7 @@
  */
 
 import { COGToolApp } from './tool-app.mjs';
-import { RACE_CLASS_KINDS } from '../data/race-class-grants.mjs';
-import { SYSTEM_ID } from '../constants.mjs';
+import { appliedRecordOf } from '../utils/character/race-class-flags.mjs';
 import { paramPickers } from '../utils/character/point-build-params.mjs';
 import { sizeName } from '../data/sizes.mjs';
 import {
@@ -227,8 +226,7 @@ export class COGBasePointBuilderApp extends COGToolApp {
   targetContext() {
     const actor = this.targetActor;
     if (!actor) return { targetActor: null, crawlers: this.crawlerTargets() };
-    const profile = RACE_CLASS_KINDS[this.spec.builderType];
-    const currentId = actor.getFlag?.(SYSTEM_ID, profile.flagKey)?.itemId;
+    const currentId = appliedRecordOf(actor, this.spec.builderType)?.itemId;
     const current = currentId ? actor.items?.get(currentId) : null;
     const i18n = globalThis.game?.i18n;
     const fmt = (key, data) => i18n?.format?.(key, data) ?? key;

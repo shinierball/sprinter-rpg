@@ -3,6 +3,7 @@
  * no buttons; the countdown is edited on the debuff and a death is undone by deleting the Dead debuff.
  */
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 
 /** English defaults, identical to the `COG.Dying` entries in lang/en.json (Foundry's i18n wins when it has the key). */
 const DYING_CARD_TEXT = Object.freeze({
@@ -24,11 +25,7 @@ const DYING_CARD_TEXT = Object.freeze({
 const CAUSE_KEYS = Object.freeze({ countdown: 'COG.Dying.CauseCountdown', hit: 'COG.Dying.CauseHit', clock: 'COG.Dying.CauseClock' });
 
 /** Localized text with the English default for a client that has not loaded the language file. */
-export function dyingCardText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return String(DYING_CARD_TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const dyingCardText = langText(DYING_CARD_TEXT);
 
 const card = (kind, badge, lines) => `<div class="cog-chat-card cog-dying-card" data-dying-card="${kind}"><header class="cog-card-header"><span class="cog-badge">${escapeAttr(badge)}</span></header><div class="cog-card-body">${lines.map((l) => `<p>${escapeAttr(l)}</p>`).join('')}</div></div>`;
 

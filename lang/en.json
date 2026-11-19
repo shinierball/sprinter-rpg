@@ -461,7 +461,8 @@
       },
       "gear": {
         "armour-no-dr": "This armour gives no Damage Resistance.",
-        "bonus-dice-non-weapon": "This gear is not a weapon, but it adds {dice} to every attack its wearer makes."
+        "bonus-dice-non-weapon": "This gear is not a weapon, but it adds {dice} to every attack its wearer makes.",
+        "held-takes-hand": "This takes a hand. Add Worn, Not Held if it is worn like gloves."
       },
       "row": {
         "grant-incomplete": "A grant row is incomplete: {detail}.",
@@ -538,8 +539,10 @@
       "DamageOnSuccess": "Roll Damage (on a Success)",
       "FailedCheckDamageTitle": "The check did not succeed",
       "FailedCheckDamage": "The check failed ({outcome}). Roll damage anyway as a Rule Break?",
-      "HighRankBadge": "Rank 16+ from the Sixth Floor",
+      "HighRankBadge": "Acts as 15",
       "HighRankTip": "Rank {rank} is kept, and acts as 15 until the crawler reaches Floor {floor}.",
+      "TutorialUpgradeBadge": "Upgrades: Floor 3",
+      "TutorialUpgradeTip": "Rank {rank} counts for checks; its Rank 10 and 15 Upgrades start on Floor {floor} (Crawlers p. 22).",
       "Sheet": {
         "Rank": "Rank",
         "RankHint": "The Rank this Skill is trained to.",
@@ -998,6 +1001,14 @@
       "recipeLocked": "{list} marks a locked recipe, and nothing here unlocks it.",
       "hazard": "This item has 3 or more enchantments: applying another rolls 1d10, and 5 or less breaks it for good."
     },
+    "SlotLimit": {
+      "SlotFull": "The {slot} slot takes {limit}; it already holds {names}.",
+      "PoolFull": "The {slot} slot takes {limit} items; this would be item {count}.",
+      "Title": "Slot full",
+      "Message": "{name} would pass a gear slot limit on {actor}: {problem} Equip anyway as a Rule Break?",
+      "OverBadge": "OVER",
+      "OverTip": "{count} equipped; the slot takes {limit}: {names}"
+    },
     "Enchanting": {
       "OverTitle": "Over-Enchanting",
       "OverMessage": "{name} already has {count} enchantments. Another risks breaking it: roll 1d10, and on {breaksOn} or less it breaks permanently.",
@@ -1012,6 +1023,10 @@
       "BrokenMessage": "{name} is broken. Equip it anyway as a Rule Break?",
       "DestroyedMessage": "{name} is destroyed. Equip it anyway as a Rule Break?",
       "AnEnchantment": "an enchantment"
+    },
+    "Equip": {
+      "FitTitle": "Does not fit",
+      "FitMessage": "{name} does not fit {actor}: {problem} Equip anyway as a Rule Break?"
     },
     "Upgrade": {
       "TriggerLabel": "Amazing Success trigger",
@@ -1069,6 +1084,26 @@
         "Label": "Roll on table",
         "Hint": "On Use, roll this table and add the rolled row's Amazing Success trigger to the item.",
         "None": "(no table: fixed enchantments only)"
+      },
+      "Recharge": {
+        "Type": "Recharge an Item",
+        "PickLabel": "Item to recharge",
+        "PickOk": "Recharge",
+        "NoteRuleBreak": "(Rule Break)",
+        "NoteFull": "(full)",
+        "NoneMessage": "Nothing here can take a recharge. Use it anyway?",
+        "RuleBreakMessage": "{target} does not fit {source}. Recharge it anyway as a Rule Break?",
+        "LineCharged": "{name}: {before} → {after} of {max} charges",
+        "LineFull": "{name} was already full",
+        "LineNothing": "Nothing was recharged.",
+        "LineRestored": "{name} restored ({units}) from {from}",
+        "LineMissing": "{from}: origin not found",
+        "NoteWas": "(was {origin})",
+        "NoteMissing": "(origin not found)",
+        "AmountPlaceholder": "full",
+        "AmountHint": "Charges the picked item gets back. Blank refills it fully.",
+        "QueryLabel": "Fits items matching",
+        "QueryHint": "Blank fits anything that can be recharged. A pick outside the query is a Rule Break."
       }
     },
     "Craft": {
@@ -1378,6 +1413,7 @@
         "Slot": "Slot",
         "Equipped": "Equipped",
         "IsWeapon": "Is Weapon",
+        "IsWeaponHint": "Off: not a weapon. A crawler can still swing it on the Improvised Weapons Skill.",
         "DamageResist": "Damage Resist (DR)",
         "Quantity": "Quantity",
         "DrTip": "DR bonus or penalty (+/-)",
@@ -1979,6 +2015,7 @@
       "NoRace": "Only crawlers change race; the added effects still apply.",
       "Held": "{actor} is held by {affliction}: its cure window is closed.",
       "Revert": "Revert as a Rule Break",
+      "HiddenEffect": "A hidden effect",
       "NotPending": "{affliction} is no longer waiting to change {actor}.",
       "NotAllowed": "Only the GM or an owner of {actor} can do that.",
       "NotFound": "That character or affliction could not be found.",
@@ -1988,7 +2025,19 @@
       "Keep": "Keep secret",
       "SecretKept": "{affliction} stays secret on {actor}. Reveal it from the Session Manager Secrets tab.",
       "SecretGone": "That secret is no longer held.",
-      "GMOnly": "Only the GM can do that."
+      "GMOnly": "Only the GM can do that.",
+      "FloorStill": "The floor changed. {actor} still carries {affliction}.",
+      "RestStill": "{actor} rested. {affliction} is still waiting to change them.",
+      "HeldFloor": "The floor changed. {affliction} is held secret on {actor}.",
+      "HeldRest": "{actor} rested. {affliction} is held secret.",
+      "ChangeNow": "Change now",
+      "WindowClosed": "{affliction} on {actor} can no longer be cured freely.",
+      "TakenOff": "Taken off: {items}.",
+      "PutBack": "Put back on: {items}.",
+      "LeftOff": "Left off: {items}.",
+      "LeftOffFit": "does not fit",
+      "LeftOffBroken": "broken",
+      "LeftOffRuleBreak": "needs a Rule Break"
     },
     "Activation": {
       "Used": "{actor} uses {buff} {window}.",
@@ -2637,6 +2686,7 @@
         "VariantDebuffs": "{text} ({list})",
         "Assist": "Assist: adds {formula} to an ally's check",
         "AssistWhen": "Assist: adds {formula} to an ally's check when {query}",
+        "AssistUntrained": "{formula} without Ranks",
         "QueryAll": "all of {tags}",
         "QueryAny": "any of {tags}",
         "QueryNone": "none of {tags}",
@@ -2684,6 +2734,15 @@
         "ModeAll": "Using it applies every outcome",
         "ModeRandom": "Using it rolls one outcome at random",
         "Charges": "{value}/{max} charges",
+        "ChargesRechargeOne": "1 charge",
+        "ChargesRechargeMany": "{n} charges",
+        "ChargesRechargeEvery": "Regains {charges} every {text}",
+        "ChargesRechargeEveryFull": "Refills every {text}",
+        "ChargesRechargeOn": "Regains {charges} on a {unit}",
+        "ChargesRechargeOnFull": "Refills on a {unit}",
+        "ChargesRechargeEach": "Regains {charges} each {unit}",
+        "ChargesRechargeEachFull": "Refills each {unit}",
+        "ChargesRechargeNext": "Next charge: {at}",
         "LootType": "{type}",
         "UsageReusable": "Reusable: using it spends nothing",
         "UsageRechargeable": "Rechargeable: each use spends a charge; at 0 it still works as a Rule Break",
@@ -2697,6 +2756,10 @@
         "OutcomeHot": "Heals {bars} each round for {rounds} rounds",
         "OutcomeRestoreAll": "Restores all {resource}",
         "OutcomeRestore": "Restores {amount} {resource}",
+        "OutcomeRecharge": "Recharges one of your items by {amount} charges",
+        "OutcomeRechargeOne": "Recharges one of your items by 1 charge",
+        "OutcomeRechargeFull": "Recharges one of your items fully",
+        "OutcomeRechargeQuery": "{effect} (matching: {query})",
         "OutcomeBuff": "Grants {name}",
         "OutcomeDebuff": "Inflicts {name}",
         "OutcomeCureAll": "Cures all debuffs",
@@ -2883,7 +2946,8 @@
       "RankBonusOwned": "{text}, only if owned",
       "RankCap": "Rank cap {value}: {target}",
       "RankRaise": "{target}: Rank {floor}, or {value} if already at {floor} or higher",
-      "RankRaiseFromCarrier": "{target}: this item's Rank, or {value} if already at or above it",
+      "RankRaiseFromCarrier": "{target}: this item's Rank, or {value} if already at or above it (only a holder who has it)",
+      "RankRaiseGiveFromCarrier": "{target}: this item's Rank (a holder with none gains it), or {value} if already at or above it",
       "RankCapChoice": "Rank cap {value} for {count} chosen skill(s)",
       "Dr": "{value} DR",
       "Walk": "{value} ft Walk speed",
@@ -2997,9 +3061,25 @@
       "NoAchievementLibrary": "No achievement library is registered for the active content theme. Achievement items you create in the world appear here.",
       "NoBuildPresets": "No presets are registered for the active content theme.",
       "LoadoutExample": "Built-in example. A content module can register more starting options.",
-      "NoGrindComplications": "No grinding complications table is registered for the active content theme.",
-      "GrindComplicationsToggle": "Roll on {name} ({formula})",
+      "GrindTables": {
+        "Default": "Default",
+        "None": "None",
+        "GroupFloor": "Floor table",
+        "GroupNeighborhood": "Neighborhood table",
+        "GroupOther": "Other tables",
+        "Roll": "Roll for the implications",
+        "Via": "{floor} sends this roll to {neighborhood}.",
+        "Missing": "This roll goes to the neighborhood's table (roll {roll}); no neighborhood table is picked.",
+        "Offer": "Floor time (the GM decides): {label}",
+        "OfferTitle": "Floor time on offer",
+        "OfferButton": "Apply: {label}",
+        "OfferApplied": "Applied: {hours} h {minutes} min lost",
+        "OfferTwiceTitle": "Floor Time Already Applied",
+        "OfferTwiceMessage": "An offer on this card is already applied. Apply another as a Rule Break?",
+        "OfferTwiceReason": "More than one floor-time offer was applied from one grinding event."
+      },
       "PdfNeedsSheet": "Save to PDF fills a fillable character sheet that the GM supplies. The GM needs to set the sheet PDF in the system settings. The publisher offers a fillable sheet as a free download on the game's site.",
+      "PdfOccupantsCargo": "{seats} (+{cargo} in cargo)",
       "SheetPdfName": "Character sheet PDF",
       "SheetPdfHint": "Path to your own fillable character sheet PDF. Save to PDF fills this file. Leave empty to turn the export off.",
       "NoBackgroundTables": "No background tables are registered for the active content theme. Write the story traits by hand.",
@@ -3546,6 +3626,12 @@
       }
     },
     "CrawlerCreator": {
+      "StatMethod": {
+        "Label": "Method",
+        "Array": "Standard Array",
+        "Chance": "Roll for Stats",
+        "Roll": "Roll Stats"
+      },
       "Description": {
         "Label": "Description (the crawler's Notes)",
         "Placeholder": "Who this crawler is, in a few sentences."
@@ -3574,6 +3660,11 @@
         "StartingItems": "Starting items",
         "NoFields": "Nothing to choose.",
         "Moved": "Stat points moved from the pool: {n}"
+      },
+      "RuleBreak": {
+        "StarterSpellInt": "A Starter Spell needs Intelligence {min} or higher; Intelligence is {int}.",
+        "StatsChanged": "Rolled Stats changed after the roll (no swapping or editing a rolled score).",
+        "StatsNotRolled": "Stats not rolled yet."
       }
     },
     "Sex": {
@@ -3899,6 +3990,24 @@
       "StripTitle": "Loot Boxes",
       "BoxQuantity": "× {count}"
     },
+    "LootBoxHeld": {
+      "NotCrawler": "Only crawlers hold loot boxes, so {name} was given no box.",
+      "TemplateUse": "Loot boxes open from a crawler's Loot Boxes strip. This item is a box template.",
+      "StripEmptyGm": "No loot boxes. Drop a box template here to give one.",
+      "EditTile": "Edit this box",
+      "DeleteTile": "Delete this box",
+      "DeleteTitle": "Delete Loot Box",
+      "DeleteMessage": "Delete {name} (×{count}) from {actor}? The box is gone unopened.",
+      "Added": "Added {name} to {actor}'s loot boxes.",
+      "EditorTitle": "Loot Box",
+      "EditorGone": "This box is no longer held: it was opened, moved or deleted.",
+      "EditorHeldBy": "Held by {name}",
+      "EditorAwardedBy": "awarded by {source}",
+      "EditorName": "Name",
+      "EditorImage": "Image",
+      "EditorFromTemplate": "A copy of a box template: edits here change this box only.",
+      "EditorDescription": "Description"
+    },
     "RewardBoxes": {
       "Title": "Reward Boxes",
       "Hint": "Boxes this achievement hands to the crawler. A tier alone gives that tier's generic box; drop a box here to use it as a template.",
@@ -3946,6 +4055,14 @@
         "OrderHint": "Listed in order of preference. The first Skill you are trained in is used unless the attacker picks another.",
         "MoveUp": "Move up",
         "MoveDown": "Move down"
+      },
+      "Improvised": {
+        "Card": "Improvised weapon: {name}",
+        "Toggle": "Improvised ({count})",
+        "ToggleTip": "Swing a held item that is not a weapon",
+        "Title": "IMPROVISED WEAPONS",
+        "Hint": "Any held item that is not a weapon can be swung on the Improvised Weapons Skill. The object weighs at least 1 lb and no more than your Str in lb.",
+        "Badge": "IMPROVISED"
       }
     },
     "AttackOptions": {
@@ -4169,7 +4286,6 @@
     "MobAttack": {
       "Header": "Mob Attack Declared \u2014 Hits Automatically",
       "SpellHeader": "Mob Spell Declared \u2014 Hits Automatically",
-      "FloorBadge": "Floor {floor}",
       "EvadeLabel": "Target Evade Difficulty:",
       "EvadeDC": "Evade DC {dc}",
       "EvadeBreakdown": "Base {base} + Floor {floor}",
@@ -4240,6 +4356,38 @@
         "Ok": "Set"
       }
     },
+    "PartyCheck": {
+      "Alias": "Party Check",
+      "Title": "Party Check: {skill}",
+      "DialogTitle": "Start a Party Check",
+      "Skill": "Skill",
+      "Participants": "Participants",
+      "Difficulty": "Difficulty",
+      "None": "None",
+      "Unopposed": "Unopposed",
+      "Opposed": "Opposed against {foe}",
+      "Number": "A number",
+      "Start": "Start",
+      "Waiting": "Waiting",
+      "Roll": "Roll",
+      "Remove": "Remove",
+      "Button": "Party Check",
+      "ChangeDifficulty": "Change Difficulty",
+      "OpposedMode": "Opposed",
+      "NumberLabel": "Difficulty number",
+      "Set": "Set",
+      "Clear": "Clear",
+      "RollAgainTitle": "Roll Again",
+      "RollAgainConfirm": "{name} already rolled. Roll again as a Rule Break?",
+      "Tally": "{successes} of {size} succeed, {needed} needed",
+      "FlipUp": "{n} Amazing turns a Failure into a Success",
+      "FlipDown": "{n} Major Fail turns a Success into a Failure",
+      "Succeeds": "PARTY SUCCEEDS",
+      "Fails": "PARTY FAILS",
+      "GmOnly": "Only the GM can start a party check.",
+      "GmOnlyControl": "Only the GM can change a party check.",
+      "NotParticipant": "You are not on this party check."
+    },
     "Assist": {
       "Title": "ASSIST",
       "Formula": "Assist Dice",
@@ -4288,7 +4436,38 @@
       "CalledPlayPick": "Which ally is this play for?",
       "CalledPlayPickOk": "Call it",
       "CalledPlayNotCleared": "Called Play not cleared: no GM connected. It ends with the round.",
-      "NoGmStore": "The Called Play was rolled but not stored: no GM connected."
+      "NoGmStore": "The Called Play was rolled but not stored: no GM connected.",
+      "LineHelp": "Help ({name}) {formula} = {amount}",
+      "HelpFieldset": "Help",
+      "HelpLine": "Help from {name}: {formula}, {ranks} in {skill}",
+      "HelpRanks": "has Ranks",
+      "HelpNoRanks": "no Ranks",
+      "HelpBlocked": "(cannot act: Rule Break)",
+      "HelpRuleBreakTitle": "Help Rule Break",
+      "HelpRuleBreakConfirm": "{name} cannot take Actions right now. Let them help anyway as a Rule Break?",
+      "HelpNote": "Help +{total} ({names})",
+      "HelpOneHint": "One helper per check; a second is a Rule Break.",
+      "HelpManyConfirm": "One helper per check. Let all {count} ({names}) help anyway as a Rule Break?",
+      "HelpPledged": "(pledged)",
+      "HelpPledgeTitle": "Help Whom?",
+      "HelpPledgePick": "Whose next Skill Check outside combat will you help with? It is pre-ticked in their roll dialog.",
+      "HelpPledgeOk": "Pledge",
+      "HelpPledgeNone": "Nobody (withdraw the pledge)",
+      "HelpPledgeCard": "{name} will help {ally} before their next Skill Check ({skill}).",
+      "HelpPledgeWithdrawn": "{name} no longer pledges Help to {ally}.",
+      "HelpPledgeNoAllies": "Nobody in your party can take your Help.",
+      "HelpPromptName": "Ask who helps before an out-of-combat Skill Check",
+      "HelpPromptHint": "On: your Skill Check roll dialog lists the party members who can help, so you can tick them (a pledged helper always opens it, pre-ticked). Off: the dialog lists them only when it opens for another reason.",
+      "UntrainedFormula": "Dice Without Ranks",
+      "UntrainedFormulaHint": "Rolled instead when the helper has no Rank in any Skill of the rolled Skill's group. Help only."
+    },
+    "Charges": {
+      "Recharge": {
+        "Label": "Recharge",
+        "Amount": "Charges back",
+        "AmountHint": "How many charges come back each time. Blank refills to the most.",
+        "AmountBlank": "refill"
+      }
     },
     "Timing": {
       "Cooldown": "Cooldown",
@@ -4526,10 +4705,10 @@
           "ConditionHint": "Applies when the craft check's tags match"
         },
         "Vehicle": {
-          "Title": "Vehicle Move",
-          "Add": "Add vehicle Move row",
-          "AddBar": "Vehicle Move",
-          "ConditionHint": "Applies when the vehicle's tags match (vehicle.kind.<id>)"
+          "Title": "Move",
+          "Add": "Add Move row",
+          "AddBar": "Move",
+          "ConditionHint": "On a vehicle: applies when the vehicle's tags match (vehicle.kind.<id>). On anyone else: the bearer's own tags."
         },
         "Substitution": {
           "Title": "Stat substitutions",
@@ -4788,6 +4967,7 @@
           "tag": "Tag",
           "floor": "Floor rank",
           "floorFrom": "Rank N from",
+          "giveIfMissing": "Give it to a holder who has none",
           "onlyIfOwned": "Only if owned"
         },
         "FloorFrom": {

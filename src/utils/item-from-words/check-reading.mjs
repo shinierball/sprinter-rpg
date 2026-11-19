@@ -5,7 +5,7 @@
  * and an unreadable value costs that one field, never the draft. Pure.
  */
 import { firstScalar } from '../first-scalar.mjs';
-import { plainText } from '../../sourcery/text.mjs';
+import { stripControls } from '../../sourcery/text.mjs';
 import { DEFAULT_RESOLVER, resolveReference } from './check-references.mjs';
 
 /** Prefix of every path a check reports: the draft's `system` object. */
@@ -85,13 +85,13 @@ export function readScalar(check, path, raw, spec, choices) {
     check.warn(path, `"${trimmed}" is not one of: ${choices.filter((c) => c !== '').join(', ')}`, 'choice');
     return { ok: false };
   }
-  return { ok: true, value: choices ? trimmed : plainText(trimmed) };
+  return { ok: true, value: choices ? trimmed : stripControls(trimmed) };
 }
 
 /** Human text (a row's `label`, an outcome's `name`): kept whole, a comma is not a list here. `null` when blank or not text. */
 export function readText(raw) {
   const text = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '';
-  return text ? plainText(text) : null;
+  return text ? stripControls(text) : null;
 }
 
 /**

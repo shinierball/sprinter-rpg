@@ -8,7 +8,7 @@ import { itemIdentifier } from '../utils/identifier.mjs';
 import { sanitizeSizeId } from './sizes.mjs';
 import { sanitizeHeritageId } from './rules/heritages.mjs';
 import { catalogNameFor } from '../models/actors/actor-derivation.mjs';
-import { SYSTEM_ID } from '../constants.mjs';
+import { appliedRecordOf } from '../utils/character/race-class-flags.mjs';
 import { confirmRequirements } from '../utils/character/requirements.mjs';
 import { confirmRaceClassFloor } from '../utils/character/race-class-floor.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
@@ -25,6 +25,7 @@ import { detectChoices, getCatalogOptions, resolveChoices, collectStatPools, col
 import { promptChoicesDialog, promptStatPoolDialog } from './race-class-dialogs.mjs';
 import { getRaceClassContext } from './race-class-context.mjs';
 import { APPLIER_DELETE_OPTION, removeAppliedRace, removeAppliedClass } from './race-class-revert.mjs';
+import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 
 /**
  * A race or class definition by exact reference: the catalog entry with that `_id` / `id` / `system.identifier`,
@@ -43,7 +44,8 @@ function findDefinition(catalogKind, itemType, ref, prefer) {
 }
 /**
  * `deleteItem` handler: deleting a race or class item from a crawler reverts it the way `removeRace` /
- * `removeClass` does, so its effects, skills and stat pool points go with it. Not run for the applier's own deletes (they carry `APPLIER_DELETE_OPTION`).
+ * `removeClass` does, so its effects, skills and stat pool points go with it. Not run for the applier's own deletes (they carry `APPLIER_DELETE_OPTION`)
+ * nor for a world migration's (it converts the actor's data itself).
  * The delete has already happened, so a revert that fails only warns (CONTRIBUTING rule 2: never block a delete).
  * @param {Item} item
  * @param {object} [options] the delete's options
@@ -51,12 +53,13 @@ function findDefinition(catalogKind, itemType, ref, prefer) {
  * @returns {Promise<boolean|null>} true reverted, null when the hook did not apply
  */
 export async function onRaceClassItemDelete(item, options, userId) {
+  if (isMigrationWrite(options)) return null;
   const kind = item?.type;
   const actor = item?.parent;
   if (!actor || !Object.hasOwn(RACE_CLASS_KINDS, kind) || actor.type !== 'crawler') return null;
   if (userId && globalThis.game?.user?.id && userId !== globalThis.game.user.id) return null;
   if (options?.[APPLIER_DELETE_OPTION]) return null;
-  const record = actor.getFlag?.(SYSTEM_ID, RACE_CLASS_KINDS[kind].flagKey);
+  const record = appliedRecordOf(actor, kind);
   if (!record) return null;
   if (record.itemId && record.itemId !== item.id) return null;
   try {
@@ -80,7 +83,7 @@ export class COGRaceClassApplier {
    *
    * @param {string|object} identifier - reference, or a definition / item (returned as data)
    * @param {{preferPet?: boolean, actor?: Actor}} [options] two races may share an identifier (an Earth race and a
-   *   pet race): a pet prefers the pet one
+   *   pet race, the two Cats): a pet prefers the pet one, anyone else the other
    * @returns {object|null}
    */
   static findRace(identifier, options = {}) {
@@ -89,7 +92,9 @@ export class COGRaceClassApplier {
       return identifier.toObject ? { ...identifier.toObject(), uuid: identifier.uuid } : identifier;
     }
     const preferPet = Boolean(options?.preferPet || options?.actor?.type === 'pet');
-    return findDefinition('races', 'race', identifier, preferPet ? (r) => COGRaceClassApplier.isPetRace(r) : null);
+    if (preferPet) return findDefinition('races', 'race', identifier, (r) => COGRaceClassApplier.isPetRace(r));
+    // Anyone else prefers a race that is not a companion's, whatever the catalog order
+    return findDefinition('races', 'race', identifier, (r) => !COGRaceClassApplier.isPetRace(r));
   }
 
   /** Whether a race definition is a companion's (a pet race), not a crawler's. */

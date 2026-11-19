@@ -6,6 +6,7 @@ import { resolveTargetActors } from './targets.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
 import { buffCardText } from '../../utils/card/buff-card-text.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { withFlags } from '../../utils/flags.mjs';
 import { buffCopyData } from '../../utils/effects/applied-buff.mjs';
 import { landBuff, hasUnappliedBuff } from '../../documents/actor/item-buffs.mjs';
@@ -35,7 +36,7 @@ registerChatApplier('crawlerApplyBuff', { parse: parseApplyBuff, apply: applyBuf
 
 /** A chat line recording that a second copy was taken as a Rule Break. */
 async function postDuplicateRuleBreak(actorName, buffName) {
-  const content = `<p>${ruleBreakBadgeHtml()} ${buffCardText('COG.BuffCard.RuleBreakLine', { actor: actorName, buff: buffName })}</p>`;
+  const content = `<p>${ruleBreakBadgeHtml()} ${escapeAttr(buffCardText('COG.BuffCard.RuleBreakLine', { actor: actorName, buff: buffName }))}</p>`;
   await globalThis.ChatMessage?.create?.(ruleBreakMessageData(withFlags({ content }, { buffRuleBreak: true })));
 }
 

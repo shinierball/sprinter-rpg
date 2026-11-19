@@ -75,7 +75,7 @@ export async function gatePotionUse(actor, item, { recipient = null, options = {
   if (lines.length) {
     const verdict = await confirmRuleBreak({
       title: text('COG.PotionGate.Title', null, 'Potion Rules'),
-      message: escapeAttr(`${lines.join(' ')} ${text('COG.PotionGate.Prompt', null, 'Take it anyway as a Rule Break?')}`),
+      message: `${lines.join(' ')} ${text('COG.PotionGate.Prompt', null, 'Take it anyway as a Rule Break?')}`,
       reason: lines.join(' '),
       options
     });

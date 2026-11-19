@@ -8,6 +8,7 @@ import { lootBoxTierDef } from '../../data/loot-box-tiers.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { flagPath, withFlags } from '../../utils/flags.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 
 /** The flag on the map-find card: `{ offers: [{ actorId, actorUuid, name, tier, itemName }], applied: { [actorId]: { ruleBreak } } }`. */
 export const MAP_FINDS_FLAG = 'mapFinds';
@@ -23,11 +24,7 @@ const TEXT = Object.freeze({
   'COG.GrindMapFind.AlreadyReason': '{name} found a map box twice in one grinding session.'
 });
 
-export const grindMapFindText = (key, data = {}) => {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-};
+export const grindMapFindText = langText(TEXT);
 
 /**
  * What a crawler's maps find: the map's name and the box tier, or null when no owned item carries a find tag.

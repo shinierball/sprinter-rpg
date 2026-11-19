@@ -10,7 +10,6 @@
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { readFlag, withFlags, flagPath } from '../../utils/flags.mjs';
 import { landItems } from '../../utils/content-source.mjs';
 import { findConditionEntry } from '../../content/catalog-lookup.mjs';
@@ -86,10 +85,10 @@ async function askStackCap(target, buffData, options) {
   return { declined: !verdict.confirmed, broke: verdict.confirmed };
 }
 
-/** The words of the cap's Rule Break for a buff at its cap on an actor: the dialog's title, its question (escaped) and the reason (plain). */
+/** The words of the cap's Rule Break for a buff at its cap on an actor: the dialog's title, its question and the reason (both plain text; the confirm escapes the question). */
 export function stackCapText(target, buffData, { count, cap }) {
   const reason = buffCardText('COG.BuffCard.CapMessage', { actor: target.name, buff: buffData?.name || 'Buff', count, cap });
-  return { title: buffCardText('COG.BuffCard.CapTitle'), message: escapeAttr(reason), reason };
+  return { title: buffCardText('COG.BuffCard.CapTitle'), message: reason, reason };
 }
 
 /**
@@ -109,7 +108,7 @@ export async function landBuff(target, buffData, { options = {} } = {}) {
   if (second) {
     const verdict = await confirmRuleBreak({
       title: buffCardText('COG.BuffCard.DuplicateTitle'),
-      message: escapeAttr(buffCardText('COG.BuffCard.DuplicateMessage', { actor: target.name, buff: buffData?.name || 'Buff' })),
+      message: buffCardText('COG.BuffCard.DuplicateMessage', { actor: target.name, buff: buffData?.name || 'Buff' }),
       reason: buffCardText('COG.BuffCard.DuplicateMessage', { actor: target.name, buff: buffData?.name || 'Buff' }),
       options
     });
@@ -198,14 +197,13 @@ export function gatherBuffRecipients(holder, item, { row }, { rank, buffData }) 
   return { recipients, measured, spec, reach };
 }
 
-/** The doubtful recipients as an escaped list for the Rule Break confirm. */
-function doubtfulDetail(doubtful) {
-  const items = doubtful.map(({ actor, reasons, distance }) => {
+/** The doubtful recipients as plain lines for the Rule Break confirm. */
+function doubtfulLines(doubtful) {
+  return doubtful.map(({ actor, reasons, distance }) => {
     const why = reasons.map((r) => buffCardText(`COG.BuffCard.Reason.${r}`)).join(', ');
     const feet = reasons.includes('out-of-reach') && distance !== null ? ` (${Math.round(distance)} ft)` : '';
-    return `<li>${escapeAttr(actor.name)}${escapeAttr(feet)}: ${escapeAttr(why)}</li>`;
+    return `${actor.name}${feet}: ${why}`;
   });
-  return `<ul>${items.join('')}</ul>`;
 }
 
 /** The card an Apply or Remove click came from: its flags, the item, its holder and the row, or null with the reason shown. */
@@ -272,9 +270,9 @@ export async function applyItemBuffs(message, rowIndex, { options = {} } = {}) {
   if (doubtful.length > 0) {
     const verdict = await confirmRuleBreak({
       title: buffCardText('COG.BuffCard.ReachTitle'),
-      message: escapeAttr(buffCardText('COG.BuffCard.ReachMessage')),
+      message: buffCardText('COG.BuffCard.ReachMessage'),
       reason: buffCardText('COG.BuffCard.ReachMessage'),
-      detail: doubtfulDetail(doubtful),
+      detailLines: doubtfulLines(doubtful),
       options
     });
     if (verdict.confirmed) result.ruleBreak = true;
@@ -299,7 +297,7 @@ export async function applyItemBuffs(message, rowIndex, { options = {} } = {}) {
     if (hasUnappliedBuff(actor, identifierOf(buffData))) {
       const verdict = await confirmRuleBreak({
         title: buffCardText('COG.BuffCard.DuplicateTitle'),
-        message: escapeAttr(buffCardText('COG.BuffCard.DuplicateMessage', { actor: actor.name, buff: buffData.name })),
+        message: buffCardText('COG.BuffCard.DuplicateMessage', { actor: actor.name, buff: buffData.name }),
         reason: buffCardText('COG.BuffCard.DuplicateMessage', { actor: actor.name, buff: buffData.name }),
         options
       });

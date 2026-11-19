@@ -218,7 +218,7 @@ function checkTargetsBoxHtml(results) {
   if (!results?.length) return '';
   const rows = results.map((r) => {
     const detail = r.lines.length ? ` (${r.lines.map(toHitLineText).join(', ')})` : '';
-    return `<div class="cog-check-target-row cog-text-secondary" data-target-id="${escapeAttr(r.actorId)}" style="font-size: 10px;"><strong>${escapeAttr(r.actorName)}</strong>: ${r.total}${escapeAttr(detail)}</div>`;
+    return `<div class="cog-check-target-row cog-text-secondary" data-target-id="${escapeAttr(r.actorId)}" style="font-size: 10px;"><strong>${escapeAttr(r.actorName)}</strong>: ${escapeAttr(r.total)}${escapeAttr(detail)}</div>`;
   }).join('');
   return `<div class="cog-check-targets-container" style="margin-top: 6px; font-family: var(--font-primary, 'Oswald', sans-serif);"><div class="cog-text-gold" style="font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-crosshairs"></i> Totals by target</div>${rows}</div>`;
 }

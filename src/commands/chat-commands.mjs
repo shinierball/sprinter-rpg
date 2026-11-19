@@ -38,6 +38,16 @@ export function onChatMessageCommand(chatLog, message, chatData, apps) {
     return false;
   }
 
+  // Party check card (GM): /partycheck.
+  if (lower === '/partycheck') {
+    if (!globalThis.game?.user?.isGM) {
+      globalThis.ui?.notifications?.warn?.(globalThis.game?.i18n?.localize?.('COG.PartyCheck.GmOnly') ?? 'COG.PartyCheck.GmOnly');
+    } else {
+      apps.openPartyCheck();
+    }
+    return false;
+  }
+
   // Explicit log commands with text: /rapidlog <text>, /batchlog <text>, /rlog <text>, /log <text>
   const explicitPrefixes = ['/rapidlog ', '/batchlog ', '/rlog ', '/log '];
   const matchedPrefix = explicitPrefixes.find(p => lower.startsWith(p));

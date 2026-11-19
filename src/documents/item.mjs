@@ -3,10 +3,12 @@ import { baseRankOf } from '../utils/skill/rank-source.mjs';
 import { slugifyIdentifier } from '../utils/identifier.mjs';
 import { stampTableOnCreate } from './actor/crafting-tables.mjs';
 import { stampOnCreate, stampOnUpdate } from './actor/duration-expiry.mjs';
+import { stampRechargeOnCreate, stampRechargeOnUpdate } from './actor/charge-recharge.mjs';
 import { isMigrationWrite } from './migrations/world-migration.mjs';
 import { lockItemOnCreate } from './actor/percent-lock.mjs';
 import { useItem } from './item/use-item.mjs';
 import { usePotionInterrupt } from './item/potion-gate.mjs';
+import { landingPreCreate, landingOnCreate } from './actor/debuff-landing.mjs';
 import { rollSpellCard } from './item/spell-card.mjs';
 
 const BaseItem = globalThis.foundry?.documents?.Item
@@ -25,23 +27,34 @@ export class COGItem extends BaseItem {
   async _preCreate(data, options, user) {
     const allowed = await super._preCreate?.(data, options, user);
     if (allowed === false) return false;
+    if (await landingPreCreate(this, options, user) === false) return false;
     if (this.system && typeof this.system === 'object') {
       if ('identifier' in this.system && !String(this.system.identifier ?? '').trim()) {
         const identifier = slugifyIdentifier(data?.name ?? this.name);
         if (identifier) this.updateSource({ 'system.identifier': identifier });
       }
       stampOnCreate(this);
+      stampRechargeOnCreate(this);
       stampTableOnCreate(this);
       lockItemOnCreate(this);
     }
     return allowed;
   }
 
+  /** @override The landing seam's card (the creating client posts the `apply` cue of a debuff that landed). */
+  _onCreate(data, options, userId) {
+    super._onCreate?.(data, options, userId);
+    return landingOnCreate(this, options, userId);
+  }
+
   /** @override A timed effect that comes into force (`system.active` turning on) gets its expiry stamped (3.12d). */
   async _preUpdate(changed, options, user) {
     const allowed = await super._preUpdate?.(changed, options, user);
     if (allowed === false) return false;
-    if (!isMigrationWrite(options)) stampOnUpdate(this, changed);
+    if (!isMigrationWrite(options)) {
+      stampOnUpdate(this, changed);
+      stampRechargeOnUpdate(this, changed);
+    }
     return allowed;
   }
 

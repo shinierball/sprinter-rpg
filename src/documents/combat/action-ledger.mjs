@@ -318,7 +318,7 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
     const reasonText = causes.join('; ');
     const confirmRes = await confirmRuleBreak({
       title: 'Action Limit Exceeded',
-      message: `${escapeAttr(reasonText)}. Proceed anyway as a Rule Break?`,
+      message: `${reasonText}. Proceed anyway as a Rule Break?`,
       reason: reasonText,
       options
     });
@@ -534,7 +534,7 @@ export async function spendAIFavorBonusAction(combat, combatantOrId, options = {
 
   if (globalThis.ChatMessage?.create) {
     const note = ruleBreak
-      ? `<div class="cog-text" style="font-size: 10px; margin-top: 2px;"><em>Rule Break: ${reasons.join(' ')}</em></div>`
+      ? `<div class="cog-text" style="font-size: 10px; margin-top: 2px;"><em>Rule Break: ${escapeAttr(reasons.join(' '))}</em></div>`
       : '';
     await globalThis.ChatMessage.create({
       speaker: globalThis.ChatMessage.getSpeaker?.({ actor }) || { alias: c.name },
@@ -545,7 +545,7 @@ export async function spendAIFavorBonusAction(combat, combatantOrId, options = {
             <i class="fa-solid fa-hand-holding-heart"></i> AI Favor Bonus Action
           </div>
           <div class="cog-text" style="font-size: 11px; margin-top: 2px;">
-            <strong>${c.name}</strong> spent 1 AI Favor to gain <strong>+1 Non-Attack Action</strong> this round! (${max} actions total)
+            <strong>${escapeAttr(c.name)}</strong> spent 1 AI Favor to gain <strong>+1 Non-Attack Action</strong> this round! (${escapeAttr(max)} actions total)
           </div>
           ${note}
         </div>

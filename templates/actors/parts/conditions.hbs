@@ -55,7 +55,7 @@
             <td>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img class="cog-condition-icon" src="{{item.img}}" />
-                <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;{{#if item.isSuspended}} text-decoration: line-through;{{/if}}">{{item.name}}</span>
+                <span{{#if item.summaryTip}} data-tooltip-text="{{item.summaryTip}}" data-tooltip-class="cog-tooltip-lines"{{/if}} style="font-weight: bold;{{#if item.isSuspended}} text-decoration: line-through;{{/if}}">{{item.name}}</span>
                 {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=item.sourceBadge}}
                 {{#if item.isSuspended}}<span class="cog-state-badge cog-badge-undone" data-tooltip="Dispelled: suspended until the combat ends">[SUSPENDED]</span>{{/if}}
                 {{#if item.activation.badge}}<span class="cog-state-badge">{{item.activation.badge}}</span>{{/if}}
@@ -126,7 +126,7 @@
             <td>
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img class="cog-condition-icon" src="{{item.img}}" />
-                <span{{#if item.summaryTip}} data-tooltip="{{item.summaryTip}}"{{/if}} style="font-weight: bold;{{#if item.system.paused}} text-decoration: line-through;{{/if}}">{{item.displayName}}</span>
+                <span{{#if item.summaryTip}} data-tooltip-text="{{item.summaryTip}}" data-tooltip-class="cog-tooltip-lines"{{/if}} style="font-weight: bold;{{#if item.system.paused}} text-decoration: line-through;{{/if}}">{{item.displayName}}</span>
                 {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=item.sourceBadge}}
                 {{#if item.system.paused}}<span class="cog-state-badge cog-badge-undone" data-tooltip="Paused: does nothing until switched back on">[PAUSED]</span>{{/if}}
                 {{#if item.transform}}<span class="cog-state-badge cog-badge-spell cog-transform-stage" data-tooltip="{{localize "COG.Transform.Title"}}">[{{item.transform.stageLabel}}]</span>{{/if}}

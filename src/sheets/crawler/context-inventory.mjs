@@ -1,19 +1,27 @@
 /**
  * Page 2 (Equipment & Inventory) context: Determine Value gating, inventory sort order and the category groups.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, writeFlag } from '../../utils/flags.mjs';
 import { sortItems } from './context-items.mjs';
 import { cooldownBadge } from '../../utils/time/cooldown-badge.mjs';
 import { brokenStateOf } from '../../documents/item/enchantments.mjs';
 import { currentTimeContext } from '../../documents/actor/dungeon-time.mjs';
 import { itemProvenance } from '../../utils/ui/item-provenance.mjs';
 import { lootBoxTierDef } from '../../data/loot-box-tiers.mjs';
-import { unopenedBoxUnits } from '../../documents/actor/loot-box-open.mjs';
-import { isUnopenedBox } from '../../documents/actor/gm-only-items.mjs';
+import { usedFromLabel } from '../../documents/actor/used-items.mjs';
+import { boxViews, unopenedBoxUnits } from '../../documents/actor/loot-box-entries.mjs';
 import { groupItemsByCategory } from '../../utils/gear/item-category.mjs';
 
 const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
 const value = (item) => Number(item.system?.value ?? 0);
+
+const INVENTORY_SORT_FLAG = 'inventorySort';
+
+/** The inventory sort mode stored on a crawler (undefined when none is). */
+const inventorySortOf = (actor) => readFlag(actor, INVENTORY_SORT_FLAG);
+
+/** Store the inventory sort mode on a crawler. */
+export const storeInventorySort = (actor, mode) => writeFlag(actor, INVENTORY_SORT_FLAG, mode);
 
 const SORTERS = {
   'value-desc': (a, b) => (value(b) - value(a)) || byName(a, b),
@@ -30,7 +38,7 @@ export function prepareInventory(context, actor, sheetSort = null) {
   const determineValueRank = actor.getDetermineValueRank();
   const canSeeItemValue = actor.canSeeItemValue();
   const canSortByValue = actor.canSortInventoryByValue();
-  const inventorySort = sheetSort || actor.getFlag?.(SYSTEM_ID, 'inventorySort') || 'default';
+  const inventorySort = sheetSort || inventorySortOf(actor) || 'default';
 
   context.determineValueRank = determineValueRank;
   context.canSeeItemValue = canSeeItemValue;
@@ -46,7 +54,6 @@ export function prepareInventory(context, actor, sheetSort = null) {
       item.brokenState = state.brokenState;
       item.brokenLabel = state.brokenLabel;
     }
-    item.isLootBox = isUnopenedBox(item);
     const { entries } = itemProvenance(item, viewer);
     // One provenance chip (the first of the origin kinds), then the source chip (7.7d) without text.
     const row = [entries.find((e) => e.kind !== 'source'), entries.find((e) => e.kind === 'source')].filter(Boolean);
@@ -57,20 +64,20 @@ export function prepareInventory(context, actor, sheetSort = null) {
 
   const valueSort = inventorySort === 'value-desc' || inventorySort === 'value-asc';
   const sorter = (valueSort && !canSortByValue) ? sortItems : (SORTERS[inventorySort] ?? sortItems);
-  // Unopened loot boxes are not inventory: they sit in their own strip (name, tier, quantity), not in the loot table.
-  context.lootBoxes = context.loot.filter((item) => item.isLootBox).map((item) => {
-    const tier = lootBoxTierDef(item.system?.box?.tier);
-    return { id: item.id, name: item.name, tier: tier.id, tierLabel: tier.label, tierColor: tier.color, tierIcon: tier.icon, quantity: unopenedBoxUnits({ items: [item] }) };
+  // Unopened loot boxes are not inventory: the crawler's `system.lootBoxes` entries sit in their own strip (name, tier,
+  // quantity). The GM sees the strip when it is empty too, as the place a box template is dropped.
+  context.lootBoxes = boxViews(actor).map((view) => {
+    const tier = lootBoxTierDef(view.tier);
+    return { id: view.id, name: view.name, tier: tier.id, tierLabel: tier.label, tierColor: tier.color, tierIcon: tier.icon, quantity: view.quantity };
   });
-  context.loot = context.loot.filter((item) => !item.isLootBox);
+  context.showLootBoxStrip = context.lootBoxes.length > 0 || viewer.gm;
   // The junk used-up consumables leave sits in its own collapsed group, out of the list and with no Use button (3.76 B2).
   context.usedLoot = context.loot.filter((item) => item.system?.used === true);
   context.loot = context.loot.filter((item) => item.system?.used !== true);
   for (const item of context.usedLoot) {
-    const from = item.system?.usedFrom ?? {};
-    item.usedFromLabel = from.name ? (from.spellIdentifier ? `${from.name} (${from.spellIdentifier})` : from.name) : '';
+    item.usedFromLabel = usedFromLabel(item);
   }
-  // 7.3d: the "Open loot boxes (N)" button counts the unopened box units the crawler holds.
+  // 7.3d: the "Open loot boxes (N)" button counts the box units the crawler holds.
   context.lootBoxUnits = unopenedBoxUnits(actor);
   context.usedLootCount = context.usedLoot.reduce((sum, item) => sum + (Number(item.system?.quantity) || 0), 0);
   context.gear.sort(sorter);

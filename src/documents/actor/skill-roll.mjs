@@ -5,7 +5,8 @@
  */
 import { getHpPerBar } from '../combat-metrics.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { rollTotalPatch } from '../../utils/roll/roll-total-flag.mjs';
+import { craftGradePatch } from '../../utils/crafting/craft-flags.mjs';
 import { cardSummary, CARD_PROFILES } from '../../utils/item-describer/card-summary.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
 import { confirmUnusableSkill } from '../../utils/skill/animal-skills.mjs';
@@ -18,6 +19,8 @@ import { sanitizeCraftRef, craftContextTags, craftTierLine, craftDifficultyLine,
 import { sanitizePatronCheckRef } from '../../utils/patron/patron-check-ref.mjs';
 import { sanitizePetCheckRef } from '../../utils/pet/pet-check-ref.mjs';
 import { PET_TAGS } from '../../data/tag-vocabulary.mjs';
+import { CHECK_TAGS } from '../../utils/tag/tag-mechanics.mjs';
+import { sanitizePartyCheckRef } from '../../utils/roll/party-ref.mjs';
 import { sanitizeVehicleRef, vehicleCheckSetup, vehicleCheckKeys, withVehicleSources } from '../../utils/vehicle/vehicle-check.mjs';
 import { floorRuleBreakCard } from '../../utils/floor/floor-rule-break.mjs';
 import { collectCheckToHit, rollCheckTargets } from '../../utils/attack/per-target-to-hit.mjs';
@@ -33,6 +36,9 @@ import { gateItemCooldown } from './cooldown-gate.mjs';
 import { spendActivationUses } from './buff-activation.mjs';
 import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from './action-block.mjs';
 import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from './zero-zone-gate.mjs';
+import { assistText } from '../../chat/render/check-assists.mjs';
+import { pendingHelpersFor, settleHelperRuleBreaks, rollHelpDice, pledgeHelp } from './help-check.mjs';
+import { postRollWithExtras } from '../../utils/roll/extra-rolls.mjs';
 import { callPlay, postSheetAssistRoll, warnInvalidAssistOnce, pendingCalledPlaysFor, rollCalledPlays, consumeCalledPlays } from './call-play.mjs';
 import {
   skillAuraActivationCardHtml, passiveSkillCardHtml, untrainedSkillFlavor, skillCheckFlavor, skillDamageButtonHtml,
@@ -44,7 +50,7 @@ import {
   auraDismissedMessage, auraActiveBlockHtml, tempBarsLineHtml, grantItemTempBars, areaTemplateButtonHtml, healingBarsFor, healBonusSlots, isSingleTargetHeal, cleanseListFor,
   buffApplyBlocks
 } from './use-card-parts.mjs';
-import { attackTargetEntries } from './attack-targets.mjs';
+import { attackTargetEntries, standingFoeShiftFor } from './attack-targets.mjs';
 import { getContestData, renderContestChallengeBlock } from './contest-blocks.mjs';
 import { rollsStatOnly } from '../../data/rules/check-types.mjs';
 import { awardAmazingForCheckCard } from './actor-popularity.mjs';
@@ -152,19 +158,16 @@ export async function earlySkillMessage(actor, skill, options, { auraData, rank,
   // If this is an aura skill without attack action/damage, present activation card directly
   if (isAuraItem(skill) && (!sys.isAttack && !sys.hasDamage && !sys.baseDamage?.dice)) {
     const buffs = await buffApplyBlocks(actor, skill, { rank: actingRank(skill) });
-    const message = await ChatMessage.create({
+    const message = await ChatMessage.create(withFlags({
       speaker: ChatMessage.getSpeaker({ actor }),
-      content: skillAuraActivationCardHtml(actor, skill, auraData, await cardSummary(skill, CARD_PROFILES.auraSkill, { actor })) + buffs.html,
-      flags: {
-        [SYSTEM_ID]: {
-          isSkillRoll: true,
-          isAuraActive: true,
-          ...gates.cooldownGate.flags,
-          auraItem: skill.id || skill._id,
-          ...buffs.flags
-        }
-      }
-    }, cardMessageOptions(actor));
+      content: skillAuraActivationCardHtml(actor, skill, auraData, await cardSummary(skill, CARD_PROFILES.auraSkill, { actor })) + buffs.html
+    }, {
+      isSkillRoll: true,
+      isAuraActive: true,
+      ...gates.cooldownGate.flags,
+      auraItem: skill.id || skill._id,
+      ...buffs.flags
+    }), cardMessageOptions(actor));
     return { message };
   }
 
@@ -187,6 +190,8 @@ export async function earlySkillMessage(actor, skill, options, { auraData, rank,
       warnInvalidAssistOnce(skill);
     } else if (assistSpec.moment === 'turn') {
       return { message: (await callPlay(actor, skill, options))?.message ?? null };
+    } else if (assistSpec.moment === 'before_check') {
+      return { message: await pledgeHelp(actor, skill, options) };
     } else {
       return { message: await postSheetAssistRoll(actor, skill, assistSpec, options) };
     }
@@ -236,17 +241,22 @@ export async function prepareSkillCheck(actor, skill, options, { rank, rangeGate
   const contest = sanitizeContestRef(options.contest);
   // A crafting check (3.15): its context carries `check.crafting`, the step's mode, the table type and the output's tags.
   const craft = sanitizeCraftRef(options.craft);
+  // A check made as a member of a party check card (pp. 59-60): its context carries `check.party` (no Help, no standing Difficulty).
+  const party = sanitizePartyCheckRef(options.partyCheck);
   const sourced = withVehicleSources(buildRollContext({
     actor, phase: isAttackSkill ? 'toHit' : 'check', item: skill, check: checkKeys, stat: statKey, other: targetActors[0],
-    tags: [...(contest ? [contest.tag] : []), ...craftContextTags(craft), ...(vehicleSetup?.tags ?? []), ...(pet ? [`${PET_TAGS.checkPrefix}${pet.kind}`] : [])]
+    tags: [...(contest ? [contest.tag] : []), ...craftContextTags(craft), ...(vehicleSetup?.tags ?? []), ...(pet ? [`${PET_TAGS.checkPrefix}${pet.kind}`] : []), ...(party ? [CHECK_TAGS.party] : [])]
   }), vehicleSetup);
   // A crafting check also reads the check rows of the space upgrades the step uses (a studio's bonus), passed as `craftSources`
   const craftSources = craft && Array.isArray(options.craftSources) ? options.craftSources : [];
   const baseContext = craftSources.length ? { ...sourced, extraSources: [...(sourced.extraSources ?? []), ...craftSources] } : sourced;
   // A Called Play waiting for this roll is a pre-ticked line in the same dialog (E7.9 D6.3).
   const calledEntries = pendingCalledPlaysFor(actor, baseContext);
-  const toggles = await resolveRollToggles(actor, baseContext, options, { isAttack: isAttackSkill, calledPlays: calledEntries, cameras: true });
+  // Help (core p. 64): a Skill Check outside combat lists the party members who can help; each ticked one adds a die after the d20.
+  const helpLines = !party ? pendingHelpersFor(actor, baseContext, { skillIdentifier: sys.identifier, skillName: skill.name, skillTags: sys.tags }) : [];
+  const toggles = await resolveRollToggles(actor, baseContext, options, { isAttack: isAttackSkill, calledPlays: calledEntries, cameras: true, helpers: helpLines, helpTitle: assistText('HelpFieldset'), helpHint: assistText('HelpOneHint') });
   const { situations, calledPlayIds } = toggles;
+  const { keys: helperKeys, ruleBreak: helpRuleBreak } = await settleHelperRuleBreaks(helpLines, toggles.helperKeys, options);
   const floorRuleBreak = floorRuleBreakCard(toggles);
   const situationContext = extendContext(baseContext, { situations });
   // Playing to the Cameras (E6.10): one extra Disadvantage reason, recorded on the card.
@@ -280,7 +290,7 @@ export async function prepareSkillCheck(actor, skill, options, { rank, rangeGate
   const checkExtraDice = checkMods.diceParts.length > 0 ? ` + ${checkMods.diceParts.join(' + ')}` : '';
   const resolvedBreaks = resolveReachedRankBreaks(skill, modifiedRank || 1);
   return {
-    isUntrained, isAttackSkill, statOnly, contest, craft, vehicle, patron, pet, targetActors, calledEntries, calledPlayIds, floorRuleBreak, camera,
+    isUntrained, isAttackSkill, statOnly, contest, craft, vehicle, patron, pet, party, targetActors, calledEntries, calledPlayIds, floorRuleBreak, camera, helpLines, helperKeys, helpRuleBreak,
     statName, statMod, totalSkill, advState, rollContext, checkMods, targetRows, checkExtraDice, resolvedBreaks
   };
 }
@@ -322,6 +332,8 @@ export async function rollSkillCheckDice(actor, skill, options, { check, rank })
   const effectiveTotal = checkValue;
   const formula = `${advState.formula} + ${checkValue}${checkExtraDice}`;
   const roll = await new Roll(formula, { rank: isUntrained || statOnly ? 0 : modifiedRank, mod: statMod }).evaluate();
+  // The helpers' dice follow the d20 (rollIndex 1, 2, ...); the card and the readers of the check record take them from `check.help`
+  check.help = check.helperKeys?.length ? await rollHelpDice(check.helpLines, check.helperKeys, { roller: actor }) : null;
 
   const rollId = newRollId();
   COGSessionEngine.recordRoll({
@@ -331,6 +343,7 @@ export async function rollSkillCheckDice(actor, skill, options, { check, rank })
     name: skill.name,
     skillIdentifier: skill.system?.identifier,
     isUntrained,
+    notes: check.help?.note ?? '',
     rollId
   }).catch(() => {});
   actor.awardPopularityForRoll(roll, { context: rollContext, options }).catch(() => {});
@@ -416,10 +429,9 @@ export async function skillUseParts(actor, skill, options, { check, rank, auraDa
   const skillTags = skill.allTags || getItemAllTags(skill);
   let aoeBtnHtml = '';
   if (!isAura && offersAreaTemplate(sys, skillTags)) {
-    const itemId = skill.id || skill._id || '';
     aoeBtnHtml = areaTemplateButtonHtml(actor, skill, {
       rank: rank.modifiedRank || 1,
-      idAttrs: `data-skill-id="${itemId}" data-item-id="${itemId}"`,
+      idKind: 'skill',
       wrapperStyle: 'margin-top: 6px;'
     });
   }
@@ -464,21 +476,23 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
   const { unusableGate, rangeFlags, cooldownGate } = gates;
   const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
   const contestData = getContestData(actor, skill, options);
-  const contestHtml = contestData ? renderContestChallengeBlock(actor, skill, contestData, roll.total) : '';
+  // The helpers' dice count in what the card grades and what a contest reads (the d20 total alone stays the ledger's)
+  const helpTotal = check.help?.total ?? 0;
+  const contestHtml = contestData ? renderContestChallengeBlock(actor, skill, contestData, roll.total + helpTotal) : '';
   const perTarget = await rollCheckTargets(roll, targetRows, rollContext, targetActors);
   // A crafting check is graded against its Difficulty with Table 47's tiers (3.15)
   const rerollStamp = checkRerollStamp(rollContext, skill);
-  const craftResult = check.craft ? craftOutcome({ total: roll.total, d20: extractD20Result(roll), dc: check.craft.dc }) : null;
+  const craftResult = check.craft ? craftOutcome({ total: roll.total + helpTotal, d20: extractD20Result(roll), dc: check.craft.dc }) : null;
   const craftHtml = craftResult ? `<p class="cog-craft-difficulty">${escapeAttr(craftDifficultyLine(check.craft, craftResult))}</p>` : '';
   const cardHtml = `${rollHtml || ''}${craftHtml}${floorRuleBreakCard({ floorRuleBreak: floorRuleBreak.flags.ruleBreak === true }).html}${perTarget.html}${tailHtml}${contestHtml || ''}`;
   const content = cardHtml.trim() ? cardHtml : undefined;
 
   // A plain check card with no Difficulty of its own takes the standing one, when the GM put it up.
   const floor = getCurrentFloor();
-  const ownDc = Boolean(check.craft || check.vehicle || check.patron || check.pet || check.contest);
+  const ownDc = Boolean(check.craft || check.vehicle || check.patron || check.pet || check.contest || check.party);
   // A roll asked to be born with a Difficulty (an after-kill check: Unopposed) takes it before the standing one
-  const stamp = (ownDc ? null : requestedStampFor(options.difficulty, { floor }))
-    ?? standingStampFor({ kind: check.statOnly ? 'stat' : 'skill', rollerType: actor.type, hasOwnDc: ownDc, floor });
+  const stamp = (ownDc && !check.party ? null : requestedStampFor(options.difficulty, { floor }))
+    ?? standingStampFor({ kind: check.statOnly ? 'stat' : 'skill', rollerType: actor.type, hasOwnDc: ownDc, floor, foeShift: standingFoeShiftFor(actor) });
   const targetRecords = perTarget.results.map((r, i) => ({ actorId: r.actorId, actorUuid: targetActors[i]?.uuid, name: r.actorName, dc: stamp?.dc ?? null, bonus: r.bonus }));
   // Called Plays this roll uses: with no Difficulty on the card they wait for the GM unless the face decides (D14).
   const { assists } = rollCalledPlays({
@@ -487,7 +501,7 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
     unassisted: { total: roll.total, d20: extractD20Result(roll), dc: stamp?.dc ?? null, firstTarget: targetRecords[0] ? { dc: targetRecords[0].dc, bonus: targetRecords[0].bonus } : null },
     hasDamage: hasDmg
   });
-  const message = await roll.toMessage(withFlags({
+  const message = await postRollWithExtras(roll, check.help?.rolls ?? [], withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
     flavor,
     content
@@ -495,15 +509,15 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
     isSkillRoll: true,
     ...camera.flags,
     skillName: skill.name,
-    rollTotal: roll.total,
-    ...(unusableGate.ruleBreak || check.pet?.ruleBreak ? { ruleBreak: true } : {}),
+    ...rollTotalPatch(roll.total),
+    ...(unusableGate.ruleBreak || check.pet?.ruleBreak || check.helpRuleBreak ? { ruleBreak: true } : {}),
     ...rangeFlags,
     ...cooldownGate.flags,
     ...gates.zeroZoneGate.flags,
     ...gates.actionBlockGate.flags,
     ...floorRuleBreak.flags,
     contest: contestData || null,
-    ...(craftResult ? { craft: { dc: check.craft.dc, tableTier: check.craft.tableTier, outcome: craftResult.outcome, margin: craftResult.margin } } : {}),
+    ...(craftResult ? craftGradePatch({ dc: check.craft.dc, tableTier: check.craft.tableTier, outcome: craftResult.outcome, margin: craftResult.margin }) : {}),
     ...perTarget.flags,
     ...rerollStamp.flags,
     ...buffFlags,
@@ -520,11 +534,12 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
       dc: check.craft ? check.craft.dc : (check.vehicle ? check.vehicle.dc : check.pet ? check.pet.dc : check.patron?.dc ?? stamp?.dc ?? null),
       difficulty: stamp?.difficulty ?? null,
       hasDamage: hasDmg,
-      assists,
+      assists: [...assists, ...(check.help?.assists ?? [])],
       rollId,
       stat: String(check.statName ?? '').toLowerCase(),
       floor,
       contest: check.contest,
+      party: check.party,
       vehicle: check.vehicle,
       patron: check.patron,
       pet: check.pet,

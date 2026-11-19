@@ -3,29 +3,18 @@
  * held GM-side and every pending or changed affliction on world actors and unlinked placed tokens, and carries the
  * buttons (Open, Reveal, Change, Cure) and the GM note for each row. Every action takes a row `key` from the list.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, writeFlag } from '../../utils/flags.mjs';
 import { getCurrentFloor } from '../../documents/actor/actor-environment.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { CURE_WINDOWS, afflictionStage, cueOf, cureWindowOpen, isAffliction, normalizeTransform, transformState } from '../../utils/character/transform-rules.mjs';
-import { listPending, reveal, cure, setNote } from '../../documents/pending-secrets.mjs';
+import { listPending, reveal, cure, setNote, carriers } from '../../documents/pending-secrets.mjs';
 import { changeVictim, revertTransformation, confirmHeldRevert, changeNow } from '../../documents/actor/transformations.mjs';
 import { formatDayClock } from '../../utils/time/timing.mjs';
 
-const landedLabel = (floor, at) => `Floor ${floor}, ${formatDayClock(at)}`;
+/** The affliction item's GM note: this tab is the only reader and writer. */
+const GM_NOTE_FLAG = 'gmNote';
 
-/** Actors that can carry an affliction: world actors, then the actors of unlinked placed tokens (each once). */
-function carriers() {
-  const seen = new Map();
-  for (const actor of Array.from(globalThis.game?.actors ?? [])) if (actor?.uuid) seen.set(actor.uuid, actor);
-  for (const scene of Array.from(globalThis.game?.scenes ?? [])) {
-    for (const token of Array.from(scene.tokens ?? [])) {
-      if (token?.actorLink) continue;
-      const actor = token.actor;
-      if (actor?.uuid && !seen.has(actor.uuid)) seen.set(actor.uuid, actor);
-    }
-  }
-  return [...seen.values()];
-}
+const landedLabel = (floor, at) => `Floor ${floor}, ${formatDayClock(at)}`;
 
 function cureWindowLabel(item, floor) {
   const id = normalizeTransform(item.system?.transform)?.curable || 'never';
@@ -72,7 +61,7 @@ export function buildSecretRows() {
         landed: landedLabel(state.landedFloor ?? 1, state.landedAt),
         cue: cueOf(item)?.label ?? '',
         window: cureWindowLabel(item, floor),
-        note: item.flags?.[SYSTEM_ID]?.gmNote ?? '',
+        note: readFlag(item, GM_NOTE_FLAG) ?? '',
         canReveal: false,
         canChange: stage === 'pending',
         canCure: true
@@ -134,6 +123,6 @@ export async function saveRowNote(key, note) {
   if (row.kind === 'held') return setNote(row.key, note);
   const { affliction } = carrierOf(row);
   if (!affliction) return false;
-  await affliction.setFlag(SYSTEM_ID, 'gmNote', String(note ?? ''));
+  await writeFlag(affliction, GM_NOTE_FLAG, String(note ?? ''));
   return true;
 }

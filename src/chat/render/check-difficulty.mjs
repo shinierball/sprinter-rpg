@@ -5,7 +5,7 @@
  * it was reached, the degree badge (never the margin, p. 60) and, for the GM, the buttons that set it. Markup is built
  * with createElement/textContent: names are user text and never go through innerHTML.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { craftGradeOf } from '../../utils/crafting/craft-flags.mjs';
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { COG_OUTCOME_CONFIG } from '../../documents/session/roll-outcomes.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
@@ -97,8 +97,7 @@ export function renderCheckDifficulty(root, message) {
   card.querySelectorAll(`.${BLOCK_CLASS}, [data-difficulty="true"]`).forEach((n) => n.remove());
   const record = readCheckRecord(message);
   if (!record) return;
-  const flags = message?.flags?.[SYSTEM_ID] ?? {};
-  if (!canSetDifficulty(record, flags)) return;
+  if (!canSetDifficulty(record, craftGradeOf(message))) return;
   const eff = effectiveCheck(record);
   if (!eff) return;
   const doc = root.ownerDocument;

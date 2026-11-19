@@ -220,3 +220,19 @@ export function actorSizeNumber(actor) {
 export function mobTokenSize(input) {
   return getSizeInfo(input).token;
 }
+
+/**
+ * What to write on one token so it follows the body's size, or `null` to leave it. `mark` is the square count the
+ * system last set on the token. A token already at `want` is left; one still at its mark (nobody changed it) or never
+ * sized (1 by 1, no mark) is set to `want`; any other is a GM's own size and is left, now and later.
+ * @param {{ width: number, height: number, mark?: number }} token
+ * @param {number} want squares per side
+ * @returns {{ width: number, height: number, mark: number }|null}
+ */
+export function tokenSizeUpdate({ width, height, mark }, want) {
+  if (width === want && height === want) return null;
+  const markNumber = Number(mark);
+  const hasMark = Number.isFinite(markNumber) && markNumber > 0;
+  const untouched = hasMark ? (width === markNumber && height === markNumber) : (width === 1 && height === 1);
+  return untouched ? { width: want, height: want, mark: want } : null;
+}

@@ -188,6 +188,36 @@ export const EXAMPLE_SET_META = Object.freeze([
     id: 'second-unit', symbol: 'SU', code: 'su', label: 'Second Unit', release: '8.2.0',
     authorship: 'ai',
     premise: 'A flash spell and a stunt Skill whose own Amazing Success effects fire on their attacks: a debuff from Rank 5, a narrated take from Rank 10.'
+  }),
+  Object.freeze({
+    id: 'dress-code', symbol: 'DC', code: 'dc', label: 'Dress Code', release: '8.3.0',
+    authorship: 'ai',
+    premise: 'Wardrobe has rules: one belt, one item on your back, and the dressing room says so when you try a second.'
+  }),
+  Object.freeze({
+    id: 'wardrobe-department', symbol: 'WD', code: 'wd', label: 'Wardrobe Department', release: '8.3.0',
+    authorship: 'ai',
+    premise: 'A costume that changes the body: a pantomime horse with its own token and no arms or hands, two fittings that call you back to it, bracers and oven mitts that come off with the limbs, and a call sheet that books you in.'
+  }),
+  Object.freeze({
+    id: 'group-project', symbol: 'GP', code: 'gp', label: 'Group Project', release: '8.3.0',
+    authorship: 'ai',
+    premise: 'Teamwork, as defined by the network: one skill that helps before an ally rolls, and the matching jackets for doing it all together.'
+  }),
+  Object.freeze({
+    id: 'refill-station', symbol: 'RF', code: 'rf', label: 'Refill Station', release: '8.3.0',
+    authorship: 'ai',
+    premise: 'A battery that fits everything it should not, correction fluid that brings cue cards back, and a prop department that bills by the charge.'
+  }),
+  Object.freeze({
+    id: 'backlot-grind', symbol: 'BG', code: 'bg', label: 'Backlot Grind', release: '8.3.0',
+    authorship: 'ai',
+    premise: 'A neighbourhood grinding table whose rows change the credited hours and the time left on the floor, for the grind picker.'
+  }),
+  Object.freeze({
+    id: 'prize-shelf', symbol: 'PS', code: 'ps', label: 'Prize Shelf', release: '8.3.0',
+    authorship: 'ai',
+    premise: 'A contestant whose winnings are still sealed: a stack of plain boxes, a box made from a sponsor template, and one the audience has not finished voting on.'
   })
 ]);
 

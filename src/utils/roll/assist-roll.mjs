@@ -28,11 +28,12 @@ function assistRollData(actor, skill) {
  * Play stores and what is rolled.
  * @param {object} actor the assisting actor (owner of the rows)
  * @param {object} skill the assist skill
- * @param {{ situations?: string[] }} [opts] ticked `situation.*` toggles
+ * @param {{ situations?: string[], base?: string }} [opts] ticked `situation.*` toggles; `base` replaces the skill's formula before the rows apply (Help's untrained dice)
  * @returns {{ formula: string, literal: string, lines: string[] }}
  */
-export function resolveAssistFormula(actor, skill, { situations = [] } = {}) {
-  const base = typeof skill?.system?.assist?.formula === 'string' ? skill.system.assist.formula.trim() : '';
+export function resolveAssistFormula(actor, skill, { situations = [], base: baseOverride } = {}) {
+  const own = typeof skill?.system?.assist?.formula === 'string' ? skill.system.assist.formula.trim() : '';
+  const base = typeof baseOverride === 'string' ? baseOverride.trim() : own;
   const acc = { replaces: [], adds: [] };
   const context = assistContext(actor, skill, situations);
   for (const { source, row, scale } of evaluateRows(actor, ARRAY_KEY, context)) {

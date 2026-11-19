@@ -111,6 +111,8 @@ export function rollTableSpec(recipe, hydrated, options = {}) {
         kind: 'magic', property: row.magic.property, ...(row.magic.damageTypes?.length ? { damageTypes: [...row.magic.damageTypes] } : {}), label: ''
       }];
     }
+    // Grinding table hints (9.14e): one option per effect; the builder labels each from its formula.
+    if (row.grind?.length) spec.options = [...(spec.options ?? []), ...row.grind.map(effect => ({ ...effect }))];
     // A `nextTable` hint links like a `kind: 'table'` Link; a real link in the row wins.
     const target = (row.links ?? []).find(l => l.kind === 'table') ?? (row.nextTable ? { kind: 'table', id: row.nextTable } : null);
     const ref = target ? tableUuidOf(target, options) : null;
@@ -125,6 +127,7 @@ export function rollTableSpec(recipe, hydrated, options = {}) {
     name: tableName(hydrated),
     tableNumber: recipe.number,
     formula: recipe.formula,
+    ...(recipe.grind ? { grind: { scope: recipe.grind.scope, floors: [...recipe.grind.floors] } } : {}),
     rows,
     flags: sourceryFlagsOf(provenance(recipe, hydrated, options))
   };
@@ -188,22 +191,22 @@ export function vehicleSpecs(recipe, hydrated, options = {}) {
 /** One cell as HTML: escaped text, or an `@UUID` link when a document link covers the whole cell. */
 function cellHtml(text, links, col, uuidFor) {
   const link = links.find(l => l.kind === 'doc' && l.col === col && l.whole);
-  const label = escapeHtml(text);
-  // `}` would close the link label early; an entity cannot.
-  if (link && text) return `@UUID[${uuidFor(link)}]{${label.replace(/\}/g, '&#125;')}}`;
-  return label;
+  if (!link || !text) return escapeHtml(text);
+  // `}` would close the link label early; an entity cannot, so each piece between the braces is escaped and the braces become entities.
+  const label = String(text).split('}').map(escapeHtml).join('&#125;');
+  return `@UUID[${escapeHtml(uuidFor(link))}]{${label}}`;
 }
 
 /** The journal page HTML of one table. */
 export function tablePageHtml(recipe, hydrated, options = {}) {
   const uuidFor = options.uuidFor ?? defaultDocUuid;
   const lines = ['<div class="cog-journal-page">'];
-  if (recipe.rollColumn && recipe.formula) lines.push(`<p><strong>${escapeHtml(recipe.formula)}</strong>${options.rollTableUuid ? ` @UUID[${options.rollTableUuid}]{Roll table}` : ''}</p>`);
+  if (recipe.rollColumn && recipe.formula) lines.push(`<p><strong>${escapeHtml(recipe.formula)}</strong>${options.rollTableUuid ? ` @UUID[${escapeHtml(options.rollTableUuid)}]{Roll table}` : ''}</p>`);
   lines.push('<table class="cog-journal-table"><tbody>');
   for (const row of hydrated.rows) {
     const cells = row.cells.map((c, i) => `<td>${cellHtml(c, row.links ?? [], i, uuidFor)}</td>`);
-    if (recipe.rollColumn) cells.unshift(`<td>${escapeHtml(rangeText(row.range))}</td>`);
-    lines.push(row.vehicleResult ? `<tr data-vehicle-result="${escapeHtml(row.vehicleResult)}">${cells.join('')}</tr>` : `<tr>${cells.join('')}</tr>`);
+    const rollCell = recipe.rollColumn ? `<td>${escapeHtml(rangeText(row.range))}</td>` : '';
+    lines.push(row.vehicleResult ? `<tr data-vehicle-result="${escapeHtml(row.vehicleResult)}">${rollCell}${cells.join('')}</tr>` : `<tr>${rollCell}${cells.join('')}</tr>`);
   }
   lines.push('</tbody></table>', '</div>');
   return lines.join('');

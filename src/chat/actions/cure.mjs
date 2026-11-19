@@ -31,8 +31,8 @@ function parseCureDebuff(button) {
 }
 
 async function cureDebuffOn(targetActor, params) {
-  if (typeof targetActor.cureDebuffs === 'function') await targetActor.cureDebuffs(params.filter);
-  return base(targetActor);
+  const cured = typeof targetActor.cureDebuffs === 'function' ? await targetActor.cureDebuffs(params.filter) : null;
+  return { ...base(targetActor), held: (cured?.held ?? []).map(a => a.name) };
 }
 
 registerChatApplier('crawlerCleanseDebuff', { parse: parseCleanseDebuff, apply: cleanseDebuffOn });
@@ -99,5 +99,7 @@ export async function handleCureDebuff(event, button, message) {
 
   const { results } = await applyCardEffect('crawlerCureDebuff', { message, button, params, targets: targetActors });
   if (!results.length) return;
-  ui.notifications?.info(`Sprinter RPG | Cured debuff (${params.filter.toUpperCase()}) for ${results.map(r => r.targetName).join(', ')}.`);
+  const held = results.flatMap(r => r.held ?? []);
+  ui.notifications?.info(`Sprinter RPG | Cured debuff (${params.filter.toUpperCase()}) for ${results.map(r => r.targetName).join(', ')}.`
+    + (held.length ? ` Held by a closed cure window: ${held.join(', ')}.` : ''));
 }

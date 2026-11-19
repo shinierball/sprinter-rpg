@@ -1,7 +1,7 @@
 /** Core kinds of `boxContents` (the prizes of a loot box), registered at import. */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { registerCoreKind } from './registry.mjs';
 import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES } from '../document-types.mjs';
+import { magicItemOf } from '../loot/loot-flags.mjs';
 
 // --- boxContents (discriminator `kind`; 7.3a descriptors, 7.3c handlers) ---------------------------------------------
 
@@ -127,7 +127,7 @@ const GENERATED_METHOD = 'loot-box';
  */
 function generatedMarks(prize) {
   const data = prize?.data;
-  const flag = data?.flags?.[SYSTEM_ID]?.magicItem;
+  const flag = magicItemOf(data);
   if (!flag || typeof flag !== 'object' || Array.isArray(flag)) return prize;
   const entries = (Array.isArray(data.system?.enchantments) ? data.system.enchantments : [])
     .filter((e) => e && typeof e === 'object' && e.method === GENERATED_METHOD);

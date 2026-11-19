@@ -38,7 +38,7 @@
                       <a class="combatant-control cog-combatant-control cog-target-btn {{#if turn.isTargeted}}is-targeted active{{/if}}"
                          data-action="targetCombatant"
                          data-combatant-id="{{turn.id}}"
-                         data-tooltip="{{#if turn.isTargeted}}Untarget (Hold Alt/Shift to Solo-Target){{else}}Target (Adds to targets){{/if}}"
+                         data-tooltip-text="{{#if turn.isTargeted}}Untarget (Hold Alt/Shift to Solo-Target){{else}}Target (Adds to targets){{/if}}"
                          aria-label="Target Combatant">
                         <i class="fa-solid fa-crosshairs"></i>
                       </a>
@@ -61,18 +61,18 @@
 
                     <!-- Health Threshold Indicator (Cheat Sheet: Green / Yellow / Red) -->
                     <div class="cog-combatant-hp-row flexrow">
-                      {{#if turn.zeroHealth}}<span class="{{turn.zeroHealth.cssClass}}" data-tooltip="{{turn.zeroHealth.title}}">{{turn.zeroHealth.label}}</span>{{/if}}
-                      <span class="cog-hp-threshold-badge health-{{turn.healthThreshold.status}}" data-tooltip="Health Threshold: {{turn.healthThreshold.label}}">
+                      {{#if turn.zeroHealth}}<span class="{{turn.zeroHealth.cssClass}}" data-tooltip-text="{{turn.zeroHealth.title}}">{{turn.zeroHealth.label}}</span>{{/if}}
+                      <span class="cog-hp-threshold-badge health-{{turn.healthThreshold.status}}" data-tooltip-text="Health Threshold: {{turn.healthThreshold.label}}">
                         HP: {{turn.hpValue}}/{{turn.hpMax}}
                         <span class="cog-hp-badge-pill">({{turn.healthThreshold.pct}}%)</span>
                       </span>
 
                       {{#if turn.hasTempBars}}
-                        <span class="cog-temp-bars-badge cog-bg-gold-tint cog-text-gold" style="border: 1px solid var(--cog-gold); padding: 1px 5px; border-radius: 3px; font-weight: bold; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;" data-tooltip="Temporary Health Bars: {{turn.tempBarsCount}} slots ({{turn.tempBarsHpPerSlot}} HP each, {{turn.tempBarsTotalHp}} Temp HP total){{#if turn.tempBarsSource}} from {{turn.tempBarsSource}}{{/if}}">
+                        <span class="cog-temp-bars-badge cog-bg-gold-tint cog-text-gold" style="border: 1px solid var(--cog-gold); padding: 1px 5px; border-radius: 3px; font-weight: bold; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;" data-tooltip-text="Temporary Health Bars: {{turn.tempBarsCount}} slots ({{turn.tempBarsHpPerSlot}} HP each, {{turn.tempBarsTotalHp}} Temp HP total){{#if turn.tempBarsSource}} from {{turn.tempBarsSource}}{{/if}}">
                           <i class="fa-solid fa-shield-heart cog-text-gold"></i> +{{turn.tempBarsCount}} Bars ({{turn.tempBarsTotalHp}} HP)
                         </span>
                       {{else if turn.tempHp}}
-                        <span class="cog-temp-bars-badge cog-bg-success-tint cog-text-success" style="border: 1px solid var(--cog-success); padding: 1px 5px; border-radius: 3px; font-weight: bold; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;" data-tooltip="Temporary HP: {{turn.tempHp}}">
+                        <span class="cog-temp-bars-badge cog-bg-success-tint cog-text-success" style="border: 1px solid var(--cog-success); padding: 1px 5px; border-radius: 3px; font-weight: bold; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;" data-tooltip-text="Temporary HP: {{turn.tempHp}}">
                           <i class="fa-solid fa-shield"></i> +{{turn.tempHp}} Temp HP
                         </span>
                       {{/if}}
@@ -86,7 +86,7 @@
                       <button type="button" class="cog-interrupt-badge-btn {{#if turn.interruptReady}}interrupt-ready{{else}}interrupt-spent{{/if}}"
                                 data-action="openInterruptDrawer" data-popover-trigger
                               data-combatant-id="{{turn.id}}"
-                              data-tooltip="{{#if turn.interruptReady}}Interrupt Ready: Click to trigger Quick Interrupt{{else}}Action Budget Depleted: Click to view Free Perks / Interrupt Options{{/if}}">
+                              data-tooltip-text="{{#if turn.interruptReady}}Interrupt Ready: Click to trigger Quick Interrupt{{else}}Action Budget Depleted: Click to view Free Perks / Interrupt Options{{/if}}">
                         <i class="fa-solid fa-bolt"></i> {{#if turn.interruptReady}}INTERRUPT READY{{else}}INTERRUPT SPENT{{/if}}
                       </button>
                     </div>
@@ -96,7 +96,7 @@
                 {{#if turn.calledPlays.length}}
                   <div class="cog-called-plays flexrow">
                     {{#each turn.calledPlays as |play|}}
-                      <span class="cog-called-play-pill" data-called-play-id="{{play.id}}" data-tooltip="{{play.title}}">
+                      <span class="cog-called-play-pill" data-called-play-id="{{play.id}}" data-tooltip-text="{{play.title}}">
                         <i class="fa-solid fa-bullhorn"></i> {{play.label}}
                         {{#if play.canDiscard}}
                           <button type="button" class="cog-called-play-discard" data-action="discardCalledPlay" data-combatant-id="{{../id}}" data-called-play-id="{{play.id}}" data-tooltip="Discard this Called Play" aria-label="Discard this Called Play">&times;</button>
@@ -108,7 +108,7 @@
 
                 {{#if turn.guidance}}
                   <div class="cog-pet-guidance flexrow">
-                    <span class="cog-pet-guidance-badge guidance-{{turn.guidance.state}}" data-tooltip="{{turn.guidance.label}}">{{turn.guidance.badge}}</span>
+                    <span class="cog-pet-guidance-badge guidance-{{turn.guidance.state}}" data-tooltip-text="{{turn.guidance.label}}">{{turn.guidance.badge}}</span>
                     {{#if turn.guidance.canGuide}}
                       <button type="button" class="cog-pet-guide-btn" data-action="guidePet" data-combatant-id="{{turn.id}}" data-tooltip="Guide this pet: your Action, an Int-Opposed Animal Handling check">
                         <i class="fa-solid fa-paw"></i> Guide
@@ -125,7 +125,7 @@
                       <button type="button" {{#unless turn.canEditActions}}disabled{{/unless}} data-action="toggleActionPip" data-filled="{{#if slot.filled}}true{{else}}false{{/if}}" class="cog-action-pip {{#if slot.filled}}pip-filled {{#if slot.isInterrupt}}pip-interrupt{{else if slot.isAttack}}pip-attack{{else}}pip-utility{{/if}}{{else}}pip-empty{{/if}} {{#if slot.isBonus}}pip-bonus{{/if}}{{#unless turn.canEditActions}} is-inert{{/unless}}"
                               data-combatant-id="{{turn.id}}"
                               data-slot-index="{{slot.index}}"
-                              data-tooltip="{{#if slot.filled}}{{slot.label}} (Click to change/clear){{else}}{{slot.label}} (Click to select action){{/if}}{{#unless turn.canEditActions}} (you do not control this combatant){{/unless}}">
+                              data-tooltip-text="{{#if slot.filled}}{{slot.label}} (Click to change/clear){{else}}{{slot.label}} (Click to select action){{/if}}{{#unless turn.canEditActions}} (you do not control this combatant){{/unless}}">
                         <i class="{{slot.icon}}"></i>
                         <span class="cog-pip-text">{{slot.label}}</span>
                       </button>
@@ -139,7 +139,7 @@
 
                   <!-- AI Favor Bonus Action Button for Crawlers -->
                   {{#if turn.canSpendAIFavor}}
-                    <button type="button" class="cog-spend-favor-btn" data-action="spendFavor" data-combatant-id="{{turn.id}}" data-tooltip="Spend 1 AI Favor ({{turn.currentFavor}} available) for +1 Non-Attack Action this round">
+                    <button type="button" class="cog-spend-favor-btn" data-action="spendFavor" data-combatant-id="{{turn.id}}" data-tooltip-text="Spend 1 AI Favor ({{turn.currentFavor}} available) for +1 Non-Attack Action this round">
                       <i class="fa-solid fa-hand-holding-heart"></i> +1 ACTION (1 FAVOR)
                     </button>
                   {{/if}}

@@ -3,7 +3,7 @@
   "journal": {"_id":"dccjnlf20fb2cd87"},
   "tables": [
     {"id":"t-toolkit-1","_id":"dcctbl64011298f5","number":1,"rollColumn":true,"columns":1,"rows":[{"range":[1,1]},{"range":[2,2]},{"range":[3,3]},{"range":[4,4]},{"range":[5,5]},{"range":[6,6]},{"range":[7,7]},{"range":[8,8]},{"range":[9,9]},{"range":[10,10]}],"formula":"1d10"},
-    {"id":"t-toolkit-2","_id":"dcctblc3c7d21b94","number":2,"rollColumn":true,"columns":1,"rows":[{"range":[1,6]},{"range":[7,7]},{"range":[8,8]},{"range":[9,9]},{"range":[10,16]},{"range":[17,17]},{"range":[18,19]},{"range":[20,20]}],"formula":"1d20"},
+    {"id":"t-toolkit-2","_id":"dcctblc3c7d21b94","number":2,"rollColumn":true,"columns":1,"rows":[{"range":[1,6],"grind":[{"kind":"seeTable"}]},{"range":[7,7]},{"range":[8,8]},{"range":[9,9]},{"range":[10,16]},{"range":[17,17],"grind":[{"kind":"floorTime","formula":"1d4*10","per":"percent"}]},{"range":[18,19]},{"range":[20,20]}],"formula":"1d20","grind":{"scope":"floor","floors":[1,2]}},
     {"id":"t-toolkit-3","_id":"dcctbl88856b292c","number":3,"rollColumn":false,"columns":7,"rows":[{},{},{},{}]},
     {"id":"t-toolkit-4","_id":"dcctbl67a1ac59cb","number":4,"rollColumn":false,"columns":2,"rows":[{},{},{},{},{},{},{}]},
     {"id":"t-toolkit-5","_id":"dcctbldf4355fac4","number":5,"rollColumn":false,"columns":2,"rows":[{},{},{},{},{},{},{}]},

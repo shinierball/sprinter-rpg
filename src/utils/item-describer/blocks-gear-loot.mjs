@@ -18,6 +18,8 @@ import { statName, applyRowLabels, choiceLabel } from './feature-describer.mjs';
 import { outcomeWeightTotal, outcomeChancePercent } from '../loot/outcome-weights.mjs';
 import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeLearnRank, outcomeStatValue, outcomeRestore } from '../loot/outcome-defaults.mjs';
 import { cooldownLabel, hasCooldown } from '../time/cooldowns.mjs';
+import { TIME_UNITS, timingAmount, formatTiming, formatDayClock } from '../time/timing.mjs';
+import { normalizeRecharge } from '../time/recharge.mjs';
 import { resolveReachedRankBreaks } from '../skill/rank-breaks.mjs';
 import { rankBreakLine } from './rank-break-text.mjs';
 import { asTriggerLines } from '../roll/amazing-success.mjs';
@@ -26,8 +28,8 @@ import { isScratchLootType, lootTypeLabel } from '../../models/items/loot-model.
 import { itemUsage, USAGE_KINDS, isAuraItem } from '../tag/tag-mechanics.mjs';
 import { describeAreaEffects } from './blocks-spell-skill.mjs';
 import { getUsedForm } from '../../data/rules/used-forms.mjs';
-import { enchantOutcomeEffect } from './blocks-crafting.mjs';
-import { ENCHANT_ITEM_OUTCOME } from '../loot/outcome-defaults.mjs';
+import { enchantOutcomeEffect, queryText } from './blocks-crafting.mjs';
+import { ENCHANT_ITEM_OUTCOME, RECHARGE_OUTCOME, outcomeRecharge } from '../loot/outcome-defaults.mjs';
 import { isRankedItem, isWeaponCapable } from '../document-types.mjs';
 
 const K = 'COG.ItemSummary.GearLoot.';
@@ -55,6 +57,15 @@ defineItemSummaryTemplates({
   [`${K}ModeAll`]: 'Using it applies every outcome',
   [`${K}ModeRandom`]: 'Using it rolls one outcome at random',
   [`${K}Charges`]: '{value}/{max} charges',
+  [`${K}ChargesRechargeOne`]: '1 charge',
+  [`${K}ChargesRechargeMany`]: '{n} charges',
+  [`${K}ChargesRechargeEvery`]: 'Regains {charges} every {text}',
+  [`${K}ChargesRechargeEveryFull`]: 'Refills every {text}',
+  [`${K}ChargesRechargeOn`]: 'Regains {charges} on a {unit}',
+  [`${K}ChargesRechargeOnFull`]: 'Refills on a {unit}',
+  [`${K}ChargesRechargeEach`]: 'Regains {charges} each {unit}',
+  [`${K}ChargesRechargeEachFull`]: 'Refills each {unit}',
+  [`${K}ChargesRechargeNext`]: 'Next charge: {at}',
   [`${K}LootType`]: '{type}',
   [`${K}UsageReusable`]: 'Reusable: using it spends nothing',
   [`${K}UsageRechargeable`]: 'Rechargeable: each use spends a charge; at 0 it still works as a Rule Break',
@@ -70,6 +81,10 @@ defineItemSummaryTemplates({
   [`${K}OutcomeRestore`]: 'Restores {amount} {resource}',
   [`${K}OutcomeBuff`]: 'Grants {name}',
   [`${K}OutcomeDebuff`]: 'Inflicts {name}',
+  [`${K}OutcomeRecharge`]: 'Recharges one of your items by {amount} charges',
+  [`${K}OutcomeRechargeOne`]: 'Recharges one of your items by 1 charge',
+  [`${K}OutcomeRechargeFull`]: 'Recharges one of your items fully',
+  [`${K}OutcomeRechargeQuery`]: '{effect} (matching: {query})',
   [`${K}OutcomeCureAll`]: 'Cures all debuffs',
   [`${K}OutcomeCure`]: 'Cures {name}',
   [`${K}OutcomeMend`]: 'Mends a {severity} injury',
@@ -372,6 +387,27 @@ const usageLine = {
   }
 };
 
+/** The timeline lines of a charges counter: "Regains 1 charge every 2 hours per Rank (6 hours)", "Refills on a long rest", "Next charge: Day 2 14:00". */
+function rechargeLines(item, raw) {
+  const rc = normalizeRecharge(raw);
+  const def = TIME_UNITS[rc.unit];
+  if (!def || !['time', 'period', 'rest'].includes(def.kind)) return [];
+  const path = 'system.charges.recharge';
+  const full = rc.amount === null;
+  const charges = full ? '' : t(`${K}ChargesRecharge${rc.amount === 1 ? 'One' : 'Many'}`, { n: rc.amount });
+  const out = [];
+  if (def.kind === 'time') {
+    const owner = item.actor ?? item.parent ?? null;
+    const amount = rc.scaleBy ? timingAmount(rc, { actor: owner, source: item }) : undefined;
+    const text = formatTiming(rc, { amount });
+    out.push(itemLine('timing', t(`${K}ChargesRecharge${full ? 'EveryFull' : 'Every'}`, { charges, text }), path));
+    if (rc.nextAt !== null) out.push(itemLine('timing', t(`${K}ChargesRechargeNext`, { at: formatDayClock(rc.nextAt) }), path));
+  } else {
+    out.push(itemLine('timing', t(`${K}ChargesRecharge${def.kind === 'rest' ? 'On' : 'Each'}${full ? 'Full' : ''}`, { charges, unit: def.label }), path));
+  }
+  return out;
+}
+
 const charges = {
   id: 'charges',
   group: 'timing',
@@ -380,7 +416,7 @@ const charges = {
     const c = sysOf(item).charges;
     const max = Math.floor(num(c.max));
     const value = Math.max(0, Math.floor(c.value === undefined || c.value === null ? max : num(c.value)));
-    return [itemLine('timing', t(`${K}Charges`, { value, max }), 'system.charges')];
+    return [itemLine('timing', t(`${K}Charges`, { value, max }), 'system.charges'), ...rechargeLines(item, c.recharge)];
   }
 };
 
@@ -473,6 +509,12 @@ async function outcomeEffect(out, ctx) {
     }
     case ENCHANT_ITEM_OUTCOME:
       return enchantOutcomeEffect(out);
+    case RECHARGE_OUTCOME: {
+      const recharge = outcomeRecharge(out);
+      const effect = recharge.full ? t(`${K}OutcomeRechargeFull`) : recharge.amount === 1 ? t(`${K}OutcomeRechargeOne`) : t(`${K}OutcomeRecharge`, { amount: recharge.amount });
+      const query = queryText(recharge.query);
+      return { kind: 'use', effect: query ? t(`${K}OutcomeRechargeQuery`, { effect, query }) : effect };
+    }
     default:
       return { kind: 'use', effect: '' };
   }

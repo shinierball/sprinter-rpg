@@ -6,8 +6,8 @@ import { dialogAnswer } from '../../utils/ui/dialog-answer.mjs';
 import { SYSTEM_PATH } from '../../constants.mjs';
 import { COG_OUTCOME_CONFIG } from '../../documents/session/roll-outcomes.mjs';
 import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
-import { COGSessionManagerApp } from './manager-app.mjs';
 import { lootBoxTierOptions } from '../../data/loot-box-tiers.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 
 export const sessionEventDialogMixin = {
   /**
@@ -74,19 +74,19 @@ export const sessionEventDialogMixin = {
       lootTierOptions: lootBoxTierOptions(existingEntry?.tier)
     };
 
-    const renderTemplateFn = globalThis.foundry?.applications?.handlebars?.renderTemplate
+    const renderTemplate = globalThis.foundry?.applications?.handlebars?.renderTemplate
       ?? globalThis.foundry?.utils?.renderTemplate
       ?? globalThis.renderTemplate;
 
     let contentHtml;
-    if (typeof renderTemplateFn === 'function') {
+    if (typeof renderTemplate === 'function') {
       try {
-        contentHtml = await renderTemplateFn(`${SYSTEM_PATH}/templates/apps/add-event-dialog.hbs`, dialogData);
+        contentHtml = trustedHtml(await renderTemplate(`${SYSTEM_PATH}/templates/apps/add-event-dialog.hbs`, dialogData));
       } catch (_) {
-        contentHtml = COGSessionManagerApp.getAddEventDialogHtml(dialogData);
+        contentHtml = addEventDialogHtml(dialogData);
       }
     } else {
-      contentHtml = COGSessionManagerApp.getAddEventDialogHtml(dialogData);
+      contentHtml = addEventDialogHtml(dialogData);
     }
 
     const DialogV2 = foundry.applications.api.DialogV2;
@@ -193,26 +193,26 @@ export const sessionEventDialogMixin = {
 
           let optHtml = '<option value="">-- Choose an Action, Skill, or Condition --</option>';
           if (acts.defaults?.length) {
-            optHtml += `<optgroup label="Default Actions & Interrupts">${acts.defaults.map(d => `<option value="${d.name}" data-type="${d.type}" data-untrained="${d.isUntrained}">${d.name} [${d.category}]</option>`).join('')}</optgroup>`;
+            optHtml += `<optgroup label="Default Actions & Interrupts">${acts.defaults.map(d => `<option value="${escapeAttr(d.name)}" data-type="${escapeAttr(d.type)}" data-untrained="${escapeAttr(d.isUntrained)}">${escapeAttr(d.name)} [${escapeAttr(d.category)}]</option>`).join('')}</optgroup>`;
           }
           if (acts.trainedSkills?.length) {
-            optHtml += `<optgroup label="Crawler's Trained Skills">${acts.trainedSkills.map(s => `<option value="${s.name}" data-type="skill" data-untrained="false">${s.displayName}</option>`).join('')}</optgroup>`;
+            optHtml += `<optgroup label="Crawler's Trained Skills">${acts.trainedSkills.map(s => `<option value="${escapeAttr(s.name)}" data-type="skill" data-untrained="false">${escapeAttr(s.displayName)}</option>`).join('')}</optgroup>`;
           }
           if (acts.attacks?.length) {
-            optHtml += `<optgroup label="Crawler's Attacks">${acts.attacks.map(a => `<option value="${a.name}" data-type="attack" data-untrained="false">${a.name}</option>`).join('')}</optgroup>`;
+            optHtml += `<optgroup label="Crawler's Attacks">${acts.attacks.map(a => `<option value="${escapeAttr(a.name)}" data-type="attack" data-untrained="false">${escapeAttr(a.name)}</option>`).join('')}</optgroup>`;
           }
           if (acts.spells?.length) {
-            optHtml += `<optgroup label="Crawler's Spells">${acts.spells.map(s => `<option value="${s.name}" data-type="spell" data-untrained="false">${s.name}</option>`).join('')}</optgroup>`;
+            optHtml += `<optgroup label="Crawler's Spells">${acts.spells.map(s => `<option value="${escapeAttr(s.name)}" data-type="spell" data-untrained="false">${escapeAttr(s.name)}</option>`).join('')}</optgroup>`;
           }
           if (acts.untrained?.length) {
-            optHtml += `<optgroup label="Common Untrained Skills">${acts.untrained.map(u => `<option value="${u.name}" data-type="untrained_skill" data-untrained="true">${u.displayName}</option>`).join('')}</optgroup>`;
+            optHtml += `<optgroup label="Common Untrained Skills">${acts.untrained.map(u => `<option value="${escapeAttr(u.name)}" data-type="untrained_skill" data-untrained="true">${escapeAttr(u.displayName)}</option>`).join('')}</optgroup>`;
           }
           if (acts.conditions?.length) {
-            optHtml += `<optgroup label="Conditions & Statuses">${acts.conditions.map(c => `<option value="${c.name}" data-type="condition_applied" data-condition="true">${c.name}</option>`).join('')}</optgroup>`;
+            optHtml += `<optgroup label="Conditions & Statuses">${acts.conditions.map(c => `<option value="${escapeAttr(c.name)}" data-type="condition_applied" data-condition="true">${escapeAttr(c.name)}</option>`).join('')}</optgroup>`;
           }
 
           if (quickSelect) quickSelect.innerHTML = optHtml;
-          if (dataList) dataList.innerHTML = (acts.allFlat || []).map(a => `<option value="${a.name}">${a.displayName || a.name}</option>`).join('');
+          if (dataList) dataList.innerHTML = (acts.allFlat || []).map(a => `<option value="${escapeAttr(a.name)}">${escapeAttr(a.displayName || a.name)}</option>`).join('');
         });
 
         // When an action is picked from Quick Select, populate name, type, untrained
@@ -235,246 +235,246 @@ export const sessionEventDialogMixin = {
   }
 };
 
-export const sessionEventDialogMixinStatic = {
-  /**
-   * Generate HTML for the Add/Edit Event Dialog
-   */
-  getAddEventDialogHtml({
-    isEdit = false,
-    existingEntry = null,
-    crawlers = [],
-    currentCrawlerId = '',
-    currentType = 'manual',
-    currentName = '',
-    isUntrained = false,
-    isKill = false,
-    damage = 0,
-    healing = 0,
-    mitigation = 0,
-    condition = '',
-    conditionAction = 'applied',
-    rollFormula = '1d20',
-    total = 10,
-    d20Result = '',
-    targetDC = '',
-    currentOutcome = 'auto',
-    statDelta = 0,
-    notes = '',
-    actionOptions = null,
-    outcomes = [],
-    lootTierOptions = lootBoxTierOptions()
-  } = {}) {
-    const crawlerOptions = crawlers.map(c => `
-      <option value="${c.actorId || c.id}" ${(c.actorId || c.id) === currentCrawlerId ? 'selected' : ''}>
-        ${c.name} (Lvl ${c.level || c.system?.details?.level || 1})${c.party ? ` [${c.party}]` : ''}
-      </option>
-    `).join('');
+/** Generate HTML for the Add/Edit Event Dialog (the fallback when the template cannot render). */
+function addEventDialogHtml({
+  isEdit = false,
+  existingEntry = null,
+  crawlers = [],
+  currentCrawlerId = '',
+  currentType = 'manual',
+  currentName = '',
+  isUntrained = false,
+  isKill = false,
+  damage = 0,
+  healing = 0,
+  mitigation = 0,
+  condition = '',
+  conditionAction = 'applied',
+  rollFormula = '1d20',
+  total = 10,
+  d20Result = '',
+  targetDC = '',
+  currentOutcome = 'auto',
+  statDelta = 0,
+  notes = '',
+  actionOptions = null,
+  outcomes = [],
+  lootTierOptions = lootBoxTierOptions()
+} = {}) {
+  const crawlerOptions = crawlers.map(c => `
+    <option value="${escapeAttr(c.actorId || c.id)}" ${(c.actorId || c.id) === currentCrawlerId ? 'selected' : ''}>
+      ${escapeAttr(c.name)} (Lvl ${escapeAttr(c.level || c.system?.details?.level || 1)})${c.party ? ` [${escapeAttr(c.party)}]` : ''}
+    </option>
+  `).join('');
 
-    const acts = actionOptions || COGSessionEngine.getCrawlerActionOptions(currentCrawlerId);
+  const acts = actionOptions || COGSessionEngine.getCrawlerActionOptions(currentCrawlerId);
 
-    const defaultActionOptions = (acts.defaults || []).map(d => `
-      <option value="${d.name}" data-type="${d.type}" data-untrained="${d.isUntrained}">${d.name} [${d.category}]</option>
-    `).join('');
+  const defaultActionOptions = (acts.defaults || []).map(d => `
+    <option value="${escapeAttr(d.name)}" data-type="${escapeAttr(d.type)}" data-untrained="${escapeAttr(d.isUntrained)}">${escapeAttr(d.name)} [${escapeAttr(d.category)}]</option>
+  `).join('');
 
-    const trainedOptions = (acts.trainedSkills || []).map(s => `
-      <option value="${s.name}" data-type="skill" data-untrained="false">${s.displayName}</option>
-    `).join('');
+  const trainedOptions = (acts.trainedSkills || []).map(s => `
+    <option value="${escapeAttr(s.name)}" data-type="skill" data-untrained="false">${escapeAttr(s.displayName)}</option>
+  `).join('');
 
-    const attackOptions = (acts.attacks || []).map(a => `
-      <option value="${a.name}" data-type="attack" data-untrained="false">${a.name}</option>
-    `).join('');
+  const attackOptions = (acts.attacks || []).map(a => `
+    <option value="${escapeAttr(a.name)}" data-type="attack" data-untrained="false">${escapeAttr(a.name)}</option>
+  `).join('');
 
-    const spellOptions = (acts.spells || []).map(s => `
-      <option value="${s.name}" data-type="spell" data-untrained="false">${s.name}</option>
-    `).join('');
+  const spellOptions = (acts.spells || []).map(s => `
+    <option value="${escapeAttr(s.name)}" data-type="spell" data-untrained="false">${escapeAttr(s.name)}</option>
+  `).join('');
 
-    const untrainedOptions = (acts.untrained || []).map(u => `
-      <option value="${u.name}" data-type="untrained_skill" data-untrained="true">${u.displayName}</option>
-    `).join('');
+  const untrainedOptions = (acts.untrained || []).map(u => `
+    <option value="${escapeAttr(u.name)}" data-type="untrained_skill" data-untrained="true">${escapeAttr(u.displayName)}</option>
+  `).join('');
 
-    const conditionOptions = (acts.conditions || []).map(c => `
-      <option value="${c.name}" data-type="condition_applied" data-condition="true">${c.name}</option>
-    `).join('');
+  const conditionOptions = (acts.conditions || []).map(c => `
+    <option value="${escapeAttr(c.name)}" data-type="condition_applied" data-condition="true">${escapeAttr(c.name)}</option>
+  `).join('');
 
-    const allDatalist = (acts.allFlat || []).map(a => `
-      <option value="${a.name}">${a.displayName || a.name}</option>
-    `).join('');
+  const allDatalist = (acts.allFlat || []).map(a => `
+    <option value="${escapeAttr(a.name)}">${escapeAttr(a.displayName || a.name)}</option>
+  `).join('');
 
-    const outcomeOptions = [
-      `<option value="auto" ${currentOutcome === 'auto' ? 'selected' : ''}>[Auto-Calculate from DC & Total]</option>`,
-      `<option class="cog-text-gold" value="critical_success" ${currentOutcome === 'critical_success' ? 'selected' : ''} style="font-weight: bold;">🌟 Critical Success (Nat 20)</option>`,
-      `<option class="cog-text-success" value="success" ${currentOutcome === 'success' ? 'selected' : ''}>🟢 Success</option>`,
-      `<option class="cog-text-warning" value="failure" ${currentOutcome === 'failure' ? 'selected' : ''}>🔴 Failure</option>`,
-      `<option class="cog-text-danger" value="critical_failure" ${currentOutcome === 'critical_failure' ? 'selected' : ''} style="font-weight: bold;">💀 Critical Failure (Nat 1)</option>`,
-      `<option value="amazing_success" ${currentOutcome === 'amazing_success' ? 'selected' : ''}>Amazing Success (+10)</option>`,
-      `<option value="near_miss" ${currentOutcome === 'near_miss' ? 'selected' : ''}>Near Miss (-1 to -3)</option>`,
-      `<option value="major_failure" ${currentOutcome === 'major_failure' ? 'selected' : ''}>Major Failure (-10)</option>`,
-      `<option value="pending" ${currentOutcome === 'pending' ? 'selected' : ''}>Pending DC</option>`
-    ].join('');
+  const outcomeOptions = [
+    `<option value="auto" ${currentOutcome === 'auto' ? 'selected' : ''}>[Auto-Calculate from DC & Total]</option>`,
+    `<option class="cog-text-gold" value="critical_success" ${currentOutcome === 'critical_success' ? 'selected' : ''} style="font-weight: bold;">🌟 Critical Success (Nat 20)</option>`,
+    `<option class="cog-text-success" value="success" ${currentOutcome === 'success' ? 'selected' : ''}>🟢 Success</option>`,
+    `<option class="cog-text-warning" value="failure" ${currentOutcome === 'failure' ? 'selected' : ''}>🔴 Failure</option>`,
+    `<option class="cog-text-danger" value="critical_failure" ${currentOutcome === 'critical_failure' ? 'selected' : ''} style="font-weight: bold;">💀 Critical Failure (Nat 1)</option>`,
+    `<option value="amazing_success" ${currentOutcome === 'amazing_success' ? 'selected' : ''}>Amazing Success (+10)</option>`,
+    `<option value="near_miss" ${currentOutcome === 'near_miss' ? 'selected' : ''}>Near Miss (-1 to -3)</option>`,
+    `<option value="major_failure" ${currentOutcome === 'major_failure' ? 'selected' : ''}>Major Failure (-10)</option>`,
+    `<option value="pending" ${currentOutcome === 'pending' ? 'selected' : ''}>Pending DC</option>`
+  ].join('');
 
-    return `
-      <div class="cog-add-event-form cog-text" style="font-family: 'Oswald', sans-serif; display: flex; flex-direction: column; gap: 10px; padding: 8px; box-sizing: border-box; max-height: 85vh; overflow-y: auto;">
-        <div class="cog-text-gold" style="font-size: 13px; border-bottom: 2px solid var(--cog-accent); padding-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-pen-to-square cog-text-danger"></i>
-          <span>${isEdit ? 'Edit Session Ledger Event' : 'Log Party or Crawler Event'}</span>
-        </div>
+  return `
+    <div class="cog-add-event-form cog-text" style="font-family: 'Oswald', sans-serif; display: flex; flex-direction: column; gap: 10px; padding: 8px; box-sizing: border-box; max-height: 85vh; overflow-y: auto;">
+      <div class="cog-text-gold" style="font-size: 13px; border-bottom: 2px solid var(--cog-accent); padding-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-pen-to-square cog-text-danger"></i>
+        <span>${isEdit ? 'Edit Session Ledger Event' : 'Log Party or Crawler Event'}</span>
+      </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Crawler:</label>
-            <select name="actorId" class="cog-dialog-select cog-event-actor-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
-              ${crawlerOptions}
-            </select>
-          </div>
-
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Action / Event Type:</label>
-            <select name="type" class="cog-dialog-select cog-event-type-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
-              <optgroup label="Skills">
-                <option value="skill" ${currentType === 'skill' ? 'selected' : ''}>Trained Skill Check</option>
-                <option value="untrained_skill" ${currentType === 'untrained_skill' ? 'selected' : ''}>Untrained Skill Attempt (Disadvantage)</option>
-              </optgroup>
-              <optgroup label="Combat Events">
-                <option value="attack" ${currentType === 'attack' ? 'selected' : ''}>Attack / Strike</option>
-                <option value="spell" ${currentType === 'spell' ? 'selected' : ''}>Spell Cast</option>
-                <option value="damage_dealt" ${currentType === 'damage_dealt' ? 'selected' : ''}>Damage Dealt</option>
-                <option value="damage_taken" ${currentType === 'damage_taken' ? 'selected' : ''}>Damage Taken</option>
-                <option value="damage_mitigated" ${currentType === 'damage_mitigated' ? 'selected' : ''}>Damage Mitigated</option>
-                <option value="healing" ${currentType === 'healing' ? 'selected' : ''}>Healing Done</option>
-                <option value="condition_applied" ${currentType === 'condition_applied' ? 'selected' : ''}>Condition Applied</option>
-                <option value="condition_removed" ${currentType === 'condition_removed' ? 'selected' : ''}>Condition Removed / Cleansed</option>
-              </optgroup>
-              <optgroup label="Progression & Other">
-                <option value="favor" ${currentType === 'favor' ? 'selected' : ''}>AI Favor Adjustment</option>
-                <option value="popularity" ${currentType === 'popularity' ? 'selected' : ''}>Popularity Shift</option>
-                <option value="loot" ${currentType === 'loot' ? 'selected' : ''}>Loot Box Awarded</option>
-                <option value="manual" ${currentType === 'manual' ? 'selected' : ''}>Manual / Custom Event</option>
-              </optgroup>
-            </select>
-          </div>
-        </div>
-
-        ${isEdit ? '' : `<div class="form-group cog-event-loot-tier-group" style="display: ${currentType === 'loot' ? 'flex' : 'none'}; flex-direction: column; gap: 3px;">
-          <label class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-box-open"></i> Loot Box Tier:</label>
-          <select name="tier" class="cog-dialog-select cog-event-loot-tier-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
-            ${lootTierOptions.map(o => `<option value="${o.key}" ${o.selected ? 'selected' : ''}>${o.label}</option>`).join('')}
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Crawler:</label>
+          <select name="actorId" class="cog-dialog-select cog-event-actor-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+            ${crawlerOptions}
           </select>
-        </div>`}
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">
-              <i class="fa-solid fa-list-check"></i> Quick Select Action / Skill:
-            </label>
-            <select id="cog-dialog-quick-action" class="cog-dialog-select cog-bg-surface-muted cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
-              <option value="">-- Choose an Action, Skill, or Condition --</option>
-              <optgroup label="Default Actions & Interrupts">
-                ${defaultActionOptions}
-              </optgroup>
-              ${trainedOptions ? `<optgroup label="Crawler's Trained Skills">${trainedOptions}</optgroup>` : ''}
-              ${attackOptions ? `<optgroup label="Crawler's Attacks">${attackOptions}</optgroup>` : ''}
-              ${spellOptions ? `<optgroup label="Crawler's Spells">${spellOptions}</optgroup>` : ''}
-              <optgroup label="Common Untrained Skills">
-                ${untrainedOptions}
-              </optgroup>
-              <optgroup label="Conditions & Statuses">
-                ${conditionOptions}
-              </optgroup>
-            </select>
-          </div>
-
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Action / Event Name (or Type Custom):</label>
-            <input type="text" name="name" list="cog-dialog-actions-list" class="cog-dialog-input cog-bg-surface cog-text-strong" placeholder="e.g. Interrupt, Pugilism, Call a Play..." value="${currentName}" style="border: 1px solid var(--cog-panel-border); padding: 5px 6px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;" required />
-            <datalist id="cog-dialog-actions-list">
-              ${allDatalist}
-            </datalist>
-          </div>
-        </div>
-
-        <div class="cog-bg-surface" style="display: flex; gap: 16px; align-items: center; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="isUntrained" id="cog-event-is-untrained" ${isUntrained ? 'checked' : ''} style="cursor: pointer;" />
-            <label class="cog-text-warning" for="cog-event-is-untrained" style="font-size: 11px; cursor: pointer; font-weight: bold;">
-              <i class="fa-solid fa-graduation-cap"></i> Untrained Attempt (Tracks for Advancement)
-            </label>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" name="isKill" id="cog-event-is-kill" ${isKill ? 'checked' : ''} style="cursor: pointer;" />
-            <label class="cog-text-danger" for="cog-event-is-kill" style="font-size: 11px; cursor: pointer; font-weight: bold;">
-              <i class="fa-solid fa-skull"></i> Killing Blow
-            </label>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-danger" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-burst"></i> Damage Dealt / Taken:</label>
-            <input class="cog-bg-surface cog-text-danger" type="number" name="damage" value="${damage}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-          </div>
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-info" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-shield-halved"></i> Damage Mitigated:</label>
-            <input class="cog-bg-surface cog-text-info" type="number" name="mitigation" value="${mitigation}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-          </div>
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-success" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-heart-pulse"></i> Healing Done:</label>
-            <input class="cog-bg-surface cog-text-success" type="number" name="healing" value="${healing}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-magic" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-biohazard"></i> Condition / Status Effect:</label>
-            <input class="cog-bg-surface cog-text-magic" type="text" name="condition" value="${condition}" placeholder="e.g. Stunned, Burning, Poisoned, Queasy, Held..." style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-          </div>
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase; font-weight: bold;">Condition Action:</label>
-            <select name="conditionAction" class="cog-dialog-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;">
-              <option value="applied" ${conditionAction === 'applied' ? 'selected' : ''}>Applied / Inflicted</option>
-              <option value="removed" ${conditionAction === 'removed' ? 'selected' : ''}>Removed / Cleansed</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Formula:</label>
-            <input class="cog-bg-surface cog-text-strong" type="text" name="rollFormula" value="${rollFormula}" placeholder="1d20" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-          </div>
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Roll Total:</label>
-            <input class="cog-bg-surface cog-text-gold" type="number" name="total" value="${total}" placeholder="Total" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-          </div>
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Natural d20 (1-20):</label>
-            <input class="cog-bg-surface cog-text-strong" type="number" name="d20Result" value="${d20Result}" min="1" max="20" placeholder="Die face" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px;">
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Target DC / AC:</label>
-            <input class="cog-bg-surface cog-text-strong" type="number" name="targetDC" value="${targetDC}" placeholder="e.g. 15" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-          </div>
-          <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-            <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Roll Outcome:</label>
-            <select name="outcome" class="cog-dialog-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;">
-              ${outcomeOptions}
-            </select>
-          </div>
         </div>
 
         <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-          <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Stat / Resource Delta (+/- Favor, Popularity):</label>
-          <input class="cog-bg-surface cog-text-strong" type="number" name="statDelta" value="${statDelta}" placeholder="e.g. +5, -2, 20" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
-        </div>
-
-        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
-          <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Notes / Target Description:</label>
-          <textarea class="cog-bg-surface cog-text-strong" name="notes" rows="2" placeholder="Optional notes or details..." style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px; resize: vertical;">${notes}</textarea>
+          <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Action / Event Type:</label>
+          <select name="type" class="cog-dialog-select cog-event-type-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+            <optgroup label="Skills">
+              <option value="skill" ${currentType === 'skill' ? 'selected' : ''}>Trained Skill Check</option>
+              <option value="untrained_skill" ${currentType === 'untrained_skill' ? 'selected' : ''}>Untrained Skill Attempt (Disadvantage)</option>
+            </optgroup>
+            <optgroup label="Combat Events">
+              <option value="attack" ${currentType === 'attack' ? 'selected' : ''}>Attack / Strike</option>
+              <option value="spell" ${currentType === 'spell' ? 'selected' : ''}>Spell Cast</option>
+              <option value="damage_dealt" ${currentType === 'damage_dealt' ? 'selected' : ''}>Damage Dealt</option>
+              <option value="damage_taken" ${currentType === 'damage_taken' ? 'selected' : ''}>Damage Taken</option>
+              <option value="damage_mitigated" ${currentType === 'damage_mitigated' ? 'selected' : ''}>Damage Mitigated</option>
+              <option value="healing" ${currentType === 'healing' ? 'selected' : ''}>Healing Done</option>
+              <option value="condition_applied" ${currentType === 'condition_applied' ? 'selected' : ''}>Condition Applied</option>
+              <option value="condition_removed" ${currentType === 'condition_removed' ? 'selected' : ''}>Condition Removed / Cleansed</option>
+            </optgroup>
+            <optgroup label="Progression & Other">
+              <option value="favor" ${currentType === 'favor' ? 'selected' : ''}>AI Favor Adjustment</option>
+              <option value="popularity" ${currentType === 'popularity' ? 'selected' : ''}>Popularity Shift</option>
+              <option value="loot" ${currentType === 'loot' ? 'selected' : ''}>Loot Box Awarded</option>
+              <option value="manual" ${currentType === 'manual' ? 'selected' : ''}>Manual / Custom Event</option>
+            </optgroup>
+          </select>
         </div>
       </div>
-    `;
-  }
+
+      ${isEdit ? '' : `<div class="form-group cog-event-loot-tier-group" style="display: ${currentType === 'loot' ? 'flex' : 'none'}; flex-direction: column; gap: 3px;">
+        <label class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-box-open"></i> Loot Box Tier:</label>
+        <select name="tier" class="cog-dialog-select cog-event-loot-tier-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+          ${lootTierOptions.map(o => `<option value="${escapeAttr(o.key)}" ${o.selected ? 'selected' : ''}>${escapeAttr(o.label)}</option>`).join('')}
+        </select>
+      </div>`}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">
+            <i class="fa-solid fa-list-check"></i> Quick Select Action / Skill:
+          </label>
+          <select id="cog-dialog-quick-action" class="cog-dialog-select cog-bg-surface-muted cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 5px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;">
+            <option value="">-- Choose an Action, Skill, or Condition --</option>
+            <optgroup label="Default Actions & Interrupts">
+              ${defaultActionOptions}
+            </optgroup>
+            ${trainedOptions ? `<optgroup label="Crawler's Trained Skills">${trainedOptions}</optgroup>` : ''}
+            ${attackOptions ? `<optgroup label="Crawler's Attacks">${attackOptions}</optgroup>` : ''}
+            ${spellOptions ? `<optgroup label="Crawler's Spells">${spellOptions}</optgroup>` : ''}
+            <optgroup label="Common Untrained Skills">
+              ${untrainedOptions}
+            </optgroup>
+            <optgroup label="Conditions & Statuses">
+              ${conditionOptions}
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Action / Event Name (or Type Custom):</label>
+          <input type="text" name="name" list="cog-dialog-actions-list" class="cog-dialog-input cog-bg-surface cog-text-strong" placeholder="e.g. Interrupt, Pugilism, Call a Play..." value="${escapeAttr(currentName)}" style="border: 1px solid var(--cog-panel-border); padding: 5px 6px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 12px;" required />
+          <datalist id="cog-dialog-actions-list">
+            ${allDatalist}
+          </datalist>
+        </div>
+      </div>
+
+      <div class="cog-bg-surface" style="display: flex; gap: 16px; align-items: center; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--cog-panel-border);">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" name="isUntrained" id="cog-event-is-untrained" ${isUntrained ? 'checked' : ''} style="cursor: pointer;" />
+          <label class="cog-text-warning" for="cog-event-is-untrained" style="font-size: 11px; cursor: pointer; font-weight: bold;">
+            <i class="fa-solid fa-graduation-cap"></i> Untrained Attempt (Tracks for Advancement)
+          </label>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" name="isKill" id="cog-event-is-kill" ${isKill ? 'checked' : ''} style="cursor: pointer;" />
+          <label class="cog-text-danger" for="cog-event-is-kill" style="font-size: 11px; cursor: pointer; font-weight: bold;">
+            <i class="fa-solid fa-skull"></i> Killing Blow
+          </label>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-danger" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-burst"></i> Damage Dealt / Taken:</label>
+          <input class="cog-bg-surface cog-text-danger" type="number" name="damage" value="${escapeAttr(damage)}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-info" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-shield-halved"></i> Damage Mitigated:</label>
+          <input class="cog-bg-surface cog-text-info" type="number" name="mitigation" value="${escapeAttr(mitigation)}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-success" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-heart-pulse"></i> Healing Done:</label>
+          <input class="cog-bg-surface cog-text-success" type="number" name="healing" value="${escapeAttr(healing)}" min="0" placeholder="0" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-magic" style="font-size: 10px; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-biohazard"></i> Condition / Status Effect:</label>
+          <input class="cog-bg-surface cog-text-magic" type="text" name="condition" value="${escapeAttr(condition)}" placeholder="e.g. Stunned, Burning, Poisoned, Queasy, Held..." style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase; font-weight: bold;">Condition Action:</label>
+          <select name="conditionAction" class="cog-dialog-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;">
+            <option value="applied" ${conditionAction === 'applied' ? 'selected' : ''}>Applied / Inflicted</option>
+            <option value="removed" ${conditionAction === 'removed' ? 'selected' : ''}>Removed / Cleansed</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Formula:</label>
+          <input class="cog-bg-surface cog-text-strong" type="text" name="rollFormula" value="${escapeAttr(rollFormula)}" placeholder="1d20" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Roll Total:</label>
+          <input class="cog-bg-surface cog-text-gold" type="number" name="total" value="${escapeAttr(total)}" placeholder="Total" style="font-weight: bold; border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Natural d20 (1-20):</label>
+          <input class="cog-bg-surface cog-text-strong" type="number" name="d20Result" value="${escapeAttr(d20Result)}" min="1" max="20" placeholder="Die face" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px;">
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Target DC / AC:</label>
+          <input class="cog-bg-surface cog-text-strong" type="number" name="targetDC" value="${escapeAttr(targetDC)}" placeholder="e.g. 15" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+          <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Roll Outcome:</label>
+          <select name="outcome" class="cog-dialog-select cog-bg-surface cog-text-strong" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;">
+            ${outcomeOptions}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+        <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Stat / Resource Delta (+/- Favor, Popularity):</label>
+        <input class="cog-bg-surface cog-text-strong" type="number" name="statDelta" value="${escapeAttr(statDelta)}" placeholder="e.g. +5, -2, 20" style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+      </div>
+
+      <div class="form-group" style="display: flex; flex-direction: column; gap: 3px;">
+        <label class="cog-text-secondary" style="font-size: 10px; text-transform: uppercase;">Notes / Target Description:</label>
+        <textarea class="cog-bg-surface cog-text-strong" name="notes" rows="2" placeholder="Optional notes or details..." style="border: 1px solid var(--cog-panel-border); padding: 4px; border-radius: 3px; font-family: 'Oswald', sans-serif; font-size: 11px; resize: vertical;">${escapeAttr(notes)}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+export const sessionEventDialogMixinStatic = {
+  getAddEventDialogHtml: addEventDialogHtml
 };

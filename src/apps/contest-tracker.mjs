@@ -21,7 +21,7 @@ import { sanitizeContest, raceStandings, chaseStatus, participantLegSkill } from
 import { CONTEST_KINDS, contestKindInfo } from '../data/rules/contest-rules.mjs';
 import { drawLegFromTable, applyLegDraw } from '../utils/contest/contest-leg-draw.mjs';
 import { getAvailableRollTables } from '../sheets/item/catalogs.mjs';
-import { participantIsOut } from '../chat/contest-card.mjs';
+import { contestIdOf, participantIsOut } from '../chat/contest-card.mjs';
 import {
   postContestCard, repostContestCard, getContest, listContests, updateContest, openLeg, closeLeg, endContest,
   setGmResult, markParticipantOut, setSkillOverride, acceptSkillProposal, dismissSkillProposal, governingStat
@@ -128,7 +128,7 @@ export class COGContestTrackerApp extends COGToolApp {
     await super._onFirstRender(context, options);
     const refresh = (message) => {
       if (!this.contestId || !this.rendered) return;
-      const id = message?.flags?.['sprinter-rpg']?.contestState?.id;
+      const id = contestIdOf(message);
       if (id === this.contestId) this.render();
     };
     for (const name of ['createChatMessage', 'updateChatMessage', 'deleteChatMessage']) {

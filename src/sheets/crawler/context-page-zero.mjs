@@ -19,8 +19,18 @@ function pageZeroView(sheet) {
   return (sheet._pageZero ??= {});
 }
 
-/** One tappable button per Health bar, with the label a screen reader says. */
-const barViews = (count) => Array.from({ length: count }, (_, i) => ({ index: i + 1, label: `Health bar ${i + 1} of ${count}` }));
+/**
+ * One view per Health bar. Each bar draws its own fill (`fill`, 0-100 of that bar) and its own slice of the meter's colour
+ * ramp (`pos`, the background position), so the bars can wrap to two rows on a narrow sheet (live check 2026-11-18).
+ * @param {number} count bars
+ * @param {number} percent Health as a percent of its maximum
+ */
+const barViews = (count, percent) => Array.from({ length: count }, (_, i) => ({
+  index: i + 1,
+  label: `Health bar ${i + 1} of ${count}`,
+  fill: Math.round(Math.min(100, Math.max(0, (percent * count) / 100 - i) * 100) * 100) / 100,
+  pos: count > 1 ? Math.round((i / (count - 1)) * 10000) / 100 : 0
+}));
 
 /** The state of a sheet that has shown page 0, else null (the sheets that never did have none). */
 export const peekPageZeroView = (sheet) => sheet?._pageZero ?? null;
@@ -53,11 +63,17 @@ function slotView(slot) {
   };
 }
 
+/** Damage Resistance: a read-only tile (it has no roll), its parts as page 1 lists them (7.102). */
+function damageResistanceView(attrs) {
+  const dr = attrs.dr ?? {};
+  return { total: num(dr.total), label: `Armor ${num(dr.armor)} + Items ${num(dr.items)} + Buffs ${num(dr.buffs)}` };
+}
+
 /**
  * Build `context.pageZero`. Requires the core, combat and hot bar context.
  * @param {object} context
  * @param {Actor} actor
- * @param {object} [sheet] the sheet instance, which keeps the stepper's state
+ * @param {object} [sheet] the sheet instance, which remembers that it has shown page 0
  */
 export function preparePageZero(context, actor, sheet = {}) {
   pageZeroView(sheet);
@@ -86,9 +102,15 @@ export function preparePageZero(context, actor, sheet = {}) {
     value: num(attrs.hp?.value),
     max: num(attrs.hp?.max),
     percent: hpPct,
-    emptyPercent: 100 - hpPct,
-    bars: barViews(context.healthSegments?.length ?? 0)
+    bars: barViews(context.healthSegments?.length ?? 0, hpPct)
   };
+  // A narrow sheet shows the bars in two rows: the first row holds half of them, rounded up
+  health.cols = Math.ceil(health.bars.length / 2);
+
+  // The crawler's temporary Health bars, from the full sheet's own slot data (`prepareCoreContext`); a tap spends them first.
+  const temp = context.hasTempBars
+    ? { has: true, source: context.tempBarsSource, slots: context.tempBarSlots, label: `Temporary shield: ${context.tempBarsSource}` }
+    : { has: false, source: '', slots: [], label: '' };
 
   const slots = (context.hotlistSlots ?? []).filter((s) => !s.isEmpty).map(slotView);
   // Mana is drawn only for a crawler that owns a spell (Question 1348 a).
@@ -119,13 +141,17 @@ export function preparePageZero(context, actor, sheet = {}) {
   const latest = latestRollFor(actor, globalThis.game?.user);
   const last = latest ? { has: true, name: latest.name, total: latest.total } : { has: false, name: '', total: 0 };
 
+  const dr = damageResistanceView(attrs);
+
   context.pageZero = {
     identity,
     move,
     health,
+    temp,
     mana,
     stats,
     evade: { total: signed(num(attrs.evade?.total)) },
+    dr,
     favor: { count: num(attrs.aiFavor) },
     attacks,
     last,

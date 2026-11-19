@@ -4,10 +4,9 @@
  * and the raised Skill cap, p. 164). Pure: `tierGiftPlan` says what to create, delete and update; `documents/actor/worship.mjs`
  * applies it.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { GRANTED_EFFECT_STATE } from '../../data/race-class-grants.mjs';
 import { TEMPLE_ACCESS_TAG_PREFIX, CHAMPIONS_CLUB_ACCESS_TAG, WORSHIP_TAGS } from '../../data/tag-vocabulary.mjs';
-import { WORSHIP_TIERS, deityGiftOf, deityIdOf } from './worship-state.mjs';
+import { WORSHIP_TIERS, deityGiftOf, deityIdOf, withDeityGift, deityGiftPath } from './worship-state.mjs';
 
 /** A Zealot's chosen signature Skill may rise to Rank 16 (p. 164). */
 const ZEALOT_SKILL_MAX = 16;
@@ -50,26 +49,24 @@ function desiredGifts(deityItem, bond, stamp) {
     const key = `${tier}:${identifier}`;
     wanted.push({
       key,
-      data: {
+      data: withDeityGift({
         name: entry.name, type: entry.type, img: entry.img,
-        system: { ...structuredClone(entry.system), ...structuredClone(state), tags: withTag(entry.system.tags, [WORSHIP_TAGS.benefit]) },
-        flags: { [SYSTEM_ID]: { deityGift: giftFlag(id, 'tier', key, tier, stamp) } }
-      }
+        system: { ...structuredClone(entry.system), ...structuredClone(state), tags: withTag(entry.system.tags, [WORSHIP_TAGS.benefit]) }
+      }, giftFlag(id, 'tier', key, tier, stamp))
     });
   }
 
   wanted.push({
     key: GIFT_KEY_STANDING,
-    data: {
+    data: withDeityGift({
       name: `${deityItem.name}: ${tierLabel(bond.tier)}`, type: 'buff', img: deityItem.img,
       system: {
         ...structuredClone(GRANTED_EFFECT_STATE.buff),
         identifier: `${id}-standing`,
         tags: [WORSHIP_TAGS.benefit, `${TEMPLE_ACCESS_TAG_PREFIX}${id}`, CHAMPIONS_CLUB_ACCESS_TAG],
         grants: standingGrants(deityItem, bond)
-      },
-      flags: { [SYSTEM_ID]: { deityGift: giftFlag(id, 'standing', GIFT_KEY_STANDING, bond.tier, stamp) } }
-    }
+      }
+    }, giftFlag(id, 'standing', GIFT_KEY_STANDING, bond.tier, stamp))
   });
   return wanted;
 }
@@ -104,7 +101,8 @@ export function tierGiftPlan(deityItem, bond, ownedGifts, { now = 0, userId = ''
       const changes = {};
       if (owned.name !== want.data.name) changes.name = want.data.name;
       if (!sameJson(owned.system?.grants, want.data.system.grants)) changes['system.grants'] = want.data.system.grants;
-      if (gift.tier !== want.data.flags[SYSTEM_ID].deityGift.tier) changes[`flags.${SYSTEM_ID}.deityGift.tier`] = want.data.flags[SYSTEM_ID].deityGift.tier;
+      const wantTier = deityGiftOf(want.data)?.tier;
+      if (gift.tier !== wantTier) changes[deityGiftPath('tier')] = wantTier;
       if (Object.keys(changes).length) plan.update.push({ _id: owned.id, ...changes });
     }
   }

@@ -12,7 +12,7 @@ import { worldSkillResolver } from '../utils/skill/weapon-skill-options.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
 import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
 import { RACE_CLASS_KINDS } from '../data/race-class-grants.mjs';
-import { SYSTEM_ID } from '../constants.mjs';
+import { appliedRecordOf } from '../utils/character/race-class-flags.mjs';
 
 const t = (key, data) => (data ? globalThis.game?.i18n?.format?.(key, data) : globalThis.game?.i18n?.localize?.(key)) ?? key;
 
@@ -90,7 +90,7 @@ export async function createFromSpec(type, spec = {}, { actor = null, options = 
   if (actor && RACE_CLASS_KINDS[type]) {
     const applied = await COGRaceClassApplier.applyKind(actor, type, payload, { interactive: true, ...apply, createOptions: options });
     if (!applied) return null;
-    const itemId = actor.getFlag?.(SYSTEM_ID, RACE_CLASS_KINDS[type].flagKey)?.itemId;
+    const itemId = appliedRecordOf(actor, type)?.itemId;
     return (itemId && actor.items?.get(itemId)) || actor.items?.find((i) => i.type === type) || null;
   }
 

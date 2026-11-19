@@ -187,7 +187,7 @@ export async function startWorship(actor, deityItem, { options } = {}) {
   if (collectActorTags(actor).has(WORSHIP_TAGS.fallen)) {
     const answer = await confirmRuleBreak({
       title: say('COG.Deity.Worship.FallenTitle', 'Fallen from Grace'),
-      reason: say('COG.Deity.Worship.FallenReason', '{actor} is Fallen from Grace and cannot worship any deity (p. 163). Worship {deity} anyway as a Rule Break?', { actor: actor.name, deity: deityItem.name }),
+      message: say('COG.Deity.Worship.FallenReason', '{actor} is Fallen from Grace and cannot worship any deity (p. 163). Worship {deity} anyway as a Rule Break?', { actor: actor.name, deity: deityItem.name }),
       options
     });
     if (!answer.confirmed) return { ok: false, ruleBreak: false, reason: answer.refusal ?? 'cancelled' };
@@ -211,7 +211,7 @@ export async function startWorship(actor, deityItem, { options } = {}) {
     } else if (choice === 'both') {
       const answer = await confirmRuleBreak({
         title: say('COG.Deity.Worship.SecondTitle', 'Another god'),
-        reason: say('COG.Deity.Worship.KeepBothReason', 'Worshipping two gods at once is outside the rules (p. 163). Keep both as a Rule Break?'),
+        message: say('COG.Deity.Worship.KeepBothReason', 'Worshipping two gods at once is outside the rules (p. 163). Keep both as a Rule Break?'),
         options
       });
       if (!answer.confirmed) return { ok: false, ruleBreak: false, reason: answer.refusal ?? 'cancelled' };
@@ -293,7 +293,7 @@ export async function setWorshipTier(actor, deityItem, tier, { zealotSkill, opti
     if (!CLERGY_ARCHETYPE_TAGS.some((tag) => archetypes.has(tag))) {
       const answer = await confirmRuleBreak({
         title: say('COG.Deity.Worship.ZealotTitle', 'Zealot'),
-        reason: say('COG.Deity.Worship.ZealotReason', 'Only a Cleric or Paladin rises above Devotee (p. 163). Make {actor} a Zealot of {deity} as a Rule Break?', { actor: actor.name, deity: deityItem.name }),
+        message: say('COG.Deity.Worship.ZealotReason', 'Only a Cleric or Paladin rises above Devotee (p. 163). Make {actor} a Zealot of {deity} as a Rule Break?', { actor: actor.name, deity: deityItem.name }),
         options
       });
       if (!answer.confirmed) return { ok: false, ruleBreak: false, reason: answer.refusal ?? 'cancelled' };

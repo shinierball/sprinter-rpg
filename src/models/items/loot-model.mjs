@@ -1,9 +1,9 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
 import { lightSchemaField } from '../fields/effect-fields.mjs';
-import { cooldownField, useRecordsField } from '../fields/timing-fields.mjs';
+import { cooldownField, useRecordsField, chargeRechargeField } from '../fields/timing-fields.mjs';
 import { tagQueryField } from '../fields/tag-fields.mjs';
 import { POTION_LOOT_TYPE } from '../../data/tag-vocabulary.mjs';
-import { craftMaterialsField, enchantmentTemplateField, enchantmentLedgerField, lootBoxRowField } from '../fields/craft-fields.mjs';
+import { craftMaterialsField, enchantmentTemplateField, enchantmentLedgerField, lootBoxSchemaFields } from '../fields/craft-fields.mjs';
 
 /** The scratch-off ticket loot type: the only value that is a scratch ticket. */
 const SCRATCH_LOOT_TYPE = 'scratch_ticket';
@@ -110,7 +110,8 @@ export class LootDataModel extends BaseItemDataModel {
       executionMode: new fields.StringField({ initial: '' }),
       charges: new fields.SchemaField({
         value: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
-        max: new fields.NumberField({ integer: true, min: 0, initial: 0 })
+        max: new fields.NumberField({ integer: true, min: 0, initial: 0 }),
+        recharge: chargeRechargeField(fields)
       }),
       // The spell this item casts, by identifier; spellName is its display label.
       spellIdentifier: new fields.StringField({ initial: '' }),
@@ -151,13 +152,7 @@ export class LootDataModel extends BaseItemDataModel {
         enchantments: new fields.ArrayField(enchantmentTemplateField(fields), { initial: [] })
       }),
       // The prizes of a loot box, used when lootType is 'box' (7.3a, 7.3 D1)
-      box: new fields.SchemaField({
-        // A CONFIG.COG.lootBoxTiers id; sanitized through resolveLootBoxTier on read, never a closed `choices` list
-        tier: new fields.StringField({ initial: 'bronze' }),
-        contents: new fields.ArrayField(lootBoxRowField(fields), { initial: [] }),
-        // What an unfilled box does: '' = the tier's default contents; 'keep' = not spent, the GM is warned
-        whenEmpty: new fields.StringField({ initial: '' })
-      }),
+      box: new fields.SchemaField(lootBoxSchemaFields(fields)),
       notes: new fields.StringField({ initial: '' }),
       description: new fields.HTMLField({ initial: '' })
     };

@@ -14,6 +14,7 @@ import { resolveSpace } from '../../documents/actor/personal-space-links.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { driveActions } from '../vehicle/drive-actions.mjs';
 import { rollPetCheck } from '../../documents/actor/pet-checks.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 const worldActor = (id) => (id ? globalThis.game?.actors?.get?.(id) ?? null : null);
 
@@ -30,19 +31,23 @@ function storyCard(res) {
   return `
     <div class="cog-chat-card cog-story-roll-card">
       <header class="cog-card-header flexrow">
-        <span class="cog-card-title"><strong>${res.tableName}</strong></span>
-        <span class="cog-badge roll-badge">Roll: ${res.roll}</span>
+        <span class="cog-card-title"><strong>${escapeAttr(res.tableName)}</strong></span>
+        <span class="cog-badge roll-badge">Roll: ${escapeAttr(res.roll)}</span>
       </header>
       <div class="cog-card-body">
-        <p class="cog-story-result-text"><em>"${res.text}"</em></p>
+        <p class="cog-story-result-text"><em>"${escapeAttr(res.text)}"</em></p>
       </div>
     </div>
   `;
 }
 
+/**
+ * Creates a companion unlinked, then bonds it: the bond is the one place the link is written and the pet limit asks.
+ * A declined bond deletes the new actor, so Add Pet and then No leaves nothing behind.
+ */
 async function createCompanion(sheet, data) {
   const companion = await COGActor.create(buildPayload(data.type, data, { delegate: false }));
-  if (companion) await sheet.actor.bondCompanion(companion);
+  if (companion && !(await sheet.actor.bondCompanion(companion))) await companion.delete();
   return sheet.render();
 }
 
@@ -69,12 +74,12 @@ export const storyActions = {
 
   async addPet() {
     if (!this.isEditable) return;
-    return createCompanion(this, { type: 'pet', system: { details: { ownerId: this.actor.id } } });
+    return createCompanion(this, { type: 'pet' });
   },
 
   async addVehicle() {
     if (!this.isEditable) return;
-    return createCompanion(this, { type: 'mount_vehicle', system: { ownerId: this.actor.id } });
+    return createCompanion(this, { type: 'mount_vehicle' });
   },
 
   openCompanion(event, target) {
@@ -173,7 +178,7 @@ export const storyActions = {
     if (space === this.actor.getOwnedPersonalSpace()) {
       const proceed = await foundry.applications.api.DialogV2.confirm({
         window: { title: 'Unlink Personal Space' },
-        content: `<p>Give up ${space.name}? ${this.actor.name} will no longer own it, and loses access unless a GM adds them back.</p>`,
+        content: `<p>Give up ${escapeAttr(space.name)}? ${escapeAttr(this.actor.name)} will no longer own it, and loses access unless a GM adds them back.</p>`,
         modal: true
       });
       if (!proceed) return;

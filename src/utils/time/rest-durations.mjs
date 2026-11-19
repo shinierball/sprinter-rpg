@@ -4,6 +4,7 @@
  * A leaf module: no document imports.
  */
 import { getItemAllTags } from '../../documents/active-tags.mjs';
+import { transformationBody } from '../effects/debuff-force.mjs';
 import { conditionTagId } from '../identifier.mjs';
 import { INJURY_NAMESPACE } from '../tag/tag-mechanics.mjs';
 
@@ -33,7 +34,8 @@ export function restLevelOf(normType) {
 }
 
 /**
- * Whether a rest of `level` clears this debuff.
+ * Whether a rest of `level` clears this debuff. Never a changed body (D8, D9): only a cure that obeys its window
+ * takes that.
  * - its `durationConfig.type` is a rest type at or below `level`;
  * - Fatigued (by identifier) on a long or longer rest;
  * - any `injury.*` debuff on a full day's rest, or on a long rest when `purgesInjuries` is set (a space that removes injuries on rest).
@@ -43,6 +45,7 @@ export function restLevelOf(normType) {
  * @returns {boolean}
  */
 export function clearedOnRest(debuff, level, { purgesInjuries = false } = {}) {
+  if (transformationBody(debuff)) return false;
   const typeLevel = REST_LEVELS[String(debuff?.system?.durationConfig?.type ?? '').toLowerCase().trim()];
   if (typeLevel && typeLevel <= level) return true;
   if (level >= REST_LEVELS.long_rest && isFatigueDebuff(debuff)) return true;

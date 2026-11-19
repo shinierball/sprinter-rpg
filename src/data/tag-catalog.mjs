@@ -493,6 +493,7 @@ export const COG_TAGS = [
   { id: 'check.surprise', label: 'Surprise Check', namespace: 'check' },
   { id: VEHICLE_TAGS.check, label: 'Vehicle Check', namespace: 'check' },
   { id: 'check.crafting', label: 'Crafting Check', namespace: 'check', description: 'Set by the engine on a check made for a crafting step.' },
+  { id: 'check.party', label: 'Party Check', namespace: 'check', description: 'Set by the engine on a check rolled for a party check card.' },
 
   // --- Roll outcomes (card condition tags; ids are the COG_ROLL_OUTCOMES keys) ---
   ...Object.entries(OUTCOME_TAGS)
@@ -576,6 +577,7 @@ export const COG_TAGS = [
   { id: 'rule.attack-and-move-only', label: 'Only Attack and Move Actions', namespace: 'rule', flags: ['only-attack-move'], description: 'The bearer may only take Attack and Move Actions; any other Action asks a Rule Break first.' },
   { id: 'rule.no-healing', label: 'Cannot Be Healed', namespace: 'rule', flags: ['no-healing'], description: 'The bearer cannot be healed; a heal asks a Rule Break first.' },
   { id: 'rule.requires-weapon', label: 'Requires Equipped Weapon', namespace: 'rule', flags: ['requires-weapon'] },
+  { id: 'rule.worn', label: 'Worn, Not Held', namespace: 'rule', flags: ['worn'], description: 'Worn on the hands, not held in them: it takes no hand, so a weapon and a shield can be held over it.' },
   { id: 'rule.no-standalone-attack', label: 'No Standalone Attack', namespace: 'rule', flags: ['no-standalone-attack'] },
   { id: 'action.mind_control', label: 'Mind Control', namespace: 'action', description: 'Descriptive: the GM adjudicates control of the target.', descriptive: true },
   { id: 'rule.mind-control-effect', label: 'Mind Control Effect', namespace: 'rule', flags: ['mind-control'], description: 'A spell that takes control of its target. A bearer immune to mind control (a Clear Head buff) is not affected by it; the GM adjudicates the control itself.' },
@@ -662,6 +664,7 @@ export const COG_TAGS = [
   { id: 'trigger.on_ally_attack', label: 'When Ally Targeted', namespace: 'trigger' },
   { id: 'trigger.on_ally_check', label: 'Ally Check', namespace: 'trigger' },
   { id: 'trigger.before_ally_action', label: 'Before Ally Acts', namespace: 'trigger' },
+  { id: 'trigger.before_ally_check', label: 'Before Ally Check', namespace: 'trigger', description: 'Offered in an ally\'s pre-roll dialog outside combat (Help).' },
 
   // --- Bard patronage (core rulebook pp. 145-146, 315) ---
   { id: PATRON_TAGS.eligible, label: 'Patron Eligible', namespace: 'access', engine: true, description: 'May acquire a Bard patron (pp. 145, 315).' },

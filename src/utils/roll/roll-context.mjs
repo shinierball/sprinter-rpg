@@ -14,6 +14,7 @@ import { stockSituationsOpenWindow } from '../attack/stock-situations.mjs';
 import { collectActorTags } from '../../documents/active-tags.mjs';
 import { activeCombatFor } from '../../documents/combat/combatants.mjs';
 import { escapeAttr, jsonAttr } from '../escape-attr.mjs';
+import { helpPromptOn } from './help-dice.mjs';
 
 /**
  * The one roll context. `buildRollContext` is the only producer of
@@ -483,26 +484,39 @@ export function calledPlayLabel(entry) {
  * @param {object} actor
  * @param {RollContext} context the roll's context before situations; callers then `extendContext(context, { situations })`
  * @param {object} [options] roll options (`situations`, `calledPlays`, `interactive`)
- * @param {object} [opts] `{ isAttack, keys, exclusive, subjects, calledPlays }`; all but `calledPlays` go to getOfferedSituations
- * @returns {Promise<{ situations: string[], calledPlayIds: string[] }>}
+ * Help: `opts.helpers` are the helper lines (`pendingHelpersFor`), unticked except a `preTicked` (pledged) one;
+ * `options.helpers` (line keys or helper uuids, `[]` = none) answers outright; no UI, `interactive: false` or a closed
+ * dialog use the pre-ticked line only. The dialog opens for helpers alone when the client setting `helpPrompt` is on or a
+ * line is pre-ticked; `opts.helpHint` is printed under the lines when there is more than one.
+ * @param {object} [opts] `{ isAttack, keys, exclusive, subjects, calledPlays, helpers, helpTitle, helpHint }`; all but `calledPlays`, `helpers`, `helpTitle` and `helpHint` go to getOfferedSituations
+ * @returns {Promise<{ situations: string[], calledPlayIds: string[], helperKeys: string[] }>}
  */
 export async function resolveRollToggles(actor, context, options = {}, opts = {}) {
   const res = await askRollToggles(actor, context, options, opts);
   if (!res.situations.some(t => typeof t === 'string' && t.startsWith(USE_TAG_PREFIX))) return res;
   // A ticked `use.<row key>` spends a once-per-floor row: a repeat on the same floor asks for a Rule Break, the use is recorded (3.12c)
   const labels = new Map();
-  const { calledPlays: _calledPlays, ...offerOpts } = opts ?? {};
+  const { calledPlays: _calledPlays, helpers: _helpers, helpTitle: _helpTitle, helpHint: _helpHint, ...offerOpts } = opts ?? {};
   for (const o of getOfferedSituations(actor, context, offerOpts)) if (o.rowLabel) labels.set(o.tag.slice(USE_TAG_PREFIX.length), o.rowLabel);
   const settled = await settleFloorUses(actor, res.situations, { labels, options });
   return { ...res, situations: settled.situations, ...(settled.ruleBreak ? { floorRuleBreak: true } : {}) };
 }
 
 async function askRollToggles(actor, context, options, opts) {
-  const { calledPlays: pending, ...offerOpts } = opts ?? {};
+  const { calledPlays: pending, helpers: helperLines, helpTitle: _helpTitle, helpHint: _helpHint, ...offerOpts } = opts ?? {};
   const entries = Array.isArray(pending) ? pending.filter((e) => e && typeof e.id === 'string') : [];
   const answered = Array.isArray(options?.calledPlays) ? new Set(options.calledPlays.filter((id) => typeof id === 'string')) : null;
   const defaultIds = entries.filter((e) => !answered || answered.has(e.id)).map((e) => e.id);
   const given = readSituationOptions(options);
+  // Help (core p. 64): one line per helper, unticked unless pledged. `options.helpers` (line keys or helper uuids) answers
+  // outright; no UI uses the pledged line only.
+  const helpers = Array.isArray(helperLines) ? helperLines.filter((h) => h && typeof h.key === 'string') : [];
+  const helpAnswer = Array.isArray(options?.helpers) ? new Set(options.helpers.filter((k) => typeof k === 'string')) : null;
+  const helpDefault = helpAnswer
+    ? helpers.filter((h) => helpAnswer.has(h.key) || helpAnswer.has(h.helperUuid)).map((h) => h.key)
+    : helpers.filter((h) => h.preTicked === true).map((h) => h.key);
+  const askHelpers = !helpAnswer && helpers.length > 0;
+  const helpOpens = askHelpers && (helpPromptOn() || helpDefault.length > 0);
 
   // A targeted token answers `subject.*` itself; only an untargeted roll offers the toggle.
   const offered = given ? [] : getOfferedSituations(actor, context, { ...offerOpts, subjects: context.other ? false : offerOpts.subjects, withRows: true });
@@ -517,8 +531,8 @@ async function askRollToggles(actor, context, options, opts) {
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
   // With the stock-reasons setting off, an attack Skill's stock lines alone do not open the dialog (nothing detects them here)
   const opening = stockSituationsOpenWindow() ? offered : offered.filter((o) => !isUniversalTagSource(o.sourceRef));
-  if ((opening.length === 0 && !askCalledPlays && !(askCameras && armed)) || options?.interactive === false || typeof DialogV2?.prompt !== 'function') {
-    return { situations: given ?? [], calledPlayIds: defaultIds, ...(cameraRoll ? { cameras: resolveCameraChoice(actor, options, null) } : {}) };
+  if ((opening.length === 0 && !askCalledPlays && !(askCameras && armed) && !helpOpens) || options?.interactive === false || typeof DialogV2?.prompt !== 'function') {
+    return { situations: given ?? [], calledPlayIds: defaultIds, helperKeys: helpDefault, ...(cameraRoll ? { cameras: resolveCameraChoice(actor, options, null) } : {}) };
   }
 
   const situationRows = offered.map(({ tag, label, source, used }) => {
@@ -530,18 +544,23 @@ async function askRollToggles(actor, context, options, opts) {
   const calledRows = askCalledPlays
     ? `<fieldset class="cog-called-play-toggles"><legend>Called Play</legend>${entries.map((e) => `<label class="cog-situation-toggle cog-called-play-toggle"><input type="checkbox" name="calledPlay" value="${escapeAttr(e.id)}" checked> ${escapeAttr(calledPlayLabel(e))}</label>`).join('')}</fieldset>`
     : '';
+  const helpHint = helpers.length > 1 && opts?.helpHint ? `<small class="cog-situation-source">${escapeAttr(opts.helpHint)}</small>` : '';
+  const helpRows = askHelpers
+    ? `<fieldset class="cog-help-toggles"><legend>${escapeAttr(opts?.helpTitle ?? 'Help')}</legend>${helpers.map((h) => `<label class="cog-situation-toggle cog-help-toggle"><input type="checkbox" name="helper" value="${escapeAttr(h.key)}"${h.preTicked === true ? ' checked' : ''}> ${escapeAttr(h.label ?? h.helperName)}</label>`).join('')}${helpHint}</fieldset>`
+    : '';
   const cameraRows = askCameras ? cameraFieldsetHtml(armed) : '';
   const ticked = (button, name) => [...(button?.form?.querySelectorAll?.(`input[name="${name}"]`) ?? [])].filter(isChecked).map((el) => el.getAttribute('value'));
-  const title = offered.length ? 'Roll Situations' : (askCalledPlays ? 'Called Play' : cameraText('COG.Cameras.Title'));
+  const title = offered.length ? 'Roll Situations' : (askCalledPlays ? 'Called Play' : (askHelpers ? (opts?.helpTitle ?? 'Help') : cameraText('COG.Cameras.Title')));
   try {
     const result = await DialogV2.prompt({
       window: { title },
-      content: `${offered.length ? `<p>Which of these apply to this roll?</p>${situationRows}` : ''}${calledRows}${cameraRows}`,
+      content: `${offered.length ? `<p>Which of these apply to this roll?</p>${situationRows}` : ''}${calledRows}${helpRows}${cameraRows}`,
       ok: {
         label: 'Roll',
         callback: (_event, button) => ({
           situations: offered.length ? ticked(button, 'situation') : [],
           calledPlayIds: askCalledPlays ? ticked(button, 'calledPlay') : defaultIds,
+          helperKeys: askHelpers ? ticked(button, 'helper') : helpDefault,
           ...(askCameras ? { cameras: ticked(button, 'cameras')[0] ?? '' } : {})
         })
       },
@@ -552,13 +571,14 @@ async function askRollToggles(actor, context, options, opts) {
       return {
         situations: given ?? result.situations,
         calledPlayIds: result.calledPlayIds.filter((id) => defaultIds.includes(id)),
+        helperKeys: (result.helperKeys ?? []).filter((k) => helpers.some((h) => h.key === k)),
         ...(cameraRoll ? { cameras: resolveCameraChoice(actor, options, askCameras ? (result.cameras ?? '') : null) } : {})
       };
     }
   } catch {
     // fall through to the defaults
   }
-  return { situations: given ?? [], calledPlayIds: defaultIds, ...(cameraRoll ? { cameras: resolveCameraChoice(actor, options, null) } : {}) };
+  return { situations: given ?? [], calledPlayIds: defaultIds, helperKeys: helpDefault, ...(cameraRoll ? { cameras: resolveCameraChoice(actor, options, null) } : {}) };
 }
 
 /** The Playing to the Cameras radio group of the roll dialog: None plus each audience; the armed one is checked. */

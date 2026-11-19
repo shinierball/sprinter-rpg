@@ -140,6 +140,7 @@ function damageResult({ appId, targetActor, adjustedRaw, dr, pools, hpPerBar, re
     tempBarsElement: pools.tbElement,
     tempBarsPassed: pools.passedDamage,
     actualDamage: pools.actualDamage,
+    isLethal: pools.isLethal,
     newHp: pools.newHp,
     tempRemaining: pools.tempRemaining,
     damageType,

@@ -32,7 +32,8 @@ export const CHECK_TAGS = Object.freeze({
   assist: 'check.assist',
   surprise: 'check.surprise',
   crafting: 'check.crafting',
-  vehicle: 'check.vehicle'
+  vehicle: 'check.vehicle',
+  party: 'check.party'
 });
 /** The skill kind that is a core action every crawler has (no Ranks). */
 export const CORE_KIND_TAG = 'kind.core';
@@ -57,8 +58,8 @@ export const PLACED_DELIVERY_TAG = 'delivery.placed';
 export const WIELD_TAGS = Object.freeze({ oneHanded: 'wield.one_handed', twoHanded: 'wield.two_handed' });
 export const OFFER_ROLES = Object.freeze({ TARGET: 'target', ALLY: 'ally', FOE: 'foe' });
 
-/** When a trigger is offered: on an attack card (`attacked`), on an ally's d20 check card (`check`), on the assister's own turn (`turn`), or when a foe's token moves (`move`). */
-export const TRIGGER_MOMENTS = Object.freeze({ attacked: 'attacked', check: 'check', turn: 'turn', move: 'move' });
+/** When a trigger is offered: on an attack card (`attacked`), on an ally's d20 check card (`check`), in an ally's pre-roll dialog (`before_check`), on the assister's own turn (`turn`), or when a foe's token moves (`move`). */
+export const TRIGGER_MOMENTS = Object.freeze({ attacked: 'attacked', check: 'check', beforeCheck: 'before_check', turn: 'turn', move: 'move' });
 /** The two ways a foe's move changes its distance to an interrupter: out of its reach (Attack of Opportunity) or into it (Zone of Control). */
 export const MOVE_EVENTS = Object.freeze({ leave: 'leave', enter: 'enter' });
 
@@ -71,7 +72,8 @@ export const INTERRUPT_TRIGGERS = Object.freeze([
   Object.freeze({ tag: 'trigger.on_ally_attack', id: 'on_ally_attack', offerTo: 'ally', moment: 'attacked', requiresHit: false }),
   Object.freeze({ tag: 'trigger.on_ally_hit', id: 'on_ally_hit', offerTo: 'ally', moment: 'attacked', requiresHit: true }),
   Object.freeze({ tag: 'trigger.on_ally_check', id: 'on_ally_check', offerTo: 'ally', moment: 'check', requiresHit: false }),
-  Object.freeze({ tag: 'trigger.before_ally_action', id: 'before_ally_action', offerTo: 'ally', moment: 'turn', requiresHit: false, actionType: 'play' })
+  Object.freeze({ tag: 'trigger.before_ally_action', id: 'before_ally_action', offerTo: 'ally', moment: 'turn', requiresHit: false, actionType: 'play' }),
+  Object.freeze({ tag: 'trigger.before_ally_check', id: 'before_ally_check', offerTo: 'ally', moment: 'before_check', requiresHit: false })
 ]);
 const DEFAULT_INTERRUPT_TRIGGER = Object.freeze({ tag: null, id: 'any', label: 'Anytime', offerTo: 'target', moment: 'attacked', requiresHit: false });
 
@@ -102,28 +104,56 @@ export function isCombatSkill(item) {
 }
 
 /**
- * The label a skill shows for its group: the first `weaponGroup.*` tag, else the first `skillGroup.*` tag other than combat
- * and utility, else combat, else utility. It reads each tag's registry definition (namespace and label), never the id text.
+ * The tag that names a skill's group: the first `weaponGroup.*` tag, else the first `skillGroup.*` tag other than combat
+ * and utility, else combat, else utility. It reads each tag's registry definition (namespace), never the id text.
+ * @param {object|Iterable<string>} source a skill (its stored `system.tags`) or a tag collection
+ * @returns {string} the tag id, or '' when the skill has no group tag
+ */
+function tagList(source) {
+  const raw = source && typeof source === 'object' && !Array.isArray(source) && !(source instanceof Set) ? source.system?.tags : source;
+  return raw && typeof raw[Symbol.iterator] === 'function' && typeof raw !== 'string' ? [...raw] : [];
+}
+
+function skillGroupTag(source) {
+  const tags = tagList(source);
+  let weapon = '';
+  let narrow = '';
+  const broad = new Set();
+  for (const id of tags) {
+    const def = getTagDefinition(id);
+    if (!def) continue;
+    if (def.namespace === WEAPON_GROUP_NAMESPACE) weapon = weapon || id;
+    else if (def.namespace === SKILL_GROUP_NAMESPACE) {
+      if (id === SKILL_GROUP_TAGS.combat || id === SKILL_GROUP_TAGS.utility) broad.add(id);
+      else narrow = narrow || id;
+    }
+  }
+  return weapon || narrow || [SKILL_GROUP_TAGS.combat, SKILL_GROUP_TAGS.utility].find((id) => broad.has(id)) || '';
+}
+
+/**
+ * Every group tag a skill carries: each `weaponGroup.*` and `skillGroup.*` tag, Utility and Combat included. Two Skills
+ * share a group when these sets meet (Help, Question 1382 b). It reads each tag's registry namespace, never the id text.
+ * @param {object|Iterable<string>} source a skill (its stored `system.tags`) or a tag collection
+ * @returns {Set<string>}
+ */
+export function skillGroupTags(source) {
+  const out = new Set();
+  for (const id of tagList(source)) {
+    const ns = getTagDefinition(id)?.namespace;
+    if (ns === WEAPON_GROUP_NAMESPACE || ns === SKILL_GROUP_NAMESPACE) out.add(id);
+  }
+  return out;
+}
+
+/**
+ * The label a skill shows for its group: the label of the tag `skillGroupTag` picks.
  * @param {object|Iterable<string>} source a skill (its stored `system.tags`) or a tag collection
  * @returns {string} the label, or '' when the skill has no group tag
  */
 export function skillGroupLabel(source) {
-  const raw = source && typeof source === 'object' && !Array.isArray(source) && !(source instanceof Set) ? source.system?.tags : source;
-  const tags = raw && typeof raw[Symbol.iterator] === 'function' && typeof raw !== 'string' ? [...raw] : [];
-  let weapon = null;
-  let narrow = null;
-  const broad = new Map();
-  for (const id of tags) {
-    const def = getTagDefinition(id);
-    if (!def) continue;
-    if (def.namespace === WEAPON_GROUP_NAMESPACE) weapon ??= def;
-    else if (def.namespace === SKILL_GROUP_NAMESPACE) {
-      if (id === SKILL_GROUP_TAGS.combat || id === SKILL_GROUP_TAGS.utility) broad.set(id, def);
-      else narrow ??= def;
-    }
-  }
-  const picked = weapon ?? narrow ?? broad.get(SKILL_GROUP_TAGS.combat) ?? broad.get(SKILL_GROUP_TAGS.utility);
-  return picked ? String(picked.label ?? '') : '';
+  const tag = skillGroupTag(source);
+  return tag ? String(getTagDefinition(tag)?.label ?? '') : '';
 }
 
 /** Passive skills have no active roll and cannot be marked for advancement: the `action.passive` tag (derived from the check type). */
@@ -234,7 +264,7 @@ export const ITEM_STATE_TAGS = Object.freeze({ broken: 'item.broken', destroyed:
 export const MATERIAL_UNSALVAGEABLE_TAG = 'material.unsalvageable';
 
 /** The tag that makes an item's junk remember what it was, so a recharge can restore it. */
-const USAGE_RESTORABLE_TAG = 'usage.restorable';
+export const USAGE_RESTORABLE_TAG ='usage.restorable';
 
 /** The tag a scene carries in `flags.sprinter-rpg.tags` when it is a safe room (where loot boxes open). Not the `space.safe_room` personal space type. */
 export const SAFE_ROOM_TAG = 'scene.safe_room';
@@ -361,6 +391,15 @@ export function isOfferedOnCheck(triggerIds) {
   for (const id of triggerIds || []) {
     const def = INTERRUPT_TRIGGERS.find(t => t.id === id);
     if (def && def.moment === TRIGGER_MOMENTS.check && def.offerTo === OFFER_ROLES.ALLY) return true;
+  }
+  return false;
+}
+
+/** Whether any trigger id is offered in an ally's pre-roll dialog (Help), before the check is rolled. */
+export function isOfferedBeforeCheck(triggerIds) {
+  for (const id of triggerIds || []) {
+    const def = INTERRUPT_TRIGGERS.find(t => t.id === id);
+    if (def && def.moment === TRIGGER_MOMENTS.beforeCheck && def.offerTo === OFFER_ROLES.ALLY) return true;
   }
   return false;
 }

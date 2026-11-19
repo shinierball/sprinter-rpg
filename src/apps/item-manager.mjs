@@ -12,7 +12,7 @@ import { describeItem, summaryText } from '../utils/item-describer/index.mjs';
 import { isScratchLootType, lootTypeLabel } from '../models/items/loot-model.mjs';
 import { cooldownBadge } from '../utils/time/cooldown-badge.mjs';
 import { currentTimeContext } from '../documents/actor/dungeon-time.mjs';
-import { GEAR_SLOTS } from '../utils/gear/gear-slots.mjs';
+import { GEAR_SLOTS, isAccessorySlot } from '../utils/gear/gear-slots.mjs';
 import { ITEM_CATEGORIES, itemCategoryOf } from '../utils/gear/item-category.mjs';
 import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
 import { INVENTORY_ITEM_TYPES } from '../utils/document-types.mjs';
@@ -118,7 +118,7 @@ export class COGItemManager extends CatalogBrowserMixin(COGToolApp) {
         if (isWeapon) {
           badgeLabel = 'WEAPON';
           badgeColor = 'var(--cog-warning-fill)';
-        } else if (slot === 'accessory') {
+        } else if (isAccessorySlot(slot)) {
           badgeLabel = 'ACCESSORY';
           badgeColor = 'var(--cog-magic-fill)';
         } else {

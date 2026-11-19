@@ -73,7 +73,7 @@ export async function withLandingRank(buffData) {
   const name = buffData?.name || 'Buff';
   const verdict = await confirmRuleBreak({
     title: buffCardText('COG.BuffCard.RankBreakTitle'),
-    message: escapeAttr(buffCardText('COG.BuffCard.RankBreakMessage', { buff: name, rank, cap: SKILL_SOFT_CAP })),
+    message: buffCardText('COG.BuffCard.RankBreakMessage', { buff: name, rank, cap: SKILL_SOFT_CAP }),
     reason: buffCardText('COG.BuffCard.RankBreakMessage', { buff: name, rank, cap: SKILL_SOFT_CAP })
   });
   return verdict.confirmed ? withRuleBreak(data) : null;

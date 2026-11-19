@@ -7,7 +7,7 @@
  * the same compendium source or `system.identifier` (`isSameOwnedEntry`); names never match.
  * Actors: on a crawler, pets and vehicles bond and a personal space links.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withCompendiumLink } from '../../utils/compendium/link-flags.mjs';
 import { isSameOwnedEntry } from '../../utils/character/owned-entry.mjs';
 import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
 import { addKnownDeity } from '../../documents/actor/worship.mjs';
@@ -37,11 +37,7 @@ function dropSlot(event) {
 /** Creation data for a dropped item, with its origin recorded for spell idempotence. */
 export function dropCreateData(item) {
   const data = item.toObject();
-  if (item.uuid) {
-    data.flags ??= {};
-    data.flags[SYSTEM_ID] = { ...(data.flags[SYSTEM_ID] ?? {}), compendiumId: item.id, sourceUuid: item.uuid };
-  }
-  return data;
+  return item.uuid ? withCompendiumLink(data, item.id, item.uuid) : data;
 }
 
 async function createDropped(sheet, item, event, data = dropCreateData(item)) {
@@ -89,8 +85,8 @@ export async function dropItem(sheet, event, item) {
   const actor = sheet.actor;
   const interactive = typeof document !== 'undefined';
 
-  // A form race an affliction embeds is the affliction's, not a race to apply (D4)
-  if (item.type === 'race' && !transformationOfItem(item)) {
+  // A form race an affliction embeds is the affliction's, not a race to apply (D4); one dropped from another actor is a race like any other (its flags are stripped on landing)
+  if (item.type === 'race' && !(transformationOfItem(item) && isOwnedBy(item, actor))) {
     await actor.applyRace(item, { interactive });
     return item;
   }

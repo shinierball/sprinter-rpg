@@ -28,6 +28,18 @@ function gearEntryFor(actor, identifier) {
 }
 
 /**
+ * The grant entry a rank_raise row that takes its Rank from its carrier and opts in (`giveIfMissing`) gives for a skill id the actor does not own: a
+ * buff such as Party Regeneration gives the skill at the buff's Rank (the row's own raise then lifts it), or null.
+ */
+function carrierEntryFor(actor, identifier) {
+  const items = actor?.items;
+  if (!items || typeof items.filter !== 'function') return null;
+  const equipped = items.filter((i) => i?.type === 'gear' && i.system?.equipped);
+  const rows = collectRankRaiseGrants({ sources: rankGrantSources(actor, equipped) });
+  return rows.some((row) => row.fromCarrier && row.identifier === identifier) ? { bonus: 0, sources: [] } : null;
+}
+
+/**
  * What a pet's role buff adds to a Skill the pet does not own: the Floor, so the granted attack starts at Rank = Floor + grant.
  * Only a buff tagged `pet.role.<id>` that grants the Skill counts; any other buff's grant stays the bare value.
  * @returns {number} the current Floor, or 0
@@ -75,7 +87,7 @@ export function buildSkillStandIn(actor, identifier, entry = null, definition = 
   const sources = Array.isArray(entry?.sources) ? entry.sources : [];
   const tags = official ? [...(official.system.tags ?? [])] : [SKILL_GROUP_TAGS.combat];
   // A granted skill acts at its bonus, raised by the rank_raise rows of gear and active buffs that name it (a skill the
-  // actor has no grant for stays untrained)
+  // actor has no grant for stays untrained, unless a row takes its Rank from its carrier)
   const equipped = typeof actor?.items?.filter === 'function' ? actor.items.filter((i) => i?.type === 'gear' && i.system?.equipped) : [];
   const raises = entry ? raiseRowsFor({ system: { identifier, tags } }, collectRankRaiseGrants({ sources: rankGrantSources(actor, equipped) })) : [];
   const modifiedRank = raisedRank(bonus, raises);
@@ -132,7 +144,7 @@ export function skillStandIn(actor, identifier, definition = null, grant = null)
   if (!id) return null;
   const owned = typeof actor?.getSkillByIdentifier === 'function' ? actor.getSkillByIdentifier(id) : null;
   if (owned) return owned;
-  const entry = grant ?? gearEntryFor(actor, id);
+  const entry = grant ?? gearEntryFor(actor, id) ?? carrierEntryFor(actor, id);
   const floorStart = entry ? roleFloorStart(actor, id) : 0;
   const stand = buildSkillStandIn(actor, id, floorStart ? { ...entry, bonus: (Number(entry.bonus) || 0) + floorStart } : entry, definition);
   if (isGearOnlySkillOffline(actor, id)) stand.offline = true;

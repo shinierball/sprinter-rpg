@@ -57,6 +57,13 @@ export const combatActions = {
     return this.render({ parts: ['page1'] });
   },
 
+  /** View-only: show or hide the improvised swing list and scroll back to the attacks section. */
+  async toggleImprovisedAttacks() {
+    this._showImprovisedAttacks = !this._showImprovisedAttacks;
+    this._scrollToAttacks = true;
+    return this.render({ parts: ['page1'] });
+  },
+
   rollSkill(event, target) {
     if (!this.isEditable) return;
     const skill = skillFor(this, target);

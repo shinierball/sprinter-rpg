@@ -9,6 +9,7 @@ import { untrainedTrainingAllowance } from '../../utils/skill/skill-advancement.
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { ADVANCEMENT_ROUTES } from '../../utils/skill/advancement-routes.mjs';
 import { confirmRouteGain } from '../actor/advancement-gates.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** The catalog skill with this identifier, or undefined. */
 const canonicalSkill = (ident) => (CONFIG?.COG?.skills || []).find(s => itemIdentifier(s) === ident);
@@ -253,11 +254,11 @@ export const sessionProgressionMixin = {
 
     const crawlerRows = trackedCrawlers.map(c => `
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dotted var(--cog-panel-border); padding: 4px 0; font-size: 11px;">
-        <span class="cog-text-strong" style="font-weight: bold;">${c.name}</span>
-        <span class="cog-text-danger">${c.damageDealt} DMG</span>
-        <span class="cog-text-warning">${c.damageTaken} TAKEN</span>
-        <span class="cog-text-success">${c.aiFavorDelta >= 0 ? `+${c.aiFavorDelta}` : c.aiFavorDelta} FAVOR</span>
-        <span class="cog-text-gold">${c.popularityDelta >= 0 ? `+${c.popularityDelta}` : c.popularityDelta} POP</span>
+        <span class="cog-text-strong" style="font-weight: bold;">${escapeAttr(c.name)}</span>
+        <span class="cog-text-danger">${escapeAttr(c.damageDealt)} DMG</span>
+        <span class="cog-text-warning">${escapeAttr(c.damageTaken)} TAKEN</span>
+        <span class="cog-text-success">${escapeAttr(c.aiFavorDelta >= 0 ? `+${c.aiFavorDelta}` : c.aiFavorDelta)} FAVOR</span>
+        <span class="cog-text-gold">${escapeAttr(c.popularityDelta >= 0 ? `+${c.popularityDelta}` : c.popularityDelta)} POP</span>
       </div>
     `).join('');
 
@@ -267,7 +268,7 @@ export const sessionProgressionMixin = {
           <i class="fa-solid fa-satellite-dish cog-text-danger" style="font-size: 20px;"></i>
           <div>
             <div class="cog-text-warning" style="font-size: 10px; letter-spacing: 1px; text-transform: uppercase;">Live Dungeon Broadcast</div>
-            <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; text-transform: uppercase;">${session.title} — PERFORMANCE RECAP</h3>
+            <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; text-transform: uppercase;">${escapeAttr(session.title)} — PERFORMANCE RECAP</h3>
           </div>
         </div>
 
@@ -278,13 +279,13 @@ export const sessionProgressionMixin = {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
           <div class="cog-bg-success-tint" style="border: 1px solid var(--cog-success); border-radius: 3px; padding: 6px; text-align: center;">
             <div class="cog-text-success" style="font-size: 9px; text-transform: uppercase; font-weight: bold;">⭐ Session MVP</div>
-            <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">${mvp ? mvp.name : 'None Selected'}</div>
-            <div class="cog-text-secondary" style="font-size: 10px;">${mvp ? `${mvp.damageDealt} Net Damage` : ''}</div>
+            <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">${escapeAttr(mvp ? mvp.name : 'None Selected')}</div>
+            <div class="cog-text-secondary" style="font-size: 10px;">${escapeAttr(mvp ? `${mvp.damageDealt} Net Damage` : '')}</div>
           </div>
           <div class="cog-bg-danger-tint" style="border: 1px solid var(--cog-accent); border-radius: 3px; padding: 6px; text-align: center;">
             <div class="cog-text-danger" style="font-size: 9px; text-transform: uppercase; font-weight: bold;">💀 Target of the Night</div>
-            <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">${chump ? chump.name : 'None Selected'}</div>
-            <div class="cog-text-secondary" style="font-size: 10px;">${chump ? `${chump.damageTaken} Damage Absorbed` : ''}</div>
+            <div class="cog-text-strong" style="font-size: 13px; font-weight: bold;">${escapeAttr(chump ? chump.name : 'None Selected')}</div>
+            <div class="cog-text-secondary" style="font-size: 10px;">${escapeAttr(chump ? `${chump.damageTaken} Damage Absorbed` : '')}</div>
           </div>
         </div>
 
@@ -296,7 +297,7 @@ export const sessionProgressionMixin = {
         <div class="cog-text-muted" style="font-size: 10px; display: flex; justify-content: space-between;">
           <span>Completed Quests: ${session.quests.filter(q => q.status === 'completed').length}</span>
           <span>Loot Boxes Dispatched: ${session.lootBoxes.length}</span>
-          <span>Untrained Attempts: ${session.summary.totalUntrainedAttempts}</span>
+          <span>Untrained Attempts: ${escapeAttr(session.summary.totalUntrainedAttempts)}</span>
         </div>
       </div>
     `;

@@ -20,7 +20,7 @@ export const ARRAY_UI = Object.freeze({
   attackModifiers: { icon: 'fa-crosshairs', key: 'Attack' },
   checkModifiers: { icon: 'fa-dice-d20', key: 'Check' },
   craftModifiers: { icon: 'fa-hammer', key: 'Craft' },
-  vehicleModifiers: { icon: 'fa-car-side', key: 'Vehicle' },
+  vehicleModifiers: { icon: 'fa-person-running', key: 'Vehicle' },
   manaCostModifiers: { icon: 'fa-flask', key: 'ManaCost' },
   recoveryModifiers: { icon: 'fa-bed', key: 'Recovery' },
   popularityTriggers: { icon: 'fa-star', key: 'Popularity' },

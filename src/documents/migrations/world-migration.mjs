@@ -13,11 +13,15 @@
  * - `packs(documentNames)` -> `[{ id, documentName, locked, sources }]`: the world compendiums of those types, with their
  *   stored sources read without building documents.
  * - `setLocked(packId, locked)`: lock or unlock a pack (throws when the user cannot).
- * - `write(nodes, options)` -> `{ written, refused, deferred, failed, unchanged? }`: write a batch of changed nodes, each
- *   list holding the node objects that were sent (`failed` holds `{ node, error }`, `deferred` holds `{ node, reason }`).
- *   `unchanged` is for a node with nothing left to send, or whose document is gone (deleted since the capture); a node
- *   the port cannot reach for any other reason is deferred or failed, never unchanged. `options` carries `pack` and the
- *   migration write option. A throw means the whole call failed.
+ * - `write(nodes, options)` -> `{ written, refused, deferred, failed, unchanged?, superseded? }`: write a batch of changed
+ *   nodes, each list holding the node objects that were sent (`failed` holds `{ node, error }`, `deferred` holds
+ *   `{ node, reason }`). `unchanged` is for a node with nothing left to send, or whose document is gone (deleted since the
+ *   capture); a node the port cannot reach for any other reason is deferred or failed, never unchanged. `superseded` lists
+ *   again each written or unchanged node one of whose changes was not sent because another client wrote that key since
+ *   the capture (theirs wins). `options` carries `pack` and the migration write option. A throw means the whole call failed.
+ * - `remove(nodes, options)` -> `{ removed, refused, deferred, failed, unchanged }`: delete a batch of removed embedded
+ *   documents (removal nodes, `remove: true`), in the same shapes; `unchanged` is for a document already gone, which
+ *   counts as done. Same options and throw rule as `write`.
  * - `worldSettings()` -> `[{ key, value }]`: the world's own settings, key without the system prefix, value parsed from the
  *   stored JSON. `setSetting(key, value, options)` and `deleteSetting(key, options)` change them.
  * - `release()`: drop the `init` capture; called on every way out of a run.
@@ -74,9 +78,15 @@ function chunks(list, size) {
 
 /**
  * Which of the migrations changed one node: run the tree with each growing prefix of the list and see where the node's
- * own source moves. Called only to name the migrations of a node that failed to write.
+ * own source moves (for a removed node: the first migration that removed it). Called only to name the migrations of a
+ * node that failed to write or to be deleted.
  */
 function migrationsThatChanged(entry, node, list, options) {
+  if (node.remove) {
+    const index = list.findIndex((_, i) => migrateTree(entry.top, list.slice(0, i + 1), options).nodes
+      .some((candidate) => candidate.remove && samePath(candidate.path, node.path)));
+    return index < 0 ? [] : [list[index].id];
+  }
   const ids = [];
   let previous = node.before;
   list.forEach((migration, index) => {
@@ -148,10 +158,12 @@ function emptyReport() {
     written: [],
     failures: [],
     deferred: [],
+    removed: [],
     watermark: null,
     skipWorldSetup: false,
     cleaned: false,
-    planned: []
+    planned: [],
+    plannedRemovals: []
   };
 }
 
@@ -168,10 +180,13 @@ function emptyReport() {
  * @param {boolean} [args.dryRun] list what would change and write nothing
  * @param {boolean} [args.writeWatermark] false: never store the watermark (a console run: it may run other migrations than
  *   the registered ones, so only the run at `ready` says the world is current)
- * @returns {Promise<object>} `{ status, changed, written, failures, deferred, watermark, skipWorldSetup, cleaned, planned }`
- *   where each failure is `{ kind, uuid, migrationIds, message }`, `deferred` and `written` hold uuids and `watermark` is
- *   the release stored by this run (null when none). There is no run on cleaned sources: when the port has none but the
- *   client's cleaned copies (`cleaned: true`), the run fails before anything is written.
+ * @returns {Promise<object>} `{ status, changed, written, removed, failures, deferred, watermark, skipWorldSetup, cleaned,
+ *   planned, plannedRemovals }` where each failure is `{ kind, uuid, migrationIds, message }`, `deferred`, `written` and
+ *   `removed` (documents deleted) hold uuids, `planned` and `plannedRemovals` the uuids a dry run would write and delete,
+ *   `changed` counts writes and deletions, and `watermark` is the release stored by this run (null when none). A removed
+ *   document is deleted only after its parent node was written (with nothing of it kept back by a newer edit) or needed
+ *   no write; otherwise it is deferred and stays until a later load. There is no run on cleaned sources: when the port
+ *   has none but the client's cleaned copies (`cleaned: true`), the run fails before anything is written.
  */
 export async function runWorldMigrations({
   port, migrations, current, watermark, role, notify = () => {}, dryRun = false, writeWatermark = true
@@ -279,8 +294,9 @@ async function runAsActiveGm({ port, list, current, dryRun, report, send, storeW
   const lookup = new Map(allNodes.map((item) => [item.node, item.entry]));
   report.planned = [
     ...settings.ops.map((op) => `Setting.${op.key}`),
-    ...allNodes.map(({ entry, node }) => uuidOf(node.path, entry.pack))
+    ...allNodes.filter(({ node }) => !node.remove).map(({ entry, node }) => uuidOf(node.path, entry.pack))
   ];
+  report.plannedRemovals = allNodes.filter(({ node }) => node.remove).map(({ entry, node }) => uuidOf(node.path, entry.pack));
   if (dryRun) {
     report.status = STATUS.dryRun;
     return;
@@ -291,8 +307,14 @@ async function runAsActiveGm({ port, list, current, dryRun, report, send, storeW
   const progress = () => send('info', NOTICE.progress, { version: current, pct: total ? Math.floor((100 * done) / total) : 100 });
   if (total) progress();
 
+  /** What became of each node sent to the port (`written`, `unchanged`, `refused`, `deferred`, `failed`). */
+  const outcome = new Map();
+  /** Written or unchanged nodes a newer edit kept a change of from being written. */
+  const superseded = new Set();
+
   const fail = (kind, node, message, pack) => {
     const entry = lookup.get(node);
+    outcome.set(node, 'failed');
     report.failures.push({
       kind,
       uuid: uuidOf(node.path, pack ?? entry?.pack ?? null),
@@ -304,38 +326,77 @@ async function runAsActiveGm({ port, list, current, dryRun, report, send, storeW
   /** Why each deferred uuid waits, for the console line `finish` prints. */
   const deferredReasons = new Map();
 
-  /** One port call; the nodes it does not report written are failures, deferrals or no-ops. */
-  const absorb = (sent, result, pack) => {
-    const reported = new Set();
-    const note = (nodes, handle) => { for (const node of nodes ?? []) { reported.add(node); handle(node); } };
-    note(result.written, (node) => { report.changed += 1; report.written.push(uuidOf(node.path, pack)); });
-    note(result.unchanged, () => {});
-    note(result.refused, (node) => fail('refused', node, 'Foundry refused the update', pack));
-    for (const { node, reason } of result.deferred ?? []) {
-      reported.add(node);
-      const uuid = uuidOf(node.path, pack);
-      report.deferred.push(uuid);
-      deferredReasons.set(uuid, reason ?? '');
-    }
-    for (const { node, error } of result.failed ?? []) { reported.add(node); fail('write', node, messageOf(error), pack); }
-    for (const node of sent) if (!reported.has(node)) fail('unreported', node, 'the write did not report this document', pack);
+  const defer = (node, reason, pack) => {
+    const uuid = uuidOf(node.path, pack);
+    outcome.set(node, 'deferred');
+    report.deferred.push(uuid);
+    deferredReasons.set(uuid, reason ?? '');
   };
 
-  /** Write a batch; when the call throws, retry each node alone and report only the ones that still throw. */
-  const writeBatch = async (nodes, pack) => {
+  /** How each port operation reports: the list of nodes it did, its failure kind, and its refusal message. */
+  const OPS = {
+    write: { did: 'written', record: report.written, kind: 'write', refused: 'Foundry refused the update', call: (nodes, options) => port.write(nodes, options) },
+    remove: { did: 'removed', record: report.removed, kind: 'remove', refused: 'Foundry refused the deletion', call: (nodes, options) => port.remove(nodes, options) }
+  };
+
+  /** One port call; the nodes it does not report done are failures, deferrals or no-ops. */
+  const absorb = (op, sent, result, pack) => {
+    const reported = new Set();
+    const note = (nodes, handle) => { for (const node of nodes ?? []) { reported.add(node); handle(node); } };
+    note(result[op.did], (node) => { outcome.set(node, 'written'); report.changed += 1; op.record.push(uuidOf(node.path, pack)); });
+    note(result.unchanged, (node) => outcome.set(node, 'unchanged'));
+    note(result.refused, (node) => { fail('refused', node, op.refused, pack); outcome.set(node, 'refused'); });
+    for (const { node, reason } of result.deferred ?? []) { reported.add(node); defer(node, reason, pack); }
+    for (const { node, error } of result.failed ?? []) { reported.add(node); fail(op.kind, node, messageOf(error), pack); }
+    for (const node of result.superseded ?? []) superseded.add(node);
+    for (const node of sent) if (!reported.has(node)) fail('unreported', node, `the ${op.kind} did not report this document`, pack);
+  };
+
+  /** Send a batch; when the call throws, retry each node alone and report only the ones that still throw. */
+  const sendBatch = async (op, nodes, pack) => {
     const callOptions = pack ? { pack, ...writeOptions } : { ...writeOptions };
     try {
-      absorb(nodes, await port.write(nodes, callOptions), pack);
+      absorb(op, nodes, await op.call(nodes, callOptions), pack);
     } catch (batchError) {
-      if (nodes.length === 1) fail('write', nodes[0], messageOf(batchError), pack);
+      if (nodes.length === 1) fail(op.kind, nodes[0], messageOf(batchError), pack);
       else {
         for (const node of nodes) {
-          try { absorb([node], await port.write([node], callOptions), pack); } catch (error) { fail('write', node, messageOf(error), pack); }
+          try { absorb(op, [node], await op.call([node], callOptions), pack); } catch (error) { fail(op.kind, node, messageOf(error), pack); }
         }
       }
     }
     done += nodes.length;
     progress();
+  };
+  const writeBatch = (nodes, pack) => sendBatch(OPS.write, nodes, pack);
+
+  /**
+   * Why a removed node must stay for now, or '' when it may go: its parent node (the one whose migration read it through
+   * `ctx.children`) was written with nothing kept back by a newer edit, or needed no write. A parent that was refused,
+   * deferred or failed, or whose change another client's edit kept back, keeps its children; a later load tries again.
+   */
+  const holdReason = (node, entry) => {
+    const parentPath = node.path.slice(0, -1);
+    const parent = entry.nodes.find((candidate) => !candidate.remove && samePath(candidate.path, parentPath));
+    if (!parent) return '';
+    const state = outcome.get(parent);
+    const parentUuid = uuidOf(parent.path, entry.pack);
+    if (superseded.has(parent)) return `its parent ${parentUuid} was edited since the world loaded, so the migration did not write all of it; a later load removes this document`;
+    if (state === 'written' || state === 'unchanged') return '';
+    return `its parent ${parentUuid} was not written (${state ?? 'not sent'}); a later load removes this document`;
+  };
+
+  /** Delete the removed nodes whose parents allow it, in batches; the rest are deferred. */
+  const removeNodes = async (nodes, pack) => {
+    const ready = [];
+    for (const node of nodes) {
+      const reason = holdReason(node, lookup.get(node));
+      if (!reason) { ready.push(node); continue; }
+      defer(node, reason, pack);
+      done += 1;
+    }
+    for (const batch of chunks(ready, MIGRATION_BATCH_SIZE)) await sendBatch(OPS.remove, batch, pack);
+    if (nodes.length) progress();
   };
 
   // Sets before deletes, so a rename writes the new key before the old one goes.
@@ -353,26 +414,36 @@ async function runAsActiveGm({ port, list, current, dryRun, report, send, storeW
   }
   if (settings.ops.length) progress();
 
-  const worldValid = entries.filter((entry) => !entry.pack && !entry.top.invalid).flatMap((entry) => entry.nodes);
-  for (const batch of chunks(worldValid, MIGRATION_BATCH_SIZE)) await writeBatch(batch, null);
+  /** The changed nodes and the removed nodes of some entries, parents first in each. */
+  const split = (list) => {
+    const nodes = list.flatMap((entry) => entry.nodes);
+    return { updates: nodes.filter((node) => !node.remove), removals: nodes.filter((node) => node.remove) };
+  };
+
+  const worldValid = split(entries.filter((entry) => !entry.pack && !entry.top.invalid));
+  for (const batch of chunks(worldValid.updates, MIGRATION_BATCH_SIZE)) await writeBatch(batch, null);
+  await removeNodes(worldValid.removals, null);
 
   for (const pack of packs) {
-    const nodes = entries.filter((entry) => entry.pack === pack.id).flatMap((entry) => entry.nodes);
-    if (!nodes.length) continue;
-    await writePack(port, pack, nodes, { writeBatch, fail, send, skipped: () => { done += nodes.length; progress(); } });
+    const nodes = split(entries.filter((entry) => entry.pack === pack.id));
+    const count = nodes.updates.length + nodes.removals.length;
+    if (!count) continue;
+    await writePack(port, pack, nodes, { writeBatch, removeNodes, fail, send, skipped: () => { done += count; progress(); } });
   }
 
-  const invalidNodes = entries.filter((entry) => !entry.pack && entry.top.invalid).flatMap((entry) => entry.nodes);
-  for (const node of invalidNodes) await writeBatch([node], null);
+  const invalid = split(entries.filter((entry) => !entry.pack && entry.top.invalid));
+  for (const node of invalid.updates) await writeBatch([node], null);
+  await removeNodes(invalid.removals, null);
 
   await finish({ report, current, send, storeWatermark, deferredReasons });
 }
 
 /**
- * Unlock a locked pack (only now that it has nodes to write), write it, and lock it again whatever happens. A pack that
- * cannot be locked again is left unlocked: the GM is told, since nothing else would show it.
+ * Unlock a locked pack (only now that it has nodes to write or delete), write it, delete what was removed from it, and
+ * lock it again whatever happens. A pack that cannot be locked again is left unlocked: the GM is told, since nothing else
+ * would show it.
  */
-async function writePack(port, pack, nodes, { writeBatch, fail, send, skipped }) {
+async function writePack(port, pack, { updates, removals }, { writeBatch, removeNodes, fail, send, skipped }) {
   let unlocked = false;
   try {
     if (pack.locked) {
@@ -380,12 +451,13 @@ async function writePack(port, pack, nodes, { writeBatch, fail, send, skipped })
         await port.setLocked(pack.id, false);
         unlocked = true;
       } catch (error) {
-        for (const node of nodes) fail('pack-locked', node, `could not unlock the compendium ${pack.id}: ${messageOf(error)}`, pack.id);
+        for (const node of [...updates, ...removals]) fail('pack-locked', node, `could not unlock the compendium ${pack.id}: ${messageOf(error)}`, pack.id);
         skipped();
         return;
       }
     }
-    for (const batch of chunks(nodes, MIGRATION_BATCH_SIZE)) await writeBatch(batch, pack.id);
+    for (const batch of chunks(updates, MIGRATION_BATCH_SIZE)) await writeBatch(batch, pack.id);
+    await removeNodes(removals, pack.id);
   } finally {
     if (unlocked) {
       try { await port.setLocked(pack.id, true); } catch (error) {

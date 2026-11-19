@@ -35,6 +35,9 @@ export function buildSkillContext(context, item) {
     formula: assist.formula,
     hasFormula: assist.formula !== '',
     invalid: assist.formula !== '' && !assist.valid,
+    untrainedFormula: assist.untrainedFormula,
+    untrainedInvalid: !assist.untrainedValid,
+    showUntrained: assist.moment === 'before_check' || assist.untrainedFormula !== '',
     whenQuery: buildQueryView(sys.assist?.when, 'system.assist.when', ['all', 'any', 'none'], { warnUnprefixed: false })
   };
   const loc = (key) => globalThis.game?.i18n?.localize?.(key) ?? key;

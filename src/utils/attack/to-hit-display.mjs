@@ -11,6 +11,7 @@ import { buildRollContext, extendContext } from '../roll/roll-context.mjs';
 import { collectToHitModifiers } from '../roll/damage-modifiers.mjs';
 import { isOneHandedPenalty as hasOneHandedPenalty, isNaturalWeapon } from '../gear/wielding.mjs';
 import { baseDamageStat } from '../damage/base-damage.mjs';
+import { weaponSystemFor } from '../skill/weapon-skill-options.mjs';
 
 /**
  * The stat an attack item rolls to hit with, as `rollAttack` picks it: the item's own `toHitStat`, else the matching
@@ -21,7 +22,7 @@ import { baseDamageStat } from '../damage/base-damage.mjs';
  * @returns {string} lower-case stat key
  */
 export function attackToHitStat(item, matchingSkill = null, baseDamage = null) {
-  const sys = item?.system || {};
+  const sys = weaponSystemFor(item) || {};
   const stat = sys.toHitStat || matchingSkill?.system?.stat || baseDamageStat(baseDamage) || (item?.type === 'gear' ? 'str' : 'dex');
   return String(stat).toLowerCase().trim();
 }
@@ -118,7 +119,7 @@ export function resolveAttackToHit(item, actor) {
     matchingSkill = resolved.matchingSkill ?? null;
     toHitRank = resolved.skillRank;
   }
-  const toHitStat = attackToHitStat(item, matchingSkill, sys.baseDamage);
+  const toHitStat = attackToHitStat(item, matchingSkill, weaponSystemFor(item)?.baseDamage);
   const hit = attackToHitDisplay(actor, {
     item, skill: matchingSkill, stat: toHitStat, rank: toHitRank,
     isOneHandedPenalty: hasOneHandedPenalty(sys, { handless: isNaturalWeapon(item) }),

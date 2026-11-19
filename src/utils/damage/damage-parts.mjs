@@ -174,7 +174,7 @@ export function parseSpellBase(raw) {
  */
 export function ignoreEvadeButtonHtml({ sourceId, attackerType, multiplier, isCrit, armorPiercing }) {
   if (!sourceId || attackerType === 'crawler' || attackerType === 'mercenary') return '';
-  return `<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="${multiplier}" data-crit="${Boolean(isCrit)}" data-evade="ignore"${armorPiercing ? ' data-ignore-dr="true"' : ''} title="Apply without the target's Evade">Ignore Evade</button>`;
+  return `<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="${escapeAttr(multiplier)}" data-crit="${Boolean(isCrit)}" data-evade="ignore"${armorPiercing ? ' data-ignore-dr="true"' : ''} title="Apply without the target's Evade">Ignore Evade</button>`;
 }
 
 /**

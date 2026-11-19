@@ -12,13 +12,80 @@ import { loadoutOptions } from '../../content/creation-loadouts.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { skillSelectionKey } from '../../content/registry/species.mjs';
 import { rngIndex } from '../../utils/rng.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 
 export const COG_STANDARD_ARRAY = [2, 3, 4, 5, 6];
+
+/** Lowest Intelligence that can use a Starter Spell (core p. 108, Step 3). */
+const STARTER_SPELL_MIN_INT = 4;
+
+const STARTER_TEXT = {
+  'COG.CrawlerCreator.RuleBreak.StarterSpellInt': 'A Starter Spell needs Intelligence {min} or higher; Intelligence is {int}.'
+};
+const starterText = langText(STARTER_TEXT);
+
+/**
+ * Rule Break reasons for the Level 1 starter loadout, as plain text (empty when it keeps to the rules).
+ * A Starter Spell needs Intelligence 4 or higher; an unassigned Intelligence is the stat-array reason's to report.
+ * @param {{ starterMode?: string, stats?: Record<string, unknown> }} draft
+ * @returns {string[]}
+ */
+export function starterLoadoutBreaks({ starterMode, stats } = {}) {
+  const reasons = [];
+  const int = Number(stats?.int);
+  if (starterMode === 'spell' && Number.isInteger(int) && int > 0 && int < STARTER_SPELL_MIN_INT) {
+    reasons.push(starterText('COG.CrawlerCreator.RuleBreak.StarterSpellInt', { min: STARTER_SPELL_MIN_INT, int }));
+  }
+  return reasons;
+}
 
 /** Skills a crawler picks in each of its four life stages. */
 export const STAGE_SKILL_PICKS = 2;
 /** Whole-draw attempts the random generator makes to find a crawler with no repeated Skill. */
 const RANDOM_STAGE_ATTEMPTS = 20;
+
+/** The two ways to set starting Stats (core p. 109, Step 3). */
+export const STAT_METHODS = Object.freeze({ ARRAY: 'array', CHANCE: 'chance' });
+/** "Leaving it to Chance": one d6 per Stat, rerolling 1s (Foundry's recursive reroll), core p. 109. */
+const CHANCE_STAT_FORMULA = '1d6rr1';
+/** The order the book rolls the Stats in (core p. 109). */
+export const CHANCE_STAT_ORDER = Object.freeze(['str', 'int', 'con', 'dex', 'cha']);
+
+const CHANCE_TEXT = {
+  'COG.CrawlerCreator.RuleBreak.StatsChanged': 'Rolled Stats changed after the roll (no swapping or editing a rolled score).',
+  'COG.CrawlerCreator.RuleBreak.StatsNotRolled': 'Stats not rolled yet.'
+};
+const chanceText = langText(CHANCE_TEXT);
+
+/**
+ * Roll the five Stats by chance: `CHANCE_STAT_FORMULA` once per Stat, in `CHANCE_STAT_ORDER`.
+ * @returns {Promise<{ rolls: Record<string, number>, dice: object[] }>} the score per Stat and the evaluated Rolls
+ */
+export async function rollChanceStats() {
+  const rolls = {};
+  const dice = [];
+  for (const key of CHANCE_STAT_ORDER) {
+    const roll = await new Roll(CHANCE_STAT_FORMULA).evaluate();
+    rolls[key] = Number(roll.total);
+    dice.push(roll);
+  }
+  return { rolls, dice };
+}
+
+/**
+ * Validate the draft's Stats under its method. The array must be a permutation of the Standard Array; by chance the scores must
+ * equal the rolls (repeats are legal then); a score changed after the roll, or no roll yet, is reported.
+ * @param {{ statMethod?: string, stats?: Record<string, unknown>, statRolls?: Record<string, unknown>|null }} draft
+ * @returns {{ valid: boolean, error?: string, remaining?: number[] }}
+ */
+export function validateStats({ statMethod, stats, statRolls } = {}) {
+  if (statMethod !== STAT_METHODS.CHANCE) return validateStatArray(stats);
+  if (!statRolls || CHANCE_STAT_ORDER.some(k => !Number.isInteger(Number(statRolls[k])))) {
+    return { valid: false, error: chanceText('COG.CrawlerCreator.RuleBreak.StatsNotRolled') };
+  }
+  const same = CHANCE_STAT_ORDER.every(k => Number(stats?.[k]) === Number(statRolls[k]));
+  return same ? { valid: true } : { valid: false, error: chanceText('COG.CrawlerCreator.RuleBreak.StatsChanged') };
+}
 
 /**
  * Validate standard array assignment.
@@ -26,7 +93,7 @@ const RANDOM_STAGE_ATTEMPTS = 20;
  * @param {Record<string, number>} assignments - e.g. { str: 5, dex: 4, con: 6, int: 2, cha: 3 }
  * @returns {{ valid: boolean, error?: string, remaining: number[] }}
  */
-export function validateStatArray(assignments = {}) {
+function validateStatArray(assignments = {}) {
   const stats = ['str', 'dex', 'con', 'int', 'cha'];
   const values = stats.map(s => Number(assignments[s])).filter(n => Number.isInteger(n) && n > 0);
   const sortedValues = [...values].sort((a, b) => a - b);
@@ -207,6 +274,12 @@ export function generateRandomCrawler(chosenSpecies = null, floor = 'Floor 1', r
     const pool = fresh.length ? fresh : options;
     return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : '';
   };
+  // A Starter Spell needs Intelligence 4: swap Int with a random stat at or above the minimum (still the standard array)
+  if (starterMode === 'spell' && stats.int < STARTER_SPELL_MIN_INT) {
+    const keys = Object.keys(stats).filter(k => stats[k] >= STARTER_SPELL_MIN_INT);
+    const swap = keys[Math.floor(Math.random() * keys.length)];
+    [stats.int, stats[swap]] = [stats[swap], stats.int];
+  }
   const starterWeapon = pickId('weapon');
   const starterSpell = pickId('spell');
   const starterUnarmed = pickId('unarmed');

@@ -386,8 +386,12 @@ export async function onLightItemUpdate(item, changes, options, userId) {
   return equipped ? igniteLight(actor, item) : extinguish(item);
 }
 
-/** `deleteItem`: puts out the item's lights, except torches already burning independently of their stack (`consumed`). */
-export async function onLightItemDelete(item, _options, userId) {
+/**
+ * `deleteItem`: puts out the item's lights, except torches already burning independently of their stack (`consumed`).
+ * A world migration's deletion is not a user's: it lights and puts out nothing.
+ */
+export async function onLightItemDelete(item, options, userId) {
+  if (isMigrationWrite(options)) return 0;
   if (item?.parent?.documentName !== 'Actor' || !ownUserChange(userId)) return 0;
   const uuid = item.uuid;
   return extinguishTokens(findLightTokens((flag) => flag.sourceItemUuid === uuid && !flag.consumed));

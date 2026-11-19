@@ -13,9 +13,9 @@
 
 import { COGToolApp } from './tool-app.mjs';
 import { COGActor } from '../documents/actor.mjs';
-import { activeComplicationTable, isExampleComplicationTable, complicationFormula } from '../content/grind-complications.mjs';
 import { GRIND_MAP_TAGS, getRequiredGrindingHours, getAdvancementTarget, getSafeGrindingThreshold } from '../data/rules/grinding-rules.mjs';
-import { SYSTEM_PATH } from '../constants.mjs';
+import { GRIND_TABLES_SETTING, honouredGrindPick, listGrindTables } from '../content/grind-tables.mjs';
+import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
 import { getItemAllTags } from '../documents/active-tags.mjs';
 import { getCurrentFloor } from '../utils/floor/current-floor.mjs';
 import { buildAdvancementControls, runAdvancementControl } from './advancement-batch.mjs';
@@ -29,6 +29,11 @@ import { advancingItemsOf } from '../utils/skill/advancing-items.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/grind-app`;
 
+/** The GM's stored table picks (`{ floor, neighborhood }`); an unreadable setting reads as no picks. */
+function storedGrindPicks() {
+  try { return game.settings.get(SYSTEM_ID, GRIND_TABLES_SETTING) ?? {}; } catch { return {}; }
+}
+
 export class COGGrindApp extends COGToolApp {
   static DEFAULT_OPTIONS = {
     id: 'cog-grind-app',
@@ -41,6 +46,8 @@ export class COGGrindApp extends COGToolApp {
       setGuideBonus: COGGrindApp.#onSetGuideBonus,
       setMapType: COGGrindApp.#onSetMapType,
       setComplication: COGGrindApp.#onSetComplication,
+      setGrindFloorTable: COGGrindApp.#onSetGrindFloorTable,
+      setGrindNeighborhoodTable: COGGrindApp.#onSetGrindNeighborhoodTable,
       setFloorTimer: COGGrindApp.#onSetFloorTimer,
       toggleCrawler: COGGrindApp.#onToggleCrawler,
       toggleLowestBonus: COGGrindApp.#onToggleLowestBonus,
@@ -271,12 +278,49 @@ export class COGGrindApp extends COGToolApp {
 
     context.skills = mappedSkills;
     context.selectedSkill = mappedSkills.find(s => s.id === this.selectedSkillId) || null;
-    const table = activeComplicationTable();
-    context.complicationTable = table ? { name: table.name, formula: complicationFormula(table), isExample: isExampleComplicationTable(table) } : null;
-    context.rollComplication = this.rollComplication && !!table;
-    context.noComplicationTable = !table;
+    await this._prepareTablePicker(context);
 
     return context;
+  }
+
+  /**
+   * The table picker's context: a floor-table select and a neighbourhood-table select, each "Default", "None", then its
+   * scope's tables and the "Other" ones, with `selected` precomputed from the GM's stored pick. The lists are read once per render.
+   * A non-GM sees them disabled: the session reads the GM's pick.
+   */
+  async _prepareTablePicker(context) {
+    const lists = await listGrindTables({ floor: this.floorNumber });
+    const stored = storedGrindPicks();
+    const canEdit = Boolean(game.user?.isGM);
+    const lang = (key) => game.i18n?.localize?.(`COG.Content.GrindTables.${key}`) ?? key;
+    const slot = (key, list, groupKey, action) => {
+      const pick = honouredGrindPick(stored[key], list, lists.other, this.floorNumber);
+      const option = (ref, label) => ({ ref, label, selected: ref === pick });
+      const group = (label, tables) => ({ label, options: tables.map((tb) => option(tb.ref, tb.label)) });
+      return {
+        key, action, label: lang(groupKey), disabled: !canEdit,
+        leading: [option('', lang('Default')), option('none', lang('None'))],
+        groups: [group(lang(groupKey), list), group(lang('GroupOther'), lists.other)].filter((g) => g.options.length)
+      };
+    };
+    const floor = slot('floor', lists.floor, 'GroupFloor', 'setGrindFloorTable');
+    const neighborhood = slot('neighborhood', lists.neighborhood, 'GroupNeighborhood', 'setGrindNeighborhoodTable');
+    context.grindTables = { canEdit, selects: [floor, neighborhood] };
+  }
+
+  /** The GM's pick for one slot goes into the `grindTables` world setting; a player's change writes nothing. */
+  static async #setGrindTable(slot, target) {
+    if (!game.user?.isGM) return;
+    await game.settings.set(SYSTEM_ID, GRIND_TABLES_SETTING, { floor: '', neighborhood: '', ...storedGrindPicks(), [slot]: String(target.value ?? '') });
+    await this.render();
+  }
+
+  static async #onSetGrindFloorTable(event, target) {
+    return COGGrindApp.#setGrindTable.call(this, 'floor', target);
+  }
+
+  static async #onSetGrindNeighborhoodTable(event, target) {
+    return COGGrindApp.#setGrindTable.call(this, 'neighborhood', target);
   }
 
   static async #onSetHours(event, target) {
@@ -306,7 +350,6 @@ export class COGGrindApp extends COGToolApp {
   }
 
   static #onSetComplication(event, target) {
-    if (!activeComplicationTable()) return;
     this.rollComplication = target.checked;
   }
 

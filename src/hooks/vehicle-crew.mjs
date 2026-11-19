@@ -111,8 +111,9 @@ export async function onDeleteActor(actor) {
   }
 }
 
-/** `deleteToken`: active GM only; only an unlinked token's synthetic actor is removed from crews. */
-async function onDeleteToken(tokenDoc) {
+/** `deleteToken`: active GM only; only an unlinked token's synthetic actor is removed from crews; not on a migration's deletion. */
+async function onDeleteToken(tokenDoc, options) {
+  if (isMigrationWrite(options)) return;
   if (!isActiveGM() || !tokenDoc || tokenDoc.actorLink !== false) return;
   const actor = tokenDoc.actor ?? null;
   try {

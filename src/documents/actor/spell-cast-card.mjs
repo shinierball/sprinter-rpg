@@ -4,10 +4,10 @@
  *
  * The `cast` record is `{ isAura, isSelfLight, isGrantedSpell, cooldownGate, castRange, cost, manaRuleBreak, newMana,
  * healInfo, auraData, nonAuraTempBars, offersAttack, conditionTags, isBurstOrArea, conditionRounds,
- * appliedConditionTargets, summaryHtml, buffBlocks }`, where `cost` is the `resolveSpellCost` result.
+ * appliedConditionTargets, buffBlocks }`, where `cost` is the `resolveSpellCost` result.
  */
 import { attackText } from '../../utils/attack/attack-text.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
 import { normalizeBaseDamage, baseDamageText } from '../../utils/damage/base-damage.mjs';
 import { schoolLineHtml } from '../../utils/card/school-line.mjs';
@@ -74,14 +74,14 @@ export function spellFailedCardHtml(actor, spell, cost) {
   return `
         <div class="cog-chat-card cog-spell-card cog-spell-failed" style="font-family: var(--font-primary, sans-serif); border: 2px solid var(--cog-danger);">
           <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-danger); padding-bottom: 4px; margin-bottom: 6px;">
-            <img class="cog-bg-icon-box" src="${spell.img || 'icons/svg/aura.svg'}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px; filter: grayscale(100%);" />
+            <img class="cog-bg-icon-box" src="${escapeAttr(spell.img || 'icons/svg/aura.svg')}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px; filter: grayscale(100%);" />
             <div>
               <h3 class="cog-text-accent" style="margin: 0; font-size: 16px; font-weight: bold;">${escapeAttr(spell.name)} — FAILED</h3>
-              <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Insufficient Mana (${currentMana} / ${manaCost} MP)</span>
+              <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Insufficient Mana (${escapeAttr(currentMana)} / ${escapeAttr(manaCost)} MP)</span>
             </div>
           </div>
           <div class="cog-text-accent cog-bg-danger-tint" style="font-size: 12px; border: 1px solid var(--cog-danger-border); padding: 6px 8px; border-radius: 3px;">
-            <i class="fa-solid fa-triangle-exclamation"></i> <strong>${escapeAttr(actor.name)}</strong> attempted to cast <strong>${escapeAttr(spell.name)}</strong>, but lacks sufficient Mana! (Required: <strong>${manaCost} MP</strong>, Available: <strong>${currentMana} MP</strong>)
+            <i class="fa-solid fa-triangle-exclamation"></i> <strong>${escapeAttr(actor.name)}</strong> attempted to cast <strong>${escapeAttr(spell.name)}</strong>, but lacks sufficient Mana! (Required: <strong>${escapeAttr(manaCost)} MP</strong>, Available: <strong>${escapeAttr(currentMana)} MP</strong>)
           </div>
         </div>
       `;
@@ -92,10 +92,10 @@ function castHeaderHtml(spell, sys, isFreeCast, itemRuleBreak = false) {
   let content = `
       <div class="cog-chat-card cog-spell-card ${isFreeCast ? 'cog-free-cast' : ''}" style="font-family: var(--font-primary, sans-serif);">
         <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-danger); padding-bottom: 4px; margin-bottom: 6px;">
-          <img class="cog-bg-icon-box" src="${spell.img || 'icons/svg/aura.svg'}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
+          <img class="cog-bg-icon-box" src="${escapeAttr(spell.img || 'icons/svg/aura.svg')}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
           <div>
             <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${escapeAttr(spell.name)}${itemRuleBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</h3>
-            <span class="cog-text-danger" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">${spellRoleLabel(spellRole(spell))}${sys.baseDamage?.damageType ? ` • ${sys.baseDamage.damageType}` : ''}${isFreeCast ? ' • FREE CAST' : ''}</span>
+            <span class="cog-text-danger" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">${escapeAttr(spellRoleLabel(spellRole(spell)))}${sys.baseDamage?.damageType ? ` • ${escapeAttr(sys.baseDamage.damageType)}` : ''}${isFreeCast ? ' • FREE CAST' : ''}</span>
           </div>
         </div>
     `;
@@ -113,10 +113,10 @@ function castInfoRowHtml(spell, sys, opts, cast) {
   const spellTags = spell.allTags || getItemAllTags(spell);
   const manaDisplay = isFreeCast
     ? `<span class="cog-text-success" style="font-weight: bold;"><i class="fa-solid fa-gift"></i> 0 MP (Free Cast)</span>`
-    : (manaCost > 0 ? `<span class="cog-text-info" style="font-weight: bold;">${manaCost} MP</span>${favoredPenalty > 0 ? ` <small class="cog-text-accent" style="font-weight: bold;">(+1 non-favored)</small>` : ''} <small class="cog-text-muted">(${newMana} MP left)</small>` : '<span class="cog-text-info" style="font-weight: bold;">None</span>');
+    : (manaCost > 0 ? `<span class="cog-text-info" style="font-weight: bold;">${escapeAttr(manaCost)} MP</span>${favoredPenalty > 0 ? ` <small class="cog-text-accent" style="font-weight: bold;">(+1 non-favored)</small>` : ''} <small class="cog-text-muted">(${escapeAttr(newMana)} MP left)</small>` : '<span class="cog-text-info" style="font-weight: bold;">None</span>');
 
   const sourceBadge = opts.originItem || opts.isConsumable || opts.isItemEffect
-    ? `<div><strong>Source:</strong> <span class="cog-text-magic" style="font-weight: bold;"><i class="fa-solid fa-wand-magic-sparkles"></i> ${opts.originItem?.name || 'Item / Consumable Effect'}</span></div>`
+    ? `<div><strong>Source:</strong> <span class="cog-text-magic" style="font-weight: bold;"><i class="fa-solid fa-wand-magic-sparkles"></i> ${escapeAttr(opts.originItem?.name || 'Item / Consumable Effect')}</span></div>`
     : '';
 
   const resolvedSpellBreaks = resolveReachedRankBreaks(spell, rankOf(sys));
@@ -128,20 +128,32 @@ function castInfoRowHtml(spell, sys, opts, cast) {
     ? `${spellCardDuration(spell, { rank: spellRank })} (+${resolvedSpellBreaks.durationBonus} ${bonusUnit})`
     : spellCardDuration(spell, { rank: spellRank });
 
+  const favored = favoredLabels(spellTags);
   const outOfRangeHtml = outOfRangeLineHtml(castRange.outOfRange);
   return `
       <div class="cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; margin-bottom: 8px; border: 1px solid var(--cog-divider); padding: 4px 6px; border-radius: 3px;">
         <div><strong>Mana:</strong> ${manaDisplay}</div>
         ${sourceBadge}
-        <div><strong>Range:</strong> ${rangeDisplay}</div>
-        ${targetDisplay ? `<div><strong>Target:</strong> ${targetDisplay}</div>` : ''}
-        <div><strong>Duration:</strong> ${durationDisplay}</div>
-        ${hasCooldown(spell, { rank: spellRank }) ? `<div><strong>Cooldown:</strong> ${cooldownLabel(spell, { rank: spellRank })}</div>` : ''}
-        ${favoredLabels(spellTags).length ? `<div><strong>Favored:</strong> ${favoredLabels(spellTags).join(', ')}</div>` : ''}
-        ${sys.aiFavor ? `<div><strong>AI Favor:</strong> +${sys.aiFavor}</div>` : ''}
+        <div><strong>Range:</strong> ${escapeAttr(rangeDisplay)}</div>
+        ${targetDisplay ? `<div><strong>Target:</strong> ${escapeAttr(targetDisplay)}</div>` : ''}
+        <div><strong>Duration:</strong> ${escapeAttr(durationDisplay)}</div>
+        ${hasCooldown(spell, { rank: spellRank }) ? `<div><strong>Cooldown:</strong> ${escapeAttr(cooldownLabel(spell, { rank: spellRank }))}</div>` : ''}
+        ${favored.length ? `<div><strong>Favored:</strong> ${escapeAttr(favored.join(', '))}</div>` : ''}
+        ${sys.aiFavor ? `<div><strong>AI Favor:</strong> +${escapeAttr(sys.aiFavor)}</div>` : ''}
       </div>
       ${outOfRangeHtml}
     `;
+}
+
+/** The first line of the heal block: what the cast did, or will do each round. */
+function healHeadline(healInfo) {
+  if (healInfo.isSelfTarget) {
+    if (healInfo.isHoT) return `Applied HoT: +${healInfo.barsToHeal} Bars/Round for ${healInfo.hotRounds} Rounds`;
+    return healInfo.actualHealed > 0 ? `Healed +${healInfo.actualHealed} HP` : 'Already at Full Health';
+  }
+  return healInfo.isHoT
+    ? `Heals +${healInfo.barsToHeal} Health Bars/Round for ${healInfo.hotRounds} Rounds`
+    : `Restores +${healInfo.barsToHeal} Health Bar Slots (${healInfo.maxHealAmount} HP)`;
 }
 
 /** The heal block with its Apply Healing / Apply HoT / Cleanse buttons. */
@@ -152,30 +164,28 @@ function castHealHtml(actor, spell, healInfo) {
             <i class="fa-solid fa-heart-pulse cog-text-success" style="font-size: 20px;"></i>
             <div style="flex: 1;">
               <div style="font-weight: bold; font-size: 13px;">
-                ${healInfo.isSelfTarget
-                  ? (healInfo.isHoT ? `Applied HoT: +${healInfo.barsToHeal} Bars/Round for ${healInfo.hotRounds} Rounds` : (healInfo.actualHealed > 0 ? `Healed +${healInfo.actualHealed} HP` : 'Already at Full Health'))
-                  : (healInfo.isHoT ? `Heals +${healInfo.barsToHeal} Health Bars/Round for ${healInfo.hotRounds} Rounds` : `Restores +${healInfo.barsToHeal} Health Bar Slots (${healInfo.maxHealAmount} HP)`)}
-                ${healInfo.isHoT ? '' : `<span class="cog-text-success" style="font-weight: normal; font-size: 11px;">(up to ${healInfo.barsToHeal} Health Bar slots)</span>`}
+                ${escapeAttr(healHeadline(healInfo))}
+                ${healInfo.isHoT ? '' : `<span class="cog-text-success" style="font-weight: normal; font-size: 11px;">(up to ${escapeAttr(healInfo.barsToHeal)} Health Bar slots)</span>`}
               </div>
               <div class="cog-text-secondary" style="font-size: 11px; margin-top: 2px;">
-                Target: <strong>${healInfo.isSelfTarget ? 'Self only' : targetFilterLabel(healInfo.target)}</strong>${healInfo.isSelfTarget ? ` • Health: <strong>${healInfo.newHp} / ${healInfo.maxHp} HP</strong> (${healInfo.newPct}%)` : ''}
+                Target: <strong>${escapeAttr(healInfo.isSelfTarget ? 'Self only' : targetFilterLabel(healInfo.target))}</strong>${healInfo.isSelfTarget ? ` • Health: <strong>${escapeAttr(healInfo.newHp)} / ${escapeAttr(healInfo.maxHp)} HP</strong> (${escapeAttr(healInfo.newPct)}%)` : ''}
               </div>
-              ${healInfo.cleansedDebuffs?.length ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-sparkles"></i> Cleansed: <strong>[${healInfo.cleansedDebuffs.map(conditionRefName).join(', ')}]</strong></div>` : ''}
-              ${healInfo.debuffsToCleanse?.length && !healInfo.cleansedDebuffs?.length ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-sparkles"></i> Cures: <strong>[${healInfo.debuffsToCleanse.map(conditionRefName).join(', ')}]</strong></div>` : ''}
+              ${healInfo.cleansedDebuffs?.length ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-sparkles"></i> Cleansed: <strong>[${escapeAttr(healInfo.cleansedDebuffs.map(conditionRefName).join(', '))}]</strong></div>` : ''}
+              ${healInfo.debuffsToCleanse?.length && !healInfo.cleansedDebuffs?.length ? `<div class="cog-text-success" style="font-size: 11px; margin-top: 2px;"><i class="fa-solid fa-sparkles"></i> Cures: <strong>[${escapeAttr(healInfo.debuffsToCleanse.map(conditionRefName).join(', '))}]</strong></div>` : ''}
             </div>
           </div>
           <div class="cog-healing-actions" style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
             ${!healInfo.isHoT ? `
-              <button type="button" class="cog-apply-healing-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerApplyHealing" data-bars="${healInfo.barsToHeal}" data-target-uuid="${actor.uuid}" style="width: 100%; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
-                <i class="fa-solid fa-heart-pulse"></i> Apply Healing (+${healInfo.barsToHeal} Health Bar${healInfo.barsToHeal > 1 ? 's' : ''})
+              <button type="button" class="cog-apply-healing-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerApplyHealing" data-bars="${escapeAttr(healInfo.barsToHeal)}" data-target-uuid="${escapeAttr(actor.uuid)}" style="width: 100%; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
+                <i class="fa-solid fa-heart-pulse"></i> Apply Healing (+${escapeAttr(healInfo.barsToHeal)} Health Bar${healInfo.barsToHeal > 1 ? 's' : ''})
               </button>
             ` : `
-              <button type="button" class="cog-apply-hot-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyHoT" data-bars="${healInfo.barsToHeal}" data-rounds="${healInfo.hotRounds}" data-name="${escapeAttr(spell.name)}" data-target-uuid="${actor.uuid}" style="width: 100%; border: 1px solid var(--cog-info-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
-                <i class="fa-solid fa-clock-rotate-left"></i> Apply HoT (+${healInfo.barsToHeal} Bars/Round for ${healInfo.hotRounds} Rounds)
+              <button type="button" class="cog-apply-hot-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyHoT" data-bars="${escapeAttr(healInfo.barsToHeal)}" data-rounds="${escapeAttr(healInfo.hotRounds)}" data-name="${escapeAttr(spell.name)}" data-target-uuid="${escapeAttr(actor.uuid)}" style="width: 100%; border: 1px solid var(--cog-info-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
+                <i class="fa-solid fa-clock-rotate-left"></i> Apply HoT (+${escapeAttr(healInfo.barsToHeal)} Bars/Round for ${escapeAttr(healInfo.hotRounds)} Rounds)
               </button>
             `}
             ${healInfo.debuffsToCleanse?.map(deb => `
-              <button type="button" class="cog-cleanse-debuff-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerCleanseDebuff" data-debuff-name="${escapeAttr(deb)}" data-target-uuid="${actor.uuid}" style="width: 100%; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
+              <button type="button" class="cog-cleanse-debuff-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerCleanseDebuff" data-debuff-name="${escapeAttr(deb)}" data-target-uuid="${escapeAttr(actor.uuid)}" style="width: 100%; border: 1px solid var(--cog-success-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
                 <i class="fa-solid fa-sparkles"></i> Cleanse [${escapeAttr(conditionRefName(deb))}]
               </button>
             `).join('')}
@@ -191,11 +201,11 @@ function castTextHtml(spell, sys) {
   const base = normalizeBaseDamage(sys.baseDamage);
   const baseText = base.dice ? baseDamageText(base, sys.stat) : '';
   if (baseText) {
-    content += `<div class="cog-text-accent" style="margin-bottom: 6px; font-weight: bold; font-size: 13px;">Base Damage: ${baseText}</div>`;
+    content += `<div class="cog-text-accent" style="margin-bottom: 6px; font-weight: bold; font-size: 13px;">Base Damage: ${escapeAttr(baseText)}</div>`;
   }
 
   if (sys.description) {
-    content += `<div style="font-size: 12px; line-height: 1.4; margin-bottom: 8px;">${sys.description}</div>`;
+    content += `<div style="font-size: 12px; line-height: 1.4; margin-bottom: 8px;">${trustedHtml(spell.system.description)}</div>`;
   }
   return content;
 }
@@ -210,8 +220,8 @@ function castDamageHtml(actor, spell, dmgData) {
   return `
         <div style="margin-top: 10px; padding-top: 6px; border-top: 1px dashed var(--cog-accent);">
           ${previewHtml}
-          <button type="button" class="cog-btn roll-spell-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollSpellDamage" data-spell-id="${spell.id || spell._id || ''}" data-actor-uuid="${actor.uuid}"${rollContextDataAttr(castContext)} style="width: 100%; border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
-            <i class="fa-solid fa-burst"></i> Roll Spell Damage (${dmgData.formula})
+          <button type="button" class="cog-btn roll-spell-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollSpellDamage" data-spell-id="${escapeAttr(spell.id || spell._id || '')}" data-actor-uuid="${escapeAttr(actor.uuid)}"${rollContextDataAttr(castContext)} style="width: 100%; border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
+            <i class="fa-solid fa-burst"></i> Roll Spell Damage (${escapeAttr(dmgData.formula)})
           </button>
         </div>
       `;
@@ -227,8 +237,8 @@ function castAttackHtml(actor, spell, sys) {
     : `${attackText('COG.SpellCast.RollAttack')} (1d20 + Rank ${rank} + ${statKey.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod})`;
   return `
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-btn roll-spell-attack-from-card cog-bg-info-fill cog-text-on-fill" data-action="crawlerRollSpellAttack" data-spell-id="${spell.id || spell._id || ''}" data-spell-identifier="${sys.identifier || ''}" data-actor-uuid="${actor.uuid}" style="width: 100%; border: 1px solid var(--cog-info-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
-            <i class="fa-solid fa-crosshairs"></i> ${label}
+          <button type="button" class="cog-btn roll-spell-attack-from-card cog-bg-info-fill cog-text-on-fill" data-action="crawlerRollSpellAttack" data-spell-id="${escapeAttr(spell.id || spell._id || '')}" data-spell-identifier="${escapeAttr(sys.identifier || '')}" data-actor-uuid="${escapeAttr(actor.uuid)}" style="width: 100%; border: 1px solid var(--cog-info-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
+            <i class="fa-solid fa-crosshairs"></i> ${escapeAttr(label)}
           </button>
         </div>
       `;
@@ -240,9 +250,10 @@ function castAttackHtml(actor, spell, sys) {
  * @param {Item} spell
  * @param {object} opts the cast options
  * @param {object} cast the cast record (see the file header)
+ * @param {string} [summaryHtml] the "What this does" section, read by the async caller (the card builder is synchronous)
  * @returns {{ content: string, contestData: object|null }} `contestData` is read once here and reused by the flags
  */
-export function spellCastCard(actor, spell, opts, cast) {
+export function spellCastCard(actor, spell, opts, cast, summaryHtml = '') {
   const sys = spell.system || {};
   const spellTags = spell.allTags || getItemAllTags(spell);
   const { cost, isAura, healInfo, auraData, nonAuraTempBars, offersAttack } = cast;
@@ -253,7 +264,7 @@ export function spellCastCard(actor, spell, opts, cast) {
   if (nonAuraTempBars) content += tempBarsLineHtml(nonAuraTempBars);
   if (healInfo) content += castHealHtml(actor, spell, healInfo);
   content += castTextHtml(spell, sys);
-  content += cast.summaryHtml ?? '';
+  content += summaryHtml;
   content += castDamageHtml(actor, spell, dmgData);
   if (offersAttack) content += castAttackHtml(actor, spell, sys);
   if (auraData) content += auraActiveBlockHtml(actor, spell, auraData);
@@ -262,7 +273,7 @@ export function spellCastCard(actor, spell, opts, cast) {
   if (!isAura && offersAreaTemplate(sys, spellTags)) {
     content += areaTemplateButtonHtml(actor, spell, {
       rank: rankOf(sys),
-      idAttrs: `data-spell-id="${spell.id || spell._id || ''}"`,
+      idKind: 'spell',
       wrapperStyle: 'margin-top: 10px; padding-top: 6px; border-top: 1px dashed var(--cog-danger);'
     });
   }

@@ -63,14 +63,14 @@
     <div class="cog-bg-surface-alt" style="padding: 3px; border: 1px dashed var(--cog-border-muted); border-radius: 3px; min-height: 24px;">
       {{#each rows as |row|}}
         <div class="cog-item-setup-entry" data-entry="{{row.identifier}}" style="display: flex; align-items: center; gap: 6px; padding: 2px 4px;">
-          {{#if row.defaultTip}}<i class="fa-solid fa-star" data-tooltip="{{row.defaultTip}}"></i>{{/if}}
+          {{#if row.defaultTip}}<i class="fa-solid fa-star" data-tooltip-text="{{row.defaultTip}}"></i>{{/if}}
           <strong>{{row.name}}</strong>
           <span class="cog-text-muted" style="flex: 1;">
             {{row.note}}
           </span>
-          {{#unless row.isFirst}}<a class="cog-modifier-move" data-action="moveListEntry" data-list="{{../id}}" data-direction="up" data-index="{{row.index}}" data-tooltip="{{../moveUp}}"><i class="fa-solid fa-arrow-up"></i></a>{{/unless}}
-          {{#unless row.isLast}}<a class="cog-modifier-move" data-action="moveListEntry" data-list="{{../id}}" data-direction="down" data-index="{{row.index}}" data-tooltip="{{../moveDown}}"><i class="fa-solid fa-arrow-down"></i></a>{{/unless}}
-          <a class="cog-text-danger" data-action="removeListEntry" data-list="{{../id}}" data-entry="{{row.identifier}}" data-tooltip="{{../remove}}" style="cursor: pointer; font-weight: bold;">&times;</a>
+          {{#unless row.isFirst}}<a class="cog-modifier-move" data-action="moveListEntry" data-list="{{../id}}" data-direction="up" data-index="{{row.index}}" data-tooltip-text="{{../moveUp}}"><i class="fa-solid fa-arrow-up"></i></a>{{/unless}}
+          {{#unless row.isLast}}<a class="cog-modifier-move" data-action="moveListEntry" data-list="{{../id}}" data-direction="down" data-index="{{row.index}}" data-tooltip-text="{{../moveDown}}"><i class="fa-solid fa-arrow-down"></i></a>{{/unless}}
+          <a class="cog-text-danger" data-action="removeListEntry" data-list="{{../id}}" data-entry="{{row.identifier}}" data-tooltip-text="{{../remove}}" style="cursor: pointer; font-weight: bold;">&times;</a>
         </div>
       {{else}}
         <span class="cog-text-muted" style="font-style: italic;">{{emptyText}}</span>
@@ -90,7 +90,7 @@
     <span class="cog-field-label">{{label}}</span>
     <div style="display: flex; flex-wrap: wrap; gap: 4px;">
       {{#each chips as |chip|}}
-        <button type="button" class="cog-badge cog-btn {{#if chip.selected}}cog-btn-primary{{else}}cog-btn-secondary{{/if}}" data-action="toggleChip" data-chips="{{../id}}" data-tag="{{chip.id}}" data-tooltip="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}" style="width: auto;">{{chip.label}}</button>
+        <button type="button" class="cog-badge cog-btn {{#if chip.selected}}cog-btn-primary{{else}}cog-btn-secondary{{/if}}" data-action="toggleChip" data-chips="{{../id}}" data-tag="{{chip.id}}" data-tooltip-text="{{chip.description}}" aria-pressed="{{#if chip.selected}}true{{else}}false{{/if}}" style="width: auto;">{{chip.label}}</button>
       {{/each}}
     </div>
     {{#if hint}}<small class="cog-text-muted">{{hint}}</small>{{/if}}

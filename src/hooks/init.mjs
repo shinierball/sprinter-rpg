@@ -59,6 +59,7 @@ import { onGetSceneControlButtons } from './scene-controls.mjs';
 import { buildDevApi } from './dev-tools.mjs';
 import { onUpdateActorRefreshRelated, onItemChangeRefreshRelated } from '../utils/ui/related-sheets.mjs';
 import { onItemChangeSyncVision, onItemUpdateSyncVision } from '../documents/actor/actor-vision.mjs';
+import { onActorSizeChange } from '../documents/actor/token-size.mjs';
 import { onLightItemCreate, onLightItemUpdate, onLightItemDelete } from '../documents/actor/light-source.mjs';
 import { ZeroZoneBehaviorType } from '../models/region-behaviors/zero-zone-behavior.mjs';
 import { registerZeroZoneRegionHooks } from './zero-zone-regions.mjs';
@@ -132,6 +133,8 @@ export async function onInit() {
   // Senses on race, class, gear and buffs drive the actor's token vision
   for (const hook of ['createItem', 'deleteItem']) Hooks.on(hook, onItemChangeSyncVision);
   Hooks.on('updateItem', onItemUpdateSyncVision);
+  // A crawler's token follows the body's size when the stored size changes
+  Hooks.on('updateActor', onActorSizeChange);
 
   // Light sources (3.16c): buffs and equipped gear light a marker token; the HUD puts it out
   Hooks.on('createItem', onLightItemCreate);

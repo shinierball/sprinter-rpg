@@ -17,13 +17,15 @@ import { resolveActor } from '../documents/actor.mjs';
 import { syncActorOwnership } from '../documents/actor/ownership-relay.mjs';
 import { userOwnsActor } from '../documents/actor/personal-space-links.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
-import { confirmRuleBreak, markContractRuleBreak } from '../utils/rule-break.mjs';
+import './migrate-contract-rule-break.mjs';
+import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { sourceBadge, isContentOff } from '../utils/content-source.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../utils/rule-break-visibility.mjs';
 import { registerRelayAction, requestRelay } from '../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { runKeyed } from '../utils/keyed-queue.mjs';
 import { readFlag, withFlags } from '../utils/flags.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/mercenary-guild`;
 
@@ -194,7 +196,6 @@ export async function signContract(merc, crawler, request, { ruleBreak = false }
     const stamp = paid.short || ruleBreak === true;
     try {
       await merc.update(terms.updates);
-      if (stamp) await markContractRuleBreak(merc);
     } catch (err) {
       await runKeyed(`merc-gold:${crawler.uuid}`, async () => {
         await crawler.update({ 'system.currency.gold': (Number(crawler.system?.currency?.gold) || 0) + Math.min(terms.totalCost, paid.gold) });
@@ -577,7 +578,6 @@ export class COGMercenaryGuildApp extends COGToolApp {
     await mercActor.update({
       'system.details.contractDays': curDays + extendDays
     });
-    if (contractRuleBreak) await markContractRuleBreak(mercActor);
 
     await this._postContractChatMessage({
       action: 'extended',
@@ -722,12 +722,12 @@ export class COGMercenaryGuildApp extends COGToolApp {
       title = 'MERCENARY CONTRACT RATIFIED';
       body = `
         <div style="font-family: 'Oswald', sans-serif; font-size: 13px;">
-          <p>Crawler <strong>${crawler.name}</strong> has retained <strong>${mercenary.name}</strong> (${COGRaceClassApplier.definitionLabel('race', mercenary.system?.details?.race || 'human', { actor: mercenary })} ${mercenary.system?.details?.class || 'Mercenary'}).</p>
+          <p>Crawler <strong>${escapeAttr(crawler.name)}</strong> has retained <strong>${escapeAttr(mercenary.name)}</strong> (${escapeAttr(COGRaceClassApplier.definitionLabel('race', mercenary.system?.details?.race || 'human', { actor: mercenary }))} ${escapeAttr(mercenary.system?.details?.class || 'Mercenary')}).</p>
           <div class="cog-bg-surface-muted" style="padding: 8px; border-radius: 4px; margin: 6px 0; border-left: 3px solid var(--cog-success);">
-            <div><strong>Duration:</strong> ${days} Days</div>
-            <div><strong>Daily Rate:</strong> ${rate} Gold / Day</div>
-            <div><strong>Total Retainer Paid:</strong> <span class="cog-text-warning" style="font-weight: bold;">${paidText}</span>${badge}</div>
-            <div><strong>Linked Employers:</strong> ${linkAll ? 'All Party Members' : `${employerCount} Crawlers`}</div>
+            <div><strong>Duration:</strong> ${escapeAttr(days)} Days</div>
+            <div><strong>Daily Rate:</strong> ${escapeAttr(rate)} Gold / Day</div>
+            <div><strong>Total Retainer Paid:</strong> <span class="cog-text-warning" style="font-weight: bold;">${escapeAttr(paidText)}</span>${badge}</div>
+            <div><strong>Linked Employers:</strong> ${escapeAttr(linkAll ? 'All Party Members' : `${employerCount} Crawlers`)}</div>
           </div>
         </div>
       `;
@@ -735,15 +735,15 @@ export class COGMercenaryGuildApp extends COGToolApp {
       title = 'MERCENARY CONTRACT EXTENDED';
       body = `
         <div style="font-family: 'Oswald', sans-serif; font-size: 13px;">
-          <p>Crawler <strong>${crawler.name}</strong> extended the contract for <strong>${mercenary.name}</strong> by <strong>+${days} Days</strong>.</p>
-          <p class="cog-text-warning" style="font-weight: bold;">Payment: ${paidText}${badge}</p>
+          <p>Crawler <strong>${escapeAttr(crawler.name)}</strong> extended the contract for <strong>${escapeAttr(mercenary.name)}</strong> by <strong>+${escapeAttr(days)} Days</strong>.</p>
+          <p class="cog-text-warning" style="font-weight: bold;">Payment: ${escapeAttr(paidText)}${badge}</p>
         </div>
       `;
     } else if (action === 'dismissed') {
       title = 'MERCENARY CONTRACT CONCLUDED';
       body = `
         <div style="font-family: 'Oswald', sans-serif; font-size: 13px;">
-          <p><strong>${mercenary.name}</strong> has been released from active service and returned to the Freelance Retainer Roster.</p>
+          <p><strong>${escapeAttr(mercenary.name)}</strong> has been released from active service and returned to the Freelance Retainer Roster.</p>
         </div>
       `;
     }

@@ -40,6 +40,7 @@ export const RULE_FLAGS = Object.freeze({
   ignoresDr: 'ignores-dr',
   antiPiercing: 'anti-piercing',
   noHands: 'no-hands',
+  worn: 'worn',
   uncountedAlly: 'uncounted-ally',
   noRanks: 'no-ranks',
   emitsLight: 'emits-light',
@@ -95,6 +96,7 @@ function seedFlags() {
   registerRuleFlag({ id: RULE_FLAGS.ignoresDr, label: 'Ignores DR', hint: 'Damage from an attack carrying this ignores Damage Resistance (Armor-Piercing).' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.antiPiercing, label: 'Anti-Piercing', hint: 'Armor carrying this keeps its DR against Armor-Piercing damage; armor without it is ignored by Armor-Piercing.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.noHands, label: 'No hands needed', hint: 'The attack occupies no hand and has no wield mode (natural weapons, unarmed strikes).' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.worn, label: 'Worn, not held', hint: 'Gear in a held slot that is worn (gloves, gauntlets): it takes no hand.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.uncountedAlly, label: 'Not counted as a crawler', hint: 'A crawler-side combatant carrying this does not count toward a Boss\'s actions per crawler.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.noRanks, label: 'No Ranks', hint: 'Skills carrying this have no Ranks, advancement marks or grinding (core actions every crawler has).' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.emitsLight, label: 'Emits light', hint: 'The item is a light source: using, casting or equipping it lights a token (radii default from CONFIG.COG.lightDefaults).' }, { priority: 0 });

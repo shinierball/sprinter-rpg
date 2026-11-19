@@ -86,7 +86,7 @@ export function chatButtonIndex(button) {
 
 /** Parse stored message HTML into a document (browser DOMParser). */
 export function parseMessageContent(html) {
-  return new globalThis.DOMParser().parseFromString(`<!doctype html><html><body>${String(html ?? '')}</body></html>`, 'text/html');
+  return new globalThis.DOMParser().parseFromString(String(html ?? ''), 'text/html');
 }
 
 /** Author user id of a ChatMessage (a User document, or the raw id in stored data). */

@@ -491,15 +491,20 @@ export class COGRapidBatchImportApp extends COGToolApp {
         color: ${idx === this._autocompleteIndex ? 'var(--cog-text-strong)' : 'var(--cog-text)'};
       `;
 
-      el.innerHTML = `
-        <span style="display: flex; align-items: center; gap: 6px;">
-          <i class="fa-solid ${item.icon}" style="width: 14px; text-align: center;"></i>
-          <strong>${item.label}</strong>
-        </span>
-        <span class="cog-bg-dyn cog-text-on-fill" style="--cog-bg-dyn: ${item.badgeColor}; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: bold; text-transform: uppercase;">
-          ${item.badge}
-        </span>
-      `;
+      const labelEl = document.createElement('span');
+      labelEl.style.cssText = 'display: flex; align-items: center; gap: 6px;';
+      const iconEl = document.createElement('i');
+      iconEl.className = `fa-solid ${item.icon}`;
+      iconEl.style.cssText = 'width: 14px; text-align: center;';
+      const strongEl = document.createElement('strong');
+      strongEl.textContent = item.label;
+      labelEl.append(iconEl, strongEl);
+      const badgeEl = document.createElement('span');
+      badgeEl.className = 'cog-bg-dyn cog-text-on-fill';
+      badgeEl.style.cssText = 'padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: bold; text-transform: uppercase;';
+      badgeEl.style.setProperty('--cog-bg-dyn', item.badgeColor);
+      badgeEl.textContent = item.badge;
+      el.append(labelEl, badgeEl);
 
       el.addEventListener('mousedown', (e) => {
         e.preventDefault();

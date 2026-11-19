@@ -42,13 +42,14 @@ import { AS_TRIGGER_ACTIONS } from './item/actions-as-triggers.mjs';
 import { BLUEPRINT_ACTIONS, canManageTable } from './item/actions-blueprint.mjs';
 import { isBlueprintLootType, isLootBoxType } from '../models/items/loot-model.mjs';
 import { buildAchievementTierContext, buildLootBoxContext, buildRewardBoxesContext } from './item/context-loot-box.mjs';
+import { itemBoxHost } from './item/box-host.mjs';
 import { LOOT_BOX_ACTIONS, dropBoxItem, dropBoxTable, dropRewardBoxTemplate } from './item/actions-loot-box.mjs';
 import { COPY_BLUEPRINT_ACTIONS } from './item/actions-copy-blueprint.mjs';
 import { POOP_ACTIONS } from './item/actions-poop.mjs';
 import { addGearGrant, GEAR_GRANT_KINDS } from './item/gear-grants.mjs';
 import { itemIdentifier } from '../utils/identifier.mjs';
 import { modifierArrayKeys } from './item/util.mjs';
-import { startRepair } from '../documents/item/enchantments.mjs';
+import { setItemEquipped, startRepair, takeEquipTurnedOn } from '../documents/item/enchantments.mjs';
 
 // `scrollable` keeps each part's scroll position across a re-render (a pick or any field change), so the form does not jump to the top.
 const part = (name) => ({ template: `${SYSTEM_PATH}/templates/items/parts/${name}.hbs`, scrollable: [''] });
@@ -138,7 +139,7 @@ export class COGItemSheet extends COGItemSheetV2 {
     spell: (context, item) => { buildSpellContext(context, item); buildAsTriggerContext(context); },
     attack: buildAttackContext,
     gear: buildGearContext,
-    loot: (context, item) => { buildLootContext(context, item); buildLootBoxContext(context, item); },
+    loot: (context, item) => { buildLootContext(context, item); buildLootBoxContext(context, itemBoxHost(item)); },
     achievement: (context, item) => { buildRewardBoxesContext(context, item); buildAchievementTierContext(context); },
     race: buildRaceContext,
     class: buildClassContext,
@@ -233,12 +234,20 @@ export class COGItemSheet extends COGItemSheetV2 {
     });
   }
 
+  /** @override Ticking Equipped on an owned item asks the equip gates (broken, rival, body fit) after the rest of the form is saved. */
+  async _processSubmitData(event, form, submitData, options) {
+    const equipAfter = takeEquipTurnedOn(this.item, submitData);
+    const result = await super._processSubmitData(event, form, submitData, options);
+    if (equipAfter && !(await setItemEquipped(this.item, true))) this.render();
+    return result;
+  }
+
   /**
    * @override Dropping a skill or spell on gear adds a skill/spell bonus row (`grants`, by identifier): a new skill
    * row is +1, a new spell row grants the spell at Rank 1, and dropping one the gear already names adds +1 to it.
    */
   async _onDropItem(event, item) {
-    if (this.isEditable && this.item?.type === 'loot' && isLootBoxType(this.item.system?.lootType)) return dropBoxItem(this.item, item);
+    if (this.isEditable && this.item?.type === 'loot' && isLootBoxType(this.item.system?.lootType)) return dropBoxItem(itemBoxHost(this.item, { editable: this.isEditable }), item);
     if (this.isEditable && this.item?.type === 'achievement') return dropRewardBoxTemplate(this.item, item);
     if (this.isEditable && this.item?.type === 'deity') return dropDeityEffect(this.item, item, event?.target?.closest?.('[data-deity-drop]')?.dataset?.deityDrop);
     if (this.isEditable && this.item?.type === 'loot' && isBlueprintLootType(this.item.system?.lootType)) return this.#dropBlueprintOutput(item);
@@ -263,7 +272,7 @@ export class COGItemSheet extends COGItemSheetV2 {
   /** @override A RollTable dropped on a loot box becomes a `table` row (7.3d); everything else keeps the base routing. */
   async _onDropDocument(event, doc) {
     if (doc?.documentName === 'RollTable') {
-      if (this.isEditable && this.item?.type === 'loot' && isLootBoxType(this.item.system?.lootType)) return dropBoxTable(this.item, doc);
+      if (this.isEditable && this.item?.type === 'loot' && isLootBoxType(this.item.system?.lootType)) return dropBoxTable(itemBoxHost(this.item, { editable: this.isEditable }), doc);
       return null;
     }
     return super._onDropDocument(event, doc);

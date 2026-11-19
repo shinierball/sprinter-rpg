@@ -3,6 +3,7 @@
  * Break reasons and the confirm dialog. Each key lives in `lang/en.json` under `COG.AttackChoices`; this table is the
  * fallback when no i18n catalogue is loaded (headless tests, a world on another language that lacks the key).
  */
+import { langText } from '../lang-text.mjs';
 const TEXT = Object.freeze({
   'COG.AttackChoices.Hint.NotOffered': 'Your last pick is not available for this attack.',
   'COG.AttackChoices.Hint.Untrained': 'Last pick {name} is untrained now.',
@@ -29,6 +30,12 @@ const TEXT = Object.freeze({
   'COG.Attack.Skill.Hint': 'The first Skill you are trained in is picked for you.',
   'COG.Attack.Skill.Changed': 'The Damage Effects listed are for the default Skill; one the Skill you picked does not allow is a Rule Break, and the roll asks first. Situations are also the default Skill\'s.',
   'COG.Attack.Skill.Used': 'Skill: {name}',
+  'COG.Attack.Improvised.Card': 'Improvised weapon: {name}',
+  'COG.Attack.Improvised.Toggle': 'Improvised ({count})',
+  'COG.Attack.Improvised.ToggleTip': 'Swing a held item that is not a weapon',
+  'COG.Attack.Improvised.Title': 'IMPROVISED WEAPONS',
+  'COG.Attack.Improvised.Hint': 'Any held item that is not a weapon can be swung on the Improvised Weapons Skill. The object weighs at least 1 lb and no more than your Str in lb.',
+  'COG.Attack.Improvised.Badge': 'IMPROVISED',
   'COG.AttackOptions.Title': '{name}: Attack Options',
   'COG.AttackOptions.RollAttack': 'Roll Attack',
   'COG.AttackOptions.RollDamage': 'Roll Damage',
@@ -69,8 +76,4 @@ const TEXT = Object.freeze({
 });
 
 /** A string by key, formatted with `{name}` data; works without a loaded i18n catalogue. */
-export function attackText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const attackText = langText(TEXT);

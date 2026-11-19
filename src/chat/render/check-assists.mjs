@@ -7,7 +7,7 @@
  * reached its check gets a GM-only Apply button. Markup is built with createElement/textContent: names, skill names
  * and the proposal are user text and never go through innerHTML.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { ASSIST_SOURCE, assistRollOf } from '../../utils/roll/assist-flags.mjs';
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { collectCheckAssistOffers, classifyAttackOutcome } from '../../utils/combat/interrupts.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
@@ -48,6 +48,27 @@ const TEXT = Object.freeze({
   SheetNote: "Use it from the Interrupt button on the ally's check card.",
   NoEffect: 'No effect',
   ResolveFirst: 'Resolve the Called Play before rolling damage.',
+  LineHelp: 'Help ({name}) {formula} = {amount}',
+  HelpFieldset: 'Help',
+  HelpLine: 'Help from {name}: {formula}, {ranks} in {skill}',
+  HelpRanks: 'has Ranks',
+  HelpNoRanks: 'no Ranks',
+  HelpBlocked: '(cannot act: Rule Break)',
+  HelpRuleBreakTitle: 'Help Rule Break',
+  HelpRuleBreakConfirm: '{name} cannot take Actions right now. Let them help anyway as a Rule Break?',
+  HelpNote: 'Help +{total} ({names})',
+  HelpOneHint: 'One helper per check; a second is a Rule Break.',
+  HelpManyConfirm: 'One helper per check. Let all {count} ({names}) help anyway as a Rule Break?',
+  HelpPledged: '(pledged)',
+  HelpPledgeTitle: 'Help Whom?',
+  HelpPledgePick: 'Whose next Skill Check outside combat will you help with? It is pre-ticked in their roll dialog.',
+  HelpPledgeOk: 'Pledge',
+  HelpPledgeNone: 'Nobody (withdraw the pledge)',
+  HelpPledgeCard: '{name} will help {ally} before their next Skill Check ({skill}).',
+  HelpPledgeWithdrawn: '{name} no longer pledges Help to {ally}.',
+  HelpPledgeNoAllies: 'Nobody in your party can take your Help.',
+  HelpPromptName: 'Ask who helps before an out-of-combat Skill Check',
+  HelpPromptHint: 'On: your Skill Check roll dialog lists the party members who can help, so you can tick them (a pledged helper always opens it, pre-ticked). Off: the dialog lists them only when it opens for another reason.',
   CalledPlayTitle: 'CALL A PLAY: {name} → {ally}: +{amount} ({formula}), for {ally}\'s next skill or attack roll this round',
   CalledPlayTitleByHand: 'CALL A PLAY: {name}: +{amount} ({formula})',
   CalledPlayByHand: 'No combat: apply it by hand.',
@@ -74,11 +95,6 @@ export function assistText(key, data = {}) {
     // fall through to the fallback
   }
   return Object.entries(data).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), TEXT[key] ?? full);
-}
-
-function flagsOf(message) {
-  const f = message?.flags?.[SYSTEM_ID];
-  return f && typeof f === 'object' ? f : {};
 }
 
 function el(doc, tag, className, text) {
@@ -139,6 +155,7 @@ function assistLineText(entry, eff) {
   if (entry.source === 'interrupt') {
     return assistText('LineInterrupt', { skill: entry.skillName || 'Assist', amount: entry.amount, name: entry.fromName, formula: entry.formula });
   }
+  if (entry.source === 'help') return assistText('LineHelp', { name: entry.fromName, formula: entry.formula, amount: entry.amount });
   const head = assistText('LineCalledPlay', { name: entry.fromName, formula: entry.formula, amount: entry.amount });
   let tail;
   if (entry.appliedTo === 'check') tail = assistText('ToCheck');
@@ -216,8 +233,8 @@ function buildOfferBlock(doc, offers) {
 
 /** The GM-only Apply button of an assist card whose entry is not on its check yet (no GM was connected). */
 function renderAssistCardApply(root, message) {
-  const f = flagsOf(message);
-  if (f.isAssistRoll !== true || f.source !== 'interrupt' || typeof f.checkMessageId !== 'string' || !f.checkMessageId) return;
+  const f = assistRollOf(message) ?? {};
+  if (f.isAssistRoll !== true || f.source !== ASSIST_SOURCE.INTERRUPT || typeof f.checkMessageId !== 'string' || !f.checkMessageId) return;
   const card = root.querySelector('.message-content') ?? root;
   card.querySelectorAll('.cog-assist-apply').forEach((n) => n.remove());
   const check = globalThis.game?.messages?.get?.(f.checkMessageId);

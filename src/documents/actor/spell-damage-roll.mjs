@@ -2,7 +2,7 @@ import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { ENGINE_SITUATIONS } from '../../data/tag-vocabulary.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { spellCardOf } from '../../utils/attack/spell-cast-link.mjs';
 import { sourceDamageBonusParts } from '../../utils/roll/check-assists.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { asTriggersDataAttr, amazingPreviewHtml, amazingSubActionHtml, amazingSourceMessage } from '../../utils/roll/amazing-success.mjs';
@@ -12,7 +12,7 @@ import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { extendContext, resolveDamageContext, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
 import {
-  buildAttackOptions, resolveAttackChoices, ruleBreakReasons, confirmChoiceRuleBreaks, commitPick, settleChoiceToggles, readChoiceOptions, choicesFromMessage, choicesFlag, emptyChoices, choicesToDamageOptions
+  buildAttackOptions, resolveAttackChoices, ruleBreakReasons, confirmChoiceRuleBreaks, commitPick, settleChoiceToggles, readChoiceOptions, choicesFromMessage, attackChoicesFlagOf, choicesFlag, emptyChoices, choicesToDamageOptions
 } from '../../utils/attack/attack-options.mjs';
 import { attackOptionsLineHtml } from '../../utils/attack/attack-options-line.mjs';
 import { collectDamageModifiers, multiplierFor } from '../../utils/roll/damage-modifiers.mjs';
@@ -34,8 +34,8 @@ const PLAIN_DICE = /^\d+d\d+$/i;
 
 /** True when this is a crawler spell hit card whose roll applied the spell's conditions (`conditionsApplied`, 3.47-1c). */
 function spellHitAppliedConditions(message) {
-  const applied = message?.flags?.[SYSTEM_ID]?.conditionsApplied;
-  return Boolean(message?.flags?.[SYSTEM_ID]?.isSpellAttack && Array.isArray(applied?.tags) && applied.tags.length > 0);
+  const card = spellCardOf(message);
+  return Boolean(card?.isSpellAttack && Array.isArray(card.conditionsApplied?.tags) && card.conditionsApplied.tags.length > 0);
 }
 
 /**
@@ -196,32 +196,32 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
   const globalMult = dmod.multipliers.all;
   const hasMult = globalMult !== 1 || evaluatedParts.some(p => p.multiplier !== 1);
   const multSourceHtml = dmod.multiplierSources.length > 0
-    ? `<div class="cog-multiplier-sources cog-text-muted" style="font-size: 10px; margin-top: 2px;">Multipliers: ${dmod.multiplierSources.join(', ')}</div>`
+    ? `<div class="cog-multiplier-sources cog-text-muted" style="font-size: 10px; margin-top: 2px;">Multipliers: ${escapeAttr(dmod.multiplierSources.join(', '))}</div>`
     : '';
 
   // Construct rich breakdown HTML for chat card (identically formatted to attack card)
   const partPills = evaluatedParts.map(p => {
-    const multTag = p.multiplier !== 1 ? ` <span class="cog-mult-tag">(x${p.multiplier})</span>` : '';
+    const multTag = p.multiplier !== 1 ? ` <span class="cog-mult-tag">(x${escapeAttr(p.multiplier)})</span>` : '';
     const sourceTag = p.source ? ` <span class="cog-source-tag">[${escapeAttr(p.source)}]</span>` : '';
     return `
       <div class="cog-damage-part-row" style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px; font-size: 11px; border-bottom: 1px dashed var(--cog-divider);">
         <div>
-          <strong class="cog-text-accent">${p.perTargetPending ? 'per target' : p.finalDamage}</strong>
-          <span style="font-weight: bold; text-transform: uppercase; margin-left: 4px;">${p.type}</span>
+          <strong class="cog-text-accent">${escapeAttr(p.perTargetPending ? 'per target' : p.finalDamage)}</strong>
+          <span style="font-weight: bold; text-transform: uppercase; margin-left: 4px;">${escapeAttr(p.type)}</span>
           ${sourceTag}
         </div>
         <div class="cog-text-muted" style="font-size: 10px;">
-          <span>(${p.formula})</span>${multTag}
+          <span>(${escapeAttr(p.formula)})</span>${multTag}
         </div>
       </div>
     `;
   }).join('');
 
-  const damageTypeStr = dmgData.damageType ? ` (${dmgData.damageType})` : '';
+  const damageTypeStr = dmgData.damageType ? ` (${escapeAttr(dmgData.damageType)})` : '';
   const effectsList = [];
-  if (sys.limitations) effectsList.push(sys.limitations);
+  if (sys.limitations) effectsList.push(escapeAttr(sys.limitations));
   if (dmgData.debuffs && dmgData.debuffs.length > 0) {
-    effectsList.push(`Inflicts: ${dmgData.debuffs.map(d => `<strong>[${d} Debuff]</strong>`).join(', ')}`);
+    effectsList.push(`Inflicts: ${dmgData.debuffs.map(d => `<strong>[${escapeAttr(d)} Debuff]</strong>`).join(', ')}`);
   }
   const effectsStr = effectsList.join(' | ');
 
@@ -244,15 +244,15 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
     const label = tagDef.label || tag;
     return `
             <button type="button" class="cog-apply-condition-btn cog-apply-debuff-btn cog-bg-danger-fill cog-text-on-fill" data-action="crawlerApplyCondition"
-              data-condition-tag="${tag}"
+              data-condition-tag="${escapeAttr(tag)}"
               data-duration-rounds="${rankBreakConditionRounds(spellItem)}"
               data-debuff-name="${escapeAttr(label)}"
-              data-item-id="${spellItem.id || spellItem._id}"
+              data-item-id="${escapeAttr(spellItem.id || spellItem._id)}"
               data-item-name="${escapeAttr(spellItem.name)}"
-              data-actor-uuid="${actor.uuid}"
+              data-actor-uuid="${escapeAttr(actor.uuid)}"
               data-is-burst="${Boolean(sys.area?.hasArea || sys.delivery === 'burst')}"
-              data-radius="${sys.area?.radius || 5}"
-              data-target-filter="${sys.area?.targetFilter || 'enemies'}"
+              data-radius="${escapeAttr(sys.area?.radius || 5)}"
+              data-target-filter="${escapeAttr(sys.area?.targetFilter || 'enemies')}"
               style="width: 100%; border: 1px solid var(--cog-accent-fill); border-radius: 3px; padding: 4px; font-size: 11px; cursor: pointer; font-weight: bold; font-family: var(--font-primary, sans-serif);">
               <i class="fa-solid fa-skull-crossbones"></i> Inflict [${escapeAttr(label)}] ${sys.area?.hasArea ? `(Burst Area)` : `on Target(s)`}
             </button>
@@ -270,7 +270,7 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
   const amazingMessage = amazingSourceMessage(sourceId);
   // The attack card's snapshot is copied, so the damage card shows what was declared.
   const attackChoicesFlag = snapshot
-    ? amazingMessage.flags[SYSTEM_ID].attackChoices
+    ? attackChoicesFlagOf(amazingMessage)
     : choicesFlag(choices, model ?? buildAttackOptions(actor, spellItem, baseContext, { mode: 'damage' }), { ruleBreak, reasons });
   const optionsLineHtml = await attackOptionsLineHtml(attackChoicesFlag);
   // What each offered condition does: only the effects, never the spell's own lines.
@@ -278,24 +278,24 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
   const asTriggers = attackAsTriggers(actor, spellItem, rollContext);
   const cardContent = `
     <div class="cog-chat-card cog-damage-card"
-      data-attacker-uuid="${actor.uuid}"
-      data-item-id="${spellItem.id}"
+      data-attacker-uuid="${escapeAttr(actor.uuid)}"
+      data-item-id="${escapeAttr(spellItem.id)}"
       data-item-name="${escapeAttr(spellItem.name)}"
-      data-damage-value="${totalRawDamage}"
+      data-damage-value="${escapeAttr(totalRawDamage)}"
       data-typed-damage='${jsonAttr(typedDamage)}'${damageCardDataAttrs(allParts, rollContextDataAttr({ ...rollContext, appliedRowKeys: dmod.appliedKeys }), critDebuffs, targetRowsDataAttr(dmod.targetRows), sourceId)}${spellBaseAttr}${asTriggersDataAttr(asTriggers)}
       data-attack-type="spell"
       data-is-armor-piercing="${isArmorPiercing}"
       data-condition-tags='${jsonAttr(normalConditionTags)}'${onHitCardAttrs(collectOnHitEffects({ sources: [{ item: spellItem, rank }] }))}
       data-is-burst="${Boolean(sys.area?.hasArea || sys.delivery === 'burst')}"
-      data-radius="${sys.area?.radius || 5}"
-      data-target-filter="${sys.area?.targetFilter || 'enemies'}">
+      data-radius="${escapeAttr(sys.area?.radius || 5)}"
+      data-target-filter="${escapeAttr(sys.area?.targetFilter || 'enemies')}">
       <div class="cog-damage-card-header">
         <strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} Damage${damageTypeStr}
         ${isArmorPiercing ? `<span class="cog-armor-piercing-badge cog-dark cog-bg-header-fill cog-text-gold" style="border: 1px solid var(--cog-gold); font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: bold; text-transform: uppercase;"><i class="fa-solid fa-shield-halved"></i> [ARMOR-PIERCING]</span>` : ''}
       </div>
       ${optionsLineHtml}
       <div class="cog-damage-card-result" style="margin: 6px 0;">
-        <span class="cog-damage-value cog-text-accent" style="font-size: 20px; font-weight: bold;">${totalRawDamage}</span>
+        <span class="cog-damage-value cog-text-accent" style="font-size: 20px; font-weight: bold;">${escapeAttr(totalRawDamage)}</span>
         <span class="cog-damage-formula">${hasMult ? '(Multiplied Total)' : 'Total Damage'}</span>
         ${multSourceHtml}
       </div>
@@ -323,8 +323,8 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
     </div>
   `;
 
-  const flavorBreakdown = Object.entries(typedDamage).map(([t, val]) => `${val} ${t}`).join(', ');
-  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (Spell Damage: ${flavorBreakdown}${hasMult ? ` [x${globalMult}]` : ''})${effectsStr ? ` - <em>${effectsStr}</em>` : ''}`;
+  const flavorBreakdown = Object.entries(typedDamage).map(([t, val]) => `${escapeAttr(val)} ${escapeAttr(t)}`).join(', ');
+  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (Spell Damage: ${flavorBreakdown}${hasMult ? ` [x${escapeAttr(globalMult)}]` : ''})${effectsStr ? ` - <em>${effectsStr}</em>` : ''}`;
 
   const mainRoll = await new Roll(`${totalRawDamage}`).evaluate();
 

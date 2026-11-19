@@ -4,8 +4,7 @@
  * so the block shows the state at render time (an applied step, a paid gig).
  */
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
-import { GIG_PAID_FLAG } from '../../documents/actor/patron-gig.mjs';
+import { gigPaidOf } from '../../documents/actor/patron-gig.mjs';
 import { patronageOf } from '../../utils/patron/patronage-state.mjs';
 import { say } from '../../documents/actor/vehicle-drive-common.mjs';
 
@@ -46,7 +45,7 @@ function auditionBlock(doc, block, message, record, actor, item) {
 function gigBlock(doc, block, message, item) {
   const gig = (key, fallback, data) => say(`COG.Patron.Gig.Check.${key}`, fallback, data);
   block.append(el(doc, 'p', 'cog-patron-check__who', gig('Who', 'Gig for {patron}: 1 hour', { patron: item.name })));
-  const paid = message.flags?.[SYSTEM_ID]?.[GIG_PAID_FLAG];
+  const paid = gigPaidOf(message);
   if (paid) {
     block.append(el(doc, 'p', 'cog-patron-check__applied', gig('Paid', 'Paid: {net} gold', { net: Number(paid.net) || 0 })));
     return;

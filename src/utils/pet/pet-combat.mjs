@@ -10,7 +10,6 @@ import { vehicleOf } from '../vehicle/vehicle-lookup.mjs';
 import { getSizeInfo } from '../../data/sizes.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../tag/tag-behaviour.mjs';
 import { confirmRuleBreak } from '../rule-break.mjs';
-import { escapeAttr } from '../escape-attr.mjs';
 
 /**
  * Why an attack with a mounted-only weapon is owed a Rule Break: the item carries the `mounted-only` rule flag and its user
@@ -37,7 +36,7 @@ export async function gateMountedOnly(actor, item, { options = {} } = {}) {
   const none = { proceed: true, ruleBreak: false, flags: {} };
   const reason = mountedOnlyCause(actor, item);
   if (!reason) return none;
-  const message = `${escapeAttr(actor.name || 'The attacker')} is not mounted. Attack with the ${escapeAttr(item.name || 'weapon')} anyway as a Rule Break?`;
+  const message = `${actor.name || 'The attacker'} is not mounted. Attack with the ${item.name || 'weapon'} anyway as a Rule Break?`;
   const verdict = await confirmRuleBreak({ title: 'Not mounted', message, reason, options });
   if (!verdict.confirmed) return { proceed: false, ruleBreak: false, flags: {} };
   return { proceed: true, ruleBreak: true, flags: { ruleBreak: true } };

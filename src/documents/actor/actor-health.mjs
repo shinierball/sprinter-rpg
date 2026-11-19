@@ -18,6 +18,7 @@ import { findActorToken } from '../../utils/combat/interrupts.mjs';
 import { emitsLight, igniteLight, extinguish as extinguishLight } from './light-source.mjs';
 import { auraRank, computeAuraTempBars } from './aura-effects.mjs';
 import { clearAllyAuraEffects } from './aura-relay.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { withOneNoGmWarning } from '../../utils/gm-relay.mjs';
 import { deleteAuraRegionsEverywhere } from './area-relay.mjs';
 import { zeroHealthOutcome, ZERO_HEALTH } from './dying.mjs';
@@ -92,22 +93,22 @@ export async function checkFatalDebuffProtection(actor, debuff, damageVal, optio
     <div class="cog-chat-card cog-con-check-card cog-bg-window cog-text-strong" style="border: 2px solid ${success ? 'var(--cog-success)' : 'var(--cog-accent)'}; border-radius: 4px; padding: 8px; font-family: 'Oswald', sans-serif;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 4px;">
         <span class="cog-text-gold" style="font-weight: bold;"><i class="fa-solid fa-heart-pulse"></i> AUTOMATIC CON STAT CHECK</span>
-        <span class="cog-bg-surface-strong" style="font-size: 11px; padding: 1px 6px; border-radius: 3px;">Difficulty ${dc} (10 + Floor ${currentFloor})</span>
+        <span class="cog-bg-surface-strong" style="font-size: 11px; padding: 1px 6px; border-radius: 3px;">Difficulty ${dc} (10 + Floor ${escapeAttr(currentFloor)})</span>
       </div>
       <div style="font-size: 13px; margin-bottom: 6px;">
-        <strong>${actor.name}</strong> faces fatal damage from <strong>${debuff?.name || 'Debuff'}</strong>!
+        <strong>${escapeAttr(actor.name)}</strong> faces fatal damage from <strong>${escapeAttr(debuff?.name || 'Debuff')}</strong>!
       </div>
       <div class="cog-bg-surface-muted" style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 6px; border-radius: 3px;">
-        <span class="cog-text-secondary" style="font-size: 14px;">CON Roll (${resistAdv.formula} + ${resistTotal}${resistDice}):</span>
-        <span class="${success ? 'cog-text-success' : 'cog-text-danger'}" style="font-size: 18px; font-weight: bold;">${roll.total}</span>
+        <span class="cog-text-secondary" style="font-size: 14px;">CON Roll (${resistAdv.formula} + ${escapeAttr(resistTotal)}${escapeAttr(resistDice)}):</span>
+        <span class="${success ? 'cog-text-success' : 'cog-text-danger'}" style="font-size: 18px; font-weight: bold;">${escapeAttr(roll.total)}</span>
         <span class="${success ? 'cog-bg-success-fill' : 'cog-bg-accent-fill'} cog-text-on-fill" style="margin-left: auto; font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 3px;">
           ${success ? 'SUCCESS' : 'FAILED'}
         </span>
       </div>
       <div class="${success ? 'cog-text-success' : 'cog-text-danger'}" style="font-size: 12px; font-style: italic;">
-        ${success 
-          ? `On a Success, ${debuff?.name || 'the Debuff'} ends, and ${actor.name} avoids the damage!` 
-          : `The check failed. Fatal damage is applied.`}
+        ${success
+          ? escapeAttr(`On a Success, ${debuff?.name || 'the Debuff'} ends, and ${actor.name} avoids the damage!`)
+          : 'The check failed. Fatal damage is applied.'}
       </div>
     </div>
   `;

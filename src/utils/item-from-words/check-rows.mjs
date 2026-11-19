@@ -6,7 +6,7 @@
  */
 import { ROW_ARRAYS, getRowKind, kindOf, rowKindErrors } from '../row-kinds.mjs';
 import { firstScalar, toStringList } from '../first-scalar.mjs';
-import { plainText } from '../../sourcery/text.mjs';
+import { stripControls } from '../../sourcery/text.mjs';
 import {
   GRANT_DRAFT_FIELDS, GRANT_REFERENCES, OUTCOME_COMMON_FIELDS, OUTCOME_DRAFT_FIELDS, OUTCOME_REFERENCES, VOCAB_SOURCES,
   fieldChoices, fieldSpec
@@ -84,7 +84,7 @@ export function cleanModifierRows(check, type, array, raw) {
     if (problems.length) {
       const why = problems.join('; ');
       check.warn(systemPath(`${at}.condition`), `${why}; the row was left out, not kept without its condition`, 'condition');
-      check.unexpressed.push(plainText(`Not applied: ${array} row ${i + 1} (${summaryOf(def, clean)}). ${why}`));
+      check.unexpressed.push(stripControls(`Not applied: ${array} row ${i + 1} (${summaryOf(def, clean)}). ${why}`));
       return;
     }
     if (condition) clean.condition = condition;

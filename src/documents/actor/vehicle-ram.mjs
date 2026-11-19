@@ -4,7 +4,7 @@
  *
  * Imports no sheet and not `actor.mjs`.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { flagPath, readFlag, withFlags } from '../../utils/flags.mjs';
 import { collectDamageModifiers, multiplierFor, getActiveModifierSources } from '../../utils/roll/damage-modifiers.mjs';
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { resolveActorByUuid, findTokenByActorUuid } from '../../utils/actor-uuid.mjs';
@@ -19,16 +19,19 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
 import { vehicleKindTag, ramDice, ramCollision, explosionFormula } from '../../data/rules/vehicle-rules.mjs';
 import { getAttackDifficulty, evadeButtonHtml } from './attack-targets.mjs';
-import { wholeFeet, notify, str, say, speakerOf, gmWhisper, messageById, cardFlag, cardKey, requestVehicleDrive } from './vehicle-drive-common.mjs';
+import { wholeFeet, notify, str, say, speakerOf, gmWhisper, messageById, requestVehicleDrive } from './vehicle-drive-common.mjs';
 import { rollVehicleCheck } from './vehicle-checks.mjs';
 import { vehicleCardInfo } from './vehicle-after-roll.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** Chat-card flags of a ram and of the explosion. */
-export const RAM_FLAGS = Object.freeze({
+const RAM_FLAGS = Object.freeze({
   attack: 'vehicleRamAttack', damage: 'vehicleRam', rolled: 'vehicleRamRolled', collision: 'vehicleCollision',
   explosion: 'vehicleExplosion', exploded: 'vehicleExploded'
 });
+
+/** Whether the ram card's damage was already rolled. */
+export const ramRolledOf = (message) => Boolean(readFlag(message, RAM_FLAGS.rolled));
 
 const RAM_TAG = `${VEHICLE_TAGS.checkPrefix}ram`;
 const actorOf = (ref) => (ref && typeof ref === 'object' ? ref : resolveActorByUuid(str(ref)));
@@ -37,7 +40,7 @@ const canvasTokens = () => (Array.isArray(globalThis.canvas?.tokens?.placeables)
 
 /** The ram stored on a damage card (`flags.<system>.vehicleRam`), or null. */
 export function ramFlag(message) {
-  const f = cardFlag(message, RAM_FLAGS.damage);
+  const f = readFlag(message, RAM_FLAGS.damage);
   return f && typeof f === 'object' && str(f.vehicleUuid) ? f : null;
 }
 
@@ -109,12 +112,11 @@ export async function rollRamDamage(vehicle, driver, target) {
     attackerUuid: roller.uuid, itemName: 'Ram', title, parts, rollContext: { ...context, appliedRowKeys: dmod.appliedKeys },
     extraButtons: [{ label: say('COG.VehicleRam.ApplyCollision', 'Apply collision'), action: 'crawlerVehicleCollision', data: { 'vehicle-uuid': vehicle.uuid } }]
   });
-  return globalThis.ChatMessage.create({
+  return globalThis.ChatMessage.create(withFlags({
     speaker: speakerOf(roller),
     content,
-    ...(baseRoll ? { rolls: [baseRoll] } : {}),
-    flags: { [SYSTEM_ID]: { [RAM_FLAGS.damage]: { vehicleUuid: vehicle.uuid, driverUuid: str(driver?.uuid), targetUuid: str(target?.uuid), damage: total } } }
-  });
+    ...(baseRoll ? { rolls: [baseRoll] } : {})
+  }, { [RAM_FLAGS.damage]: { vehicleUuid: vehicle.uuid, driverUuid: str(driver?.uuid), targetUuid: str(target?.uuid), damage: total } }));
 }
 
 /**
@@ -139,11 +141,10 @@ async function postMobRam(vehicle, mob, target, { headOn }) {
   }
   const damage = vehicleButtonHtml(say('COG.VehicleRam.RollDamage', 'Roll ram damage'), 'crawlerVehicleRamDamage', {}, { className: 'cog-attack-roll-btn' });
   const content = mobRamBannerHtml({ driverName: mob.name, vehicleName: vehicle.name, targetName: target.name, dc }) + evade + damage;
-  return globalThis.ChatMessage.create({
+  return globalThis.ChatMessage.create(withFlags({
     speaker: speakerOf(mob),
-    content,
-    flags: { [SYSTEM_ID]: { [RAM_FLAGS.attack]: { vehicleUuid: vehicle.uuid, driverUuid: mob.uuid, targetUuid: target.uuid, dc, headOn } } }
-  });
+    content
+  }, { [RAM_FLAGS.attack]: { vehicleUuid: vehicle.uuid, driverUuid: mob.uuid, targetUuid: target.uuid, dc, headOn } }));
 }
 
 /**
@@ -171,7 +172,7 @@ export async function startVehicleRam(vehicle, actor, { target, headOn = false }
  */
 export async function rollRamDamageFromCard(message) {
   const user = globalThis.game?.user;
-  const attack = cardFlag(message, RAM_FLAGS.attack);
+  const attack = readFlag(message, RAM_FLAGS.attack);
   let vehicle;
   let driver;
   let target;
@@ -187,14 +188,14 @@ export async function rollRamDamageFromCard(message) {
   }
   if (vehicle?.type !== 'mount_vehicle' || !driver) return null;
   if (!user?.isGM && !userOwnsActor(driver, user)) return null;
-  if (cardFlag(message, RAM_FLAGS.rolled)) {
+  if (ramRolledOf(message)) {
     notify('info', say('COG.VehicleRam.AlreadyRolled', 'The ram damage has already been rolled for this ram.'));
     return null;
   }
   const posted = await rollRamDamage(vehicle, driver, target);
   if (posted) {
     try {
-      await message.update({ [cardKey(RAM_FLAGS.rolled)]: true });
+      await message.update({ [flagPath(RAM_FLAGS.rolled)]: true });
     } catch {
       // The card stays clickable; the GM adjudicates a second roll.
     }
@@ -224,7 +225,7 @@ export async function applyCollision(vehicle, payload) {
   const message = messageById(str(payload?.messageId));
   const ram = ramFlag(message);
   if (!ram || ram.vehicleUuid !== vehicle.uuid) return { ok: false, reason: 'no-card' };
-  if (cardFlag(message, RAM_FLAGS.collision)) return { ok: false, reason: 'done' };
+  if (readFlag(message, RAM_FLAGS.collision)) return { ok: false, reason: 'done' };
   const driver = resolveActorByUuid(str(ram.driverUuid));
   if (!isTrustedAssist(message, driver ?? vehicle)) return { ok: false, reason: 'untrusted' };
   const target = resolveActorByUuid(str(ram.targetUuid));
@@ -236,7 +237,7 @@ export async function applyCollision(vehicle, payload) {
     damage, ramSize: actorSizeNumber(vehicle), targetSize: target ? actorSizeNumber(target) : actorSizeNumber(vehicle),
     ramDr: drOf(vehicle), occupantDrs: aboard.map(drOf), targetIsVehicle, targetDr: drOf(target), targetOccupantDrs: targetAboard.map(drOf)
   });
-  await message.update({ [cardKey(RAM_FLAGS.collision)]: true });
+  await message.update({ [flagPath(RAM_FLAGS.collision)]: true });
 
   const lines = [];
   const hit = async (who, amount) => {
@@ -272,10 +273,9 @@ export async function postExplosionPrompt(vehicle) {
   const content = `<div class="cog-chat-card cog-vehicle-explosion-prompt"><strong>${escapeAttr(say('COG.VehicleExplosion.AtZero', '{name} is at 0%.', { name: vehicle.name ?? '' }))}</strong>`
     + `<div>${vehicleButtonHtml(say('COG.VehicleExplosion.Explode', 'Explode'), 'crawlerVehicleExplode', { 'vehicle-uuid': vehicle.uuid })}`
     + ` ${vehicleButtonHtml(say('COG.VehicleExplosion.NotNow', 'Not this time'), 'crawlerVehicleExplodeDismiss', {})}</div></div>`;
-  return globalThis.ChatMessage.create({
-    speaker: speakerOf(vehicle), whisper: gmWhisper(), content,
-    flags: { [SYSTEM_ID]: { [RAM_FLAGS.explosion]: { vehicleUuid: vehicle.uuid } } }
-  });
+  return globalThis.ChatMessage.create(withFlags({
+    speaker: speakerOf(vehicle), whisper: gmWhisper(), content
+  }, { [RAM_FLAGS.explosion]: { vehicleUuid: vehicle.uuid } }));
 }
 
 /**
@@ -289,8 +289,8 @@ export async function postExplosionPrompt(vehicle) {
 export async function explodeVehicle(vehicle, { messageId = '' } = {}) {
   if (vehicle?.type !== 'mount_vehicle') return { ok: false, reason: 'no-vehicle' };
   const prompt = messageById(messageId);
-  if (prompt && cardFlag(prompt, RAM_FLAGS.exploded)) return { ok: false, reason: 'done' };
-  if (prompt) await prompt.update({ [cardKey(RAM_FLAGS.exploded)]: true });
+  if (prompt && readFlag(prompt, RAM_FLAGS.exploded)) return { ok: false, reason: 'done' };
+  if (prompt) await prompt.update({ [flagPath(RAM_FLAGS.exploded)]: true });
   const spec = explosionFormula({ size: actorSizeNumber(vehicle), floor: getCurrentFloor() });
   const roll = await new Roll(spec.formula).evaluate();
   const total = Math.max(0, Number(roll.total) || 0);
@@ -311,10 +311,9 @@ export async function explodeVehicle(vehicle, { messageId = '' } = {}) {
     parts: [{ type, finalDamage: total, baseTotal: total, formula: spec.formula }], rollContext: context,
     notes: aboard.length ? [say('COG.VehicleExplosion.Aboard', 'Aboard: {names}', { names: aboard.map((a) => a.name).join(', ') })] : []
   });
-  await globalThis.ChatMessage.create({
-    speaker: speakerOf(vehicle), content, rolls: [roll],
-    flags: { [SYSTEM_ID]: { [RAM_FLAGS.explosion]: { vehicleUuid: vehicle.uuid, occupants: aboard.map((a) => a.uuid), damage: total } } }
-  });
+  await globalThis.ChatMessage.create(withFlags({
+    speaker: speakerOf(vehicle), content, rolls: [roll]
+  }, { [RAM_FLAGS.explosion]: { vehicleUuid: vehicle.uuid, occupants: aboard.map((a) => a.uuid), damage: total } }));
   return { ok: true };
 }
 

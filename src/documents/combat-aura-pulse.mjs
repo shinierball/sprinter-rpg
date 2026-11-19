@@ -35,7 +35,7 @@ export async function runAuraPulseStep(combat, { round = combat?.round } = {}) {
   return pulses;
 }
 
-/** The card rows of one pulse: damage per enemy, inflicted debuffs, healing and cleansing per ally. */
+/** The card rows of one pulse as HTML (empty when nothing happened): damage per enemy, inflicted debuffs, healing and cleansing per ally. */
 export function pulseRows({ item, result }) {
   const { report } = result;
   const rows = [];
@@ -66,7 +66,7 @@ export function pulseRows({ item, result }) {
     for (const debuff of entry.cleansed) parts.push(escapeAttr(combatText('COG.AuraPulse.Cleanse', { debuff: conditionLabel(debuff) })));
     if (parts.length) rows.push(`<div class="cog-bg-success-tint"><strong>${escapeAttr(item.name)}</strong> &rarr; ${escapeAttr(entry.actor.name)}: ${parts.join(', ')}</div>`);
   }
-  return rows;
+  return rows.join('');
 }
 
 /**
@@ -76,11 +76,11 @@ export function pulseRows({ item, result }) {
  * @returns {Promise<ChatMessage|null>}
  */
 async function postAuraPulseCard(pulses, round) {
-  const rows = pulses.flatMap(pulseRows);
-  if (!rows.length || typeof globalThis.ChatMessage?.create !== 'function') return null;
+  const rows = pulses.map((pulse) => pulseRows(pulse)).join('');
+  if (!rows || typeof globalThis.ChatMessage?.create !== 'function') return null;
   const content = `<div class="cog-chat-card cog-round-end-card cog-aura-pulse-card">
     <header class="cog-card-header"><h3><i class="fa-solid fa-circle-radiation"></i> ${escapeAttr(combatText('COG.AuraPulse.Title', { round }))}</h3></header>
-    <div class="cog-card-body">${rows.join('')}</div>
+    <div class="cog-card-body">${rows}</div>
   </div>`;
   return globalThis.ChatMessage.create({ content, speaker: { alias: 'Combat Tracker' } });
 }

@@ -8,7 +8,7 @@
   {{#if title}}<div class="cog-banner-header cog-feature-header"><span>{{title}}</span></div>{{/if}}
   <ul class="cog-feature-list">
     {{#each features as |feature|}}
-      <li class="cog-feature-line"{{#if feature.ruleText}} data-tooltip="{{feature.ruleText}}"{{/if}}>
+      <li class="cog-feature-line"{{#if feature.ruleText}} data-tooltip-text="{{feature.ruleText}}"{{/if}}>
         <span class="cog-badge cog-feature-badge cog-feature-badge-{{feature.kind}}">[{{feature.badge}}]</span>
         <span class="cog-feature-text">{{feature.text}}</span>
       </li>

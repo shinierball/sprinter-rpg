@@ -4,8 +4,7 @@
  * by `buildPayload` like any user loot, belongs to no theme (no source stamp) and is never used up. The flavor text is
  * the human's own and is used verbatim.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { readFlag } from '../../utils/flags.mjs';
+import { readFlag, withFlags } from '../../utils/flags.mjs';
 import { buildPayload } from '../builders/item-payload.mjs';
 import { USAGE_KINDS } from '../../utils/tag/tag-mechanics.mjs';
 
@@ -52,7 +51,7 @@ export function replacedRecordOf(data, { replacedAt = Date.now() } = {}) {
  * @returns {object}
  */
 export function celestialAiPoopPayload(replaced = null) {
-  const payload = buildPayload('loot', {
+  let payload = buildPayload('loot', {
     name: CELESTIAL_AI_POOP_NAME,
     img: 'icons/svg/acid.svg',
     system: {
@@ -67,11 +66,16 @@ export function celestialAiPoopPayload(replaced = null) {
     }
   }, { warnings: [] });
   if (isPlain(replaced)) {
-    payload.flags = { ...(payload.flags ?? {}), [SYSTEM_ID]: { ...(payload.flags?.[SYSTEM_ID] ?? {}), [REPLACED_FLAG]: replaced } };
+    payload = withFlags(payload, { [REPLACED_FLAG]: replaced });
     const id = replaced.data?._id;
     if (typeof id === 'string' && /^[A-Za-z0-9]{16}$/.test(id)) payload._id = id;
   }
   return payload;
+}
+
+/** The replaced-item record as stored (a document that throws on the read has none). */
+function replacedFlagOf(item) {
+  try { return readFlag(item, REPLACED_FLAG); } catch { return undefined; }
 }
 
 /**
@@ -81,11 +85,7 @@ export function celestialAiPoopPayload(replaced = null) {
  * @returns {{ source: { theme: string, set: string }, name: string, type: string, identifier: string, replacedAt: number, data: object }|null}
  */
 export function readReplacedRecord(item) {
-  let raw;
-  try {
-    raw = typeof item?.getFlag === 'function' ? item.getFlag(SYSTEM_ID, REPLACED_FLAG) : undefined;
-  } catch { raw = undefined; }
-  raw ??= item?.flags?.[SYSTEM_ID]?.[REPLACED_FLAG];
+  const raw = replacedFlagOf(item);
   if (!isPlain(raw) || !isPlain(raw.data)) return null;
   const type = text(raw.data.type, 40);
   if (!type) return null;
@@ -103,10 +103,6 @@ export function readReplacedRecord(item) {
 
 /** Whether an item carries a `replaced` flag at all (usable or not). */
 export function isPoop(item) {
-  let raw;
-  try {
-    raw = typeof item?.getFlag === 'function' ? item.getFlag(SYSTEM_ID, REPLACED_FLAG) : undefined;
-  } catch { raw = undefined; }
-  raw ??= item?.flags?.[SYSTEM_ID]?.[REPLACED_FLAG];
+  const raw = replacedFlagOf(item);
   return raw !== undefined && raw !== null;
 }

@@ -5,7 +5,7 @@
  *
  * Imports no sheet and not `actor.mjs`.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag } from '../../utils/flags.mjs';
 import { requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import './migrate-vehicle-card-offers.mjs';
 
@@ -21,11 +21,12 @@ export const RELAY_ACTION_VEHICLE_DRIVE = 'vehicleDrive';
 /** Chat-card flags the GM writes on a vehicle check card. */
 export const VEHICLE_CARD_FLAGS = Object.freeze({ result: 'vehicleResult', stop: 'vehicleStop' });
 
+/** The result a vehicle check card carries (`{ outcome, choice, note }`), or null before one is set. */
+export const vehicleResultOf = (message) => readFlag(message, VEHICLE_CARD_FLAGS.result) ?? null;
+
 export const str = (v) => (typeof v === 'string' ? v.trim().slice(0, 200) : '');
 
 export const messageById = (id) => (typeof id === 'string' && id ? globalThis.game?.messages?.get?.(id) ?? null : null);
-export const cardFlag = (message, key) => (typeof message?.getFlag === 'function' ? message.getFlag(SYSTEM_ID, key) : message?.flags?.[SYSTEM_ID]?.[key]);
-export const cardKey = (name) => `flags.${SYSTEM_ID}.${name}`;
 
 export const say = (key, fallback, data = {}) => {
   const i18n = globalThis.game?.i18n;
@@ -43,7 +44,7 @@ export const gmWhisper = () => (globalThis.ChatMessage?.getWhisperRecipients?.('
 /**
  * Ask for one vehicle-drive write: a GM writes at once, anyone else asks the GM.
  * @param {Actor} vehicle
- * @param {'speed'|'choose'|'shift'|'spend'|'clear'|'override'|'useItem'|'collision'|'explode'} op
+ * @param {'speed'|'choose'|'clear'|'override'|'collision'|'explode'} op
  * @param {object} [data] the op's fields
  * @returns {Promise<{ ok: boolean, reason?: string }>}
  */

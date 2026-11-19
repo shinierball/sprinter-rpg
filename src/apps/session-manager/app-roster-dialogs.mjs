@@ -3,6 +3,7 @@
  */
 
 import { dialogAnswer } from '../../utils/ui/dialog-answer.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 
 export const sessionRosterDialogsMixin = {
@@ -27,25 +28,25 @@ export const sessionRosterDialogsMixin = {
       const img = c.img || 'icons/svg/mystery-man.svg';
 
       return `
-        <tr class="cog-roster-row" data-actor-id="${c.id}" data-party="${party.toLowerCase()}" style="border-bottom: 1px solid var(--cog-panel-border);">
+        <tr class="cog-roster-row" data-actor-id="${escapeAttr(c.id)}" data-party="${escapeAttr(party.toLowerCase())}" style="border-bottom: 1px solid var(--cog-panel-border);">
           <td style="text-align: center; padding: 6px;">
-            <input type="checkbox" class="cog-roster-checkbox" data-actor-id="${c.id}" ${isTracked ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px;" />
+            <input type="checkbox" class="cog-roster-checkbox" data-actor-id="${escapeAttr(c.id)}" ${isTracked ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px;" />
           </td>
           <td style="padding: 6px; display: flex; align-items: center; gap: 8px;">
-            <img class="cog-bg-icon-box" src="${img}" style="width: 28px; height: 28px; border-radius: 3px; border: 1px solid var(--cog-accent); object-fit: cover;" />
+            <img class="cog-bg-icon-box" src="${escapeAttr(img)}" style="width: 28px; height: 28px; border-radius: 3px; border: 1px solid var(--cog-accent); object-fit: cover;" />
             <div>
-              <strong class="cog-text-strong" style="font-size: 13px;">${c.name}</strong>
-              <span class="cog-text-secondary" style="font-size: 10px; margin-left: 4px;">LVL ${level}</span>
+              <strong class="cog-text-strong" style="font-size: 13px;">${escapeAttr(c.name)}</strong>
+              <span class="cog-text-secondary" style="font-size: 10px; margin-left: 4px;">LVL ${escapeAttr(level)}</span>
             </div>
           </td>
           <td style="padding: 6px;">
-            <input type="text" class="cog-roster-party-input cog-bg-surface cog-text-strong" data-actor-id="${c.id}" value="${party}" placeholder="e.g. Alpha Squad, Night Shift" style="width: 100%; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 3px 6px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
+            <input type="text" class="cog-roster-party-input cog-bg-surface cog-text-strong" data-actor-id="${escapeAttr(c.id)}" value="${escapeAttr(party)}" placeholder="e.g. Alpha Squad, Night Shift" style="width: 100%; border: 1px solid var(--cog-panel-border); border-radius: 3px; padding: 3px 6px; font-family: 'Oswald', sans-serif; font-size: 11px;" />
           </td>
         </tr>
       `;
     }).join('');
 
-    const partySelectOptions = distinctParties.map(p => `<option value="${p}">${p}</option>`).join('');
+    const partySelectOptions = distinctParties.map(p => `<option value="${escapeAttr(p)}">${escapeAttr(p)}</option>`).join('');
 
     const content = `
       <div class="cog-manage-roster-dialog cog-text" style="font-family: 'Oswald', sans-serif;">
@@ -191,25 +192,25 @@ export const sessionRosterDialogsMixin = {
       const img = c.img || 'icons/svg/mystery-man.svg';
 
       return `
-        <tr class="cog-new-party-row" data-actor-id="${c.id}" style="border-bottom: 1px solid var(--cog-panel-border);">
+        <tr class="cog-new-party-row" data-actor-id="${escapeAttr(c.id)}" style="border-bottom: 1px solid var(--cog-panel-border);">
           <td style="text-align: center; padding: 6px;">
-            <input type="checkbox" class="cog-party-member-checkbox" data-actor-id="${c.id}" style="cursor: pointer; width: 16px; height: 16px;" />
+            <input type="checkbox" class="cog-party-member-checkbox" data-actor-id="${escapeAttr(c.id)}" style="cursor: pointer; width: 16px; height: 16px;" />
           </td>
           <td style="padding: 6px; display: flex; align-items: center; gap: 8px;">
-            <img class="cog-bg-icon-box" src="${img}" style="width: 28px; height: 28px; border-radius: 3px; border: 1px solid var(--cog-accent); object-fit: cover;" />
+            <img class="cog-bg-icon-box" src="${escapeAttr(img)}" style="width: 28px; height: 28px; border-radius: 3px; border: 1px solid var(--cog-accent); object-fit: cover;" />
             <div>
-              <strong class="cog-text-strong" style="font-size: 13px;">${c.name}</strong>
-              <span class="cog-text-secondary" style="font-size: 10px; margin-left: 4px;">LVL ${level}</span>
+              <strong class="cog-text-strong" style="font-size: 13px;">${escapeAttr(c.name)}</strong>
+              <span class="cog-text-secondary" style="font-size: 10px; margin-left: 4px;">LVL ${escapeAttr(level)}</span>
             </div>
           </td>
           <td class="cog-text-gold" style="padding: 6px; font-size: 11px;">
-            ${party ? party : '<span class="cog-text-muted" style="font-style: italic;">Unassigned</span>'}
+            ${party ? escapeAttr(party) : '<span class="cog-text-muted" style="font-style: italic;">Unassigned</span>'}
           </td>
         </tr>
       `;
     }).join('');
 
-    const datalistOptions = distinctParties.map(p => `<option value="${p}">`).join('');
+    const datalistOptions = distinctParties.map(p => `<option value="${escapeAttr(p)}">`).join('');
 
     const content = `
       <div class="cog-create-party-dialog cog-text" style="font-family: 'Oswald', sans-serif;">

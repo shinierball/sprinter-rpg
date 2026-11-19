@@ -4,7 +4,7 @@
  * `buildFloorSimContext` gathers what the compiler reads besides it. The document layer
  * (`src/documents/actor/actor-floor-sim.mjs`) re-exports these.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { floorHistoryOf } from './run-flag.mjs';
 import { catalogEntries, findConditionEntry } from '../../content/catalog-lookup.mjs';
 import { getFloorArrival, runForStartFloor } from '../floor-arrivals.mjs';
 import { prefillAiFavorRating } from '../../utils/character/ai-favor.mjs';
@@ -18,6 +18,7 @@ import { getStatCaps } from '../../utils/character/stat-caps.mjs';
 import { getCOGStatModifier } from '../../documents/actor/actor-constants.mjs';
 import { parseFloorNumber } from '../../utils/floor/floor-number.mjs';
 import { transformationOfItem } from '../../utils/character/overlay-state.mjs';
+import { starterRoleOf } from '../../utils/character/starter-role.mjs';
 
 const STATS = ['str', 'dex', 'con', 'int', 'cha'];
 
@@ -29,8 +30,6 @@ const intOr = (raw, fallback = 0) => {
 const itemList = (actor) => {
   return Array.from(actor?.items ?? []);
 };
-
-const flagOf = (actor, key) => actor?.flags?.[SYSTEM_ID]?.[key] ?? actor?.getFlag?.(SYSTEM_ID, key) ?? null;
 
 /** A run (`{ startFloor, done, complete? }`) sanitised: `{ startFloor, done: number[], complete? }` or null. */
 export function cleanFloorRun(raw) {
@@ -62,7 +61,7 @@ export function snapshotForFloorSim(actor, { floorRun = null } = {}) {
   let hasRace = false;
   let hasClass = false;
   for (const item of itemList(actor)) {
-    const role = item.flags?.[SYSTEM_ID]?.starterRole ?? null;
+    const role = starterRoleOf(item);
     if (item.type === 'skill') {
       skills.push({
         id: item.id, identifier: item.system?.identifier ?? '', name: item.name, rank: intOr(item.system?.rank), rankCeiling: getRankCeiling(item),
@@ -88,7 +87,7 @@ export function snapshotForFloorSim(actor, { floorRun = null } = {}) {
     const linked = w.skillIdentifier ? itemList(actor).find(i => i.type === 'skill' && i.system?.identifier === w.skillIdentifier) : null;
     if (linked) w.aiFavor = Math.max(w.aiFavor, prefillAiFavorRating(linked.system?.aiFavorRatings));
   }
-  const history = flagOf(actor, 'floorHistory');
+  const history = floorHistoryOf(actor) ?? null;
   return {
     actorUuid: actor?.uuid ?? '', name: actor?.name ?? '', type: actor?.type ?? '',
     level: Math.max(1, intOr(system.details?.level, 1)), floor: parseFloorNumber(system.details?.floor) || 1,

@@ -11,13 +11,13 @@
  *
  * No Foundry globals and no text parsing: the row's words are carried as words, never read for meaning (GEMINI §2).
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { buildEnchantmentWrite } from './crafting-engine.mjs';
 import { upgradeTemplate, upgradedName } from './upgrade-table.mjs';
 import { getRowKind } from '../row-kinds.mjs';
 import { craftText } from './craft-text.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 import { rngPick } from '../rng.mjs';
+import { withMagicItem } from '../loot/loot-flags.mjs';
 import { lootBoxTierDef } from '../../data/loot-box-tiers.mjs';
 import { buildPayload } from '../../data/builders/item-payload.mjs';
 
@@ -204,11 +204,7 @@ export function magicItemPayload(rolled, ctx = {}) {
 
   const rolls = [rolled?.typeRoll, ...(Array.isArray(rolled?.propertyRolls) ? rolled.propertyRolls : []), unique?.via, unique]
     .filter(isPlain).map(rollRef);
-  data.flags = isPlain(data.flags) ? data.flags : {};
-  data.flags[SYSTEM_ID] = {
-    ...(isPlain(data.flags[SYSTEM_ID]) ? data.flags[SYSTEM_ID] : {}),
-    magicItem: { generator: text(rolled?.generator), tier: tierDef?.id ?? text(rolled?.tier), rolls, missed }
-  };
+  data.flags = withMagicItem(data, { generator: text(rolled?.generator), tier: tierDef?.id ?? text(rolled?.tier), rolls, missed }).flags;
   const pending = (Array.isArray(data.system.enchantments) ? data.system.enchantments : []).filter((e) => e?.pending === true).length;
   return { data, lines, pendingLines, pending, warnings };
 }

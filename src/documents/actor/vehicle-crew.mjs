@@ -252,8 +252,9 @@ function accessChanges(vehicle, crew, plan, ref, actor, left) {
 /* -------------------------------------------- */
 
 
-async function postLine(vehicle, content, ruleBreak) {
-  const data = { speaker: globalThis.ChatMessage?.getSpeaker?.({ actor: vehicle }), content: `<p>${content}</p>` };
+/** A chat line about the vehicle's crew; `text` is plain and escaped here. */
+async function postLine(vehicle, text, ruleBreak) {
+  const data = { speaker: globalThis.ChatMessage?.getSpeaker?.({ actor: vehicle }), content: `<p>${escapeAttr(text)}</p>` };
   try {
     await globalThis.ChatMessage?.create?.(ruleBreak ? ruleBreakMessageData(data) : data);
   } catch (err) {
@@ -322,7 +323,7 @@ async function applyCrewChange(payload) {
 
     const who = actor?.name ?? 'Someone';
     if (overCapacity) {
-      await postLine(vehicle, `${escapeAttr(who)} boards ${escapeAttr(vehicle.name)} past its occupancy (${plan.aboard}/${plan.total}). Rule Break.`, true);
+      await postLine(vehicle, `${who} boards ${vehicle.name} past its occupancy (${plan.aboard}/${plan.total}). Rule Break.`, true);
     }
     // A moving vehicle (the GM reads its speed from the document) and a boarder as large as the vehicle get a line of their own.
     const speed = Number(vehicle.system?.drive?.currentMove) || 0;
@@ -330,16 +331,16 @@ async function applyCrewChange(payload) {
     if (plan.added && (speed > 0 || tight)) {
       const parts = [];
       if (speed > 0) {
-        parts.push(`${escapeAttr(who)} boards ${escapeAttr(vehicle.name)} while it is moving (${speed} ft).`);
+        parts.push(`${who} boards ${vehicle.name} while it is moving (${speed} ft).`);
         if (globalThis.game?.combat?.started) parts.push('Boarding uses 10 ft of Move (a Step will do).');
         if (payload.boardRuleBreak === true) parts.push('Boarded without a passing check. Rule Break.');
       }
-      if (tight) parts.push(`${escapeAttr(who)} is as large as ${escapeAttr(vehicle.name)}: it is going to be a tight fit.`);
+      if (tight) parts.push(`${who} is as large as ${vehicle.name}: it is going to be a tight fit.`);
       await postLine(vehicle, parts.join(' '), speed > 0 && payload.boardRuleBreak === true);
     }
     if (plan.replacedPilot) {
       const old = resolveActorByUuid(plan.replacedPilot)?.name ?? 'the previous driver';
-      await postLine(vehicle, `${escapeAttr(who)} takes the wheel of ${escapeAttr(vehicle.name)} from ${escapeAttr(old)}.`, false);
+      await postLine(vehicle, `${who} takes the wheel of ${vehicle.name} from ${old}.`, false);
     }
   } finally {
     if (wroteTarget) {

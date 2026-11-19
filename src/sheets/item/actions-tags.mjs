@@ -12,6 +12,7 @@ import { normalizeTagList } from '../../utils/tag/tag-query.mjs';
 import { composeQueryTag } from './context-query.mjs';
 import { queryBucketsAt } from './util.mjs';
 import { addTagFromInput, removeTagFromDocument } from '../base/tag-editor.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 export { addTagFromInput };
 
@@ -95,7 +96,7 @@ async function promptSituationLabel() {
   const DialogV2 = foundry.applications.api.DialogV2;
   const result = await DialogV2.prompt({
     window: { title: game.i18n.localize('COG.Rows.Query.NewSituation') },
-    content: `<label>${game.i18n.localize('COG.Rows.Query.SituationLabel')} <input type="text" name="label" autofocus></label>`,
+    content: `<label>${escapeAttr(game.i18n.localize('COG.Rows.Query.SituationLabel'))} <input type="text" name="label" autofocus></label>`,
     ok: {
       label: game.i18n.localize('COG.Rows.Query.Add'),
       callback: (_event, button) => String(button?.form?.elements?.label?.value ?? '').trim()

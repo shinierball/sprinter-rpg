@@ -191,7 +191,8 @@ async function pulseZone(region, { combat, round = combat?.round } = {}) {
 async function postZonePulseCard(reports, round) {
   const rows = [];
   for (const r of reports) {
-    if (r.pulse) rows.push(...pulseRows({ item: { name: r.itemName, system: r.itemSystem }, result: { report: r.pulse } }));
+    const pulsed = r.pulse ? pulseRows({ item: { name: r.itemName, system: r.itemSystem }, result: { report: r.pulse } }) : '';
+    if (pulsed) rows.push(pulsed);
     for (const c of r.conditions) {
       rows.push(`<div class="cog-bg-danger-tint"><strong>${escapeAttr(r.itemName)}</strong> &rarr; ${escapeAttr(c.name)}: ${escapeAttr(combatText('COG.ZonePulse.Condition', { condition: conditionLabel(c.ref) }))}</div>`);
     }

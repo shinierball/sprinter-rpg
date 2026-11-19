@@ -9,12 +9,11 @@
  * clicking client asks, and the GM applies. A GM applies directly; a player asks the GM through the relay (the attacker is usually not
  * theirs), and the GM checks that the player owns the holder named on the card.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { COGDamage } from '../../documents/actor/damage-pipeline.mjs';
 import { currentTokens } from '../../documents/actor/actor-popularity.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
-import { readFlag, writeFlag } from '../../utils/flags.mjs';
+import { flagPath, readFlag, withFlags, writeFlag } from '../../utils/flags.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { confirmRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
@@ -27,6 +26,8 @@ import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { ownerAndGmIds } from '../../utils/owner-recipients.mjs';
 
 export const REFLECT_RELAY = 'chatReflectApply';
+/** The flag a reflect or retaliate offer card stores its record under; this module is its only reader and writer. */
+const REFLECT_FLAG = 'reflect';
 const REFLECT_ATTACK_NAME = 'Damage Reflection';
 const RETALIATE_ATTACK_NAME = 'Retaliation';
 const MAX_REFLECT_SLOTS = 100;
@@ -46,7 +47,7 @@ const plural = (n) => (n === 1 ? '' : 's');
  * @returns {{ kind: 'reflect'|'retaliate', holderUuid: string, attackerUuid: string, slots: number, label: string, applied: boolean, applicationId: string, reflectIndex: number }|null}
  */
 export function readReflectRecord(message) {
-  const r = message?.flags?.[SYSTEM_ID]?.reflect;
+  const r = readFlag(message, REFLECT_FLAG);
   if (!r || typeof r !== 'object') return null;
   if (typeof r.holderUuid !== 'string' || !r.holderUuid || typeof r.attackerUuid !== 'string' || !r.attackerUuid) return null;
   const kind = r.kind === KINDS.retaliate ? KINDS.retaliate : KINDS.reflect;
@@ -126,7 +127,7 @@ export function reflectOfferHtml({ holderName, attackerName, label, slots = 0, a
     what = `${name}: roll <strong>${escapeAttr(chance)}</strong>; on a ${CHANCE_HIT}, <strong>${escapeAttr(attackerName)}</strong> loses <strong>${escapeAttr(slotWords)}</strong>.`;
     buttonText = escapeAttr(`Roll ${chance} (attacker loses ${slots} slot${plural(slots)} on a ${CHANCE_HIT})`);
   } else {
-    what = `${name}: reflect <strong>${slots}</strong> Health Bar slot${plural(slots)} to <strong>${escapeAttr(attackerName)}</strong>?`;
+    what = `${name}: reflect <strong>${escapeAttr(slots)}</strong> Health Bar slot${plural(slots)} to <strong>${escapeAttr(attackerName)}</strong>?`;
     buttonText = escapeAttr(`Reflect ${slots} slot${plural(slots)}`);
   }
   const doneText = note ? escapeAttr(note) : (retaliate ? 'Retaliated.' : 'Reflected.');
@@ -152,12 +153,11 @@ export async function postReflectOffers({ holder, attacker, reflections = [], re
   const posted = [];
   if (!holder || !attacker || !globalThis.ChatMessage?.create) return posted;
   const post = async (content, record) => {
-    posted.push(await globalThis.ChatMessage.create({
+    posted.push(await globalThis.ChatMessage.create(withFlags({
       speaker: globalThis.ChatMessage.getSpeaker?.({ actor: holder }) || { alias: holder.name },
       whisper: ownerAndGmIds(holder),
-      content,
-      flags: { [SYSTEM_ID]: { reflect: { holderUuid: holder.uuid, attackerUuid: attacker.uuid, applied: false, applicationId, ...record } } }
-    }));
+      content
+    }, { [REFLECT_FLAG]: { holderUuid: holder.uuid, attackerUuid: attacker.uuid, applied: false, applicationId, ...record } })));
   };
   for (const [reflectIndex, refl] of (Array.isArray(reflections) ? reflections : []).entries()) {
     const slots = Math.min(MAX_REFLECT_SLOTS, Math.max(1, Math.floor(Number(refl.slots) || 1)));
@@ -221,9 +221,9 @@ async function applyReflectionNow(message, { ruleBreak = false } = {}) {
   const slots = retaliate ? 0 : Math.min(MAX_REFLECT_SLOTS, Math.max(1, Math.floor(Number(row.slots) || 1)));
   const face = { holderName: holder?.name ?? '', attackerName: attacker.name, label: record.label, slots, kind: record.kind, chance: row.chance ?? '', formula: row.formula ?? '', damageType: row.damageType ?? '', ruleBreak: breaking };
   await markDamageUndoReflected(holder, record.applicationId, record.reflectIndex, true, field);
-  await message.update({ [`flags.${SYSTEM_ID}.reflect.applied`]: true, ...(breaking ? ruleBreakUpdate() : {}) });
+  await message.update({ [flagPath(`${REFLECT_FLAG}.applied`)]: true, ...(breaking ? ruleBreakUpdate() : {}) });
   const rollBack = async () => {
-    await message.update({ [`flags.${SYSTEM_ID}.reflect.applied`]: false });
+    await message.update({ [flagPath(`${REFLECT_FLAG}.applied`)]: false });
     await markDamageUndoReflected(holder, record.applicationId, record.reflectIndex, false, field);
   };
   let result;
@@ -300,7 +300,7 @@ export async function handleApplyReflect(event, button, message) {
   if (spent) {
     const asked = await confirmRuleBreak({
       title: `Once Per ${spent.scope === 'floor' ? 'Floor' : 'Combat'}`,
-      message: escapeAttr(`${spent.label || 'This offer'} was already used this ${spent.scope}. Use it again as a Rule Break?`)
+      message: `${spent.label || 'This offer'} was already used this ${spent.scope}. Use it again as a Rule Break?`
     });
     if (!asked.confirmed) return;
     ruleBreak = true;

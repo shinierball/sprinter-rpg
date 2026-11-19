@@ -1,6 +1,7 @@
 import { hasRuleFlag, RULE_FLAGS } from '../tag/tag-behaviour.mjs';
 import { isWeaponGear, getWieldMode, isHeldSlot, hasWeaponTypeTag } from './wield-mode.mjs';
 import { isWeaponCapable } from '../document-types.mjs';
+import { isAccessorySlot } from './gear-slots.mjs';
 
 export { isWeaponGear, getWieldMode };
 
@@ -22,6 +23,8 @@ export function calculateItemHandsRequired(item) {
   if (item.type === 'gear' && !sys.equipped) return 0;
   if (item.type === 'attack' && sys.equipped === false) return 0;
   if (isNaturalWeapon(item)) return 0;
+  // Gear worn in a held slot (gloves, gauntlets) is on the hands, not in them.
+  if (item.type === 'gear' && hasRuleFlag(item, RULE_FLAGS.worn)) return 0;
 
   // Gear held in the hands (a shield, a lantern) takes its hands even with the Weapon box off; other non-weapon gear takes none.
   if (item.type === 'gear' && !isWeaponGear(item) && !isHeldSlot(sys.slot)) return 0;
@@ -32,6 +35,22 @@ export function calculateItemHandsRequired(item) {
   if (mode === 'two_handed') return 2;
   if (mode === 'one_handed') return 1;
   return 0;
+}
+
+/**
+ * Whether the sheet offers this item as an improvised swing (core p. 178): equipped gear that is not a weapon and is carried,
+ * not worn: in a held slot (unless it is worn on the hands, like gloves) or in an accessory or belt slot. Armour, tattoos,
+ * patches, pet gear, unequipped gear and loot are left out. The attack path itself answers for any non-weapon gear.
+ * @param {object} item
+ * @returns {boolean}
+ */
+export function canSwingImprovised(item) {
+  if (item?.type !== 'gear') return false;
+  const sys = item.system || {};
+  if (!sys.equipped || isWeaponGear(item)) return false;
+  const slot = sys.slot;
+  if (isHeldSlot(slot)) return !hasRuleFlag(item, RULE_FLAGS.worn);
+  return isAccessorySlot(slot);
 }
 
 /**

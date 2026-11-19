@@ -17,6 +17,7 @@ import { COGItemSetupApp } from '../apps/item-setup-app.mjs';
 import { canCreateItems } from '../apps/item-create.mjs';
 import { COGWeaponBuilderApp } from '../apps/weapon-builder/weapon-builder-app.mjs';
 import { isMarkerActor } from '../utils/area/marker.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const CREATE_BUTTONS = '.create-document, .create-entry, [data-action="createEntry"], [data-action="createDocument"]';
 const HEADER_ACTIONS = '.header-actions, .action-buttons, header.directory-header .action-buttons';
@@ -30,7 +31,7 @@ function directoryRoot(app, html) {
 /** Parse a single-element HTML snippet with the root's own document. */
 function createElement(root, html) {
   const holder = root.ownerDocument.createElement('div');
-  holder.innerHTML = html.trim();
+  holder.innerHTML = html; // leading whitespace is a text node: `firstElementChild` skips it
   return holder.firstElementChild;
 }
 
@@ -65,8 +66,8 @@ export function injectItemDirectoryButtons(app, html) {
   onClick(btn, () => COGSkillManager.open());
 
   const subButton = (classes, iconClass, label, title = '') => createElement(root, `
-    <button type="button" class="cog-sidebar-btn cog-sidebar-btn-sub ${classes}" ${title ? `title="${title}"` : ''}>
-      <i class="${iconClass}"></i> ${label}
+    <button type="button" class="cog-sidebar-btn cog-sidebar-btn-sub ${escapeAttr(classes)}" ${title ? `title="${escapeAttr(title)}"` : ''}>
+      <i class="${escapeAttr(iconClass)}"></i> ${escapeAttr(label)}
     </button>
   `);
 

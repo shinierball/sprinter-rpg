@@ -132,6 +132,21 @@ export function nodeToUpdate(node, { live, baseline = null, fieldKind = () => nu
 }
 
 /**
+ * Does rule 2 of `nodeToUpdate` keep any of a node's changes back: is there a changed path whose live value is no longer
+ * the baseline's (someone wrote it since the capture)? The runner keeps a removed child while its parent's change was
+ * not all written, so what the parent took from the child is never lost.
+ * @param {{ before: object, after: object }} node
+ * @param {{ live: object, baseline?: object|null }} args as for `nodeToUpdate`; with no baseline nothing is kept back
+ * @returns {boolean}
+ */
+export function hasNewerEdit(node, { live, baseline = null } = {}) {
+  if (!baseline) return false;
+  const { ForcedDeletion } = foundry.data.operators;
+  const diff = foundry.utils.diffObject(node.before, node.after, { bidirectional: true });
+  return flatten(diff, node.before, ForcedDeletion).some(({ path }) => !deepEqual(valueAt(live, path), valueAt(baseline, path)));
+}
+
+/**
  * Does a stored source (read back from the database) hold a node's migrated values? Compares only the paths the
  * migrations changed, so server-managed keys (`_stats`) and defaults filled on write do not count. A stored `null` reads
  * back as an absent key (the server's `get` omits it), so absent and `null` are the same here.

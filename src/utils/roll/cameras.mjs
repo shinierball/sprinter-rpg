@@ -7,9 +7,10 @@
  * Eligible rolls (D-C2 a): skill, stat, attack, spell attack and Evade of a crawler; never a mob, never an automatic
  * roll, not the contest response. The award itself (Popularity and AI Favor deltas) is E6.10 B3b.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { clearFlag, readFlag } from '../flags.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 import { escapeAttr } from '../escape-attr.mjs';
+import { langText } from '../lang-text.mjs';
 
 /** The actor flag holding the armed (one-shot) choice. */
 export const CAMERA_ARMED_FLAG = 'cameraArmed';
@@ -58,11 +59,7 @@ const TEXT = Object.freeze({
 });
 
 /** A string by key; works without a loaded i18n catalogue (headless tests). */
-export function cameraText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const cameraText = langText(TEXT);
 
 const cell = (auto = {}, extra = {}) => ({ auto: { popularity: 0, aiFavor: 0, ...auto }, choices: [], text: '', ...extra });
 const choice = (id, label, effect = {}) => ({ id, label, ...effect });
@@ -230,7 +227,7 @@ export function cameraNoteHtml(choiceId) {
 export function armedCamera(actor) {
   let raw;
   try {
-    raw = typeof actor?.getFlag === 'function' ? actor.getFlag(SYSTEM_ID, CAMERA_ARMED_FLAG) : actor?.flags?.[SYSTEM_ID]?.[CAMERA_ARMED_FLAG];
+    raw = readFlag(actor, CAMERA_ARMED_FLAG);
   } catch {
     raw = undefined;
   }
@@ -276,7 +273,7 @@ export function cameraParts(actor, choiceId, floor = 1) {
 export async function consumeArmedCamera(actor) {
   if (!armedCamera(actor)) return false;
   try {
-    await actor.unsetFlag(SYSTEM_ID, CAMERA_ARMED_FLAG);
+    await clearFlag(actor, CAMERA_ARMED_FLAG);
     return true;
   } catch (err) {
     console.warn('Sprinter RPG | Could not clear the armed camera choice', err);

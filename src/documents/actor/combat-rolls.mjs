@@ -40,7 +40,9 @@ import {
 } from '../../utils/attack/attack-options.mjs';
 import { attackOptionsLineHtml, damageButtonLabel } from '../../utils/attack/attack-options-line.mjs';
 import { attackText } from '../../utils/attack/attack-text.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { resolveWeaponSkills } from './weapon-skills.mjs';
+import { weaponSystemFor } from '../../utils/skill/weapon-skill-options.mjs';
 import { spendActivationUses } from './buff-activation.mjs';
 import { readAttackFacts } from '../../utils/attack/attack-facts.mjs';
 import { attackTargetEntries, getAttackDifficultyState, incomingAdvantageOf, resolveAttackTargets, evadeButtonHtml } from './attack-targets.mjs';
@@ -154,7 +156,7 @@ async function rollMobAttackAutoHit(actor, attackItem, options = {}, picked = nu
 
   const isArea = isAreaAttack(attackItem, options);
   let effectTag = '';
-  if (favorBonus > 0) effectTag += ` [AI Favor rating ${favorBonus}]`;
+  if (favorBonus > 0) effectTag += ` [AI Favor rating ${escapeAttr(favorBonus)}]`;
 
   const roll = await new Roll(`${evadeDC}`).evaluate();
 
@@ -196,7 +198,7 @@ async function rollMobAttackAutoHit(actor, attackItem, options = {}, picked = nu
   if (dmgFormula || resolveVariant || hasOnHitDebuff(attackItem.system)) {
     const dmgLabel = damageButtonLabel({ formula: dmgFormula, flag: attackChoicesFlag, resolveVariant });
     let effectBtnTag = '';
-    if (favorBonus > 0) effectBtnTag += ` [AI Favor rating ${favorBonus}]`;
+    if (favorBonus > 0) effectBtnTag += ` [AI Favor rating ${escapeAttr(favorBonus)}]`;
     // An auto-hit has no d20 (never a crit); the damage roll inherits this context's situations and subject.
     // A Disadvantaged mob attack carries `situation.disadvantaged`, as a crawler's card does, so rows that need it (the size damage) match.
     const autoHitContext = extendContext(picked?.context ?? buildRollContext({
@@ -204,8 +206,8 @@ async function rollMobAttackAutoHit(actor, attackItem, options = {}, picked = nu
     }), { disadvantaged: diff.mode === 'disadvantage' });
     dmgBtnHtml = `
       <div style="margin-top: 6px;">
-        <button type="button" class="cog-attack-roll-btn roll-attack-dmg-from-card roll-skill-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollItemDamage" data-actor-uuid="${actor.uuid}" data-item-id="${attackItem.id}" data-skill-id="${attackItem.id}" data-item-type="${attackItem.type || 'attack'}"${rollContextDataAttr(autoHitContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
-          <i class="fa-solid fa-burst"></i> ${dmgLabel}${effectBtnTag}
+        <button type="button" class="cog-attack-roll-btn roll-attack-dmg-from-card roll-skill-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollItemDamage" data-actor-uuid="${escapeAttr(actor.uuid)}" data-item-id="${escapeAttr(attackItem.id)}" data-skill-id="${escapeAttr(attackItem.id)}" data-item-type="${escapeAttr(attackItem.type || 'attack')}"${rollContextDataAttr(autoHitContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
+          <i class="fa-solid fa-burst"></i> ${escapeAttr(dmgLabel)}${effectBtnTag}
         </button>
       </div>
     `;
@@ -217,7 +219,7 @@ async function rollMobAttackAutoHit(actor, attackItem, options = {}, picked = nu
   const optionsLineHtml = await attackOptionsLineHtml(attackChoicesFlag);
   const contestHtml = attackItem.type === 'attack' && !allOutOfRange(targetResults) ? renderAttackContestBlock(actor, attackItem, inRangeRows(targetResults), evadeDC, { shift: diff.shift + diff.flat, label: diff.label }) : '';
   const content = [autoHitBannerHtml, optionsLineHtml, targetResultsHtml, dmgBtnHtml, evadeBtnHtml, contestHtml, interruptPromptsHtml, controlsHtml].filter(Boolean).join('');
-  const flavorText = `<strong>${actor.name}</strong>: ${attackItem.name} (Auto-Hit vs Target Evade DC ${evadeDC})${effectTag}`;
+  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(attackItem.name)} (Auto-Hit vs Target Evade DC ${escapeAttr(evadeDC)})${effectTag}`;
 
   COGSessionEngine.recordRoll({
     actor: actor,
@@ -312,7 +314,7 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
     hitSkill = matchingSkill;
     attackMarkSkills = markSkills;
 
-    toHitStat = attackToHitStat(attackItem, matchingSkill, sys.baseDamage);
+    toHitStat = attackToHitStat(attackItem, matchingSkill, weaponSystemFor(attackItem)?.baseDamage);
   }
   let isUntrained = isMob ? false : (rank <= 0);
   const isOneHandedPenalty = isMob ? false : hasOneHandedPenalty(sys, { ...options, handless: isNaturalWeapon(attackItem) });
@@ -355,7 +357,7 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
     rank = weaponResolve.skillRank;
     hitSkill = weaponResolve.matchingSkill;
     attackMarkSkills = weaponResolve.markSkills;
-    toHitStat = attackToHitStat(attackItem, hitSkill, sys.baseDamage);
+    toHitStat = attackToHitStat(attackItem, hitSkill, weaponSystemFor(attackItem)?.baseDamage);
     isUntrained = rank <= 0;
     baseContext = contextFor();
   }
@@ -451,9 +453,10 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
 
   // AI Favor rating (3.25d): judged against the roll's context, so a targeted Boss counts. A label, never an award.
   const favorBonus = getAiFavorRating(actor, attackItem, { context: rollContext, damageEffect: chosenEffect, skill: hitSkill ?? undefined }).value;
-  if (favorBonus > 0) effectTag += ` [AI Favor rating ${favorBonus}]`;
+  if (favorBonus > 0) effectTag += ` [AI Favor rating ${escapeAttr(favorBonus)}]`;
   // A weapon with several Skills: the card names the one this attack used.
-  if ((weaponResolve?.options.length ?? 0) > 1 && hitSkill) effectTag += ` [${attackText('COG.Attack.Skill.Used', { name: hitSkill.name })}]`;
+  if ((weaponResolve?.options.length ?? 0) > 1 && hitSkill) effectTag += ` [${escapeAttr(attackText('COG.Attack.Skill.Used', { name: hitSkill.name }))}]`;
+  if (weaponResolve?.improvised && hitSkill) effectTag += ` [${escapeAttr(attackText('COG.Attack.Improvised.Card', { name: hitSkill.name }))}]`;
 
   // Q-B2: check rows (every roll of the skill) and attackModifiers rows (attacks only) go into the formula
   const targetEntries = attackTargetEntries(actor, options);
@@ -464,28 +467,31 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   const roll = await new Roll(formula, { rank: isUntrained ? 0 : rank, mod: statMod }).evaluate();
 
   const bonusStr = toHit.breakdown.length > 0 ? ` + ${toHit.breakdown.join(', ')}` : '';
+  const rankText = isUntrained ? '' : (rank > 0 ? `Rank ${rank} + ` : '');
+  const modText = `${toHitStat.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${bonusStr}`;
+  const who = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(attackItem.name)}`;
   let flavorText;
   if (advState.mode === 'disadvantage') {
     const reason = isOneHandedPenalty ? 'One-Handed Disadvantage' : (isUntrained ? 'Untrained Attack Check with Disadvantage' : (advState.label || 'Disadvantage'));
-    flavorText = `<strong>${actor.name}</strong>: ${attackItem.name} (<strong>${reason}</strong>: 2d20kl + ${isUntrained ? '' : (rank > 0 ? `Rank ${rank} + ` : '')}${toHitStat.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${bonusStr} vs Target Evade)${effectTag}`;
+    flavorText = `${who} (<strong>${escapeAttr(reason)}</strong>: 2d20kl + ${escapeAttr(rankText)}${escapeAttr(modText)} vs Target Evade)${effectTag}`;
   } else if (advState.mode === 'advantage') {
-    flavorText = `<strong>${actor.name}</strong>: ${attackItem.name} (<strong>${advState.label}</strong>: 2d20kh + ${isUntrained ? '' : (rank > 0 ? `Rank ${rank} + ` : '')}${toHitStat.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${bonusStr} vs Target Evade)${effectTag}`;
+    flavorText = `${who} (<strong>${escapeAttr(advState.label)}</strong>: 2d20kh + ${escapeAttr(rankText)}${escapeAttr(modText)} vs Target Evade)${effectTag}`;
   } else if (advState.mode === 'cancelled') {
-    flavorText = `<strong>${actor.name}</strong>: ${attackItem.name} (<strong>${advState.label}</strong>: 1d20 + ${isUntrained ? '' : (rank > 0 ? `Rank ${rank} + ` : '')}${toHitStat.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${bonusStr} vs Target Evade)${effectTag}`;
+    flavorText = `${who} (<strong>${escapeAttr(advState.label)}</strong>: 1d20 + ${escapeAttr(rankText)}${escapeAttr(modText)} vs Target Evade)${effectTag}`;
   } else {
     const rankPart = rank > 0 ? `Rank ${rank} + ` : '';
-    flavorText = `<strong>${actor.name}</strong>: ${attackItem.name} (To Hit: 1d20 + ${rankPart}${toHitStat.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${bonusStr} vs Target Evade)${effectTag}`;
+    flavorText = `${who} (To Hit: 1d20 + ${escapeAttr(rankPart)}${escapeAttr(modText)} vs Target Evade)${effectTag}`;
   }
 
   // Check for Fumble on Natural 1
   const isFumble = roll.dice?.[0]?.results ? roll.dice[0].results.some(r => r.result === 1 && (r.active ?? true)) : (roll.terms?.[0]?.results ? roll.terms[0].results.some(r => r.result === 1 && (r.active ?? true)) : roll.total === 1);
   const matchedSkill = attackItem.type === 'skill' ? resolveWeaponSkills(actor, attackItem).matchingSkill : hitSkill;
-  const fumbleDebuff = matchedSkill?.system?.fumbleDebuff || attackItem.system?.fumbleDebuff || '';
+  const fumbleDebuff = matchedSkill?.system?.fumbleDebuff || weaponSystemFor(attackItem)?.fumbleDebuff || '';
   let fumbleTag = '';
   if (isFumble && fumbleDebuff) {
     fumbleTag = `
       <div class="cog-fumble-warning cog-bg-warning-tint cog-text-warning" style="margin-top: 6px; padding: 4px 6px; border: 1px solid var(--cog-warning); border-radius: 3px; font-size: 11px;">
-        <i class="fa-solid fa-triangle-exclamation"></i> <strong>FUMBLE!</strong> Critical Miss inflicts <strong>${fumbleDebuff}</strong> on wielder!
+        <i class="fa-solid fa-triangle-exclamation"></i> <strong>FUMBLE!</strong> Critical Miss inflicts <strong>${escapeAttr(fumbleDebuff)}</strong> on wielder!
       </div>
     `;
   }
@@ -542,13 +548,13 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   if (dmgFormula || resolveVariant || hasOnHitDebuff(attackItem.system)) {
     const dmgLabel = damageButtonLabel({ formula: dmgFormula, flag: attackChoicesFlag, resolveVariant });
     let effectBtnTag = '';
-    if (favorBonus > 0) effectBtnTag += ` [AI Favor rating ${favorBonus}]`;
+    if (favorBonus > 0) effectBtnTag += ` [AI Favor rating ${escapeAttr(favorBonus)}]`;
     // A natural 20 (the kept die) marks the damage roll as a crit; the context rides on the button.
     const cardContext = extendContext(rollContext, { isCrit: extractD20Result(roll) === 20, isAmazing: isAmazingOutcome(targetResults[0]?.outcomeId) });
     dmgBtnHtml = `
       <div style="margin-top: 6px;">
-        <button type="button" class="cog-attack-roll-btn roll-attack-dmg-from-card roll-skill-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollItemDamage" data-actor-uuid="${actor.uuid}" data-item-id="${attackItem.id}" data-skill-id="${attackItem.id}" data-item-type="${attackItem.type || 'attack'}"${foreignItemAttr(actor, attackItem)}${rollContextDataAttr(cardContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
-          <i class="fa-solid fa-burst"></i> ${dmgLabel}${effectBtnTag}
+        <button type="button" class="cog-attack-roll-btn roll-attack-dmg-from-card roll-skill-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollItemDamage" data-actor-uuid="${escapeAttr(actor.uuid)}" data-item-id="${escapeAttr(attackItem.id)}" data-skill-id="${escapeAttr(attackItem.id)}" data-item-type="${escapeAttr(attackItem.type || 'attack')}"${foreignItemAttr(actor, attackItem)}${rollContextDataAttr(cardContext)} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-accent-strong-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif);">
+          <i class="fa-solid fa-burst"></i> ${escapeAttr(dmgLabel)}${effectBtnTag}
         </button>
       </div>
     `;
@@ -557,7 +563,7 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   const attackIsArea = isAreaAttack(attackItem, options);
   const evadeBtnHtml = evadeButtonHtml(actor, roll, currentFloor, { rollContext, isArea: attackIsArea });
 
-  const rollHtml = typeof roll.render === 'function' ? await roll.render() : '';
+  const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
   const optionsLineHtml = await attackOptionsLineHtml(attackChoicesFlag);
   const contestHtml = attackItem.type === 'attack' && !allOutOfRange(targetResults) ? renderAttackContestBlock(actor, attackItem, inRangeRows(targetResults), roll.total) : '';
   const content = [rollHtml, floorRuleBreak.html, optionsLineHtml, fumbleTag, targetResultsHtml, dmgBtnHtml, evadeBtnHtml, contestHtml, interruptPromptsHtml].filter(Boolean).join('');

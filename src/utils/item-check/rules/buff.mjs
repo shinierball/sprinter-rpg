@@ -1,7 +1,7 @@
 /**
  * src/utils/item-check/rules/buff.mjs
  * A buff that changes nothing: no stat grant, defense, damage, attack or check row, and none of the other things a buff
- * can do (healing, limbs, senses, light, popularity, stat substitutions, mana or recovery rows).
+ * can do (a Skill, Spell or Rank grant row, healing, limbs, senses, light, popularity, stat substitutions, mana or recovery rows).
  */
 import { registerItemRule, finding } from '../registry.mjs';
 import { rowFindings } from '../rows.mjs';
@@ -14,7 +14,8 @@ const OTHER_ROW_ARRAYS = ['vehicleModifiers', 'manaCostModifiers', 'recoveryModi
 function hasOtherEffect(item) {
   const sys = item.system ?? {};
   const limbs = sys.limbModifiers ?? {};
-  return OTHER_ROW_ARRAYS.some((key) => liveRows(item, key).length > 0)
+  return liveRows(item, 'grants').some((g) => g.kind !== undefined && g.kind !== 'stat')
+    || OTHER_ROW_ARRAYS.some((key) => liveRows(item, key).length > 0)
     || Boolean(String(sys.healingPerRound ?? '').trim())
     || ['arms', 'legs', 'hands'].some((limb) => Number(limbs[limb]) !== 0 && limbs[limb] !== undefined)
     || Boolean(sys.light?.bright > 0 || sys.light?.dim > 0);

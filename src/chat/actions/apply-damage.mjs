@@ -29,6 +29,7 @@ import { conditionLabel } from '../../documents/actor/condition-data.mjs';
 import { addDispelEntry } from '../../utils/effects/dispel.mjs';
 import { isOutOfRangeOnMessage, rangeText } from '../../utils/attack/attack-range.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { onLethalDamage } from '../../documents/actor/transform-cues.mjs';
 
 /** The Amazing Success mode of a clicked button (E6.9 D6): `auto` (absent), `force` or `off`. */
 function amazingModeOf(raw) {
@@ -326,7 +327,7 @@ export async function applyDamageTo(targetActor, params, ctx) {
   for (const cTag of (evaded || ignoreRiders ? [] : [...(params.conditionTags || []), ...asRefs])) {
     let created = null;
     if (typeof targetActor.applyCondition === 'function') {
-      created = await targetActor.applyCondition(cTag, { source: params.itemName });
+      created = await targetActor.applyCondition(cTag, { source: params.itemName, appId: res?.applicationId });
     } else if (typeof targetActor.applyDebuff === 'function') {
       created = await targetActor.applyDebuff(cTag, { source: params.itemName });
     }
@@ -352,7 +353,7 @@ export async function applyDamageTo(targetActor, params, ctx) {
     const refs = [...anyHit, ...await resolvePicks(gated, targetActor, params), ...await resolvePicks(slotLoss, targetActor, params)];
     for (const ref of refs) {
       const created = typeof targetActor.applyCondition === 'function'
-        ? await targetActor.applyCondition(ref, { source: params.itemName })
+        ? await targetActor.applyCondition(ref, { source: params.itemName, appId: res?.applicationId })
         : await targetActor.applyDebuff?.(ref, { source: params.itemName });
       const createdId = created?.id || created?._id;
       if (createdId && !prevItemIds.has(createdId) && !inflictedItemIds.includes(createdId)) inflictedItemIds.push(createdId);
@@ -360,6 +361,9 @@ export async function applyDamageTo(targetActor, params, ctx) {
       if (created) appliedEffects.push({ stage: 'effect', text: await appliedEffectLine(ref) });
     }
   }
+
+  // A killing blow that landed an affliction after the pipeline's own card pass: its `death` card, once per application
+  if (res?.isLethal && inflictedItemIds.length > 0) await onLethalDamage(targetActor, { isLethal: true, appId: res.applicationId });
 
   const { lifesteal, dispelled } = await applyOnHitRiders({ targetActor, attacker, params, res, evaded });
 
@@ -452,8 +456,8 @@ export async function handleApplyDamage(event, button, message) {
   const conditionTagsToApply = params.conditionTags;
   const applied = results.filter(r => r.skipped !== 'out-of-range');
   const summary = results.map(r => {
-    if (r.skipped === 'out-of-range') return `<strong>${r.targetName}</strong>: ${rangeText('COG.AttackRange.Badge').toLowerCase()}, not hit`;
-    let text = `<strong>${r.targetName}</strong>: ${r.actualDamage} net dmg`;
+    if (r.skipped === 'out-of-range') return `${r.targetName}: ${rangeText('COG.AttackRange.Badge').toLowerCase()}, not hit`;
+    let text = `${r.targetName}: ${r.actualDamage} net dmg`;
     if (r.tempBarsDamage > 0) {
       const only = r.tempBarsElement ? ` (${elementToDamageType(r.tempBarsElement) || r.tempBarsElement} only)` : '';
       text += ` (${r.tempBarsDamage} absorbed by bonus bars${only}, ${r.tempBarsRemaining ?? 0} bonus bars left)`;
@@ -484,7 +488,7 @@ export async function handleApplyDamage(event, button, message) {
 
   const feedbackHtml = `
         <div class="cog-damage-applied-feedback cog-bg-success-tint cog-text-success" style="margin-top: 6px; font-size: 11px; border: 1px solid var(--cog-success); padding: 4px 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
-          <i class="fa-solid fa-check"></i> Applied to ${applied.length} target(s). Logged to combat!
+          <i class="fa-solid fa-check"></i> Applied to ${escapeAttr(applied.length)} target(s). Logged to combat!
         </div>
       `;
   card.insertAdjacentHTML('beforeend', feedbackHtml);

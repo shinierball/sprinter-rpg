@@ -2,9 +2,27 @@
   {{!-- COMPLICATIONS & REST OPTIONS --}}
   <div class="cog-bg-surface" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border: 1px solid var(--cog-panel-border); border-radius: 6px; padding: 8px 12px;">
     <label class="cog-text" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px;">
-      <input type="checkbox" name="complication" data-change-action="setComplication" class="complication-toggle cog-ac-accent" {{#if rollComplication}}checked{{/if}} {{#if noComplicationTable}}disabled{{/if}} />
-      <span><i class="fa-solid fa-dice-d20 cog-text-gold"></i> {{#if complicationTable}}{{localize "COG.Content.GrindComplicationsToggle" name=complicationTable.name formula=complicationTable.formula}}{{else}}{{localize "COG.Content.NoGrindComplications"}}{{/if}}</span>
+      <input type="checkbox" name="complication" data-change-action="setComplication" class="complication-toggle cog-ac-accent" {{#if rollComplication}}checked{{/if}} />
+      <span><i class="fa-solid fa-dice-d20 cog-text-gold"></i> {{localize "COG.Content.GrindTables.Roll"}}</span>
     </label>
+
+    {{#if grindTables}}
+    <div class="cog-grind-table-picker" style="display: flex; gap: 10px;">
+      {{#each grindTables.selects}}
+      <label class="cog-text-secondary" style="display: flex; flex-direction: column; gap: 2px; font-size: 11px; text-transform: uppercase;">
+        {{label}}
+        <select data-change-action="{{action}}" class="grind-table-select-{{key}} cog-bg-surface-muted cog-text-strong" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 4px 6px; font-size: 12px; font-family: 'Oswald', sans-serif; max-width: 190px;" {{#if disabled}}disabled{{/if}}>
+          {{#each leading}}<option value="{{ref}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+          {{#each groups}}
+          <optgroup label="{{label}}">
+            {{#each options}}<option value="{{ref}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+          </optgroup>
+          {{/each}}
+        </select>
+      </label>
+      {{/each}}
+    </div>
+    {{/if}}
 
     <div class="cog-text-muted" style="font-size: 11px;">
       Advances Floor Clock: <strong class="cog-text-warning">-{{hours}} Hours</strong>

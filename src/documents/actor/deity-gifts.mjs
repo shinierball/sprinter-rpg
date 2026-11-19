@@ -7,11 +7,10 @@
  * The GM's gift dialog is an app; this module only opens it through the opener the app registers at load (the same
  * pattern as the Loot Box showcase), so nothing below the apps layer imports an app.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { WORSHIP_TAGS } from '../../data/tag-vocabulary.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
 import { itemIdentifier } from '../../utils/identifier.mjs';
-import { deityIdOf } from '../../utils/deity/worship-state.mjs';
+import { deityIdOf, withDeityGift } from '../../utils/deity/worship-state.mjs';
 import { writeBond } from './worship.mjs';
 import { say } from './vehicle-drive-common.mjs';
 
@@ -91,14 +90,8 @@ export async function createDeityGift(actor, deityItem, effectData, { mode, hour
     },
     ...(def.type === 'buff' ? { active: true } : { paused: false })
   };
-  data.flags = {
-    ...(data.flags ?? {}),
-    [SYSTEM_ID]: {
-      ...(data.flags?.[SYSTEM_ID] ?? {}),
-      deityGift: { deity, kind: mode, key, at: Number(globalThis.game?.time?.worldTime) || 0, by: String(globalThis.game?.user?.id ?? '') }
-    }
-  };
-  const [created] = await actor.createEmbeddedDocuments('Item', [data]);
+  const gift = { deity, kind: mode, key, at: Number(globalThis.game?.time?.worldTime) || 0, by: String(globalThis.game?.user?.id ?? '') };
+  const [created] = await actor.createEmbeddedDocuments('Item', [withDeityGift(data, gift)]);
   return created ?? null;
 }
 

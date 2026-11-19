@@ -2,6 +2,7 @@
  * The words of the Apply Buff button's second-copy Rule Break and the Apply buttons of a use card: Foundry's i18n when it has the key, else the
  * bundled default, which is identical to the entry in lang/en.json.
  */
+import { langText } from '../lang-text.mjs';
 const TEXT = Object.freeze({
   'COG.BuffCard.AppliedOnUse': 'Applied on use',
   'COG.BuffCard.DuplicateTitle': 'Buff Already Applied',
@@ -33,8 +34,4 @@ const TEXT = Object.freeze({
   'COG.BuffCard.RankBreakMessage': '{buff} at Rank {rank} is above the usual limit of Rank {cap}. Land it anyway as a Rule Break?'
 });
 
-export function buffCardText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return String(TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const buffCardText = langText(TEXT);

@@ -11,10 +11,10 @@
  * update. Nothing numeric from a relay payload is used (2.2c rule).
  */
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { ASSIST_SOURCE, assistRollOf, withAssistRoll } from '../../utils/roll/assist-flags.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { readCheckRecord, getAssistSpec, CHECK_RECORD_FLAG, MAX_RECORD_ASSISTS } from '../../utils/roll/check-assists.mjs';
+import { readCheckRecord, getAssistSpec, checkRecordPath, MAX_RECORD_ASSISTS } from '../../utils/roll/check-assists.mjs';
 import { rollAssistDice } from '../../utils/roll/assist-roll.mjs';
 import { isFreeInterruptItem } from '../../utils/tag/tag-mechanics.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
@@ -23,7 +23,6 @@ import { canModifyMessage } from '../damage-applications.mjs';
 import { messageAuthorId } from '../chat-relay.mjs';
 import { assistText } from '../render/check-assists.mjs';
 import { findCombatant, combatantOfActor } from '../../documents/combat/combatants.mjs';
-import { withFlags } from '../../utils/flags.mjs';
 
 /** Relay action for check-card amends; `payload.op` names the write (`apply`; B3 adds `resolve`). */
 const ASSIST_APPLY_RELAY = 'checkAssist';
@@ -37,11 +36,6 @@ const notify = (level, text) => globalThis.ui?.notifications?.[level]?.(text);
 function messageById(id) {
   if (typeof id !== 'string' || !id) return null;
   return globalThis.game?.messages?.get?.(id) ?? null;
-}
-
-function flagsOf(message) {
-  const f = message?.flags?.[SYSTEM_ID];
-  return f && typeof f === 'object' && !Array.isArray(f) ? f : null;
 }
 
 function userById(id) {
@@ -81,8 +75,8 @@ export async function writeCheckAssist(payload = {}) {
   if (!canModifyMessage(checkMessage)) return { ok: false, reason: 'forbidden' };
   const record = readCheckRecord(checkMessage);
   if (!record) return { ok: false, reason: 'no-record' };
-  const f = flagsOf(assistMessage);
-  if (!f || f.isAssistRoll !== true || f.source !== 'interrupt' || f.checkMessageId !== checkMessageId) return { ok: false, reason: 'not-assist' };
+  const f = assistRollOf(assistMessage);
+  if (!f || f.isAssistRoll !== true || f.source !== ASSIST_SOURCE.INTERRUPT || f.checkMessageId !== checkMessageId) return { ok: false, reason: 'not-assist' };
   const assister = resolveActorByUuid(f.assisterUuid);
   if (!isTrustedAssist(assistMessage, assister)) return { ok: false, reason: 'untrusted' };
   const amount = rolledAmount(assistMessage);
@@ -106,7 +100,7 @@ export async function writeCheckAssist(payload = {}) {
     calledPlayId: null,
     proposal: ''
   };
-  await checkMessage.update({ [`flags.${SYSTEM_ID}.${CHECK_RECORD_FLAG}.assists.${assistMessageId}`]: entry });
+  await checkMessage.update({ [checkRecordPath(`assists.${assistMessageId}`)]: entry });
   return { ok: true, entry };
 }
 
@@ -153,7 +147,7 @@ function checkResolveCalledPlay(payload, user) {
 async function writeResolveCalledPlay(payload, user) {
   const res = checkResolveCalledPlay(payload, user);
   if (!res.ok) return res;
-  await res.message.update({ [`flags.${SYSTEM_ID}.${CHECK_RECORD_FLAG}.assists.${res.entry.id}.appliedTo`]: payload.appliedTo });
+  await res.message.update({ [checkRecordPath(`assists.${res.entry.id}.appliedTo`)]: payload.appliedTo });
   return { ok: true, appliedTo: payload.appliedTo };
 }
 
@@ -197,13 +191,12 @@ async function postAssistCard({ assister, skill, roll, formula, lines, checkMess
       ${rollHtml}
     </div>
   `;
-  return roll.toMessage(withFlags({
+  return roll.toMessage(withAssistRoll({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor: assister }) ?? { alias: assister.name },
     flavor: `<strong>${escapeAttr(assister.name)}</strong>: ${escapeAttr(skill.name)} (${escapeAttr(formula)})`,
     content
   }, {
-    isAssistRoll: true,
-    source: 'interrupt',
+    source: ASSIST_SOURCE.INTERRUPT,
     checkMessageId,
     assisterUuid: assister.uuid,
     itemId: skill.id,
@@ -369,7 +362,7 @@ export async function handleResolveCalledPlay(event, button, message) {
  * @param {ChatMessage} message the assist card
  */
 export async function handleApplyAssist(event, button, message) {
-  const f = flagsOf(message);
+  const f = assistRollOf(message);
   if (!f?.checkMessageId || !message?.id) return { ok: false, reason: 'not-assist' };
   button.disabled = true;
   const res = await applyCheckAssist({ checkMessageId: f.checkMessageId, assistMessageId: message.id });

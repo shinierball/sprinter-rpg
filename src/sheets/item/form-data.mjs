@@ -327,6 +327,11 @@ export function processItemFormData(item, data, { isGM } = {}) {
   if (sys.hitDifficulty !== undefined) sys.hitDifficulty = blankToNull(sys.hitDifficulty);
   if (sys.cooldown && typeof sys.cooldown === 'object') sys.cooldown = cleanTiming(sys.cooldown);
   if (sys.durationConfig && typeof sys.durationConfig === 'object') sys.durationConfig = cleanTiming(sys.durationConfig);
+  // A charges timeline is a timing too; a blank Amount means the timeline refills to the most (null).
+  if (sys.charges?.recharge && typeof sys.charges.recharge === 'object') {
+    sys.charges.recharge = cleanTiming(sys.charges.recharge);
+    if (sys.charges.recharge.amount !== undefined) sys.charges.recharge.amount = blankToNull(sys.charges.recharge.amount);
+  }
   // A buff's activation cooldown is a timing too: a blank Scale by stores no scaling.
   if (sys.activation?.cooldown && typeof sys.activation.cooldown === 'object') sys.activation.cooldown = cleanTiming(sys.activation.cooldown);
   // The Light section is always on the sheet, so its burn time posts on every save; an amount of 0 is an untimed light (null).

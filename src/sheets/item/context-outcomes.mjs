@@ -8,7 +8,8 @@ import { identifierOptions, pickedBadge } from '../../utils/ui/identifier-option
 import { rollsNoDamage } from '../../utils/damage/base-damage.mjs';
 import { outcomeWeight } from '../../utils/loot/outcome-weights.mjs';
 import { isScratchLootType, LOOT_TYPE_CHOICES } from '../../models/items/loot-model.mjs';
-import { ENCHANT_ITEM_OUTCOME, RESTORE_RESOURCES, OUTCOME_TARGET_TYPES, OUTCOME_EXECUTION_MODES, outcomeRestore, outcomeTypeOptions } from '../../utils/loot/outcome-defaults.mjs';
+import { ENCHANT_ITEM_OUTCOME, RECHARGE_OUTCOME, RESTORE_RESOURCES, OUTCOME_TARGET_TYPES, OUTCOME_EXECUTION_MODES, outcomeRestore, outcomeRecharge, outcomeTypeOptions } from '../../utils/loot/outcome-defaults.mjs';
+import { buildQueryView } from './context-query.mjs';
 import { buildBlueprintContext, buildEnchantmentLedgerContext, buildTemplateViews } from './context-blueprint.mjs';
 
 const TARGET_LABELS = Object.freeze({ self: 'Self', closest_mob: 'Closest Mob', target: 'Targeted Token' });
@@ -134,6 +135,14 @@ export function buildOutcomesContext(context) {
       out.enchantTemplates = buildTemplateViews(out.enchantments, out.enchantTemplatesPath, {
         item: context.item, tagOptions: context.techniqueTagOptions ?? [], damageTypes: context.damageTypes, availableDebuffs: context.availableDebuffs, craft: false
       });
+    }
+    // A recharge row: its amount (blank = full refill) and the tag query of the items it fits (the editor reads `out.rechargeQuery`)
+    out.isRecharge = out.type === RECHARGE_OUTCOME;
+    if (out.isRecharge) {
+      const recharge = outcomeRecharge(out);
+      out.rechargeAmount = recharge.full ? '' : recharge.amount;
+      out.rechargeQuery = buildQueryView(recharge.query, `system.outcomes.${idx}.query`);
+      out.rechargeTagOptions = context.techniqueTagOptions ?? [];
     }
     if (out.type === 'cure_debuff') out.cureFilterOptions = cureFilterOptions(out, context.availableDebuffs, context.damageTypes);
     out.damageTypeOptions = context.damageTypes.map((dt) => ({

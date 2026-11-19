@@ -53,7 +53,8 @@ export const FEATURE_TEMPLATES = Object.freeze({
   'COG.Feature.RankBonusOwned': '{text}, only if owned',
   'COG.Feature.RankCap': 'Rank cap {value}: {target}',
   'COG.Feature.RankRaise': '{target}: Rank {floor}, or {value} if already at {floor} or higher',
-  'COG.Feature.RankRaiseFromCarrier': "{target}: this item's Rank, or {value} if already at or above it",
+  'COG.Feature.RankRaiseFromCarrier': "{target}: this item's Rank, or {value} if already at or above it (only a holder who has it)",
+  'COG.Feature.RankRaiseGiveFromCarrier': "{target}: this item's Rank (a holder with none gains it), or {value} if already at or above it",
   'COG.Feature.RankCapChoice': 'Rank cap {value} for {count} chosen skill(s)',
   'COG.Feature.Dr': '{value} DR',
   'COG.Feature.Walk': '{value} ft Walk speed',
@@ -291,7 +292,7 @@ async function describeSkillGrants(item) {
       out.push(line('skill', text, path, g, '', target));
     } else if (g.kind === 'rank_raise') {
       const target = await targetOf(g);
-      const key = g.floorFrom === 'rank' ? 'COG.Feature.RankRaiseFromCarrier' : 'COG.Feature.RankRaise';
+      const key = g.floorFrom !== 'rank' ? 'COG.Feature.RankRaise' : (g.giveIfMissing ? 'COG.Feature.RankRaiseGiveFromCarrier' : 'COG.Feature.RankRaiseFromCarrier');
       out.push(line('skill', t(key, { target, floor: Number(g.floor) || 0, value: signed(Number(g.value) || 0) }), path, g, '', target));
     } else if (g.kind === 'rank_cap') {
       const target = g.mode === 'choice' ? '' : await targetOf(g);

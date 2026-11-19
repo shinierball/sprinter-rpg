@@ -18,9 +18,18 @@
  *   (missing from its live collection), or a token delta Foundry no longer keeps. The items of a token whose base actor
  *   is gone have no synthetic actor to be written through: they are deferred, naming the scene and token, so the
  *   watermark waits until the GM deletes or relinks the token. Any other miss is a failure with its reason.
+ * - A removed embedded document is deleted through its parent (a delta's item through the token's synthetic actor), one
+ *   call per parent, carrying the migration option, `render: false` and, in a world pack, the pack. Foundry's delete
+ *   throws on an id it cannot find, so a document already gone is not sent (it counts as done); and it returns no
+ *   document for an invalid one, so an invalid one is deleted alone and read back.
+ * - A write reports as `superseded` a node one of whose changes a newer edit kept back, so the runner keeps that node's
+ *   removed children until a later load; a retry after a batch threw reports it again.
+ * - A removed document another client edited since the capture (its live source, server stamps aside, is no longer the
+ *   baseline) is not deleted: it is deferred, so the edit is not lost with it.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { nodeToUpdate, storedHoldsNode, FIELD_KIND } from '../../utils/migrations/node-to-update.mjs';
+import { nodeToUpdate, storedHoldsNode, hasNewerEdit, FIELD_KIND } from '../../utils/migrations/node-to-update.mjs';
+import { deepEqual } from '../../utils/migrations/migrate-tree.mjs';
 import { capturedSources, releaseCapturedSources, embeddedTable } from './stored-sources.mjs';
 
 const ACTOR_DELTA = 'ActorDelta';
@@ -51,6 +60,13 @@ function kindOf(field, fields) {
   if (fields?.ObjectField && field instanceof fields.ObjectField) return FIELD_KIND.OBJECT;
   return FIELD_KIND.VALUE;
 }
+
+/** A source without the server's `_stats` stamps at any depth, to compare what a user could have edited. */
+const withoutStats = (value) => {
+  if (Array.isArray(value)) return value.map(withoutStats);
+  if (!isPlain(value)) return value;
+  return Object.fromEntries(Object.entries(value).filter(([key]) => key !== '_stats').map(([key, child]) => [key, withoutStats(child)]));
+};
 
 const idsOf = (documents) => new Set((documents ?? []).map((doc) => doc?.id ?? doc?._id).filter(Boolean));
 
@@ -87,8 +103,11 @@ export function foundryPort(game = globalThis.game, {
   const tops = new Map();
   /** Built baselines, by the same key (null when the source could not be built). */
   const baselines = new Map();
-  /** Nodes already written, so a retry after a batch threw does not send them again. */
+  /** Nodes already written or deleted, so a retry after a batch threw does not send them again. */
   const writtenNodes = new WeakSet();
+  const removedNodes = new WeakSet();
+  /** Nodes a newer edit kept a change of back, so a retry that answers from `writtenNodes` still reports them. */
+  const supersededNodes = new WeakSet();
 
   const topKey = (pack, documentName, id) => `${pack ?? ''}|${documentName}|${id}`;
   const remember = (pack, documentName, sources) => {
@@ -138,7 +157,9 @@ export function foundryPort(game = globalThis.game, {
 
   /**
    * Find a node's live document and how to write it, or why there is none (`{ miss, reason }`, `miss` one of `MISS`).
-   * @returns {Promise<{ target: object, invalid: boolean, group: string, send: Function, sentId: string, wrap?: Function }|{ miss: string, reason: string }>}
+   * An embedded document also gets `drop(ids, options)`, its parent's delete, and `dropGroup`, the parent it groups by.
+   * @returns {Promise<{ target: object, invalid: boolean, group: string, send: Function, sentId: string, wrap?: Function,
+   *   drop?: Function, dropGroup?: string }|{ miss: string, reason: string }>}
    */
   async function resolve(node, pack, options) {
     const { doc: top, invalid: topInvalid } = await topDocument(node.path[0], pack);
@@ -205,7 +226,9 @@ export function foundryPort(game = globalThis.game, {
         invalid,
         group: `${invalid ? `invalid|${current.id}` : 'synthetic'}|${token.uuid}|${name}`,
         send: (updates) => actor.updateEmbeddedDocuments(name, updates, embeddedOptions),
-        sentId: current.id
+        sentId: current.id,
+        drop: (ids, dropOptions) => actor.deleteEmbeddedDocuments(name, ids, dropOptions),
+        dropGroup: `synthetic|${token.uuid}|${name}`
       };
     }
     return {
@@ -213,16 +236,19 @@ export function foundryPort(game = globalThis.game, {
       invalid,
       group: `${invalid ? `invalid|${current.id}` : 'embedded'}|${parent.uuid}|${name}`,
       send: (updates) => parent.updateEmbeddedDocuments(name, updates, embeddedOptions),
-      sentId: current.id
+      sentId: current.id,
+      drop: (ids, dropOptions) => parent.deleteEmbeddedDocuments(name, ids, dropOptions),
+      dropGroup: `embedded|${parent.uuid}|${name}`
     };
   }
 
+  /** The update to send for a node (null when nothing is left), and whether a newer edit kept any of its changes back. */
   function buildUpdate(node, resolved, pack) {
     const live = resolved.target._source ?? {};
     const schema = resolved.target.constructor?.schema ?? classOf(node.documentName)?.schema;
     const fieldKind = (path) => kindOf(schema?.getField?.(path, { source: live }), fields);
     const baseline = resolved.invalid ? null : baselineOf(node, pack);
-    return nodeToUpdate(node, { live, baseline, fieldKind });
+    return { update: nodeToUpdate(node, { live, baseline, fieldKind }), superseded: hasNewerEdit(node, { live, baseline }) };
   }
 
   /** Read the stored source of a node back from the database (the raw `get` the pack read uses). */
@@ -288,11 +314,15 @@ export function foundryPort(game = globalThis.game, {
       const pack = options.pack ?? null;
       const sendOptions = { ...options, diff: false, render: false };
       if (!pack) delete sendOptions.pack;
-      const result = { written: [], refused: [], deferred: [], failed: [], unchanged: [] };
+      const result = { written: [], refused: [], deferred: [], failed: [], unchanged: [], superseded: [] };
 
       const groups = new Map();
       for (const node of nodes) {
-        if (writtenNodes.has(node)) { result.written.push(node); continue; }
+        if (writtenNodes.has(node)) {
+          result.written.push(node);
+          if (supersededNodes.has(node)) result.superseded.push(node);
+          continue;
+        }
         if (node.invalid && node.path.length > 1) {
           result.deferred.push({ node, reason: invalidParentReason(`${node.path[0].documentName}.${node.path[0].id}`) });
           continue;
@@ -301,7 +331,11 @@ export function foundryPort(game = globalThis.game, {
         if (resolved.miss === MISS.GONE) { result.unchanged.push(node); continue; }
         if (resolved.miss === MISS.DEFERRED) { result.deferred.push({ node, reason: resolved.reason }); continue; }
         if (resolved.miss) { result.failed.push({ node, error: new Error(resolved.reason) }); continue; }
-        const update = buildUpdate(node, resolved, pack);
+        const { update, superseded } = buildUpdate(node, resolved, pack);
+        if (superseded) {
+          supersededNodes.add(node);
+          result.superseded.push(node);
+        }
         if (!update) { result.unchanged.push(node); continue; }
         const group = resolved.invalid ? `${resolved.group}|${groups.size}` : resolved.group;
         if (!groups.has(group)) groups.set(group, { invalid: resolved.invalid, send: resolved.send, items: [] });
@@ -339,6 +373,63 @@ export function foundryPort(game = globalThis.game, {
           } else {
             result.refused.push(node);
           }
+        }
+      }
+      return result;
+    },
+
+    async remove(nodes, options = {}) {
+      const pack = options.pack ?? null;
+      const sendOptions = { ...options, render: false };
+      if (!pack) delete sendOptions.pack;
+      const result = { removed: [], refused: [], deferred: [], failed: [], unchanged: [] };
+      const groups = new Map();
+      const alone = [];
+      for (const node of nodes) {
+        if (removedNodes.has(node)) { result.removed.push(node); continue; }
+        if (node.invalid) {
+          result.deferred.push({ node, reason: invalidParentReason(`${node.path[0].documentName}.${node.path[0].id}`) });
+          continue;
+        }
+        const resolved = await resolve(node, pack, sendOptions);
+        if (resolved.miss === MISS.GONE) { result.unchanged.push(node); continue; }
+        if (resolved.miss === MISS.DEFERRED) { result.deferred.push({ node, reason: resolved.reason }); continue; }
+        if (resolved.miss) { result.failed.push({ node, error: new Error(resolved.reason) }); continue; }
+        if (!resolved.drop) { result.failed.push({ node, error: new Error(`${resolved.target.uuid ?? node.documentName} is not an embedded document; a migration cannot delete it`) }); continue; }
+        const baseline = resolved.invalid ? null : baselineOf(node, pack);
+        if (baseline && !deepEqual(withoutStats(resolved.target._source ?? {}), withoutStats(baseline))) {
+          result.deferred.push({ node, reason: 'it was edited since the world loaded, so it is kept; a later load removes it' });
+          continue;
+        }
+        if (resolved.invalid) { alone.push({ node, resolved }); continue; }
+        if (!groups.has(resolved.dropGroup)) groups.set(resolved.dropGroup, { drop: resolved.drop, items: [] });
+        groups.get(resolved.dropGroup).items.push({ node, resolved });
+      }
+
+      // Foundry writes the operation's parent, pack and ids into the options it is given: each call gets its own copy.
+      for (const group of groups.values()) {
+        const returned = idsOf(await group.drop(group.items.map(({ resolved }) => resolved.target.id), { ...sendOptions }));
+        for (const { node, resolved } of group.items) {
+          if (returned.has(resolved.target.id)) {
+            removedNodes.add(node);
+            result.removed.push(node);
+          } else {
+            result.refused.push(node);
+          }
+        }
+      }
+      // An invalid document is deleted without being returned: the stored parent, read back, decides.
+      for (const { node, resolved } of alone) {
+        let error = null;
+        try { await resolved.drop([resolved.target.id], { ...sendOptions }); } catch (rejection) { error = rejection; }
+        let read = false;
+        let stored = null;
+        try { stored = await readBack(node, pack); read = true; } catch (readError) { error ??= readError; }
+        if (read && !stored) {
+          removedNodes.add(node);
+          result.removed.push(node);
+        } else {
+          result.failed.push({ node, error: error ?? new Error('the stored parent still holds the document') });
         }
       }
       return result;

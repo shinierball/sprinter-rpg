@@ -12,7 +12,7 @@ import { handleApplyHealing, handleApplyMana, handleApplyHoT } from './restore.m
 import { handleApplyBuff } from './apply-buff.mjs';
 import { handleApplyItemBuff, handleRemoveItemBuff } from './apply-item-buff.mjs';
 import { handleApplyCondition } from './apply-condition.mjs';
-import { handleChangeVictim, handleRevertTransformation, handleRevealSecret, handleKeepSecret } from './transformation.mjs';
+import { handleChangeVictim, handleRevertTransformation, handleRevealSecret, handleKeepSecret, handleChangeSecret } from './transformation.mjs';
 import { handleCleanseDebuff, handleMendInjury, handleCureDebuff } from './cure.mjs';
 import { handleGrantSkillRank, handleGrantStat } from './grant-progression.mjs';
 import { handleDrawTable } from './draw-table.mjs';
@@ -26,9 +26,11 @@ import { handleApplyAiFavorTally } from './ai-favor-tally.mjs';
 import { handleRollMobLoot, handleHandOutBossLoot } from './fight-loot.mjs';
 import { handleApplyEvadeInjury } from './evade-injuries.mjs';
 import { handleGrindMapFind } from './grind-map-find.mjs';
+import { handleGrindFloorTime } from './grind-floor-time.mjs';
 import { handleUseAssist, handleApplyAssist, handleResolveCalledPlay } from './use-assist.mjs';
 import { handleCameraPickRow, handleCameraAward, handleCameraChoice, handleCameraWithheld } from './cameras.mjs';
 import { handleContestRoll, handleContestDrop, handleContestPropose } from './contest.mjs';
+import { handlePartyCheckRoll, handlePartyCheckRemove, handlePartyCheckDifficulty } from './party-check.mjs';
 import { handleTauntDeclared, handleResolveDeclared } from './declared-attacks.mjs';
 import { handleLootBoxWatch } from './loot-box-watch.mjs';
 import { handleDeityGift, handleDeityFallen, handleDeitySmiteChance, handleDeityInfidels } from './deity.mjs';
@@ -96,6 +98,7 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerRevertTransformation: handleRevertTransformation,
   crawlerRevealSecret: handleRevealSecret,
   crawlerKeepSecret: handleKeepSecret,
+  crawlerChangeSecret: handleChangeSecret,
   crawlerGrantSkillRank: handleGrantSkillRank,
   crawlerGrantStat: handleGrantStat,
   crawlerDrawTable: handleDrawTable,
@@ -117,6 +120,7 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerApplyEvadeInjury: handleApplyEvadeInjury,
   crawlerHandOutBossLoot: handleHandOutBossLoot,
   crawlerGrindMapFind: handleGrindMapFind,
+  crawlerGrindFloorTime: handleGrindFloorTime,
   crawlerPopularityChecklistUndo: handlePopularityChecklistUndo,
   crawlerPopularityChecklistOpen: handlePopularityChecklistOpen,
   crawlerFanBoxAlertAward: handleFanBoxAlertAward,
@@ -128,6 +132,9 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerContestRoll: handleContestRoll,
   crawlerContestDrop: handleContestDrop,
   crawlerContestPropose: handleContestPropose,
+  crawlerPartyCheckRoll: handlePartyCheckRoll,
+  crawlerPartyCheckRemove: handlePartyCheckRemove,
+  crawlerPartyCheckDifficulty: handlePartyCheckDifficulty,
   crawlerTauntDeclared: handleTauntDeclared,
   crawlerResolveDeclared: handleResolveDeclared,
   crawlerHitVehicle: handleHitVehicle,

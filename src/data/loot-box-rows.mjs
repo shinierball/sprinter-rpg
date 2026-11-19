@@ -8,7 +8,7 @@
 import { firstScalar } from '../utils/first-scalar.mjs';
 import { getRowKind } from '../utils/row-kinds.mjs';
 import { cleanTagQuery } from '../utils/tag/tag-query.mjs';
-import { resolveLootBoxTier } from './loot-box-tiers.mjs';
+import { DEFAULT_LOOT_BOX_IMG, resolveLootBoxTier } from './loot-box-tiers.mjs';
 
 /** What a `table` row's rolled rows may become: a skill potion of a custom Skill, or a placeholder loot item ('' = as printed). */
 export const BOX_TABLE_AS = Object.freeze(['skillPotion', 'item']);
@@ -135,6 +135,72 @@ export function sanitizeRewardBoxes(raw, warn = () => {}, path = 'rewardBoxes') 
       name: text(row.name),
       whenEmpty: text(firstScalar(row.whenEmpty)) === 'keep' ? 'keep' : ''
     });
+  });
+  return out;
+}
+
+/** The length of an entry id: Foundry's document id length, which a loot box pick key expects. */
+const LOOT_BOX_ID_LENGTH = 16;
+const ID_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+/** A fresh entry id: Foundry's random id (16 letters and digits), with a Math.random stand-in where Foundry is not loaded. */
+export function newLootBoxId() {
+  return globalThis.foundry?.utils?.randomID?.(LOOT_BOX_ID_LENGTH)
+    ?? Array.from({ length: LOOT_BOX_ID_LENGTH }, () => ID_CHARACTERS[Math.floor(Math.random() * ID_CHARACTERS.length)]).join('');
+}
+
+/**
+ * One entry of a crawler's `system.lootBoxes[]`: the prize fields through `sanitizeLootBox`, text trimmed, `quantity` at
+ * least 1, the icon the default one when it names none. A blank or missing `id` gets a fresh one.
+ * @param {*} raw
+ * @param {(path: string, message: string) => void} [warn]
+ * @param {string} [path]
+ * @returns {object|null} null when the entry is not an object
+ */
+export function sanitizeLootBoxEntry(raw, warn = () => {}, path = 'lootBox') {
+  if (!isPlain(raw)) {
+    warn(path, 'a loot box entry must be an object; skipped');
+    return null;
+  }
+  const quantity = whole(raw.quantity);
+  return {
+    id: text(raw.id) || newLootBoxId(),
+    name: text(raw.name),
+    img: text(raw.img) || DEFAULT_LOOT_BOX_IMG,
+    identifier: text(raw.identifier),
+    template: text(raw.template),
+    ...sanitizeLootBox(raw, warn, path),
+    quantity: quantity === null ? 1 : Math.max(1, quantity),
+    description: typeof raw.description === 'string' ? raw.description : '',
+    awardedBy: text(raw.awardedBy)
+  };
+}
+
+/**
+ * `system.lootBoxes`: not an array reads as empty (with a warning), a junk entry is dropped, and an entry whose id an
+ * earlier entry already uses gets a fresh one (ids are the lookup key).
+ * @param {*} raw
+ * @param {(path: string, message: string) => void} [warn]
+ * @param {string} [path]
+ * @returns {object[]}
+ */
+export function sanitizeLootBoxEntries(raw, warn = () => {}, path = 'lootBoxes') {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) {
+    warn(path, 'lootBoxes must be an array; treated as empty');
+    return [];
+  }
+  const seen = new Set();
+  const out = [];
+  raw.forEach((row, i) => {
+    const entry = sanitizeLootBoxEntry(row, warn, `${path}[${i}]`);
+    if (!entry) return;
+    if (seen.has(entry.id)) {
+      warn(`${path}[${i}].id`, `id "${entry.id}" is already used; given a new one`);
+      entry.id = newLootBoxId();
+    }
+    seen.add(entry.id);
+    out.push(entry);
   });
   return out;
 }

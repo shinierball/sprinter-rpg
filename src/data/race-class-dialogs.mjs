@@ -4,6 +4,7 @@
  */
 
 import { dialogAnswer } from '../utils/ui/dialog-answer.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 import { evaluateStatPool } from '../utils/character/stat-pool.mjs';
 
 /**
@@ -20,21 +21,21 @@ export async function promptChoicesDialog(applier, def, choices, options = {}) {
   // Build Choice HTML rows
   const rowsHtml = choices.map((ch) => {
     const catalog = applier.getCatalogOptions(ch);
-    const optionsHtml = catalog.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+    const optionsHtml = catalog.map(opt => `<option value="${escapeAttr(opt.value)}">${escapeAttr(opt.label)}</option>`).join('');
     return `
       <div class="cog-choice-row cog-bg-surface" style="margin-bottom: 12px; padding: 8px; border: 1px solid var(--cog-divider); border-radius: 4px;">
         <div class="cog-text" style="font-weight: bold; font-family: 'Oswald', sans-serif; font-size: 13px; margin-bottom: 4px; display: flex; justify-content: space-between;">
-          <span><i class="fa-solid fa-crosshairs cog-text-accent"></i> ${ch.label}</span>
-          <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="font-size: 11px; padding: 1px 6px; border-radius: 2px;">Rank +${ch.rank}</span>
+          <span><i class="fa-solid fa-crosshairs cog-text-accent"></i> ${escapeAttr(ch.label)}</span>
+          <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="font-size: 11px; padding: 1px 6px; border-radius: 2px;">Rank +${Number(ch.rank)}</span>
         </div>
-        ${ch.sourcePerk ? `<div class="cog-text-muted" style="font-size: 11px; margin-bottom: 6px; font-style: italic;">From perk: "${ch.sourcePerk}"</div>` : ''}
+        ${ch.sourcePerk ? `<div class="cog-text-muted" style="font-size: 11px; margin-bottom: 6px; font-style: italic;">From perk: "${escapeAttr(ch.sourcePerk)}"</div>` : ''}
         <div style="display: flex; gap: 8px; align-items: center;">
-          <select name="${ch.id}" class="cog-choice-select" data-choice-id="${ch.id}" style="flex: 1; padding: 4px; font-size: 12px;">
+          <select name="${escapeAttr(ch.id)}" class="cog-choice-select" data-choice-id="${escapeAttr(ch.id)}" style="flex: 1; padding: 4px; font-size: 12px;">
             ${optionsHtml}
             <option value="__custom__">-- Custom Write-in... --</option>
           </select>
         </div>
-        <input type="text" name="${ch.id}_custom" class="cog-choice-custom" data-choice-id="${ch.id}" placeholder="Enter custom name..." style="display: none; width: 100%; margin-top: 6px; padding: 4px; font-size: 12px; box-sizing: border-box;" />
+        <input type="text" name="${escapeAttr(`${ch.id}_custom`)}" class="cog-choice-custom" data-choice-id="${escapeAttr(ch.id)}" placeholder="Enter custom name..." style="display: none; width: 100%; margin-top: 6px; padding: 4px; font-size: 12px; box-sizing: border-box;" />
       </div>
     `;
   }).join('');
@@ -43,10 +44,10 @@ export async function promptChoicesDialog(applier, def, choices, options = {}) {
     <div class="cog-dialog-choices" style="padding: 6px; font-family: 'Oswald', sans-serif;">
       <div class="cog-bg-accent-fill cog-text-on-fill" style="padding: 8px 10px; border-radius: 4px 4px 0 0; margin-bottom: 10px;">
         <h3 style="margin: 0; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;">
-          <i class="fa-solid fa-list-check"></i> Choose: ${def.name}
+          <i class="fa-solid fa-list-check"></i> Choose: ${escapeAttr(def.name)}
         </h3>
         <p style="margin: 4px 0 0; font-size: 11px; opacity: 0.9;">
-          This ${def.type || 'definition'} provides choices for skills or spells. Select your preferences below:
+          This ${escapeAttr(def.type || 'definition')} provides choices for skills or spells. Select your preferences below:
         </p>
       </div>
       <div class="cog-choices-form">
@@ -113,14 +114,14 @@ export async function promptChoicesDialog(applier, def, choices, options = {}) {
 export async function promptStatPoolDialog(applier, def, pool) {
   const rows = pool.options.map(stat => `
     <div class="cog-choice-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-      <label for="pool_${stat}" style="font-family: 'Oswald', sans-serif; text-transform: uppercase;">${stat}</label>
-      <input type="number" id="pool_${stat}" name="pool_${stat}" class="cog-pool-input" min="0" step="1" value="0" style="width: 64px; text-align: center;" />
+      <label for="${escapeAttr(`pool_${stat}`)}" style="font-family: 'Oswald', sans-serif; text-transform: uppercase;">${escapeAttr(stat)}</label>
+      <input type="number" id="${escapeAttr(`pool_${stat}`)}" name="${escapeAttr(`pool_${stat}`)}" class="cog-pool-input" min="0" step="1" value="0" style="width: 64px; text-align: center;" />
     </div>`).join('');
   const content = `
     <div class="cog-dialog-choices" style="padding: 6px; font-family: 'Oswald', sans-serif;">
-      <p>${pool.label || 'Stat points'}: split <strong>${pool.points}</strong> points across ${pool.options.map(o => o.toUpperCase()).join(', ')}.</p>
+      <p>${escapeAttr(pool.label || 'Stat points')}: split <strong>${Number(pool.points)}</strong> points across ${escapeAttr(pool.options.map(o => o.toUpperCase()).join(', '))}.</p>
       ${rows}
-      <p class="cog-pool-remaining">Remaining: <strong>${pool.points}</strong></p>
+      <p class="cog-pool-remaining">Remaining: <strong>${Number(pool.points)}</strong></p>
     </div>`;
 
   const result = await foundry.applications.api.DialogV2.wait({

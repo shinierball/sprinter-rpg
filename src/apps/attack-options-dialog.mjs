@@ -8,6 +8,7 @@
  * the window needs no open sheet (the token HUD has none). Names and labels are only ever displayed.
  */
 import { SYSTEM_PATH } from '../constants.mjs';
+import { trustedHtml } from '../utils/escape-attr.mjs';
 import { dialogAnswer } from '../utils/ui/dialog-answer.mjs';
 import { attackText } from '../utils/attack/attack-text.mjs';
 import { cameraText } from '../utils/roll/cameras.mjs';
@@ -185,9 +186,9 @@ function wireDialog(root) {
  */
 export async function promptAttackOptions(actor, item, model, prefilled) {
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
-  const render = globalThis.foundry?.applications?.handlebars?.renderTemplate;
-  if (typeof DialogV2?.wait !== 'function' || typeof render !== 'function') return prefilled.choices;
-  const content = await render(TEMPLATE, buildDialogContext(model, prefilled));
+  const renderTemplate = globalThis.foundry?.applications?.handlebars?.renderTemplate;
+  if (typeof DialogV2?.wait !== 'function' || typeof renderTemplate !== 'function') return prefilled.choices;
+  const content = trustedHtml(await renderTemplate(TEMPLATE, buildDialogContext(model, prefilled)));
   const damage = model.mode === 'damage';
   const answer = await DialogV2.wait({
     window: { title: t('Title', { name: model.attackName || item?.name || '' }) },

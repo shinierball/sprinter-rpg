@@ -111,6 +111,7 @@ defineItemSummaryTemplates({
   [`${KEY}.VariantDebuffs`]: '{text} ({list})',
   [`${KEY}.Assist`]: 'Assist: adds {formula} to an ally\'s check',
   [`${KEY}.AssistWhen`]: 'Assist: adds {formula} to an ally\'s check when {query}',
+  [`${KEY}.AssistUntrained`]: '{formula} without Ranks',
   [`${KEY}.QueryAll`]: 'all of {tags}',
   [`${KEY}.QueryAny`]: 'any of {tags}',
   [`${KEY}.QueryNone`]: 'none of {tags}',
@@ -531,7 +532,10 @@ function describeAssist(item) {
   const formula = str(sys.assist?.formula);
   if (!formula) return [];
   const query = queryText(sys.assist?.when);
-  return [itemLine('skill', query ? L('AssistWhen', { formula, query }) : L('Assist', { formula }), 'system.assist')];
+  const out = [itemLine('skill', query ? L('AssistWhen', { formula, query }) : L('Assist', { formula }), 'system.assist')];
+  const untrained = str(sys.assist?.untrainedFormula);
+  if (untrained) out.push(itemLine('skill', L('AssistUntrained', { formula: untrained }), 'system.assist.untrainedFormula'));
+  return out;
 }
 
 // ---- rank breaks ------------------------------------------------------------------------------------------------

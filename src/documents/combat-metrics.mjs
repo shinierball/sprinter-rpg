@@ -17,6 +17,8 @@ import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { combatantOfActor, isCombatantOfActor } from './combat/combatants.mjs';
 import { removeDispelsByApplication } from '../utils/effects/dispel.mjs';
 import { resolveHpPerBar } from '../utils/damage/hp-per-bar.mjs';
+import { dropHeldFor } from './pending-secrets.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 /**
  * Calculate HP per damage bar for an actor.
@@ -496,16 +498,16 @@ export class COGCombatMetrics {
           <i class="fa-solid fa-bullhorn"></i> DUNGEON ANNOUNCEMENT
         </div>
         <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 8px; margin-bottom: 8px;">
-          <img class="cog-bg-icon-box" src="${recipientActor.img || 'icons/svg/mystery-man.svg'}" style="width: 44px; height: 44px; border-radius: 4px; border: 1.5px solid var(--cog-gold);" />
+          <img class="cog-bg-icon-box" src="${escapeAttr(recipientActor.img || 'icons/svg/mystery-man.svg')}" style="width: 44px; height: 44px; border-radius: 4px; border: 1.5px solid var(--cog-gold);" />
           <div>
-            <div class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Recipient: ${recipientActor.name}</div>
+            <div class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Recipient: ${escapeAttr(recipientActor.name)}</div>
             <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">
-              <i class="${badgeIcon} cog-text-danger"></i> ${title}
+              <i class="${badgeIcon} cog-text-danger"></i> ${escapeAttr(title)}
             </h3>
           </div>
         </div>
         <div class="cog-bg-surface-muted cog-text" style="border-left: 3px solid var(--cog-danger); padding: 6px 10px; font-style: italic; font-size: 12px; margin-bottom: 8px; line-height: 1.4;">
-          “${quote}”
+          “${escapeAttr(quote)}”
         </div>
         <div class="cog-bg-surface-muted" style="display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--cog-panel-border); padding: 6px 10px; border-radius: 4px; font-size: 12px;">
           <span class="cog-text-secondary" style="text-transform: uppercase;">Award Granted:</span>
@@ -640,6 +642,13 @@ export class COGCombatMetrics {
           }
           result.debuffsRemoved = toDelete.length;
         }
+      }
+
+      // A secret rider this application held (waiting on the carrier, or in the GM's store) is taken back too
+      try {
+        await dropHeldFor(target, applicationId);
+      } catch (err) {
+        console.error('Sprinter RPG | Damage undo could not drop the held secret:', err);
       }
 
       // The Buffs this application's hit dispelled come back (3.13-2). A lifesteal heal to the attacker stays: the GM adjusts it by hand.

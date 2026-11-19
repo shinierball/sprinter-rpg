@@ -11,6 +11,7 @@
  * Nothing registers at import time; `installSourceryContentHook()` is called once from cog.mjs.
  */
 import { SYSTEM_ID } from '../constants.mjs';
+import { tableNumberOf } from '../utils/rolltable/table-flags.mjs';
 import { contentRegistry } from './registry.mjs';
 import { readCatalog } from '../sourcery/commit.mjs';
 import { COG_THEME_ID } from './default-content-provider.mjs';
@@ -170,11 +171,11 @@ export function storyTableFromRollTable(doc, key) {
   }
   if (!results.length) return null;
   results.sort((a, b) => a.roll - b.roll);
-  const flags = doc.flags?.[SYSTEM_ID] ?? {};
+  const tableNumber = tableNumberOf(doc);
   return {
     key,
     name: String(doc.name ?? key),
-    ...(Number.isFinite(flags.tableNumber) ? { tableNumber: flags.tableNumber } : {}),
+    ...(Number.isFinite(tableNumber) ? { tableNumber } : {}),
     formula: typeof doc.formula === 'string' && doc.formula ? doc.formula : `1d${results.at(-1).roll}`,
     results
   };

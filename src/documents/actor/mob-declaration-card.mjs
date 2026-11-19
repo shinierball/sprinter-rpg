@@ -7,8 +7,8 @@ import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
 
 const VARIANTS = Object.freeze({
-  attack: { header: 'COG.MobAttack.Header', icon: 'fa-crosshairs', fill: 'cog-bg-accent-fill', badge: 'cog-bg-accent-strong-fill', text: 'cog-text-accent' },
-  spell: { header: 'COG.MobAttack.SpellHeader', icon: 'fa-wand-magic-sparkles', fill: 'cog-bg-magic-fill', badge: 'cog-bg-magic-fill', text: 'cog-text-magic' }
+  attack: { header: 'COG.MobAttack.Header', icon: 'fa-crosshairs', fill: 'cog-bg-accent-fill cog-text-on-fill', text: 'cog-text-accent' },
+  spell: { header: 'COG.MobAttack.SpellHeader', icon: 'fa-wand-magic-sparkles', fill: 'cog-bg-magic-fill cog-text-on-fill', text: 'cog-text-magic' }
 });
 
 /**
@@ -31,14 +31,13 @@ export function mobDeclarationBannerHtml({ variant = 'attack', evadeDC, floor, i
     : '';
   return `
       <div class="cog-mob-autohit-card cog-mob-declaration-card" style="font-family: var(--font-primary, 'Oswald', sans-serif); margin-bottom: 6px;">
-        <div class="${v.fill} cog-text-on-fill" style="padding: 6px 10px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between;">
-          <span><i class="fa-solid ${v.icon}"></i> ${escapeAttr(mobAttackText(v.header))}</span>
-          <span class="${v.badge}" style="padding: 2px 6px; border-radius: 3px; font-size: 11px;">${escapeAttr(mobAttackText('COG.MobAttack.FloorBadge', { floor }))}</span>
+        <div class="${escapeAttr(v.fill)}" style="padding: 6px 10px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between;">
+          <span><i class="fa-solid ${escapeAttr(v.icon)}"></i> ${escapeAttr(mobAttackText(v.header))}</span>
         </div>
         <div class="cog-bg-surface-alt" style="border: 1px solid var(--cog-divider); border-radius: 4px; padding: 6px 8px; margin-top: 4px; font-size: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span>${escapeAttr(mobAttackText('COG.MobAttack.EvadeLabel'))}</span>
-            <strong class="${v.text}" style="font-size: 14px;">${escapeAttr(mobAttackText('COG.MobAttack.EvadeDC', { dc: evadeDC }))}</strong>
+            <strong class="${escapeAttr(v.text)}" style="font-size: 14px;">${escapeAttr(mobAttackText('COG.MobAttack.EvadeDC', { dc: evadeDC }))}</strong>
           </div>
           <div class="cog-evade-dc-breakdown cog-text-muted" style="font-size: 10px; text-align: right;">${escapeAttr(breakdown)}</div>
           <div class="cog-text-muted" style="font-size: 10px; margin-top: 2px;">

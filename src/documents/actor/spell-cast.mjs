@@ -8,7 +8,8 @@ import { getItemAllTags } from '../active-tags.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { getHpPerBar } from '../combat-metrics.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { gateAttackRange, findOutOfRange } from '../../utils/attack/attack-range.mjs';
 import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
@@ -59,11 +60,10 @@ async function dismissActiveAura(actor, spell) {
 
 async function putOutLight(actor, spell) {
   await extinguishLight(spell);
-  return ChatMessage.create({
+  return ChatMessage.create(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
-    content: `<div class="cog-chat-card cog-spell-card cog-aura-dismissed"><h3 class="cog-text">${spell.name} — DISMISSED</h3><div class="cog-text-secondary"><i class="fa-solid fa-power-off"></i> <strong>${actor.name}</strong> put out the light.</div></div>`,
-    flags: { [SYSTEM_ID]: { isSpellCast: true, isLightDismiss: true } }
-  }, cardMessageOptions(actor));
+    content: `<div class="cog-chat-card cog-spell-card cog-aura-dismissed"><h3 class="cog-text">${escapeAttr(spell.name)} — DISMISSED</h3><div class="cog-text-secondary"><i class="fa-solid fa-power-off"></i> <strong>${escapeAttr(actor.name)}</strong> put out the light.</div></div>`
+  }, { isSpellCast: true, isLightDismiss: true }), cardMessageOptions(actor));
 }
 
 /**
@@ -201,22 +201,19 @@ export async function postSpellFailedCard(actor, spell, cost) {
   const { manaCost, baseManaCost, favoredPenalty, isFavored, currentMana } = cost;
   globalThis.ui?.notifications?.warn?.(`Sprinter RPG | ${actor.name} has insufficient Mana to cast ${spell.name}! (Needs ${manaCost} MP, has ${currentMana} MP)`);
 
-  return ChatMessage.create({
+  return ChatMessage.create(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
-    content: spellFailedCardHtml(actor, spell, cost),
-    flags: {
-      [SYSTEM_ID]: {
-        isSpellCast: true,
-        spellFailed: true,
-        reason: 'insufficient_mana',
-        manaCost,
-        baseManaCost,
-        favoredPenalty,
-        isFavored,
-        currentMana
-      }
-    }
-  }, cardMessageOptions(actor));
+    content: spellFailedCardHtml(actor, spell, cost)
+  }, {
+    isSpellCast: true,
+    spellFailed: true,
+    reason: 'insufficient_mana',
+    manaCost,
+    baseManaCost,
+    favoredPenalty,
+    isFavored,
+    currentMana
+  }), cardMessageOptions(actor));
 }
 
 /**

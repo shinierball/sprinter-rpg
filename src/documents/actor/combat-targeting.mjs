@@ -96,7 +96,7 @@ export async function rollEvade(actor, options = {}) {
   actor.awardPopularityForRoll(roll, { context: rollContext, options }).catch(() => {});
 
   let resultHtml = '';
-  let flavor = `<strong>${actor.name}</strong>: Evade Roll (1d20 + ${parts.join(' + ')})`;
+  let flavor = `<strong>${escapeAttr(actor.name)}</strong>: Evade Roll (1d20 + ${escapeAttr(parts.join(' + '))})`;
 
   const targetDC = options.targetDC !== undefined && options.targetDC !== null
     ? Number(options.targetDC)
@@ -122,7 +122,7 @@ export async function rollEvade(actor, options = {}) {
     const { bannerText, bannerBg, bannerBorder } = verdict;
     const attackerLabel = options.attackerName ? ` vs ${options.attackerName}` : '';
     const dcLabel = options.targetDC !== undefined ? `DC ${targetDC}` : `Attack Roll ${targetDC}`;
-    flavor = `<strong>${actor.name}</strong>: Evade Roll${attackerLabel} (vs ${dcLabel}): 1d20 + ${parts.join(' + ')}`;
+    flavor = `<strong>${escapeAttr(actor.name)}</strong>: Evade Roll${escapeAttr(attackerLabel)} (vs ${dcLabel}): 1d20 + ${escapeAttr(parts.join(' + '))}`;
 
     // 548 a: an Evade Near Miss by someone aboard sends the hit to the vehicle.
     const nearMissVehicle = !isEvaded && !isArea && isEvadeNearMiss({ total: roll.total, dc: targetDC, d20: d20Face }) ? aboardState(actor)?.vehicle : null;
@@ -130,7 +130,7 @@ export async function rollEvade(actor, options = {}) {
       <div class="cog-evade-result-banner cog-bg-dyn cog-text-on-fill" style="--cog-bg-dyn: ${bannerBg}; margin-top: 6px; padding: 4px 8px; border-radius: 3px; font-family: var(--font-primary, 'Oswald', sans-serif); font-size: 12px; font-weight: bold; text-align: center; text-transform: uppercase; border: 1px solid ${bannerBorder};">
         <i class="fa-solid ${isEvaded ? 'fa-shield-halved' : 'fa-burst'}"></i>
         ${bannerText}
-        <span style="font-size: 10px; font-weight: normal; margin-left: 4px;">(${roll.total} vs ${targetDC})</span>
+        <span style="font-size: 10px; font-weight: normal; margin-left: 4px;">(${escapeAttr(roll.total)} vs ${targetDC})</span>
       </div>
     `;
     if (nearMissVehicle) {

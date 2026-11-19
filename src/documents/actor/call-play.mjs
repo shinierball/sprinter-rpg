@@ -9,7 +9,7 @@
  * there is no proposed-action text.
  */
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { ASSIST_SOURCE, withAssistRoll } from '../../utils/roll/assist-flags.mjs';
 import { sameSideCombatants } from '../../utils/combat/interrupts.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { getAssistSpec, calledPlayDestination, rollerTokenIdOf } from '../../utils/roll/check-assists.mjs';
@@ -207,7 +207,8 @@ export async function postSheetAssistRoll(actor, skill, spec, options = {}) {
     notify('error', assistText('RollFailed', { skill: skill.name }));
     return null;
   }
-  const note = spec.moment === 'check' ? `<div class="cog-assist-card-lines">${escapeAttr(assistText('SheetNote'))}</div>` : '';
+  const noteKey = { check: 'SheetNote' }[spec.moment];
+  const note = noteKey ? `<div class="cog-assist-card-lines">${escapeAttr(assistText(noteKey))}</div>` : '';
   const rollHtml = typeof rolled.roll.render === 'function' ? trustedHtml(await rolled.roll.render()) : '';
   const content = `
     <div class="cog-chat-card cog-assist-card">
@@ -216,12 +217,11 @@ export async function postSheetAssistRoll(actor, skill, spec, options = {}) {
       ${rollHtml}
     </div>
   `;
-  return rolled.roll.toMessage({
+  return rolled.roll.toMessage(withAssistRoll({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }) ?? { alias: actor.name },
     flavor: `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)} (${escapeAttr(rolled.formula)})`,
-    content,
-    flags: { [SYSTEM_ID]: { isAssistRoll: true, source: 'sheet', assisterUuid: actor.uuid, itemId: skill.id, skillName: skill.name, formula: rolled.formula } }
-  });
+    content
+  }, { source: ASSIST_SOURCE.SHEET, assisterUuid: actor.uuid, itemId: skill.id, skillName: skill.name, formula: rolled.formula }));
 }
 
 /**

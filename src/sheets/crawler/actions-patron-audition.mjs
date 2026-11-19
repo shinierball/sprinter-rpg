@@ -22,7 +22,7 @@ const patronItem = (sheet, target) => {
 /** The start dialog: attitude (Willing selected), the Difficulty and the criteria. Resolves `{ attitude, dc }` or null. */
 function startDialog(actor, item) {
   const forced = auditionStartsOpposed(actor);
-  const options = PATRON_ATTITUDES.map((a) => `<option value="${a}"${a === (forced ? 'opposed' : 'willing') ? ' selected' : ''}>${escapeAttr(attitudeName(a))}</option>`).join('');
+  const options = PATRON_ATTITUDES.map((a) => `<option value="${escapeAttr(a)}"${a === (forced ? 'opposed' : 'willing') ? ' selected' : ''}>${escapeAttr(attitudeName(a))}</option>`).join('');
   const content = `
     <p>${escapeAttr(t('Start.Intro', 'Start {actor}\'s audition for {patron}. Three checks, each with a different Skill.', { actor: actor.name, patron: item.name }))}</p>
     ${forced ? `<p class="cog-text-muted">${escapeAttr(t('Start.Forced', 'They killed their last patron, so this audition starts Opposed.'))}</p>` : ''}

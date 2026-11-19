@@ -17,6 +17,7 @@ import { isBuffSuppressed } from '../utils/effects/dispel.mjs';
 import { debuffInForce } from '../utils/effects/debuff-force.mjs';
 import { isEffectPaused, workingGear } from '../utils/effects/gear-suppression.mjs';
 import { restoredValue } from '../utils/damage/resource-restore.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 /**
  * Preview a debuff tick: the damage after reduction, and whether it would take a whole bar off a crawler at 0 HP.
@@ -253,7 +254,7 @@ export async function roundEndGearEffects(actor, combatant, ctx) {
     if (Array.isArray(healingCfg.cleanseDebuffs) && healingCfg.cleanseDebuffs.length > 0) {
       for (const deb of healingCfg.cleanseDebuffs) {
         if (!deb) continue;
-        await actor.cleanseDebuff(deb);
+        await actor.cleanseDebuff(deb, { interactive: false });
       }
     }
   }
@@ -350,13 +351,13 @@ export async function postRoundEndEffectsChatCard(results, round) {
         return `
           <div class="cog-bg-success-tint" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-left: 3px solid var(--cog-success); margin-bottom: 3px; font-size: 11px;">
             <div>
-              <span class="cog-text-success" style="font-weight: bold;"><i class="fa-solid fa-shield-heart"></i> ${res.itemName}</span>
-              <span class="cog-text"> &rarr; <strong>${res.actorName}</strong></span>
-              <span class="cog-text-success" style="font-size: 10px;"> (CON Check ${res.conCheck.total} vs DC ${res.conCheck.dc}: SUCCESS)</span>
+              <span class="cog-text-success" style="font-weight: bold;"><i class="fa-solid fa-shield-heart"></i> ${escapeAttr(res.itemName)}</span>
+              <span class="cog-text"> &rarr; <strong>${escapeAttr(res.actorName)}</strong></span>
+              <span class="cog-text-success" style="font-size: 10px;"> (CON Check ${escapeAttr(res.conCheck.total)} vs DC ${escapeAttr(res.conCheck.dc)}: SUCCESS)</span>
             </div>
             <div style="text-align: right;">
-              <span class="cog-text-success" style="font-weight: bold; font-size: 11px;">DAMAGE AVOIDED (${res.itemName} Ended!)</span>
-              <span class="cog-text-muted" style="font-size: 10px;"> (${res.hpAfter} HP)</span>
+              <span class="cog-text-success" style="font-weight: bold; font-size: 11px;">DAMAGE AVOIDED (${escapeAttr(res.itemName)} Ended!)</span>
+              <span class="cog-text-muted" style="font-size: 10px;"> (${escapeAttr(res.hpAfter)} HP)</span>
             </div>
           </div>
         `;
@@ -364,14 +365,14 @@ export async function postRoundEndEffectsChatCard(results, round) {
       return `
         <div class="cog-bg-danger-tint" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-left: 3px solid var(--cog-accent); margin-bottom: 3px; font-size: 11px;">
           <div>
-            <span class="cog-text-accent" style="font-weight: bold;"><i class="fa-solid fa-skull"></i> ${res.itemName}</span>
-            <span class="cog-text-muted" style="font-size: 10px;"> (${res.damageType || 'Physical'})</span>
-            <span class="cog-text"> &rarr; <strong>${res.actorName}</strong></span>
-            ${res.conCheck && !res.conCheck.success ? `<span class="cog-text-accent" style="font-size: 10px;"> (CON Check ${res.conCheck.total} vs DC ${res.conCheck.dc}: FAILED)</span>` : ''}
+            <span class="cog-text-accent" style="font-weight: bold;"><i class="fa-solid fa-skull"></i> ${escapeAttr(res.itemName)}</span>
+            <span class="cog-text-muted" style="font-size: 10px;"> (${escapeAttr(res.damageType || 'Physical')})</span>
+            <span class="cog-text"> &rarr; <strong>${escapeAttr(res.actorName)}</strong></span>
+            ${res.conCheck && !res.conCheck.success ? `<span class="cog-text-accent" style="font-size: 10px;"> (CON Check ${escapeAttr(res.conCheck.total)} vs DC ${escapeAttr(res.conCheck.dc)}: FAILED)</span>` : ''}
           </div>
           <div style="text-align: right;">
-            <span class="cog-text-accent" style="font-weight: bold; font-size: 12px;">${res.actualDamage > 0 ? `-${res.actualDamage} HP` : 'No Health Bar lost'}</span>
-            <span class="cog-text-muted" style="font-size: 10px;"> (${res.hpAfter} HP)</span>
+            <span class="cog-text-accent" style="font-weight: bold; font-size: 12px;">${res.actualDamage > 0 ? escapeAttr(`-${res.actualDamage} HP`) : 'No Health Bar lost'}</span>
+            <span class="cog-text-muted" style="font-size: 10px;"> (${escapeAttr(res.hpAfter)} HP)</span>
           </div>
         </div>
       `;
@@ -379,12 +380,12 @@ export async function postRoundEndEffectsChatCard(results, round) {
       return `
         <div class="cog-bg-success-tint" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border-left: 3px solid var(--cog-success); margin-bottom: 3px; font-size: 11px;">
           <div>
-            <span class="cog-text-success" style="font-weight: bold;"><i class="fa-solid fa-sparkles"></i> ${res.itemName}</span>
-            <span class="cog-text"> &rarr; <strong>${res.actorName}</strong></span>
+            <span class="cog-text-success" style="font-weight: bold;"><i class="fa-solid fa-sparkles"></i> ${escapeAttr(res.itemName)}</span>
+            <span class="cog-text"> &rarr; <strong>${escapeAttr(res.actorName)}</strong></span>
           </div>
           <div style="text-align: right;">
-            <span class="cog-text-success" style="font-weight: bold; font-size: 12px;">${res.blocked ? 'Cannot be healed' : `+${res.actualHealed} HP`}</span>
-            <span class="cog-text-muted" style="font-size: 10px;"> (${res.hpAfter}/${res.maxHp} HP)</span>
+            <span class="cog-text-success" style="font-weight: bold; font-size: 12px;">${res.blocked ? 'Cannot be healed' : escapeAttr(`+${res.actualHealed} HP`)}</span>
+            <span class="cog-text-muted" style="font-size: 10px;"> (${escapeAttr(res.hpAfter)}/${escapeAttr(res.maxHp)} HP)</span>
           </div>
         </div>
       `;
@@ -394,7 +395,7 @@ export async function postRoundEndEffectsChatCard(results, round) {
   const content = `
     <div class="cog-chat-card cog-round-end-card" style="border: 2px solid var(--cog-panel-border); border-radius: 4px; overflow: hidden; font-family: 'Oswald', sans-serif;">
       <div class="cog-dark cog-bg-header-fill cog-text-on-fill" style="padding: 6px 10px; font-weight: bold; font-size: 12px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;">
-        <span><i class="fa-solid fa-hourglass-end"></i> End of Round ${round} Effects</span>
+        <span><i class="fa-solid fa-hourglass-end"></i> End of Round ${escapeAttr(round)} Effects</span>
         <span style="font-size: 10px; opacity: 0.85;">${results.length} Triggered</span>
       </div>
       <div class="cog-bg-surface" style="padding: 6px 8px;">

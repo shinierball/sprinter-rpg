@@ -3,7 +3,6 @@ import { getItemAllTags } from '../active-tags.mjs';
 import { getHpPerBar } from '../combat-metrics.mjs';
 import { isAreaAttack } from '../../utils/area/area-attack.mjs';
 import { isAreaTagSet, INJURY_NAMESPACE } from '../../utils/tag/tag-mechanics.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { carrySourceStamp, landItems } from '../../utils/content-source.mjs';
 import { conditionTagId, itemIdentifier } from '../../utils/identifier.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
@@ -12,10 +11,11 @@ import { isBuffSuppressed } from '../../utils/effects/dispel.mjs';
 import { isGearSuppressed } from '../../utils/effects/gear-suppression.mjs';
 import { isMarkerActor } from '../../utils/area/marker.mjs';
 import { restoredValue } from '../../utils/damage/resource-restore.mjs';
-import { conditionRefTag, conditionItemData } from './condition-data.mjs';
-import { raceInForce, isAffliction } from '../../utils/character/transform-rules.mjs';
-import { stampLanding, cureByWindow } from './transformations.mjs';
-import { postCue } from './transform-cues.mjs';
+import { conditionRefTag, conditionItemData, withInflictedBy } from './condition-data.mjs';
+import { raceInForce } from '../../utils/character/transform-rules.mjs';
+import { cureByWindow } from './transformations.mjs';
+import { landingOptions } from './debuff-landing.mjs';
+import { transformationBody } from '../../utils/effects/debuff-force.mjs';
 import { holdSecret } from '../pending-secrets.mjs';
 import { getSpellRank } from './spell-rank.mjs';
 import { confirmRuleBreak, withRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
@@ -231,6 +231,7 @@ export async function mendInjury(actor, severity = 'minor') {
   const wanted = `${INJURY_NAMESPACE}.${norm.includes('long') ? 'long_term' : norm}`;
   const toRemove = [];
   for (const debuff of allDebuffs) {
+    if (transformationBody(debuff)) continue;
     const injuryTags = tagListOf(debuff).filter(t => t.startsWith(`${INJURY_NAMESPACE}.`));
     if (injuryTags.length === 0) continue;
 
@@ -473,6 +474,24 @@ export function resolveActionTargets(actor, sourceItem, options = {}) {
 }
 
 
+/** Whether the carrier already has a copy of this debuff (what a `promote` or `ask` verdict names is a different debuff). */
+function carrierHasCopy(actor, debuffData, tagId) {
+  const verdict = repeatVerdict(actor.items, debuffData, tagId);
+  return verdict.action !== 'ask' && Boolean(verdict.existing);
+}
+
+/** The create through the landing seam: `COGItem#_preCreate` stamps and `_onCreate` posts the card, from these options. */
+async function createThroughSeam(actor, debuffData, options, source) {
+  const landing = landingOptions({
+    by: 'condition', reveal: true, postCue: options.postCue !== false, source,
+    landedAt: options.landedAt, landedFloor: options.landedFloor, appId: options.appId
+  });
+  const results = await actor.createEmbeddedDocuments('Item', landItems([debuffData]), landing);
+  const created = results?.[0] || null;
+  if (typeof actor.prepareData === 'function') actor.prepareData();
+  return created;
+}
+
 /**
  * Apply a condition/debuff to this actor using the unified Tag System.
  * Resolves by condition tag (condition.*), item ID, or data object.
@@ -504,7 +523,7 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
   let debuffData;
 
   if (rawData) {
-    debuffData = {
+    debuffData = withInflictedBy({
       name: rawData.name || 'Debuff',
       type: 'debuff',
       img: options.img || rawData.img || 'icons/svg/skull.svg',
@@ -513,15 +532,8 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
         duration: options.duration || rawData.system?.duration || '1 scene',
         tags: Array.from(new Set([...(rawData.system?.tags || []), tagId].filter(Boolean))),
         ...(rawData.system ? structuredClone(rawData.system) : {})
-      },
-      flags: {
-        [SYSTEM_ID]: {
-          inflictedBy: options.source || options.sourceItem?.name || null,
-          sourceItemId: options.sourceItem?.id || options.sourceItemId || null,
-          conditionTag: tagId || null
-        }
       }
-    };
+    }, options, tagId);
     carrySourceStamp(debuffData, rawData);
   } else {
     debuffData = conditionItemData(conditionTagOrData, options);
@@ -533,6 +545,13 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
   const durationRounds = Math.floor(Number(options.durationRounds) || 0);
   if (durationRounds > 0) {
     debuffData.system.durationConfig = { type: 'rounds', value: durationRounds, remainingRounds: durationRounds };
+  }
+
+  // A secret debuff the carrier does not have yet waits GM-side before anything about it is asked on this client (N5):
+  // the immunity and repeat rulings run on the GM's client at the reveal. A carrier that has it already knows it.
+  if (debuffData.system?.secret === true && !options.reveal && !carrierHasCopy(actor, debuffData, tagId)) {
+    await holdSecret(actor, debuffData, { source: options.source || options.sourceItem?.name || '', appId: options.appId, landedAt: options.landedAt, landedFloor: options.landedFloor });
+    return null;
   }
 
   // An `effectImmunity` row that matches this Debuff stops it landing. Never a hard block (Directive 2): the GM or player may force it.
@@ -551,6 +570,9 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
 
   // What a second application does is the debuff's own `repeat` (refresh, stack, or promote), judged by `repeatVerdict`.
   const verdict = repeatVerdict(actor.items, debuffData, tagId);
+  // A changed body is permanent (D8) and leaves only through a cure that obeys its window (D9): a second landing, a
+  // refresh or a promotion never touches it.
+  if (verdict.action !== 'create' && transformationBody(verdict.existing)) return verdict.existing;
   if (verdict.action === 'promote') {
     await verdict.existing.delete();
     return applyCondition(actor, verdict.into, { ...options, ...(immunity.immune ? { ruleBreak: true } : {}) });
@@ -585,31 +607,15 @@ export async function applyCondition(actor, conditionTagOrData, options = {}) {
     return existing;
   }
 
-  // A secret debuff waits GM-side (the pending store) until the GM reveals it or fires the change (D10). Nothing is
-  // created on the carrier; revealing re-enters here with `reveal: true`.
-  if (debuffData.system?.secret === true && !options.reveal) {
-    await holdSecret(actor, debuffData, { source: options.source || options.sourceItem?.name || '' });
-    return null;
-  }
-
-  // An affliction lands pending: when and on which floor, for its cure window (D8)
-  if (isAffliction(debuffData)) stampLanding(debuffData);
-
-  const results = await actor.createEmbeddedDocuments('Item', landItems([debuffData]));
-  const created = results?.[0] || null;
-
-  if (typeof actor.prepareData === 'function') {
-    actor.prepareData();
-  }
-
-  // The `apply` cue's card. A secret affliction never reaches this create: the GM-side hold lands it and posts on reveal.
-  if (created && isAffliction(created) && options.postCue !== false) await postCue(actor, created, 'apply');
+  const source = options.source || options.sourceItem?.name || '';
+  const created = await createThroughSeam(actor, debuffData, options, source);
 
   // The debuffs that land with this one: one level deep (a companion's own list is not followed), never this debuff itself.
+  // A secret companion of a revealed secret is held on its own (`reveal: false`).
   if (created && !options.companion) {
     for (const id of toStringList(debuffData.system?.alsoApplies)) {
       if (conditionRefTag(id) === tagId) continue;
-      await applyCondition(actor, id, { ...options, postCue: false, companion: true });
+      await applyCondition(actor, id, { ...options, reveal: false, postCue: false, companion: true });
     }
   }
 

@@ -5,12 +5,13 @@
  * flag, the scalar engine's scale editor view, and a plain-text readout. Every name is built from `path`, so a sheet that
  * mounts the partial once per path binds each `system.*` name exactly once.
  */
-import { formatTiming, normalizeTiming, timeUnitsFor } from '../../utils/time/timing.mjs';
+import { formatDayClock, formatTiming, normalizeTiming, timeUnitsFor } from '../../utils/time/timing.mjs';
+import { rechargeUnits } from '../../utils/time/recharge.mjs';
 import { scaleSpecErrors } from '../../utils/roll/scalars.mjs';
 import { scaleView } from './context-scale.mjs';
 import { hasConflictingUsageTags, isJunkItem, itemUsage, usageLabel } from '../../utils/tag/tag-mechanics.mjs';
 import { getUsedForm, usedFormsInOrder } from '../../data/rules/used-forms.mjs';
-import { resolveUsedFormId } from '../../documents/actor/used-items.mjs';
+import { resolveUsedFormId, usedFromLabel } from '../../documents/actor/used-items.mjs';
 import { isLootBoxType } from '../../models/items/loot-model.mjs';
 import { emitsLight } from '../../documents/actor/light-source.mjs';
 import { isInventoryItem } from '../../utils/document-types.mjs';
@@ -31,15 +32,15 @@ function unitLabel(def) {
 }
 
 /**
- * The unit select entries for an editor: a "None" entry first for cooldowns (a cooldown can be absent; a duration
- * is instantaneous instead), every registered unit allowed for `use`, then a stored unit nobody registered.
- * @param {'cooldown'|'duration'} use
+ * The unit select entries for an editor: a "None" entry first for cooldowns and charges timelines (either can be
+ * absent; a duration is instantaneous instead), every registered unit allowed for `use`, then a stored unit nobody registered.
+ * @param {'cooldown'|'duration'|'recharge'} use
  * @param {string} current the stored unit id
  */
 export function unitOptions(use, current) {
-  const defs = timeUnitsFor(use);
+  const defs = use === 'recharge' ? rechargeUnits() : timeUnitsFor(use);
   const options = [];
-  if (use === 'cooldown') options.push({ value: '', label: text('COG.Timing.None', 'None'), selected: current === '' });
+  if (use !== 'duration') options.push({ value: '', label: text('COG.Timing.None', 'None'), selected: current === '' });
   for (const def of defs) options.push({ value: def.id, label: unitLabel(def), selected: def.id === current });
   if (current && !defs.some(d => d.id === current)) options.push({ value: current, label: text('COG.Timing.Custom', '{unit} (custom)').replace('{unit}', current), selected: true });
   return options;
@@ -50,7 +51,7 @@ export function unitOptions(use, current) {
  * @param {object} params
  * @param {string} params.path the stored object's path, e.g. `system.cooldown` or `system.grants.2.cooldown`
  * @param {object|null} params.spec the stored object (cooldown or durationConfig)
- * @param {'cooldown'|'duration'} params.use
+ * @param {'cooldown'|'duration'|'recharge'} params.use
  * @param {object} params.item the edited item (for the scale editor's query buckets)
  * @param {Array} [params.tagOptions] tag picker options for scalars with a `where` query
  * @param {string} [params.label] heading text
@@ -75,6 +76,23 @@ export function timingEditorView({ path, spec, use, item, tagOptions = [], label
     tagOptions,
     endsWithCombat: use === 'duration' ? { name: `${path}.endsWithCombat`, checked: Boolean(stored.endsWithCombat) } : null,
     readout: formatTiming({ value: norm.value, unit: norm.unit, scaleBy: norm.scaleBy }, { use })
+  };
+}
+
+/**
+ * The charges timeline editor (`system.charges.recharge`): the shared timing editor over the three timing fields, plus
+ * the Amount input (blank refills) and the next-charge readout of a time unit. `nextAt` itself has no input.
+ */
+function rechargeEditorView(spec, item, tagOptions) {
+  const view = timingEditorView({ path: 'system.charges.recharge', spec, use: 'recharge', item, tagOptions, label: text('COG.Charges.Recharge.Label', 'Recharge') });
+  const amount = Math.floor(Number(spec?.amount));
+  const nextAt = Number(spec?.nextAt);
+  const hasNext = spec?.nextAt !== null && spec?.nextAt !== undefined && Number.isFinite(nextAt);
+  return {
+    ...view,
+    amountName: 'system.charges.recharge.amount',
+    amount: Number.isFinite(amount) && amount >= 1 ? amount : '',
+    next: hasNext ? text('COG.ItemSummary.GearLoot.ChargesRechargeNext', 'Next charge: {at}').replace('{at}', formatDayClock(nextAt)) : ''
   };
 }
 
@@ -135,8 +153,9 @@ export function buildRankBreakTimingViews(context, item) {
 const hasField = (item, key) => Boolean(item?.system && typeof item.system === 'object' && key in item.system);
 
 /**
- * Add the timing editors to the render context: `cooldownEditor` and `durationEditor` for the item itself, and on each
- * gear grant row of kind spell a `cooldownEditor`. Call it after the type builders (they create `gearGrantRows`).
+ * Add the timing editors to the render context: `cooldownEditor` and `durationEditor` for the item itself, `rechargeEditor`
+ * for a charges timeline, and on each gear grant row of kind spell a `cooldownEditor`. Call it after the type builders
+ * (they create `gearGrantRows`).
  * @param {object} context render context (mutated)
  * @param {COGItem} item
  */
@@ -146,6 +165,9 @@ export function buildTimingContext(context, item) {
   if (hasField(item, 'cooldown')) context.cooldownEditor = timingEditorView({ path: 'system.cooldown', spec: sys.cooldown, use: 'cooldown', item, tagOptions });
   if (hasField(item, 'durationConfig')) context.durationEditor = timingEditorView({ path: 'system.durationConfig', spec: sys.durationConfig, use: 'duration', item, tagOptions });
   buildRankBreakTimingViews(context, item);
+  if (sys.charges && typeof sys.charges === 'object' && 'recharge' in sys.charges) {
+    context.rechargeEditor = rechargeEditorView(sys.charges.recharge, item, tagOptions);
+  }
   if (isInventoryItem(item)) {
     // How the item is used up (3.76): read from its usage tag, with a warning when it stores several.
     const kind = itemUsage(item);
@@ -169,8 +191,7 @@ export function buildTimingContext(context, item) {
       ...usedFormsInOrder().map((form) => ({ value: form.id, label: form.name, selected: form.id === chosen }))
     ];
     // Junk left by a restorable item names what it was.
-    const from = sys.usedFrom ?? {};
-    context.usedFromLabel = from.name ? (from.spellIdentifier ? `${from.name} (${from.spellIdentifier})` : from.name) : '';
+    context.usedFromLabel = usedFromLabel(item);
   }
   if (context.isLightItem && hasField(item, 'light')) {
     // A light burns out on the clock, not with the combat, so the combat checkbox is dropped.

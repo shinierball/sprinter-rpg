@@ -8,11 +8,34 @@ import { scaleByField } from './tag-fields.mjs';
  * @param {{ nullable?: boolean }} [opts] nullable: a rank-break override, null = "this tier does not change it"
  */
 export function cooldownField(fields, { nullable = false } = {}) {
-  return new fields.SchemaField({
+  return new fields.SchemaField(cooldownTimingFields(fields), nullable ? { nullable: true, initial: null } : {});
+}
+
+/**
+ * The cooldown timing's own fields, built fresh on every call: a field instance belongs to one parent, so a schema
+ * that extends the timing takes new instances, never another SchemaField's `.fields`.
+ * @param {object} fields foundry.data.fields
+ */
+function cooldownTimingFields(fields) {
+  return {
     value: new fields.NumberField({ min: 0, initial: 0 }),
     unit: new fields.StringField({ initial: '', blank: true }),
     scaleBy: scaleByField(fields)
-  }, nullable ? { nullable: true, initial: null } : {});
+  };
+}
+
+/**
+ * A charges timeline on loot and gear: the cooldown timing (`value`, `unit`, `scaleBy`, one definition) plus how many
+ * charges come back (`amount`, null = refill to max) and `nextAt`, the world time of the next charge for a time unit
+ * (engine state, never authored). A blank `unit` is no inherent recharge.
+ * @param {object} fields foundry.data.fields
+ */
+export function chargeRechargeField(fields) {
+  return new fields.SchemaField({
+    ...cooldownTimingFields(fields),
+    amount: new fields.NumberField({ integer: true, min: 1, nullable: true, initial: null }),
+    nextAt: new fields.NumberField({ nullable: true, initial: null })
+  });
 }
 
 /**

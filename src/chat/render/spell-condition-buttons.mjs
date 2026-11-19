@@ -7,13 +7,13 @@
  * Once every target is covered the GM keeps the buttons and players do not. While any target still waits, or the card
  * records no targets, the buttons stay for everyone so a failed relay can be retried.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { spellCardOf } from '../../utils/attack/spell-cast-link.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 
 /** True when the card records its targets and every one of them is in its applied list. */
 function spellConditionsAllApplied(message) {
-  const f = message?.flags?.[SYSTEM_ID];
-  if (!f || typeof f !== 'object') return false;
+  const f = spellCardOf(message);
+  if (!f) return false;
   const targets = Array.isArray(f.conditionTargetUuids) ? f.conditionTargetUuids : [];
   if (targets.length === 0) return false;
   const applied = f.isSpellAttack === true ? f.conditionsApplied?.targets : f.appliedTargets;

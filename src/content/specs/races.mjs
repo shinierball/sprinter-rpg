@@ -182,8 +182,12 @@ export const COG_RACES = [
       "prerequisites": "",
       "requirements": [
         {
-          "kind": "race",
-          "identifier": "cat"
+          "kind": "tags",
+          "query": {
+            "all": [
+              "species.animal"
+            ]
+          }
         }
       ],
       "description": "",
@@ -219,13 +223,19 @@ export const COG_RACES = [
             ],
             "activation": {
               "enabled": true,
+              "auto": true,
               "cooldown": {
                 "value": 1,
                 "unit": "day"
               },
               "window": {
                 "unit": "hit",
-                "value": 9
+                "value": 9,
+                "query": {
+                  "any": [
+                    "check.attack"
+                  ]
+                }
               }
             }
           }

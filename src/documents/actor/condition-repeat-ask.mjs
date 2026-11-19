@@ -27,12 +27,11 @@ function notify(level, message) {
 async function askOnThisClient(actorName, existingName, incomingName) {
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
   if (typeof DialogV2?.wait !== 'function') return null;
-  // The title and button labels are plain text in Foundry; only the message is HTML, so only it takes escaped names.
+  // The title and button labels are plain text in Foundry; only the message is HTML, so only it is escaped (the whole sentence).
   const data = { actor: actorName, existing: existingName, incoming: incomingName };
-  const html = { actor: escapeAttr(actorName), existing: escapeAttr(existingName), incoming: escapeAttr(incomingName) };
   const answer = await DialogV2.wait({
     window: { title: text('Title', data, 'Another injury') },
-    content: `<p>${text('Message', html, `${html.actor} already has ${html.existing}. ${html.incoming} would land again. What happens?`)}</p>`,
+    content: `<p>${escapeAttr(text('Message', data, `${actorName} already has ${existingName}. ${incomingName} would land again. What happens?`))}</p>`,
     buttons: [
       { action: REPEAT_RULINGS.NONE, label: text('None', data, 'Nothing more'), default: true },
       { action: REPEAT_RULINGS.BESIDE, label: text('Beside', data, `Add ${data.incoming}`) },

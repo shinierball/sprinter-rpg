@@ -18,6 +18,7 @@
  * formula's maximum. Known limit: the GM cannot confirm the target is inside the aura radius or is an
  * ally/enemy.
  */
+import { transformationBody } from '../../utils/effects/debuff-force.mjs';
 import { auraSourceUuidOf } from '../../utils/area/aura-flags.mjs';
 import { registerRelayAction, dispatchRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
@@ -50,7 +51,7 @@ export function findAuraEffects(actor, auraUuid) {
   if (!auraUuid) return { hasBars: false, itemIds: [] };
   const hasBars = actor?.system?.attributes?.hp?.tempBars?.sourceUuid === auraUuid;
   const itemIds = itemsOf(actor)
-    .filter(it => auraSourceUuidOf(it) === auraUuid)
+    .filter(it => auraSourceUuidOf(it) === auraUuid && !transformationBody(it))
     .map(it => it.id || it._id);
   return { hasBars, itemIds };
 }
@@ -240,7 +241,7 @@ export async function removeAuraItems(actor, sourceItem, { types = [], keepTimed
   const auraUuid = sourceItem?.uuid || '';
   if (!auraUuid) return true;
   const itemIds = itemsOf(actor)
-    .filter(it => types.includes(it.type) && auraSourceUuidOf(it) === auraUuid)
+    .filter(it => types.includes(it.type) && auraSourceUuidOf(it) === auraUuid && !transformationBody(it))
     .filter(it => !(keepTimed && it.type === 'debuff' && hasAuthoredDuration(it)))
     .map(it => it.id || it._id);
   if (itemIds.length > 0) {
@@ -273,7 +274,7 @@ async function applyAuraHeal(actor, sourceName, area) {
 
 async function applyAuraCleanse(actor, debuff) {
   if (typeof actor.cleanseDebuff === 'function') {
-    await actor.cleanseDebuff(debuff);
+    await actor.cleanseDebuff(debuff, { interactive: false });
   }
 }
 

@@ -51,7 +51,7 @@ export function decorateEntry(entry, collection) {
     chip.className = 'cog-provenance-chip cog-fg-dyn cog-compendium-source-chip';
     chip.dataset.provenance = 'source';
     chip.dataset.cogSource = key;
-    chip.dataset.tooltip = badge.tooltip;
+    chip.dataset.tooltip = escapeAttr(badge.tooltip); // Foundry parses a tooltip as HTML
     chip.style.setProperty('--cog-fg-dyn', `var(${badge.color})`);
     chip.innerHTML = `<i class="${escapeAttr(badge.icon)}"></i> ${escapeAttr(badge.symbol)}`
       + (badge.authorship ? `<i class="cog-authorship-glyph ${escapeAttr(badge.authorship.icon)}" data-authorship="${escapeAttr(badge.authorship.id)}"></i>` : '');

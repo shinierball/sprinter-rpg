@@ -43,7 +43,7 @@ export function formatDayClock(seconds) {
  * @property {number} [seconds] length of one unit (kind 'time')
  * @property {'scene'|'floor'} [token] the `TimeNow` token a period unit compares (kind 'period')
  * @property {number} [level] rest level 1-3 (kind 'rest'); see REST_LEVELS
- * @property {Array<'cooldown'|'duration'>} use where the unit may be chosen
+ * @property {Array<'cooldown'|'duration'|'recharge'>} use where the unit may be chosen
  */
 
 /** @type {Record<string, TimeUnitDef>} The registry. `CONFIG.COG.timeUnits === TIME_UNITS`. */
@@ -72,17 +72,18 @@ export function registerTimeUnit(def) {
 }
 
 const BOTH = ['cooldown', 'duration'];
+const ALL_USES = ['cooldown', 'duration', 'recharge'];
 for (const def of [
   { id: 'seconds', label: 'seconds', kind: 'time', seconds: 1, use: ['duration'] },
   { id: 'rounds', label: 'rounds', kind: 'rounds', use: BOTH },
-  { id: 'minutes', label: 'minutes', kind: 'time', seconds: 60, use: BOTH },
-  { id: 'hours', label: 'hours', kind: 'time', seconds: SECONDS_PER_HOUR, use: BOTH },
-  { id: 'day', label: 'days', kind: 'time', seconds: DAY_HOURS * SECONDS_PER_HOUR, use: BOTH },
-  { id: 'scene', label: 'scene (combat)', kind: 'period', token: 'scene', use: BOTH },
-  { id: 'floor', label: 'floor', kind: 'period', token: 'floor', use: BOTH },
-  { id: 'short_rest', label: 'short rest', kind: 'rest', level: 1, use: BOTH },
-  { id: 'long_rest', label: 'long rest', kind: 'rest', level: 2, use: BOTH },
-  { id: 'full_day_rest', label: "full day's rest", kind: 'rest', level: 3, use: BOTH },
+  { id: 'minutes', label: 'minutes', kind: 'time', seconds: 60, use: ALL_USES },
+  { id: 'hours', label: 'hours', kind: 'time', seconds: SECONDS_PER_HOUR, use: ALL_USES },
+  { id: 'day', label: 'days', kind: 'time', seconds: DAY_HOURS * SECONDS_PER_HOUR, use: ALL_USES },
+  { id: 'scene', label: 'scene (combat)', kind: 'period', token: 'scene', use: ALL_USES },
+  { id: 'floor', label: 'floor', kind: 'period', token: 'floor', use: ALL_USES },
+  { id: 'short_rest', label: 'short rest', kind: 'rest', level: 1, use: ALL_USES },
+  { id: 'long_rest', label: 'long rest', kind: 'rest', level: 2, use: ALL_USES },
+  { id: 'full_day_rest', label: "full day's rest", kind: 'rest', level: 3, use: ALL_USES },
   { id: 'instant', label: 'Instantaneous', kind: 'state', use: ['duration'] },
   { id: 'combat', label: 'Until the end of combat', kind: 'state', use: ['duration'] },
   { id: 'next_check', label: 'Until the next Check', kind: 'state', use: ['duration'] },
@@ -91,7 +92,7 @@ for (const def of [
   { id: 'permanent', label: 'Until removed', kind: 'state', use: ['duration'] }
 ]) registerTimeUnit(def);
 
-/** @param {'cooldown'|'duration'} use @returns {TimeUnitDef[]} the units an editor offers */
+/** @param {'cooldown'|'duration'|'recharge'} use @returns {TimeUnitDef[]} the units an editor offers */
 export function timeUnitsFor(use) {
   return Object.values(TIME_UNITS).filter(def => def.use.includes(use));
 }

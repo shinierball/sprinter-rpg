@@ -99,6 +99,12 @@
   flex: 1;
 }
 
+/* A checkbox in a field group is a box at its own size: stretched across the column it would draw the dark scheme's 2px
+   outline (see the checkbox rules below) as a full-width bar. */
+.cog-field-group > input[type="checkbox"] {
+  align-self: flex-start;
+}
+
 .cog-field-group.small {
   flex: 0 0 75px;
 }
@@ -821,6 +827,11 @@ textarea::placeholder,
   width: 100%;
 }
 
+/* A skill-row badge is a short label; it never wraps mid-label and squeezes the name. */
+.cog-skills-table .cog-badge {
+  white-space: nowrap;
+}
+
 .cog-attribute-mod-container {
   display: flex;
   align-items: center;
@@ -1519,9 +1530,13 @@ select.cog-box-input.cog-size-select,
   color: var(--cog-text-secondary);
 }
 
-.cog-feature-line[data-tooltip] .cog-feature-text {
+.cog-feature-line:is([data-tooltip], [data-tooltip-text]) .cog-feature-text {
   text-decoration: underline dotted;
   cursor: help;
+}
+
+#tooltip.cog-tooltip-lines {
+  white-space: pre-line;
 }
 
 .hotlist-clear {

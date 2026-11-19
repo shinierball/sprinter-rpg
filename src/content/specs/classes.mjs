@@ -5689,8 +5689,9 @@ export const COG_CLASSES = [
           "dice": "1d4",
           "label": "Helpful Advice",
           "condition": {
-            "all": [
-              "id.skill.intervene"
+            "any": [
+              "id.skill.intervene",
+              "id.skill.help"
             ]
           }
         }

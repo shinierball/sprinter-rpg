@@ -9,6 +9,7 @@
 import { resolveAreaShape, getTagDefinition } from '../../data/tag-definitions.mjs';
 import { formatTiming, normalizeTiming } from '../time/timing.mjs';
 import { isWeaponCapable } from '../document-types.mjs';
+import { langText } from '../lang-text.mjs';
 
 const TEXT = Object.freeze({
   'COG.AttackMechanics.ToHit': '{n}+F to hit',
@@ -32,11 +33,7 @@ const TEXT = Object.freeze({
   'COG.AttackMechanics.Or': ' or '
 });
 
-function mechText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+const mechText = langText(TEXT);
 
 const wholeFeet = (v) => {
   const n = Math.floor(Number(v));

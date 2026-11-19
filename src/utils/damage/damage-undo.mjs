@@ -3,10 +3,9 @@
  * target actor holding the HP and temp-bar state before and after. Undo gives back what the application
  * took, capped at the before-state, so later damage or healing from other sources is kept.
  *
- * Imports only SYSTEM_ID: combat-metrics.mjs imports this module, so it must not import documents or apps.
+ * Imports only the flag primitives: combat-metrics.mjs imports this module, so it must not import documents or apps.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { writeFlag } from '../flags.mjs';
+import { readFlag, writeFlag } from '../flags.mjs';
 
 const DAMAGE_UNDO_FLAG = 'damageUndo';
 export const MAX_DAMAGE_UNDO_RECORDS = 20;
@@ -70,7 +69,7 @@ export function snapshotHpPools(actor) {
 
 /** The actor's valid records (flag value is an array of objects with a valid applicationId). */
 export function getDamageUndoRecords(actor) {
-  const raw = actor?.getFlag?.(SYSTEM_ID, DAMAGE_UNDO_FLAG) ?? actor?.flags?.[SYSTEM_ID]?.[DAMAGE_UNDO_FLAG];
+  const raw = readFlag(actor, DAMAGE_UNDO_FLAG);
   if (!Array.isArray(raw)) return [];
   return raw.filter(r => r && typeof r === 'object' && isApplicationId(r.applicationId));
 }
@@ -85,7 +84,7 @@ export async function appendDamageUndoRecord(actor, record) {
   kept.push(record);
   kept.sort((a, b) => num(a.at) - num(b.at));
   const pruned = kept.slice(-MAX_DAMAGE_UNDO_RECORDS);
-  await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, pruned);
+  await writeFlag(actor, DAMAGE_UNDO_FLAG, pruned);
 }
 
 /** Set undoneAt/undoneBy on one record and setFlag. Returns false if the record is absent. */
@@ -94,7 +93,7 @@ export async function markDamageUndoRecord(actor, applicationId, { undoneAt, und
   const rec = records.find(r => r.applicationId === applicationId);
   if (!rec) return false;
   const next = records.map(r => (r === rec ? { ...r, undoneAt, undoneBy } : r));
-  await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, next);
+  await writeFlag(actor, DAMAGE_UNDO_FLAG, next);
   return true;
 }
 
@@ -109,7 +108,7 @@ export async function markDamageUndoReflected(actor, applicationId, index, used 
   const list = (Array.isArray(rec[field].used) ? rec[field].used : []).filter(i => Number.isInteger(i) && i !== index);
   if (used) list.push(index);
   const next = records.map(r => (r === rec ? { ...r, [field]: { ...r[field], used: list } } : r));
-  await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, next);
+  await writeFlag(actor, DAMAGE_UNDO_FLAG, next);
   return true;
 }
 
@@ -119,7 +118,7 @@ export async function markDamageUndoKillAwarded(actor, applicationId) {
   const rec = records.find(r => r.applicationId === applicationId);
   if (!rec) return false;
   const next = records.map(r => (r === rec ? { ...r, killAwarded: true } : r));
-  await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, next);
+  await writeFlag(actor, DAMAGE_UNDO_FLAG, next);
   return true;
 }
 
@@ -145,7 +144,7 @@ export async function markDamageUndoLethal(actor, applicationId, { killContext, 
   if (killContext !== undefined) patch.killContext = killContext;
   if (killTrophy !== undefined) patch.killTrophy = killTrophy;
   const next = records.map(r => (r === rec ? { ...r, ...patch } : r));
-  await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, next);
+  await writeFlag(actor, DAMAGE_UNDO_FLAG, next);
   return true;
 }
 
@@ -156,7 +155,7 @@ export async function setDamageUndoInflictedItems(actor, applicationId, inflicte
   if (!rec) return false;
   const ids = Array.isArray(inflictedItemIds) ? inflictedItemIds.filter(id => typeof id === 'string' && Boolean(id)) : [];
   const next = records.map(r => (r === rec ? { ...r, inflictedItemIds: ids } : r));
-  await actor.setFlag(SYSTEM_ID, DAMAGE_UNDO_FLAG, next);
+  await writeFlag(actor, DAMAGE_UNDO_FLAG, next);
   return true;
 }
 

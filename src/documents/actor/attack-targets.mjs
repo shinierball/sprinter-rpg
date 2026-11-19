@@ -5,6 +5,8 @@
 
 import { getCurrentFloor } from './actor-environment.mjs';
 import { getCOGStatModifier } from './actor-constants.mjs';
+import { STAT_KEYS } from '../../models/actors/actor-derivation.mjs';
+import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { OFFER_ROLES } from '../../utils/tag/tag-mechanics.mjs';
 import { collectRollAdvantage, collectCheckModifiers, collectToHitModifiers, collectIncomingAdvantage } from '../../utils/roll/damage-modifiers.mjs';
 import { buildRollContext, resolveRowAdvantage, rollContextDataAttr, actionTagsOf } from '../../utils/roll/roll-context.mjs';
@@ -309,14 +311,14 @@ export function resolveAttackTargets(actor, roll, options = {}) {
       const vehicleButtons = `${tr.hitsVehicle ? `<button type="button" class="cog-vehicle-near-miss-btn" data-action="crawlerHitVehicle" data-vehicle-uuid="${escapeAttr(tr.hitsVehicle)}" style="flex-basis: 100%; cursor: pointer;"><i class="fa-solid fa-car-burst"></i> ${escapeAttr(vehicleText('COG.Vehicle.NearMiss.Button', 'Hits the vehicle'))}</button>` : ''}`
         + `${tr.vehicleEvade ? `<button type="button" class="cog-vehicle-evade-btn" data-action="crawlerVehicleEvade" data-vehicle-uuid="${escapeAttr(tr.vehicleEvade.vehicleUuid)}" data-driver-uuid="${escapeAttr(tr.vehicleEvade.driverUuid)}" data-target-dc="${escapeAttr(tr.targetDC)}" data-attacker-name="${escapeAttr(actor.name)}" style="flex-basis: 100%; cursor: pointer;"><i class="fa-solid fa-car-side"></i> ${escapeAttr(vehicleText('COG.Vehicle.Evade.Button', 'Driver: evade with a Driving check'))} (${escapeAttr(tr.targetDC)})</button>` : ''}`;
       return `
-        <div class="cog-target-eval-row ${hit ? 'hit' : 'miss'} cog-bg-dyn" data-target-id="${tr.actorId}" style="--cog-bg-dyn: ${hit ? 'var(--cog-success-tint)' : 'var(--cog-danger-tint)'}; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 6px; border: 1px solid ${hit ? 'var(--cog-success)' : 'var(--cog-accent)'}; border-radius: 3px; margin-top: 3px;">
+        <div class="cog-target-eval-row ${hit ? 'hit' : 'miss'} cog-bg-dyn" data-target-id="${escapeAttr(tr.actorId)}" style="--cog-bg-dyn: ${hit ? 'var(--cog-success-tint)' : 'var(--cog-danger-tint)'}; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 6px; border: 1px solid ${hit ? 'var(--cog-success)' : 'var(--cog-accent)'}; border-radius: 3px; margin-top: 3px;">
           <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
-            <img class="cog-bg-icon-box" src="${img}" style="width: 20px; height: 20px; border-radius: 2px; border: 1px solid var(--cog-border-muted); object-fit: cover;" />
-            <span class="cog-text" style="font-size: 11px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${tr.actorName}</span>
-            ${tr.outOfRange ? '' : `<span class="cog-text-secondary" style="font-size: 10px;">(DC ${tr.targetDC})</span>`}
+            <img class="cog-bg-icon-box" src="${escapeAttr(img)}" style="width: 20px; height: 20px; border-radius: 2px; border: 1px solid var(--cog-border-muted); object-fit: cover;" />
+            <span class="cog-text" style="font-size: 11px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeAttr(tr.actorName)}</span>
+            ${tr.outOfRange ? '' : `<span class="cog-text-secondary" style="font-size: 10px;">(DC ${escapeAttr(tr.targetDC)})</span>`}
           </div>
           <div class="cog-bg-dyn cog-text-on-fill" style="--cog-bg-dyn: ${badgeBg}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 2px; text-transform: uppercase; white-space: nowrap;">
-            ${outcomeBadge}
+            ${escapeAttr(outcomeBadge)}
           </div>
           ${linesHtml}
           ${vehicleButtons}
@@ -326,9 +328,8 @@ export function resolveAttackTargets(actor, roll, options = {}) {
 
     targetResultsHtml = `
       <div class="cog-attack-targets-container" style="margin-top: 6px; font-family: var(--font-primary, 'Oswald', sans-serif);">
-        <div class="cog-text-gold" style="font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between;">
+        <div class="cog-text-gold" style="font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
           <span><i class="fa-solid fa-crosshairs"></i> Target Evaluation</span>
-          <span>Floor ${currentFloor}</span>
         </div>
         ${rows}
       </div>
@@ -405,7 +406,7 @@ export function interruptPromptsHtml(actor, targetResults, options = {}) {
         data-role="${escapeAttr(p.role)}"
         style="width: 100%; margin-top: 4px; padding: 5px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-warning); border-radius: 3px; display: flex; align-items: center; justify-content: space-between; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif); text-transform: uppercase;">
         <span style="display: flex; align-items: center; gap: 6px; min-width: 0; text-align: left;">
-          <i class="${p.icon} cog-dark cog-text-warning"></i>
+          <i class="${escapeAttr(p.icon)} cog-dark cog-text-warning"></i>
           <span style="overflow-wrap: anywhere;">${escapeAttr(p.label)}</span>
           ${freeBadge}
         </span>
@@ -453,9 +454,29 @@ export function evadeButtonHtml(actor, roll, currentFloor, options = {}) {
     : `Roll Evade vs Attack (${targetDC})`;
   return `
     <div class="cog-evade-btn-container" style="margin-top: 6px;">
-      <button type="button" class="cog-evade-roll-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerRollEvade" data-attacker-id="${actor.id}" data-attacker-name="${actor.name}" data-target-dc="${targetDC}" data-attack-total="${targetDC}" data-floor="${currentFloor}"${areaAttr} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-info-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif); text-transform: uppercase;">
-        <i class="fa-solid fa-person-running"></i> ${displayLabel}
+      <button type="button" class="cog-evade-roll-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerRollEvade" data-attacker-id="${escapeAttr(actor.id)}" data-attacker-name="${escapeAttr(actor.name)}" data-target-dc="${escapeAttr(targetDC)}" data-attack-total="${escapeAttr(targetDC)}" data-floor="${escapeAttr(currentFloor)}"${areaAttr} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-info-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif); text-transform: uppercase;">
+        <i class="fa-solid fa-person-running"></i> ${escapeAttr(displayLabel)}
       </button>
     </div>
   `;
+}
+
+/**
+ * The Advantage shift a foe brings to an Opposed Difficulty set against `roller`, as it is now: a mob's check quality in the
+ * context of a check of `statKey` (0 for any other foe, or none).
+ * @param {object|null} foe
+ * @param {string} statKey a Stat key; anything else is judged with no Stat
+ * @param {object|null} [roller]
+ * @returns {number}
+ */
+export function foeShiftFor(foe, statKey, roller = null) {
+  if (foe?.type !== 'mob') return 0;
+  const stat = STAT_KEYS.includes(statKey) ? statKey : undefined;
+  const context = buildRollContext({ actor: foe, phase: 'check', check: 'stat', stat, other: roller ?? undefined });
+  return mobDifficultyShift(foe, MOB_QUALITIES.check, { context }).shift;
+}
+
+/** For `standingStampFor`: reads the shift of the foe a standing Opposed Difficulty names, as it is when `roller` rolls (0 when the foe cannot be found). */
+export function standingFoeShiftFor(roller) {
+  return (standing) => foeShiftFor(resolveActorByUuid(standing?.foeUuid), standing?.stat, roller);
 }

@@ -3,14 +3,31 @@
  * An attack spell is cast first (Mana, cooldown), then attacked from the cast; an attack that answers no cast is a Rule
  * Break, never a block. Any number of attacks may answer one cast. Structured flags and tags only.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlags } from '../flags.mjs';
+import { attackCardOf } from '../combat/card-flags.mjs';
 import { isAttackSkill, isAuraItem } from '../tag/tag-mechanics.mjs';
 import { attackText } from './attack-text.mjs';
 import { combatRefFor } from '../roll/check-assists.mjs';
 import { MAX_CARD_SCAN, messageList, scopeCombatId, inScope } from '../card/recent-cards.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 
-const flagsOf = (message) => message?.flags?.[SYSTEM_ID] ?? null;
+/**
+ * What a spell's cast card and its attack (hit) card store about the spell, its caster, its targets and what the cast
+ * applied (a key the card does not carry reads `undefined`); null for no message. `isSpellAttack` and `attackItemUuid`
+ * come from `attackCardOf`, the one place that reads them.
+ */
+export function spellCardOf(message) {
+  if (!message) return null;
+  const { isSpellAttack, attackItemUuid } = attackCardOf(message);
+  return {
+    ...readFlags(message, [
+      'isSpellCast', 'offersAttack', 'spellSuccess', 'casterId', 'castSpellId', 'castSpellIdentifier', 'castCombatId',
+      'conditionSpellId', 'conditionCasterId', 'conditionTargetUuids', 'appliedTargets', 'conditionsApplied'
+    ]),
+    isSpellAttack,
+    attackItemUuid
+  };
+}
 
 /** A flag read defensively as a trimmed string; arrays take the first entry, comma strings the first part. */
 function idString(raw) {
@@ -42,7 +59,7 @@ export function castLinkFlags(actor, spell) {
 
 /** True when a message is a successful cast of `spell` by `actor` that offered the attack. */
 function isCastOf(message, actor, spell) {
-  const f = flagsOf(message);
+  const f = spellCardOf(message);
   if (!f || f.offersAttack !== true || f.spellSuccess !== true) return false;
   if (!actor?.id || idString(f.casterId) !== actor.id) return false;
   const spellId = idString(f.castSpellId);
@@ -63,7 +80,7 @@ export function findLatestCast(actor, spell, { now = Date.now() } = {}) {
   if (!actor?.id || !spell || !messages) return null;
   const list = messageList(messages);
   const combatId = scopeCombatId();
-  const combatIdOf = (m) => idString(flagsOf(m)?.castCombatId) || null;
+  const combatIdOf = (m) => idString(spellCardOf(m)?.castCombatId) || null;
   for (let i = list.length - 1, scanned = 0; i >= 0 && scanned < MAX_CARD_SCAN; i--, scanned++) {
     const message = list[i];
     if (!isCastOf(message, actor, spell)) continue;

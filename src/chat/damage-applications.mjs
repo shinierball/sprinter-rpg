@@ -7,10 +7,10 @@
  * Only the GM or the message author can update a message, so with no GM connected a non-author's
  * application gets no row (the record on the actor still exists).
  */
-import { SYSTEM_ID } from '../constants.mjs';
 import { isApplicationId } from '../utils/damage/damage-undo.mjs';
 import { messageAuthorId } from './chat-relay.mjs';
-import { readFlag } from '../utils/flags.mjs';
+import { flagPath, readFlag } from '../utils/flags.mjs';
+import { sourceMessageIdOf } from '../utils/combat/card-flags.mjs';
 import { messageList } from '../utils/card/recent-cards.mjs';
 import { appliedBeforeEvade } from '../utils/attack/evade-link.mjs';
 import { MAX_TARGET_LINES } from '../utils/damage/per-target-damage.mjs';
@@ -25,7 +25,7 @@ export function canModifyMessage(message, user = globalThis.game?.user) {
 }
 
 function readIndex(message) {
-  return message?.getFlag?.(SYSTEM_ID, DAMAGE_APPLICATIONS_FLAG) ?? message?.flags?.[SYSTEM_ID]?.[DAMAGE_APPLICATIONS_FLAG] ?? null;
+  return readFlag(message, DAMAGE_APPLICATIONS_FLAG) ?? null;
 }
 
 const LINE_STAGES = new Set(['attacker', 'crit', 'defense', 'dr', 'heal', 'effect']);
@@ -75,7 +75,7 @@ export async function indexDamageApplication(message, { applicationId, targetUui
   if (!message?.id || !isApplicationId(applicationId) || !canModifyMessage(message)) return false;
   try {
     await message.update({
-      [`flags.${SYSTEM_ID}.${DAMAGE_APPLICATIONS_FLAG}.${applicationId}`]: {
+      [flagPath(`${DAMAGE_APPLICATIONS_FLAG}.${applicationId}`)]: {
         applicationId, targetUuid, targetName: String(targetName ?? ''),
         actualDamage: Number(actualDamage) || 0, at: Date.now(), undone: false, lines: sanitizeLines(lines)
       }
@@ -93,7 +93,7 @@ export async function markDamageApplicationUndone(message, applicationId, target
   const existing = readIndex(message)?.[applicationId];
   if (!existing || existing.targetUuid !== targetUuid) return false;
   try {
-    await message.update({ [`flags.${SYSTEM_ID}.${DAMAGE_APPLICATIONS_FLAG}.${applicationId}.undone`]: true });
+    await message.update({ [flagPath(`${DAMAGE_APPLICATIONS_FLAG}.${applicationId}.undone`)]: true });
     return true;
   } catch (err) {
     console.error('Sprinter RPG | Could not mark the damage application undone:', err);
@@ -113,10 +113,10 @@ export function damageAlreadyApplied(message, record) {
     return appliedBeforeEvade(messages, { attackMessageId: readFlag(message, 'attackMessageId'), evaderUuid: readFlag(message, 'evaderUuid') ?? record.rollerUuid, getApplications: getDamageApplications });
   }
   if (!message?.id) return false;
-  return messages.some((m) => readFlag(m, 'sourceMessageId') === message.id && getDamageApplications(m).some((a) => !a.undone));
+  return messages.some((m) => sourceMessageIdOf(m) === message.id && getDamageApplications(m).some((a) => !a.undone));
 }
 
 /** True when a damage card answers this check (made from it, applied or not): the Called Plays on it keep where they went. */
 export function damageCardAnswers(message) {
-  return Boolean(message?.id) && messageList(globalThis.game?.messages).some((m) => readFlag(m, 'sourceMessageId') === message.id);
+  return Boolean(message?.id) && messageList(globalThis.game?.messages).some((m) => sourceMessageIdOf(m) === message.id);
 }

@@ -2,9 +2,9 @@
  * The questions asked before a Rank is advanced a way the skill's `system.rankLimits` close (the use mark, an ad hoc
  * check, a batch, grind hours, a training session, a potion). Each asks the one Rule Break dialog and never hard-blocks;
  * a confirmed gain is recorded as a Rule Break. A route limit is separate from the Rank cap (`getRankCap`), which
- * `applyRankGain` asks about itself. Plain functions: no actor method (🧱 rail 6).
+ * `applyRankGain` asks about itself. Plain functions: no actor method.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { clearFlag, readFlag, writeFlag } from '../../utils/flags.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { ADVANCEMENT_ROUTE_DEFS, ADVANCEMENT_ROUTES, openRoutes, routeAllowsGain, routeLimit } from '../../utils/skill/advancement-routes.mjs';
 
@@ -24,7 +24,7 @@ export function routeLimitPhrase(skill, route, rank = rankOf(skill)) {
 
 /** The skill's remembered route Rule Break, or null. */
 function readStamp(skill) {
-  const stamp = typeof skill?.getFlag === 'function' ? skill.getFlag(SYSTEM_ID, ROUTE_BREAK_FLAG) : skill?.flags?.[SYSTEM_ID]?.[ROUTE_BREAK_FLAG];
+  const stamp = readFlag(skill, ROUTE_BREAK_FLAG);
   return stamp && typeof stamp === 'object' ? stamp : null;
 }
 
@@ -36,7 +36,7 @@ export function hasRouteStamp(skill, route, rank = rankOf(skill)) {
 
 /** Remove the skill's stamp, when it has one. */
 export async function clearRouteStamp(skill) {
-  if (readStamp(skill) && typeof skill.unsetFlag === 'function') await skill.unsetFlag(SYSTEM_ID, ROUTE_BREAK_FLAG);
+  if (readStamp(skill) && typeof skill.unsetFlag === 'function') await clearFlag(skill, ROUTE_BREAK_FLAG);
 }
 
 /**
@@ -69,7 +69,7 @@ export async function confirmRouteGain(actor, skill, route, { fromRank, options 
     options
   });
   if (!res.confirmed) return { ok: false, ruleBreak: false, limited: true };
-  if (stamp && typeof item.setFlag === 'function') await item.setFlag(SYSTEM_ID, ROUTE_BREAK_FLAG, { route, rank: Number(rank) || 0 });
+  if (stamp && typeof item.setFlag === 'function') await writeFlag(item, ROUTE_BREAK_FLAG, { route, rank: Number(rank) || 0 });
   return { ok: true, ruleBreak: true, limited: true };
 }
 

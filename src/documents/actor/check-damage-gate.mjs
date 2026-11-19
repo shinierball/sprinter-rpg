@@ -7,7 +7,6 @@
 import { readCheckRecord, effectiveCheck, isSuccessOutcome } from '../../utils/roll/check-assists.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { isAttackSkill } from '../../utils/tag/tag-mechanics.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { COG_OUTCOME_CONFIG } from '../session/roll-outcomes.mjs';
 
 const loc = (key, fallback, data) => {
@@ -44,7 +43,7 @@ export async function gateFailedCheckDamage(message, item, { options = {} } = {}
   const { failed, outcome } = failedCheckDamage(message, item);
   if (!failed) return { proceed: true, ruleBreak: false };
   const label = COG_OUTCOME_CONFIG[outcome]?.label ?? outcome;
-  const text = loc('COG.Skill.FailedCheckDamage', `The check failed (${label}). Roll damage anyway as a Rule Break?`, { outcome: escapeAttr(label) });
+  const text = loc('COG.Skill.FailedCheckDamage', `The check failed (${label}). Roll damage anyway as a Rule Break?`, { outcome: label });
   const verdict = await confirmRuleBreak({ title: loc('COG.Skill.FailedCheckDamageTitle', 'The check did not succeed'), message: text, reason: text, options });
   return { proceed: verdict.confirmed, ruleBreak: verdict.ruleBreak };
 }

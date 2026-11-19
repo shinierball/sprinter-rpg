@@ -9,7 +9,7 @@ import { grantsField } from './grant-fields.mjs';
  * id, sanitized on read, so there is no closed `choices` list.
  * @param {object} fields foundry.data.fields
  */
-export function lootBoxRowField(fields) {
+function lootBoxRowField(fields) {
   return new fields.SchemaField({
     kind: new fields.StringField({ initial: 'item' }),
     uuid: new fields.StringField({ initial: '' }),
@@ -35,6 +35,42 @@ export function lootBoxRowField(fields) {
     // table: a dice formula for how many times to roll ('' = `quantity`)
     times: new fields.StringField({ initial: '' }),
     label: new fields.StringField({ initial: '' })
+  });
+}
+
+/**
+ * The prize fields of one loot box: a loot item's `system.box` and a crawler's `system.lootBoxes[]` entry share this one
+ * definition. The tier is a `CONFIG.COG.lootBoxTiers` id, sanitized on read, so there is no closed `choices` list.
+ * @param {object} fields foundry.data.fields
+ */
+export function lootBoxSchemaFields(fields) {
+  return {
+    tier: new fields.StringField({ initial: 'bronze' }),
+    contents: new fields.ArrayField(lootBoxRowField(fields), { initial: [] }),
+    // What an unfilled box does: '' = the tier's default contents; 'keep' = not spent, the GM is warned
+    whenEmpty: new fields.StringField({ initial: '' })
+  };
+}
+
+/**
+ * One unopened box stack a crawler holds (`system.lootBoxes[]`). `id` is the stable key (a random id, or the id of the
+ * box item it replaced); `template` is the uuid of the template it was copied from ('' for a generic box); `quantity` is
+ * the units left in the stack.
+ * @param {object} fields foundry.data.fields
+ * @param {string} defaultImg the tile icon of a box that names none
+ */
+export function lootBoxEntryField(fields, defaultImg) {
+  return new fields.SchemaField({
+    id: new fields.StringField({ required: true, blank: false }),
+    name: new fields.StringField({ initial: '' }),
+    img: new fields.StringField({ initial: defaultImg }),
+    identifier: new fields.StringField({ initial: '' }),
+    template: new fields.StringField({ initial: '' }),
+    ...lootBoxSchemaFields(fields),
+    quantity: new fields.NumberField({ integer: true, min: 1, initial: 1 }),
+    // The template's description (rich text, a stored copy of the box item's `system.description`); read by the GM only
+    description: new fields.HTMLField({ initial: '' }),
+    awardedBy: new fields.StringField({ initial: '' })
   });
 }
 

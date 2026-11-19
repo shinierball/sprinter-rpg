@@ -100,7 +100,7 @@ import { contentRegistry } from '../content/registry.mjs';
 import { SCALARS } from '../utils/roll/scalars.mjs';
 import { TIME_UNITS } from '../utils/time/timing.mjs';
 import { TRANSFORM_CUES, CURE_WINDOWS } from '../utils/character/transform-rules.mjs';
-import { GEAR_SLOT_LIMBS } from '../utils/gear/body-fit.mjs';
+import { GEAR_SLOT_LIMBS } from '../utils/gear/gear-slot-limbs.mjs';
 import { GEAR_SLOTS } from '../utils/gear/gear-slots.mjs';
 import { SEX_OPTIONS } from '../utils/tag/sex.mjs';
 import { VEHICLE_ROLES } from '../data/rules/vehicle-crew-rules.mjs';

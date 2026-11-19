@@ -11,7 +11,7 @@
     <input class="cog-hp-input cog-vehicle-hp-temp" name="system.attributes.hp.temp" type="number" value="{{system.attributes.hp.temp}}" placeholder="0" />
     <span class="cog-vehicle-hp-pct">{{system.attributes.hp.pct}}%</span>
   </div>
-  <div class="cog-health-bar-wrapper" style="--hp-val: {{system.attributes.hp.value}}; --hp-max: {{system.attributes.hp.max}}; --hp-pct: {{system.attributes.hp.pct}}; --hp-segments: {{healthSegments.length}};" data-tooltip="HP: {{system.attributes.hp.value}} / {{system.attributes.hp.max}} ({{hpPerBar}} HP per slot)">
+  <div class="cog-health-bar-wrapper" style="--hp-val: {{system.attributes.hp.value}}; --hp-max: {{system.attributes.hp.max}}; --hp-pct: {{system.attributes.hp.pct}}; --hp-segments: {{healthSegments.length}};" data-tooltip-text="HP: {{system.attributes.hp.value}} / {{system.attributes.hp.max}} ({{hpPerBar}} HP per slot)">
     <div class="cog-health-fill-overlay"></div>
     <div class="cog-health-segments" style="grid-template-columns: repeat({{healthSegments.length}}, 1fr);">
       {{#each healthSegments}}

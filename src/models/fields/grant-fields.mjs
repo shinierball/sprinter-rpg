@@ -41,6 +41,8 @@ export function grantField(fields) {
     floor:      new fields.NumberField({ nullable: false, integer: true, min: 0, initial: 0 }),
     // rank_raise rows: where the Rank N comes from ('' this row's `floor`; 'rank' the Rank of the buff carrying the row).
     floorFrom:  new fields.StringField({ initial: '', blank: true, choices: GRANT_FLOOR_SOURCES }),
+    // rank_raise rows with `floorFrom: 'rank'`: also give the skill (at the buff's Rank) to a holder who has none.
+    giveIfMissing: new fields.BooleanField({ initial: false }),
     onlyIfOwned: new fields.BooleanField({ initial: false }),
     enchantment: enchantmentRef(fields)
   };

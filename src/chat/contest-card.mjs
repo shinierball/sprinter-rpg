@@ -9,7 +9,7 @@
  * The HTML is built here as a pure function (like the floor arrival card). Per-viewer visibility (a Roll button only
  * for the actors the viewer owns) is a render-time step, chat/render/contest.mjs.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { readFlag } from '../utils/flags.mjs';
 import { sanitizeContest, raceStandings, chaseStatus, contestMoveOf, moveRateMod, participantLegSkill } from '../utils/contest/contest-engine.mjs';
 import { contestMoveOptions } from '../documents/actor/vehicle-contest.mjs';
 import { contestKindInfo } from '../data/rules/contest-rules.mjs';
@@ -37,16 +37,16 @@ export function sanitizeContestWrapper(raw) {
   return { id, state: sanitizeContest(raw.state) };
 }
 
+/** The id the stored contest wrapper carries, unsanitised and whoever authored the card (the tracker lists every contest card). */
+export const contestIdOf = (message) => readFlag(message, CONTEST_FLAG)?.id;
+
 /**
  * The sanitised contest wrapper on a chat message, or null when it is not a contest card. Only a GM-authored message
  * counts: the contest id is public, so a player's message carrying it must never read as the contest (3.56c, A-S2).
  */
 export function readContest(message) {
   if (!isGmAuthored(message)) return null;
-  const raw = typeof message?.getFlag === 'function'
-    ? message.getFlag(SYSTEM_ID, CONTEST_FLAG)
-    : message?.flags?.[SYSTEM_ID]?.[CONTEST_FLAG];
-  return sanitizeContestWrapper(raw);
+  return sanitizeContestWrapper(readFlag(message, CONTEST_FLAG));
 }
 
 /**
@@ -137,7 +137,7 @@ export function buildContestCardHtml(wrapper, { resolve } = {}) {
   }
 
   return `<div class="cog-chat-card cog-contest-card" data-contest-id="${escapeAttr(w.id)}" data-contest-kind="${escapeAttr(state.kind)}" data-contest-status="${escapeAttr(state.status)}">
-    <div class="cog-contest-title"><i class="fa-solid fa-flag-checkered"></i> ${escapeAttr(kind.label)} <span class="cog-contest-status">[${escapeAttr(state.status)}]</span> <span class="cog-contest-floor">Floor ${escapeAttr(state.floor)}</span>${anyBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</div>
+    <div class="cog-contest-title"><i class="fa-solid fa-flag-checkered"></i> ${escapeAttr(kind.label)} <span class="cog-contest-status">[${escapeAttr(state.status)}]</span>${anyBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</div>
     ${legsHtml}
     <ul class="cog-contest-summary">${summaryRows}</ul>
     ${outcome}

@@ -4,8 +4,7 @@
  * ordinary `buildPayload('rolltable', ...)` table. The skill comes from the option's structured `identifier` (or the
  * document its result points at), never from the narrative text.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { optionOf } from '../rolltable/table-flags.mjs';
+import { isNarrativeResult, optionOf } from '../rolltable/table-flags.mjs';
 
 const MAX_LABEL = 120;
 
@@ -34,8 +33,7 @@ export function legFromResults(results, options = {}) {
   let skill = null;
   for (const result of Array.isArray(results) ? results : []) {
     if (result === null || typeof result !== 'object') continue;
-    const flags = result.flags?.[SYSTEM_ID] ?? {};
-    if (flags.role === 'narrative') {
+    if (isNarrativeResult(result)) {
       if (!label) label = plain(result.description ?? result.text) || plain(result.name);
       continue;
     }

@@ -78,7 +78,8 @@ export const EXAMPLE_ACTOR_IDS = Object.freeze({
 
 /** RollTable ids (examples-tables pack). */
 export const EXAMPLE_TABLE_IDS = Object.freeze({
-  'consolation-prizes': 'dccext0100000000'
+  'consolation-prizes': 'dccext0100000000',
+  'backlot-grind': 'dccexbgt01000000'
 });
 
 /** The compendium UUID of an example document. */

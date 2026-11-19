@@ -8,8 +8,8 @@ import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { isActiveGM } from '../../utils/gm-relay.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
-import { readCheckRecord, effectiveCheck, isSuccessOutcome, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
-import { flagPath } from '../../utils/flags.mjs';
+import { readCheckRecord, effectiveCheck, isSuccessOutcome, checkRecordPath } from '../../utils/roll/check-assists.mjs';
+import { flagPath, readFlag } from '../../utils/flags.mjs';
 import { skillByQuery } from './skill-by-query.mjs';
 import { vehicleCheckDifficulty } from '../../utils/vehicle/vehicle-check.mjs';
 import { addAiFavor } from '../../chat/actions/ai-favor-tally.mjs';
@@ -17,7 +17,7 @@ import { isTrustedAssist } from '../../chat/actions/use-assist.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { availableMove, operateQueryFor, resultEffect, resultDelta, VEHICLE_CHECK_KINDS } from '../../data/rules/vehicle-rules.mjs';
 import { vehicleNow, vehicleMoveOf } from './vehicle-move.mjs';
-import { wholeFeet, str, say, messageById, cardFlag, cardKey, VEHICLE_CARD_FLAGS } from './vehicle-drive-common.mjs';
+import { wholeFeet, str, say, messageById, VEHICLE_CARD_FLAGS, vehicleResultOf } from './vehicle-drive-common.mjs';
 
 /**
  * The skill `actor` rolls to operate `vehicle`: among the actor's skills whose tags match the vehicle's query (its own
@@ -146,9 +146,9 @@ function recordNow(record) {
 
 /** Show the settled degree and choice on the card (written only when it differs, so the update hook stops). */
 export async function syncCard(message, { outcome, choice, note = '' }) {
-  const current = cardFlag(message, VEHICLE_CARD_FLAGS.result) ?? {};
+  const current = vehicleResultOf(message) ?? {};
   if (current.outcome === outcome && (current.choice ?? '') === choice && (current.note ?? '') === note) return;
-  await message.update({ [cardKey(VEHICLE_CARD_FLAGS.result)]: { outcome, choice, note } });
+  await message.update({ [flagPath(VEHICLE_CARD_FLAGS.result)]: { outcome, choice, note } });
 }
 
 /** The degree a card stands at: the rolled degree after the shifts on its record. Null while the Difficulty is open. */
@@ -183,7 +183,7 @@ async function ingestTable6(message, record, vehicle, roller, outcome) {
   if (isNew && ref.rerollOf) {
     const old = messageById(ref.rerollOf);
     const used = readCheckRecord(old)?.offersUsed ?? [];
-    if (old && ref.rerollKey && !used.includes(ref.rerollKey)) await old.update({ [flagPath(`${CHECK_RECORD_FLAG}.offersUsed`)]: [...used, ref.rerollKey] });
+    if (old && ref.rerollKey && !used.includes(ref.rerollKey)) await old.update({ [checkRecordPath('offersUsed')]: [...used, ref.rerollKey] });
   }
   return { ingested: true, changed: settled.changed, outcome };
 }
@@ -201,12 +201,12 @@ async function spendOwedAdvantage(message, record, vehicle, roller) {
 }
 
 async function ingestStop(message, vehicle, outcome) {
-  if (cardFlag(message, VEHICLE_CARD_FLAGS.stop)) return { skipped: 'done' };
+  if (readFlag(message, VEHICLE_CARD_FLAGS.stop)) return { skipped: 'done' };
   const stopped = isSuccessOutcome(outcome);
   if (stopped && wholeFeet(vehicle.system.drive?.currentMove) > 0) await vehicle.update({ 'system.drive.currentMove': 0 });
   await message.update({
-    [cardKey(VEHICLE_CARD_FLAGS.stop)]: true,
-    [cardKey(VEHICLE_CARD_FLAGS.result)]: { outcome, choice: '', note: stopped ? '' : 'gm' }
+    [flagPath(VEHICLE_CARD_FLAGS.stop)]: true,
+    [flagPath(VEHICLE_CARD_FLAGS.result)]: { outcome, choice: '', note: stopped ? '' : 'gm' }
   });
   return { ingested: true, stopped };
 }

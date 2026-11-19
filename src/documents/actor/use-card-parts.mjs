@@ -3,7 +3,7 @@
  * temporary-bar grant and its line, the damage-source preview, the area-template button, the healing-bar formula and the
  * cleanse list. Every function takes the actor first and never uses `this`.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 import { tempBarBaseSlots, tempBarHpPerSlot, tempBarPassTag } from '../../utils/damage/temp-bars.mjs';
 import { startTimedEffect } from './duration-expiry.mjs';
 import { absorbElementOf } from './aura-effects.mjs';
@@ -29,30 +29,27 @@ import { ITEM_BUFF_SLOT, appliedBuffRowsAt, buildAppliedBuff, rowRecipients } fr
  */
 export function auraDismissedMessage(actor, item, { cardClass, subtitle, flags }) {
   const dismissContent = `
-        <div class="cog-chat-card ${cardClass} cog-aura-dismissed" style="font-family: var(--font-primary, sans-serif); border: 2px solid var(--cog-border-muted);">
+        <div class="cog-chat-card ${escapeAttr(cardClass)} cog-aura-dismissed" style="font-family: var(--font-primary, sans-serif); border: 2px solid var(--cog-border-muted);">
           <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-border-muted); padding-bottom: 4px; margin-bottom: 6px;">
-            <img class="cog-bg-icon-box" src="${item.img || 'icons/svg/aura.svg'}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
+            <img class="cog-bg-icon-box" src="${escapeAttr(item.img || 'icons/svg/aura.svg')}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
             <div>
-              <h3 class="cog-text" style="margin: 0; font-size: 16px; font-weight: bold;">${item.name} — DISMISSED</h3>
-              <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">${subtitle}</span>
+              <h3 class="cog-text" style="margin: 0; font-size: 16px; font-weight: bold;">${escapeAttr(item.name)} — DISMISSED</h3>
+              <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">${escapeAttr(subtitle)}</span>
             </div>
           </div>
           <div class="cog-text-secondary cog-bg-surface-alt" style="font-size: 12px; border: 1px solid var(--cog-divider); padding: 6px 8px; border-radius: 3px;">
-            <i class="fa-solid fa-power-off"></i> <strong>${actor.name}</strong> dismissed the <strong>${item.name}</strong> aura. Any temporary health bars or persistent effects have been cleared.
+            <i class="fa-solid fa-power-off"></i> <strong>${escapeAttr(actor.name)}</strong> dismissed the <strong>${escapeAttr(item.name)}</strong> aura. Any temporary health bars or persistent effects have been cleared.
           </div>
         </div>
       `;
-  return {
+  return withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
-    content: dismissContent,
-    flags: {
-      [SYSTEM_ID]: {
-        ...flags,
-        isAuraDismiss: true,
-        auraItem: item.id || item._id
-      }
-    }
-  };
+    content: dismissContent
+  }, {
+    ...flags,
+    isAuraDismiss: true,
+    auraItem: item.id || item._id
+  });
 }
 
 /**
@@ -67,14 +64,14 @@ export function auraActiveBlockHtml(actor, item, auraData, { itemIdAttr = false 
   return `
         <div class="cog-aura-effect cog-bg-gold-tint cog-text-gold" style="margin: 8px 0; padding: 8px 10px; border: 1px solid var(--cog-gold); border-radius: 4px; font-size: 12px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-            <span class="cog-text-gold" style="font-weight: bold; font-size: 13px;"><i class="fa-solid fa-atom"></i> Aura Active: ${auraData.radius}ft Radius</span>
-            <button type="button" class="cog-btn cog-dismiss-aura-btn cog-bg-surface-muted cog-text" data-action="crawlerDismissAura" data-actor-uuid="${actor.uuid}" ${itemIdAttr ? `data-item-id="${item.id || item._id}" ` : ''}data-spell-id="${item.id || item._id}" style="padding: 2px 6px; font-size: 11px; border: 1px solid var(--cog-border-muted); border-radius: 3px; cursor: pointer;">
+            <span class="cog-text-gold" style="font-weight: bold; font-size: 13px;"><i class="fa-solid fa-atom"></i> Aura Active: ${escapeAttr(auraData.radius)}ft Radius</span>
+            <button type="button" class="cog-btn cog-dismiss-aura-btn cog-bg-surface-muted cog-text" data-action="crawlerDismissAura" data-actor-uuid="${escapeAttr(actor.uuid)}" ${itemIdAttr ? `data-item-id="${escapeAttr(item.id || item._id)}" ` : ''}data-spell-id="${escapeAttr(item.id || item._id)}"style="padding: 2px 6px; font-size: 11px; border: 1px solid var(--cog-border-muted); border-radius: 3px; cursor: pointer;">
               <i class="fa-solid fa-power-off"></i> Dismiss
             </button>
           </div>
-          ${auraData.totalTempHp > 0 ? `<div><i class="fa-solid fa-shield-heart cog-text-gold"></i> Granted <strong>${auraData.slots}</strong> Temporary Health Bars (${auraData.hpPerSlot} HP/slot, <strong>${auraData.totalTempHp} Temp HP</strong> total)</div>` : ''}
-          ${auraData.affectedAllies?.length ? `<div><i class="fa-solid fa-user-shield cog-text-success"></i> Applied bonus health bars to <strong>${auraData.affectedAllies.length}</strong> allies in radius: ${auraData.affectedAllies.map(a => a.name).join(', ')}</div>` : ''}
-          <div><i class="fa-solid fa-users"></i> Target: <strong>${auraData.target || 'Self'}</strong> (${auraData.targetFilter} within <strong>${auraData.radius}ft</strong>) • Duration: <strong>${auraData.remainingRounds} combat rounds</strong></div>
+          ${auraData.totalTempHp > 0 ? `<div><i class="fa-solid fa-shield-heart cog-text-gold"></i> Granted <strong>${escapeAttr(auraData.slots)}</strong> Temporary Health Bars (${escapeAttr(auraData.hpPerSlot)} HP/slot, <strong>${escapeAttr(auraData.totalTempHp)} Temp HP</strong> total)</div>` : ''}
+          ${auraData.affectedAllies?.length ? `<div><i class="fa-solid fa-user-shield cog-text-success"></i> Applied bonus health bars to <strong>${auraData.affectedAllies.length}</strong> allies in radius: ${escapeAttr(auraData.affectedAllies.map(a => a.name).join(', '))}</div>` : ''}
+          <div><i class="fa-solid fa-users"></i> Target: <strong>${escapeAttr(auraData.target || 'Self')}</strong> (${escapeAttr(auraData.targetFilter)} within <strong>${escapeAttr(auraData.radius)}ft</strong>) • Duration: <strong>${escapeAttr(auraData.remainingRounds)} combat rounds</strong></div>
         </div>
       `;
 }
@@ -87,7 +84,7 @@ export function auraActiveBlockHtml(actor, item, auraData, { itemIdAttr = false 
 export function tempBarsLineHtml({ slots, hpPerSlot, totalTempHp }) {
   return `
         <div class="cog-temp-bars-effect cog-bg-gold-tint cog-text-gold" style="margin: 8px 0; padding: 6px 8px; border: 1px solid var(--cog-gold); border-radius: 4px; font-size: 11px;">
-          <i class="fa-solid fa-shield-heart cog-text-gold"></i> Granted <strong>${slots}</strong> Temporary Health Bars (${hpPerSlot} HP/slot, <strong>${totalTempHp} Temp HP</strong> total)
+          <i class="fa-solid fa-shield-heart cog-text-gold"></i> Granted <strong>${escapeAttr(slots)}</strong> Temporary Health Bars (${escapeAttr(hpPerSlot)} HP/slot, <strong>${escapeAttr(totalTempHp)} Temp HP</strong> total)
         </div>
       `;
 }
@@ -128,14 +125,14 @@ export function damageSourcesPreviewHtml(parts, { wrapperStyle }) {
     const fStr = fParts.join(' ').trim() || '0';
     return `
             <div class="cog-damage-source-row" style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px; font-size: 11px; border-bottom: 1px dashed var(--cog-divider);">
-              <span><strong class="cog-text-accent">${fStr}</strong> <span style="font-size: 10px; font-weight: bold; text-transform: uppercase;">${p.type}</span></span>
-              <span class="cog-source-tag cog-text-muted" style="font-size: 10px; font-style: italic;">[${p.source}]</span>
+              <span><strong class="cog-text-accent">${escapeAttr(fStr)}</strong> <span style="font-size: 10px; font-weight: bold; text-transform: uppercase;">${escapeAttr(p.type)}</span></span>
+              <span class="cog-source-tag cog-text-muted" style="font-size: 10px; font-style: italic;">[${escapeAttr(p.source)}]</span>
             </div>
           `;
   }).join('');
 
   return `
-          <div class="cog-damage-sources-preview cog-bg-surface-alt" style="border: 1px solid var(--cog-divider); border-radius: 4px; padding: 4px 6px; ${wrapperStyle}">
+          <div class="cog-damage-sources-preview cog-bg-surface-alt" style="border: 1px solid var(--cog-divider); border-radius: 4px; padding: 4px 6px; ${escapeAttr(wrapperStyle)}">
             <div class="cog-text-muted" style="font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 3px;">
               <i class="fa-solid fa-burst"></i> Damage Sources &amp; Formulas:
             </div>
@@ -148,20 +145,24 @@ export function damageSourcesPreviewHtml(parts, { wrapperStyle }) {
  * The "Place Area of Effect" button block.
  * @param {Actor} actor
  * @param {Item} item
- * @param {{ rank: number, idAttrs: string, wrapperStyle: string }} parts `idAttrs` is the id-attribute string between
- *   `data-item-uuid` and `data-actor-uuid` (`data-spell-id="…"` on a spell, `data-skill-id="…" data-item-id="…"` on a skill)
+ * @param {{ rank: number, idKind: 'spell'|'skill', wrapperStyle: string }} parts `idKind` picks the id attributes printed between
+ *   `data-item-uuid` and `data-actor-uuid` (`data-spell-id` on a spell, `data-skill-id` and `data-item-id` on a skill)
  * @returns {string}
  */
-export function areaTemplateButtonHtml(actor, item, { rank, idAttrs, wrapperStyle }) {
+export function areaTemplateButtonHtml(actor, item, { rank, idKind, wrapperStyle }) {
   const geo = resolveAreaGeometry(item, { rank });
   const areaShape = geo?.shape || 'burst';
   const effectiveRadius = (geo && (areaReach(geo) || geo.length || geo.distance)) || 5;
   const lineLength = geo?.length || 0;
   const lineWidth = geo?.width || 0;
+  const itemId = item.id || item._id || '';
+  const idAttrsHtml = idKind === 'skill'
+    ? `data-skill-id="${escapeAttr(itemId)}" data-item-id="${escapeAttr(itemId)}"`
+    : `data-spell-id="${escapeAttr(itemId)}"`;
   return `
-        <div style="${wrapperStyle}">
-          <button type="button" class="cog-btn place-aoe-template-btn cog-bg-warning-fill cog-text-on-fill" data-action="crawlerPlaceTemplate" data-item-uuid="${item.uuid || ''}" ${idAttrs} data-actor-uuid="${actor.uuid}" data-radius="${effectiveRadius}" data-shape="${areaShape}" data-line-length="${lineLength}" data-line-width="${lineWidth}" style="width: 100%; border: 1px solid var(--cog-warning-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
-            <i class="fa-solid fa-bullseye"></i> Place Area of Effect (${effectiveRadius}ft ${areaShape})
+        <div style="${escapeAttr(wrapperStyle)}">
+          <button type="button" class="cog-btn place-aoe-template-btn cog-bg-warning-fill cog-text-on-fill" data-action="crawlerPlaceTemplate" data-item-uuid="${escapeAttr(item.uuid || '')}" ${idAttrsHtml} data-actor-uuid="${escapeAttr(actor.uuid)}" data-radius="${escapeAttr(effectiveRadius)}" data-shape="${escapeAttr(areaShape)}" data-line-length="${escapeAttr(lineLength)}" data-line-width="${escapeAttr(lineWidth)}" style="width: 100%; border: 1px solid var(--cog-warning-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
+            <i class="fa-solid fa-bullseye"></i> Place Area of Effect (${escapeAttr(effectiveRadius)}ft ${escapeAttr(areaShape)})
           </button>
         </div>
       `;

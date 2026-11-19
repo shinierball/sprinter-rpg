@@ -2,6 +2,7 @@ import { PDFDocument as importedPDFDocument } from '../../lib/pdf-lib.mjs';
 import { findCatalogEntry } from '../content/catalog-lookup.mjs';
 import { isWeaponGear } from '../documents/actor.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
+import { isAccessorySlot } from '../utils/gear/gear-slots.mjs';
 import { SHEET_PDF_SETTING } from '../utils/ui/sheet-pdf-setting.mjs';
 import { checkTypeLabel } from '../data/rules/check-types.mjs';
 import { normalizeBaseDamage, baseDamageText } from '../utils/damage/base-damage.mjs';
@@ -15,6 +16,11 @@ import { effectiveRace, overlayOf } from '../utils/character/overlay-state.mjs';
 import { firstScalar } from '../utils/first-scalar.mjs';
 import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
 import { isWorshipBond } from '../utils/deity/worship-state.mjs';
+import { getBondedPets, getBondedVehicles } from '../documents/actor/actor-companions.mjs';
+import { vehicleMoveOf } from '../documents/actor/vehicle-move.mjs';
+import { creatureMoveOf } from '../documents/actor/actor-move.mjs';
+import { boxViews } from '../documents/actor/loot-box-entries.mjs';
+import { lootBoxTierDef } from '../data/loot-box-tiers.mjs';
 
 function getPDFDocument() {
   return globalThis.PDFLib?.PDFDocument || importedPDFDocument;
@@ -212,6 +218,54 @@ export async function loadTemplatePdf(options = {}) {
   const path = await import(pathMod);
   const filePath = options.templatePath || path.resolve(globalThis.process.cwd(), source.path.replace(/^systems\/[^/]+\//, ''));
   return await fs.readFile(filePath);
+}
+
+/** The Pet box's values from a bonded pet document (its signature attacks and special live under `details`). */
+function petBoxData(pet) {
+  const sys = pet.system || {};
+  const d = sys.details || {};
+  return {
+    name: pet.name,
+    level: d.level,
+    abilities: sys.abilities,
+    attributes: sys.attributes,
+    attack1: d.attack1,
+    attack2: d.attack2,
+    special: d.special
+  };
+}
+
+/** Occupants text: the seats, plus the cargo seats when the vehicle has any. */
+function occupantsText(attributes) {
+  const seats = Number(attributes?.occupancy) || 0;
+  const cargo = Number(attributes?.cargoOccupancy) || 0;
+  if (!seats && !cargo) return '';
+  if (cargo <= 0) return String(seats);
+  const i18n = globalThis.game?.i18n;
+  return typeof i18n?.format === 'function' ? i18n.format('COG.Content.PdfOccupantsCargo', { seats, cargo }) : `${seats} (+${cargo} in cargo)`;
+}
+
+/**
+ * The Mount/Vehicle box's values: the first bonded vehicle (Move through its rows and this crawler's, without a Table 6
+ * result), else the first bonded dedicated mount (its Move with the rider's rows; no Occupants or Accessories). Null with neither.
+ */
+function mountBoxData(actor) {
+  const vehicle = getBondedVehicles(actor)[0];
+  if (vehicle) {
+    const attrs = vehicle.system?.attributes || {};
+    const upgrades = [...(vehicle.items || [])].filter((i) => i.type === 'gear').sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+    return {
+      size: sizeName(attrs.size),
+      move: vehicleMoveOf(vehicle, { now: null, driver: actor }).rated || '',
+      occupants: occupantsText(attrs),
+      dr: attrs.dr?.total ?? '',
+      accessories: upgrades.map((i) => i.name).join(', ')
+    };
+  }
+  const mount = getBondedPets(actor).find((p) => p.system?.details?.isMount === true);
+  if (!mount) return null;
+  const attrs = mount.system?.attributes || {};
+  return { size: sizeName(attrs.size), move: creatureMoveOf(mount).rated || '', occupants: '', dr: attrs.dr?.total ?? '', accessories: '' };
 }
 
 /** Tell the GM there is no sheet to fill. Never throws. */
@@ -418,7 +472,7 @@ export async function exportCrawlerToPdf(actor, options = {}) {
 
   // Accessories (multi-line)
   const equippedAccessories = gear
-    .filter(g => g.system?.equipped && (g.system.slot || '').toLowerCase() === 'accessory')
+    .filter(g => g.system?.equipped && isAccessorySlot(g.system.slot))
     .map(g => g.name);
   const accessoriesText = (equippedAccessories.length ? equippedAccessories.join('\n') : gearSlots.accessories) || '';
   setTextField(form, 'Text Field 91', accessoriesText);
@@ -512,7 +566,9 @@ export async function exportCrawlerToPdf(actor, options = {}) {
   // =========================================================================
   // PAGE 4: INVENTORY (20 Rows)
   // =========================================================================
-  const inventoryItems = [...gear, ...loot];
+  // The boxes a crawler holds are not items (`system.lootBoxes`); the printed inventory still lists them, with their tier
+  const heldBoxes = boxViews(actor).map((view) => ({ name: view.name, system: { quantity: view.quantity, notes: lootBoxTierDef(view.tier).label } }));
+  const inventoryItems = [...gear, ...loot, ...heldBoxes];
   for (let i = 0; i < 20; i++) {
     const itemField = `Text Field ${223 + 3 * i}`;
     const qtyField = `Text Field ${224 + 3 * i}`;
@@ -530,8 +586,9 @@ export async function exportCrawlerToPdf(actor, options = {}) {
   // =========================================================================
   // PAGE 5: EXTRAS & SPACE
   // =========================================================================
-  // Pet (if defined on actor or system)
-  const petData = details.pet || system.pet || {};
+  // Pet: the first bonded pet that is not a dedicated mount
+  const bondedPet = getBondedPets(actor).find((p) => p.system?.details?.isMount !== true);
+  const petData = bondedPet ? petBoxData(bondedPet) : {};
   if (petData.level != null || petData.name) {
     setTextField(form, 'Text Field 3075', petData.level || 1);
     setTextField(form, 'Text Field 3074', petData.abilities?.str?.value ?? petData.str ?? '');
@@ -559,14 +616,14 @@ export async function exportCrawlerToPdf(actor, options = {}) {
     }
   }
 
-  // Mount / Vehicle
-  const mountData = details.mount || system.mount_vehicle || {};
-  if (mountData.size || mountData.move || mountData.occupants) {
-    setTextField(form, 'Text Field 3098', mountData.size ? sizeName(mountData.size) : '');
-    setTextField(form, 'Text Field 3099', mountData.move || '');
-    setTextField(form, 'Text Field 30100', mountData.occupants || '');
-    setTextField(form, 'Text Field 30101', mountData.dr || '');
-    setTextField(form, 'Text Field 30102', mountData.accessories || '');
+  // Mount / Vehicle: the first bonded vehicle, else a dedicated mount
+  const mountBox = mountBoxData(actor);
+  if (mountBox) {
+    setTextField(form, 'Text Field 3098', mountBox.size);
+    setTextField(form, 'Text Field 3099', mountBox.move);
+    setTextField(form, 'Text Field 30100', mountBox.occupants);
+    setTextField(form, 'Text Field 30101', mountBox.dr);
+    setTextField(form, 'Text Field 30102', mountBox.accessories);
   }
 
   // Important Things I've Killed (13 lines: Text Field 30103 to 301015)

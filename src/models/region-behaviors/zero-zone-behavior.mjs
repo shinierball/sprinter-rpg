@@ -5,7 +5,8 @@
  * (`refreshGearOffline`). Only the client of the user who moved the token whispers the owners, and what they read never
  * names the zone.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { isZeroZoneSubject, worldZeroZone } from '../../utils/effects/zero-zone.mjs';
 import { refreshHudVisibility } from '../../utils/effects/hud-visibility.mjs';
 import { refreshGearOffline } from '../../utils/effects/gear-offline-refresh.mjs';
@@ -35,12 +36,11 @@ export async function whisperZoneEntered(actor) {
   const key = 'COG.Hud.ZoneNotice';
   const localized = globalThis.game?.i18n?.localize?.(key);
   const content = localized && localized !== key ? localized : 'Your interface isn\'t responding.';
-  return globalThis.ChatMessage?.create?.({
-    content,
+  return globalThis.ChatMessage?.create?.(withFlags({
+    content: escapeAttr(content),
     whisper,
-    speaker: { alias: actor.name },
-    flags: { [SYSTEM_ID]: { zoneNotice: true } }
-  });
+    speaker: { alias: actor.name }
+  }, { zoneNotice: true }));
 }
 
 /** Every client: the token's actor is re-prepared for the zone it is in now, and the HUD classes follow. */

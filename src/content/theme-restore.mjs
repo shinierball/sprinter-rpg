@@ -4,11 +4,12 @@
  * theme the document came from is still turned off, the GM confirms a Rule Break first. A race or class goes back through
  * the race and class applier, so its grants are applied again.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { withFlags } from '../utils/flags.mjs';
 import { contentRegistry } from './registry.mjs';
 import { readReplacedRecord } from '../data/rules/celestial-ai-poop.mjs';
 import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
+import { landingOptions } from '../documents/actor/debuff-landing.mjs';
 import { transformationOfItem } from '../utils/character/overlay-state.mjs';
 import { isRaceOrClass } from '../utils/document-types.mjs';
 
@@ -18,15 +19,10 @@ const t = (key, data) => {
   return data ? i18n.format(key, data) : i18n.localize(key);
 };
 const notify = (level, message) => globalThis.ui?.notifications?.[level]?.(message);
-const isPlain = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 
 /** The copy to recreate: the stored data with the restore noted in a history flag (`ruleBreak` when the theme was off). */
 function restoredCopy(record, { ruleBreak }) {
-  const data = structuredClone(record.data);
-  const flags = isPlain(data.flags) ? data.flags : {};
-  const own = isPlain(flags[SYSTEM_ID]) ? flags[SYSTEM_ID] : {};
-  data.flags = { ...flags, [SYSTEM_ID]: { ...own, restoredFrom: { restoredAt: Date.now(), ruleBreak } } };
-  return data;
+  return withFlags(structuredClone(record.data), { restoredFrom: { restoredAt: Date.now(), ruleBreak } });
 }
 
 /**
@@ -73,7 +69,7 @@ export async function restoreFromPoop(actor, poop, { registry = contentRegistry,
       // The restored item, never a transformation's (form race) item of the same type (D4)
       item = Array.from(actor.items ?? []).find((i) => i.type === data.type && !transformationOfItem(i)) ?? null;
     } else {
-      [item] = await actor.createEmbeddedDocuments('Item', [data], { keepId: true });
+      [item] = await actor.createEmbeddedDocuments('Item', [data], landingOptions({ keepLanding: true, postCue: false }, { keepId: true }));
     }
     notify('info', t('COG.CelestialAiPoop.Restored', { name: record.name }));
     return { restored: true, item: item ?? null, ruleBreak };

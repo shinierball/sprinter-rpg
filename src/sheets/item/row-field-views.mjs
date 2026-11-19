@@ -19,7 +19,7 @@ export const NUMBER_FIELDS = Object.freeze({
   count: { min: 0, step: 1 },
   floor: { min: 0, step: 1 }
 });
-export const CHECKBOX_FIELDS = Object.freeze(['distinct', 'onlyIfOwned']);
+export const CHECKBOX_FIELDS = Object.freeze(['distinct', 'onlyIfOwned', 'giveIfMissing']);
 
 export const loc = (key, data) => globalThis.game?.i18n?.localize?.(key, data) ?? key;
 

@@ -8,16 +8,18 @@
  * `ContentRegistry.registerMagicItemBase`.
  *
  * A definition is `{ id, label, matches(itemData) -> boolean, blank }`. `label` is an i18n key or plain text; `blank` is a
- * gear spec whose `name` is an i18n key (or plain text) that the generator localizes. Pure module: imports nothing.
+ * gear spec whose `name` is an i18n key (or plain text) that the generator localizes. Pure module.
  */
 import { firstScalar } from '../../utils/first-scalar.mjs';
+import { isAccessorySlot } from '../../utils/gear/gear-slots.mjs';
 
 const ID_PATTERN = /^[a-z][a-z0-9_.-]*$/;
 
 /** Gear slots a worn base matches. */
 const WORN_SLOTS = Object.freeze(['head', 'torso', 'arms', 'hands', 'legs', 'feet']);
-/** Gear slots an accessory base matches. */
-const ACCESSORY_SLOTS = Object.freeze(['accessory', 'tattoo', 'patch']);
+
+/** Slots outside the ten Accessories that an accessory base still matches. */
+const TATTOO_PATCH_SLOTS = Object.freeze(['tattoo', 'patch']);
 
 const isGear = (item) => item?.type === 'gear';
 const slotOf = (item) => (typeof item?.system?.slot === 'string' ? item.system.slot : '');
@@ -45,7 +47,7 @@ const SEEDED_MAGIC_ITEM_BASES = [
   {
     id: 'accessory',
     label: 'COG.MagicItem.BaseLabel.accessory',
-    matches: (item) => isGear(item) && ACCESSORY_SLOTS.includes(slotOf(item)),
+    matches: (item) => isGear(item) && (isAccessorySlot(slotOf(item)) || TATTOO_PATCH_SLOTS.includes(slotOf(item))),
     blank: { name: 'COG.MagicItem.Base.accessory', system: { slot: 'accessory' } }
   }
 ];

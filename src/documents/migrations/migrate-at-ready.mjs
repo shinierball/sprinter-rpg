@@ -62,13 +62,14 @@ function askOtherClientsToRefresh(game) {
 }
 
 /**
- * After a run that wrote: the sidebar once; and when a world pack changed, the Sourcery catalogs, which every client
+ * After a run that wrote or deleted: the sidebar once; and when a world pack changed, the Sourcery catalogs, which every client
  * read from the packs at `setup`: here (after any refresh still running), and on every other connected client.
  */
 async function afterRun(report, game) {
-  if (!report?.written?.length) return;
+  const touched = [...(report?.written ?? []), ...(report?.removed ?? [])];
+  if (!touched.length) return;
   for (const name of SIDEBAR_DIRECTORIES) globalThis.ui?.[name]?.render?.();
-  if (report.written.some((uuid) => uuid.startsWith(PACK_UUID_PREFIX))) {
+  if (touched.some((uuid) => uuid.startsWith(PACK_UUID_PREFIX))) {
     await refreshSourceryCatalogsAfterWrite().catch((error) => console.warn('Sprinter RPG | Sourcery catalog refresh after the migration failed:', error));
     askOtherClientsToRefresh(game);
   }

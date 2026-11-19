@@ -8,6 +8,7 @@
  */
 import { SYSTEM_ID } from '../constants.mjs';
 import { withRuleBreak } from './rule-break.mjs';
+import { escapeAttr } from './escape-attr.mjs';
 
 /** World setting: whether players see the GM's Rule Breaks. */
 export const SHOW_GM_RULE_BREAKS_SETTING = 'showGmRuleBreaks';
@@ -31,9 +32,9 @@ export function showGmRuleBreaks() {
  * @returns {string}
  */
 export function ruleBreakBadgeHtml({ cls = 'cog-state-badge cog-badge-rule-break', style = '', text = '[RULE BREAK]', title = '' } = {}) {
-  const styleAttr = style ? ` style="${style}"` : '';
-  const titleAttr = title ? ` title="${title}"` : '';
-  return `<span class="${cls}" ${RULE_BREAK_BADGE_ATTR}${styleAttr}${titleAttr}>${text}</span>`;
+  const styleAttr = style ? ` style="${escapeAttr(style)}"` : '';
+  const titleAttr = title ? ` title="${escapeAttr(title)}"` : '';
+  return `<span class="${escapeAttr(cls)}" ${RULE_BREAK_BADGE_ATTR}${styleAttr}${titleAttr}>${escapeAttr(text)}</span>`;
 }
 
 /**

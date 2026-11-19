@@ -57,7 +57,7 @@ export function writeInLinks(result, actorUuid) {
 }
 
 /** A content link Foundry's enrichment turns into a clickable document link; the label cannot hold link syntax. */
-const contentLink = ({ name, uuid }) => `@UUID[${uuid}]{${escapeAttr(name.replace(/[[\]{}]/g, '') || 'Write-in')}}`;
+const contentLink = ({ name, uuid }) => `@UUID[${escapeAttr(uuid)}]{${escapeAttr(name.replace(/[[\]{}]/g, '') || 'Write-in')}}`;
 
 /**
  * @param {object} result FloorArrivalResult (uses `card`, `skipped`, `warnings`, `ruleBreaks`)
@@ -73,7 +73,7 @@ export function buildFloorArrivalCard(result, { actorUuid = '' } = {}) {
       </div>`).join('');
   const links = writeInLinks(result, actorUuid);
   const writeIns = links.length
-    ? `<div style="margin-top: 8px; font-size: 12px;"><span class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Write-ins</span> ${links.map(contentLink).join(', ')}</div>` : '';
+    ? `<div style="margin-top: 8px; font-size: 12px;"><span class="cog-text-secondary" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Write-ins</span> ${links.map((link) => contentLink(link)).join(', ')}</div>` : '';
   const skipped = (result?.skipped ?? []).length
     ? `<div class="cog-text-secondary" style="margin-top: 8px; font-size: 11px;">Not simulated: ${(result.skipped).map(s => escapeAttr(s.step)).join(', ')}</div>` : '';
   const warnings = (result?.warnings ?? []).length

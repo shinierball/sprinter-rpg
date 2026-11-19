@@ -10,13 +10,20 @@
  * record with `combatId` and `rollerUuid`. Card text is never read.
  */
 import { ruleBreakBadgeHtml } from '../utils/rule-break-visibility.mjs';
-import { SYSTEM_ID } from '../constants.mjs';
-import { CHECK_RECORD_FLAG } from '../utils/roll/check-assists.mjs';
+import { readCheckRecord } from '../utils/roll/check-assists.mjs';
 import { isMobSide } from '../utils/combat/combat-sides.mjs';
-import { attackerIdOf } from '../utils/combat/card-flags.mjs';
+import { attackCardOf, attackerIdOf } from '../utils/combat/card-flags.mjs';
+import { flagPath, readFlag, withFlags } from '../utils/flags.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
+import { langText } from '../utils/lang-text.mjs';
 
-export const AI_FAVOR_TALLY_FLAG = 'aiFavorTally';
+const AI_FAVOR_TALLY_FLAG = 'aiFavorTally';
+
+/** The tally a card stores (its lines and which of them were applied); undefined on any other card. */
+export const aiFavorTallyOf = (message) => readFlag(message, AI_FAVOR_TALLY_FLAG);
+
+/** The update that records one applied line of a tally card. */
+export const aiFavorAppliedPath = (lineId) => flagPath(`${AI_FAVOR_TALLY_FLAG}.applied.${lineId}`);
 const AI_FAVOR_TALLY_ACTION = 'crawlerApplyAiFavorTally';
 /** The book's minimum number of rounds. */
 const BOOK_MIN_ROUNDS = 3;
@@ -39,11 +46,7 @@ const TEMPLATES = {
 };
 
 /** Localized text with an English fallback when no i18n is loaded. */
-export function tallyText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (TEMPLATES[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const tallyText = langText(TEMPLATES);
 
 
 const asList = (collection) => {
@@ -52,8 +55,6 @@ const asList = (collection) => {
   if (Array.isArray(collection.contents)) return collection.contents;
   return [...collection];
 };
-
-const flagsOf = (message) => message?.flags?.[SYSTEM_ID] ?? {};
 
 /** The chat messages in the world, as an array. */
 function worldMessages() {
@@ -83,10 +84,11 @@ export function buildAiFavorTally({ combat, messages = worldMessages() } = {}) {
 
   const cards = [];
   for (const message of messages) {
-    const flags = flagsOf(message);
+    const flags = attackCardOf(message);
+    if (!flags) continue;
     const itemId = typeof flags.attackItemId === 'string' ? flags.attackItemId : '';
     if (!itemId) continue;
-    const record = flags[CHECK_RECORD_FLAG];
+    const record = readCheckRecord(message);
     if (!record || record.combatId !== combatId) continue;
     cards.push({ itemId, rollerUuid: String(record.rollerUuid ?? ''), attackerId: attackerIdOf(message) ?? null, bonus: flags.aiFavorBonus });
   }
@@ -147,7 +149,7 @@ export function renderAiFavorTallyCard(lines, applied = {}) {
     const warn = line.meetsBook ? '' : ` <span class="cog-text-gold">${escapeAttr(tallyText('COG.AiFavorTally.BelowBook'))}</span>`;
     const control = done
       ? `<span class="cog-text-success" style="font-weight: bold;">${escapeAttr(tallyText('COG.AiFavorTally.Applied'))}${done.ruleBreak ? ` ${ruleBreakBadgeHtml({ cls: '' })}` : ''}</span>`
-      : `<button type="button" class="cog-bg-accent-fill cog-text-on-fill" data-action="${AI_FAVOR_TALLY_ACTION}" data-line-id="${escapeAttr(line.id)}" data-actor-uuid="${escapeAttr(line.actorUuid)}" data-item-id="${escapeAttr(line.itemId)}" data-value="${line.value}" data-meets-book="${line.meetsBook ? 'true' : 'false'}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">${escapeAttr(tallyText('COG.AiFavorTally.Apply', { value: line.value }))}</button>`;
+      : `<button type="button" class="cog-bg-accent-fill cog-text-on-fill" data-action="${AI_FAVOR_TALLY_ACTION}" data-line-id="${escapeAttr(line.id)}" data-actor-uuid="${escapeAttr(line.actorUuid)}" data-item-id="${escapeAttr(line.itemId)}" data-value="${escapeAttr(line.value)}" data-meets-book="${line.meetsBook ? 'true' : 'false'}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">${escapeAttr(tallyText('COG.AiFavorTally.Apply', { value: line.value }))}</button>`;
     return `<li style="margin-bottom: 6px;"><strong>${escapeAttr(line.actorName)}</strong><br/>${escapeAttr(text)}${warn}<div style="margin-top: 3px;">${control}</div></li>`;
   }).join('');
   return `
@@ -170,10 +172,9 @@ export async function postAiFavorTallyCard(combat, { messages } = {}) {
   const lines = buildAiFavorTally({ combat, messages });
   if (!lines.length) return null;
   const whisper = globalThis.ChatMessage?.getWhisperRecipients?.('GM')?.map(u => u.id);
-  return globalThis.ChatMessage.create({
+  return globalThis.ChatMessage.create(withFlags({
     speaker: { alias: tallyText('COG.AiFavorTally.Title') },
     content: renderAiFavorTallyCard(lines),
-    ...(whisper?.length ? { whisper } : {}),
-    flags: { [SYSTEM_ID]: { [AI_FAVOR_TALLY_FLAG]: { combatId: combat.id, lines, applied: {} } } }
-  });
+    ...(whisper?.length ? { whisper } : {})
+  }, { [AI_FAVOR_TALLY_FLAG]: { combatId: combat.id, lines, applied: {} } }));
 }

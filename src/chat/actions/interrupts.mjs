@@ -3,7 +3,7 @@
  */
 import { findActorToken } from '../../utils/combat/interrupts.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { attackCardOf } from '../../utils/combat/card-flags.mjs';
 import { findEvadeFor } from '../../utils/attack/evade-link.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { mobAttackText, TARGET_VIA } from '../../utils/combat/declared-attacks.mjs';
@@ -35,7 +35,7 @@ async function confirmCatchOfEvadedHit(interrupter, interruptId, attackContext) 
  * @returns {object}
  */
 export function autoHitContextOf(message) {
-  const f = message?.flags?.[SYSTEM_ID];
+  const f = attackCardOf(message);
   // Any attack card, not only a mob's auto-hit, says whether it is an Area Attack (3.47a F4).
   if (f?.isAutoHit !== true) return f?.isAttackRoll === true && f.isArea === true ? { isArea: true } : {};
   const dc = Number(f.effectiveEvadeDC ?? f.targetDC);

@@ -19,7 +19,7 @@
       <input type="checkbox" name="system.equipped" {{#if system.equipped}}checked{{/if}} class="cog-checkbox-lg" />
     </label>
   </div>
-  <div class="cog-field-group small" style="text-align: center;">
+  <div class="cog-field-group small" style="text-align: center;" data-tooltip="{{localize "COG.GearSheet.Basics.IsWeaponHint"}}">
     <span class="cog-field-label">{{localize "COG.GearSheet.Basics.IsWeapon"}}</span>
     <label style="display: flex; align-items: center; justify-content: center; height: 28px; cursor: pointer;">
       <input type="checkbox" name="system.isWeapon" {{#if isWeaponChecked}}checked{{/if}} class="cog-checkbox-lg" />

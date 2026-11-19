@@ -83,7 +83,7 @@ export async function applyPetRole(pet, source, { options } = {}) {
   let ruleBreak = false;
   if (role) {
     const question = `${pet.name || 'This pet'} is already a ${PET_ROLES[role]?.label ?? role} pet; a pet has one role. Change it anyway as a Rule Break?`;
-    const verdict = await confirmRuleBreak({ title: 'Pet role', message: escapeAttr(question), reason: question, options });
+    const verdict = await confirmRuleBreak({ title: 'Pet role', message: question, reason: question, options });
     if (!verdict.confirmed) return null;
     ruleBreak = true;
     await pet.deleteEmbeddedDocuments('Item', roleItems.map((item) => item.id));
@@ -106,7 +106,7 @@ export async function addPetAbility(pet, source, { options } = {}) {
   let ruleBreak = false;
   if (rolePicksLeft(pet) <= 0) {
     const question = `${pet.name || 'This pet'} has no special ability picks left. Add ${source.name || 'this ability'} anyway as a Rule Break?`;
-    const verdict = await confirmRuleBreak({ title: 'Pet ability', message: escapeAttr(question), reason: question, options });
+    const verdict = await confirmRuleBreak({ title: 'Pet ability', message: question, reason: question, options });
     if (!verdict.confirmed) return null;
     ruleBreak = true;
   }

@@ -1,26 +1,19 @@
 /**
  * The one pause predicate for debuffs (7.1b), and the changed-body exemption (D16). A leaf module: it imports no tag or
- * registry module, so the tag index, dispel and derivation can all use it without an import cycle.
+ * registry module (only the overlay state leaf), so the tag index, dispel and derivation can all use it without an import cycle.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { hasTransformationOwner, transformState, hasTransformBlock } from '../character/overlay-state.mjs';
 
 const sysOf = (item) => (item?.system && typeof item.system === 'object' ? item.system : {});
 
-/** Whether a debuff carries a `transform` block (an object; null or a non-object is not an affliction). */
-export function hasTransformBlock(item) {
-  const block = sysOf(item).transform;
-  return item?.type === 'debuff' && Boolean(block) && typeof block === 'object' && !Array.isArray(block);
-}
-
 /**
  * Whether an item belongs to a changed body (D16): a changed affliction, or anything the engine made for the change
- * (`flags[SYSTEM_ID].transformationOf`). A zero zone and a dispel leave these alone. A pending affliction is not one.
+ * (stamped with its owner). A zero zone and a dispel leave these alone. A pending affliction is not one.
  */
 export function transformationBody(item) {
   if (!item) return false;
-  const flags = item.flags?.[SYSTEM_ID];
-  if (flags?.transformationOf) return true;
-  return hasTransformBlock(item) && flags?.transformation?.stage === 'changed';
+  if (hasTransformationOwner(item)) return true;
+  return hasTransformBlock(item) && transformState(item).stage === 'changed';
 }
 
 /**

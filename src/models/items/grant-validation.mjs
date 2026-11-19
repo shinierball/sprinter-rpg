@@ -56,6 +56,7 @@ export function grantRowErrors(grant) {
     if (!GRANT_FLOOR_SOURCES.includes(grant.floorFrom)) errors.push(`floorFrom "${grant.floorFrom}" is not one of ${GRANT_FLOOR_SOURCES.map((v) => `"${v}"`).join(', ')}`);
     else if (grant.floorFrom !== '' && kind !== 'rank_raise') errors.push('floorFrom is only valid on a rank_raise row');
   }
+  if (grant.giveIfMissing === true && (kind !== 'rank_raise' || grant.floorFrom !== 'rank')) errors.push('giveIfMissing is only valid on a rank_raise row that takes its Rank from the buff (floorFrom "rank")');
 
   if (grant.mode !== undefined && grant.mode !== '' && !GRANT_MODES.includes(grant.mode)) {
     errors.push(`mode "${grant.mode}" is not one of ${GRANT_MODES.join(', ')}`);

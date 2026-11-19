@@ -3,7 +3,7 @@
  * the GM. Shared by the Floor Simulator's experience picks (a custom pick, a stub for an uninstalled book document) and the
  * loot box open engine (a hobby Skill rolled from a table), so a write-in is built one way. Built through `buildPayload`.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { withFlags } from '../utils/flags.mjs';
 import { buildPayload } from './builders/item-payload.mjs';
 
 /**
@@ -14,8 +14,7 @@ import { buildPayload } from './builders/item-payload.mjs';
  * @returns {object} the creation payload, Rank 0, flagged `floorCustom` (or `floorStub`)
  */
 export function customItemPayload(docKind, name, { identifier = '', stub = false, warnings = [] } = {}) {
-  return buildPayload(docKind, {
-    name, system: { rank: 0, ...(stub ? { identifier } : {}) },
-    flags: { [SYSTEM_ID]: stub ? { floorStub: true } : { floorCustom: true } }
-  }, { warnings });
+  return buildPayload(docKind, withFlags({
+    name, system: { rank: 0, ...(stub ? { identifier } : {}) }
+  }, stub ? { floorStub: true } : { floorCustom: true }), { warnings });
 }

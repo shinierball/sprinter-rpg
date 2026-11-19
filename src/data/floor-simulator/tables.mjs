@@ -11,10 +11,9 @@
  * Option kinds: named | choice | custom | lootSlot | asTrigger | spell (see rolltable-payload.mjs). A plain text result
  * the GM adds without our flag reads as `{ kind: 'custom', label: <result name or text> }`.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
-import { TABLE_KEY_FIELD, optionOf, tableKeyOf } from '../../utils/rolltable/table-flags.mjs';
+import { TABLE_KEY_FIELD, isNarrativeResult, optionOf, tableKeyOf } from '../../utils/rolltable/table-flags.mjs';
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
@@ -32,9 +31,6 @@ function listOf(collection) {
   if (isPlainObject(collection)) return Object.values(collection);
   return [];
 }
-
-/** Flags in data or document form. */
-const flagsOf = (obj) => (isPlainObject(obj?.flags?.[SYSTEM_ID]) ? obj.flags[SYSTEM_ID] : {});
 
 function resultRange(result) {
   const r = result?.range;
@@ -95,11 +91,10 @@ export function tableSnapshotFromRollTable(data, options = {}) {
     const id = `${range[0]}-${range[1]}`;
     if (!byRange.has(id)) byRange.set(id, { range, narrative: '', options: [], tableRef: null });
     const row = byRange.get(id);
-    const flags = flagsOf(result);
     const uuid = text(result.documentUuid);
     const label = text(result.name) || text(result.description ?? result.text);
 
-    if (flags.role === 'narrative') {
+    if (isNarrativeResult(result)) {
       const line = text(result.description ?? result.text) || text(result.name);
       // A row with both a name (its first column) and words keeps the name apart; a name alone is the narrative
       if (text(result.description ?? result.text) && text(result.name) && !row.name) row.name = text(result.name);

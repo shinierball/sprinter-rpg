@@ -74,7 +74,8 @@ export function queueAuraSync(tokenDoc, { deleted = false, movement = null } = {
 // A migration write that moves a token is not a move into or out of an aura
 export function onAuraTokenMove(tokenDoc, movement, operation) { return isMigrationWrite(operation) ? undefined : queueAuraSync(tokenDoc, { movement }); }
 export function onAuraTokenCreate(tokenDoc) { return queueAuraSync(tokenDoc); }
-export function onAuraTokenDelete(tokenDoc) { return queueAuraSync(tokenDoc, { deleted: true }); }
+// Nor is a migration's deletion of a token a departure from an aura
+export function onAuraTokenDelete(tokenDoc, operation) { return isMigrationWrite(operation) ? undefined : queueAuraSync(tokenDoc, { deleted: true }); }
 
 export function registerAuraMovementHooks() {
   Hooks.on('moveToken', onAuraTokenMove);

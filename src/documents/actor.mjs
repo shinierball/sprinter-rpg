@@ -13,7 +13,7 @@ import * as spellDamageRoll from './actor/spell-damage-roll.mjs';
 import * as spellAttackRoll from './actor/spell-attack-roll.mjs';
 import * as spaces from './actor/actor-spaces.mjs';
 import * as crafting from './actor/actor-crafting.mjs';
-import { SYSTEM_ID } from '../constants.mjs';
+import { clearFlag, writeFlag } from '../utils/flags.mjs';
 import { isMigrationWrite } from './migrations/world-migration.mjs';
 import { resolveHpPerBar } from '../utils/damage/hp-per-bar.mjs';
 import { isSameOwnedEntry } from '../utils/character/owned-entry.mjs';
@@ -40,9 +40,11 @@ import * as skills from './actor/actor-skills.mjs';
 import { rollContestResponse } from './actor/contest-response.mjs';
 import * as combatRolls from './actor/combat-rolls.mjs';
 import * as evade from './actor/combat-targeting.mjs';
+import { addFormTokenChanges } from './actor/actor-appearance.mjs';
 import { syncZeroHealth } from './actor/dying.mjs';
 import { lockEmbeddedOnActorCreate, stampLockOwnerOnActorCreated } from './actor/percent-lock.mjs';
 import { LINKED_ACTOR_TYPES } from '../utils/document-types.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const BaseActor = globalThis.foundry?.documents?.Actor
   ?? globalThis.foundry?.documents?.BaseActor
@@ -369,13 +371,10 @@ export class COGActor extends BaseActor {
   }
 
   /**
-   * Compatibility wrapper ensuring _preUpdate is invoked across environments.
+   * Foundry's own update runs `_preUpdate` once; calling it here as well absorbed a loss into temp bars twice.
    * @override
    */
   async update(data, options = {}) {
-    if (typeof this._preUpdate === 'function') {
-      await this._preUpdate(data, options, globalThis.game?.user?.id || 'test-user');
-    }
     const hpBefore = Number(this.system?.attributes?.hp?.value);
     const result = super.update ? await super.update(data, options) : this;
     await syncZeroHealth(this, { hpBefore, options });
@@ -444,6 +443,12 @@ export class COGActor extends BaseActor {
     return super.createEmbeddedDocuments ? super.createEmbeddedDocuments(embeddedType, dataArray, options) : [];
   }
 
+  /** @override Foundry's own pass first; then the token image of the form in force joins the token changes. */
+  applyActiveEffects(phase) {
+    super.applyActiveEffects(phase);
+    addFormTokenChanges(this, phase);
+  }
+
   /** @override */
   prepareBaseData() {
     super.prepareBaseData();
@@ -490,7 +495,7 @@ export class COGActor extends BaseActor {
             <h3 class="cog-text-gold" style="margin: 0 0 6px 0; font-size: 16px;">
               <i class="fa-solid fa-angles-up"></i> LEVEL UP!
             </h3>
-            <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>${this.name}</strong> advanced from Level <strong>${currentLevel}</strong> to Level <strong>${newLevel}</strong>!</p>
+            <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>${escapeAttr(this.name)}</strong> advanced from Level <strong>${currentLevel}</strong> to Level <strong>${escapeAttr(newLevel)}</strong>!</p>
             <p class="cog-text-secondary" style="margin: 0; font-size: 11px;">Total Experience: <strong>${newXP} XP</strong></p>
           </div>
         `
@@ -516,8 +521,8 @@ export class COGActor extends BaseActor {
    */
   async armCameras(id = '') {
     const choice = camerasOffered(this) ? sanitizeCameraChoice(id) : '';
-    if (choice) await this.setFlag(SYSTEM_ID, CAMERA_ARMED_FLAG, choice);
-    else if (armedCamera(this)) await this.unsetFlag(SYSTEM_ID, CAMERA_ARMED_FLAG);
+    if (choice) await writeFlag(this, CAMERA_ARMED_FLAG, choice);
+    else if (armedCamera(this)) await clearFlag(this, CAMERA_ARMED_FLAG);
     return choice;
   }
 

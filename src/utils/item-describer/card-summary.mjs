@@ -13,6 +13,7 @@ import { escapeAttr } from '../escape-attr.mjs';
 import { findConditionEntry } from '../../content/catalog-lookup.mjs';
 import { conditionItemData, conditionLabel } from '../../documents/actor/condition-data.mjs';
 import { GM_ACTOR_TYPES } from '../document-types.mjs';
+import { effectCardName } from '../character/transform-text.mjs';
 
 /** The describer, loaded on first use (see the file header). */
 const describer = () => import('./index.mjs');
@@ -71,7 +72,7 @@ const hasText = (l) => Boolean(l) && typeof l.text === 'string' && l.text !== ''
 
 function listHtml(lines) {
   const items = lines.map((l) => {
-    const tip = typeof l.ruleText === 'string' && l.ruleText.trim() ? ` data-tooltip="${escapeAttr(l.ruleText)}"` : '';
+    const tip = typeof l.ruleText === 'string' && l.ruleText.trim() ? ` data-tooltip-text="${escapeAttr(l.ruleText)}"` : '';
     // The same badge as the sheet's feature list (templates/items/parts/feature-list.hbs)
     const badge = typeof l.badge === 'string' && l.badge.trim()
       ? `<span class="cog-badge cog-feature-badge cog-feature-badge-${escapeAttr(l.kind)}">[${escapeAttr(l.badge)}]</span> ` : '';
@@ -104,10 +105,13 @@ function resolveEffect(kind, ref) {
   return entry ? { type: 'buff', ...entry } : null;
 }
 
-/** The effect's rules: `{ heading, lines }` with the card-irrelevant lines dropped; null when it has no rules text. */
+/**
+ * The effect's rules: `{ heading, lines }` with the card-irrelevant lines dropped; null when it has no rules text, and
+ * for a secret debuff, which no public card describes before the GM reveals it.
+ */
 async function effectGroup(kind, ref) {
   const data = resolveEffect(kind, ref);
-  if (!data) return null;
+  if (!data || data.system?.secret === true) return null;
   const { describeItem } = await describer();
   const lines = filterCardLines(await describeItem(data), CARD_PROFILES.effect);
   return lines.length ? { heading: String(data.name ?? ''), lines } : null;
@@ -155,10 +159,11 @@ export async function cardSummary(item, omit, opts = {}) {
 export async function appliedEffectLine(ref) {
   let name = '';
   let rules = '';
+  let data = null;
   try {
-    const data = resolveEffect('debuffs', ref);
+    data = resolveEffect('debuffs', ref);
     name = String(data?.name ?? '');
-    if (data) {
+    if (data && data.system?.secret !== true) {
       const { describeItem, summaryText } = await describer();
       rules = summaryText(filterCardLines(await describeItem(data), CARD_PROFILES.effect));
     }
@@ -166,5 +171,6 @@ export async function appliedEffectLine(ref) {
     console.warn('sprinter-rpg | applied effect line failed', err);
   }
   if (!name) name = String(conditionLabel(ref) ?? ref ?? '');
+  if (data?.system?.secret === true) return `Inflicted ${effectCardName(data)}`;
   return rules ? `Inflicted ${name}: ${rules}` : `Inflicted ${name}`;
 }

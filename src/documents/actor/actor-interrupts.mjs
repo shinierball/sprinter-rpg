@@ -268,9 +268,7 @@ export async function triggerInterrupt(actor, interruptOrId, options = {}) {
   // Post Interrupt Chat Message
   let message = null;
   if (globalThis.ChatMessage?.create) {
-    const content = interruptCardHtml({
-      interrupt, actorName: actor.name, targetName: options.targetName, isFree, spentLabel: 'SPENT 1 ACTION', interceptionHtml
-    });
+    const content = interruptCardHtml(interrupt, actor.name, options.targetName, isFree, 'SPENT 1 ACTION', interceptionHtml);
 
     message = await globalThis.ChatMessage.create(withFlags({
       speaker: globalThis.ChatMessage.getSpeaker?.({ actor }) || { alias: actor.name },

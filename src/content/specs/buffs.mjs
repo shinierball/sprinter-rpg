@@ -793,6 +793,7 @@ export const COG_BUFFS = [
           "identifier": "regeneration",
           "floor": 1,
           "floorFrom": "rank",
+          "giveIfMissing": true,
           "value": 0
         }
       ],

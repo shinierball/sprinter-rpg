@@ -8,9 +8,9 @@
  *
  * Imports nothing from documents, so the combat, actor and chat modules may all use it.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { flagPath, readFlag } from '../flags.mjs';
-import { attackerUuidOf, targetResultsOf } from './card-flags.mjs';
+import { attackCardOf, cardFloorOf, attackerUuidOf, targetResultsOf } from './card-flags.mjs';
+import { langText } from '../lang-text.mjs';
 
 const DECLARED_ATTACKS_FLAG = 'declaredAttacks';
 
@@ -48,7 +48,6 @@ const ID_PATTERN = /^[A-Za-z0-9._-]{1,128}$/;
 export const MOB_ATTACK_TEXT = Object.freeze({
   'COG.MobAttack.Header': 'Mob Attack Declared — Hits Automatically',
   'COG.MobAttack.SpellHeader': 'Mob Spell Declared — Hits Automatically',
-  'COG.MobAttack.FloorBadge': 'Floor {floor}',
   'COG.MobAttack.EvadeLabel': 'Target Evade Difficulty:',
   'COG.MobAttack.EvadeDC': 'Evade DC {dc}',
   'COG.MobAttack.EvadeBreakdown': 'Base {base} + Floor {floor}',
@@ -84,11 +83,7 @@ export const MOB_ATTACK_TEXT = Object.freeze({
 });
 
 /** Localized text with a built-in English fallback (the test harness has no i18n). */
-export function mobAttackText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (MOB_ATTACK_TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const mobAttackText = langText(MOB_ATTACK_TEXT);
 
 const str = (v, max = MAX_TEXT) => (typeof v === 'string' ? v.slice(0, max) : '');
 const strOrNull = (v) => (typeof v === 'string' && v ? v.slice(0, 256) : null);
@@ -187,7 +182,7 @@ export function sanitizeDeclaration(raw) {
  * @returns {object|null} a storable record (targets keyed `t0`, `t1`, ...)
  */
 export function declarationFromMessage(message, { round = 0, now = Date.now() } = {}) {
-  const f = message?.flags?.[SYSTEM_ID];
+  const f = attackCardOf(message);
   if (!f || f.isAutoHit !== true || !isDeclarationId(message?.id)) return null;
   const rawAttackerUuid = attackerUuidOf(message);
   const attackerUuid = typeof rawAttackerUuid === 'string' && rawAttackerUuid ? rawAttackerUuid : null;
@@ -214,7 +209,7 @@ export function declarationFromMessage(message, { round = 0, now = Date.now() } 
     itemName: str(f.attackItemName),
     isSpell: f.isSpellAttack === true,
     evadeDC: num(f.effectiveEvadeDC ?? f.targetDC, 0),
-    floor: num(f.currentFloor, 1),
+    floor: num(cardFloorOf(message), 1),
     isArea: f.isArea === true,
     status: DECLARATION_STATUS.DECLARED,
     ruleBreak: false,

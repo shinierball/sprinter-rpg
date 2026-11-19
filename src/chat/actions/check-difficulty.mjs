@@ -7,13 +7,12 @@
  * (`crawlerSetDifficulty`, `crawlerAskOpposed`, `crawlerClearDifficulty`) are GM only.
  */
 import { damageCardAnswers } from '../damage-applications.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
-import { readCheckRecord, effectiveCheck, calledPlayDestination, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
+import { craftGradeOf } from '../../utils/crafting/craft-flags.mjs';
+import { readCheckRecord, effectiveCheck, calledPlayDestination, checkRecordPath } from '../../utils/roll/check-assists.mjs';
 import { difficultyFor, canSetDifficulty } from '../../utils/roll/check-difficulty.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { buildRollContext } from '../../utils/roll/roll-context.mjs';
-import { mobDifficultyShift, MOB_QUALITIES } from '../../documents/actor/attack-targets.mjs';
+import { foeShiftFor } from '../../documents/actor/attack-targets.mjs';
 import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { awardAmazingForCheckCard } from '../../documents/actor/actor-popularity.mjs';
@@ -53,12 +52,7 @@ const modOf = (actor, stat) => Number(actor?.system?.abilities?.[stat]?.mod) || 
 export function foeEntryFor(foe, statKey, roller = null) {
   const stat = STATS.includes(statKey) ? statKey : '';
   const mod = stat ? modOf(foe, stat) : 0;
-  let shift = 0;
-  if (foe?.type === 'mob') {
-    const context = buildRollContext({ actor: foe, phase: 'check', check: 'stat', stat: stat || undefined, other: roller ?? undefined });
-    shift = mobDifficultyShift(foe, MOB_QUALITIES.check, { context }).shift;
-  }
-  return { uuid: foe?.uuid ?? '', name: foe?.name ?? '', mod, shift };
+  return { uuid: foe?.uuid ?? '', name: foe?.name ?? '', mod, shift: foeShiftFor(foe, stat, roller) };
 }
 
 /** The actors that can oppose this check: the card's recorded targets, else the GM's own targets; never the roller. */
@@ -69,8 +63,6 @@ export function knownFoes(message, record = readCheckRecord(message)) {
   const seen = new Set();
   return pool.filter((a) => a.uuid !== record.rollerUuid && !seen.has(a.uuid) && seen.add(a.uuid));
 }
-
-const flagsOf = (message) => message?.flags?.[SYSTEM_ID] ?? {};
 
 function messageList() {
   const m = globalThis.game?.messages;
@@ -107,14 +99,14 @@ function workOut(record, spec, floor, roller) {
  * Put a Difficulty on a plain check card (GM only). `spec.mode === ''` clears it.
  * @param {ChatMessage} message the check card
  * @param {{ mode?: string, value?: number, foe?: object, stat?: string }} spec see `difficultyFor`
- * @param {{ syncLedger?: boolean }} [opts]
+ * @param {{ syncLedger?: boolean, partyCard?: boolean }} [opts] `partyCard`: the party check card is setting it for a member's roll (the one way a party record takes a Difficulty)
  * @returns {Promise<{ ok: boolean, reason?: string, difficulty?: object|null }>}
  */
-export async function setCheckDifficulty(message, spec, { syncLedger = true } = {}) {
+export async function setCheckDifficulty(message, spec, { syncLedger = true, partyCard = false } = {}) {
   if (!globalThis.game?.user?.isGM) return { ok: false, reason: 'forbidden' };
   const record = readCheckRecord(message);
   if (!record) return { ok: false, reason: 'no-record' };
-  if (!canSetDifficulty(record, flagsOf(message))) return { ok: false, reason: 'not-settable' };
+  if (!canSetDifficulty(partyCard ? { ...record, party: null } : record, craftGradeOf(message))) return { ok: false, reason: 'not-settable' };
 
   const clearing = spec?.mode === '';
   const floor = record.floor ?? getCurrentFloor();
@@ -129,13 +121,12 @@ export async function setCheckDifficulty(message, spec, { syncLedger = true } = 
   const dc = difficulty ? difficulty.value : null;
   const targets = record.targets.map((t, i) => ({ ...t, dc: perTarget[i] ?? null }));
 
-  const base = `flags.${SYSTEM_ID}.${CHECK_RECORD_FLAG}`;
-  const update = { [`${base}.dc`]: dc, [`${base}.targets`]: targets, [`${base}.difficulty`]: difficulty };
+  const update = { [checkRecordPath('dc')]: dc, [checkRecordPath('targets')]: targets, [checkRecordPath('difficulty')]: difficulty };
   // Called Plays are re-judged on the unassisted roll until a damage card answers the check.
   if (!damageCardAnswers(message)) {
     for (const entry of record.assists.filter((a) => a.source === 'called_play')) {
       const first = targets[0] ?? null;
-      update[`${base}.assists.${entry.id}.appliedTo`] = calledPlayDestination({
+      update[checkRecordPath(`assists.${entry.id}.appliedTo`)] = calledPlayDestination({
         total: record.total, d20: record.d20, dc, firstTarget: first ? { dc: first.dc, bonus: first.bonus } : null, hasDamage: record.hasDamage
       });
     }

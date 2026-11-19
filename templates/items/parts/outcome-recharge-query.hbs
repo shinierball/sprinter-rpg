@@ -1,0 +1,8 @@
+{{!-- A recharge outcome row's query (which items it fits; blank = anything that can be recharged). Context: out, colspan. The query editor has no `name`: its controls are action delegates. --}}
+<tr>
+  <td colspan="{{colspan}}" class="cog-outcome-recharge-query">
+    <label class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.Recharge.QueryLabel"}}</label>
+    {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=out.rechargeQuery tagOptions=out.rechargeTagOptions}}
+    <div class="cog-text-secondary" style="font-size: 11px;">{{localize "COG.Outcome.Recharge.QueryHint"}}</div>
+  </td>
+</tr>

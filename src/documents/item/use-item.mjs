@@ -1,10 +1,12 @@
 import { cardSummary, CARD_PROFILES } from '../../utils/item-describer/card-summary.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
 import { outcomeWeight, outcomeWeightTotal } from '../../utils/loot/outcome-weights.mjs';
-import { ENCHANT_ITEM_OUTCOME } from '../../utils/loot/outcome-defaults.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
-import { isScratchLootType, isLootBoxType } from '../../models/items/loot-model.mjs';
+import { ENCHANT_ITEM_OUTCOME, RECHARGE_OUTCOME } from '../../utils/loot/outcome-defaults.mjs';
+import { pickOwnedItem } from './item-pick.mjs';
+import { pickRechargeTarget } from './recharge.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { isScratchLootType } from '../../models/items/loot-model.mjs';
 import { itemUsage, usageLabel } from '../../utils/tag/tag-mechanics.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
 import { spendConsumableUnit } from '../actor/used-items.mjs';
@@ -25,6 +27,8 @@ import { say } from '../actor/vehicle-drive-common.mjs';
 import { spellByIdentifier } from './spell-tome.mjs';
 import { spendActivationUses } from '../actor/buff-activation.mjs';
 import { rollSpellCard } from './spell-card.mjs';
+import { isBoxTemplate } from '../actor/gm-only-items.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 
 const WASTED_SCROLL_TEXT = '{name} read {item} with nothing equipped. The dumbass has wasted a valuable scroll. No reward. We do not encourage this behavior.';
 
@@ -35,29 +39,10 @@ function wastedScrollText(name, item) {
   return WASTED_SCROLL_TEXT.replace('{name}', name).replace('{item}', item);
 }
 
-/**
- * Ask which of the actor's equipped items an enchantment goes on (a DialogV2 select). Null when none is equipped (a
- * notice is shown), when the user cancels, or when no dialog can be shown.
- * @param {Actor} actor
- * @param {string} sourceName the enchanting item's name, for the prompt
- * @returns {Promise<Item|null>}
- */
-async function pickEquippedItem(actor, sourceName) {
-  const equipped = [...(actor?.items ?? [])].filter((i) => i.type === 'gear' && i.system?.equipped === true);
-  if (!equipped.length) return null;
-  if (equipped.length === 1 && typeof globalThis.foundry?.applications?.api?.DialogV2?.prompt !== 'function') return equipped[0];
-  const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
-  if (typeof DialogV2?.prompt !== 'function') return null;
-  const options = equipped.map((i) => `<option value="${escapeAttr(i.id)}">${escapeAttr(i.name)}</option>`).join('');
-  const chosen = await DialogV2.prompt({
-    window: { title: sourceName },
-    content: `<div class="form-group"><label>Item to enchant</label><select name="itemId">${options}</select></div>`,
-    ok: { label: 'Enchant', callback: (event, button) => button.form?.elements?.itemId?.value ?? null },
-    rejectClose: false,
-    modal: true
-  });
-  return equipped.find((i) => i.id === chosen) ?? null;
-}
+/** Why a box template item does not open, with the English default when the lang file is not loaded. */
+const useText = langText(Object.freeze({
+  'COG.LootBoxHeld.TemplateUse': "Loot boxes open from a crawler's Loot Boxes strip. This item is a box template."
+}));
 
 /**
  * Use a loot / consumable item (e.g. Normal Mana Potion, healing items, scratch-off lottery tickets, wands, scrolls)
@@ -72,6 +57,13 @@ export async function useItem(item, options = {}) {
   const sys = item.system || {};
   const itemName = item.name || 'Item';
 
+  // A box item is a template, not a box anyone holds: held boxes are a crawler's entries, opened from its strip.
+  if (isBoxTemplate(item)) {
+    const message = useText('COG.LootBoxHeld.TemplateUse');
+    globalThis.ui?.notifications?.info?.(message);
+    return { error: 'box_template', message };
+  }
+
   // A bearer who cannot take Actions asks first, so a declined gate asks nothing else.
   const actionBlockGate = actionBlockApplies(actor, 'item', options) ? await gateActionBlock(actor, 'item', { options }) : ACTION_BLOCK_CLEAR;
   if (!actionBlockGate.proceed) return { error: 'action_block_cancelled', message: `"${itemName}" was not used.` };
@@ -80,22 +72,16 @@ export async function useItem(item, options = {}) {
   const zeroZoneGate = actor && zeroZoneApplies(actor, options) ? await gateZeroZone(actor, item, { verb: 'Use', options }) : ZERO_ZONE_CLEAR;
   if (!zeroZoneGate.proceed) return { error: 'zero_zone_cancelled', message: `"${itemName}" was not used.` };
 
-  // A loot box is opened, not used: the open engine checks the safe room and asks the GM (7.3c D8).
-  if (actor && item.type === 'loot' && isLootBoxType(sys.lootType) && typeof actor.openLootBoxes === 'function') {
-    return actor.openLootBoxes([item], { interactive: options.interactive !== false, ruleBreak: options.ruleBreak === true });
-  }
-
   // Activated gear that emits an aura: using it switches the aura on, using it again switches it off (3.17-6).
   // Gear that also has outcomes goes on to resolve them when it switches on; the aura alone costs nothing.
   if (actor && isActivatedGearAura(item)) {
     const wasActive = Boolean(sys.active);
     await toggleGearAura(item);
     if (wasActive || !(sys.outcomes?.length > 0)) {
-      return ChatMessage.create({
+      return ChatMessage.create(withFlags({
         speaker: ChatMessage.getSpeaker({ actor }),
-        content: `<div class="cog-chat-card cog-item-card cog-aura-toggle"><strong>${actor.name}</strong> ${wasActive ? 'switched off' : 'switched on'} <strong>${escapeAttr(itemName)}</strong>.</div>`,
-        flags: { [SYSTEM_ID]: { isAuraToggle: true, auraItem: item.id, auraActive: !wasActive, ...zeroZoneGate.flags } }
-      }, cardMessageOptions(actor));
+        content: `<div class="cog-chat-card cog-item-card cog-aura-toggle"><strong>${escapeAttr(actor.name)}</strong> ${wasActive ? 'switched off' : 'switched on'} <strong>${escapeAttr(itemName)}</strong>.</div>`
+      }, { isAuraToggle: true, auraItem: item.id, auraActive: !wasActive, ...zeroZoneGate.flags }), cardMessageOptions(actor));
     }
   }
   const lootType = String(sys.lootType || '').toLowerCase().trim();
@@ -159,21 +145,35 @@ export async function useItem(item, options = {}) {
   if (!potionGate.proceed) return { error: 'potion_cancelled', message: `"${itemName}" was not used.` };
   // The lifetime kinds the use applied; a random outcome narrows it to the one rolled.
   let potionKinds = lifetimeKindsOf(sys.outcomes);
-  if (actor) await spendActivationUses(actor, [item]);
-  const gateFlags = { ...cooldownGate.flags, ...usageFlags, ...zeroZoneGate.flags, ...actionBlockGate.flags, ...potionGate.flags };
-  // A confirmed Rule Break (no charges, used up, on cooldown) shows on the card like every other Rule Break card.
-  const ruleBreakBadge = gateFlags.ruleBreak ? ` ${ruleBreakBadgeHtml()}` : '';
-
-  // An `enchant_item` outcome upgrades one equipped item: the user picks it now, before anything is spent. A cancelled
+  // A `recharge` outcome refills one of the user's own items: the user picks it now, before anything is spent. A
+  // cancelled pick ends the use; nothing able to take a recharge asks whether to use it anyway (no effect, no Rule Break).
+  const rechargeRows = (Array.isArray(sys.outcomes) ? sys.outcomes : []).filter((o) => String(o?.type || '').toLowerCase().trim() === RECHARGE_OUTCOME);
+  let recharge = null;
+  if (actor && rechargeRows.length) {
+    recharge = await pickRechargeTarget(actor, item, { rows: rechargeRows, options });
+    if (recharge.cancelled) return { error: 'recharge_cancelled', message: `"${itemName}" was not used.` };
+  }
+  // An `enchant_item` outcome upgrades one equipped item: the user picks it now, before anything is spent (a buff-activation use included). A cancelled
   // pick ends the use with nothing spent. With nothing equipped the unit is spent and nothing is applied (wasted below).
   const enchantOutcomes = (Array.isArray(sys.outcomes) ? sys.outcomes : []).filter((o) => String(o?.type || '').toLowerCase().trim() === ENCHANT_ITEM_OUTCOME);
   let enchantTarget = null;
   const nothingEquipped = enchantOutcomes.length > 0
     && ![...(actor?.items ?? [])].some((i) => i.type === 'gear' && i.system?.equipped === true);
   if (enchantOutcomes.length && !nothingEquipped) {
-    enchantTarget = await pickEquippedItem(actor, itemName);
+    const equipped = [...(actor?.items ?? [])].filter((i) => i.type === 'gear' && i.system?.equipped === true);
+    enchantTarget = await pickOwnedItem(actor, {
+      candidates: equipped.map((item) => ({ item })),
+      title: itemName,
+      label: 'Item to enchant',
+      okLabel: 'Enchant'
+    });
     if (!enchantTarget) return { error: 'no_enchant_target', message: `"${itemName}" needs an equipped item to enchant. It was not used.` };
   }
+
+  if (actor) await spendActivationUses(actor, [item]);
+  const gateFlags = { ...cooldownGate.flags, ...usageFlags, ...(recharge?.ruleBreak ? { ruleBreak: true, rechargeRuleBreak: true } : {}), ...zeroZoneGate.flags, ...actionBlockGate.flags, ...potionGate.flags };
+  // A confirmed Rule Break (no charges, used up, on cooldown) shows on the card like every other Rule Break card.
+  const ruleBreakBadge = gateFlags.ruleBreak ? ` ${ruleBreakBadgeHtml()}` : '';
 
   // False when nothing was spent: a light source could not be lit (no token on the viewed scene), or every enchantment
   // the use tried was refused. The card's remaining count reads it.
@@ -206,20 +206,19 @@ export async function useItem(item, options = {}) {
   // Nothing equipped to enchant: the unit is gone, nothing is applied, and the card says so.
   if (nothingEquipped) {
     await consumeItemUse();
-    await ChatMessage.create({
+    await ChatMessage.create(withFlags({
       speaker: actor ? ChatMessage.getSpeaker({ actor }) : undefined,
-      content: `<div class="cog-chat-card cog-item-card"><p>${escapeAttr(wastedScrollText(actor?.name ?? 'Someone', itemName))}</p></div>`,
-      flags: { [SYSTEM_ID]: { ...gateFlags, wastedEnchant: true } }
-    }, cardMessageOptions(actor));
+      content: `<div class="cog-chat-card cog-item-card"><p>${escapeAttr(wastedScrollText(actor?.name ?? 'Someone', itemName))}</p></div>`
+    }, { ...gateFlags, wastedEnchant: true }), cardMessageOptions(actor));
     return { wasted: true, message: wastedScrollText(actor?.name ?? 'Someone', itemName) };
   }
 
   /** The "remaining" line of a card: charges for a counter, the stack for a consumable, nothing to count for the rest. */
   const remainingLabel = () => {
     const taken = unitSpent ? 1 : 0;
-    if (hasCharges) return `<strong>Remaining Charges:</strong> ${Math.max(0, currentCharges - taken)} / ${sys.charges.max}`;
+    if (hasCharges) return `<strong>Remaining Charges:</strong> ${Math.max(0, currentCharges - taken)} / ${escapeAttr(sys.charges.max)}`;
     if (spendsQuantity) return `<strong>Remaining Uses:</strong> ${Math.max(0, currentQty - taken)}`;
-    return `<strong>${usageLabel(usage)}</strong>`;
+    return `<strong>${escapeAttr(usageLabel(usage))}</strong>`;
   };
 
   // 3. Multi-Outcome Logic
@@ -255,22 +254,26 @@ export async function useItem(item, options = {}) {
       const summaryHtml = await outcomeCardSummary(item, actor, [chosenOutcome]);
       // Consume only once the outcome resolved: a cast that throws leaves the scroll in the pack.
       potionKinds = lifetimeKindsOf([chosenOutcome]);
-      const singleRes = await resolveSingleOutcome(chosenOutcome, actor, item, false, { enchantTarget, recipient });
+      // Destructured: each field the card prints is read by name, so the escaping rail can follow `outcomeHtml` to its builder.
+      const {
+        outcomeHtml, isDamageCard, evaluatedDmg, damageType, healBars, healAmount, buff, debuff, targetActor,
+        enchantAttempts, enchantApplied, enchantDestroyed
+      } = await resolveSingleOutcome(chosenOutcome, actor, item, false, { enchantTarget, recipient, recharge });
       // A refused or cancelled enchantment keeps the unit; a destroyed item still spends the scroll (the book's roll).
-      if (enchantWasRefused(singleRes)) unitSpent = false;
+      if (enchantWasRefused({ enchantAttempts, enchantApplied, enchantDestroyed })) unitSpent = false;
       else await consumeItemUse();
       const remainingUsesLabel = remainingLabel();
 
       const cardHtml = `
-        <div class="cog-chat-card cog-item-card ${singleRes.isDamageCard ? 'cog-damage-card' : ''} cog-scratchoff-card"
-          data-attacker-uuid="${actor?.uuid || ''}"
+        <div class="cog-chat-card cog-item-card ${isDamageCard ? 'cog-damage-card' : ''} cog-scratchoff-card"
+          data-attacker-uuid="${escapeAttr(actor?.uuid || '')}"
           data-item-name="${escapeAttr(itemName)}"
-          data-damage-value="${singleRes.evaluatedDmg}"
-          data-damage-type="${singleRes.damageType || ''}"
-          data-target-uuid="${singleRes.targetActor?.uuid || ''}"
+          data-damage-value="${escapeAttr(evaluatedDmg)}"
+          data-damage-type="${escapeAttr(damageType || '')}"
+          data-target-uuid="${escapeAttr(targetActor?.uuid || '')}"
           style="font-family: var(--font-primary, sans-serif);">
           <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-magic); padding-bottom: 4px; margin-bottom: 6px;">
-            <img class="cog-bg-icon-box" src="${item.img || 'icons/svg/item-bag.svg'}" style="width: 34px; height: 34px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
+            <img class="cog-bg-icon-box" src="${escapeAttr(item.img || 'icons/svg/item-bag.svg')}" style="width: 34px; height: 34px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
             <div>
               <h3 class="cog-text-strong" style="margin: 0; font-size: 15px; font-weight: bold;">${escapeAttr(itemName)}${ruleBreakBadge}</h3>
               <span class="cog-text-magic" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">
@@ -280,30 +283,27 @@ export async function useItem(item, options = {}) {
           </div>
           <div class="cog-text-muted" style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
             <span>${remainingUsesLabel}</span>
-            ${hasCooldown(sys) ? `<span><strong>Limit:</strong> ${cooldownLabel(sys)}</span>` : ''}
+            ${hasCooldown(sys) ? `<span><strong>Limit:</strong> ${escapeAttr(cooldownLabel(sys))}</span>` : ''}
           </div>
-          ${singleRes.outcomeHtml}
+          ${outcomeHtml}
           ${summaryHtml}
         </div>
       `;
 
-      return ChatMessage.create({
+      return ChatMessage.create(withFlags({
         speaker: actor ? ChatMessage.getSpeaker({ actor }) : undefined,
-        content: cardHtml,
-        flags: {
-          [SYSTEM_ID]: {
-            ...gateFlags,
-            outcome: chosenOutcome,
-            roll: rollVal,
-            damage: singleRes.evaluatedDmg,
-            healBars: singleRes.healBars,
-            healAmount: singleRes.healAmount,
-            buff: singleRes.buff,
-            debuff: singleRes.debuff,
-            targetId: singleRes.targetActor?.id || null
-          }
-        }
-      }, cardMessageOptions(actor));
+        content: cardHtml
+      }, {
+        ...gateFlags,
+        outcome: chosenOutcome,
+        roll: rollVal,
+        damage: evaluatedDmg,
+        healBars,
+        healAmount,
+        buff,
+        debuff,
+        targetId: targetActor?.id || null
+      }), cardMessageOptions(actor));
     }
 
     // --- ALL EFFECTS MODE (Guaranteed Consumable / Potion Combo / Activated Gear) ---
@@ -314,11 +314,18 @@ export async function useItem(item, options = {}) {
     let totalDmg = 0;
 
     for (const out of outcomes) {
-      const res = await resolveSingleOutcome(out, actor, item, true, { enchantTarget, recipient });
-      outcomeHtmls.push(res.outcomeHtml);
-      appliedResults.push(res);
-      totalHealBars += res.healBars || 0;
-      totalDmg += res.evaluatedDmg || 0;
+      const {
+        outcomeHtml, evaluatedDmg, damageType, healAmount, healBars, buff, debuff, isDamageCard, targetActor, targetName,
+        enchantAttempts, enchantApplied, enchantDestroyed
+      } = await resolveSingleOutcome(out, actor, item, true, { enchantTarget, recipient, recharge });
+      outcomeHtmls.push(outcomeHtml);
+      // The stored result keeps every field the outcome resolver returned.
+      appliedResults.push({
+        outcomeHtml, evaluatedDmg, damageType, healAmount, healBars, buff, debuff, isDamageCard, targetActor, targetName,
+        enchantAttempts, enchantApplied, enchantDestroyed
+      });
+      totalHealBars += healBars || 0;
+      totalDmg += evaluatedDmg || 0;
     }
     // Spent unless every enchantment the use tried was refused or cancelled (nothing applied, nothing destroyed).
     const enchantTried = appliedResults.filter((r) => r.enchantAttempts > 0);
@@ -335,12 +342,12 @@ export async function useItem(item, options = {}) {
 
     const multiCardHtml = `
       <div class="cog-chat-card cog-item-card cog-multi-effect-card ${totalDmg > 0 ? 'cog-damage-card' : ''}"
-        data-attacker-uuid="${actor?.uuid || ''}"
+        data-attacker-uuid="${escapeAttr(actor?.uuid || '')}"
         data-item-name="${escapeAttr(itemName)}"
-        data-damage-value="${totalDmg}"
+        data-damage-value="${escapeAttr(totalDmg)}"
         style="font-family: var(--font-primary, sans-serif);">
         <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid ${headerColor}; padding-bottom: 4px; margin-bottom: 6px;">
-          <img class="cog-bg-icon-box" src="${item.img || (lootType === 'wand' ? 'icons/svg/aura.svg' : (lootType === 'scroll' ? 'icons/svg/book.svg' : 'icons/svg/item-bag.svg'))}" style="width: 34px; height: 34px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
+          <img class="cog-bg-icon-box" src="${escapeAttr(item.img || (lootType === 'wand' ? 'icons/svg/aura.svg' : (lootType === 'scroll' ? 'icons/svg/book.svg' : 'icons/svg/item-bag.svg')))}" style="width: 34px; height: 34px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
           <div>
             <h3 class="cog-text-strong" style="margin: 0; font-size: 15px; font-weight: bold;">${escapeAttr(itemName)}${ruleBreakBadge}</h3>
             <span class="cog-fg-dyn" style="--cog-fg-dyn: ${headerColor}; font-size: 11px; text-transform: uppercase; font-weight: bold;">
@@ -350,7 +357,7 @@ export async function useItem(item, options = {}) {
         </div>
         <div class="cog-text-muted" style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
           <span>${remainingUsesLabel}</span>
-          ${hasCooldown(sys) ? `<span><strong>Limit:</strong> ${cooldownLabel(sys)}</span>` : ''}
+          ${hasCooldown(sys) ? `<span><strong>Limit:</strong> ${escapeAttr(cooldownLabel(sys))}</span>` : ''}
         </div>
         ${sys.notes ? `<p class="cog-text-secondary" style="margin: 3px 0 6px 0; font-size: 11px;">${escapeAttr(sys.notes)}</p>` : ''}
         <div class="cog-outcomes-container" style="display: flex; flex-direction: column; gap: 4px;">
@@ -360,22 +367,19 @@ export async function useItem(item, options = {}) {
       </div>
     `;
 
-    return ChatMessage.create({
+    return ChatMessage.create(withFlags({
       speaker: actor ? ChatMessage.getSpeaker({ actor }) : undefined,
-      content: multiCardHtml,
-      flags: {
-        [SYSTEM_ID]: {
-          ...gateFlags,
-          executionMode: 'all',
-          itemType: item.type,
-          lootType: sys.lootType,
-          outcomes: outcomes,
-          totalHealBars,
-          totalDmg,
-          results: appliedResults
-        }
-      }
-    }, cardMessageOptions(actor));
+      content: multiCardHtml
+    }, {
+      ...gateFlags,
+      executionMode: 'all',
+      itemType: item.type,
+      lootType: sys.lootType,
+      outcomes: outcomes,
+      totalHealBars,
+      totalDmg,
+      results: appliedResults
+    }), cardMessageOptions(actor));
   }
 
   // 4. Scrolls, Wands, & Direct Spell Consumables (without explicit outcome array)
@@ -412,12 +416,12 @@ export async function useItem(item, options = {}) {
     : (currentQty > 1 ? `<strong>Remaining Quantity:</strong> ${currentQty - 1}` : '<em>Last consumable used.</em>');
   const plainTitle = spendsQuantity ? 'Used Consumable' : (item.type === 'gear' ? 'Activated Gear' : 'Item Used');
 
-  return ChatMessage.create({
+  return ChatMessage.create(withFlags({
     speaker: actor ? ChatMessage.getSpeaker({ actor }) : undefined,
     content: `
       <div class="cog-chat-card cog-item-card" style="font-family: var(--font-primary, sans-serif);">
         <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-info); padding-bottom: 4px; margin-bottom: 6px;">
-          <img class="cog-bg-icon-box" src="${item.img || 'icons/svg/item-bag.svg'}" style="width: 32px; height: 32px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
+          <img class="cog-bg-icon-box" src="${escapeAttr(item.img || 'icons/svg/item-bag.svg')}" style="width: 32px; height: 32px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
           <div>
             <h3 class="cog-text-strong" style="margin: 0; font-size: 15px; font-weight: bold;">${escapeAttr(itemName)}${ruleBreakBadge}</h3>
             <span class="cog-text-info" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">${plainTitle}</span>
@@ -425,10 +429,9 @@ export async function useItem(item, options = {}) {
         </div>
         <p style="margin: 2px 0; font-size: 12px;">${remainingUsesLabel}</p>
         ${sys.notes ? `<p style="margin: 4px 0; font-size: 12px;">${escapeAttr(sys.notes)}</p>` : ''}
-        ${sys.description ? `<div style="font-size: 12px; margin-top: 4px;">${sys.description}</div>` : ''}
+        ${sys.description ? `<div style="font-size: 12px; margin-top: 4px;">${trustedHtml(item.system.description)}</div>` : ''}
         ${plainSummaryHtml}
       </div>
-    `,
-    flags: { [SYSTEM_ID]: { ...gateFlags } }
-  }, cardMessageOptions(actor));
+    `
+  }, { ...gateFlags }), cardMessageOptions(actor));
 }

@@ -16,7 +16,7 @@
  * The `contestRequest` relay action carries player requests that are not rolls (`drop`, `propose`): the GM checks the requester
  * owns the participant's actor from socketlib's envelope, never from the payload.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { flagPath, readFlag } from '../utils/flags.mjs';
 import { isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { isActiveGM, registerRelayAction, requestRelay } from '../utils/gm-relay.mjs';
@@ -36,10 +36,6 @@ export const CONTEST_RELAY = 'contestRequest';
 export const CONTEST_RULE_BREAK_FLAG = 'contestRuleBreak';
 
 const str = (v) => (typeof v === 'string' ? v.trim().slice(0, 120) : '');
-
-function flagOf(message, key) {
-  return typeof message?.getFlag === 'function' ? message.getFlag(SYSTEM_ID, key) : message?.flags?.[SYSTEM_ID]?.[key];
-}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Ingest
@@ -91,7 +87,7 @@ async function ingestNow(rollMessage, record) {
     if (old?.source === 'gm') { outcome = { skipped: 'pinned' }; return false; }
     const oldMessage = old?.messageId && old.messageId !== rollMessage.id ? globalThis.game?.messages?.get?.(old.messageId) : null;
     if (oldMessage && Number(oldMessage.timestamp) > Number(rollMessage.timestamp)) { outcome = { skipped: 'stale' }; return false; }
-    const ruleBreak = leg.status !== 'open' || participantIsOut(state, p.id, resolve) || flagOf(rollMessage, CONTEST_RULE_BREAK_FLAG) === true;
+    const ruleBreak = leg.status !== 'open' || participantIsOut(state, p.id, resolve) || readFlag(rollMessage, CONTEST_RULE_BREAK_FLAG) === true;
     const next = { total: eff.total, d20: record.d20, source: 'roll', messageId: rollMessage.id ?? null, ruleBreak, note: '' };
     if (old && old.source === 'roll' && old.total === next.total && old.d20 === next.d20 && old.messageId === next.messageId && old.ruleBreak === next.ruleBreak) {
       outcome = { skipped: 'unchanged' };
@@ -202,7 +198,7 @@ export async function rollContestLeg({ message, legId, participantId, skillId = 
     ? await actor.rollSkill(skillStandIn(actor, useSkill), rollOptions)
     : await actor.rollStat(leg.check.stat, rollOptions);
   if (rolled && differs && typeof rolled.update === 'function') {
-    await rolled.update({ [`flags.${SYSTEM_ID}.${CONTEST_RULE_BREAK_FLAG}`]: true });
+    await rolled.update({ [flagPath(CONTEST_RULE_BREAK_FLAG)]: true });
   }
   return { ok: Boolean(rolled), message: rolled ?? undefined, ruleBreak };
 }

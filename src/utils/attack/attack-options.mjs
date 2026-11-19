@@ -11,7 +11,7 @@
  *
  * Everything reads structured data: identifiers, tags, ranks and flags. A name is only ever displayed.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag } from '../flags.mjs';
 import { getOfferedSituations } from '../roll/damage-modifiers.mjs';
 import { RULE_FLAG_DEFS, hasRuleFlag, isUniversalTagSource } from '../tag/tag-behaviour.mjs';
 import { cooldownState, effectiveCooldown } from '../time/cooldowns.mjs';
@@ -29,7 +29,6 @@ import { headOnOfferFor } from '../vehicle/vehicle-combat.mjs';
 import { camerasOffered, armedCamera, cameraAudienceList, sanitizeCameraChoice } from '../roll/cameras.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 import { skillRefSlug, readableSkillName } from '../skill/weapon-skill-options.mjs';
-import { escapeAttr } from '../escape-attr.mjs';
 import { DETECTED } from '../../data/rules/attack-situation-rules.mjs';
 import { detectSituations } from './situation-detectors.mjs';
 import { stockSituationsOpenWindow } from './stock-situations.mjs';
@@ -363,7 +362,7 @@ export async function confirmChoiceRuleBreaks(reasons, options = {}) {
   if (!reasons.length) return { proceed: true, ruleBreak: false };
   const check = await confirmRuleBreak({
     title: attackText('COG.AttackChoices.Confirm.Title'),
-    message: `${reasons.map(escapeAttr).join('<br>')}<br>${attackText('COG.AttackChoices.Confirm.Question')}`,
+    message: [...reasons, attackText('COG.AttackChoices.Confirm.Question')].join('\n'),
     reason: reasons.join(' '),
     options
   });
@@ -421,13 +420,16 @@ export function choicesFlag(choices, model, { ruleBreak = false, reasons = [] } 
   };
 }
 
+/** The raw snapshot of the chosen attack options an attack or damage card stores (`attackChoices`); undefined when it has none. */
+export const attackChoicesFlagOf = (message) => readFlag(message, 'attackChoices');
+
 /**
  * The choices a hit card holds, sanitised. Null when the message carries no snapshot.
  * @param {{ flags?: object }|null} message
  * @returns {(AttackChoices & { ruleBreak: boolean, reasons: string[] })|null}
  */
 export function choicesFromMessage(message) {
-  const flag = message?.flags?.[SYSTEM_ID]?.attackChoices;
+  const flag = attackChoicesFlagOf(message);
   if (!flag || typeof flag !== 'object' || Array.isArray(flag)) return null;
   const effects = (Array.isArray(flag.effects) ? flag.effects : []).filter(e => e && typeof e === 'object');
   const ids = effects.map(e => firstText(e.identifier)).filter(id => !isNoneId(id));

@@ -14,6 +14,7 @@ import { getRequiredXPForLevel } from '../documents/actor.mjs';
 import { SYSTEM_ID } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { XP_CONFIG_SETTING, DEFAULT_XP_WEIGHTS } from '../utils/combat/xp-config.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 /** What a live combat stores once its XP is awarded (`{ xpAwarded, awardedCrawlers, ... }`), so an award is not paid twice. */
 const XP_AWARDED_FLAG = 'xpAwarded';
@@ -366,10 +367,10 @@ export class COGExperienceTracker {
     if (globalThis.ChatMessage?.create) {
       const crawlerRows = awardedList.map(a => `
         <tr style="border-bottom: 1px solid var(--cog-panel-border);">
-          <td class="cog-text-strong" style="padding: 4px 6px; font-weight: bold;">${a.name}</td>
-          <td class="cog-text-success" style="padding: 4px 6px; text-align: center; font-weight: bold;">+${a.awardedXP} XP</td>
+          <td class="cog-text-strong" style="padding: 4px 6px; font-weight: bold;">${escapeAttr(a.name)}</td>
+          <td class="cog-text-success" style="padding: 4px 6px; text-align: center; font-weight: bold;">+${escapeAttr(a.awardedXP)} XP</td>
           <td class="${a.leveledUp ? 'cog-text-gold' : 'cog-text-secondary'}" style="padding: 4px 6px; text-align: right; font-weight: ${a.leveledUp ? 'bold' : 'normal'};">
-            Lv. ${a.newLevel}${a.leveledUp ? ' <span class="cog-bg-warning-fill cog-text-on-bright" style="padding: 1px 4px; border-radius: 2px; font-size: 9px;">LEVEL UP!</span>' : ''}
+            Lv. ${escapeAttr(a.newLevel)}${a.leveledUp ? ' <span class="cog-bg-warning-fill cog-text-on-bright" style="padding: 1px 4px; border-radius: 2px; font-size: 9px;">LEVEL UP!</span>' : ''}
           </td>
         </tr>
       `).join('');
@@ -382,11 +383,11 @@ export class COGExperienceTracker {
                 <i class="fa-solid fa-trophy"></i> EXPERIENCE ALLOCATION REPORT
               </h3>
               <span class="cog-dark cog-bg-header-fill cog-text-on-fill" style="font-size: 11px; padding: 2px 6px; border-radius: 3px;">
-                ${calculated.totalPool} Total XP
+                ${escapeAttr(calculated.totalPool)} Total XP
               </span>
             </div>
             <p class="cog-text-secondary" style="font-size: 12px; margin: 0 0 8px 0;">
-              Encounter: <strong>${combatRecord.name || 'Dungeon Encounter'}</strong>
+              Encounter: <strong>${escapeAttr(combatRecord.name || 'Dungeon Encounter')}</strong>
             </p>
             <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 8px;">
               <thead>

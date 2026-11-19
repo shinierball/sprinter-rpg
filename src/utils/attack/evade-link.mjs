@@ -6,9 +6,9 @@
  * damage card (D) records the same attack message as `sourceMessageId`. At apply time `findEvadeFor` returns the
  * latest trusted E for (attack, target).
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlags } from '../flags.mjs';
 import { readCheckRecord, effectiveCheck, evadeAftermath } from '../roll/check-assists.mjs';
-import { attackerUuidOf } from '../combat/card-flags.mjs';
+import { attackerUuidOf, sourceMessageIdOf } from '../combat/card-flags.mjs';
 
 /** The most messages a lookup scans, newest first. */
 export const MAX_EVADE_SCAN = 500;
@@ -25,7 +25,10 @@ export function messageList(messages) {
   return messages ? Array.from(messages.values?.() ?? messages) : [];
 }
 
-const flagsOf = (message) => message?.flags?.[SYSTEM_ID] ?? null;
+/** What an Evade roll message stores about itself; null for no message. */
+const flagsOf = (message) => (message
+  ? readFlags(message, ['isEvadeRoll', 'attackMessageId', 'evaderUuid', 'evadeOutcome', 'damageMultiplier', 'floorBonus', 'double', 'evadeTotal', 'targetDC', 'freeEvade'])
+  : null);
 
 /**
  * The sanitized link record of one message, or null when it is not a linkable Evade.
@@ -217,7 +220,7 @@ export function appliedBeforeEvade(messages, { attackMessageId, evaderUuid, getA
   const list = messageList(messages);
   for (let i = list.length - 1, scanned = 0; i >= 0 && scanned < MAX_EVADE_SCAN; i--, scanned++) {
     const message = list[i];
-    if (flagsOf(message)?.sourceMessageId !== attackMessageId) continue;
+    if (sourceMessageIdOf(message) !== attackMessageId) continue;
     if (getApplications(message).some(a => a.targetUuid === evaderUuid && !a.undone)) return true;
   }
   return false;

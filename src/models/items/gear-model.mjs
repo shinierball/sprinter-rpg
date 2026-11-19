@@ -1,6 +1,6 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
 import { onHitField, areaSchemaField, baseDamageField, interruptSchemaField, lightSchemaField, auraStateField, itemTempBarsField } from '../fields/effect-fields.mjs';
-import { cooldownField, useRecordsField } from '../fields/timing-fields.mjs';
+import { cooldownField, useRecordsField, chargeRechargeField } from '../fields/timing-fields.mjs';
 import { damageModifiersField, asTriggersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, eventTriggersField, aiFavorRatingsField, sensesField } from '../fields/modifier-fields.mjs';
 import { grantsField } from '../fields/grant-fields.mjs';
 import { enchantmentLedgerField } from '../fields/craft-fields.mjs';
@@ -68,7 +68,8 @@ export class GearDataModel extends BaseItemDataModel {
       useRecords: useRecordsField(fields),
       charges: new fields.SchemaField({
         value: new fields.NumberField({ integer: true, initial: 0 }),
-        max: new fields.NumberField({ integer: true, initial: 0 })
+        max: new fields.NumberField({ integer: true, initial: 0 }),
+        recharge: chargeRechargeField(fields)
       }),
       outcomes: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
       area: areaSchemaField(fields),

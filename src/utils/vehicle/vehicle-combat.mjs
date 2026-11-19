@@ -16,6 +16,7 @@ import { hasRuleFlag, RULE_FLAGS } from '../tag/tag-behaviour.mjs';
 import { CHECK_TAGS } from '../tag/tag-mechanics.mjs';
 import { calculateItemHandsRequired } from '../gear/wielding.mjs';
 import { confirmRuleBreak } from '../rule-break.mjs';
+import { escapeAttr } from '../escape-attr.mjs';
 
 const whole = (v) => {
   const n = Math.trunc(Number(v));
@@ -233,5 +234,5 @@ export async function gateDriverHands(actor, item, { options = {} } = {}) {
 export function foreignItemAttr(actor, item) {
   const owner = item?.parent ?? item?.actor ?? null;
   if (!item?.uuid || !owner || owner === actor || (owner.uuid && owner.uuid === actor?.uuid)) return '';
-  return ` data-item-uuid="${item.uuid}"`;
+  return ` data-item-uuid="${escapeAttr(item.uuid)}"`;
 }

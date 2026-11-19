@@ -6,12 +6,14 @@
  * turns documents off (hiding AI-written content) passes its own predicate and reuses everything else here.
  */
 import { SYSTEM_ID } from '../constants.mjs';
+import { withFlags } from '../utils/flags.mjs';
 import { contentRegistry } from './registry.mjs';
 import { isContentOff, readSourceStamp } from '../utils/content-source.mjs';
 import { celestialAiPoopPayload, isPoop, readReplacedRecord, replacedRecordOf } from '../data/rules/celestial-ai-poop.mjs';
 import { restoreFromPoop } from './theme-restore.mjs';
 import { slotReferencesTo } from '../utils/ui/slot-references.mjs';
 import { RACE_CLASS_TYPES } from '../utils/document-types.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 /** World setting: the off-content list the GM has already been shown. */
 export const THEME_CLEANUP_SEEN_SETTING = 'themeCleanupSeen';
@@ -228,12 +230,11 @@ export async function postCleanupSummary(counts) {
   if (deleted) lines.push(t('COG.ThemeCleanup.SummaryDeleted', { count: deleted }));
   if (restored) lines.push(t('COG.ThemeCleanup.SummaryRestored', { count: restored }));
   const whisper = globalThis.ChatMessage?.getWhisperRecipients?.('GM')?.map((u) => u.id);
-  return globalThis.ChatMessage.create({
+  return globalThis.ChatMessage.create(withFlags({
     speaker: { alias: t('COG.ThemeCleanup.Title') },
-    content: `<div class="cog-theme-cleanup-card"><h3>${t('COG.ThemeCleanup.Title')}</h3><ul>${lines.map((l) => `<li>${l}</li>`).join('')}</ul></div>`,
-    ...(whisper?.length ? { whisper } : {}),
-    flags: { [SYSTEM_ID]: { themeCleanupSummary: { replaced, deleted, restored, owners, byType } } }
-  });
+    content: `<div class="cog-theme-cleanup-card"><h3>${escapeAttr(t('COG.ThemeCleanup.Title'))}</h3><ul>${lines.map((l) => `<li>${escapeAttr(l)}</li>`).join('')}</ul></div>`,
+    ...(whisper?.length ? { whisper } : {})
+  }, { themeCleanupSummary: { replaced, deleted, restored, owners, byType } }));
 }
 
 /**

@@ -5,8 +5,9 @@
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { getRuleBreakMode, RULE_BREAK_MODES } from '../../utils/rule-break.mjs';
 import { canWriteTarget } from '../chat-relay.mjs';
-import { afflictionStage } from '../../utils/character/transform-rules.mjs';
-import { changeVictim, revertTransformation } from '../../documents/actor/transformations.mjs';
+import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
+import { afflictionStage, heldByCure } from '../../utils/character/transform-rules.mjs';
+import { changeVictim, revertTransformation, changeNow } from '../../documents/actor/transformations.mjs';
 import { reveal, listPending } from '../../documents/pending-secrets.mjs';
 import { transformText } from '../../utils/character/transform-text.mjs';
 
@@ -56,7 +57,8 @@ export async function handleRevertTransformation(event, button) {
     warn(transformText('COG.TransformCard.RefusePolicy'));
     return false;
   }
-  return revertTransformation(actor, affliction, { ruleBreak: true });
+  // A window that opened since the card was posted reverts freely (N10)
+  return revertTransformation(actor, affliction, { ruleBreak: heldByCure(affliction, { floor: getCurrentFloor() }) });
 }
 
 /**
@@ -81,4 +83,15 @@ export async function handleKeepSecret(event, button) {
   if (!record) { warn(transformText('COG.TransformCard.SecretGone')); return false; }
   globalThis.ui?.notifications?.info?.(transformText('COG.TransformCard.SecretKept', { actor: record.actorName, affliction: record.name }));
   return true;
+}
+
+/**
+ * "Change now" on a held secret's cue card: reveal the debuff and fire its change in one step. GM only, like Reveal.
+ * @param {Event} event
+ * @param {HTMLElement} button
+ */
+export async function handleChangeSecret(event, button) {
+  if (!globalThis.game?.user?.isGM) { warn(transformText('COG.TransformCard.GMOnly')); return false; }
+  if (!listPending().some((r) => r.id === button.dataset?.secretId)) { warn(transformText('COG.TransformCard.SecretGone')); return false; }
+  return Boolean(await changeNow(button.dataset.secretId));
 }

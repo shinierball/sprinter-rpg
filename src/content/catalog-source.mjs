@@ -5,7 +5,7 @@
  * incomplete: creating an item from it drops tags, area, temp bars, rank breaks, durations and every
  * other field the index didn't ask for. Resolve the source document by id instead.
  */
-import { SYSTEM_ID } from '../constants.mjs';
+import { withCompendiumLink } from '../utils/compendium/link-flags.mjs';
 import { contentRegistry } from './registry.mjs';
 import { findCatalogEntry } from './catalog-lookup.mjs';
 import { isContentOff } from '../utils/content-source.mjs';
@@ -181,10 +181,10 @@ export async function resolveFullItemData(entry, collection, { category = collec
   }
 
   const base = source || entry;
-  const flags = structuredClone(base.flags || {});
+  let flags = structuredClone(base.flags || {});
   if (uuid) {
     flags.core = { ...(flags.core || {}), sourceId: uuid };
-    flags[SYSTEM_ID] = { ...(flags[SYSTEM_ID] || {}), compendiumId: id, sourceUuid: uuid };
+    flags = withCompendiumLink({ flags }, id, uuid).flags;
   }
   return {
     name: base.name ?? entry.name,

@@ -15,6 +15,7 @@
  *   columns     text columns after the roll column
  *   rows        [{ range?: [lo, hi], links?: [Link], flags?: { <name>: boolean|number }, asTrigger?: AsTriggerHint,
  *                 nextTable?: '<recipe id>', base?: '<id>', magic?: MagicHint }]
+ *   grind       { scope: 'floor'|'neighborhood', floors?: [n, ...] } marks a grinding table (becomes the `grindTable` flag; no floors = any floor)
  *   layoutHint  { columnsX?: [x, ...], groups?: n, skipRows?: n, continues?: n } for grid and swatch shapes (see tables.mjs)
  * AsTriggerHint: { debuff?: '<debuff identifier>', tags?: [<tag id>, ... up to 4] } marks a row as an Amazing Success upgrade (Scroll of
  *       Upgrade). Ids only: the row's name addition and text are the cells read from the book at import. `{}` is a narrative trigger.
@@ -28,12 +29,16 @@
  *                  vehicle field (`VEHICLE_COLUMNS`); the import builds one `mount_vehicle` per row from the cells
  *   vehicleKind    row level: a `CONFIG.COG.vehicleKinds` id for the vehicle that row builds
  *   vehicleResult  row level: a `COG_ROLL_OUTCOMES` id; marks the row of the vehicle check results table that belongs to that degree
+ * Grinding table hints (9.14e; ids and numbers only, the label of each option is made from its formula):
+ *   grind (row level)  [{ kind: 'grindHours', formula } | { kind: 'floorTime', formula, per: 'hours'|'percent' } | { kind: 'seeTable' }, ...]:
+ *                      becomes options on that row (`src/utils/grind/grind-effects.mjs` owns the kinds and the formula grammar)
  * Link: { col, kind: 'doc', id, pack, whole?, item?, stat? } a canon document by frozen `_id` (`whole`: the cell is only that
  *       name; `item`: 0-9, the document's position in a comma list cell; `stat`: str|dex|con|int|cha|none, that item's printed stat)
  *       { col, kind: 'table', id } another recipe of the same book by recipe id (`t-<book>-<number>`)
  */
 import { isLayoutHint } from './table-slicer.mjs';
 import { firstScalar } from '../utils/first-scalar.mjs';
+import { normalizeEffects, normalizeGrindScope } from '../utils/grind/grind-effects.mjs';
 
 const REC_ID = /^t-[a-z0-9]{1,24}-\d{1,4}$/;
 const DOC_ID = /^[A-Za-z0-9]{16}$/;
@@ -120,6 +125,11 @@ function readVehicles(raw) {
   return unique.includes('name') ? { columns: unique } : null;
 }
 
+/** The valid effects of a row's `grind` hint, each without a label (the import makes it from the formula); [] when none. */
+function readGrind(raw) {
+  return normalizeEffects(raw).map(({ label, ...effect }) => effect);
+}
+
 function readRow(raw) {
   const row = {};
   if (!isRecord(raw)) return row;
@@ -149,6 +159,8 @@ function readRow(raw) {
   if (SNAKE_ID.test(vehicleKind)) row.vehicleKind = vehicleKind;
   const vehicleResult = scalar(raw.vehicleResult);
   if (SNAKE_ID.test(vehicleResult)) row.vehicleResult = vehicleResult;
+  const grind = readGrind(raw.grind);
+  if (grind.length) row.grind = grind;
   return row;
 }
 
@@ -173,6 +185,10 @@ export function readTableRecipe(raw) {
   if (raw.vehicles !== undefined) {
     const vehicles = readVehicles(raw.vehicles);
     if (vehicles) recipe.vehicles = vehicles; else problems.push(`${id}: vehicles hint ignored`);
+  }
+  if (raw.grind !== undefined) {
+    const grind = normalizeGrindScope(raw.grind);
+    if (grind) recipe.grind = grind; else problems.push(`${id}: grind hint ignored`);
   }
   if (raw.layoutHint !== undefined) {
     if (isLayoutHint(raw.layoutHint)) {

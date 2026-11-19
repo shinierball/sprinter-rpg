@@ -3,13 +3,12 @@
  * The tagged Taunt and Catcher offers are the card's interrupt prompts (interrupts.mjs); this Taunt is for any crawler,
  * and one without a Taunt interrupt uses it as a Rule Break.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { getTagsOf } from '../../utils/tag/tag-mechanics.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { mobAttackText, TARGET_VIA } from '../../utils/combat/declared-attacks.mjs';
-import { attackerUuidOf, cardCombatIdOf, targetResultsOf } from '../../utils/combat/card-flags.mjs';
+import { attackCardOf, cardFloorOf, attackerUuidOf, cardCombatIdOf, targetResultsOf } from '../../utils/combat/card-flags.mjs';
 import { combatOfDeclaration } from '../../documents/combat-declarations.mjs';
 import { COG_ACTION_TYPES } from '../../documents/combat/action-ledger.mjs';
 import { resolveActingCrawler } from './roll-evade.mjs';
@@ -62,7 +61,7 @@ async function pickDefender(candidates) {
  * @param {ChatMessage} message the mob's Declaration Card
  */
 export async function handleTauntDeclared(event, button, message) {
-  const flags = message?.flags?.[SYSTEM_ID];
+  const flags = attackCardOf(message);
   if (flags?.isAutoHit !== true) return null;
   const taunter = await resolveActingCrawler({
     title: mobAttackText('COG.MobAttack.PickCrawler'),
@@ -103,7 +102,7 @@ export async function handleTauntDeclared(event, button, message) {
     defenderTokenId: defender.tokenId,
     defenderName: defender.name,
     attackTotal: autoHit.targetDC,
-    floor: Number(flags.currentFloor) || null,
+    floor: Number(cardFloorOf(message)) || null,
     d20Face: null,
     ...autoHit,
     ...(ruleBreak ? { ruleBreak: true } : {})

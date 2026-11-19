@@ -96,11 +96,11 @@ export function defaultModeFor(record) {
   return Array.isArray(record?.targets) && record.targets.length ? 'opposed' : 'unopposed';
 }
 
-/** Whether the GM may put a Difficulty on this card: not a contest leg, vehicle, patron, pet or Evade card, nor a crafting check. */
-export function canSetDifficulty(record, flags = {}) {
+/** Whether the GM may put a Difficulty on this card: not a contest leg, a party check member, vehicle, patron, pet or Evade card, nor a crafting check (`craftGrade` is the card's crafting grade, `craftGradeOf(message)`). */
+export function canSetDifficulty(record, craftGrade = null) {
   if (!record || !['skill', 'stat', 'attack', 'spell'].includes(record.kind)) return false;
-  if (record.contest || record.vehicle || record.patron || record.pet || record.evade) return false;
-  return !flags?.craft;
+  if (record.contest || record.party || record.vehicle || record.patron || record.pet || record.evade) return false;
+  return !craftGrade;
 }
 
 /** Whether the card offers the three formula buttons (an attack's real Difficulty is a target's Evade: number box only). */
@@ -165,13 +165,22 @@ function standingDifficultyFor({ kind, rollerType, hasOwnDc = false } = {}) {
 
 /**
  * What a roll born under the standing Difficulty is given: the `difficulty` record (flagged `standing`) and its number,
- * worked out on the Floor of the roll (an Opposed one adds the stored Mod to that Floor), or null when none applies.
+ * worked out on the Floor of the roll (an Opposed one adds the stored Mod to that Floor, and the foe's Advantage shift as it is
+ * now: `foeShift(standing)` reads it, 0 when absent or it throws), or null when none applies.
  * @returns {{ difficulty: object, dc: number }|null}
  */
-export function standingStampFor({ kind, rollerType, hasOwnDc = false, floor = 0 } = {}) {
+export function standingStampFor({ kind, rollerType, hasOwnDc = false, floor = 0, foeShift = null } = {}) {
   const standing = standingDifficultyFor({ kind, rollerType, hasOwnDc });
   if (!standing) return null;
-  const worked = difficultyFor({ mode: standing.mode, value: standing.value, stat: standing.stat, foe: { uuid: standing.foeUuid, name: standing.foeName, mod: standing.mod } }, { floor });
+  let shift = 0;
+  if (standing.mode === 'opposed' && typeof foeShift === 'function') {
+    try {
+      shift = whole(foeShift(standing));
+    } catch {
+      shift = 0;
+    }
+  }
+  const worked = difficultyFor({ mode: standing.mode, value: standing.value, stat: standing.stat, foe: { uuid: standing.foeUuid, name: standing.foeName, mod: standing.mod, shift } }, { floor });
   if (!worked) return null;
   return { difficulty: { ...worked, standing: true, by: globalThis.game?.user?.id ?? '', at: Date.now() }, dc: worked.value };
 }

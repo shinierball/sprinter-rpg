@@ -780,7 +780,6 @@
 .cog-contest-card .cog-contest-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 14px; font-weight: bold; text-transform: uppercase; color: var(--cog-accent-strong); border-bottom: 1px solid var(--cog-divider); padding-bottom: 4px; margin-bottom: 6px; }
 .cog-contest-card .cog-contest-status,
 .cog-contest-card .cog-contest-leg-status { font-size: 10px; font-weight: normal; letter-spacing: 0.5px; color: var(--cog-text-muted); }
-.cog-contest-card .cog-contest-floor { margin-left: auto; font-size: 11px; font-weight: normal; color: var(--cog-text-muted); }
 .cog-contest-card .cog-contest-leg { padding: 4px 0; border-top: 1px solid var(--cog-divider); }
 .cog-contest-card .cog-contest-leg[data-leg-status="open"] .cog-contest-leg-head { color: var(--cog-accent-strong); }
 .cog-contest-card .cog-contest-leg[data-leg-status="pending"] { opacity: 0.7; }

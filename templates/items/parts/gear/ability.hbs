@@ -58,6 +58,7 @@
             </a>
           </div>
         </div>
+        {{> "systems/sprinter-rpg/templates/items/parts/charges-recharge.hbs" recharge=rechargeEditor}}
 
         {{#if system.outcomes.length}}
           <table class="cog-table" style="width: 100%; font-size: 12px; margin-bottom: 0;">
@@ -183,6 +184,8 @@
                           <option value="{{tOpt.uuid}}" {{#if tOpt.selected}}selected{{/if}}>{{tOpt.name}}</option>
                         {{/each}}
                       </select>
+                    {{else if out.isRecharge}}
+                      {{> "systems/sprinter-rpg/templates/items/parts/outcome-recharge-amount.hbs" out=out idx=idx}}
                     {{else if out.isEnchantItem}}
                       <span class="cog-text-secondary">{{localize "COG.CraftSheet.Outcome.Summary" count=out.enchantTemplates.length}}</span>
                     {{else}}
@@ -214,6 +217,9 @@
                     <input class="cog-field-input" type="text" name="system.outcomes.{{idx}}.description" value="{{out.description}}" placeholder="{{localize "COG.GearSheet.Ability.DescriptionPlaceholder"}}" style="width: 100%; font-size: 11px;" />
                   </td>
                 </tr>
+            {{#if out.isRecharge}}
+              {{> "systems/sprinter-rpg/templates/items/parts/outcome-recharge-query.hbs" out=out colspan=6}}
+            {{/if}}
             {{#if out.isEnchantItem}}
               <tr>
                 <td colspan="6" class="cog-outcome-enchant-table">

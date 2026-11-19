@@ -57,6 +57,10 @@ import { SPECS as primeTimePantheonItems } from './items/prime-time-pantheon.mjs
 import { SPECS as primeTimePantheonMobs } from './mobs/prime-time-pantheon.mjs';
 import { SPECS as craftServicesItems } from './items/craft-services.mjs';
 import { SPECS as secondUnitItems } from './items/second-unit.mjs';
+import { SPECS as dressCodeItems } from './items/dress-code.mjs';
+import { SPECS as wardrobeDepartmentItems } from './items/wardrobe-department.mjs';
+import { SPECS as groupProjectItems } from './items/group-project.mjs';
+import { SPECS as refillStationItems } from './items/refill-station.mjs';
 import { SPECS as technicalDifficultiesItems } from './items/technical-difficulties.mjs';
 import { SPECS as technicalDifficultiesMobs } from './mobs/technical-difficulties.mjs';
 import { SPECS as fanMailItems } from './items/fan-mail.mjs';
@@ -65,8 +69,10 @@ import { SPECS as propDepartmentItems } from './items/prop-department.mjs';
 import { SPECS as propDepartmentMobs } from './mobs/prop-department.mjs';
 import { SPECS as racingMobs } from './mobs/racing-and-chasing.mjs';
 import { SPECS as racingTables } from './tables/racing-and-chasing.mjs';
+import { SPECS as backlotGrindTables } from './tables/backlot-grind.mjs';
 import { SPECS as animalSegmentItems } from './items/animal-segment.mjs';
 import { SPECS as animalSegmentActors } from './actors/animal-segment.mjs';
+import { SPECS as prizeShelfActors } from './actors/prize-shelf.mjs';
 import { SPECS as creatureFeatureItems } from './items/creature-feature.mjs';
 import { SPECS as creatureFeatureMobs } from './mobs/creature-feature.mjs';
 
@@ -126,7 +132,13 @@ const RELEASE_FILES = Object.freeze([
   { set: 'side-effects-may-include', kind: 'items', specs: sideEffectsMayIncludeItems },
   { set: 'creature-feature', kind: 'items', specs: creatureFeatureItems },
   { set: 'creature-feature', kind: 'mobs', specs: creatureFeatureMobs },
-  { set: 'second-unit', kind: 'items', specs: secondUnitItems }
+  { set: 'second-unit', kind: 'items', specs: secondUnitItems },
+  { set: 'dress-code', kind: 'items', specs: dressCodeItems },
+  { set: 'wardrobe-department', kind: 'items', specs: wardrobeDepartmentItems },
+  { set: 'group-project', kind: 'items', specs: groupProjectItems },
+  { set: 'refill-station', kind: 'items', specs: refillStationItems },
+  { set: 'backlot-grind', kind: 'tables', specs: backlotGrindTables },
+  { set: 'prize-shelf', kind: 'actors', specs: prizeShelfActors }
 ]);
 
 /** Kind order inside a set's `specs`: referenced documents come first. `mobs` are Actors (the examples-actors pack). */

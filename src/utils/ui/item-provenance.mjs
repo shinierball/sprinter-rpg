@@ -3,22 +3,22 @@
  * returns display entries for the item header and the inventory chip. A new source (a content-source badge, say) is one
  * more provider in PROVIDERS.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { lootBoxTierDef } from '../../data/loot-box-tiers.mjs';
 import { sourceBadge } from '../content-source.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { isPoop, readReplacedRecord } from '../../data/rules/celestial-ai-poop.mjs';
 import { deityGiftOf, deityIdOf } from '../deity/worship-state.mjs';
+import { lootBoxOf, magicItemOf, prerollOf } from '../loot/loot-flags.mjs';
 
 const isPlain = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
 const text = (v) => (typeof v === 'string' ? v.trim() : '');
 
-function flagOf(item, key) {
+/** A record flag of an item through its reader, `null` when it is missing, malformed or the read throws. */
+function plainFlag(item, read) {
   let value;
   try {
-    value = typeof item?.getFlag === 'function' ? item.getFlag(SYSTEM_ID, key) : undefined;
+    value = read(item);
   } catch { value = undefined; }
-  value ??= item?.flags?.[SYSTEM_ID]?.[key];
   return isPlain(value) ? value : null;
 }
 
@@ -36,7 +36,7 @@ function dateLabel(ms) {
 
 /** The loot box the copy was opened from. Shown to the GM, and to the owner at Determine Value Rank 10. */
 function lootBoxEntry(item, { gm, originVisible }) {
-  const flag = flagOf(item, 'lootBox');
+  const flag = plainFlag(item, lootBoxOf);
   if (!flag || !(gm || originVisible)) return null;
   const def = lootBoxTierDef(text(flag.tier));
   const box = text(flag.boxName);
@@ -48,7 +48,7 @@ function lootBoxEntry(item, { gm, originVisible }) {
 
 /** The generator record on a rolled item. GM only. */
 function magicItemEntry(item, { gm }) {
-  const flag = flagOf(item, 'magicItem');
+  const flag = plainFlag(item, magicItemOf);
   if (!flag || !gm) return null;
   const def = lootBoxTierDef(text(flag.tier));
   const rolls = Array.isArray(flag.rolls) ? flag.rolls.length : 0;
@@ -61,7 +61,7 @@ function magicItemEntry(item, { gm }) {
 
 /** The pre-roll record on a world item. GM only. */
 function prerollEntry(item, { gm }) {
-  const flag = flagOf(item, 'lootBoxPreroll');
+  const flag = plainFlag(item, prerollOf);
   if (!flag || !gm) return null;
   const box = text(flag.boxName);
   return {

@@ -28,7 +28,7 @@
 import { registerRelayAction, requestRelay, getActiveGM } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { readCrew } from '../../data/rules/vehicle-crew-rules.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, flagPath } from '../../utils/flags.mjs';
 
 export const SYNC_ACTOR_OWNERSHIP = 'syncActorOwnership';
 
@@ -37,7 +37,7 @@ export const SYNC_ACTOR_OWNERSHIP = 'syncActorOwnership';
  * whose level the system raised. `before` is their explicit level before the first grant (INHERIT when they had none),
  * `granted` the level the system last wrote. A dropped entry is written as `null` (no `-=` key).
  */
-export const CREW_ACCESS_FLAG = 'crewAccess';
+const CREW_ACCESS_FLAG = 'crewAccess';
 
 /** DOCUMENT_OWNERSHIP_LEVELS.INHERIT: v14 rejects `-=<userId>` keys in `ownership`; writing -1 removes the explicit entry. */
 const INHERIT = -1;
@@ -68,7 +68,7 @@ const isLevel = (v) => Number.isInteger(v) && v >= INHERIT && v <= 3;
  * @returns {Record<string, { before: number, granted: number }>}
  */
 export function accessRecord(target) {
-  const raw = target?.flags?.[SYSTEM_ID]?.[CREW_ACCESS_FLAG];
+  const raw = readFlag(target, CREW_ACCESS_FLAG);
   const out = {};
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
   for (const [id, rec] of Object.entries(raw)) {
@@ -292,7 +292,7 @@ async function writePlan(target, { ownership, records }) {
     for (const id of Object.keys(ownership)) if (ownership[id] === INHERIT) ownership[id] = safe;
   }
   if (Object.keys(ownership).length) data.ownership = ownership;
-  for (const [id, rec] of Object.entries(records)) data[`flags.${SYSTEM_ID}.${CREW_ACCESS_FLAG}.${id}`] = rec;
+  for (const [id, rec] of Object.entries(records)) data[flagPath(`${CREW_ACCESS_FLAG}.${id}`)] = rec;
   await target.update(data);
 }
 

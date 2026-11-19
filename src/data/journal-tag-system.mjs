@@ -1,4 +1,5 @@
 import { flagPath, readFlag, withFlags } from '../utils/flags.mjs';
+import { trustedHtml } from '../utils/escape-attr.mjs';
 import { PAGE_SORT_STEP } from './builders/journal-payload.mjs';
 import { AUTHORING_PAGES } from './journal-tag-system/pages-authoring.mjs';
 import { ENGINE_PAGES } from './journal-tag-system/pages-engine.mjs';
@@ -46,7 +47,7 @@ export function tagSystemJournalPayload() {
       type: page.type,
       sort: (index + 1) * PAGE_SORT_STEP,
       title: { ...page.title },
-      text: { format: page.text.format, content: String(page.text.content ?? '') }
+      text: { format: page.text.format, content: trustedHtml(page.text.content ?? '') }
     }))
   };
 }

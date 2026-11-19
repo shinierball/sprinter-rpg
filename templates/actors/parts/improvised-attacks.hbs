@@ -1,0 +1,25 @@
+{{!-- Page 1: held items that are not weapons, swung on the Improvised Weapons Skill (core p. 178). Reuses the attack table's roll actions on the item's own id. --}}
+<div class="cog-stat-block cog-bg-danger-tint cog-improvised-attacks" style="margin-top: 6px; border: 1px dashed var(--cog-accent); padding: 6px;">
+  <div class="cog-text-accent" style="font-size: 11px; font-weight: bold; margin-bottom: 4px;">
+    <i class="fa-solid fa-hand-fist"></i> {{improvisedTitle}}
+  </div>
+  <div class="cog-text" style="font-size: 10px; margin-bottom: 4px;">{{improvisedHint}}</div>
+  <table class="cog-attacks-table" style="margin: 0; font-size: 11px;">
+    <tbody>
+      {{#each improvisedAttacks as |swing|}}
+        <tr data-item-id="{{swing.id}}">
+          <td style="width: 40%;">
+            <a data-action="rollAttackHit"{{#if swing.summaryTip}} data-tooltip-text="{{swing.summaryTip}}" data-tooltip-class="cog-tooltip-lines"{{/if}} style="font-weight: bold; cursor: pointer;">{{swing.name}}</a>
+            <span class="cog-stat-sublabel" style="font-size: 9px; text-transform: uppercase;">[{{../improvisedBadge}}]</span>
+          </td>
+          <td style="width: 30%;">
+            <button type="button" class="cog-formula-link" data-action="rollAttackHit">{{swing.toHit}}</button>
+          </td>
+          <td style="width: 30%;">
+            <button type="button" class="cog-formula-link" data-action="rollAttackDamage">{{swing.damage}}</button>
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

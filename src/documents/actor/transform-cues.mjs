@@ -5,14 +5,17 @@
  * victim: only a person pressing Change does (a transformation never fires on its own). Two cues post:
  *  - `apply`: right after the affliction lands, to the GM and the carrier's owners;
  *  - `death`: when damage takes the carrier to 0 Health, to the GM only, once per lethal application.
- * `rest` and `floor` stay registered (transform-rules.mjs) but have no poster, so they are inert until a later release.
+ * `rest` and `floor` post too: `rest` to the GM and the owners after a long
+ * rest, `floor` to the GM when the current floor changes (transform-cue-events.mjs calls them).
  *
  * `postCue` is the one entry point. A secret affliction is held GM-side before it is ever created (the pending store);
  * when the GM reveals it, that code creates the item and calls `postCue` like any landing.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { writeTransformState } from '../../utils/character/overlay-state.mjs';
 import { transformText } from '../../utils/character/transform-text.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { registerRelayAction, dispatchRelay, getActiveGM } from '../../utils/gm-relay.mjs';
+import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { afflictionStage, transformState, cueOf, isAffliction, formEntries } from '../../utils/character/transform-rules.mjs';
 
 const idOf = (doc) => doc?.id ?? doc?._id ?? '';
@@ -35,11 +38,11 @@ function changeButton(actor, affliction) {
   return `<button type="button" class="cog-transform-change-btn" data-action="crawlerChangeVictim" data-target-uuid="${escapeAttr(actor.uuid ?? '')}" data-affliction-id="${escapeAttr(idOf(affliction))}">${escapeAttr(label)}</button>`;
 }
 
-const cardOf = (kind, lines, button) => `<div class="cog-chat-card cog-transform-card" data-transform-card="${kind}">${lines.map((l) => `<p>${l}</p>`).join('')}${button}</div>`;
+const cardOf = (kind, lines, button) => `<div class="cog-chat-card cog-transform-card" data-transform-card="${kind}">${lines.map((l) => `<p>${escapeAttr(l)}</p>`).join('')}${button}</div>`;
 
 function cardLines(actor, affliction, key) {
-  const lines = [escapeAttr(transformText(key, { actor: actor.name, affliction: affliction.name }))];
-  if (formEntries(affliction).length && actor.type !== 'crawler') lines.push(escapeAttr(transformText('COG.TransformCard.NoRace')));
+  const lines = [transformText(key, { actor: actor.name, affliction: affliction.name })];
+  if (formEntries(affliction).length && actor.type !== 'crawler') lines.push(transformText('COG.TransformCard.NoRace'));
   return lines;
 }
 
@@ -54,6 +57,20 @@ async function post(actor, content, whisper) {
     console.warn('Sprinter RPG | Could not post the transformation card:', err);
     return null;
   }
+}
+
+/**
+ * A card for `actor` that carries no affliction item: to the GMs alone, or to the GMs and the owners. Null with nobody to
+ * tell (a GM-only card with no GM).
+ * @param {Actor} actor
+ * @param {{ kind: string, lines: string[], buttons?: Array<{ cls: string, action: string, label: string }>, secretId?: string, gmOnly?: boolean }} card
+ *   `kind` is the `data-transform-card` value; each button is a `data-action` button naming the held record `secretId`
+ */
+export async function postCueCard(actor, { kind, lines, buttons = [], secretId = '', gmOnly = true }) {
+  const whisper = viewerIds(actor, { gmOnly });
+  if (!actor || !whisper) return null;
+  const markup = buttons.map((b) => `<button type="button" class="${escapeAttr(b.cls)}" data-action="${escapeAttr(b.action)}" data-secret-id="${escapeAttr(secretId)}">${escapeAttr(b.label)}</button>`).join('');
+  return post(actor, cardOf(escapeAttr(kind), lines, markup), whisper);
 }
 
 const POSTERS = {
@@ -71,14 +88,27 @@ const POSTERS = {
     const state = transformState(affliction);
     if (appId && (state.deathCards ?? []).includes(appId)) return null;
     const message = await post(actor, cardOf('death', cardLines(actor, affliction, 'COG.TransformCard.Death'), changeButton(actor, affliction)), whisper);
-    if (appId && message) await affliction.setFlag(SYSTEM_ID, 'transformation', { ...state, deathCards: [...(state.deathCards ?? []), appId] });
+    if (appId && message) await writeTransformState(affliction, { ...state, deathCards: [...(state.deathCards ?? []), appId] });
     return message;
+  },
+
+  /** After a long or full-day rest: the GM and the owners, like the landing card. */
+  async rest(actor, affliction) {
+    const whisper = viewerIds(actor, { gmOnly: false });
+    return post(actor, cardOf('rest', cardLines(actor, affliction, 'COG.TransformCard.RestStill'), changeButton(actor, affliction)), whisper);
+  },
+
+  /** The current floor changed: the GM alone. */
+  async floor(actor, affliction) {
+    const whisper = viewerIds(actor, { gmOnly: true });
+    if (!whisper) return null;
+    return post(actor, cardOf('floor', cardLines(actor, affliction, 'COG.TransformCard.FloorStill'), changeButton(actor, affliction)), whisper);
   }
 };
 
 /**
  * Post the card for a cue, when the affliction is still pending and names that cue. Posts nothing for a cue with no
- * poster (`rest`, `floor`, or an id a module registered without code) and never changes the victim.
+ * poster (an id a module registered without code) and never changes the victim.
  * @param {Actor} actor
  * @param {Item} affliction
  * @param {string} cueId a `TRANSFORM_CUES` id
@@ -101,6 +131,20 @@ export async function postCue(actor, affliction, cueId, ctx = {}) {
  */
 export async function onLethalDamage(actor, { isLethal = false, appId = '' } = {}) {
   if (!isLethal || !actor) return 0;
+  // A GM-only card a player's client creates is the player's to read (Foundry shows a whisper to its author), so a
+  // player's client asks a GM's client to post it, and with no GM connected posts nothing.
+  if (globalThis.game?.user?.isGM) return postLethalCards(actor, appId);
+  if (!getActiveGM()) return 0;
+  try {
+    await dispatchRelay(GM_CARDS_RELAY, { kind: 'lethal', actorUuid: actor.uuid, appId: String(appId ?? '') });
+  } catch (err) {
+    console.warn('Sprinter RPG | The 0 Health transformation card request failed:', err);
+  }
+  return 0;
+}
+
+/** The `death` card for each pending affliction of the actor that names it, on the client that posts GM-only cards. */
+async function postLethalCards(actor, appId) {
   let posted = 0;
   try {
     for (const item of Array.from(actor.items ?? [])) {
@@ -111,6 +155,23 @@ export async function onLethalDamage(actor, { isLethal = false, appId = '' } = {
   }
   return posted;
 }
+
+const GM_CARDS_RELAY = 'transformGmCards';
+
+// The GM's client re-derives the afflictions from the actor; a request carries only ids. Authorised for a GM or an owner,
+// and a lethal card only for an actor at 0 Health.
+registerRelayAction(GM_CARDS_RELAY, {
+  authorize: (payload, user) => {
+    const actor = resolveActorByUuid(payload?.actorUuid);
+    if (!actor) return false;
+    if (!user?.isGM && !actor.testUserPermission?.(user, 'OWNER')) return false;
+    return payload?.kind === 'lethal' && Number(actor.system?.attributes?.hp?.value) <= 0;
+  },
+  apply: async (payload) => {
+    await postLethalCards(resolveActorByUuid(payload.actorUuid), String(payload.appId ?? ''));
+    return true;
+  }
+});
 
 /**
  * The GM-only card for a secret debuff that landed and is held GM-side (7.1f): Reveal creates it on the carrier, Keep
@@ -127,7 +188,7 @@ export async function postSecretCard(actor, held, secretId) {
   const attrs = `data-secret-id="${escapeAttr(secretId)}"`;
   const reveal = `<button type="button" class="cog-transform-reveal-btn" data-action="crawlerRevealSecret" ${attrs}>${escapeAttr(transformText('COG.TransformCard.Reveal', data))}</button>`;
   const keep = `<button type="button" class="cog-transform-keep-btn" data-action="crawlerKeepSecret" ${attrs}>${escapeAttr(transformText('COG.TransformCard.Keep', data))}</button>`;
-  return post(actor, cardOf('secret', [escapeAttr(transformText('COG.TransformCard.Secret', data))], reveal + keep), whisper);
+  return post(actor, cardOf('secret', [transformText('COG.TransformCard.Secret', data)], reveal + keep), whisper);
 }
 
 /**

@@ -3,7 +3,7 @@
  * single-skill check. The Level writer (gainLevels), the grind Level tracker and Stat point spending.
  */
 import { getRequiredGrindingHours } from '../../data/rules/grinding-rules.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 import { collectCheckModifiers, collectRollAdvantage } from '../../utils/roll/damage-modifiers.mjs';
 import { CHECK_TAGS, isPassiveSkill } from '../../utils/tag/tag-mechanics.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
@@ -401,29 +401,26 @@ export async function spendStatPoint(actor, stat, options = {}) {
  */
 export async function postAdvancementCard(actor, d) {
   const { skillId, ...cardData } = d;
-  return ChatMessage.create({
+  return ChatMessage.create(withFlags({
     speaker: ChatMessage.getSpeaker({ actor }),
-    content: buildAdvancementCard({ actorName: actor.name, ...cardData }),
-    flags: {
-      [SYSTEM_ID]: {
-        isSkillAdvancement: true,
+    content: buildAdvancementCard({ actorName: actor.name, ...cardData })
+  }, {
+    isSkillAdvancement: true,
+    skillId,
+    advancement: {
+      mode: 'single',
+      ruleBreak: Boolean(cardData.ruleBreak),
+      results: [{
         skillId,
-        advancement: {
-          mode: 'single',
-          ruleBreak: Boolean(cardData.ruleBreak),
-          results: [{
-            skillId,
-            skillName: cardData.skillName,
-            previousRank: cardData.previousRank,
-            newRank: cardData.newRank,
-            rollTotal: cardData.rollTotal,
-            target: cardData.target,
-            outcome: cardData.outcome
-          }]
-        }
-      }
+        skillName: cardData.skillName,
+        previousRank: cardData.previousRank,
+        newRank: cardData.newRank,
+        rollTotal: cardData.rollTotal,
+        target: cardData.target,
+        outcome: cardData.outcome
+      }]
     }
-  });
+  }));
 }
 
 /**

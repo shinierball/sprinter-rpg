@@ -3,6 +3,7 @@
  * `lang/en.json` under `COG.CraftWarn`, `COG.Craft`, `COG.Enchanting` and `COG.MagicItem` (the 7.3 generator); the table below is the fallback when no i18n catalogue is
  * loaded (Node tests), and a test keeps it equal to the catalogue.
  */
+import { langText } from '../lang-text.mjs';
 export const CRAFT_TEXT = Object.freeze({
   'COG.CraftWarn.notInSpace': 'Crafting with a table needs a personal space you are in.',
   'COG.CraftWarn.noTable': 'No crafting table for: {types}.',
@@ -78,8 +79,4 @@ export const CRAFT_TEXT = Object.freeze({
 });
 
 /** A craft string, formatted; works without a loaded i18n catalogue. */
-export function craftText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (CRAFT_TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const craftText = langText(CRAFT_TEXT);

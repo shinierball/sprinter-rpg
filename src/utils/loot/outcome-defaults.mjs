@@ -52,6 +52,9 @@ export function outcomeRestore(out) {
 /** The loot outcome type that enchants one of the user's equipped items when the item is used (3.15, crafting-system.md 5.2). */
 export const ENCHANT_ITEM_OUTCOME = 'enchant_item';
 
+/** The loot outcome type that recharges one of the user's own items when the item is used. */
+export const RECHARGE_OUTCOME = 'recharge';
+
 /** The row arrays an enchantment writes into, and a template carries under `rows`. The one list (crafting-engine re-exports it). */
 export const ENCHANTMENT_ROW_ARRAYS = Object.freeze(['grants', 'damageModifiers', 'defenseModifiers', 'attackModifiers', 'checkModifiers', 'asTriggers']);
 
@@ -67,6 +70,36 @@ const cleanList = (v) => (Array.isArray(v) ? v.map(cleanString).filter(Boolean) 
 function cleanQuery(raw) {
   const q = plain(raw);
   return q ? { all: cleanList(q.all), any: cleanList(q.any), none: cleanList(q.none) } : null;
+}
+
+/**
+ * A recharge outcome as `{ full, amount, query }`. It refills fully when `amount` is blank, null, 'full', zero or not a
+ * number (the reading {@link outcomeRestore} gives a restore row); otherwise `amount` is a whole number of at least 1.
+ * `query` is a clean tag query, or null when blank (anything that can be recharged).
+ * @param {object} out
+ * @returns {{ full: boolean, amount: number, query: ({ all: string[], any: string[], none: string[] }|null) }}
+ */
+export function outcomeRecharge(out) {
+  const raw = out?.amount;
+  const n = Math.floor(Number(typeof raw === 'string' ? raw.trim() : raw));
+  const full = !(Number.isFinite(n) && n >= 1);
+  const query = cleanQuery(out?.query);
+  const blank = !query || (!query.all.length && !query.any.length && !query.none.length);
+  return { full, amount: full ? 0 : n, query: blank ? null : query };
+}
+
+/**
+ * Charges after a recharge: never above `max`, never below the current value (a negative stored value counts as 0).
+ * @param {{ value: number, max: number }} charges
+ * @param {{ full: boolean, amount: number }} recharge
+ * @returns {{ value: number, gained: number }}
+ */
+export function chargesAfterRecharge(charges, { full, amount }) {
+  const max = Math.max(0, Math.floor(Number(charges?.max)) || 0);
+  const current = Math.max(0, Math.floor(Number(charges?.value)) || 0);
+  if (current >= max) return { value: current, gained: 0 };
+  const value = full ? max : Math.min(max, current + Math.max(0, Math.floor(Number(amount)) || 0));
+  return { value, gained: value - current };
 }
 
 /**
@@ -184,6 +217,7 @@ export const OUTCOME_TYPES = Object.freeze([
   { value: 'stat_permanent', label: 'Stat Boost (+)', effectLabel: 'Permanent Stat (+)' },
   { value: 'roll_table', label: 'Roll Table' },
   { value: ENCHANT_ITEM_OUTCOME, labelKey: 'COG.CraftSheet.Outcome.Type' },
+  { value: RECHARGE_OUTCOME, labelKey: 'COG.Outcome.Recharge.Type' },
   { value: 'custom', label: 'Custom' }
 ]);
 

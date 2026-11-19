@@ -33,7 +33,7 @@
   <div class="cog-field-group cog-patron-actor">
     <span class="cog-field-label">{{localize "COG.Patron.Sheet.Actor"}}</span>
     {{#if patronActor.uuid}}
-      <span class="cog-patron-actor-line{{#if patronActor.broken}} cog-text-warning{{/if}}" data-tooltip="{{patronActor.uuid}}">
+      <span class="cog-patron-actor-line{{#if patronActor.broken}} cog-text-warning{{/if}}" data-tooltip-text="{{patronActor.uuid}}">
         {{patronActor.label}}
       </span>
       <a data-action="clearPatronActor" aria-label="{{localize "COG.Patron.Sheet.ActorClear"}}"><i class="fa-solid fa-xmark"></i> {{localize "COG.Patron.Sheet.ActorClear"}}</a>

@@ -5,6 +5,7 @@
 // Row normalization lives on the item DataModel (one source for prepareBaseData and submits).
 export { toRowArray as toArray } from '../../models/items/grant-validation.mjs';
 import { enchantmentTemplateField } from '../../models/fields/craft-fields.mjs';
+import { tagQueryField } from '../../models/fields/tag-fields.mjs';
 import { ROW_ARRAYS } from '../../utils/row-kinds.mjs';
 
 const QUERY_BUCKETS = Object.freeze(['all', 'any', 'none']);
@@ -90,10 +91,18 @@ function enchantItemTemplates() {
   return outcomeTemplatesField;
 }
 
+let outcomeQueryField = null;
+
+/** The schema of the `query` inside a `recharge` outcome row: a plain tag query (the row itself is free-form, so the schema cannot say). */
+function rechargeQuery() {
+  outcomeQueryField ??= tagQueryField(foundry.data.fields);
+  return outcomeQueryField;
+}
+
 /**
  * The schema field at a dotted path (`system.a.b.0.c`; array segments are indexes), or null when the path leaves
  * the schema. A SchemaField is followed by `fields`, an ArrayField by `element`; any other field ends the walk,
- * except the `enchantments` list of an outcome row (see {@link enchantItemTemplates}).
+ * except the `enchantments` list of an outcome row (see {@link enchantItemTemplates}) and a `recharge` row's `query` (see {@link rechargeQuery}).
  */
 export function schemaFieldAt(item, path) {
   const segments = String(path ?? '').split('.');
@@ -104,6 +113,7 @@ export function schemaFieldAt(item, path) {
     if (field?.element) field = field.element;
     else if (field?.fields && Object.hasOwn(field.fields, segment)) field = field.fields[segment];
     else if (segment === 'enchantments' && previous !== '' && Number.isInteger(Number(previous)) && field instanceof foundry.data.fields.ObjectField) field = enchantItemTemplates();
+    else if (segment === 'query' && previous !== '' && Number.isInteger(Number(previous)) && field instanceof foundry.data.fields.ObjectField) field = rechargeQuery();
     else return null;
     previous = segment;
   }

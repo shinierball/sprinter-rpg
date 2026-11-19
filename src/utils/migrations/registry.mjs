@@ -7,6 +7,15 @@
 /** The release stamp a step writes while the real version is undecided; the coordinator replaces it with the version bump. */
 export const NEXT_RELEASE = 'next';
 
+/**
+ * What a document function returns to delete the embedded document it was given (an item moved into its actor's own
+ * data, say). Only an embedded document may be removed; a top-level document or a token's actor delta returning it is an
+ * error that drops its whole tree. The runner deletes a removed document only after its parent's write succeeded or the
+ * parent needed none (`world-migration.mjs`). A registered symbol, so a console probe can name it as
+ * `Symbol.for('sprinter-rpg.migrationRemove')`.
+ */
+export const MIGRATION_REMOVE = Symbol.for('sprinter-rpg.migrationRemove');
+
 /** The oldest release whose data is supported; an empty watermark means a world is at this release. */
 export const MIGRATION_FLOOR = '8.0.0';
 

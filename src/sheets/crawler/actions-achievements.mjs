@@ -3,6 +3,7 @@
  * Every handler runs with `this` bound to the sheet.
  */
 import { rowItemId } from './dom.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { TROPHY_TIERS } from './context-achievements.mjs';
 
 const TROPHY_TIER_IDS = TROPHY_TIERS.map(t => t.id);
@@ -23,8 +24,27 @@ export function applyAchievementFilter(root, { query = '', tier = 'all' } = {}) 
   }
 }
 
-/** Confirm/cancel dialog for a kill record; `onConfirm` receives the dialog form's `elements`. */
-function killDialog({ title, content, icon, label, onConfirm }) {
+const INPUT_CLASS = 'cog-dialog-input cog-bg-window cog-text-strong';
+
+/** One labelled control of a kill dialog: a select when `options` is given, else a text input; every value is escaped. */
+function killField({ label, name, placeholder = '', value = '', options = null }) {
+  const control = options
+    ? `<select name="${escapeAttr(name)}" class="${INPUT_CLASS}">${options.map((o) => `<option value="${escapeAttr(o.value)}"${o.selected ? ' selected' : ''}>${escapeAttr(o.label)}</option>`).join('')}</select>`
+    : `<input type="text" name="${escapeAttr(name)}"${placeholder ? ` placeholder="${escapeAttr(placeholder)}"` : ''}${value ? ` value="${escapeAttr(value)}"` : ''} class="${INPUT_CLASS}" />`;
+  return `
+  <div>
+    <label class="cog-text-strong" style="display: block; font-size: 11px; text-transform: uppercase; font-weight: bold;">${escapeAttr(label)}</label>
+    ${control}
+  </div>`;
+}
+
+/** Confirm/cancel dialog for a kill record: `fields` are the `killField` descriptors; `onConfirm` receives the dialog form's `elements`. */
+function killDialog({ title, fields: descriptors, icon, label, onConfirm }) {
+  const fields = descriptors.map(killField);
+  const content = `
+  <div class="cog-bg-window cog-text" style="font-family: 'Oswald', sans-serif; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 4px;">
+    ${fields.join('')}
+  </div>`;
   return foundry.applications.api.DialogV2.wait({
     window: { title },
     content,
@@ -35,17 +55,6 @@ function killDialog({ title, content, icon, label, onConfirm }) {
     rejectClose: false
   });
 }
-
-const field = (label, input) => `
-  <div>
-    <label class="cog-text-strong" style="display: block; font-size: 11px; text-transform: uppercase; font-weight: bold;">${label}</label>
-    ${input}
-  </div>`;
-const INPUT_CLASS = 'cog-dialog-input cog-bg-window cog-text-strong';
-const dialogBody = (fields) => `
-  <div class="cog-bg-window cog-text" style="font-family: 'Oswald', sans-serif; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 4px;">
-    ${fields.join('')}
-  </div>`;
 
 export const achievementActions = {
   openAchievementPicker() {
@@ -97,14 +106,14 @@ export const achievementActions = {
   recordBossKill() {
     if (!this.isEditable) return;
     const floor = this.actor.system?.details?.floor || 'Floor 1';
-    const tierOptions = TROPHY_TIERS.map(t => `<option value="${t.id}"${t.id === 'gold' ? ' selected' : ''}>${t.label} - ${t.bossLevel}</option>`).join('');
+    const tierOptions = TROPHY_TIERS.map(t => ({ value: t.id, label: `${t.label} - ${t.bossLevel}`, selected: t.id === 'gold' }));
     return killDialog({
       title: 'Record Boss Kill',
-      content: dialogBody([
-        field('Boss Name:', `<input type="text" name="name" placeholder="e.g. Goblin King" class="${INPUT_CLASS}" />`),
-        field('Boss Level / Star Tier:', `<select name="tier" class="${INPUT_CLASS}">${tierOptions}</select>`),
-        field('Floor:', `<input type="text" name="floor" value="${floor}" class="${INPUT_CLASS}" />`)
-      ]),
+      fields: [
+        { label: 'Boss Name:', name: 'name', placeholder: 'e.g. Goblin King' },
+        { label: 'Boss Level / Star Tier:', name: 'tier', options: tierOptions },
+        { label: 'Floor:', name: 'floor', value: floor }
+      ],
       icon: 'fa-solid fa-star',
       label: 'Record Kill & Award Star',
       onConfirm: async (f) => this.actor.recordBossKill({
@@ -120,11 +129,11 @@ export const achievementActions = {
     const floor = this.actor.system?.details?.floor || 'Floor 1';
     return killDialog({
       title: 'Record Crawler Kill (PvP)',
-      content: dialogBody([
-        field('Slain Crawler Name:', `<input type="text" name="name" placeholder="e.g. Frank, Meatball" class="${INPUT_CLASS}" />`),
-        field('Crawler Number (Optional):', `<input type="text" name="crawlerNumber" placeholder="e.g. #4091" class="${INPUT_CLASS}" />`),
-        field('Floor:', `<input type="text" name="floor" value="${floor}" class="${INPUT_CLASS}" />`)
-      ]),
+      fields: [
+        { label: 'Slain Crawler Name:', name: 'name', placeholder: 'e.g. Frank, Meatball' },
+        { label: 'Crawler Number (Optional):', name: 'crawlerNumber', placeholder: 'e.g. #4091' },
+        { label: 'Floor:', name: 'floor', value: floor }
+      ],
       icon: 'fa-solid fa-skull',
       label: 'Record Kill & Claim Skull',
       onConfirm: async (f) => this.actor.recordCrawlerKill({

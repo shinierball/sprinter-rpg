@@ -63,6 +63,8 @@ export class SkillDataModel extends BaseItemDataModel {
       // card's check and outcome tags that decides when it is offered (E7.9). Empty formula = not an assist.
       assist: new fields.SchemaField({
         formula: new fields.StringField({ initial: '' }),
+        // Help only: rolled instead of `formula` when the helper has no Rank in the Skill being rolled. '' = same as `formula`.
+        untrainedFormula: new fields.StringField({ initial: '' }),
         when: new fields.SchemaField({
           all: new fields.ArrayField(new fields.StringField(), { initial: [] }),
           any: new fields.ArrayField(new fields.StringField(), { initial: [] }),

@@ -5,6 +5,7 @@
  */
 import { confirmRuleBreak, withRuleBreak } from '../../utils/rule-break.mjs';
 import { planJunkSpend, junkPoints } from '../../utils/crafting/craft-materials.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { buildPayload } from '../../data/builders/item-payload.mjs';
 
 /**
@@ -46,7 +47,7 @@ async function promptItemName() {
   const loc = (key) => i18n?.localize?.(key) ?? key;
   const result = await DialogV2.prompt({
     window: { title: loc('COG.PullOut.DialogTitle') },
-    content: `<label>${loc('COG.PullOut.NameLabel')} <input type="text" name="name" autofocus></label>`,
+    content: `<label>${escapeAttr(loc('COG.PullOut.NameLabel'))} <input type="text" name="name" autofocus></label>`,
     ok: { label: loc('COG.PullOut.Confirm'), callback: (_event, button) => String(button?.form?.elements?.name?.value ?? '').trim() },
     rejectClose: false,
     modal: true

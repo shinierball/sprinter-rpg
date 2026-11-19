@@ -13,7 +13,7 @@ import { mobDifficultyShift, MOB_QUALITIES } from '../../documents/actor/attack-
 import { COGActor } from '../../documents/actor.mjs';
 import { contentRegistry } from '../../content/registry.mjs';
 import { getHpPerBar } from '../../documents/combat-metrics.mjs';
-import { DEFAULT_SIZE, getSizeInfo, sizeOptions } from '../../data/sizes.mjs';
+import { DEFAULT_SIZE, getSizeInfo, sanitizeSizeId, sizeLabel, sizeOptions } from '../../data/sizes.mjs';
 import { COGRaceClassApplier } from '../../data/race-class-applier.mjs';
 import { BOSS_TIERS, bossActionBudget } from '../../data/mob-creation-rules.mjs';
 import { overlayOf, effectiveRace, storedAttributes, transformationOfItem } from '../../utils/character/overlay-state.mjs';
@@ -132,6 +132,13 @@ function prepareMobReadouts(context, system, actor) {
 function moveNowReadout(actor) {
   const { full, rated, sources } = creatureMoveOf(actor);
   return rated === full ? null : { rated, title: sources.join('; ') };
+}
+
+/** The Size readout beside the stored size: `{ label }` ("6 Large") when a form changes it, else null. */
+function sizeNowReadout(actor) {
+  const stored = sanitizeSizeId(storedAttributes(actor).size ?? DEFAULT_SIZE);
+  const now = sanitizeSizeId(actor?.system?.attributes?.size ?? DEFAULT_SIZE);
+  return stored === now ? null : { label: sizeLabel(now) };
 }
 
 /** `{ dc, shift, flat, shifted, title }` for one mob Difficulty: the stat-block number, its shift, its flat Check rows and the reasons. */
@@ -255,6 +262,7 @@ export function prepareCoreContext(context, actor) {
   context.floorOptions = optionsWithCustom(FLOOR_OPTIONS, String(system?.details?.floor || '').trim());
   prepareMobReadouts(context, system, actor);
   context.moveNow = moveNowReadout(actor);
+  context.sizeNow = sizeNowReadout(actor);
   context.mobCreatureTypes = optionsWithCustom(MOB_CREATURE_TYPES, String(system?.details?.creatureType || '').trim());
 
   const rc = COGRaceClassApplier.getRaceClassContext(actor, { requirements: true });

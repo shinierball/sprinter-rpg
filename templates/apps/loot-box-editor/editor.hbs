@@ -1,0 +1,43 @@
+{{!--
+  The Loot Box editor (spec D4): one box a crawler holds (an entry of system.lootBoxes), GM only.
+  Context: COGLootBoxEditorApp#_prepareContext (src/apps/loot-box-editor.mjs); lootBox = buildLootBoxContext(...) on the
+  entry's box host. Every control is an action delegate with no name (GEMINI §5); the prize rows are the loot sheet's.
+--}}
+<div class="cog-loot-box-editor">
+  {{#if missing}}
+    <p class="cog-text-secondary"><i class="fa-solid fa-box-open"></i> {{localize "COG.LootBoxHeld.EditorGone"}}</p>
+  {{else}}
+    <p class="cog-text-secondary">{{localize "COG.LootBoxHeld.EditorHeldBy" name=actorName}}{{#if entry.awardedBy}} · {{localize "COG.LootBoxHeld.EditorAwardedBy" source=entry.awardedBy}}{{/if}}</p>
+    <div class="cog-field-row">
+      {{#if entry.img}}<img class="cog-bg-icon-box" src="{{entry.img}}" width="36" height="36" alt="" />{{/if}}
+      <label class="cog-field-group flex-1">
+        <span class="cog-field-label">{{localize "COG.LootBoxHeld.EditorName"}}</span>
+        <input class="cog-field-input" type="text" data-change-action="editLootBoxField" data-field="name" value="{{entry.name}}" />
+      </label>
+      <label class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.LootBoxSheet.Tier"}}</span>
+        <select class="cog-field-input" data-change-action="editLootBoxField" data-field="tier">
+          {{#each entry.tierOptions as |o|}}<option value="{{o.key}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+        </select>
+      </label>
+      <label class="cog-field-group" style="width: 72px;">
+        <span class="cog-field-label">{{localize "COG.LootBoxSheet.Quantity"}}</span>
+        <input class="cog-field-input" type="number" min="1" step="1" data-change-action="editLootBoxField" data-field="quantity" value="{{entry.quantity}}" />
+      </label>
+    </div>
+    <label class="cog-field-group">
+      <span class="cog-field-label">{{localize "COG.LootBoxHeld.EditorImage"}}</span>
+      <input class="cog-field-input" type="text" data-change-action="editLootBoxField" data-field="img" value="{{entry.img}}" />
+    </label>
+    {{#if entry.hasTemplate}}<p class="cog-text-secondary"><i class="fa-solid fa-copy"></i> {{localize "COG.LootBoxHeld.EditorFromTemplate"}}</p>{{/if}}
+
+    {{> "systems/sprinter-rpg/templates/items/parts/loot-box-rows.hbs" lootBox=lootBox}}
+
+    {{#if hasDescription}}
+      <div class="cog-field-group">
+        <span class="cog-field-label">{{localize "COG.LootBoxHeld.EditorDescription"}}</span>
+        {{editor descriptionHtml target="description" editable=false}}
+      </div>
+    {{/if}}
+  {{/if}}
+</div>

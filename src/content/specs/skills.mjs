@@ -8171,6 +8171,20 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "determine-value",
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
       "tags": [
         "action.passive",
         "kind.skill",
@@ -9290,6 +9304,20 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "escape-plan",
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
       "tags": [
         "action.passive",
         "kind.skill",
@@ -9855,6 +9883,20 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "find-crawler",
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
       "tags": [
         "action.passive",
         "kind.skill",
@@ -9978,6 +10020,16 @@ export const COG_SKILLS = [
         }
       },
       "identifier": "find-trap",
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        }
+      ],
       "tags": [
         "action.passive",
         "kind.skill",
@@ -22667,6 +22719,139 @@ export const COG_SKILLS = [
         "value": 1,
         "unit": "floor"
       },
+      "rankBreaks": {
+        "rank5": {
+          "damageDice": "",
+          "baseDiceCountMod": "",
+          "rankDamageDice": 0,
+          "buffsResistances": "",
+          "debuff": "",
+          "notes": "",
+          "isArmorPiercing": false,
+          "healing": {
+            "barsBonus": 0,
+            "cleanseDebuff": ""
+          },
+          "rank": 5,
+          "critMultiplier": 1,
+          "damageType": "",
+          "contest": {
+            "dcBonus": 0,
+            "onFailDebuff": ""
+          }
+        },
+        "rank10": {
+          "damageDice": "",
+          "baseDiceCountMod": "",
+          "rankDamageDice": 0,
+          "buffsResistances": "",
+          "debuff": "",
+          "notes": "",
+          "isArmorPiercing": false,
+          "healing": {
+            "barsBonus": 0,
+            "cleanseDebuff": ""
+          },
+          "rank": 10,
+          "critMultiplier": 1,
+          "damageType": "",
+          "contest": {
+            "dcBonus": 0,
+            "onFailDebuff": ""
+          }
+        },
+        "rank15": {
+          "damageDice": "",
+          "baseDiceCountMod": "",
+          "rankDamageDice": 0,
+          "buffsResistances": "",
+          "debuff": "",
+          "notes": "",
+          "isArmorPiercing": false,
+          "healing": {
+            "barsBonus": 0,
+            "cleanseDebuff": ""
+          },
+          "rank": 15,
+          "critMultiplier": 1,
+          "damageType": "",
+          "contest": {
+            "dcBonus": 0,
+            "onFailDebuff": ""
+          }
+        },
+        "rank20": {
+          "damageDice": "",
+          "baseDiceCountMod": "",
+          "rankDamageDice": 0,
+          "buffsResistances": "",
+          "debuff": "",
+          "notes": "",
+          "isArmorPiercing": false,
+          "healing": {
+            "barsBonus": 0,
+            "cleanseDebuff": ""
+          },
+          "rank": 20,
+          "critMultiplier": 1,
+          "damageType": "",
+          "contest": {
+            "dcBonus": 0,
+            "onFailDebuff": ""
+          }
+        }
+      }
+    }
+  },
+  {
+    "_id": "dccskl1000000002",
+    "name": "Help",
+    "type": "skill",
+    "img": "icons/svg/aura.svg",
+    "system": {
+      "identifier": "help",
+      "tags": [
+        "kind.core",
+        "kind.skill",
+        "skillGroup.utility",
+        "stat.dex",
+        "trigger.before_ally_check"
+      ],
+      "rank": 0,
+      "stat": "dex",
+      "checkType": "none",
+      "checkNote": "None",
+      "description": "<p>Lend a hand before an ally's Skill Check outside combat. They add 1d6 if you have a Rank in any Skill of that Skill's group, 1d2 if you do not. One helper per check. Not for Stat Checks or party checks.</p>",
+      "assist": {
+        "formula": "1d6",
+        "untrainedFormula": "1d2",
+        "when": {
+          "all": [],
+          "any": [
+            "check.skill"
+          ],
+          "none": [
+            "check.stat",
+            "check.attack",
+            "check.party",
+            "situation.in_combat"
+          ]
+        }
+      },
+      "rankLimits": [
+        {
+          "route": "use",
+          "maxRank": 0
+        },
+        {
+          "route": "grind",
+          "maxRank": 0
+        },
+        {
+          "route": "training",
+          "maxRank": 0
+        }
+      ],
       "rankBreaks": {
         "rank5": {
           "damageDice": "",

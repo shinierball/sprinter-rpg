@@ -9,86 +9,143 @@ const code = (id) => `<code>${escapeAttr(id)}</code>`;
 const labelOf = (id) => COG_TAGS.find((d) => d.id === id)?.label ?? id;
 
 /**
- * Where each built-in namespace lives and what reads it (the Namespace Reference page). The grouping and the reader
+ * Where each built-in namespace lives (the Namespace Reference page; `guideReader` holds what reads it). The grouping and the reader
  * text are hand-written; the namespace list itself comes from `TAG_NAMESPACES`, and `tests/journal-tag-system.test.mjs`
  * fails when this map and the registry disagree. A namespace a module registers is listed under its own group.
  */
 export const NAMESPACE_GUIDE = Object.freeze({
   // Carried by items (typed on an item's Tags tab, or derived from its fields)
-  kind: { group: 'item', reader: 'The type of every document. <code>kind.core</code> (no Ranks), <code>kind.technique</code> and <code>kind.weapon</code> gate sheet and roll behaviour.' },
-  action: { group: 'item', reader: 'Attack, passive, heal, interrupt: which buttons and rolls an item gets. Entries such as <code>action.summon</code> are descriptive.' },
-  element: { group: 'item', reader: 'The damage type of a packet; resistance, immunity and vulnerability rows match it.' },
-  shape: { group: 'item', reader: 'Area geometry and the Place Area button. Any shape carrying the <code>area</code> flag also derives <code>shape.aoe</code>.' },
-  delivery: { group: 'item', reader: 'Placed, aura, self or target: how an effect is delivered. Auras pulse.' },
-  duration: { group: 'item', reader: 'Floor-clock durations and rest durations.' },
-  target: { group: 'item', reader: 'Who an area affects.' },
-  stat: { group: 'item', reader: 'The governing stat of an item; conditions and stat substitutions test it.' },
-  archetype: { group: 'item', reader: 'A class or race names its archetypes; spell Favored costs compare against them.' },
-  favored: { group: 'item', reader: 'The spell Favored check (the +1 MP penalty). Falls back to the matching <code>archetype.&lt;name&gt;</code>.' },
-  weapon: { group: 'item', reader: 'The weapon family; weapon skills find their gear by it.' },
-  weaponClass: { group: 'item', reader: 'Melee, ranged, unarmed, natural. Unarmed and natural attacks need no wielded weapon.' },
-  weaponGroup: { group: 'item', reader: 'A weapon family group, typed on a weapon and on its Skill (never derived); technique queries and row conditions test it.' },
-  weaponProp: { group: 'item', reader: 'Handling traits such as reach and thrown; range checks.' },
-  wield: { group: 'item', reader: 'One-handed or two-handed. Derived for weapons; a flexible two-hander is rewritten at roll time.' },
-  skillGroup: { group: 'item', reader: 'Skill pickers and lists (the contest tracker lists movement skills first); the animal-skill lockout.' },
-  technique: { group: 'item', reader: 'Names the skill a combat technique targets.' },
-  rule: { group: 'item', reader: 'Rule tags carry rows and flags the engine reads, or a named engine rule reads them.' },
-  perk: { group: 'item', reader: 'A race, class or benefit perk the engine cannot run. Descriptive: it carries no rows or flags and the system applies nothing for it; the tag shows the perk\'s text, and the GM adjudicates it.' },
-  trigger: { group: 'item', reader: 'Interrupt offers (page 15) and the derived on-hit, critical and fumble triggers.' },
-  interrupt: { group: 'item', reader: 'What an interrupt does to the attack that triggered it (page 15).' },
-  injury: { group: 'item', reader: 'Marks a debuff as an injury and its severity; Mend Injury removes by it and rest durations read it.' },
-  companion: { group: 'item', reader: 'Pet, vehicle, mount; the mount flag lets a pet be ridden.' },
-  race: { group: 'item', reader: '<code>race.form</code> marks a race that is only a transformation form: the race pickers leave it out, and an affliction names it to change a victim into it.' },
-  heritage: { group: 'item', reader: 'Derived from the heritage a race names (a registry id: earth, alien, pet, or one a module registers), never stored; a class can require one, and no other rule reads it.' },
-  role: { group: 'item', reader: 'Crew stations on vehicles and mounts; mercenary roles are descriptive.' },
-  space: { group: 'item', reader: 'The kind of personal space a space item is.' },
-  upgrade: { group: 'item', reader: 'The kind of upgrade a space upgrade is; the training and rest upgrades read it.' }, scene: { group: 'context', reader: 'Set on a scene by the Safe Room checkbox in Scene Config; a crawler token on such a scene opens loot boxes without a Rule Break.' },
-  worship: { group: 'derived', reader: 'Worship state, derived from a deity bond (<code>worship.active</code>, <code>worship.tier.1</code> to <code>worship.tier.3</code>) and carried by the buffs and debuffs a god gives (<code>worship.boon</code>, <code>worship.smite</code>, <code>worship.benefit</code>, <code>worship.divine</code>, <code>worship.fallen</code>).' },
-  worships: { group: 'derived', reader: '<code>worships.&lt;deity identifier&gt;</code>: the actor worships that god. Derived from a deity bond; typed on a mob or an NPC.' },
-  blessed: { group: 'item', reader: '<code>blessed.&lt;deity identifier&gt;</code>: gear blessed by that god. Registered for every deity that exists.' },
-  access: { group: 'item', reader: 'Descriptive: access to a club, guild or facility. The GM adjudicates it (page 17).' },
-  school: { group: 'item', reader: 'Descriptive: a spell\'s school or theme (illusion, healing, mind control). It shows as a line on the cast card; no rule reads it, and the GM adjudicates it (page 17).' },
-  sense: { group: 'item', reader: 'Descriptive: darkvision, water breathing and the like (page 17).' },
-  usage: { group: 'item', reader: 'How an item is used up. <code>usage.reusable</code> never changes, <code>usage.rechargeable</code> counts charges and stays at 0, <code>usage.consumable</code> is spent and leaves junk. <code>usage.restorable</code> makes the junk remember what it was, so a recharge can restore it. No tag means gear is reusable, anything with charges is rechargeable, and other loot is consumable.' },
-  material: { group: 'item', reader: '<code>material.crafting</code> marks loot as a crafting reagent and <code>material.misc_junk</code> the baseline Misc. Junk. The junk a used-up consumable leaves behind carries both; the crafting rules (row 3.15) read them.' },
-  crafting: { group: 'item', reader: '<code>crafting.table.&lt;type&gt;</code> is the type of a crafting table (a space upgrade), read by prefix: a blueprint\'s <code>tables</code> query names the types it needs and the lowest tier applies. <code>crafting.attachment.&lt;id&gt;</code> marks an attachment a blueprint may require. <code>crafting.coupon.table</code> marks loot that adds a table tier. <code>crafting.mode.*</code> is carried by a crafting check\'s context only.' },
-  vehicle: { group: 'item', reader: '<code>vehicle.skill.driving</code> and <code>vehicle.skill.chopper</code> mark the skills a vehicle kind finds by tag query; <code>vehicle.kind.&lt;id&gt;</code> is derived on a vehicle; <code>vehicle.upgrade.&lt;id&gt;</code> marks gear installed on one (crafting reads it for default skills). <code>vehicle.check.&lt;id&gt;</code> and <code>vehicle.explosion</code> are carried by a roll\'s context only (3.44).' },
-  pet: { group: 'item', reader: '<code>pet.skill.riding</code> marks the skill that rides a mount (the rider rules find it by tag); <code>pet.check.&lt;kind&gt;</code> is carried by a pet check\'s context only.' },
-  item: { group: 'item', reader: '<code>item.broken</code> (repairable) and <code>item.destroyed</code> (permanent) mark gear that crafting or the over-enchanting hazard broke. Equipping either asks a Rule Break. <code>item.trap</code> and <code>item.explosive</code> are descriptive: crafting rows may test them on the item being made.' },
-  custom: { group: 'item', reader: 'Yours. Whatever rows or flags you give a custom tag, the engine runs.' },
+  kind: { group: 'item' },
+  action: { group: 'item' },
+  element: { group: 'item' },
+  shape: { group: 'item' },
+  delivery: { group: 'item' },
+  duration: { group: 'item' },
+  target: { group: 'item' },
+  stat: { group: 'item' },
+  archetype: { group: 'item' },
+  favored: { group: 'item' },
+  weapon: { group: 'item' },
+  weaponClass: { group: 'item' },
+  weaponGroup: { group: 'item' },
+  weaponProp: { group: 'item' },
+  wield: { group: 'item' },
+  skillGroup: { group: 'item' },
+  technique: { group: 'item' },
+  rule: { group: 'item' },
+  perk: { group: 'item' },
+  trigger: { group: 'item' },
+  interrupt: { group: 'item' },
+  injury: { group: 'item' },
+  companion: { group: 'item' },
+  race: { group: 'item' },
+  heritage: { group: 'item' },
+  role: { group: 'item' },
+  space: { group: 'item' },
+  upgrade: { group: 'item' },
+  scene: { group: 'context' },
+  worship: { group: 'derived' },
+  worships: { group: 'derived' },
+  blessed: { group: 'item' },
+  access: { group: 'item' },
+  school: { group: 'item' },
+  sense: { group: 'item' },
+  usage: { group: 'item' },
+  material: { group: 'item' },
+  crafting: { group: 'item' },
+  vehicle: { group: 'item' },
+  pet: { group: 'item' },
+  item: { group: 'item' },
+  custom: { group: 'item' },
   // Carried by actors
-  species: { group: 'actor', reader: 'A crawler\'s origin at induction; the crawler creator and the animal-skill lockout read it.' },
-  mob: { group: 'actor', reader: 'Mob and boss classification: boss tier, unique, summoned, minion (page 16).' },
-  creature: { group: 'actor', reader: 'What a creature is. Per-target rows test it as <code>subject.creature.&lt;x&gt;</code>; owners may edit it on their own sheet.' },
+  species: { group: 'actor' },
+  mob: { group: 'actor' },
+  creature: { group: 'actor' },
   // Derived only
-  id: { group: 'derived', reader: 'The identity tag of an item, <code>id.&lt;type&gt;.&lt;identifier&gt;</code>. Grants, queries and rows use it to name one item.' },
-  condition: { group: 'derived', reader: 'Comes from a debuff\'s identifier, and from the debuffs an attack can inflict. Rows test <code>self.condition.&lt;x&gt;</code>.' },
-  resource: { group: 'derived', reader: 'Mana, Health Bars and temporary bars on healing and restoring items; <code>resource.health_N</code> on an actor that is hurt (page 14).' },
-  contest: { group: 'derived', reader: 'From an item\'s contest settings, plus the race and chase tags the engine sets on a leg\'s roll (page 14).' },
+  id: { group: 'derived' },
+  condition: { group: 'derived' },
+  resource: { group: 'derived' },
+  contest: { group: 'derived' },
   // Context only
-  check: { group: 'context', reader: 'What kind of roll this is. Only a roll\'s context carries it (page 14).' },
-  outcome: { group: 'context', reader: 'The degree of a finished check. Only cards carry it (page 14).' },
-  situation: { group: 'context', reader: 'A circumstance the engine cannot see; offered as a roll-dialog toggle, or set by the engine (page 8).' },
-  use: { group: 'context', reader: '<code>use.&lt;row key&gt;</code>: the once-per-Floor toggle (page 8).' },
-  self: { group: 'context', reader: 'Role prefix: a tag of the row\'s owner (page 8).' },
-  attacker: { group: 'context', reader: 'Role prefix: a tag of whoever is hitting you (page 8).' },
-  subject: { group: 'context', reader: 'Role prefix: a tag of the other party of a roll (page 8).' }
+  check: { group: 'context' },
+  outcome: { group: 'context' },
+  situation: { group: 'context' },
+  use: { group: 'context' },
+  self: { group: 'context' },
+  attacker: { group: 'context' },
+  subject: { group: 'context' }
 });
 
-const NAMESPACE_GROUPS = Object.freeze([
-  { key: 'item', title: 'Carried by items', intro: 'Typed on an item\'s Tags tab, or derived from its fields. Actors pick them up through the items they carry (page 8).' },
-  { key: 'actor', title: 'Carried by actors', intro: 'Typed on the actor\'s own Tags tab. <strong>Identity</strong> namespaces are the ones an actor\'s owner may edit; <strong>party</strong> namespaces describe an actor, so a row condition must say whose tag it is (<code>self.</code>, <code>subject.</code>, <code>attacker.</code>) and the row editor warns when it does not.' },
-  { key: 'derived', title: 'Derived only', intro: 'Worked out by the engine from fields and state. Set the field, not the tag (page 13).' },
-  { key: 'context', title: 'Context only', intro: 'Never carried by an item or an actor. They exist inside a roll or on a card, and rows test them.' },
-  { key: 'module', title: 'Registered by modules or the world', intro: 'Added with <code>registerTagNamespace</code> (page 18). The engine reads them only if the module that added them says how.' }
-]);
+/** The hand-written text of what reads a built-in namespace: markup of ours, a switch of literals so the escaping rail proves it. `''` for a namespace with none. */
+function guideReader(ns) {
+  switch (ns) {
+    case 'kind': return 'The type of every document. <code>kind.core</code> (no Ranks), <code>kind.technique</code> and <code>kind.weapon</code> gate sheet and roll behaviour.';
+    case 'action': return 'Attack, passive, heal, interrupt: which buttons and rolls an item gets. Entries such as <code>action.summon</code> are descriptive.';
+    case 'element': return 'The damage type of a packet; resistance, immunity and vulnerability rows match it.';
+    case 'shape': return 'Area geometry and the Place Area button. Any shape carrying the <code>area</code> flag also derives <code>shape.aoe</code>.';
+    case 'delivery': return 'Placed, aura, self or target: how an effect is delivered. Auras pulse.';
+    case 'duration': return 'Floor-clock durations and rest durations.';
+    case 'target': return 'Who an area affects.';
+    case 'stat': return 'The governing stat of an item; conditions and stat substitutions test it.';
+    case 'archetype': return 'A class or race names its archetypes; spell Favored costs compare against them.';
+    case 'favored': return 'The spell Favored check (the +1 MP penalty). Falls back to the matching <code>archetype.&lt;name&gt;</code>.';
+    case 'weapon': return 'The weapon family; weapon skills find their gear by it.';
+    case 'weaponClass': return 'Melee, ranged, unarmed, natural. Unarmed and natural attacks need no wielded weapon.';
+    case 'weaponGroup': return 'A weapon family group, typed on a weapon and on its Skill (never derived); technique queries and row conditions test it.';
+    case 'weaponProp': return 'Handling traits such as reach and thrown; range checks.';
+    case 'wield': return 'One-handed or two-handed. Derived for weapons; a flexible two-hander is rewritten at roll time.';
+    case 'skillGroup': return 'Skill pickers and lists (the contest tracker lists movement skills first); the animal-skill lockout.';
+    case 'technique': return 'Names the skill a combat technique targets.';
+    case 'rule': return 'Rule tags carry rows and flags the engine reads, or a named engine rule reads them.';
+    case 'perk': return 'A race, class or benefit perk the engine cannot run. Descriptive: it carries no rows or flags and the system applies nothing for it; the tag shows the perk\'s text, and the GM adjudicates it.';
+    case 'trigger': return 'Interrupt offers (page 15) and the derived on-hit, critical and fumble triggers.';
+    case 'interrupt': return 'What an interrupt does to the attack that triggered it (page 15).';
+    case 'injury': return 'Marks a debuff as an injury and its severity; Mend Injury removes by it and rest durations read it.';
+    case 'companion': return 'Pet, vehicle, mount; the mount flag lets a pet be ridden.';
+    case 'race': return '<code>race.form</code> marks a race that is only a transformation form: the race pickers leave it out, and an affliction names it to change a victim into it.';
+    case 'heritage': return 'Derived from the heritage a race names (a registry id: earth, alien, pet, or one a module registers), never stored; a class can require one, and no other rule reads it.';
+    case 'role': return 'Crew stations on vehicles and mounts; mercenary roles are descriptive.';
+    case 'space': return 'The kind of personal space a space item is.';
+    case 'upgrade': return 'The kind of upgrade a space upgrade is; the training and rest upgrades read it.';
+    case 'scene': return 'Set on a scene by the Safe Room checkbox in Scene Config; a crawler token on such a scene opens loot boxes without a Rule Break.';
+    case 'worship': return 'Worship state, derived from a deity bond (<code>worship.active</code>, <code>worship.tier.1</code> to <code>worship.tier.3</code>) and carried by the buffs and debuffs a god gives (<code>worship.boon</code>, <code>worship.smite</code>, <code>worship.benefit</code>, <code>worship.divine</code>, <code>worship.fallen</code>).';
+    case 'worships': return '<code>worships.&lt;deity identifier&gt;</code>: the actor worships that god. Derived from a deity bond; typed on a mob or an NPC.';
+    case 'blessed': return '<code>blessed.&lt;deity identifier&gt;</code>: gear blessed by that god. Registered for every deity that exists.';
+    case 'access': return 'Descriptive: access to a club, guild or facility. The GM adjudicates it (page 17).';
+    case 'school': return 'Descriptive: a spell\'s school or theme (illusion, healing, mind control). It shows as a line on the cast card; no rule reads it, and the GM adjudicates it (page 17).';
+    case 'sense': return 'Descriptive: darkvision, water breathing and the like (page 17).';
+    case 'usage': return 'How an item is used up. <code>usage.reusable</code> never changes, <code>usage.rechargeable</code> counts charges and stays at 0, <code>usage.consumable</code> is spent and leaves junk. <code>usage.restorable</code> makes the junk remember what it was, so a recharge can restore it. No tag means gear is reusable, anything with charges is rechargeable, and other loot is consumable.';
+    case 'material': return '<code>material.crafting</code> marks loot as a crafting reagent and <code>material.misc_junk</code> the baseline Misc. Junk. The junk a used-up consumable leaves behind carries both; the crafting rules (row 3.15) read them.';
+    case 'crafting': return '<code>crafting.table.&lt;type&gt;</code> is the type of a crafting table (a space upgrade), read by prefix: a blueprint\'s <code>tables</code> query names the types it needs and the lowest tier applies. <code>crafting.attachment.&lt;id&gt;</code> marks an attachment a blueprint may require. <code>crafting.coupon.table</code> marks loot that adds a table tier. <code>crafting.mode.*</code> is carried by a crafting check\'s context only.';
+    case 'vehicle': return '<code>vehicle.skill.driving</code> and <code>vehicle.skill.chopper</code> mark the skills a vehicle kind finds by tag query; <code>vehicle.kind.&lt;id&gt;</code> is derived on a vehicle; <code>vehicle.upgrade.&lt;id&gt;</code> marks gear installed on one (crafting reads it for default skills). <code>vehicle.check.&lt;id&gt;</code> and <code>vehicle.explosion</code> are carried by a roll\'s context only (3.44).';
+    case 'pet': return '<code>pet.skill.riding</code> marks the skill that rides a mount (the rider rules find it by tag); <code>pet.check.&lt;kind&gt;</code> is carried by a pet check\'s context only.';
+    case 'item': return '<code>item.broken</code> (repairable) and <code>item.destroyed</code> (permanent) mark gear that crafting or the over-enchanting hazard broke. Equipping either asks a Rule Break. <code>item.trap</code> and <code>item.explosive</code> are descriptive: crafting rows may test them on the item being made.';
+    case 'custom': return 'Yours. Whatever rows or flags you give a custom tag, the engine runs.';
+    case 'species': return 'A crawler\'s origin at induction; the crawler creator and the animal-skill lockout read it.';
+    case 'mob': return 'Mob and boss classification: boss tier, unique, summoned, minion (page 16).';
+    case 'creature': return 'What a creature is. Per-target rows test it as <code>subject.creature.&lt;x&gt;</code>; owners may edit it on their own sheet.';
+    case 'id': return 'The identity tag of an item, <code>id.&lt;type&gt;.&lt;identifier&gt;</code>. Grants, queries and rows use it to name one item.';
+    case 'condition': return 'Comes from a debuff\'s identifier, and from the debuffs an attack can inflict. Rows test <code>self.condition.&lt;x&gt;</code>.';
+    case 'resource': return 'Mana, Health Bars and temporary bars on healing and restoring items; <code>resource.health_N</code> on an actor that is hurt (page 14).';
+    case 'contest': return 'From an item\'s contest settings, plus the race and chase tags the engine sets on a leg\'s roll (page 14).';
+    case 'check': return 'What kind of roll this is. Only a roll\'s context carries it (page 14).';
+    case 'outcome': return 'The degree of a finished check. Only cards carry it (page 14).';
+    case 'situation': return 'A circumstance the engine cannot see; offered as a roll-dialog toggle, or set by the engine (page 8).';
+    case 'use': return '<code>use.&lt;row key&gt;</code>: the once-per-Floor toggle (page 8).';
+    case 'self': return 'Role prefix: a tag of the row\'s owner (page 8).';
+    case 'attacker': return 'Role prefix: a tag of whoever is hitting you (page 8).';
+    case 'subject': return 'Role prefix: a tag of the other party of a roll (page 8).';
+    default: return '';
+  }
+}
+
 
 function namespaceTable(groupKey) {
   const rows = Object.entries(TAG_NAMESPACES)
     .filter(([ns]) => (NAMESPACE_GUIDE[ns]?.group ?? 'module') === groupKey)
     .map(([ns, def]) => {
       const marks = [def.identity ? 'identity' : '', def.partyTag ? 'party' : ''].filter(Boolean).join(', ');
-      const reader = NAMESPACE_GUIDE[ns]?.reader ?? escapeAttr(def.description);
+      const reader = guideReader(ns) || escapeAttr(def.description);
       return `      <tr><td>${code(ns)}</td><td>${escapeAttr(def.label)}${marks ? ` <em>(${marks})</em>` : ''}</td><td>${reader}</td></tr>`;
     });
   if (!rows.length) return '';
@@ -101,12 +158,21 @@ ${rows.join('\n')}
   </table>`;
 }
 
+/** One group's heading, intro and table; `title` and `intro` are markup of ours, passed as literals. */
+function groupSection(key, title, intro) {
+  const table = namespaceTable(key);
+  return table ? `\n  <h3>${title}</h3>\n  <p>${intro}</p>${table}\n` : '';
+}
+
 export function namespaceReferenceHtml() {
   const count = Object.keys(TAG_NAMESPACES).length;
-  const sections = NAMESPACE_GROUPS.map((g) => {
-    const table = namespaceTable(g.key);
-    return table ? `\n  <h3>${g.title}</h3>\n  <p>${g.intro}</p>${table}\n` : '';
-  }).join('');
+  const sections = [
+    groupSection('item', 'Carried by items', 'Typed on an item\'s Tags tab, or derived from its fields. Actors pick them up through the items they carry (page 8).'),
+    groupSection('actor', 'Carried by actors', 'Typed on the actor\'s own Tags tab. <strong>Identity</strong> namespaces are the ones an actor\'s owner may edit; <strong>party</strong> namespaces describe an actor, so a row condition must say whose tag it is (<code>self.</code>, <code>subject.</code>, <code>attacker.</code>) and the row editor warns when it does not.'),
+    groupSection('derived', 'Derived only', 'Worked out by the engine from fields and state. Set the field, not the tag (page 13).'),
+    groupSection('context', 'Context only', 'Never carried by an item or an actor. They exist inside a roll or on a card, and rows test them.'),
+    groupSection('module', 'Registered by modules or the world', 'Added with <code>registerTagNamespace</code> (page 18). The engine reads them only if the module that added them says how.')
+  ].join('');
   return `
 <div class="cog-journal-page">
   <h2>Namespace Reference</h2>
@@ -207,6 +273,7 @@ damageModifiers: [
 const MOMENT_TEXT = Object.freeze({
   [TRIGGER_MOMENTS.attacked]: 'on an attack card',
   [TRIGGER_MOMENTS.check]: 'on an ally\'s d20 check card',
+  [TRIGGER_MOMENTS.beforeCheck]: 'in an ally\'s pre-roll dialog, before the check is rolled',
   [TRIGGER_MOMENTS.turn]: 'on the assister\'s own turn',
   [TRIGGER_MOMENTS.move]: 'when a foe\'s token moves'
 });

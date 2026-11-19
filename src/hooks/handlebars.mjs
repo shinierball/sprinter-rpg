@@ -50,6 +50,7 @@ import { COGEffectsPanel } from '../apps/effects-panel.mjs';
 import { COGSourceryImporterApp } from '../apps/sourcery-importer.mjs';
 import { COGCrawlerHotbarHUD, COGCrawlerActionHUD } from '../apps/crawler-token-hud.mjs';
 import { COGLootBoxShowApp } from '../apps/loot-box-show.mjs';
+import { COGLootBoxEditorApp } from '../apps/loot-box-editor.mjs';
 import { COGDeityGiftDialog } from '../apps/deity-gift-dialog.mjs';
 import { COGOfferingDialog } from '../apps/offering-dialog.mjs';
 
@@ -93,6 +94,7 @@ export const TEMPLATE_PATHS = Object.freeze([
   `${SYSTEM_PATH}/templates/shared/content-hint.hbs`,
   `${SYSTEM_PATH}/templates/shared/source-badge.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/page1-core.hbs`,
+  `${SYSTEM_PATH}/templates/actors/parts/improvised-attacks.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/identity-pet.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/pet-role.hbs`,
   `${SYSTEM_PATH}/templates/actors/parts/identity-mercenary.hbs`,
@@ -196,8 +198,12 @@ export const TEMPLATE_PATHS = Object.freeze([
   `${SYSTEM_PATH}/templates/items/parts/applied-buffs.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/blueprint.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/loot-box.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/loot-box-rows.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/outcome-cure-filter.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/outcome-spell-damage.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/outcome-recharge-amount.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/outcome-recharge-query.hbs`,
+  `${SYSTEM_PATH}/templates/items/parts/charges-recharge.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/reward-boxes.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/craft-materials.hbs`,
   `${SYSTEM_PATH}/templates/items/parts/enchantment-ledger.hbs`,
@@ -220,7 +226,7 @@ export const TOOL_APP_CLASSES = [
   COGCombatArchiveApp, COGCombatMetricsApp, COGSessionManagerApp, COGClassCreatorApp,
   COGRaceCreatorApp, COGCrawlerCreatorApp, COGMobCreatorV2App, COGPetCreatorApp, COGContestTrackerApp,
   COGFloorClockHUD, COGCrawlerClockHUD, COGEffectsPanel,
-  COGCrawlerHotbarHUD, COGCrawlerActionHUD, COGSourceryImporterApp, COGLootBoxShowApp, COGAuthorshipApp, COGThemeCleanupApp, COGSpacePricesApp, COGItemFromWordsApp, COGDraftReviewApp, COGItemSetupApp, COGWeaponBuilderApp, COGPopularityChecklistApp
+  COGCrawlerHotbarHUD, COGCrawlerActionHUD, COGSourceryImporterApp, COGLootBoxShowApp, COGLootBoxEditorApp, COGAuthorshipApp, COGThemeCleanupApp, COGSpacePricesApp, COGItemFromWordsApp, COGDraftReviewApp, COGItemSetupApp, COGWeaponBuilderApp, COGPopularityChecklistApp
 ];
 
 export function preloadTemplates() {

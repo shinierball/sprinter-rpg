@@ -1,4 +1,5 @@
 import { confirmRuleBreak, withRuleBreak, isRuleBreak } from '../../utils/rule-break.mjs';
+import { readFlag, writeFlag, flagPath, withFlags } from '../../utils/flags.mjs';
 import {
   RELAY_ACTION_PERSONAL_SPACE_LEAVE,
   addCrawlerToSpace,
@@ -29,10 +30,27 @@ import { confirmRouteGain } from './advancement-gates.mjs';
 import { ADVANCEMENT_ROUTES } from '../../utils/skill/advancement-routes.mjs';
 import { roomOf, tablesIn, confirmRoomFor, studioProblems, confirmStudioFor } from './space-room.mjs';
 import { spaceGroupFurniture } from './space-group.mjs';
-import { isGmOnlyItem, isUnopenedBox, refuseGmOnlyItem, refuseStashedBox } from './gm-only-items.mjs';
+import { isGmOnlyItem, isBoxTemplate, refuseGmOnlyItem, refuseStashedBox } from './gm-only-items.mjs';
 
-/** `flags.sprinter-rpg.restBuff` of the buff a rest in a personal space applies; found by this flag, never by name. */
+/** The `restBuff` flag of the buff a rest in a personal space applies; found by this flag, never by name. */
+const REST_BUFF_FLAG = 'restBuff';
 const WELL_RESTED_KEY = 'wellRested';
+/** The `spaceBuff` flag of a buff a space's upgrade granted: the buff's catalog id, so it is not granted twice. */
+const SPACE_BUFF_FLAG = 'spaceBuff';
+/** The `trainingState` flag of a crawler: `{ windowExpiresAt, sessionsUsedInWindow }` of the open Training Room window. */
+const TRAINING_STATE_FLAG = 'trainingState';
+
+const trainingStateOf = (crawler) => readFlag(crawler, TRAINING_STATE_FLAG);
+
+/** Store a crawler's Training Room window; an actor without `setFlag` (a plain double) is written in place and by `update`. */
+async function saveTrainingState(actor, state) {
+  if (typeof actor.setFlag === 'function') {
+    await writeFlag(actor, TRAINING_STATE_FLAG, state);
+    return;
+  }
+  actor.flags = withFlags(actor, { [TRAINING_STATE_FLAG]: state }).flags;
+  if (typeof actor.update === 'function') await actor.update({ [flagPath(TRAINING_STATE_FLAG)]: state });
+}
 /** The Well Rested buff's "+N to all Checks" as a structured roll row (no condition = every check). */
 const wellRestedRow = (value) => ({ kind: 'bonus', label: 'Well Rested', value });
 
@@ -56,7 +74,7 @@ async function performDeposit(crawler, space, itemId, { ruleBreak = false, perfo
   const item = crawler.items?.get(itemId);
   if (!item) return { ok: false, reason: 'missing' };
   if (item.system?.equipped) return { ok: false, reason: 'equipped' };
-  if (isUnopenedBox(item)) return { ok: false, reason: 'box' };
+  if (isBoxTemplate(item)) return { ok: false, reason: 'box' };
   if (performer && !performer.isGM && isGmOnlyItem(item)) return { ok: false, reason: 'gm-only' };
 
   const stashItems = getPersonalSpaceStashItems(crawler, space);
@@ -86,7 +104,7 @@ async function performDeposit(crawler, space, itemId, { ruleBreak = false, perfo
 async function performWithdraw(crawler, space, itemId, { performer = globalThis.game?.user } = {}) {
   const item = space.items?.get(itemId);
   if (!item) return { ok: false, reason: 'missing' };
-  if (isUnopenedBox(item)) return { ok: false, reason: 'box' };
+  if (isBoxTemplate(item)) return { ok: false, reason: 'box' };
   if (performer && !performer.isGM && isGmOnlyItem(item)) return { ok: false, reason: 'gm-only' };
 
   const itemData = item.toObject ? item.toObject() : structuredClone(item);
@@ -115,7 +133,7 @@ async function moveStashItem(crawler, mode, itemId, options = {}) {
     globalThis.ui?.notifications?.warn?.(`Only the owner of ${space.name} can use its stash.`);
     return false;
   }
-  // Boxes never go in or out of a stash (anyone); achievements move only for the GM.
+  // Box templates never go in or out of a stash (anyone); achievements move only for the GM.
   const moving = mode === 'deposit' ? crawler.items?.get(itemId) : space.items?.get(itemId);
   if (refuseStashedBox(moving) || refuseGmOnlyItem(moving)) return false;
   const perform = mode === 'deposit' ? performDeposit : performWithdraw;
@@ -189,7 +207,7 @@ const warnedMultiOwner = new Set();
  * @returns {string}
  */
 export function trainingWindowLabel(crawler, now) {
-  const state = typeof crawler?.getFlag === 'function' ? crawler.getFlag(SYSTEM_ID, 'trainingState') : crawler?.flags?.[SYSTEM_ID]?.trainingState;
+  const state = trainingStateOf(crawler);
   const stamp = { expiresAt: state?.windowExpiresAt };
   return isWithinWindow(stamp, now) ? formatWindow(stamp, now) : '';
 }
@@ -382,23 +400,22 @@ export async function restInPersonalSpace(actor, restType = 'long', options = {}
   // Apply / Refresh "Well Rested" buff
   if (effectiveWellRested > 0) {
     const itemsList = Array.from(actor.items ?? []);
-    const existingBuff = itemsList.find(i => i.type === 'buff' && i.flags?.[SYSTEM_ID]?.restBuff === WELL_RESTED_KEY);
+    const existingBuff = itemsList.find(i => i.type === 'buff' && readFlag(i, REST_BUFF_FLAG) === WELL_RESTED_KEY);
     if (existingBuff) {
       await existingBuff.update({
         'system.checkModifiers': [wellRestedRow(effectiveWellRested)],
         'system.duration': 'Until end of next rest'
       });
     } else {
-      const buffData = {
+      const buffData = withFlags({
         name: 'Well Rested',
         type: 'buff',
-        flags: { [SYSTEM_ID]: { restBuff: WELL_RESTED_KEY } },
         system: {
           checkModifiers: [wellRestedRow(effectiveWellRested)],
           duration: 'Until end of next rest',
           description: `Rested in ${space?.name || 'Safe Space'}. +${effectiveWellRested} bonus to all Checks.`
         }
-      };
+      }, { [REST_BUFF_FLAG]: WELL_RESTED_KEY });
       await actor.createEmbeddedDocuments('Item', [buffData]);
     }
   }
@@ -408,20 +425,19 @@ export async function restInPersonalSpace(actor, restType = 'long', options = {}
   const buffIds = Array.isArray(space?.system?.buffs) ? space.system.buffs : [];
   for (const id of buffIds) {
     if (typeof id !== 'string' || !id) continue;
-    const have = Array.from(actor.items ?? []).some(i => i.type === 'buff' && i.flags?.[SYSTEM_ID]?.spaceBuff === id);
+    const have = Array.from(actor.items ?? []).some(i => i.type === 'buff' && readFlag(i, SPACE_BUFF_FLAG) === id);
     if (have) continue;
     const match = findConditionEntry('buffs', id);
     if (!match) {
       console.warn(`${SYSTEM_ID} | ${space?.name || 'Personal space'} grants unknown buff "${id}"; nothing applied`);
       continue;
     }
-    await actor.createEmbeddedDocuments('Item', landItems([carrySourceStamp({
+    await actor.createEmbeddedDocuments('Item', landItems([carrySourceStamp(withFlags({
       name: match.name,
       type: 'buff',
       img: match.img || 'icons/svg/aura.svg',
-      system: { ...structuredClone(match.system || {}), active: true },
-      flags: { [SYSTEM_ID]: { spaceBuff: id } }
-    }, match)]));
+      system: { ...structuredClone(match.system || {}), active: true }
+    }, { [SPACE_BUFF_FLAG]: id }), match)]));
     spaceBuffs.push(match.name);
   }
 
@@ -532,7 +548,7 @@ export async function trainSkillInPersonalSpace(actor, skillOrId, options = {}) 
   const windowHours = Number(training.windowHours) || 30;
   const sessionsPerWindow = Number.isFinite(Number(training.sessionsPerWindow)) ? Number(training.sessionsPerWindow) : 1;
   const hourCost = Math.max(0, Number.isFinite(Number(training.hourCost)) ? Number(training.hourCost) : 1);
-  const rawFlag = typeof actor.getFlag === 'function' ? actor.getFlag(SYSTEM_ID, 'trainingState') : actor.flags?.[SYSTEM_ID]?.trainingState;
+  const rawFlag = trainingStateOf(actor);
   const trainingState = rawFlag ? structuredClone(rawFlag) : { windowExpiresAt: null, sessionsUsedInWindow: 0 };
   if (!isWithinWindow({ expiresAt: trainingState.windowExpiresAt }, now)) {
     trainingState.windowExpiresAt = openWindow(windowHours, now).expiresAt;
@@ -571,14 +587,7 @@ export async function trainSkillInPersonalSpace(actor, skillOrId, options = {}) 
   if (check.passed) outcome = advanced ? 'gain' : (gainResult?.limit === 'limited' || gainResult?.reason === 'floor-ranked' ? 'limited' : 'capped');
 
   trainingState.sessionsUsedInWindow = (Number(trainingState.sessionsUsedInWindow) || 0) + 1;
-  if (typeof actor.setFlag === 'function') {
-    await actor.setFlag(SYSTEM_ID, 'trainingState', trainingState);
-  } else {
-    actor.flags ??= {};
-    actor.flags[SYSTEM_ID] ??= {};
-    actor.flags[SYSTEM_ID].trainingState = trainingState;
-    if (typeof actor.update === 'function') await actor.update({ [`flags.${SYSTEM_ID}.trainingState`]: trainingState });
-  }
+  await saveTrainingState(actor, trainingState);
 
   if (!options.silent) {
     await postAdvancementCard(actor, {

@@ -8,8 +8,7 @@
  * is a confirm that records `ruleBreak: true`. Crafting hours come off the floor clock and are not banked as grind hours;
  * the check marks the skill like any skill check.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
-import { confirmRuleBreak, markRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
 import { landingFor } from '../../utils/content-source.mjs';
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
@@ -29,6 +28,7 @@ import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { craftText } from '../../utils/crafting/craft-text.mjs';
+import { craftedUpdate, craftGradeOf } from '../../utils/crafting/craft-flags.mjs';
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
 import { buildPayload } from '../../data/builders/item-payload.mjs';
@@ -245,12 +245,7 @@ export async function resolveOutputTemplate(bp) {
 /** The `crafted` provenance flag (C7) on an item, plus `ruleBreak` when a break was confirmed. */
 async function stampCrafted(item, crafted, ruleBreak) {
   if (!item) return;
-  if (typeof item.setFlag === 'function') {
-    await item.setFlag(SYSTEM_ID, 'crafted', crafted);
-    if (ruleBreak) await markRuleBreak(item);
-  } else {
-    await item.update({ [`flags.${SYSTEM_ID}.crafted`]: crafted, ...(ruleBreak ? ruleBreakUpdate() : {}) });
-  }
+  await item.update({ ...craftedUpdate(crafted), ...(ruleBreak ? ruleBreakUpdate() : {}) });
 }
 
 /** Create `units` of the output template on the crawler, compiled through `buildPayload`. */
@@ -294,7 +289,7 @@ function craftResultCardHtml(data) {
     ].filter(Boolean);
     return `<li><strong>${escapeAttr(s.label || s.kind)}</strong>: ${escapeAttr(outcome)}${s.dc !== undefined ? ` (Difficulty ${escapeAttr(s.dc)})` : ''}`
       + `, ${escapeAttr(s.hours)} h${extras.length ? `; ${escapeAttr(extras.join(', '))}` : ''}`
-      + `${salvage.length ? `<br><em>${salvage.join('; ')}</em>` : ''}</li>`;
+      + `${salvage.length ? `<br><em>${escapeAttr(salvage.join('; '))}</em>` : ''}</li>`;
   }).join('');
   const made = asArray(data.made).map((m) => `<li>${escapeAttr(m)}</li>`).join('');
   const breaks = asArray(data.ruleBreaks).map((b) => `<li>${escapeAttr(b)}</li>`).join('');
@@ -451,7 +446,7 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
       craft: craftRefOf(step, target, template, blueprint),
       craftSources: craftSpaceSources(furniture, linked, step)
     });
-    const info = message?.flags?.[SYSTEM_ID]?.craft;
+    const info = craftGradeOf(message);
     if (!info) {
       result.success = false;
       result.refusal = 'roll-declined';

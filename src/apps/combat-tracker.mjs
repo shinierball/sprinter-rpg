@@ -246,7 +246,7 @@ export class COGCombatTracker extends BaseCombatTracker {
   static #paintTarget(btn, targeted) {
     btn.classList.toggle('is-targeted', targeted);
     btn.classList.toggle('active', targeted);
-    btn.setAttribute('data-tooltip', targeted ? TARGET_TIP_ON : TARGET_TIP_OFF);
+    btn.setAttribute('data-tooltip-text', targeted ? TARGET_TIP_ON : TARGET_TIP_OFF);
   }
 
   /* -------------------------------------------- */

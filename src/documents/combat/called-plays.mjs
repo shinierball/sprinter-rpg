@@ -5,8 +5,7 @@
  * the `calledPlay` relay.
  */
 
-import { SYSTEM_ID } from '../../constants.mjs';
-import { flagPath, readFlag, clearFlag } from '../../utils/flags.mjs';
+import { flagPath, readFlag, readFlags, clearFlag } from '../../utils/flags.mjs';
 import { registerRelayAction, dispatchRelay, requestRelay } from '../../utils/gm-relay.mjs';
 import { messageAuthorId } from '../../chat/chat-relay.mjs';
 import { readCheckRecord, getAssistSpec } from '../../utils/roll/check-assists.mjs';
@@ -131,7 +130,7 @@ function userMayActFor(user, actor) {
  */
 function checkStoreCalledPlay(payload, user) {
   const message = messageById(payload?.callMessageId);
-  const flags = message?.flags?.[SYSTEM_ID];
+  const flags = message ? readFlags(message, ['isCalledPlay', 'fromUuid', 'round', 'allyCombatantId', 'itemId', 'skillName', 'when']) : null;
   if (!message || !flags || flags.isCalledPlay !== true) return { ok: false, reason: 'not-called-play' };
   if (!isCalledPlayId(message.id)) return { ok: false, reason: 'bad-id' };
   const authorId = messageAuthorId(message);

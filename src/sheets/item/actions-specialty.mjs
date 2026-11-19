@@ -2,7 +2,7 @@
  * Skill specialty actions (3.15 G4a, G4-D3). The first pick is free; changing or clearing a set specialty asks a Rule
  * Break confirm (never a block) and, once confirmed, flags the skill. Every handler runs with `this` = the item sheet.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { writeFlag } from '../../utils/flags.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { sanitizeSpecialty } from '../../utils/skill/skill-specialty.mjs';
 import { specialtyLabel } from '../../utils/skill/skill-specialty-options.mjs';
@@ -36,7 +36,7 @@ export async function applySkillSpecialty(item, raw) {
     ruleBreak = true;
   }
   await item.update({ 'system.specialty': next });
-  if (ruleBreak) await item.setFlag(SYSTEM_ID, SPECIALTY_RULE_BREAK_FLAG, true);
+  if (ruleBreak) await writeFlag(item, SPECIALTY_RULE_BREAK_FLAG, true);
   return true;
 }
 

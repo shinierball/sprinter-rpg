@@ -7,12 +7,23 @@ import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.
 import { messageList, MAX_CARD_SCAN } from '../../utils/card/recent-cards.mjs';
 import { AI_FAVOR_OFFER_KEY } from '../../utils/roll/check-offers.mjs';
 import { checkCardInfo, checkNameOf } from './check-after-roll.mjs';
+import { messageAuthorId } from '../../chat/chat-relay.mjs';
 import { ABILITIES } from '../../utils/ui/field-options.mjs';
 
-/** A stat check is recorded by its key (`str`); people read the stat's name. */
-const readableName = (record) => { const name = checkNameOf(record); return ABILITIES[name] ?? name; };
+/** What a record kind is called when no item on the record still resolves. */
+const KIND_NAMES = Object.freeze({ evade: 'Evade', attack: 'Attack', spell: 'Spell', skill: 'Skill check', stat: 'Stat check' });
 
-const authorIdOf = (message) => message?.author?.id ?? message?.author ?? null;
+/** The kinds a stat names: a Stat check, and a Skill check whose Skill no longer resolves. An Evade also records its stat
+ *  (Dex), but people call it an Evade. */
+const STAT_NAMED_KINDS = new Set(['stat', 'skill']);
+
+/** A roll's name: its item's, else its stat's name (`str` reads Strength) for the kinds a stat names, else its kind's. */
+const readableName = (record) => {
+  const name = checkNameOf(record);
+  const fromStat = Boolean(record.stat) && name === record.stat;
+  if (name === record.kind || (fromStat && !STAT_NAMED_KINDS.has(record.kind))) return KIND_NAMES[record.kind] ?? record.kind;
+  return ABILITIES[name] ?? name;
+};
 
 /**
  * The latest check record `user` rolled for `actor`: `{ message, record, name, total }`, or null. A reroll card carries no
@@ -26,7 +37,7 @@ export function latestRollFor(actor, user, messages = globalThis.game?.messages)
   const list = messageList(messages).slice(-MAX_CARD_SCAN);
   let best = null;
   list.forEach((message, index) => {
-    if (authorIdOf(message) !== user.id) return;
+    if (messageAuthorId(message) !== user.id) return;
     const record = readCheckRecord(message);
     if (!record || record.rollerUuid !== actor.uuid) return;
     const stamp = Number(message.timestamp) || 0;

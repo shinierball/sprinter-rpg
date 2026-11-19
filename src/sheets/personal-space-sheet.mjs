@@ -7,7 +7,7 @@ import { ADVANCEMENT_ROUTES, routeAllowsGain } from '../utils/skill/advancement-
 import { currentTimeContext } from '../documents/actor/dungeon-time.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
-import { unopenedBoxUnits } from '../documents/actor/loot-box-open.mjs';
+import { unopenedBoxUnits } from '../documents/actor/loot-box-entries.mjs';
 import { removeCrawlerFromSpace, resolveSpace, spaceMembers, userOwnsActor, worldCrawlers, worldSpaces } from '../documents/actor/personal-space-links.mjs';
 import { joinedLinks, spaceGroup } from '../documents/actor/space-group.mjs';
 import { applyTableCoupon, buyTableTier, isCraftingTable, isStudio, tableCoupons } from '../documents/actor/crafting-tables.mjs';

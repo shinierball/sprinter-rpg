@@ -7,6 +7,7 @@
  * reader here ever reports an Amazing Success for it.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { cardFloorOf } from '../combat/card-flags.mjs';
 import { COG_ROLL_OUTCOMES } from '../../documents/session/roll-outcomes.mjs';
 import { ENGINE_SITUATIONS, identityTag } from '../../data/tag-vocabulary.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
@@ -14,6 +15,7 @@ import { queryReferences } from '../tag/tag-query.mjs';
 import { readCheckRecord, effectiveCheck } from './check-assists.mjs';
 import { WEAPON_CAPABLE_TYPES } from '../document-types.mjs';
 import { escapeAttr, jsonAttr } from '../escape-attr.mjs';
+import { langText } from '../lang-text.mjs';
 
 export const AS_TRIGGER_TYPES = Object.freeze(['debuff', 'narrative']);
 /** Read cap: a stored array longer than this is truncated with one console warning. */
@@ -116,7 +118,7 @@ export function isAmazingOutcome(outcomeId) {
 }
 
 function floorOf(message) {
-  const raw = typeof message?.getFlag === 'function' ? message.getFlag(SYSTEM_ID, 'currentFloor') : message?.flags?.[SYSTEM_ID]?.currentFloor;
+  const raw = cardFloorOf(message);
   const n = Number(raw);
   return raw !== null && raw !== undefined && raw !== '' && Number.isFinite(n) ? Math.max(0, Math.floor(n)) : null;
 }
@@ -214,11 +216,7 @@ const CARD_TEXT = Object.freeze({
 });
 
 /** A card string, formatted; works without a loaded i18n catalogue. */
-export function amazingCardText(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return (CARD_TEXT[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+export const amazingCardText = langText(CARD_TEXT);
 
 
 /** The source attack or spell card of a damage roll, from its message id; null when it is not in the log. */

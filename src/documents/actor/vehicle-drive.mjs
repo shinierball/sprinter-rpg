@@ -7,22 +7,15 @@
  * The relay registers when this module is evaluated; `hooks/ready.mjs` imports it at startup. Imports no sheet and not
  * `actor.mjs`.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { isMigrationWrite } from '../migrations/world-migration.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { registerRelayAction } from '../../utils/gm-relay.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
-import { readCheckRecord, CHECK_RECORD_FLAG } from '../../utils/roll/check-assists.mjs';
-import { flagPath } from '../../utils/flags.mjs';
-import { offerByKey } from '../../utils/roll/after-roll.mjs';
-import { gateItemCooldown } from './cooldown-gate.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
 import { resultEffect, VEHICLE_CHECK_RESULTS } from '../../data/rules/vehicle-rules.mjs';
 import { str, say, speakerOf, gmWhisper, messageById, RELAY_ACTION_VEHICLE_DRIVE } from './vehicle-drive-common.mjs';
 import { vehicleNow, writeVehicleSpeed } from './vehicle-move.mjs';
-import { settleVehicleResult, syncCard, ingestVehicleCheck, ingestVehicleCheckNow } from './vehicle-checks.mjs';
-import { vehicleCardInfo } from './vehicle-after-roll.mjs';
-import { findCarrier } from './check-after-roll.mjs';
+import { settleVehicleResult, syncCard, ingestVehicleCheck } from './vehicle-checks.mjs';
 import { ramFlag, applyCollision, explodeVehicle } from './vehicle-ram.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 
@@ -45,7 +38,7 @@ export function resetVehicleDriveHooks() {
 // ---------------------------------------------------------------------------------------------------------------
 // The relay: writes by someone who cannot write the vehicle
 
-const OPS = Object.freeze(['speed', 'choose', 'shift', 'spend', 'clear', 'override', 'useItem', 'collision', 'explode']);
+const OPS = Object.freeze(['speed', 'choose', 'clear', 'override', 'collision', 'explode']);
 
 const driverActorOf = (vehicle) => resolveActorByUuid(str(vehicle.system?.pilotUuid)) ?? null;
 
@@ -60,11 +53,6 @@ function authorizeOp(payload, user) {
   const owner = userOwnsActor(vehicle, user);
   if (op === 'speed' || op === 'clear') return owner || userOwnsActor(driverActorOf(vehicle), user);
   if (op === 'choose') return owner || userOwnsActor(resolveActorByUuid(str(vehicle.system.drive?.result?.driverUuid)), user);
-  if (op === 'shift' || op === 'spend' || op === 'useItem') {
-    // The roller's owner, for a card that names this vehicle (a vehicle owner is not the roller).
-    const record = readCheckRecord(messageById(str(payload.messageId)));
-    return Boolean(record?.vehicle) && record.vehicle.vehicleUuid === str(payload.vehicleUuid) && userOwnsActor(resolveActorByUuid(record.rollerUuid), user);
-  }
   if (op === 'collision') {
     // The ramming vehicle's driver (or an owner of it), for a ram card that names this vehicle.
     const ram = ramFlag(messageById(str(payload.messageId)));
@@ -85,28 +73,6 @@ async function applyChoose(vehicle, payload) {
   });
   const message = messageById(messageId);
   if (message) await syncCard(message, { outcome: stored.outcome, choice: settled.choice });
-  return { ok: true };
-}
-
-async function applyShift(vehicle, payload) {
-  const message = messageById(str(payload.messageId));
-  const info = message ? vehicleCardInfo(message) : null;
-  if (!info || info.ref.vehicleUuid !== str(payload.vehicleUuid)) return { ok: false, reason: 'no-card' };
-  const offer = offerByKey(info.offers, str(payload.rowKey));
-  if (offer?.kind !== 'degreeShift') return { ok: false, reason: 'no-offer' };
-  // The carrier's cooldown is gated here, on the GM, whatever the client did: a use on cooldown is a Rule Break on the card.
-  const carrier = findCarrier(info, offer);
-  let flags = {};
-  if (carrier) {
-    const gate = await gateItemCooldown(info.roller, carrier, { options: { ruleBreak: true } });
-    if (!gate.proceed) return { ok: false, reason: 'cooldown-declined' };
-    await gate.commit();
-    flags = Object.fromEntries(Object.entries(gate.flags).map(([k, v]) => [`flags.${SYSTEM_ID}.${k}`, v]));
-  }
-  const shifts = [...info.record.shifts, { rowKey: offer.rowKey, steps: offer.steps, failOnly: offer.failOnly }];
-  await message.update({ [flagPath(`${CHECK_RECORD_FLAG}.shifts`)]: shifts, ...flags });
-  // The card is the truth: settle from it, whether or not the update hook has run yet.
-  await ingestVehicleCheckNow(message);
   return { ok: true };
 }
 
@@ -137,32 +103,6 @@ async function applyClear(vehicle, user) {
   return { ok: true };
 }
 
-/** Spend one offer's row key on its card (a reroll was made). Idempotent; only a key the card offers, or has already spent. */
-async function applySpend(vehicle, payload) {
-  const message = messageById(str(payload.messageId));
-  const info = message ? vehicleCardInfo(message) : null;
-  if (!info || info.ref.vehicleUuid !== vehicle.uuid) return { ok: false, reason: 'no-card' };
-  const rowKey = str(payload.rowKey);
-  if (info.spent.includes(rowKey)) return { ok: true };
-  if (!offerByKey(info.offers, rowKey)) return { ok: false, reason: 'no-offer' };
-  await message.update({ [flagPath(`${CHECK_RECORD_FLAG}.offersUsed`)]: [...info.record.offersUsed, rowKey] });
-  return { ok: true };
-}
-
-/** Record a use of an item that carries a current offer on the named card; any other item is refused. */
-async function applyUseItem(vehicle, payload) {
-  const message = messageById(str(payload.messageId));
-  const info = message ? vehicleCardInfo(message) : null;
-  if (!info || info.ref.vehicleUuid !== vehicle.uuid) return { ok: false, reason: 'no-card' };
-  const item = vehicle.items.get(str(payload.itemId)) ?? null;
-  if (!item) return { ok: false, reason: 'no-item' };
-  const offer = offerByKey(info.offers, str(payload.rowKey));
-  if (!offer || findCarrier(info, offer) !== item) return { ok: false, reason: 'no-offer' };
-  const gate = await gateItemCooldown(vehicle, item, { options: { ruleBreak: true } });
-  if (gate.proceed) await gate.commit();
-  return { ok: true };
-}
-
 registerRelayAction(RELAY_ACTION_VEHICLE_DRIVE, {
   authorize: authorizeOp,
   apply: (payload, user) => {
@@ -176,11 +116,8 @@ registerRelayAction(RELAY_ACTION_VEHICLE_DRIVE, {
           return { ok: await writeVehicleSpeed(vehicle, Math.trunc(raw)) };
         }
         case 'choose': return applyChoose(vehicle, payload);
-        case 'shift': return applyShift(vehicle, payload);
-        case 'spend': return applySpend(vehicle, payload);
         case 'clear': return applyClear(vehicle, user);
         case 'override': return applyOverride(vehicle, payload);
-        case 'useItem': return applyUseItem(vehicle, payload);
         case 'collision': return applyCollision(vehicle, payload);
         case 'explode': return explodeVehicle(vehicle, { messageId: str(payload.messageId) });
         default: return { ok: false, reason: 'rejected' };

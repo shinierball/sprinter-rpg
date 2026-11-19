@@ -2,6 +2,7 @@
  * "Apply Debuff" / "Apply Condition" chat button.
  */
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { resolveActorByUuid, findTokenByActorUuid, isSameActor } from '../../utils/actor-uuid.mjs';
 import { applyCardEffect, registerChatApplier, canWriteTarget } from '../chat-relay.mjs';
 import { tokensInCardArea } from './area-membership.mjs';
@@ -124,7 +125,7 @@ export async function handleApplyCondition(event, button, message) {
     card.querySelectorAll('.cog-condition-applied-feedback').forEach(el => el.remove());
     const feedbackHtml = `
           <div class="cog-condition-applied-feedback cog-bg-danger-tint cog-text-accent" style="margin-top: 6px; font-size: 11px; border: 1px solid var(--cog-danger); padding: 4px 6px; border-radius: 3px; font-family: 'Oswald', sans-serif;">
-            <i class="fa-solid fa-skull"></i> Inflicted [${tagLabel}] on ${names}.
+            <i class="fa-solid fa-skull"></i> Inflicted [${escapeAttr(tagLabel)}] on ${escapeAttr(names)}.
           </div>
         `;
     card.insertAdjacentHTML('beforeend', feedbackHtml);

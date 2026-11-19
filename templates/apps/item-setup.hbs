@@ -5,12 +5,12 @@
     <p class="cog-text-secondary">{{localize "COG.ItemSetup.Pick.Intro"}}</p>
     <div class="cog-item-setup-kinds" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
       {{#each kinds as |kind|}}
-        <button type="button" class="cog-btn cog-btn-secondary" data-action="pickKind" data-kind="{{kind.id}}" data-tooltip="{{kind.hint}}" style="text-align: left; display: flex; align-items: center; gap: 6px;">
+        <button type="button" class="cog-btn cog-btn-secondary" data-action="pickKind" data-kind="{{kind.id}}" data-tooltip-text="{{kind.hint}}" style="text-align: left; display: flex; align-items: center; gap: 6px;">
           <i class="fa-solid {{kind.icon}}"></i> {{kind.label}}
         </button>
       {{/each}}
       {{#if canBuild}}
-      <button type="button" class="cog-btn cog-btn-secondary" data-action="openWeaponBuilder" data-tooltip="{{weaponBuilderHint}}" style="text-align: left; grid-column: span 2; display: flex; align-items: center; gap: 6px;">
+      <button type="button" class="cog-btn cog-btn-secondary" data-action="openWeaponBuilder" data-tooltip-text="{{weaponBuilderHint}}" style="text-align: left; grid-column: span 2; display: flex; align-items: center; gap: 6px;">
         <i class="fa-solid fa-crosshairs"></i> {{weaponBuilderLabel}}
       </button>
       {{/if}}
@@ -24,7 +24,7 @@
     {{/each}}
 
     {{#if isWeapon}}
-      {{#if canBuild}}<p class="cog-item-setup-builder-link"><a data-action="openWeaponBuilder" data-tooltip="{{weaponBuilderLinkHint}}"><i class="fa-solid fa-sliders"></i> {{weaponBuilderLink}}</a></p>{{/if}}
+      {{#if canBuild}}<p class="cog-item-setup-builder-link"><a data-action="openWeaponBuilder" data-tooltip-text="{{weaponBuilderLinkHint}}"><i class="fa-solid fa-sliders"></i> {{weaponBuilderLink}}</a></p>{{/if}}
     {{/if}}
 
     <footer style="display: flex; gap: 6px; margin-top: 8px;">

@@ -9,8 +9,7 @@ import { floorLabel } from '../../utils/floor/floor-number.mjs';
 import { getFloorArrival, remainingArrivals, runForStartFloor } from '../floor-arrivals.mjs';
 import { cleanInt, cleanText, createState } from './state.mjs';
 import { getStepHandler } from './steps/index.mjs';
-
-const FLAG_SCOPE = 'sprinter-rpg';
+import { floorRunUpdate } from './run-flag.mjs';
 
 function cleanSpec(raw) {
   const spec = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
@@ -52,7 +51,7 @@ function resolveRun(spec, snapshot, context) {
   if (!remaining.length) {
     if (startFloor !== cleanInt(run.startFloor)) {
       // Switching to a run that is already finished (D1a): mark it complete and change nothing else.
-      return { result: emptyResult(null, [], { actorUpdate: { [`flags.${FLAG_SCOPE}.floorRun`]: { startFloor, done, complete: true } }, switchedOnly: true }) };
+      return { result: emptyResult(null, [], { actorUpdate: floorRunUpdate({ startFloor, done, complete: true }), switchedOnly: true }) };
     }
     return { result: refuse(null, 'This crawler has no arrivals left to run.') };
   }
@@ -137,7 +136,7 @@ export function simulateFloorArrival(rawSpec, snapshot, context, { rng } = {}) {
   const actorUpdate = { 'system.details.floor': floorLabel(floor) };
   if (state.aiFavorChanged) actorUpdate['system.attributes.aiFavor'] = state.aiFavor;
   if (state.popularityChanged) actorUpdate['system.details.popularity'] = state.popularity;
-  actorUpdate[`flags.${FLAG_SCOPE}.floorRun`] = { startFloor: floorRun.startFloor, done, ...(complete ? { complete: true } : {}) };
+  Object.assign(actorUpdate, floorRunUpdate({ startFloor: floorRun.startFloor, done, ...(complete ? { complete: true } : {}) }));
 
   const produced = [...state.produced.values()];
   const ruleBreaks = {

@@ -3,7 +3,7 @@
  * row with a `percent` is worked out once, when the item lands on an actor, and the number is kept on the row as
  * `locked`. Buff and debuff rows never lock: they are always live.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, flagPath, withFlags } from '../../utils/flags.mjs';
 import { resolveBaseScore } from '../../models/actors/actor-derivation.mjs';
 import { PERCENT_STAT_MODES, percentStatMode, roundPercent } from '../../utils/character/stat-percent.mjs';
 import { EFFECT_ITEM_TYPES } from '../../utils/document-types.mjs';
@@ -15,8 +15,8 @@ const isPercentRow = (g) => g?.kind === 'stat' && (!g.mode || g.mode === 'fixed'
 const isEmptyLock = (g) => g?.locked === null || g.locked === undefined || g.locked === '';
 
 /** The item flag naming the actor its lock was worked out for (an item flag, so no schema field). */
-export const PERCENT_LOCK_OWNER_FLAG = 'percentLockOwner';
-const OWNER_FLAG_PATH = `flags.${SYSTEM_ID}.${PERCENT_LOCK_OWNER_FLAG}`;
+const PERCENT_LOCK_OWNER_FLAG = 'percentLockOwner';
+const OWNER_FLAG_PATH = flagPath(PERCENT_LOCK_OWNER_FLAG);
 
 /** The uuid an actor's locks are filed under; '' while it has no id yet. */
 function lockOwnerKey(actor) {
@@ -29,8 +29,7 @@ function lockOwnerKey(actor) {
 
 /** The owner recorded on an item or item source; anything but a non-empty string reads as no owner. */
 function readLockOwner(item) {
-  const flags = item?.flags ?? item?._source?.flags;
-  const val = flags?.[SYSTEM_ID]?.[PERCENT_LOCK_OWNER_FLAG];
+  const val = readFlag(item?.flags ? item : item?._source, PERCENT_LOCK_OWNER_FLAG);
   return typeof val === 'string' ? val.trim() : '';
 }
 
@@ -124,7 +123,7 @@ export function lockEmbeddedOnActorCreate(actor) {
     if (!changed && !flagChanged) continue;
     const update = { _id: item._id };
     if (changed) update.system = { grants };
-    if (flagChanged) update.flags = { [SYSTEM_ID]: { [PERCENT_LOCK_OWNER_FLAG]: key } };
+    if (flagChanged) update.flags = withFlags({}, { [PERCENT_LOCK_OWNER_FLAG]: key }).flags;
     updates.push(update);
   }
   if (!updates.length) return false;

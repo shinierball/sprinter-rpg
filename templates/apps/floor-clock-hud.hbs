@@ -1,7 +1,8 @@
 <div class="cog-hud-content {{#if isCollapsed}}collapsed{{/if}}" data-tooltip="Floor Collapse Timer Clock">
   {{#if isCollapsed}}
     <div class="cog-hud-pill-collapsed" style="display: flex; align-items: center; gap: 6px; padding: 3px 8px;">
-      <button type="button" data-action="toggleCollapsed" class="cog-floor-hud-toggle-btn cog-bg-none cog-text-on-fill" title="Floor Timer Clock: {{floorTimerText}} Hours Remaining. Click to expand." style="border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: 'Oswald', sans-serif; font-size: 13px; padding: 0;">
+      <button type="button" data-action="toggleCollapsed" class="cog-floor-hud-toggle-btn cog-bg-none cog-text-on-fill" title="Floor {{currentFloor}} Collapse Clock: {{floorTimerText}} Hours Remaining. Click to expand." style="border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: 'Oswald', sans-serif; font-size: 13px; padding: 0;">
+        <span class="cog-hud-floor-badge">F{{currentFloor}}</span>
         <i class="fa-solid fa-hourglass-half fa-spin-pulse cog-text-warning" style="--fa-animation-duration: 4s;"></i>
         <span class="cog-hud-collapsed-val cog-dark cog-text-warning" style="font-weight: bold;">{{floorTimerShort}}</span>
       </button>

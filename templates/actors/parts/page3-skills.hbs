@@ -44,34 +44,34 @@
               {{#if (or skill.isGranted skill.isCore ../isPet)}}
                 <span class="cog-text-secondary" style="font-size: 11px;">—</span>
               {{else if skill.useLocked}}
-                <i class="fa-solid fa-lock cog-text-secondary cog-skill-lock" title="{{skill.advanceNote}}. Using this skill does not mark it for advancement at this Rank." data-tooltip="{{skill.advanceNote}}"></i>
+                <i class="fa-solid fa-lock cog-text-secondary cog-skill-lock" title="{{skill.advanceNote}}. Using this skill does not mark it for advancement at this Rank." data-tooltip-text="{{skill.advanceNote}}"></i>
               {{else}}
                 <input class="cog-field-input cog-ac-success cog-checkbox-center" data-change-action="editItemField" type="checkbox" data-field="system.checked" {{#if skill.isChecked}}checked{{/if}} title="Marked when you use the skill in play. A marked skill gets a Skill Advancement Check at the next 2-hour check (Rank 4 or lower) or end of floor (Rank 5 or higher)." />
               {{/if}}
             </td>
             <td>
-              <div style="display: flex; align-items: center; gap: 6px;">
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
                 <img class="cog-bg-icon-box" src="{{skill.img}}" style="width: 20px; height: 20px; border: 1px solid var(--cog-panel-border); border-radius: 3px; object-fit: contain;" />
                 {{#if skill.isGranted}}
-                  <span style="font-weight: bold; flex: 1;" title="Granted by equipped gear: {{skill.itemSources}}"{{#if skill.summaryTip}} data-tooltip="{{skill.summaryTip}}"{{/if}}>{{skill.name}}</span>
+                  <span style="font-weight: bold; flex: 1;" title="Granted by equipped gear: {{skill.itemSources}}"{{#if skill.summaryTip}} data-tooltip-text="{{skill.summaryTip}}" data-tooltip-class="cog-tooltip-lines"{{/if}}>{{skill.name}}</span>
                   <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;" title="Granted by equipped gear: {{skill.itemSources}}">GEAR</span>
-                   {{#if skill.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip="{{skill.offlineTip}}">[OFFLINE]</span>{{/if}}
+                   {{#if skill.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip-text="{{skill.offlineTip}}">[OFFLINE]</span>{{/if}}
                 {{else}}
-                  <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="name" value="{{skill.name}}"{{#if skill.summaryTip}} data-tooltip="{{skill.summaryTip}}"{{/if}} style="font-weight: bold; flex: 1;" />
+                  <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="name" value="{{skill.name}}"{{#if skill.summaryTip}} data-tooltip-text="{{skill.summaryTip}}" data-tooltip-class="cog-tooltip-lines"{{/if}} style="font-weight: bold; flex: 1;" />
                 {{/if}}
                 {{> "systems/sprinter-rpg/templates/shared/source-badge.hbs" badge=skill.sourceBadge}}
                 {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=skill.cooldownBadge}}
                 {{#if skill.useLocked}}
-                  <span class="cog-badge cog-badge-core cog-skill-lock-badge" style="white-space: nowrap;" data-tooltip="{{skill.advanceNote}}">[LOCKED]</span>
+                  <span class="cog-badge cog-badge-core cog-skill-lock-badge" style="white-space: nowrap;" data-tooltip-text="{{skill.advanceNote}}">[LOCKED]</span>
                 {{/if}}
                 {{#if skill.isCore}}
                   <span class="cog-badge cog-badge-core" title="Core action: every crawler has it. It has no Ranks.">[CORE]</span>
                 {{/if}}
                 {{#if skill.highRankBadge}}
-                  <span class="cog-badge cog-badge-core" title="{{skill.highRankBadge}}">[{{skill.highRankBadge}}]</span>
+                  <span class="cog-badge cog-badge-core" data-tooltip-text="{{skill.highRankTip}}">[{{skill.highRankBadge}}]</span>
                 {{/if}}
-                {{#if skill.highRankBadge}}
-                  <span class="cog-badge cog-badge-core" title="{{skill.highRankTip}}">[{{skill.highRankBadge}}]</span>
+                {{#if skill.tutorialUpgradeBadge}}
+                  <span class="cog-badge cog-badge-core" data-tooltip-text="{{skill.tutorialUpgradeTip}}">[{{skill.tutorialUpgradeBadge}}]</span>
                 {{/if}}
                 {{#if skill.isUnusable}}
                   <span class="cog-badge cog-badge-danger cog-bg-accent-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px; font-weight: bold;" title="Animal Skill: you are no longer an animal. Using it is a Rule Break.">[UNUSABLE]</span>
@@ -170,21 +170,21 @@
             <td style="text-align: center; white-space: nowrap;">
               <div class="item-actions">
                 {{#if skill.isAttack}}
-                  <button type="button" class="cog-attack-roll-btn" data-action="rollSkill" data-tooltip="Roll Attack (To Hit): 1d20 + Rank {{skill.modifiedRank}} + {{skill.statModStr}} vs Target Evade" style="font-size: 10px; padding: 2px 6px;">
+                  <button type="button" class="cog-attack-roll-btn" data-action="rollSkill" data-tooltip-text="Roll Attack (To Hit): 1d20 + Rank {{skill.modifiedRank}} + {{skill.statModStr}} vs Target Evade" style="font-size: 10px; padding: 2px 6px;">
                     <i class="fa-solid fa-dice-d20"></i>
                   </button>
                 {{else}}
-                  <button type="button" class="cog-attack-roll-btn" data-action="rollSkill" data-tooltip="Roll Skill Check: 1d20 + Total ({{skill.totalSkillStr}}) | Modified Rank: {{skill.modifiedRank}}" style="font-size: 10px; padding: 2px 6px;">
+                  <button type="button" class="cog-attack-roll-btn" data-action="rollSkill" data-tooltip-text="Roll Skill Check: 1d20 + Total ({{skill.totalSkillStr}}) | Modified Rank: {{skill.modifiedRank}}" style="font-size: 10px; padding: 2px 6px;">
                     <i class="fa-solid fa-dice-d20"></i>
                   </button>
                 {{/if}}
                 {{#if skill.hasDamage}}
-                  <button type="button" class="cog-attack-roll-btn cog-bg-accent-fill cog-text-on-fill" data-action="rollSkillDamage" data-tooltip="Roll Attack Damage: {{skill.damageFormulaWithStat}}" style="font-size: 10px; padding: 2px 6px;">
+                  <button type="button" class="cog-attack-roll-btn cog-bg-accent-fill cog-text-on-fill" data-action="rollSkillDamage" data-tooltip-text="Roll Attack Damage: {{skill.damageFormulaWithStat}}" style="font-size: 10px; padding: 2px 6px;">
                     <i class="fa-solid fa-burst"></i>
                   </button>
                 {{/if}}
                 {{#unless (or skill.isCore ../isPet)}}
-                  <button type="button" class="cog-attack-roll-btn cog-bg-success-fill cog-text-on-fill" data-action="advanceSkill" data-skill-id="{{skill.id}}" data-tooltip="Test Skill Advancement: Roll 1d20 &ge; {{skill.advancementTarget}}{{#unless skill.canAdvance}} (needs {{skill.neededHours}} more grind hrs: a Rule Break){{/unless}}" style="font-size: 10px; padding: 2px 6px;">
+                  <button type="button" class="cog-attack-roll-btn cog-bg-success-fill cog-text-on-fill" data-action="advanceSkill" data-skill-id="{{skill.id}}" data-tooltip-text="Test Skill Advancement: Roll 1d20 &ge; {{skill.advancementTarget}}{{#unless skill.canAdvance}} (needs {{skill.neededHours}} more grind hrs: a Rule Break){{/unless}}" style="font-size: 10px; padding: 2px 6px;">
                     <i class="fa-solid fa-graduation-cap"></i>
                   </button>
                 {{/unless}}
@@ -192,7 +192,7 @@
                   {{> "systems/sprinter-rpg/templates/actors/parts/advancement-check-button.hbs" row=skill}}
                 {{/unless}}
                 {{#if (and skill.isChecked (not ../isPet))}}
-                  <button type="button" class="cog-attack-roll-btn cog-bg-warning-fill cog-text-on-fill" data-action="grindSkill" data-item-id="{{skill.id}}" data-tooltip="Grind this skill: Rank {{skill.baseRank}} requires {{skill.requiredGrindHours}} hrs (Target: d20 &ge; {{skill.advancementTarget}})" style="font-size: 10px; padding: 2px 6px;">
+                  <button type="button" class="cog-attack-roll-btn cog-bg-warning-fill cog-text-on-fill" data-action="grindSkill" data-item-id="{{skill.id}}" data-tooltip-text="Grind this skill: Rank {{skill.baseRank}} requires {{skill.requiredGrindHours}} hrs (Target: d20 &ge; {{skill.advancementTarget}})" style="font-size: 10px; padding: 2px 6px;">
                     <i class="fa-solid fa-dumbbell"></i>
                   </button>
                 {{/if}}

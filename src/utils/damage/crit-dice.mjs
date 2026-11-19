@@ -3,6 +3,7 @@
  * are added once. The builders mark the base dice parts (`baseDice: true`); a damage roll rolls the extra copies this
  * file makes as parts of their own (`crit: true`), and only a Critical Hit apply counts them. A pure leaf module.
  */
+import { escapeAttr } from '../escape-attr.mjs';
 
 /**
  * The extra Critical Hit parts of a damage roll: for each `baseDice` part with dice, `sets - 1` copies that carry the
@@ -59,7 +60,7 @@ export function critDiceNoteHtml(parts, isCrit) {
   const crit = (Array.isArray(parts) ? parts : []).filter(p => p?.crit);
   if (isCrit || crit.length === 0) return '';
   const formulas = crit.map(p => p.formula).join(' + ');
-  return `<div class="cog-crit-dice-note cog-text-muted" style="font-size: 10px; margin-bottom: 6px;">Critical Hit dice: +${critDiceTotal(crit)} (${formulas})</div>`;
+  return `<div class="cog-crit-dice-note cog-text-muted" style="font-size: 10px; margin-bottom: 6px;">Critical Hit dice: +${escapeAttr(critDiceTotal(crit))} (${escapeAttr(formulas)})</div>`;
 }
 
 /**
@@ -72,5 +73,5 @@ export function critDiceNoteHtml(parts, isCrit) {
 export function critSubButtonHtml(isCrit, extra) {
   return isCrit
     ? '<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-crit="false" title="Apply as a normal hit (no extra Critical Hit dice or critical debuffs)">Apply as normal hit</button>'
-    : `<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-crit="true" title="Apply as a Critical Hit (the extra base dice and critical debuffs)">Critical Hit (+${extra})</button>`;
+    : `<button type="button" class="cog-apply-damage-btn" data-action="crawlerApplyDamage" data-multiplier="1" data-crit="true" title="Apply as a Critical Hit (the extra base dice and critical debuffs)">Critical Hit (+${escapeAttr(extra)})</button>`;
 }

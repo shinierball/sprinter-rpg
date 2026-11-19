@@ -14,7 +14,6 @@ import {
 import { starterWeaponSkillFields } from '../../utils/skill/starter-weapon-skill.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { getCOGStatModifier } from '../../documents/actor/actor-constants.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
 import { DEFAULT_SIZE, sanitizeSizeId } from '../sizes.mjs';
 import { parseFloorNumber, floorLabel } from '../../utils/floor/floor-number.mjs';
 import { runForStartFloor, startLevelForFloor } from '../floor-arrivals.mjs';
@@ -24,6 +23,9 @@ import { compileFloorStart } from '../floor-simulator/pipeline.mjs';
 import { contentIds } from '../../utils/stable-id.mjs';
 import { withRuleBreak } from '../../utils/rule-break.mjs';
 import { readFlag, withFlags } from '../../utils/flags.mjs';
+import { bodySizedPrototype } from '../../documents/actor/token-size.mjs';
+import { starterRoleOf, withStarterRole } from '../../utils/character/starter-role.mjs';
+import { sanitizeLootBoxEntries } from '../loot-box-rows.mjs';
 
 /** The flag on a background skill whose catalog entry was missing: the reference it asked for. */
 const MISSING_CATALOG_REF = 'missingCatalogRef';
@@ -40,7 +42,7 @@ export const missingCatalogRefOf = (item) => readFlag(item, MISSING_CATALOG_REF)
  */
 export function starterHotlist(items) {
   const list = Array.from(items ?? []);
-  const byRole = (starterRole) => list.find((i) => i?.flags?.[SYSTEM_ID]?.starterRole === starterRole);
+  const byRole = (starterRole) => list.find((i) => starterRoleOf(i) === starterRole);
   const idOf = (item) => item?.id ?? item?._id;
   const heal = idOf(byRole('heal'));
   const spell = idOf(byRole('starterSpell'));
@@ -135,10 +137,9 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
   }
 
   // Each item the hotlist maps is stamped with its starter role, so the slots never look items up by name.
-  const role = (starterRole) => ({ [SYSTEM_ID]: { starterRole } });
   // Adds the role to the item's own system-scope flags, so the flags a catalog copy carries (its source stamp, 7.7c) stay.
   const withRole = (item, starterRole) => {
-    item.flags = { ...(item.flags || {}), [SYSTEM_ID]: { ...(item.flags?.[SYSTEM_ID] || {}), starterRole } };
+    item.flags = withStarterRole(item, starterRole).flags;
   };
 
   const itemPayloads = [];
@@ -168,7 +169,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         name: s.name,
         type: 'skill',
         img: 'icons/svg/book.svg',
-        ...(s.primary || catalogMiss ? withFlags({}, { ...(s.primary ? { starterRole: 'primarySkill' } : {}), ...(catalogMiss ? { [MISSING_CATALOG_REF]: s.ref } : {}) }) : {}),
+        ...(s.primary || catalogMiss ? withFlags(s.primary ? withStarterRole({}, 'primarySkill') : {}, catalogMiss ? { [MISSING_CATALOG_REF]: s.ref } : {}) : {}),
         system: {
           rank: s.rank,
           stat: (s.stat || 'str').toLowerCase(),
@@ -235,11 +236,10 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
     delete healItem.id;
     itemPayloads.push(healItem);
   } else {
-    itemPayloads.push({
+    itemPayloads.push(withStarterRole({
       name: 'Heal',
       type: 'spell',
       img: 'icons/svg/heal.svg',
-      flags: role('heal'),
       system: {
         identifier: 'heal',
         rank: 1,
@@ -255,18 +255,17 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         tags: ['school.healing'],
         description: 'Heal 2 Health Bar slots.'
       }
-    });
+    }, 'heal'));
   }
 
   // If starterMode === 'weapon': add the weapon to inventory (gear) and equip it. The weapon is the starter attack: no
   // separate attack item, which would take the weapon's hands a second time and stay equipped when the weapon is stowed.
   if (starterMode === 'weapon') {
     const weaponTags = weaponTagsForSkill(wDef.skillIdentifier);
-    itemPayloads.push({
+    itemPayloads.push(withStarterRole({
       name: wDef.name,
       type: 'gear',
       img: wDef.img || 'icons/svg/sword.svg',
-      flags: role('starterAttack'),
       system: {
         slot: 'hands',
         quantity: 1,
@@ -279,7 +278,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         ...(wDef.wieldMode ? { wieldMode: wDef.wieldMode } : {}),
         notes: wDef.effects || `Equipped weapon: ${wDef.name}`
       }
-    });
+    }, 'starterAttack'));
   } else if (starterMode === 'spell') {
     const spellItem = starterSpellPayload(spellEntry, loadoutWarnings);
     if (spellItem) {
@@ -324,7 +323,8 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
     ownership,
     prototypeToken: {
       actorLink: true,
-      name
+      name,
+      ...bodySizedPrototype(sanitizeSizeId(spec.size) || DEFAULT_SIZE)
     },
     system: {
       abilities: {
@@ -363,7 +363,9 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         regrets: spec.regrets || '',
         // The party key joins crawlers into one party (space joins read it); left to the schema default when the spec has none
         ...(typeof spec.party === 'string' && spec.party.trim() ? { party: spec.party.trim() } : {})
-      }
+      },
+      // Unopened boxes the crawler holds (`system.lootBoxes[]`), sanitised; the schema default when the spec has none
+      ...(Array.isArray(spec.lootBoxes) && spec.lootBoxes.length ? { lootBoxes: sanitizeLootBoxEntries(spec.lootBoxes) } : {})
     },
     flags: isRuleBreak ? withRuleBreak({ flags: spec.flags }).flags : { ...(spec.flags || {}) },
     items: itemPayloads

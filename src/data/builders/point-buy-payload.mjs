@@ -25,6 +25,7 @@ import { unfilledParams } from '../../utils/character/point-build-params.mjs';
 import { COG_BENEFIT_TIERS, COG_DETRIMENT_TIERS } from '../rules/point-build-tiers.mjs';
 import { registerPayloadDelegate } from './item-payload.mjs';
 import { withFlags } from '../../utils/flags.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /**
  * The DR a point-build benefit grants: its own `drBonus`, else the catalog benefit with its id's.
@@ -160,7 +161,7 @@ function grantedEffectEntry(type, row) {
   const identifier = String(row.identifier ?? '').trim();
   if (identifier) system.identifier = identifier;
   if (!hasSystem) {
-    if (row.description) system.description = `<p>${row.description}</p>`;
+    if (row.description) system.description = `<p>${escapeAttr(row.description)}</p>`;
     if (type === 'debuff') system.severity = row.tier === 'minor' ? 'Minor' : 'Major';
   }
   return { type, name, img: row.img || '', system };
@@ -301,14 +302,14 @@ export function buildPointBuyPayload(spec = {}) {
   const selectedDetriments = Array.isArray(spec.selectedDetriments) ? spec.selectedDetriments : [];
   const customDetriments = Array.isArray(spec.customDetriments) ? spec.customDetriments : [];
 
-  const descHtml = spec.description ? `<p>${spec.description}</p>` : '';
+  const descHtml = spec.description ? `<p>${escapeAttr(spec.description)}</p>` : '';
   const abilities = compileAbilitiesList(spec);
-  const abilitiesHtml = abilities.length ? `<ul>${abilities.map(a => `<li>${a}</li>`).join('')}</ul>` : '';
+  const abilitiesHtml = abilities.length ? `<ul>${abilities.map(a => `<li>${escapeAttr(a)}</li>`).join('')}</ul>` : '';
   // The Earth / Alien note: a race's heritage note, and the Earth class's Silver Earth Box note.
   const heritageNote = builderType === 'race'
     ? (getHeritage(spec.heritage)?.note ?? '')
     : (spec.isEarthClass === true ? SILVER_EARTH_NOTE : '');
-  const noteHtml = heritageNote && !descHtml.includes(heritageNote) ? `<p>${heritageNote}</p>` : '';
+  const noteHtml = heritageNote && !descHtml.includes(heritageNote) ? `<p>${escapeAttr(heritageNote)}</p>` : '';
 
   const isRuleBreak = Boolean(spec.ruleBreak || spec.isRuleBreak);
 

@@ -33,7 +33,7 @@ export function similarity(a, b) {
  * and whether the first column of the slice is a roll column to skip; the slice supplies only the title and the cells.
  * @param {object} recipe a `readTableRecipe` result
  * @param {object} sliced a `sliceTable` result
- * @returns {{ id: string, number: number, title: string, rows: { range: number[]|null, cells: string[], links: object[], flags: object, asTrigger?: object, nextTable?: string, base?: string, magic?: object, vehicleKind?: string, vehicleResult?: string }[], vehicles?: { columns: (string|null)[] }, warnings: string[] }}
+ * @returns {{ id: string, number: number, title: string, rows: { range: number[]|null, cells: string[], links: object[], flags: object, asTrigger?: object, nextTable?: string, base?: string, magic?: object, vehicleKind?: string, vehicleResult?: string, grind?: object[] }[], vehicles?: { columns: (string|null)[] }, warnings: string[] }}
  */
 export function hydrateTable(recipe, sliced) {
   const warnings = [];
@@ -49,7 +49,8 @@ export function hydrateTable(recipe, sliced) {
     const cells = (source[i] ?? []).slice(skip);
     out.rows.push({ range: row.range ?? null, cells, links: row.links ?? [], flags: row.flags ?? {}, ...(row.asTrigger ? { asTrigger: row.asTrigger } : {}),
       ...(row.nextTable ? { nextTable: row.nextTable } : {}), ...(row.base ? { base: row.base } : {}), ...(row.magic ? { magic: row.magic } : {}),
-      ...(row.vehicleKind ? { vehicleKind: row.vehicleKind } : {}), ...(row.vehicleResult ? { vehicleResult: row.vehicleResult } : {}) });
+      ...(row.vehicleKind ? { vehicleKind: row.vehicleKind } : {}), ...(row.vehicleResult ? { vehicleResult: row.vehicleResult } : {}),
+      ...(row.grind ? { grind: row.grind } : {}) });
   });
   if (recipe.vehicles) out.vehicles = recipe.vehicles;
   return out;

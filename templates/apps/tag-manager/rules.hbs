@@ -28,7 +28,7 @@
     <div class="cog-field-row cog-tm-flags">
       <span class="cog-field-label">{{localize 'COG.TagManager.Flags'}}</span>
       {{#each tagEditor.flags as |f|}}
-        <label class="cog-field-group small" data-tooltip="{{f.hint}}">
+        <label class="cog-field-group small" data-tooltip-text="{{f.hint}}">
           <input type="checkbox" class="cog-tm-flag" data-change-action="toggleFlag" data-flag="{{f.id}}" {{#if f.checked}}checked{{/if}} {{#unless ../tagEditor.editable}}disabled{{/unless}} />
           <span class="cog-field-label">{{f.label}}{{#if f.undeclared}} <i class="fa-solid fa-triangle-exclamation" title="{{localize 'COG.TagManager.UndeclaredFlag'}}"></i>{{/if}}</span>
         </label>

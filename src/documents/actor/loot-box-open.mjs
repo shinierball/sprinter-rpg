@@ -3,11 +3,11 @@
  *
  * The opener's client checks "in a safe room" (D7: a crawler token on a safe room scene). Anywhere else it asks a
  * lightweight Rule Break, never a block. It then asks the GM through one relay action, `lootBoxOpen`, authorized by ownership of the crawler (D8). The GM client does everything else in one batch:
- * 1. resolve and roll every box unit, in tier rank order (the registry), then box name, then item id; a stack of N is N
+ * 1. resolve and roll every box unit, in tier rank order (the registry), then box name, then entry id; a stack of N is N
  *    units, each rolled on its own;
  * 2. create every prize in one `createEmbeddedDocuments` call (if that throws, nothing is spent);
  * 3. add the gold in one update;
- * 4. spend the opened units through `spendConsumableUnit` (each leaves its used form: an Empty Loot Box, D12);
+ * 4. spend the opened units in one write of the crawler's `system.lootBoxes` (`spendLootBoxUnits`; a stack at 0 goes);
  * 5. post the ceremony chat card (with a Watch button) and, for the GM, a whispered note of the generated entries left
  *    to finish and of every warning.
  * It returns the reveal list for the show. The loot is written before the show starts, so nothing is lost if the window
@@ -16,10 +16,14 @@
  * A box row whose kind asks for a pick (`apply.boxChoose`, the `choice` kind) makes the open two-pass. Before step 1 the
  * GM pre-scans every unit's rows. A pick with no answer, or with an answer not in the freshly computed candidates, is
  * pending: the call returns `{ error: 'needs-choices', pending, blocked }` having rolled, created and spent nothing. The
- * opener's client shows one picker and calls again with `choices: { '<itemId>:<unit>:<rowIndex>': uuid }`. A pick with no
+ * opener's client shows one picker and calls again with `choices: { '<entryId>:<unit>:<rowIndex>': uuid }`. A pick with no
  * candidates blocks its unit: that unit stays sealed (`empty`, not spent) and the GM is told, while the others open.
  *
- * What a box gives is its `system.box.contents` rows, run through each `CONFIG.COG.rowKinds.boxContents` kind's
+ * The boxes are the crawler's held entries (`system.lootBoxes`, read as box views through `boxViews`), never items. The wire
+ * and stored keys keep their 7.3 names: a relay `boxes[].itemId`, a pick key and a stored reveal's `itemId` hold the entry
+ * id (a box moved off an item by the 7.24xd migration kept the item's id).
+ *
+ * What a box gives is its `contents` rows, run through each `CONFIG.COG.rowKinds.boxContents` kind's
  * `apply.boxOpen` handler (D4). A box with no rows (D6, 538 d) gives its tier's default: a GM's house table
  * (`lootbox.default.<tier>`) when one resolves, else one item from the tier's generator; when neither works, or the box
  * says `whenEmpty: 'keep'`, the unit is not spent and the GM is told. The session ledger records nothing (D14): the card
@@ -27,7 +31,6 @@
  *
  * Does not import `actor.mjs`; the actor mixin delegates here.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
@@ -51,23 +54,18 @@ import { buildPayload } from '../../data/builders/item-payload.mjs';
 import { startingChoiceCandidates } from '../../data/starting-items.mjs';
 import { resolveGrantDocument } from '../../data/race-class-grants.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
-import { isUnopenedBox, refuseNamedBoxes, unitsOf } from './gm-only-items.mjs';
+import { isBoxTemplate, refuseNamedBoxes } from './gm-only-items.mjs';
+import { boxViews, canHoldLootBoxes, entryFromRow, lootBoxQueueKey, spendLootBoxUnits } from './loot-box-entries.mjs';
 import { loadEnchantTable, rollEnchantTable } from '../item/enchant-table.mjs';
 import { followTableRef, rollMagicItem } from '../item/magic-item-roll.mjs';
-import { spendConsumableUnit } from './used-items.mjs';
 import { userOwnsActor } from './personal-space-links.mjs';
 import { landItems } from '../../utils/content-source.mjs';
 import { RANKED_ITEM_TYPES, isInventoryItem } from '../../utils/document-types.mjs';
 import { withFlags } from '../../utils/flags.mjs';
+import { withLootBox, lootBoxOf, prerollOf, lootBoxOpenPatch, withLootBoxGmNote } from '../../utils/loot/loot-flags.mjs';
 
 /** The one GM relay action of an open. */
 export const RELAY_ACTION_LOOT_BOX_OPEN = 'lootBoxOpen';
-/** Provenance on every prize: `flags.sprinter-rpg.lootBox = { tier, boxName, openedAt }` (Determine Value, Rank 10). */
-export const LOOT_BOX_FLAG = 'lootBox';
-/** The ceremony card's flag: the opener and the reveal list, which the Watch button replays. */
-export const LOOT_BOX_OPEN_FLAG = 'lootBoxOpen';
-/** The flag on the GM's whispered note. */
-const LOOT_BOX_GM_NOTE_FLAG = 'lootBoxGmNote';
 /** The `data-action` of the card's Watch button (`src/chat/actions/index.mjs`). */
 const LOOT_BOX_WATCH_ACTION = 'lootBoxWatch';
 
@@ -78,29 +76,20 @@ export function boxText(key, data = {}) {
   return key;
 }
 
-// --- boxes on an actor -------------------------------------------------------------------------------------------------
-
-/** The actor's unopened loot boxes. */
-function unopenedBoxes(actor) {
-  return Array.from(actor?.items ?? []).filter(isUnopenedBox);
-}
-
-/** How many box units the actor can open (the "Open loot boxes (N)" count). */
-export function unopenedBoxUnits(actor) {
-  return unopenedBoxes(actor).reduce((sum, item) => sum + unitsOf(item), 0);
-}
+/** The units a box view holds (0 for anything that is not one). */
+const unitsOfView = (view) => Math.max(0, Math.trunc(Number(view?.quantity)) || 0);
 
 // --- pure planning and folding -----------------------------------------------------------------------------------------
 
 /**
- * Pure: the open order. One entry per unit: tier rank ascending (ties by registry order), then box name, then item id.
+ * Pure: the open order. One entry per unit: tier rank ascending (ties by registry order), then box name, then entry id.
  * An unknown tier reads as bronze.
- * @param {object[]} boxItems box items (anything that is not an unopened box is left out)
+ * @param {object[]} views box views (`boxViews`; one with no units is left out)
  * @param {Record<string, object>} [tierRegistry] the tier registry (default `CONFIG.COG.lootBoxTiers`)
- * @param {Record<string, number>} [unitsById] at most this many units of an item (default: all of its stack)
- * @returns {Array<{ itemId: string, tier: string, unit: number, name: string }>}
+ * @param {Record<string, number>} [unitsById] at most this many units of an entry (default: all of its stack)
+ * @returns {Array<{ itemId: string, tier: string, unit: number, name: string }>} `itemId` holds the entry id (the 7.3 key)
  */
-export function planOpenOrder(boxItems, tierRegistry = lootBoxTierRegistry(), unitsById = {}) {
+export function planOpenOrder(views, tierRegistry = lootBoxTierRegistry(), unitsById = {}) {
   const registry = tierRegistry && typeof tierRegistry === 'object' ? tierRegistry : lootBoxTierRegistry();
   const order = Object.keys(registry);
   const tierOf = (raw) => {
@@ -112,11 +101,11 @@ export function planOpenOrder(boxItems, tierRegistry = lootBoxTierRegistry(), un
     const i = order.indexOf(id);
     return i === -1 ? order.length : i;
   };
-  const entries = Array.from(boxItems ?? []).filter(isUnopenedBox).map((item) => {
-    const tier = tierOf(item.system?.box?.tier);
-    const cap = Number(unitsById?.[item.id]);
-    const units = Number.isFinite(cap) && cap >= 0 ? Math.min(unitsOf(item), Math.trunc(cap)) : unitsOf(item);
-    return { item, tier, rank: rankOf(tier), index: indexOf(tier), name: String(item.name ?? ''), id: String(item.id ?? ''), units };
+  const entries = Array.from(views ?? []).filter((view) => unitsOfView(view) > 0).map((view) => {
+    const tier = tierOf(view.box?.tier ?? view.tier);
+    const cap = Number(unitsById?.[view.id]);
+    const units = Number.isFinite(cap) && cap >= 0 ? Math.min(unitsOfView(view), Math.trunc(cap)) : unitsOfView(view);
+    return { tier, rank: rankOf(tier), index: indexOf(tier), name: String(view.name ?? ''), id: String(view.id ?? ''), units };
   });
   entries.sort((a, b) => (a.rank - b.rank) || (a.index - b.index) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
   return entries.flatMap((e) => Array.from({ length: e.units }, (_, unit) => ({ itemId: e.id, tier: e.tier, unit, name: e.name })));
@@ -152,9 +141,8 @@ export function foldPrizes(resolved, { openedAt = Date.now() } = {}) {
       if (prize?.type === 'item') {
         const data = structuredClone(prize.data ?? {});
         delete data._id;
-        const own = data.flags?.[SYSTEM_ID] ?? {};
-        data.flags = { ...(data.flags ?? {}), [SYSTEM_ID]: { ...own, [LOOT_BOX_FLAG]: { tier: unit.tier, boxName: unit.name, openedAt } } };
-        const createIndex = creates.push(data) - 1;
+        const stamped = withLootBox(data, { tier: unit.tier, boxName: unit.name, openedAt });
+        const createIndex = creates.push(stamped) - 1;
         prizes.push({
           type: 'item',
           name: prize.name || data.name || '',
@@ -303,7 +291,7 @@ export function choiceCandidates(spec = {}) {
   for (const entry of startingChoiceCandidates({ query: spec?.query ?? null, itemType })) {
     if (!entry?.uuid) continue;
     if (!itemType && !isInventoryItem(entry)) continue;
-    if (entry.document?.flags?.[SYSTEM_ID]?.lootBoxPreroll) continue;
+    if (prerollOf(entry.document)) continue;
     const key = entry.identifier || entry.uuid;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -390,13 +378,13 @@ const givesSomething = (prizes) => prizes.some((p) => p?.type === 'item' || p?.t
  * generator tables, a homebrew tier with neither), a box kept sealed and a unit whose pick has no candidates
  * (`blocked`, the labels of those picks) are `empty`: not spent, the GM told. `answers` are the unit's picks by row index.
  */
-async function resolveUnit(actor, item, entry, { services, houseTables, answers, blocked = [] }) {
-  const box = sanitizeLootBox(item.system?.box);
+async function resolveUnit(actor, view, entry, { services, houseTables, answers, blocked = [] }) {
+  const box = sanitizeLootBox(view.box);
   const tierDef = lootBoxTierDef(entry.tier);
-  const where = { box: entry.name || item.name || '', actor: actor.name ?? '' };
+  const where = { box: entry.name || view.name || '', actor: actor.name ?? '' };
   if (blocked.length) {
     return {
-      itemId: item.id, name: entry.name, tier: tierDef.id, unit: entry.unit, empty: true,
+      itemId: view.id, name: entry.name, tier: tierDef.id, unit: entry.unit, empty: true,
       prizes: [{ type: 'line', text: boxText('COG.LootBoxOpen.ChoiceEmptyReveal'), notice: true }],
       warnings: blocked.map((label) => boxText('COG.LootBoxOpen.ChoiceEmptyWarn', { ...where, label }))
     };
@@ -417,7 +405,7 @@ async function resolveUnit(actor, item, entry, { services, houseTables, answers,
       rows = defaultBoxContents(tierDef, { houseTableFound: houseTables.get(tierDef.id) });
     }
   }
-  const ctx = { actor, box: { itemId: item.id, name: entry.name, tier: tierDef.id }, tierDef, depth: 1, services };
+  const ctx = { actor, box: { itemId: view.id, name: entry.name, tier: tierDef.id }, tierDef, depth: 1, services };
   const acc = await runRows(rows, ctx, answers);
   const fromHouseTable = defaulted && rows[0]?.kind === 'table';
   const empty = defaulted && !fromHouseTable && !givesSomething(acc.prizes);
@@ -425,7 +413,7 @@ async function resolveUnit(actor, item, entry, { services, houseTables, answers,
     acc.warnings.push(boxText(kept ? 'COG.LootBoxOpen.KeptWarn' : 'COG.LootBoxOpen.EmptyWarn', where));
     acc.prizes = [{ type: 'line', text: boxText('COG.LootBoxOpen.EmptyReveal'), notice: true }];
   }
-  return { itemId: item.id, name: entry.name, tier: tierDef.id, unit: entry.unit, empty, prizes: acc.prizes, warnings: acc.warnings };
+  return { itemId: view.id, name: entry.name, tier: tierDef.id, unit: entry.unit, empty, prizes: acc.prizes, warnings: acc.warnings };
 }
 
 // --- the chat cards ----------------------------------------------------------------------------------------------------
@@ -436,7 +424,7 @@ function prizeHtml(prize) {
     const label = prize.label ? ` <em>(${escapeAttr(prize.label)})</em>` : '';
     const chosen = prize.chosen ? ` <span class="cog-state-badge cog-lootbox-chosen">${escapeAttr(boxText('COG.LootBoxOpen.CardChosen'))}</span>` : '';
     const lines = prize.lines?.length ? `<br><small>${prize.lines.map((l) => escapeAttr(l)).join('<br>')}</small>` : '';
-    return `<li class="cog-lootbox-prize"><strong>${escapeAttr(prize.name)}</strong>${qty}${chosen}${label}${lines}</li>`;
+    return `<li class="cog-lootbox-prize"><strong>${escapeAttr(prize.name)}</strong>${escapeAttr(qty)}${chosen}${label}${lines}</li>`;
   }
   if (prize.type === 'gold') {
     const label = prize.label ? ` <em>(${escapeAttr(prize.label)})</em>` : '';
@@ -468,7 +456,7 @@ export function lootBoxGmNoteHtml(reveals, warnings) {
     for (const p of r.prizes ?? []) {
       if (p.type !== 'item' || !(p.pending > 0)) continue;
       const link = p.uuid ? ` @UUID[${p.uuid}]{${boxText('COG.LootBoxOpen.OpenItem')}}` : '';
-      pending.push(`<li><strong>${escapeAttr(p.name)}</strong>: ${escapeAttr(boxText('COG.LootBoxOpen.GmPending', { count: p.pending }))}${link}</li>`);
+      pending.push(`<li><strong>${escapeAttr(p.name)}</strong>: ${escapeAttr(boxText('COG.LootBoxOpen.GmPending', { count: p.pending }))}${escapeAttr(link)}</li>`);
     }
   }
   const warned = [...new Set(warnings ?? [])].map((w) => `<li>${escapeAttr(w)}</li>`);
@@ -485,16 +473,16 @@ async function postCards(actor, result, user) {
   const speaker = ChatMessageClass.getSpeaker?.({ actor }) ?? {};
   const author = user?.id && !user.isGM ? { author: user.id } : {};
   const card = await ChatMessageClass.create(withFlags({ speaker, content: lootBoxCardHtml(view), ...author }, {
-    [LOOT_BOX_OPEN_FLAG]: {
+    ...lootBoxOpenPatch({
       actorUuid: result.actorUuid, actorName: result.actorName, reveals: result.reveals,
       ruleBreak: result.ruleBreak, gold: result.gold, openedAt: result.openedAt
-    },
+    }),
     ...(result.ruleBreak ? { ruleBreak: true } : {})
   }));
   const note = lootBoxGmNoteHtml(result.reveals, result.warnings);
   if (note) {
     const whisper = ChatMessageClass.getWhisperRecipients?.('GM')?.map((u) => u.id) ?? [];
-    await ChatMessageClass.create({ speaker, content: note, whisper, flags: { [SYSTEM_ID]: { [LOOT_BOX_GM_NOTE_FLAG]: true } } });
+    await ChatMessageClass.create(withLootBoxGmNote({ speaker, content: note, whisper }));
   }
   return card;
 }
@@ -505,40 +493,42 @@ function notify(level, message) {
   globalThis.ui?.notifications?.[level]?.(message);
 }
 
-/** The boxes and unit caps a request names; every unopened box when it names none. */
-function requestedBoxes(actor, request) {
-  if (!Array.isArray(request?.boxes)) return { items: unopenedBoxes(actor), caps: {} };
-  const items = [];
+/** The held boxes and unit caps a request names (`boxes[].itemId` holds an entry id); every held box when it names none. */
+function requestedBoxes(views, request) {
+  if (!Array.isArray(request?.boxes)) return { views, caps: {} };
+  const byId = new Map(views.map((view) => [view.id, view]));
+  const picked = [];
   const caps = {};
   for (const entry of request.boxes) {
     const id = String(firstScalar(entry?.itemId ?? '')).trim();
-    const item = id ? actor.items.get(id) : null;
-    if (!item || !isUnopenedBox(item) || items.includes(item)) continue;
-    items.push(item);
+    const view = id ? byId.get(id) : null;
+    if (!view || picked.includes(view)) continue;
+    picked.push(view);
     const units = Number(entry?.units);
     if (Number.isFinite(units) && units >= 0) caps[id] = Math.trunc(units);
   }
-  return { items, caps };
+  return { views: picked, caps };
 }
 
-/** Spend the opened units of each box, one at a time (each leaves its used form). */
-async function spendUnits(actor, reveals) {
-  const counts = new Map();
-  for (const r of reveals) if (!r.empty) counts.set(r.itemId, (counts.get(r.itemId) ?? 0) + 1);
-  for (const [itemId, count] of counts) {
-    for (let i = 0; i < count; i += 1) {
-      const item = actor.items.get(itemId);
-      if (!item) break;
-      const quantity = unitsOf(item);
-      await spendConsumableUnit(item, actor, { quantity, leaveForm: false });
-      if (quantity <= 1) break;
-    }
-  }
+/**
+ * Spend the opened units of each box, and add the boxes won as prizes, in one write (inside the open's queue job, which the
+ * entry writers share).
+ */
+async function spendUnits(actor, reveals, won = []) {
+  const counts = {};
+  for (const r of reveals) if (!r.empty) counts[r.itemId] = (counts[r.itemId] ?? 0) + 1;
+  await spendLootBoxUnits(actor, counts, { held: true, add: won });
+}
+
+/** The held box a box-template prize becomes (a box in a box): a copy of the template, awarded by the box it came out of. */
+function prizeBoxEntry(data) {
+  const uuid = String(data._stats?.compendiumSource ?? '');
+  return entryFromRow({ tier: data.system?.box?.tier, quantity: data.system?.quantity, uuid }, { ...data, uuid }, { sourceName: lootBoxOf(data)?.boxName ?? '' });
 }
 
 // --- picks before the open (the two-pass protocol) ---------------------------------------------------------------------
 
-/** The key of one pick: the box item, the unit within its stack (`planOpenOrder`'s), the row's index in its contents. */
+/** The key of one pick: the box's entry id, the unit within its stack (`planOpenOrder`'s), the row's index in its contents. */
 export const choiceKey = (itemId, unit, rowIndex) => `${itemId}:${unit}:${rowIndex}`;
 const CHOICE_KEY_PATTERN = /^[A-Za-z0-9]{16}:\d{1,4}:\d{1,4}$/;
 /** At most this many answers are read from one request. */
@@ -589,7 +579,7 @@ function askRow(choose, row, ctx) {
  * answered; any other is pending. The candidates of a row are computed once for every unit of its stack.
  * @returns {{ pending: object[], blocked: object[], answers: Map<string, Map<number, string>>, blockedUnits: Map<string, string[]> }}
  */
-function scanChoices(actor, plan, choices, services) {
+function scanChoices(actor, plan, byId, choices, services) {
   const pending = [];
   const blocked = [];
   const answers = new Map();
@@ -598,11 +588,11 @@ function scanChoices(actor, plan, choices, services) {
   const units = new Map();
   for (const entry of plan) units.set(entry.itemId, (units.get(entry.itemId) ?? 0) + 1);
   for (const entry of plan) {
-    const item = actor.items.get(entry.itemId);
-    if (!item) continue;
-    const rows = sanitizeLootBox(item.system?.box).contents;
+    const view = byId.get(entry.itemId);
+    if (!view) continue;
+    const rows = sanitizeLootBox(view.box).contents;
     const tierDef = lootBoxTierDef(entry.tier);
-    const ctx = { actor, box: { itemId: item.id, name: entry.name, tier: tierDef.id }, tierDef, depth: 1, services, arrayKey: 'boxContents', stage: 'boxChoose' };
+    const ctx = { actor, box: { itemId: view.id, name: entry.name, tier: tierDef.id }, tierDef, depth: 1, services, arrayKey: 'boxContents', stage: 'boxChoose' };
     const unitKey = `${entry.itemId}:${entry.unit}`;
     const unitPending = [];
     const unitBlocked = [];
@@ -640,13 +630,14 @@ function scanChoices(actor, plan, choices, services) {
 async function performNow(actor, request, user, { sources, rng, floor, now }) {
   const ruleBreak = request?.ruleBreak === true;
   const base = { actorUuid: actor.uuid ?? '', actorName: actor.name ?? '', ruleBreak };
-  const { items, caps } = requestedBoxes(actor, request);
-  const plan = planOpenOrder(items, lootBoxTierRegistry(), caps);
+  const { views, caps } = requestedBoxes(boxViews(actor), request);
+  const byId = new Map(views.map((view) => [view.id, view]));
+  const plan = planOpenOrder(views, lootBoxTierRegistry(), caps);
   if (!plan.length) return { ...base, error: 'no-boxes', reveals: [] };
 
   const services = boxOpenServices({ actor, sources, rng, floor });
   // The first pass: nothing is rolled, created or spent until every pick is answered.
-  const scan = scanChoices(actor, plan, sanitizeLootBoxChoices(request?.choices), services);
+  const scan = scanChoices(actor, plan, byId, sanitizeLootBoxChoices(request?.choices), services);
   if (scan.pending.length) {
     for (const b of scan.blocked) {
       notify('warn', boxText('COG.LootBoxOpen.ChoiceEmptyWarn', { box: b.boxName, actor: actor.name ?? '', label: b.label || boxText('COG.LootBoxOpen.ChoiceDefaultLabel') }));
@@ -657,11 +648,11 @@ async function performNow(actor, request, user, { sources, rng, floor, now }) {
   const houseTables = new Map();
   const resolved = [];
   for (const entry of plan) {
-    const item = actor.items.get(entry.itemId);
-    if (!item) continue;
+    const view = byId.get(entry.itemId);
+    if (!view) continue;
     const unitKey = `${entry.itemId}:${entry.unit}`;
     const blocked = (scan.blockedUnits.get(unitKey) ?? []).map((label) => label || boxText('COG.LootBoxOpen.ChoiceDefaultLabel'));
-    resolved.push(await resolveUnit(actor, item, entry, { services, houseTables, answers: scan.answers.get(unitKey), blocked }));
+    resolved.push(await resolveUnit(actor, view, entry, { services, houseTables, answers: scan.answers.get(unitKey), blocked }));
   }
   const openedAt = Number.isFinite(now) ? now : Date.now();
   const { creates, goldDelta, reveals } = foldPrizes(resolved, { openedAt });
@@ -672,10 +663,13 @@ async function performNow(actor, request, user, { sources, rng, floor, now }) {
     ? () => globalThis.foundry.utils.randomID()
     : seededIds(`${actor.uuid ?? actor.id}:${openedAt}`);
   const createIds = creates.map((data) => (data._id = nextId()));
+  // A box template won as a prize is a held box on a crawler (an entry, never an item; its theme is not checked, Question 6 (c))
+  const wonBoxes = canHoldLootBoxes(actor) ? creates.filter((data) => isBoxTemplate(data)) : [];
+  const itemCreates = creates.filter((data) => !wonBoxes.includes(data));
   let created = [];
-  if (creates.length) {
+  if (itemCreates.length) {
     try {
-      created = Array.from((await actor.createEmbeddedDocuments('Item', landItems(creates), { keepId: true })) ?? []);
+      created = Array.from((await actor.createEmbeddedDocuments('Item', landItems(itemCreates), { keepId: true })) ?? []);
     } catch (err) {
       const message = boxText('COG.LootBoxOpen.CreateFailed', { error: String(err?.message ?? err) });
       console.error(`Sprinter RPG | ${message}`, err);
@@ -686,8 +680,10 @@ async function performNow(actor, request, user, { sources, rng, floor, now }) {
   for (const reveal of reveals) {
     for (const prize of reveal.prizes) {
       if (prize.type !== 'item') continue;
+      // A won box is no document: it names no uuid or item, so the card, the GM note and the show print it as text only
+      const won = wonBoxes.includes(creates[prize.createIndex]);
       const id = createIds[prize.createIndex];
-      const doc = created.find((d) => d?.id === id) ?? actor.items?.get(id) ?? null;
+      const doc = won ? null : (created.find((d) => d?.id === id) ?? actor.items?.get(id) ?? null);
       prize.uuid = doc?.uuid ?? '';
       prize.itemId = doc?.id ?? '';
     }
@@ -696,7 +692,7 @@ async function performNow(actor, request, user, { sources, rng, floor, now }) {
     const current = Number(actor.system?.currency?.gold) || 0;
     await actor.update({ 'system.currency.gold': current + goldDelta });
   }
-  await spendUnits(actor, reveals);
+  await spendUnits(actor, reveals, wonBoxes.map(prizeBoxEntry));
   for (const w of warnings) notify('warn', w);
 
   const result = { ...base, reveals, gold: goldDelta, warnings, openedAt };
@@ -718,7 +714,7 @@ async function performNow(actor, request, user, { sources, rng, floor, now }) {
  */
 export async function performLootBoxOpen(actor, request = {}, user = null, opts = {}) {
   if (!actor) return { error: 'no-actor', reveals: [], ruleBreak: false };
-  return runKeyed(`loot-box-open:${actor.uuid ?? actor.id ?? ''}`, () => performNow(actor, request, user, opts));
+  return runKeyed(lootBoxQueueKey(actor), () => performNow(actor, request, user, opts));
 }
 
 registerRelayAction(RELAY_ACTION_LOOT_BOX_OPEN, {
@@ -767,9 +763,9 @@ export async function showLootBoxReveals(data, { replay = false } = {}) {
 
 // --- the client entry --------------------------------------------------------------------------------------------------
 
-/** Whether any of these boxes holds a row whose kind asks for a pick before the open (`apply.boxChoose`). */
-export function boxesNeedChoices(boxes) {
-  return Array.from(boxes ?? []).some((item) => sanitizeLootBox(item?.system?.box).contents
+/** Whether any of these box views holds a row whose kind asks for a pick before the open (`apply.boxChoose`). */
+export function boxesNeedChoices(views) {
+  return Array.from(views ?? []).some((view) => sanitizeLootBox(view?.box).contents
     .some((row) => typeof getRowKind('boxContents', kindOf('boxContents', row))?.apply?.boxChoose === 'function'));
 }
 
@@ -808,17 +804,19 @@ const PICKER_ROUNDS = 2;
  * with nothing spent); a list that changed meanwhile is shown once more. A non-interactive open returns the
  * `needs-choices` result.
  * @param {Actor} actor the opener
- * @param {Item[]|null} [items] the boxes to open; null = every unopened box (the "Open loot boxes" button)
+ * @param {string[]|null} [ids] the entry ids of the held boxes to open (the GM's per-box open); null = every held box (the
+ *   "Open loot boxes" button)
  * @param {{ scene?: object|null, interactive?: boolean, ruleBreak?: boolean, show?: boolean,
  *   choices?: Record<string, string>|null }} [options]
  *   `scene`: the scene to judge (default: the crawler's token's); `ruleBreak`: already confirmed; `choices`: headless picks by `choiceKey`
  * @returns {Promise<object>} the GM's result (`reveals`, `ruleBreak`, `gold`), or `{ error }` (`needs-choices` with
  *   `pending` and `blocked`)
  */
-export async function openLootBoxes(actor, items = null, { scene, interactive = true, ruleBreak = false, show = true, choices = null } = {}) {
+export async function openLootBoxes(actor, ids = null, { scene, interactive = true, ruleBreak = false, show = true, choices = null } = {}) {
   if (!actor) return { error: 'no-actor' };
-  if (items && refuseNamedBoxes()) return { error: 'open-all-only' }; // players open every box at once
-  const boxes = (items ? Array.from(items) : unopenedBoxes(actor)).filter(isUnopenedBox);
+  if (ids && refuseNamedBoxes()) return { error: 'open-all-only' }; // players open every box at once
+  const wanted = ids ? new Set(Array.from(ids, String)) : null;
+  const boxes = boxViews(actor).filter((view) => unitsOfView(view) > 0 && (!wanted || wanted.has(view.id)));
   if (!boxes.length) {
     notify('info', boxText('COG.LootBoxOpen.NoBoxes', { name: actor.name ?? '' }));
     return { error: 'no-boxes' };
@@ -834,7 +832,7 @@ export async function openLootBoxes(actor, items = null, { scene, interactive = 
     if (!verdict.confirmed) return { error: 'cancelled', refusal: verdict.refusal };
     broke = true;
   }
-  const payload = { actorUuid: actor.uuid, boxes: boxes.map((b) => ({ itemId: b.id, units: unitsOf(b) })), ruleBreak: broke };
+  const payload = { actorUuid: actor.uuid, boxes: boxes.map((view) => ({ itemId: view.id, units: unitsOfView(view) })), ruleBreak: broke };
   let answers = sanitizeLootBoxChoices(choices);
   if (boxesNeedChoices(boxes)) payload.choices = answers;
   const ask = async (body) => {

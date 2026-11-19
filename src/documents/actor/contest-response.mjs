@@ -1,6 +1,7 @@
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { getCOGStatModifier } from './actor-constants.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
+import { rollTotalPatch } from '../../utils/roll/roll-total-flag.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
 import { collectCheckToHit } from '../../utils/attack/per-target-to-hit.mjs';
 import { buildRollContext, extendContext, resolveSituations } from '../../utils/roll/roll-context.mjs';
@@ -86,11 +87,10 @@ export async function rollContestResponse(actor, params = {}) {
   const immunity = effectImmunityFor(actor, incoming, { other: initiator });
   if (immunity.immune) {
     const sources = immunity.sources.join(', ');
-    const msg = await ChatMessage.create({
+    const msg = await ChatMessage.create(withFlags({
       speaker: ChatMessage.getSpeaker({ actor: actor }),
-      content: `<div class="cog-chat-card cog-contest-result-card cog-bg-surface"><strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(immuneText('Card', { sources }, `Immune (${sources})`))}<div class="cog-text-muted" style="font-size: 11px;">${escapeAttr(immuneText('CardNote', { actor: actor.name, item: cleanItemName }, `${actor.name} is immune to ${cleanItemName}'s effect.`))}</div></div>`,
-      flags: { [SYSTEM_ID]: { isContestRoll: true, isContestSuccess: true, defenderId: actor.id, initiatorId, immune: true, sourceRank: Number(sourceRank) || 0 } }
-    });
+      content: `<div class="cog-chat-card cog-contest-result-card cog-bg-surface"><strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(immuneText('Card', { sources }, `Immune (${sources})`))}<div class="cog-text-muted" style="font-size: 11px;">${escapeAttr(immuneText('CardNote', { actor: actor.name, item: cleanItemName }, `${actor.name} is immune to ${cleanItemName}'s effect.`))}</div></div>`
+    }, { isContestRoll: true, isContestSuccess: true, defenderId: actor.id, initiatorId, immune: true, sourceRank: Number(sourceRank) || 0 }));
     if (msg) { msg.isSuccess = true; msg.success = true; }
     return msg;
   }
@@ -170,24 +170,21 @@ export async function rollContestResponse(actor, params = {}) {
     </div>
   `;
 
-  const msg = await roll.toMessage({
+  const msg = await roll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor: actor }),
     flavor: `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(usingSkill ? matchedSkill.name : statName)} Contest Roll vs ${escapeAttr(cleanInitiatorName)}`,
-    content: cardContent,
-    flags: {
-      [SYSTEM_ID]: {
-        isContestRoll: true,
-        isContestSuccess: isSuccess,
-        defenderId: actor.id,
-        initiatorId,
-        targetThreshold,
-        rollTotal: roll.total,
-        diff,
-        sourceRank: Number(sourceRank) || 0,
-        conditionRounds
-      }
-    }
-  });
+    content: cardContent
+  }, {
+    isContestRoll: true,
+    isContestSuccess: isSuccess,
+    defenderId: actor.id,
+    initiatorId,
+    targetThreshold,
+    ...rollTotalPatch(roll.total),
+    diff,
+    sourceRank: Number(sourceRank) || 0,
+    conditionRounds
+  }));
 
   if (msg) {
     msg.isSuccess = isSuccess;

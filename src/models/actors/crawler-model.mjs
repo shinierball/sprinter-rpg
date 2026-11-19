@@ -1,4 +1,10 @@
 import { BaseActorDataModel } from './base-actor-model.mjs';
+import { lootBoxEntryField } from '../fields/craft-fields.mjs';
+import { DEFAULT_LOOT_BOX_IMG } from '../../data/loot-box-tiers.mjs';
+import { registerStoredCopy } from '../../utils/migrations/stored-copies.mjs';
+
+// An entry keeps a copy of the box template it was made from: a later migration of `Item.loot` box rows converts these too.
+registerStoredCopy({ of: 'Item.loot', at: 'field:Actor.crawler:lootBoxes' });
 
 /**
  * TypeDataModel for Crawlers (PCs).
@@ -66,7 +72,9 @@ export class CrawlerDataModel extends BaseActorDataModel {
         vehicles: new fields.ArrayField(new fields.StringField(), { initial: [] }),
         mercenaries: new fields.ArrayField(new fields.StringField(), { initial: [] })
       }),
-      currency: BaseActorDataModel.defineCurrencyField()
+      currency: BaseActorDataModel.defineCurrencyField(),
+      // The unopened loot boxes this crawler holds, one entry per stack; written only through `loot-box-entries.mjs`
+      lootBoxes: new fields.ArrayField(lootBoxEntryField(fields, DEFAULT_LOOT_BOX_IMG), { initial: [] })
     };
   }
 

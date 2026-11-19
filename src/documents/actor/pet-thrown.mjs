@@ -5,7 +5,7 @@
  *
  * Imports no sheet and not `actor.mjs`.
  */
-import { withFlags } from '../../utils/flags.mjs';
+import { flagPath, readFlag, withFlags } from '../../utils/flags.mjs';
 import { resolveActorByUuid, findTokenByActorUuid } from '../../utils/actor-uuid.mjs';
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
@@ -13,7 +13,7 @@ import { vehicleDamageCardHtml } from '../../utils/vehicle/vehicle-damage-card.m
 import { isTrustedAssist } from '../../chat/actions/use-assist.mjs';
 import { actorSizeNumber } from '../../data/sizes.mjs';
 import { THROWN_DAMAGE_TYPE, riderMayBeThrown, thrownFormula } from '../../data/rules/pet-rules.mjs';
-import { cardFlag, cardKey, speakerOf } from './vehicle-drive-common.mjs';
+import { speakerOf } from './vehicle-drive-common.mjs';
 import { creatureMoveOf } from './actor-move.mjs';
 
 /** The card flag the GM's click leaves on a riding card (a second click throws nobody again), and on the damage card. */
@@ -47,12 +47,12 @@ export async function throwRiderFromCard(message) {
   if (!globalThis.game?.user?.isGM) return null;
   const info = ridingCardInfo(message);
   if (!info?.mayBeThrown) return null;
-  if (cardFlag(message, PET_THROWN_FLAG)) return null;
+  if (readFlag(message, PET_THROWN_FLAG)) return null;
   const { pet, rider } = info;
   const spec = thrownFormula({ move: creatureMoveOf(pet).rated, sizeNumber: actorSizeNumber(pet) });
   const roll = await new Roll(spec).evaluate();
   const total = Math.max(0, Number(roll.total) || 0);
-  await message.update({ [cardKey(PET_THROWN_FLAG)]: true });
+  await message.update({ [flagPath(PET_THROWN_FLAG)]: true });
   const token = findTokenByActorUuid(globalThis.canvas?.tokens?.placeables ?? [], rider.uuid);
   token?.setTarget?.(true, { releaseOthers: true });
   const context = buildRollContext({ actor: pet, phase: 'damage', other: rider });

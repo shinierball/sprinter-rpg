@@ -8,7 +8,6 @@
  */
 import { RULE_FLAGS, hasRuleFlag, collectItemSources } from '../../utils/tag/tag-behaviour.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
-import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { guidanceCausesFor } from './pet-guidance.mjs';
 
 const NO_FLAGS = Object.freeze({});
@@ -115,18 +114,18 @@ export async function gateActionBlock(actor, actionType, { options = {} } = {}) 
   const reasons = actionBlockCauses(actor, actionType);
   const name = actor?.name || 'This actor';
   const debuffs = [...new Set(blocksInForce().flatMap((b) => blockCovers(b, actionType) && hasRuleFlag(actor, b.flag) ? blockSourceNames(actor, b.flag) : []))].join(', ');
-  // The message becomes HTML in the dialog body (names escaped); the reason is plain text (a notification).
+  // The message and the reason are plain text; the confirm escapes the message where it shows it.
   // A type-limited restriction names its own rule ("Cannot cast Spells"), not "cannot take Actions".
   const guidance = guidanceCausesFor(actor, actionType);
   const typedOnly = reasons.every((r) => TYPED_BLOCKS.some((b) => b.cause === r));
-  const causeText = escapeAttr(reasons.join('; '));
+  const causeText = reasons.join('; ');
   const message = guidance.length
-    ? `${escapeAttr(name)}: ${causeText}. Act anyway as a Rule Break?`
+    ? `${name}: ${causeText}. Act anyway as a Rule Break?`
     : typedOnly
-    ? text('COG.ActionBlockGate.PromptCause', { name: escapeAttr(name), cause: causeText, debuffs: escapeAttr(debuffs) }, `${escapeAttr(name)}: ${causeText} (${escapeAttr(debuffs)}). Act anyway as a Rule Break?`)
+    ? text('COG.ActionBlockGate.PromptCause', { name, cause: causeText, debuffs }, `${name}: ${causeText} (${debuffs}). Act anyway as a Rule Break?`)
     : debuffs
-    ? text('COG.ActionBlockGate.PromptDebuff', { name: escapeAttr(name), debuffs: escapeAttr(debuffs) }, `${escapeAttr(name)} cannot take Actions (${escapeAttr(debuffs)}). Act anyway as a Rule Break?`)
-    : text('COG.ActionBlockGate.Prompt', { name: escapeAttr(name) }, `${escapeAttr(name)} cannot take Actions. Act anyway as a Rule Break?`);
+    ? text('COG.ActionBlockGate.PromptDebuff', { name, debuffs }, `${name} cannot take Actions (${debuffs}). Act anyway as a Rule Break?`)
+    : text('COG.ActionBlockGate.Prompt', { name }, `${name} cannot take Actions. Act anyway as a Rule Break?`);
   const res = await confirmRuleBreak({
     title: text('COG.ActionBlockGate.Title', null, 'Cannot Act'),
     message,

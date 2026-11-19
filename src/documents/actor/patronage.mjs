@@ -182,12 +182,17 @@ export function patronCriteriaFor(actor, item) {
 /** Every criteria row of a patron item as met / unmet / "the GM judges" lines (the audition dialog and Make Patron show it); '' for a god. */
 export function patronCriteriaHtml(actor, item) {
   if (item.type !== 'patron') return '';
-  const rows = patronCriteriaFor(actor, item).map((row) => {
+  return `<ul class="cog-patron-criteria">${patronCriteriaLines(actor, item).map((line) => `<li>${escapeAttr(line)}</li>`).join('')}</ul>`;
+}
+
+/** The same criteria rows as plain lines ("Name: state"); [] for a god. */
+function patronCriteriaLines(actor, item) {
+  if (item.type !== 'patron') return [];
+  return patronCriteriaFor(actor, item).map((row) => {
     const name = say(`COG.Patron.Audition.Criteria.${row.id}`, row.id);
     const state = say(`COG.Patron.Audition.Criteria.State.${row.status}`, row.status);
-    return `<li>${escapeAttr(name)}: ${escapeAttr(state)}</li>`;
+    return `${name}: ${state}`;
   });
-  return `<ul class="cog-patron-criteria">${rows.join('')}</ul>`;
 }
 
 const CRITERIA_LABELS = Object.freeze({
@@ -252,9 +257,8 @@ export async function becomePatron(actor, item, { via = 'direct', options, gated
     const ask = (data) => say('COG.Patron.Gate.Ask', '{reasons}. Make {patron} {actor}\'s patron anyway as a Rule Break?', data);
     const answer = await confirmRuleBreak({
       title: say('COG.Patron.Gate.Title', 'Patron'),
-      message: ask({ reasons: reasons.map(escapeAttr).join('; '), patron: escapeAttr(item.name), actor: escapeAttr(actor.name) }),
-      reason: ask({ reasons: reasons.join('; '), patron: item.name, actor: actor.name }),
-      detail: gated && CRITERIA_VIA.includes(how) ? patronCriteriaHtml(actor, item) : '',
+      message: ask({ reasons: reasons.join('; '), patron: item.name, actor: actor.name }),
+      detailLines: gated && CRITERIA_VIA.includes(how) ? patronCriteriaLines(actor, item) : [],
       options
     });
     if (!answer.confirmed) return { ok: false, ruleBreak: false, reason: answer.refusal ?? 'cancelled' };

@@ -6,7 +6,7 @@
  * over-enchanting hazard and equipping a broken item all ask a Rule Break and record `ruleBreak: true` when confirmed.
  */
 
-import { SYSTEM_ID } from '../../constants.mjs';
+import { rollTotalOf } from '../../utils/roll/roll-total-flag.mjs';
 import { confirmRuleBreak, getRuleBreakMode, RULE_BREAK_MODES, markRuleBreak } from '../../utils/rule-break.mjs';
 import { hasAsTrigger } from '../../utils/roll/amazing-success.mjs';
 import { craftText } from '../../utils/crafting/craft-text.mjs';
@@ -23,6 +23,10 @@ import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { collectCraftModifiers } from '../../utils/roll/damage-modifiers.mjs';
 import { decrementFloorTimer } from '../actor/actor-environment.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { bodyLimbsOf } from '../../utils/gear/body-fit.mjs';
+import { equipProblems, isSlotLimitProblem } from '../../utils/gear/equip-rules.mjs';
+import { takenOffByOf, takenOffByUpdate } from '../../utils/character/overlay-state.mjs';
+import { registerGearEquipper } from '../actor/transform-fit.mjs';
 
 /** Hours a Repair takes (the book: 2 hours). */
 export const REPAIR_HOURS = 2;
@@ -149,6 +153,54 @@ export async function removeEnchantment(item, ledgerId) {
 }
 
 /**
+ * What an owned item's equip asks a Rule Break about, in prompt order: the one list of equip checks. Body fit, then the gear slot
+ * limits. Actors with no body (a vehicle) fit everything.
+ * @param {Item} item
+ * @returns {Array<{ reason: string, label: string }>}
+ */
+function equipFitProblems(item) {
+  const actor = item?.actor;
+  const limbs = bodyLimbsOf(actor);
+  if (!limbs) return [];
+  return equipProblems(item, { items: actor.items, limbs });
+}
+
+/**
+ * The equip gate: one Rule Break prompt listing every problem (body fit, slot limits), one mark. Nothing is blocked (Directive 2).
+ * @param {Item} item
+ * @param {{ interactive?: boolean, ruleBreak?: boolean }} [options]
+ * @returns {Promise<{ proceed: boolean, ruleBreak: boolean }>}
+ */
+async function confirmEquipFit(item, options = {}) {
+  const problems = equipFitProblems(item);
+  if (!problems.length) return { proceed: true, ruleBreak: false };
+  const slotFirst = isSlotLimitProblem(problems[0]);
+  const res = await confirmRuleBreak({
+    title: loc(slotFirst ? 'COG.SlotLimit.Title' : 'COG.Equip.FitTitle'),
+    message: loc(slotFirst ? 'COG.SlotLimit.Message' : 'COG.Equip.FitMessage', { name: item.name, actor: item.actor.name, problem: problems[0].label }),
+    detailLines: problems.length > 1 ? problems.map((problem) => problem.label) : [],
+    options
+  });
+  return { proceed: res.confirmed, ruleBreak: res.confirmed };
+}
+
+/**
+ * An owned item's Equipped box ticked on goes through `setItemEquipped` (the Rule Break gates live there), not into the
+ * update: when the submit turns it on (gear: not already true; attack: was false), the key is taken out of `data`.
+ * @param {COGItem} item
+ * @param {object} data expanded submit data, mutated
+ * @returns {boolean} whether the caller must equip the item after saving
+ */
+export function takeEquipTurnedOn(item, data) {
+  const sys = data?.system;
+  if (!item?.actor || !sys || sys.equipped !== true) return false;
+  const was = item.type === 'attack' ? item.system?.equipped !== false : item.system?.equipped === true;
+  if (was) return false;
+  delete sys.equipped;
+  return true;
+}
+
+/**
  * Equip or unequip an item. Equipping a broken or destroyed item asks a Rule Break and records it as an item flag.
  * @param {Item} item
  * @param {boolean} value
@@ -174,10 +226,19 @@ export async function setItemEquipped(item, value, options = {}) {
     if (!rival.proceed) return false;
     ruleBreak = ruleBreak || rival.ruleBreak;
   }
-  await item.update({ 'system.equipped': equip });
+  // The body-fit gate comes last, so the broken and rival prompts keep their order.
+  if (equip && item.actor) {
+    const fit = await confirmEquipFit(item, options);
+    if (!fit.proceed) return false;
+    ruleBreak = ruleBreak || fit.ruleBreak;
+  }
+  // A person's toggle is the last word on gear a body change took off: the record of who took it off goes (a refit never overrides it)
+  await item.update({ 'system.equipped': equip, ...(takenOffByOf(item) ? takenOffByUpdate('') : {}) });
   if (ruleBreak) await markRuleBreak(item);
   return true;
 }
+
+registerGearEquipper(setItemEquipped);
 
 /** A localized string; the key itself when no catalogue is loaded. */
 const loc = (key, data) => {
@@ -239,7 +300,7 @@ export async function repairItem(actor, item, { skill, options = {} } = {}) {
   // A declined roll dialog spends nothing: no hours, no Rule Break flag.
   if (!message) return { repaired: false, refusal: 'roll-declined', dc, ruleBreak };
   await decrementFloorTimer(hours, { actorUuid: actor.uuid });
-  const total = Number(message?.flags?.[SYSTEM_ID]?.rollTotal ?? message?.rolls?.[0]?.total);
+  const total = Number(rollTotalOf(message) ?? message?.rolls?.[0]?.total);
   const repaired = Number.isFinite(total) && total >= dc;
   if (repaired) {
     const gone = new Set([ITEM_STATE_TAGS.broken, ITEM_STATE_TAGS.destroyed]);

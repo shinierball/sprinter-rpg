@@ -9,7 +9,7 @@
  * (`interactive: false`) a row that needs a choice or a confirmation is skipped; a row with exactly one matching
  * skill and no prior use applies without asking.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
+import { readFlag, writeFlag } from '../flags.mjs';
 import { evaluateRows } from '../roll/damage-modifiers.mjs';
 import { CHECK_TAGS } from '../tag/tag-mechanics.mjs';
 import { buildRollContext } from '../roll/roll-context.mjs';
@@ -97,7 +97,7 @@ export async function resolveFloorRows(actor, skills, options = {}) {
   if (limited.length === 0) return { rows, ruleBreaks };
 
   const tokens = popularityTokens({ floor: getCurrentFloor() });
-  const record = actor?.flags?.[SYSTEM_ID]?.[ADVANCEMENT_USAGE_FLAG];
+  const record = readFlag(actor, ADVANCEMENT_USAGE_FLAG);
   const used = new Set(usedKeys(record, tokens).floor);
   const fired = [];
 
@@ -109,7 +109,7 @@ export async function resolveFloorRows(actor, skills, options = {}) {
     if (used.has(entry.key)) {
       const res = await confirmRuleBreak({
         title: t('COG.Advancement.FloorRowTitle'),
-        message: escapeAttr(t('COG.Advancement.FloorRowUsed', { label: entry.label })),
+        message: t('COG.Advancement.FloorRowUsed', { label: entry.label }),
         options
       });
       if (!res.confirmed) continue;
@@ -125,7 +125,7 @@ export async function resolveFloorRows(actor, skills, options = {}) {
   }
 
   if (fired.length && typeof actor.setFlag === 'function') {
-    await actor.setFlag(SYSTEM_ID, ADVANCEMENT_USAGE_FLAG, recordUsage(record, tokens, fired));
+    await writeFlag(actor, ADVANCEMENT_USAGE_FLAG, recordUsage(record, tokens, fired));
   }
   return { rows, ruleBreaks };
 }

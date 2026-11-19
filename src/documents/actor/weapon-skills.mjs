@@ -5,7 +5,7 @@ import { isTechniqueSkill, isPassiveSkill } from '../../utils/tag/tag-mechanics.
 import { catalogEntries } from '../../content/catalog-lookup.mjs';
 import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
 import { actingRank } from '../../utils/skill/rank-source.mjs';
-import { listedSkillEntries, readableSkillName, skillRefSlug, worldSkillResolver } from '../../utils/skill/weapon-skill-options.mjs';
+import { listedSkillEntries, readableSkillName, skillRefSlug, worldSkillResolver, weaponSystemFor, isImprovisedSwing, improvisedFallbackDefinition } from '../../utils/skill/weapon-skill-options.mjs';
 
 function isNonEmptyTagQuery(query) {
   if (!query) return false;
@@ -36,12 +36,13 @@ function isNonEmptyTagQuery(query) {
  * @param {Item|object} attackItem
  * @param {Array<Item>} [availableSkills=null]
  * @param {{ chosen?: string, resolver?: object }} [opts] `chosen`: the Skill identifier picked for this attack; `resolver`: where a listed Skill is looked up
- * @returns {{ matchingSkill: Item|null, auxiliarySkills: Array<Item>, skillRank: number, matchedSkills: Array<Item>, markSkills: Array<Item>, options: object[], option: object|null }}
+ * @returns {{ matchingSkill: Item|null, auxiliarySkills: Array<Item>, skillRank: number, matchedSkills: Array<Item>, markSkills: Array<Item>, options: object[], option: object|null, improvised: boolean }}
  *   `matchedSkills` is for display only; the roll uses `matchingSkill`, its `skillRank` and `markSkills` (roll-skill-policy.mjs)
  */
 export function resolveWeaponSkills(actor, attackItem, availableSkills = null, { chosen = '', resolver = worldSkillResolver() } = {}) {
-  if (!attackItem) return { matchingSkill: null, auxiliarySkills: [], skillRank: 0, matchedSkills: [], markSkills: [], options: [], option: null };
-  const sys = attackItem.system || {};
+  if (!attackItem) return { matchingSkill: null, auxiliarySkills: [], skillRank: 0, matchedSkills: [], markSkills: [], options: [], option: null, improvised: false };
+  const sys = weaponSystemFor(attackItem) || {};
+  const improvised = isImprovisedSwing(attackItem);
   const skillList = availableSkills || (actor.items ? actor.items.filter(i => i.type === 'skill') : []);
   // The listed Skills are read once: the options and the "lists nothing" check share them
   const entries = listedSkillEntries(sys, resolver);
@@ -52,6 +53,7 @@ export function resolveWeaponSkills(actor, attackItem, availableSkills = null, {
     : getItemAllTags(attackItem);
 
   const matchesAttack = (s) => {
+    // An improvised swing has exactly one Skill: the listed route below, never a tag or appliesToQuery match
     // Techniques/maneuvers modify an attack; they are never the matched weapon skill (their appliesToQuery says
     // which attacks they modify, not which weapons they wield).
     if (isTechniqueSkill(s)) return false;
@@ -66,12 +68,12 @@ export function resolveWeaponSkills(actor, attackItem, availableSkills = null, {
     const sId = (s.system?.identifier || '').toLowerCase().trim();
 
     // Route 1: Shared weapon.* or weaponGroup.* tag, OR appliesTo TagQuery
-    for (const t of attackTags) {
+    if (!improvised) for (const t of attackTags) {
       if ((t.startsWith('weapon.') || t.startsWith('weaponGroup.')) && sTags.has(t)) {
         return true;
       }
     }
-    if (isNonEmptyTagQuery(s.system?.appliesToQuery) && matchesTagQuery(attackTags, s.system.appliesToQuery)) {
+    if (!improvised && isNonEmptyTagQuery(s.system?.appliesToQuery) && matchesTagQuery(attackTags, s.system.appliesToQuery)) {
       return true;
     }
 
@@ -91,7 +93,7 @@ export function resolveWeaponSkills(actor, attackItem, availableSkills = null, {
   };
 
   const ownedMatches = skillList.filter(matchesAttack);
-  let options = weaponSkillOptions(actor, attackItem, skillList, ownedMatches, entries);
+  let options = weaponSkillOptions(actor, attackItem, skillList, ownedMatches, entries, sys, improvised);
   const listsNothing = entries.length === 0;
   if (options.length === 0 && listsNothing && ownedMatches.length === 0 && actor?.type !== 'mob' && attackItem.type === 'gear') {
     // A held weapon with no list and no owned match offers the catalog Skills its tags match, untrained.
@@ -102,13 +104,13 @@ export function resolveWeaponSkills(actor, attackItem, availableSkills = null, {
   // One skill per roll: the policy picks it; its Rank, stat and mark are the only ones used.
   const { skill: matchingSkill, rank: skillRank, markSkills, ordered, option } = pickRollSkill(actor, attackItem, options, chosen);
   if (!matchingSkill) {
-    return { matchingSkill: null, auxiliarySkills: [], skillRank: Number(sys.toHitRank) || 0, matchedSkills: ordered, markSkills: [], options, option: null };
+    return { matchingSkill: null, auxiliarySkills: [], skillRank: Number(sys.toHitRank) || 0, matchedSkills: ordered, markSkills: [], options, option: null, improvised };
   }
   // Passive Skills the weapon matches (Aiming) are never the weapon's Skill; they stay listed as auxiliary.
   const passive = ownedMatches.filter(isPassiveSkill);
   const auxiliarySkills = [...ordered.filter(s => s !== matchingSkill), ...passive];
 
-  return { matchingSkill, auxiliarySkills, skillRank, matchedSkills: [...ordered, ...passive], markSkills, options, option };
+  return { matchingSkill, auxiliarySkills, skillRank, matchedSkills: [...ordered, ...passive], markSkills, options, option, improvised };
 }
 
 function optionFor(identifier, skill, inWorld, listed) {
@@ -132,8 +134,7 @@ function optionFor(identifier, skill, inWorld, listed) {
  * @param {Array<object>} entries the weapon's listed Skills (`listedSkillEntries`)
  * @returns {Array<{ identifier: string, skill: object, rank: number, trained: boolean, inWorld: boolean, listed: boolean }>}
  */
-function weaponSkillOptions(actor, attackItem, skillList, ownedMatches = [], entries = []) {
-  const sys = attackItem?.system || {};
+function weaponSkillOptions(actor, attackItem, skillList, ownedMatches = [], entries = [], sys = attackItem?.system || {}, improvised = false) {
   const isMob = actor?.type === 'mob';
   const toHitRank = Number(sys.toHitRank) || 0;
   const ownedFor = (entry) => skillList.find(s => !isTechniqueSkill(s) && (
@@ -153,7 +154,7 @@ function weaponSkillOptions(actor, attackItem, skillList, ownedMatches = [], ent
     if (isMob) continue;
     const stand = attackItem?.type === 'attack' && toHitRank > 0
       ? skillStandIn(actor, entry.identifier, entry.definition, { bonus: toHitRank, sources: [attackItem.name] })
-      : skillStandIn(actor, entry.identifier, entry.definition);
+      : skillStandIn(actor, entry.identifier, entry.definition ?? (improvised ? improvisedFallbackDefinition() : null));
     if (!entry.inWorld) stand.name = readableSkillName(entry.identifier);
     if (!isPassiveSkill(stand)) options.push(optionFor(entry.identifier, stand, entry.inWorld, true));
   }

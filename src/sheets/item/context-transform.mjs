@@ -91,6 +91,8 @@ export function buildTransformContext(context, item) {
       lists: [{ list: 'transformEffects', stored: transform.effects, entries, groupLabel: loc('COG.Transform.AddsGroup'), customLabel: loc('COG.Transform.AddsButton') }]
     }),
     cueOptions: registryOptions(TRANSFORM_CUES, transform.cue, loc('COG.Transform.CueNone')),
+    // The chosen cue's hint, so a cue that does not post yet (`rest`, `floor`) says so where it is picked
+    cueHint: (Object.hasOwn(TRANSFORM_CUES, transform.cue) && TRANSFORM_CUES[transform.cue]?.hint) || '',
     curableOptions: registryOptions(CURE_WINDOWS, transform.curable)
   };
 }

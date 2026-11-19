@@ -1,7 +1,9 @@
 /**
- * Items that belong to the GM: an unopened loot box or an achievement. A player sees them; only the GM transfers, stashes,
- * edits or deletes them, and a player opens boxes only all at once. This is a permission boundary, not a Rule Break, so
- * there is no prompt.
+ * Items that belong to the GM: a loot box template (a `loot` item with `lootType: 'box'`) or an achievement. A crawler's
+ * unopened boxes are not items (`system.lootBoxes`, `loot-box-entries.mjs`); a box item on an actor is an inert template
+ * copy. A player sees these items; only the GM transfers, edits or deletes them, a box template never goes into or out of
+ * a stash, and a player opens boxes only all at once. This is a permission boundary, not a Rule Break, so there is no
+ * prompt.
  */
 import { isLootBoxType } from '../../models/items/loot-model.mjs';
 
@@ -17,21 +19,25 @@ function warn(key) {
   globalThis.ui?.notifications?.warn?.(i18n?.has?.(key) ? i18n.localize(key) : TEXT[key]);
 }
 
-/** How many units a box stack holds (missing quantity reads as 1). */
-export function unitsOf(item) {
-  const q = Number(item?.system?.quantity);
-  if (item?.system?.quantity === undefined || item?.system?.quantity === null || !Number.isFinite(q)) return 1;
+/** The units a box item names: a missing quantity reads as 1. */
+export function boxItemUnits(item) {
+  const raw = item?.system?.quantity;
+  const q = Number(raw);
+  if (raw === undefined || raw === null || !Number.isFinite(q)) return 1;
   return Math.max(0, Math.trunc(q));
 }
 
-/** Whether an item is a loot box with at least one unit left to open. */
-export function isUnopenedBox(item) {
-  return item?.type === 'loot' && isLootBoxType(item.system?.lootType) && !item.system?.used && unitsOf(item) > 0;
+/**
+ * Whether an item (a document or plain data) is a box template: a `loot` item whose `lootType` is `box`, not used up and
+ * naming at least one unit. A used or 0-unit box item is plain loot, as it was before boxes left the item list.
+ */
+export function isBoxTemplate(item) {
+  return item?.type === 'loot' && isLootBoxType(item.system?.lootType) && !item.system?.used && boxItemUnits(item) > 0;
 }
 
 /** Whether an item is the GM's to move or change. */
 export function isGmOnlyItem(item) {
-  return item?.type === 'achievement' || isUnopenedBox(item);
+  return item?.type === 'achievement' || isBoxTemplate(item);
 }
 
 /**
@@ -47,12 +53,12 @@ export function refuseGmOnlyItem(item, user = globalThis.game?.user) {
 }
 
 /**
- * Refuse a loot box going into or out of a personal space stash, for everyone (the GM included) with one warning.
+ * Refuse a loot box template going into or out of a personal space stash, for everyone (the GM included) with one warning.
  * @param {object} item
  * @returns {boolean} true when refused (the caller stops)
  */
 export function refuseStashedBox(item) {
-  if (!isUnopenedBox(item)) return false;
+  if (!isBoxTemplate(item)) return false;
   warn('COG.LootBoxOpen.NotStashable');
   return true;
 }

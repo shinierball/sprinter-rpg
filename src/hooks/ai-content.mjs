@@ -10,6 +10,7 @@ import { maybePromptCleanup } from '../content/theme-cleanup.mjs';
 import { COGThemeCleanupApp } from '../apps/theme-cleanup.mjs';
 import { syncRegistryConfig, refreshOfferedContent } from './system-api.mjs';
 import { AI_CONTENT_SETTING } from '../content/registry/authorship.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const t = (key, data) => {
   const i18n = globalThis.game?.i18n;
@@ -22,7 +23,7 @@ async function confirmEmpty(empty) {
   const lists = empty.map((kind) => t(`COG.AiContent.List.${kind}`)).join(', ');
   return Boolean(await globalThis.foundry.applications.api.DialogV2.confirm({
     window: { title: t('COG.AiContent.ConfirmTitle') },
-    content: `<p>${t('COG.AiContent.ConfirmBody', { lists })}</p>`,
+    content: `<p>${escapeAttr(t('COG.AiContent.ConfirmBody', { lists }))}</p>`,
     modal: true
   }));
 }

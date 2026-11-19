@@ -5,7 +5,7 @@
  * predicate, `isBuffSuppressed`); the arithmetic is `utils/effects/activation-plan.mjs`.
  */
 import { isActiveGM } from '../../utils/gm-relay.mjs';
-import { SYSTEM_ID } from '../../constants.mjs';
+import { withFlags } from '../../utils/flags.mjs';
 import { ACTIVATION_RECORD_KEY, activationOf, isEventUnit } from '../../utils/effects/activation-window.mjs';
 import { closePatch, isDueToClose, openPatch, spendPatch } from '../../utils/effects/activation-plan.mjs';
 import { activationWindowPhrase } from '../../utils/effects/activation-text.mjs';
@@ -62,11 +62,10 @@ export async function useBuffActivation(actor, buff, { options } = {}) {
 
   const now = currentTimeContext(actor);
   await item.update(statePaths(openPatch(activation, { now: now.time, combatId: runningCombatId(actor) })));
-  await globalThis.ChatMessage?.create?.({
+  await globalThis.ChatMessage?.create?.(withFlags({
     speaker: speakerOf(actor),
-    content: `<div class="cog-chat-card"><div class="cog-text-secondary">${escapeAttr(say('COG.Activation.Used', '{actor} uses {buff} {window}.', { actor: actor.name, buff: item.name, window: activationWindowPhrase(activation, say, 'COG.Activation.') }))}</div></div>`,
-    flags: { [SYSTEM_ID]: { buffActivation: item.id } }
-  }, cardMessageOptions(actor));
+    content: `<div class="cog-chat-card"><div class="cog-text-secondary">${escapeAttr(say('COG.Activation.Used', '{actor} uses {buff} {window}.', { actor: actor.name, buff: item.name, window: activationWindowPhrase(activation, say, 'COG.Activation.') }))}</div></div>`
+  }, { buffActivation: item.id }), cardMessageOptions(actor));
   return { ok: true, ruleBreak: gate.ruleBreak };
 }
 

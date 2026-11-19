@@ -2,9 +2,10 @@ import { getHpPerBar } from '../combat-metrics.mjs';
 import { cardSummary, CARD_PROFILES } from '../../utils/item-describer/card-summary.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { buffCardText } from '../../utils/card/buff-card-text.mjs';
-import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeStatValue, outcomeRestore, outcomeEnchantments, ENCHANT_ITEM_OUTCOME } from '../../utils/loot/outcome-defaults.mjs';
+import { outcomeHealBars, outcomeRounds, outcomeRankBonus, outcomeStatValue, outcomeRestore, outcomeEnchantments, ENCHANT_ITEM_OUTCOME, RECHARGE_OUTCOME } from '../../utils/loot/outcome-defaults.mjs';
 import { applyEnchantment } from './enchantments.mjs';
 import { applyEnchantTableOutcome } from './enchant-table.mjs';
+import { applyRecharge, rechargeLine, rechargeTitle } from './recharge.mjs';
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
 import { carrySourceStamp } from '../../utils/content-source.mjs';
 import { findCatalogEntry, findConditionEntry } from '../../content/catalog-lookup.mjs';
@@ -14,8 +15,20 @@ import { landBuff } from '../actor/item-buffs.mjs';
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { restoredValue } from '../../utils/damage/resource-restore.mjs';
 import { heldCureHtml } from '../actor/transform-cues.mjs';
+import { effectCardName } from '../../utils/character/transform-text.mjs';
 import { resolveOutcomeTarget } from './outcome-target.mjs';
 import { spellByIdentifier, learnSpellFromTome } from './spell-tome.mjs';
+
+/** The card line for what a spell tome did (`learnSpellFromTome`'s status); '' for a status it does not know. */
+function tomeStatusLine(learned) {
+  switch (learned.status) {
+    case 'learned': return `Learns <strong>${escapeAttr(learned.name)}</strong> at Rank ${escapeAttr(learned.rank)}!`;
+    case 'known': return `Already knows <strong>${escapeAttr(learned.name)}</strong> (Rank ${escapeAttr(learned.rank)}); nothing was added.`;
+    case 'unknown': return `No spell with identifier <strong>${escapeAttr(learned.name)}</strong> was found; nothing was added.`;
+    case 'no-actor': return 'No character to teach.';
+    default: return '';
+  }
+}
 
 /** The modifier of the stat an outcome row's `damageStat` names; 0 when blank or unknown. */
 function outcomeStatMod(actor, outcome) {
@@ -44,7 +57,11 @@ function outcomeEffects(outcomes) {
   for (const o of Array.isArray(outcomes) ? outcomes : []) {
     const type = String(o?.type || '').toLowerCase().trim();
     if (type === 'buff') out.push({ kind: 'buffs', ref: String(o.buffIdentifier || '').trim() });
-    else if (type === 'debuff') out.push({ kind: 'debuffs', ref: String(o.debuffIdentifier || '').trim() });
+    else if (type === 'debuff') {
+      const ref = String(o.debuffIdentifier || '').trim();
+      // a secret debuff's rules are not printed on a public card
+      if (findConditionEntry('debuffs', ref)?.system?.secret !== true) out.push({ kind: 'debuffs', ref });
+    }
   }
   return out;
 }
@@ -55,7 +72,7 @@ function outcomeEffects(outcomes) {
  * @param {Actor} actor
  * @param {Item} originItem
  * @param {boolean} [isMultiMode=false]
- * @param {{ enchantTarget?: Item|null, recipient?: Actor|null }} [context] the equipped item an `enchant_item` outcome upgrades, picked by the caller; the crawler a potion is poured into, who takes every `self` outcome
+ * @param {{ enchantTarget?: Item|null, recipient?: Actor|null, recharge?: { target?: Item|null }|null }} [context] the equipped item an `enchant_item` outcome upgrades, picked by the caller; the crawler a potion is poured into, who takes every `self` outcome; the pick a `recharge` outcome refills (`{ target }`, a null target when nothing could take it), made by the caller (absent: the branch is skipped)
  * @returns {Promise<object>}
  */
 export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMode = false, context = {}) {
@@ -99,12 +116,12 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
           <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="font-size: 10px;">BUFF</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Recipient:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Recipient:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
-        ${buffDesc ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${buffDesc}</p>` : ''}
+        ${buffDesc ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(buffDesc)}</p>` : ''}
         ${appliedOnUse ? `<p class="cog-applied-note" data-applied-on-use="true" style="margin: 4px 0; font-size: 11px; font-weight: bold;">${escapeAttr(buffCardText('COG.BuffCard.AppliedOnUse'))}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-apply-buff-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyBuff" data-buff-identifier="${buffIdentifier}" data-buff-name="${escapeAttr(buffName)}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          <button type="button" class="cog-apply-buff-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyBuff" data-buff-identifier="${escapeAttr(buffIdentifier)}" data-buff-name="${escapeAttr(buffName)}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
             <i class="fa-solid fa-hand-sparkles"></i> Apply Buff (${escapeAttr(buffName)})
           </button>
         </div>
@@ -113,9 +130,13 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
   } else if (outType === 'debuff') {
     const debuffIdentifier = String(outcome.debuffIdentifier || '').trim();
     // The stored name is the plain one; the card shows the debuff's live name (the book's, once imported).
-    const debuffName = findConditionEntry('debuffs', debuffIdentifier)?.name || outcome.name || 'Debuff';
-    const debuffDesc = outcome.description || '';
-    debuff = debuffName;
+    const debuffEntry = findConditionEntry('debuffs', debuffIdentifier);
+    const debuffName = debuffEntry?.name || outcome.name || 'Debuff';
+    // A secret debuff is not named on a public card, and its description stays off it
+    const secretDebuff = debuffEntry?.system?.secret === true;
+    const shownName = effectCardName(debuffEntry, debuffName);
+    const debuffDesc = secretDebuff ? '' : (outcome.description || '');
+    debuff = shownName;
 
     if (isMultiMode && targetActor) {
       const match = findConditionEntry('debuffs', debuffIdentifier);
@@ -138,17 +159,17 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-debuff cog-bg-magic-tint" style="border-left: 4px solid var(--cog-magic); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-magic" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-skull"></i> ${escapeAttr(debuffName)}
+            <i class="fa-solid fa-skull"></i> ${escapeAttr(shownName)}
           </h4>
           <span class="cog-badge cog-bg-magic-fill cog-text-on-fill" style="font-size: 10px;">DEBUFF</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Target:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Target:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
-        ${debuffDesc ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${debuffDesc}</p>` : ''}
+        ${debuffDesc ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(debuffDesc)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-apply-debuff-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerApplyCondition" data-debuff-id="${debuffIdentifier}" data-debuff-name="${escapeAttr(debuffName)}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
-            <i class="fa-solid fa-biohazard"></i> Apply Debuff (${escapeAttr(debuffName)})
+          <button type="button" class="cog-apply-debuff-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerApplyCondition" data-debuff-id="${escapeAttr(debuffIdentifier)}" data-debuff-name="${escapeAttr(shownName)}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+            <i class="fa-solid fa-biohazard"></i> Apply Debuff (${escapeAttr(shownName)})
           </button>
         </div>
       </div>
@@ -167,19 +188,19 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-heal cog-bg-gold-tint" style="border-left: 4px solid var(--cog-warning); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-warning" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-cake-candles"></i> ${outcome.name || 'Healing Pudding'}
+            <i class="fa-solid fa-cake-candles"></i> ${escapeAttr(outcome.name || 'Healing Pudding')}
           </h4>
           <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="font-size: 10px;">HEALING</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Recipient:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Recipient:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-success" style="font-size: 14px; font-weight: bold; margin: 4px 0;">
           Healing: +${healBars} Health Bars <span class="cog-text-secondary" style="font-size: 11px; font-weight: normal;">(~${healAmount} HP restored)</span>
         </div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-apply-healing-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerApplyHealing" data-bars="${healBars}" data-healing="${healAmount}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          <button type="button" class="cog-apply-healing-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerApplyHealing" data-bars="${healBars}" data-healing="${healAmount}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
             <i class="fa-solid fa-heart"></i> Apply Healing (+${healBars} Bars)
           </button>
         </div>
@@ -198,19 +219,19 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-heal cog-bg-success-tint" style="border-left: 4px solid var(--cog-success); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-success" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-heart-pulse"></i> ${outcome.name || 'Regeneration'}
+            <i class="fa-solid fa-heart-pulse"></i> ${escapeAttr(outcome.name || 'Regeneration')}
           </h4>
           <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 10px;">HEAL OVER TIME</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Recipient:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Recipient:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-success" style="font-size: 13px; font-weight: bold; margin: 4px 0;">
           Regeneration: +${healBars} Health Bar${healBars > 1 ? 's' : ''} / round for ${rounds} rounds
         </div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-apply-hot-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerApplyHoT" data-bars="${healBars}" data-rounds="${rounds}" data-name="${escapeAttr(outcome.name || 'Regeneration')}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          <button type="button" class="cog-apply-hot-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerApplyHoT" data-bars="${healBars}" data-rounds="${rounds}" data-name="${escapeAttr(outcome.name || 'Regeneration')}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
             <i class="fa-solid fa-heart-pulse"></i> Apply Regeneration (+${healBars} Bars/rnd)
           </button>
         </div>
@@ -241,19 +262,19 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-mana cog-bg-info-tint" style="border-left: 4px solid var(--cog-info); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-info" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-bolt"></i> ${outcome.name || 'Mana Restoration'}
+            <i class="fa-solid fa-bolt"></i> ${escapeAttr(outcome.name || 'Mana Restoration')}
           </h4>
           <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="font-size: 10px;">MANA</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Recipient:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Recipient:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-info" style="font-size: 14px; font-weight: bold; margin: 4px 0;">
           Mana Restored: ${restoredAmount > 0 ? `+${restoredAmount} MP` : 'Refilled'} <span class="cog-text-secondary" style="font-size: 11px; font-weight: normal;">(Now ${newVal}/${maxVal} MP)</span>
         </div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-apply-mana-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyMana" data-mana="${restoredAmount}" data-new-mana="${newVal}" data-target-uuid="${resourceTarget?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          <button type="button" class="cog-apply-mana-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerApplyMana" data-mana="${restoredAmount}" data-new-mana="${newVal}" data-target-uuid="${escapeAttr(resourceTarget?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
             <i class="fa-solid fa-bolt"></i> Restore Mana (+${restoredAmount} MP)
           </button>
         </div>
@@ -272,20 +293,20 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-buff cog-bg-success-tint" style="border-left: 4px solid var(--cog-success); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-success" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-bandage"></i> ${outcome.name || 'Mend Injury'}
+            <i class="fa-solid fa-bandage"></i> ${escapeAttr(outcome.name || 'Mend Injury')}
           </h4>
           <span class="cog-badge cog-bg-success-fill cog-text-on-fill" style="font-size: 10px;">MEND INJURY</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Target:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Target:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-success" style="font-size: 12px; font-weight: bold; margin: 4px 0;">
-          ${mendedLabel}
+          ${escapeAttr(mendedLabel)}
         </div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-mend-injury-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerMendInjury" data-severity="${severity}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
-            <i class="fa-solid fa-bandage"></i> Mend Injury (${severity.toUpperCase()})
+          <button type="button" class="cog-mend-injury-btn cog-bg-success-fill cog-text-on-fill" data-action="crawlerMendInjury" data-severity="${escapeAttr(severity)}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+            <i class="fa-solid fa-bandage"></i> Mend Injury (${escapeAttr(severity.toUpperCase())})
           </button>
         </div>
       </div>
@@ -318,7 +339,19 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
           <span class="cog-badge cog-bg-magic-fill cog-text-on-fill" style="font-size: 10px;">ENCHANTMENT</span>
         </div>
         <div class="cog-text-magic" style="font-size: 13px; margin: 4px 0;">${lines.join('<br>')}</div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
+      </div>
+    `;
+  } else if (outType === RECHARGE_OUTCOME && context.recharge) {
+    const line = rechargeLine(await applyRecharge(context.recharge.target ?? null, outcome, { actor, origin: context.recharge.origin }));
+    outcomeHtml = `
+      <div class="cog-scratch-outcome cog-outcome-buff cog-bg-magic-tint" style="border-left: 4px solid var(--cog-magic); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h4 class="cog-text-magic" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">${escapeAttr(outcome.name || rechargeTitle())}</h4>
+          <span class="cog-badge cog-bg-magic-fill cog-text-on-fill" style="font-size: 10px;">RECHARGE</span>
+        </div>
+        <div class="cog-text-magic" style="font-size: 13px; margin: 4px 0;">${escapeAttr(line)}</div>
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
       </div>
     `;
   } else if (outType === 'cure_debuff') {
@@ -334,21 +367,21 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-buff cog-bg-info-tint" style="border-left: 4px solid var(--cog-info); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-info" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-shield-virus"></i> ${outcome.name || 'Cure Debuff'}
+            <i class="fa-solid fa-shield-virus"></i> ${escapeAttr(outcome.name || 'Cure Debuff')}
           </h4>
           <span class="cog-badge cog-bg-info-fill cog-text-on-fill" style="font-size: 10px;">CURE DEBUFF</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Target:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Target:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-info" style="font-size: 12px; font-weight: bold; margin: 4px 0;">
-          ${curedLabel}
+          ${escapeAttr(curedLabel)}
         </div>
         ${heldCureHtml(cureTarget, cured.held)}
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-cure-debuff-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerCureDebuff" data-filter="${filter}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
-            <i class="fa-solid fa-shield-virus"></i> Cure Debuff (${filter.toUpperCase()})
+          <button type="button" class="cog-cure-debuff-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerCureDebuff" data-filter="${escapeAttr(filter)}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+            <i class="fa-solid fa-shield-virus"></i> Cure Debuff (${escapeAttr(filter.toUpperCase())})
           </button>
         </div>
       </div>
@@ -368,19 +401,19 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-buff cog-bg-warning-tint" style="border-left: 4px solid var(--cog-warning); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-warning" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-book-bookmark"></i> ${outcome.name || `Skill: ${skillName}`}
+            <i class="fa-solid fa-book-bookmark"></i> ${escapeAttr(outcome.name || `Skill: ${skillName}`)}
           </h4>
           <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="font-size: 10px;">SKILL TRAINING</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Recipient:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Recipient:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-warning" style="font-size: 13px; font-weight: bold; margin: 4px 0;">
-          Permanently increases <strong>${skillName}</strong> by +${bonus} Rank! ${skillRes ? (skillRes.declined ? `(declined, still Rank ${skillRes.newRank})` : `(Now Rank ${skillRes.newRank})`) : ''}
+          Permanently increases <strong>${escapeAttr(skillName)}</strong> by +${bonus} Rank! ${escapeAttr(skillRes ? (skillRes.declined ? `(declined, still Rank ${skillRes.newRank})` : `(Now Rank ${skillRes.newRank})`) : '')}
         </div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-apply-skill-rank-btn cog-bg-warning-fill cog-text-on-fill" data-action="crawlerGrantSkillRank" data-skill-identifier="${skillIdentifier}" data-skill="${escapeAttr(skillName)}" data-bonus="${bonus}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          <button type="button" class="cog-apply-skill-rank-btn cog-bg-warning-fill cog-text-on-fill" data-action="crawlerGrantSkillRank" data-skill-identifier="${escapeAttr(skillIdentifier)}" data-skill="${escapeAttr(skillName)}" data-bonus="${bonus}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
             <i class="fa-solid fa-book-bookmark"></i> Grant Skill Rank (+${bonus})
           </button>
         </div>
@@ -399,20 +432,20 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-buff cog-bg-warning-tint" style="border-left: 4px solid var(--cog-warning); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-warning" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-arrow-up-right-dots"></i> ${outcome.name || `Permanent ${stat.toUpperCase()} Boost`}
+            <i class="fa-solid fa-arrow-up-right-dots"></i> ${escapeAttr(outcome.name || `Permanent ${stat.toUpperCase()} Boost`)}
           </h4>
           <span class="cog-badge cog-bg-warning-fill cog-text-on-fill" style="font-size: 10px;">STAT BOOST</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Recipient:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Recipient:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-warning" style="font-size: 13px; font-weight: bold; margin: 4px 0;">
-          Permanently increases <strong>${stat.toUpperCase()}</strong> by +${bonus}! ${statRes ? `(Now ${statRes.newUnenhanced})` : ''}
+          Permanently increases <strong>${escapeAttr(stat.toUpperCase())}</strong> by +${bonus}! ${escapeAttr(statRes ? `(Now ${statRes.newUnenhanced})` : '')}
         </div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-apply-stat-btn cog-bg-warning-fill cog-text-on-fill" data-action="crawlerGrantStat" data-stat="${stat}" data-bonus="${bonus}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
-            <i class="fa-solid fa-arrow-up-right-dots"></i> Grant Stat Boost (+${bonus} ${stat.toUpperCase()})
+          <button type="button" class="cog-apply-stat-btn cog-bg-warning-fill cog-text-on-fill" data-action="crawlerGrantStat" data-stat="${escapeAttr(stat)}" data-bonus="${bonus}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+            <i class="fa-solid fa-arrow-up-right-dots"></i> Grant Stat Boost (+${bonus} ${escapeAttr(stat.toUpperCase())})
           </button>
         </div>
       </div>
@@ -420,22 +453,17 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
   } else if (outType === 'learn_spell') {
     // A spell tome: the tome was consumed by the caller; this teaches the spell at Rank 1 or the stated Rank.
     const learned = await learnSpellFromTome(targetActor || actor, outcome);
-    const statusLine = {
-      learned: `Learns <strong>${learned.name}</strong> at Rank ${learned.rank}!`,
-      known: `Already knows <strong>${learned.name}</strong> (Rank ${learned.rank}); nothing was added.`,
-      unknown: `No spell with identifier <strong>${learned.name}</strong> was found; nothing was added.`,
-      'no-actor': 'No character to teach.'
-    }[learned.status];
+    const statusLine = tomeStatusLine(learned);
     outcomeHtml = `
       <div class="cog-scratch-outcome cog-outcome-buff cog-bg-magic-tint" style="border-left: 4px solid var(--cog-magic); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-magic" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-book-open"></i> ${outcome.name || `Tome: ${learned.name}`}
+            <i class="fa-solid fa-book-open"></i> ${escapeAttr(outcome.name || `Tome: ${learned.name}`)}
           </h4>
           <span class="cog-badge cog-bg-magic-fill cog-text-on-fill" style="font-size: 10px;">SPELL TOME</span>
         </div>
         <div class="cog-text-magic" style="font-size: 13px; margin: 4px 0;">${statusLine}</div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
       </div>
     `;
   } else if (outType === 'spell') {
@@ -498,7 +526,7 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
     }
 
     const debuffNote = outcome.debuff
-      ? `<p class="cog-text-accent" style="margin: 4px 0 0 0; font-size: 11px;"><strong>Debuff:</strong> Targets losing 1+ Health Bar gain the <strong>${outcome.debuff} Debuff</strong>.</p>`
+      ? `<p class="cog-text-accent" style="margin: 4px 0 0 0; font-size: 11px;"><strong>Debuff:</strong> Targets losing 1+ Health Bar gain the <strong>${escapeAttr(outcome.debuff)} Debuff</strong>.</p>`
       : '';
 
     outcomeHtml = `
@@ -510,21 +538,21 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
           <span class="cog-badge cog-badge-spell cog-bg-magic-fill cog-text-on-fill" style="font-size: 10px;">0 MP (FREE CAST)</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Target:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Target:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-muted" style="font-size: 12px; margin: 4px 0;">
           <i class="fa-solid fa-bolt"></i> <strong>Spell Effect:</strong> Costs <strong>0 Mana</strong> (Item / Consumable Effect)
-          ${evaluatedDmg > 0 ? ` • Damage: <strong>${evaluatedDmg}</strong> (${damageType})` : ''}
+          ${evaluatedDmg > 0 ? ` • Damage: <strong>${escapeAttr(evaluatedDmg)}</strong> (${escapeAttr(damageType)})` : ''}
         </div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         ${debuffNote}
         <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
-          <button type="button" class="cog-cast-spell-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerCastSpell" data-spell-id="${linkedSpell?.id || linkedSpell?._id || ''}" data-spell-identifier="${linkedSpell?.system?.identifier || outcome.spellIdentifier || ''}" data-free-cast="true" data-actor-uuid="${actor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          <button type="button" class="cog-cast-spell-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerCastSpell" data-spell-id="${escapeAttr(linkedSpell?.id || linkedSpell?._id || '')}" data-spell-identifier="${escapeAttr(linkedSpell?.system?.identifier || outcome.spellIdentifier || '')}" data-free-cast="true" data-actor-uuid="${escapeAttr(actor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Cast Spell (0 Mana)
           </button>
           ${evaluatedDmg > 0 ? `
-          <button type="button" class="cog-apply-damage-btn cog-bg-accent-fill cog-text-on-fill" data-action="crawlerApplyDamage" data-multiplier="1" data-damage-value="${evaluatedDmg}" data-damage-type="${damageType}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
-            <i class="fa-solid fa-burst"></i> Apply Damage (${evaluatedDmg})
+          <button type="button" class="cog-apply-damage-btn cog-bg-accent-fill cog-text-on-fill" data-action="crawlerApplyDamage" data-multiplier="1" data-damage-value="${escapeAttr(evaluatedDmg)}" data-damage-type="${escapeAttr(damageType)}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+            <i class="fa-solid fa-burst"></i> Apply Damage (${escapeAttr(evaluatedDmg)})
           </button>` : ''}
         </div>
       </div>
@@ -548,20 +576,20 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
       <div class="cog-scratch-outcome cog-outcome-damage cog-bg-danger-tint" style="border-left: 4px solid var(--cog-accent); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 class="cog-text-accent" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-            <i class="fa-solid fa-burst"></i> ${outcome.name || 'Damage Effect'}
+            <i class="fa-solid fa-burst"></i> ${escapeAttr(outcome.name || 'Damage Effect')}
           </h4>
           <span class="cog-badge cog-badge-attack cog-bg-accent-fill cog-text-on-fill" style="font-size: 10px;">DAMAGE</span>
         </div>
         <p style="margin: 4px 0; font-size: 12px;">
-          <strong>Target:</strong> <span class="cog-text-strong">${targetName}${distLabel}</span>
+          <strong>Target:</strong> <span class="cog-text-strong">${escapeAttr(targetName)}${distLabel}</span>
         </p>
         <div class="cog-text-accent" style="font-size: 13px; font-weight: bold; margin: 4px 0;">
-          Inflicts <strong>${evaluatedDmg}</strong> (${damageType}) damage!
+          Inflicts <strong>${escapeAttr(evaluatedDmg)}</strong> (${escapeAttr(damageType)}) damage!
         </div>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-apply-damage-btn cog-bg-accent-fill cog-text-on-fill" data-action="crawlerApplyDamage" data-multiplier="1" data-damage-value="${evaluatedDmg}" data-damage-type="${damageType}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
-            <i class="fa-solid fa-burst"></i> Apply Damage (${evaluatedDmg})
+          <button type="button" class="cog-apply-damage-btn cog-bg-accent-fill cog-text-on-fill" data-action="crawlerApplyDamage" data-multiplier="1" data-damage-value="${escapeAttr(evaluatedDmg)}" data-damage-type="${escapeAttr(damageType)}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+            <i class="fa-solid fa-burst"></i> Apply Damage (${escapeAttr(evaluatedDmg)})
           </button>
         </div>
       </div>
@@ -578,10 +606,10 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
           </h4>
           <span class="cog-badge cog-bg-magic-fill cog-text-on-fill" style="font-size: 10px;">ROLL TABLE</span>
         </div>
-        <p style="margin: 4px 0; font-size: 12px;"><strong>Target:</strong> ${targetName}${distLabel}</p>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        <p style="margin: 4px 0; font-size: 12px;"><strong>Target:</strong> ${escapeAttr(targetName)}${distLabel}</p>
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-roll-table-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerDrawTable" data-table-uuid="${tableUuid}" data-table-name="${escapeAttr(tableName)}" data-target-uuid="${targetActor?.uuid || ''}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          <button type="button" class="cog-roll-table-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerDrawTable" data-table-uuid="${escapeAttr(tableUuid)}" data-table-name="${escapeAttr(tableName)}" data-target-uuid="${escapeAttr(targetActor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
             <i class="fa-solid fa-dice-d20"></i> Draw from Table (${escapeAttr(tableName)})
           </button>
         </div>
@@ -591,10 +619,10 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
     outcomeHtml = `
       <div class="cog-scratch-outcome cog-bg-info-tint" style="border-left: 4px solid var(--cog-info); padding: 8px 10px; margin: 8px 0; border-radius: 3px;">
         <h4 class="cog-text-info" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-          ${outcome.name || 'Effect'}
+          ${escapeAttr(outcome.name || 'Effect')}
         </h4>
-        <p style="margin: 4px 0; font-size: 12px;"><strong>Target:</strong> ${targetName}${distLabel}</p>
-        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${outcome.description}</p>` : ''}
+        <p style="margin: 4px 0; font-size: 12px;"><strong>Target:</strong> ${escapeAttr(targetName)}${distLabel}</p>
+        ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
       </div>
     `;
   }
@@ -626,6 +654,6 @@ export const enchantWasRefused = (res) => res.enchantAttempts > 0 && !res.enchan
  * @param {object[]} outcomes
  * @returns {Promise<string>}
  */
-export function outcomeCardSummary(item, actor, outcomes) {
-  return cardSummary(item, CARD_PROFILES.use, { actor, effects: outcomeEffects(outcomes) });
+export async function outcomeCardSummary(item, actor, outcomes) {
+  return await cardSummary(item, CARD_PROFILES.use, { actor, effects: outcomeEffects(outcomes) });
 }

@@ -9,7 +9,6 @@
  * Camera Popularity counts on every floor (D-C6, answered b). AI Favor gains while the day's bar is up are withheld
  * (never written from a hook, never a modal); the GM's button asks the Rule Break.
  */
-import { SYSTEM_ID } from '../../constants.mjs';
 import { isMigrationWrite } from '../../documents/migrations/world-migration.mjs';
 import { CAMERAS_FLAG, sanitizeCameraRecord, cameraRowOf, cameraCell, cameraReasonLabel, cameraText } from '../../utils/roll/cameras.mjs';
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
@@ -21,7 +20,7 @@ import { addPopularity } from '../../documents/actor/actor-popularity.mjs';
 import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
 import { addAiFavor, aiFavorBarState, setAiFavorBar } from './ai-favor-tally.mjs';
 import { isTrustedAssist } from './use-assist.mjs';
-import { withFlags } from '../../utils/flags.mjs';
+import { flagPath, readFlag, withFlags } from '../../utils/flags.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 /** The chat-message flag on a prompt card: `{ sourceId, row, resolved }`. */
@@ -30,11 +29,7 @@ const CAMERA_PROMPT_FLAG = 'cameraPrompt';
 
 const signed = (n) => (n > 0 ? `+${n}` : `${n}`);
 const notify = (level, key, data) => globalThis.ui?.notifications?.[level]?.(cameraText(key, data));
-const camerasPath = (tail) => `flags.${SYSTEM_ID}.${CAMERAS_FLAG}.${tail}`;
-
-function flagOf(message, key) {
-  return typeof message?.getFlag === 'function' ? message.getFlag(SYSTEM_ID, key) : message?.flags?.[SYSTEM_ID]?.[key];
-}
+const camerasPath = (tail) => flagPath(`${CAMERAS_FLAG}.${tail}`);
 
 function messageById(id) {
   return typeof id === 'string' && id ? (globalThis.game?.messages?.get?.(id) ?? null) : null;
@@ -60,7 +55,7 @@ export function cameraChangesText({ popularity = 0, aiFavor = 0 } = {}) {
  * @param {ReturnType<typeof sanitizeCameraRecord>} [record]
  * @returns {number|null}
  */
-function cameraRowFor(message, record = sanitizeCameraRecord(flagOf(message, CAMERAS_FLAG))) {
+function cameraRowFor(message, record = sanitizeCameraRecord(readFlag(message, CAMERAS_FLAG))) {
   if (record?.pickedRow) return record.pickedRow;
   const check = readCheckRecord(message);
   const eff = effectiveCheck(check);
@@ -76,7 +71,7 @@ function cameraRowFor(message, record = sanitizeCameraRecord(flagOf(message, CAM
  *   delta: { popularity: number, aiFavor: number }, withhold: boolean, needsPrompt: boolean, pending: boolean }}
  */
 export function cameraAwardPlan(message) {
-  const record = sanitizeCameraRecord(flagOf(message, CAMERAS_FLAG));
+  const record = sanitizeCameraRecord(readFlag(message, CAMERAS_FLAG));
   if (!record) return null;
   const actor = resolveActorByUuid(record.actorUuid);
   if (!actor || actor.type === 'mob') return null;
@@ -117,12 +112,11 @@ async function postPrompt(message, plan) {
   const reason = cameraReasonLabel(record.choice);
   const buttons = cell.choices.map(c => `<button type="button" class="cog-camera-choice" data-action="crawlerCameraChoice" data-gm-only="true" data-choice-id="${escapeAttr(c.id)}">${escapeAttr(c.label)}</button>`).join('');
   const whisper = globalThis.ChatMessage?.getWhisperRecipients?.('GM')?.map(u => u.id);
-  const created = await globalThis.ChatMessage?.create?.({
+  const created = await globalThis.ChatMessage?.create?.(withFlags({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }),
     content: `<div class="cog-chat-card cog-camera-prompt"><p>${escapeAttr(cameraText('COG.Cameras.PromptTitle', { reason, name: actor.name, row: cameraRowLabel(row) }))}</p><div class="cog-camera-choices">${buttons}</div></div>`,
-    ...(whisper?.length ? { whisper } : {}),
-    flags: { [SYSTEM_ID]: { [CAMERA_PROMPT_FLAG]: { sourceId: message.id, row, resolved: null } } }
-  });
+    ...(whisper?.length ? { whisper } : {})
+  }, { [CAMERA_PROMPT_FLAG]: { sourceId: message.id, row, resolved: null } }));
   if (created?.id) await message.update({ [camerasPath(`prompts.${row}`)]: created.id });
 }
 
@@ -165,7 +159,7 @@ const queues = new Map();
  */
 export function settleCameraAward(message, { force = false } = {}) {
   if (!message?.id) return Promise.resolve({ skipped: 'no-message' });
-  if (!flagOf(message, CAMERAS_FLAG)) return Promise.resolve({ skipped: 'no-record' });
+  if (!readFlag(message, CAMERAS_FLAG)) return Promise.resolve({ skipped: 'no-record' });
   if (force ? !globalThis.game?.user?.isGM : !isActiveGM()) return Promise.resolve({ skipped: 'not-gm' });
   const run = (queues.get(message.id) ?? Promise.resolve()).catch(() => {}).then(() => settleNow(message));
   queues.set(message.id, run);
@@ -179,7 +173,7 @@ export function registerCameraHooks() {
   if (hooksRegistered) return;
   hooksRegistered = true;
   const onMessage = (message) => {
-    if (!flagOf(message, CAMERAS_FLAG)) return;
+    if (!readFlag(message, CAMERAS_FLAG)) return;
     settleCameraAward(message).catch(err => console.warn('Sprinter RPG | Camera award failed', err));
   };
   globalThis.Hooks?.on?.('createChatMessage', onMessage);
@@ -202,7 +196,7 @@ export async function handleCameraPickRow(event, button, message) {
   if (!gmOnly()) return;
   const row = Number(button?.dataset?.row);
   if (!Number.isInteger(row) || row < 1 || row > 4) return;
-  if (!sanitizeCameraRecord(flagOf(message, CAMERAS_FLAG))) return;
+  if (!sanitizeCameraRecord(readFlag(message, CAMERAS_FLAG))) return;
   await message.update({ [camerasPath('pickedRow')]: row });
   await settleCameraAward(message, { force: true });
 }
@@ -217,7 +211,7 @@ export async function handleCameraAward(event, button, message) {
 /** Apply one GM choice from a prompt card, once. */
 export async function handleCameraChoice(event, button, message) {
   if (!gmOnly()) return;
-  const prompt = flagOf(message, CAMERA_PROMPT_FLAG);
+  const prompt = readFlag(message, CAMERA_PROMPT_FLAG);
   if (!prompt) return;
   if (prompt.resolved) {
     notify('info', 'COG.Cameras.AlreadyResolved');
@@ -238,7 +232,7 @@ export async function handleCameraChoice(event, button, message) {
   const { actor, record } = plan;
   // Claim the prompt before writing so a second click cannot apply again.
   await message.update({
-    [`flags.${SYSTEM_ID}.${CAMERA_PROMPT_FLAG}.resolved`]: choice.id,
+    [flagPath(`${CAMERA_PROMPT_FLAG}.resolved`)]: choice.id,
     content: `<div class="cog-chat-card cog-camera-prompt"><p>${escapeAttr(cameraText('COG.Cameras.Chosen', { choice: choice.label }))}</p></div>`
   });
   const reason = `${cameraReasonLabel(record.choice)}: ${choice.label}`;

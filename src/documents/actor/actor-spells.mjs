@@ -377,17 +377,18 @@ export async function rollSpell(actor, spellItem, action = 'cast', options = {})
   const omit = [...CARD_PROFILES.cast, ...(healInfo ? CARD_PROFILES.castHeal : []), ...(cast.nonAuraTempBars ? CARD_PROFILES.castTempBars : [])];
   // The cast card offers its conditions only when it offers no attack (the hit card offers them otherwise)
   const conditionEffects = cast.offersAttack ? [] : (cast.conditionTags ?? []).map((ref) => ({ kind: 'debuffs', ref }));
-  cast.summaryHtml = await cardSummary(spellItem, omit, { actor, effects: conditionEffects });
+  const summaryHtml = await cardSummary(spellItem, omit, { actor, effects: conditionEffects });
   // The buffs this spell applies: a block per row in force, on every cast card (an attack spell included)
-  cast.buffBlocks = await buffApplyBlocks(actor, spellItem, { rank: Math.max(actingRank(spellItem), 1) });
+  const buffBlocks = await buffApplyBlocks(actor, spellItem, { rank: Math.max(actingRank(spellItem), 1) });
+  cast.buffBlocks = { flags: buffBlocks.flags };
   recordSpellCast(actor, spellItem, cost, healInfo);
 
-  const { content, contestData } = spellCastCard(actor, spellItem, opts, cast);
+  const { content, contestData } = spellCastCard(actor, spellItem, opts, cast, summaryHtml);
   // A spell whose text calls for a Spell Check against a target makes it at the cast (an attack spell's Check is its attack roll)
   if (contestData?.hasContest && !cast.offersAttack && castTakesMark(spellItem, opts)) await actor.markSkillUsed(spellItem, { reason: 'spell-check' });
   const castMessage = await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor }),
-    content: content + cast.buffBlocks.html,
+    content: content + buffBlocks.html,
     flags: spellCastFlags(actor, spellItem, opts, cast, contestData)
   }, cardMessageOptions(actor));
   await relayPendingSpellConditions(castMessage, spellItem, cast.pendingConditions, cast.appliedConditionTargets, 'appliedTargets');

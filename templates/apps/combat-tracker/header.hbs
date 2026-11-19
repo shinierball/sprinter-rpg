@@ -82,7 +82,7 @@
         <span class="cog-history-banner-text">
           <i class="fa-solid fa-clock-rotate-left"></i> Viewing Past Round {{viewedRound}} History
         </span>
-        <button type="button" class="cog-return-live-btn" data-action="returnLive" data-tooltip="Jump back to live active round {{round}}">
+        <button type="button" class="cog-return-live-btn" data-action="returnLive" data-tooltip-text="Jump back to live active round {{round}}">
           <i class="fa-solid fa-play"></i> LIVE RD {{round}}
         </button>
       </div>
@@ -116,7 +116,7 @@
           <span class="cog-step-desc">{{currentStepDefinition.desc}}</span>
         </div>
         {{#if isGM}}
-        <button type="button" class="cog-step-nav-btn next-step{{#if isCleanUpStep}} cog-end-round{{/if}}" data-action="stepNext" data-tooltip="{{nextStepTooltip}}">
+        <button type="button" class="cog-step-nav-btn next-step{{#if isCleanUpStep}} cog-end-round{{/if}}" data-action="stepNext" data-tooltip-text="{{nextStepTooltip}}">
           {{#if isCleanUpStep}}<span class="cog-end-round-label">{{nextStepLabel}}</span>{{/if}}
           <i class="fas {{#if isCleanUpStep}}fa-rotate-right{{else}}fa-chevron-right{{/if}}"></i>
         </button>
@@ -128,13 +128,13 @@
           <button type="button" class="cog-step-pill {{#if st.isActive}}active{{/if}} {{#if st.isPast}}past{{/if}} side-{{st.activeSide}}"
                   data-action="setStep"
                   data-step-id="{{st.id}}"
-                  data-tooltip="{{st.label}}: {{st.desc}}">
+                  data-tooltip-text="{{st.label}}: {{st.desc}}">
             {{st.shortLabel}}
           </button>
           {{else}}
           <span class="cog-step-pill {{#if st.isActive}}active{{/if}} {{#if st.isPast}}past{{/if}} side-{{st.activeSide}}"
                 data-step-id="{{st.id}}"
-                data-tooltip="{{st.label}}: {{st.desc}}">
+                data-tooltip-text="{{st.label}}: {{st.desc}}">
             {{st.shortLabel}}
           </span>
           {{/if}}

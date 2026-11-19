@@ -76,8 +76,9 @@ export async function onGearAuraItemUpdate(item, changes, options, userId) {
   return item.system.active ? holder.deactivateAura(item) : null;
 }
 
-/** `deleteItem`: the aura ends on the holder the item was taken from. */
-export async function onGearAuraItemDelete(item, _options, userId) {
+/** `deleteItem`: the aura ends on the holder the item was taken from (not on a world migration's deletion). */
+export async function onGearAuraItemDelete(item, options, userId) {
+  if (isMigrationWrite(options)) return null;
   const holder = wielderOf(item);
   if (!holder || item?.type !== 'gear' || !item.system?.active || !ownUserChange(userId)) return null;
   return holder.deactivateAura(item, { itemDeleted: true });

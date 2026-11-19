@@ -25,6 +25,16 @@ export function readFlag(doc, key) {
 }
 
 /**
+ * Several flags of this system on a document or on plain data, as one object keyed by the names asked for (a flag that
+ * is not set reads `undefined`). For a card or record whose reader needs a handful of keys; each is read like `readFlag`.
+ * @param {object} doc a document, or data with a `flags` property
+ * @param {string[]} keys the flag keys
+ */
+export function readFlags(doc, keys) {
+  return Object.fromEntries(keys.map((key) => [key, readFlag(doc, key)]));
+}
+
+/**
  * Unset one flag of this system on a document (the deletion syntax is Foundry's, never written here). Resolves to what
  * `unsetFlag` resolves to; does nothing for a document without the method or a key that is not a string.
  * @param {object} doc a document
@@ -79,4 +89,9 @@ export function withoutFlags(data, keys) {
   if (!bag || !keys.some((key) => key in bag)) return data;
   const kept = Object.fromEntries(Object.entries(bag).filter(([key]) => !keys.includes(key)));
   return { ...data, flags: { ...flags, [SYSTEM_ID]: kept } };
+}
+
+/** A replace-not-merge value for a document update of a flag (Foundry v14 ForcedReplacement); the plain value outside Foundry. */
+export function forcedReplacement(value) {
+  return globalThis.foundry?.data?.operators?.ForcedReplacement?.create?.(value) ?? value;
 }

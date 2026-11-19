@@ -55,7 +55,7 @@ const { broken: BROKEN_TAG, destroyed: DESTROYED_TAG } = ITEM_STATE_TAGS;
 const tagLabels = (list) => normalizeTagList(list).map((id) => getTagDefinition(id)?.label || id).join(', ');
 
 /** A tag query as one phrase ("A, B, any of C, not D"); '' when it names nothing. */
-function queryText(q) {
+export function queryText(q) {
   if (!q || typeof q !== 'object') return '';
   const any = tagLabels(q.any);
   const none = tagLabels(q.none);

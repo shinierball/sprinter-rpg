@@ -4,11 +4,11 @@
  * are shown to the GM only; a player sees the tier and "Sealed".
  */
 import { lootBoxTierDef, lootBoxTierOptions, resolveLootBoxTier } from '../../data/loot-box-tiers.mjs';
-import { isLootBoxType } from '../../models/items/loot-model.mjs';
 import { COG_ACHIEVEMENT_TIERS } from '../../data/rules/achievement-tiers.mjs';
 import { BOX_TABLE_AS } from '../../data/loot-box-rows.mjs';
 import { choiceCandidates } from '../../documents/actor/loot-box-open.mjs';
 import { buildQueryView } from './context-query.mjs';
+import { asBoxHost } from './box-host.mjs';
 import { pickOptions } from '../../utils/ui/field-options.mjs';
 import { toArray } from './util.mjs';
 import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES } from '../../utils/document-types.mjs';
@@ -108,13 +108,13 @@ function rowView(row, index, { boxTier, tables, tagOptions }) {
  * The Box part. Sets `context.isLootBox`; the rest only for a box.
  * `context.availableBoxTables` (set by the sheet for a GM) feeds the table pickers.
  * @param {object} context render context (mutated)
- * @param {object} item the loot item
+ * @param {object} boxOrHost the box host, or the loot item (its host is made here)
  */
-export function buildLootBoxContext(context, item) {
-  const sys = context.system ?? item?.system ?? {};
-  context.isLootBox = isLootBoxType(sys.lootType);
+export function buildLootBoxContext(context, boxOrHost) {
+  const host = asBoxHost(boxOrHost);
+  context.isLootBox = host.isBox;
   if (!context.isLootBox) return;
-  const box = sys.box ?? {};
+  const box = host.read();
   const tier = resolveLootBoxTier(box.tier);
   const def = lootBoxTierDef(tier);
   const gm = isGM();
@@ -130,7 +130,7 @@ export function buildLootBoxContext(context, item) {
     sealed: !gm,
     keepSealed: box.whenEmpty === 'keep',
     // A stack of copies shares its rows: Pre-roll and Choose now give every unit the same prizes
-    stackHint: gm && (Number(sys.quantity) || 1) > 1 && contents.some((r) => r?.kind === 'magicItem' || r?.kind === 'choice'),
+    stackHint: gm && host.quantity > 1 && contents.some((r) => r?.kind === 'magicItem' || r?.kind === 'choice'),
     count: contents.length,
     rows: gm ? contents.map((row, index) => rowView(row, index, { boxTier: tier, tables, tagOptions })) : [],
     tablePicker: pickOptions(tableChoices(tables), '', { blankLabel: loc('COG.LootBoxSheet.AddTable', 'Add a roll table...') }),
