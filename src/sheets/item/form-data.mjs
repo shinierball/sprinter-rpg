@@ -63,7 +63,7 @@ function mergeTemplates(stored, submitted) {
     if (materials !== undefined) out.materials = mergeRows(prior.materials, materials);
     if (rows && typeof rows === 'object') {
       out.rows = { ...(prior.rows ?? {}) };
-      for (const key of Object.keys(rows)) out.rows[key] = mergeRows(prior.rows?.[key], rows[key]);
+      for (const key of Object.keys(rows)) out.rows[key] = clearBlankScale(mergeRows(prior.rows?.[key], rows[key]));
       if (out.rows.grants) out.rows.grants = out.rows.grants.map((row, j) => keepOneTarget(prior.rows?.grants?.[j], row));
     }
     return out;

@@ -1,5 +1,5 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
-import { baseDamageField, onHitField, contestField, areaSchemaField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField, appliedBuffsField, itemTempBarsField } from '../fields/effect-fields.mjs';
+import { baseDamageField, onHitField, contestField, areaSchemaField, ammunitionField, interruptSchemaField, rankDamagePartsField, lightSchemaField, auraStateField, appliedBuffsField, itemTempBarsField } from '../fields/effect-fields.mjs';
 import { damageModifiersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, popularityTriggersField, eventTriggersField, aiFavorRatingsField, asTriggersField } from '../fields/modifier-fields.mjs';
 import { advancementStateFields, cooldownField, rankBreakTimingFields, useRecordsField, durationConfigField } from '../fields/timing-fields.mjs';
 import { rankBreaksField } from '../../utils/skill/rank-breaks.mjs';
@@ -38,6 +38,7 @@ export class SkillDataModel extends BaseItemDataModel {
       // Structured Base Damage: dice 'NdM' only, the damage stat ('none' = no stat), and the damage type.
       baseDamage: baseDamageField(fields),
       notes: new fields.StringField({ initial: '' }),
+      limitations: new fields.StringField({ initial: '' }),
       description: new fields.HTMLField({ initial: '' }),
       upgrades: new fields.StringField({ initial: '' }),
       damageModifiers: damageModifiersField(fields),
@@ -137,6 +138,8 @@ export class SkillDataModel extends BaseItemDataModel {
       light: lightSchemaField(fields),
       rankBreaks: rankBreaksField(fields, rankBreakTimingFields(fields)),
       area: areaSchemaField(fields),
+      // The ammunition this weapon takes (see ammunitionField); empty takes none.
+      ammunition: ammunitionField(fields),
       // The buffs this item's card applies to people (see appliedBuffsField); an aura's `area.grantedBuffs` is separate.
       appliedBuffs: appliedBuffsField(fields),
       delivery: new fields.StringField({ initial: 'target' }),

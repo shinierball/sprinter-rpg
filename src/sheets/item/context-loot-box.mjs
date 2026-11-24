@@ -11,6 +11,7 @@ import { buildQueryView } from './context-query.mjs';
 import { asBoxHost } from './box-host.mjs';
 import { pickOptions } from '../../utils/ui/field-options.mjs';
 import { toArray } from './util.mjs';
+import { SPELLBOOK_RANK_FORMULA } from '../../utils/loot/outcome-defaults.mjs';
 import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES } from '../../utils/document-types.mjs';
 
 const KIND_LABELS = Object.freeze({
@@ -50,6 +51,16 @@ function tableAsOptions(selected) {
   return ids.map((id) => ({ value: id, label: loc(`COG.LootBoxSheet.TableAs.${id || 'printed'}`, fallbacks[id]), selected: id === selected }));
 }
 
+/** A spell row's Rank modes: the fixed Rank, the book's random roll, and a formula a module set (shown, not lost). */
+function rankModeOptions(formula) {
+  const modes = [
+    { value: '', label: loc('COG.LootBoxSheet.RankMode.Fixed', 'Fixed Rank') },
+    { value: SPELLBOOK_RANK_FORMULA, label: loc('COG.LootBoxSheet.RankMode.Book', 'Book random: 1d6 - 1, at least 1') }
+  ];
+  if (formula && formula !== SPELLBOOK_RANK_FORMULA) modes.push({ value: formula, label: formula });
+  return modes.map((m) => ({ ...m, selected: m.value === formula }));
+}
+
 /** One prize row as the template prints it. */
 function rowView(row, index, { boxTier, tables, tagOptions }) {
   const kind = String(row?.kind ?? 'item');
@@ -73,6 +84,11 @@ function rowView(row, index, { boxTier, tables, tagOptions }) {
     hasRank: kind === 'spell',
     hasQuantity: kind === 'item' || kind === 'table' || kind === 'magicItem' || kind === 'choice'
   };
+  if (view.isSpell) {
+    view.rankModes = rankModeOptions(view.formula);
+    view.rankRandom = view.formula !== '';
+    view.hasRank = !view.rankRandom;
+  }
   if (view.isChoice) {
     const itemType = String(row?.itemType ?? '');
     view.itemTypeOptions = choiceTypeOptions(itemType);

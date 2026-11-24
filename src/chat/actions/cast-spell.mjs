@@ -3,6 +3,7 @@
  */
 import { COGItem } from '../../documents/item.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { castRankOption } from '../../utils/skill/rank-source.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { isContentOff } from '../../utils/content-source.mjs';
 
@@ -44,8 +45,8 @@ export async function handleCastSpell(event, button, message) {
   const spell = resolveCardSpell(actor, { spellId, spellIdentifier });
 
   if (spell && typeof actor.rollSpell === 'function') {
-    await actor.rollSpell(spell, { freeCast: isFreeCast, isItemEffect: true, isConsumable: true });
+    await actor.rollSpell(spell, { freeCast: isFreeCast, isItemEffect: true, isConsumable: true, ...castRankOption(button) });
   } else if (spell) {
-    await COGItem.rollSpellCard(spell, { freeCast: isFreeCast, isItemEffect: true, isConsumable: true });
+    await COGItem.rollSpellCard(spell, { freeCast: isFreeCast, isItemEffect: true, isConsumable: true, ...castRankOption(button) });
   }
 }

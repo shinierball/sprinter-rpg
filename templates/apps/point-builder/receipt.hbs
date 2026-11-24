@@ -14,9 +14,13 @@
       <div class="cog-legality-badge {{#if ledger.isLegal}}legal{{else}}overbudget{{/if}}">
         {{#if ledger.isLegal}}
           <i class="fa-solid fa-circle-check"></i> LEGAL BUILD ({{ledger.balance}} BP Left)
+        {{else if ledger.isPassiveCapOnly}}
+          <i class="fa-solid fa-triangle-exclamation"></i> {{passiveCapNote}}
+          <div class="cog-soft-hint">Soft limit: Not enforced (GM permitted)</div>
         {{else}}
           <i class="fa-solid fa-triangle-exclamation"></i> OVER BUDGET (+{{ledger.overbudgetAmount}} BP)
           <div class="cog-soft-hint">Soft limit: Not enforced (GM permitted)</div>
+          {{#if passiveCapNote}}<div class="cog-soft-hint">{{passiveCapNote}}</div>{{/if}}
         {{/if}}
       </div>
 
@@ -28,7 +32,7 @@
         </div>
         <div class="cog-breakdown-col">
           <span class="cog-b-lbl">Detriments</span>
-          <span class="cog-b-val positive">+{{ledger.extraPoints}}</span>
+          <span class="cog-b-val positive">{{#if detrimentCapNote}}{{detrimentCapNote}}{{else}}+{{ledger.extraPoints}}{{/if}}</span>
         </div>
         <div class="cog-breakdown-col">
           <span class="cog-b-lbl">Target</span>
@@ -49,6 +53,8 @@
                 <span class="cog-r-cost refund">+{{this.extraPoints}} Extra BP</span>
               {{else if this.isPenalty}}
                 <span class="cog-r-cost">penalty</span>
+              {{else if this.isNote}}
+                <span class="cog-r-cost">{{@root.sizeUnpricedNote}}</span>
               {{else}}
                 <span class="cog-r-cost">+{{this.cost}} BP</span>
               {{/if}}

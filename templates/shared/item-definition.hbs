@@ -1,0 +1,43 @@
+{{!--
+  The read-only definition of an item (definitionView in src/utils/item-describer/definition.mjs): the quote, key facts,
+  Limitations, what it does, rank breaks, description, notes. Params: def. The blocks are direct children of the root, in
+  this order. No inputs and no `name` attributes, so nothing here is harvested by a form. The description is the enriched
+  HTML of the item's own description field, printed read-only as the item sheet prints it.
+--}}
+<div class="cog-item-definition">
+  {{#if def.quote}}<p class="cog-definition-quote">{{def.quote}}</p>{{/if}}
+  {{#if def.facts.length}}
+  <div class="cog-definition-facts">
+    {{> "systems/sprinter-rpg/templates/items/parts/feature-list.hbs" features=def.facts title=(localize "COG.SheetTables.Definition.KeyFacts")}}
+  </div>
+  {{/if}}
+  {{#if def.limitations.length}}
+  <div class="cog-definition-limitations">
+    {{> "systems/sprinter-rpg/templates/items/parts/feature-list.hbs" features=def.limitations title=(localize "COG.SheetTables.Definition.Limitations")}}
+  </div>
+  {{/if}}
+  {{#if def.effects.length}}
+    {{> "systems/sprinter-rpg/templates/items/parts/feature-list.hbs" features=def.effects title=(localize "COG.SheetTables.Definition.WhatItDoes")}}
+  {{/if}}
+  {{#if def.rankBreaks.length}}
+    {{> "systems/sprinter-rpg/templates/items/parts/feature-list.hbs" features=def.rankBreaks title=(localize "COG.SheetTables.Definition.RankBreaks")}}
+  {{/if}}
+  {{#if def.hasDescription}}
+  <div class="cog-definition-description">
+    <div class="cog-definition-heading">{{localize "COG.SheetTables.Definition.Description"}}</div>
+    {{editor def.descriptionHtml editable=false}}
+  </div>
+  {{/if}}
+  {{#if def.notes}}
+  <div class="cog-definition-notes">
+    <div class="cog-definition-heading">{{localize "COG.SheetTables.Definition.Notes"}}</div>
+    <p>{{def.notes}}</p>
+  </div>
+  {{/if}}
+  {{#if def.isEmpty}}<p class="cog-feature-empty">{{@root.summaryEmptyText}}</p>{{/if}}
+  {{#if def.canEdit}}
+  <div class="cog-definition-actions">
+    <button type="button" data-action="editItem" data-item-id="{{def.itemId}}"><i class="fa-solid fa-edit"></i> {{localize "COG.SheetTables.Definition.OpenSheet"}}</button>
+  </div>
+  {{/if}}
+</div>

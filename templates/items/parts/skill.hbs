@@ -271,6 +271,8 @@
 
 {{> "systems/sprinter-rpg/templates/items/parts/on-hit.hbs"}}
 
+{{> "systems/sprinter-rpg/templates/items/parts/ammunition.hbs"}}
+
 {{> "systems/sprinter-rpg/templates/items/parts/ability/healing.hbs" barsPlaceholder="1 or 1 + con"}}
 
 {{> "systems/sprinter-rpg/templates/items/parts/applied-buffs.hbs"}}
@@ -285,6 +287,11 @@
 {{> "systems/sprinter-rpg/templates/items/parts/ability/rank-damage-parts.hbs"}}
 
 
+<div class="cog-field-group" style="margin-bottom: 8px;">
+  <span class="cog-field-label">{{localize "COG.Skill.Sheet.Limitations"}}</span>
+  <input class="cog-field-input" type="text" name="system.limitations" value="{{system.limitations}}" placeholder="{{localize "COG.Skill.Sheet.LimitationsPlaceholder"}}" />
+  <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Skill.Sheet.LimitationsHint"}}</p>
+</div>
 <div class="cog-field-group" style="margin-bottom: 8px;">
   <span class="cog-field-label">{{localize "COG.Skill.Sheet.Notes"}}</span>
   <textarea class="cog-field-input" name="system.notes" style="height: 120px;">{{system.notes}}</textarea>

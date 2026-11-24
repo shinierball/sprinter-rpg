@@ -21,6 +21,7 @@ import { confirmRuleBreak, RULE_BREAK_REFUSALS, withRuleBreak } from '../../util
 import { combatText } from '../../utils/combat/combat-round-text.mjs';
 import { addAiFavor } from '../../chat/actions/ai-favor-tally.mjs';
 import { findCombatById, isCombatWriter, canWriteCombatant, isMobCombatant } from './combatants.mjs';
+import { pvpActionLines } from './pvp-rounds.mjs';
 import { calledPlaysOf, clearCalledPlays } from './called-plays.mjs';
 import { roundHistoryOf, saveRoundHistory } from './combat-flags.mjs';
 
@@ -310,6 +311,8 @@ export async function recordCombatantAction(combat, combatantOrId, actionData = 
   // A "no Actions" bearer (Paralyzed, Dying): the same confirm, unless the roll that led here already asked.
   // An unguided or hiding pet (and a guided one's second attack) asks through the same lines; `hasAttacked` is the viewed round's.
   if (options?.actionBlockChecked !== true) causes.push(...actionBlockLines(actor, type, { hasAttacked: actions.hasAttacked }));
+
+  causes.push(...pvpActionLines(combat, c, actions, type, actionData));
 
   let ruleBreak = false;
   let ruleBreakReason = '';

@@ -1,9 +1,13 @@
 import { getOfferedSituations, buildActionTags } from './damage-modifiers.mjs';
 import { settleFloorUses } from '../floor/floor-row-usage.mjs';
 import { CHECK_TAGS } from '../tag/tag-mechanics.mjs';
-import { camerasOffered, armedCamera, resolveCameraChoice, cameraAudienceList, cameraText } from './cameras.mjs';
+import { camerasOffered, armedCamera, resolveCameraChoice, cameraAudienceList, cameraText, SPONSORS_CHOICE } from './cameras.mjs';
+import { confirmCameraPlay } from '../../documents/actor/sponsor-limits.mjs';
+import { sponsorPlayBreaks, sponsorText } from '../../data/rules/sponsor-rules.mjs';
+import { effectiveFloor } from '../character/race-class-floor.mjs';
 import { actorSizeNumber } from '../../data/sizes.mjs';
 import { vehicleRollTags, headOnOfferFor } from '../vehicle/vehicle-combat.mjs';
+import { travelRollTags } from '../exploring/travel-roll-tags.mjs';
 import { ridingRollTags } from '../pet/pet-riding.mjs';
 import { specialtyOf } from '../skill/skill-specialty.mjs';
 import { partitionTicks } from './ticked-subject.mjs';
@@ -180,6 +184,8 @@ export function buildRollContext({
   if (!derived) for (const t of vehicleRollTags(actor)) out.add(t);
   // A crawler riding a pet rolls `situation.riding` (the rider Disadvantage on attacks reads it).
   if (!derived) for (const t of ridingRollTags(actor)) out.add(t);
+  // The party's travel pace (core p. 71): Fast or Slow, set from the floor clock HUD.
+  if (!derived) for (const t of travelRollTags()) out.add(t);
   if (otherActor) for (const t of roleTags(otherActor, role)) out.add(t);
   // Engine-set: how the two parties' sizes compare (a technique or a perk that needs it). A live actor on each side is required.
   if (!derived) {
@@ -273,7 +279,7 @@ export function buildKillContext({ attacker, victim = null, attackTags = [], sub
 }
 
 /** An actor's Level, or null when it has none to read (a missing actor, or a Level that is not a number above 0). */
-const levelOf = (actor) => {
+export const levelOf = (actor) => {
   const level = Number(actor?.system?.details?.level);
   return Number.isFinite(level) && level > 0 ? level : null;
 };
@@ -548,7 +554,7 @@ async function askRollToggles(actor, context, options, opts) {
   const helpRows = askHelpers
     ? `<fieldset class="cog-help-toggles"><legend>${escapeAttr(opts?.helpTitle ?? 'Help')}</legend>${helpers.map((h) => `<label class="cog-situation-toggle cog-help-toggle"><input type="checkbox" name="helper" value="${escapeAttr(h.key)}"${h.preTicked === true ? ' checked' : ''}> ${escapeAttr(h.label ?? h.helperName)}</label>`).join('')}${helpHint}</fieldset>`
     : '';
-  const cameraRows = askCameras ? cameraFieldsetHtml(armed) : '';
+  const cameraRows = askCameras ? cameraFieldsetHtml(armed, sponsorPlayBreaks(effectiveFloor(actor)).length > 0) : '';
   const ticked = (button, name) => [...(button?.form?.querySelectorAll?.(`input[name="${name}"]`) ?? [])].filter(isChecked).map((el) => el.getAttribute('value'));
   const title = offered.length ? 'Roll Situations' : (askCalledPlays ? 'Called Play' : (askHelpers ? (opts?.helpTitle ?? 'Help') : cameraText('COG.Cameras.Title')));
   try {
@@ -568,6 +574,8 @@ async function askRollToggles(actor, context, options, opts) {
       modal: true
     });
     if (result && typeof result === 'object' && Array.isArray(result.situations)) {
+      // A choice made here that breaks a limit is a Rule Break (an armed one was confirmed when it was armed)
+      if (askCameras && result.cameras && result.cameras !== armed && !(await confirmCameraPlay(actor, result.cameras, { options }))) result.cameras = '';
       return {
         situations: given ?? result.situations,
         calledPlayIds: result.calledPlayIds.filter((id) => defaultIds.includes(id)),
@@ -582,9 +590,10 @@ async function askRollToggles(actor, context, options, opts) {
 }
 
 /** The Playing to the Cameras radio group of the roll dialog: None plus each audience; the armed one is checked. */
-function cameraFieldsetHtml(armed) {
+function cameraFieldsetHtml(armed, sponsorsEarly = false) {
   const radio = (value, label, checked) => `<label class="cog-situation-toggle cog-camera-toggle"><input type="radio" name="cameras" value="${escapeAttr(value)}"${checked ? ' checked' : ''}> ${escapeAttr(label)}</label>`;
-  const audienceRows = cameraAudienceList().map(a => radio(a.id, a.label || a.id, a.id === armed)).join('');
+  const labelOf = (a) => (sponsorsEarly && a.id === SPONSORS_CHOICE ? sponsorText('COG.Sponsor.Limits.PlayLabel') : (a.label || a.id));
+  const audienceRows = cameraAudienceList().map(a => radio(a.id, labelOf(a), a.id === armed)).join('');
   const rows = `${radio('', cameraText('COG.Cameras.None'), !armed)}${audienceRows}`;
   return `<fieldset class="cog-camera-toggles"><legend>${escapeAttr(cameraText('COG.Cameras.Title'))}</legend>${rows}<small class="cog-situation-source">${escapeAttr(cameraText('COG.Cameras.Hint'))}</small></fieldset>`;
 }

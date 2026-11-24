@@ -41,3 +41,30 @@ function centreAtPosition(tokenDoc, pos, gridSize) {
 export function centreAfterMovement(tokenDoc, movement, gridSize) {
   return centreAtPosition(tokenDoc, positionAfterMovement(tokenDoc, movement), gridSize);
 }
+
+/**
+ * The feet a token has moved since its movement history was last cleared: the creature's own walked segments, each measured
+ * by the token's own measurement. A waypoint a push or pull made (`displace`) ends one walked run and starts the next, so the
+ * jump to it, and any push in the middle of the history, is never counted as walking.
+ * @param {object|null} tokenDoc a token document (`movementHistory`, `measureMovementPath`)
+ * @returns {number} 0 when there is no history or the token cannot measure it
+ */
+export function movedFeet(tokenDoc) {
+  const history = Array.isArray(tokenDoc?.movementHistory) ? tokenDoc.movementHistory : [];
+  if (history.length === 0 || typeof tokenDoc.measureMovementPath !== 'function') return 0;
+  const runs = [];
+  let run = [];
+  for (const waypoint of history) {
+    if (waypoint?.action === 'displace') {
+      if (run.length > 1) runs.push(run);
+      run = [waypoint];
+    } else run.push(waypoint);
+  }
+  if (run.length > 1) runs.push(run);
+  let total = 0;
+  for (const walked of runs) {
+    const distance = Number(tokenDoc.measureMovementPath(walked)?.distance);
+    if (Number.isFinite(distance) && distance > 0) total += distance;
+  }
+  return total;
+}

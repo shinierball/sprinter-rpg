@@ -1,0 +1,112 @@
+{{!-- PAGE 4: lean INVENTORY table. The columns come from @root.tables.inventory (src/utils/ui/sheet-columns.mjs). The banner, loot box strip and sort stay in page4-inventory.hbs. --}}
+<div class="cog-lean-table-wrap">
+<table class="cog-attacks-table cog-inventory-table cog-lean-table" style="width: 100%;">
+  <thead>
+    <tr>
+      {{#each @root.tables.inventory.columns as |col|}}
+        <th class="cog-col {{col.cssClass}}"{{#if col.tip}} data-tooltip-text="{{col.tip}}"{{/if}}>{{col.label}}</th>
+      {{/each}}
+    </tr>
+  </thead>
+  <tbody>
+    {{!-- One group per item category (the item picker's: weapons, armor, accessories, consumables, ...) --}}
+    {{#each inventoryGroups as |group|}}
+      <tr class="cog-inventory-group-row" data-category="{{group.id}}">
+        <th class="cog-bg-surface-muted cog-text-strong" colspan="{{@root.tables.inventory.span}}" style="text-align: left; font-size: 11px; text-transform: uppercase; padding: 4px 8px;">
+          <i class="{{group.icon}} cog-text-accent"></i> {{group.label}} <span class="cog-text-secondary" style="font-weight: normal;">({{group.items.length}})</span>
+        </th>
+      </tr>
+      {{#each group.items as |item|}}
+        <tr class="draggable {{#if group.isGear}}{{#if item.system.equipped}}cog-bg-danger-tint{{/if}}{{#if item.isOffline}} cog-gear-offline{{/if}}{{/if}}" data-item-id="{{item.id}}" draggable="true">
+          <td class="cog-col-item">
+            <div class="cog-spell-name-cell">
+              {{#if group.isGear}}
+                <button class="cog-bg-none" type="button" data-action="toggleGearEquipped" data-tooltip-text="{{#if item.system.equipped}}Equipped to {{upper item.system.slot}} (Click to unequip){{else}}Unequipped (Click to equip to {{upper item.system.slot}}){{/if}}" style="border: none; cursor: pointer; padding: 2px 4px; font-size: 14px;">
+                  {{#if item.system.equipped}}
+                    <i class="fa-solid fa-shield-halved cog-text-accent"></i>
+                  {{else}}
+                    <i class="fa-regular fa-circle cog-text-secondary"></i>
+                  {{/if}}
+                </button>
+              {{/if}}
+              <button type="button" class="cog-row-name" data-action="toggleDefinition" data-item-id="{{item.id}}" aria-expanded="{{#if item.definitionOpen}}true{{else}}false{{/if}}"{{#unless item.definitionOpen}}{{#if item.summaryTip}} data-tooltip-text="{{item.summaryTip}}" data-tooltip-class="cog-tooltip-lines"{{/if}}{{/unless}}><i class="fa-solid {{#if item.definitionOpen}}fa-chevron-down{{else}}fa-chevron-right{{/if}} cog-row-chevron"></i> {{item.name}}</button>
+              {{#if group.isGear}}
+                <span class="cog-stat-sublabel" style="display: inline-block; text-transform: uppercase;">[{{item.system.slot}}]</span>
+              {{/if}}
+              {{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=item.cooldownBadge}}
+              {{> "systems/sprinter-rpg/templates/items/parts/provenance-badges.hbs" provenance=item.provenance}}
+              {{#if group.isGear}}
+                {{#if item.system.equipped}}
+                  <span class="cog-badge cog-bg-accent-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;">EQUIPPED</span>
+                {{/if}}
+                {{#if item.isOffline}}<span class="cog-state-badge cog-badge-undone cog-badge-offline" data-tooltip-text="{{item.offlineTip}}">[{{item.offlineBadge}}]</span>{{/if}}
+                {{#if item.brokenState}}
+                  <span class="cog-badge cog-bg-danger-fill cog-text-on-fill" style="font-size: 9px; padding: 1px 4px; border-radius: 2px;">{{item.brokenLabel}}</span>
+                {{/if}}
+              {{/if}}
+            </div>
+          </td>
+          {{#if @root.tables.inventory.show.effects}}
+          <td class="cog-col-effects">
+            {{#if item.displayEffects}}<div class="cog-text cog-attack-effects" style="font-size: 10px;">{{item.displayEffects}}</div>{{/if}}
+            {{#if item.bonusesSummary}}
+              <div class="cog-text" style="font-size: 10px; margin-top: 2px;">
+                <i class="fa-solid fa-sparkles cog-text-accent"></i> {{item.bonusesSummary}}
+              </div>
+            {{/if}}
+          </td>
+          {{/if}}
+          {{#if @root.tables.inventory.show.qty}}
+          <td class="cog-col-qty">
+            <input class="cog-stat-input" data-change-action="editItemField" type="number" data-field="system.quantity" value="{{item.system.quantity}}" style="width: 44px;" />
+          </td>
+          {{/if}}
+          {{#if @root.tables.inventory.show.value}}
+          <td class="cog-col-value" style="text-align: center; white-space: nowrap;">
+            {{#if item.canSeeValue}}
+              <span class="cog-gold-value cog-text-gold" style="font-weight: bold; font-size: 11px;">
+                <i class="fa-solid fa-coins cog-text-gold" style="font-size: 10px;"></i> {{item.system.value}} GP
+              </span>
+            {{else}}
+              <span class="cog-gold-value-hidden cog-text" style="font-style: italic; font-size: 11px;" title="Requires Determine Value Rank 15 to identify gold value">
+                <i class="fa-solid fa-eye-slash" style="font-size: 10px;"></i> ???
+              </span>
+            {{/if}}
+          </td>
+          {{/if}}
+          {{#if @root.tables.inventory.show.notes}}
+          <td class="cog-col-notes">
+            <input class="cog-field-input" data-change-action="editItemField" type="text" data-field="system.notes" value="{{item.system.notes}}" placeholder="Notes..." />
+          </td>
+          {{/if}}
+          <td class="cog-col-actions" style="text-align: center;">
+            {{#if group.isGear}}
+              {{#if item.brokenState}}
+                <a class="cog-text-warning" data-action="repairItem" data-tooltip="{{localize "COG.Repair.Tooltip"}}" style="cursor: pointer; margin-right: 6px;"><i class="fa-solid fa-screwdriver-wrench"></i></a>
+              {{/if}}
+              {{#if item.canActivate}}
+                <a class="cog-text-accent" data-action="useItem" data-tooltip="Activate Gear" style="cursor: pointer; margin-right: 6px;"><i class="fa-solid fa-bolt"></i></a>
+              {{/if}}
+            {{else}}
+              <a class="cog-text-info" data-action="useItem" data-tooltip="Use Item" style="cursor: pointer; margin-right: 6px;"><i class="fa-solid fa-flask"></i></a>
+            {{/if}}
+            <a class="item-edit" data-action="editItem" data-tooltip="Edit"><i class="fa-solid fa-edit"></i></a>
+            <a class="item-delete" data-action="deleteItem" data-tooltip="Delete" style="margin-left: 6px;"><i class="fa-solid fa-trash"></i></a>
+          </td>
+        </tr>
+        {{#if item.definitionOpen}}
+          {{> "systems/sprinter-rpg/templates/actors/parts/tables/definition-row.hbs" row=item span=@root.tables.inventory.span}}
+        {{/if}}
+      {{/each}}
+    {{/each}}
+
+    {{#unless inventoryGroups.length}}
+      <tr>
+        <td class="cog-text" colspan="{{@root.tables.inventory.span}}" style="text-align: center; padding: 14px;">
+          Inventory is empty. Drag and drop items or click <strong>Add Gear</strong> / <strong>Add Item</strong>.
+        </td>
+      </tr>
+    {{/unless}}
+  </tbody>
+</table>
+</div>

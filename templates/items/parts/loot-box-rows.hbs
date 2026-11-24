@@ -43,6 +43,11 @@
       {{#if row.hasStem}}
         <input class="cog-field-input" type="text" style="width: 120px;" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="name" value="{{row.name}}" placeholder="{{localize 'COG.LootBoxSheet.ChoiceStem'}}" title="{{localize 'COG.LootBoxSheet.ChoiceStem'}}" />
       {{/if}}
+      {{#if row.rankModes}}
+        <select class="cog-field-input" style="width: 150px;" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="formula" title="{{localize 'COG.LootBoxSheet.RankMode.Title'}}">
+          {{#each row.rankModes as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+        </select>
+      {{/if}}
       {{#if row.hasRank}}
         <input class="cog-field-input" type="number" min="1" step="1" style="width: 56px;" data-change-action="editBoxRow" data-index="{{row.index}}" data-field="rank" value="{{row.rank}}" placeholder="1" title="{{localize 'COG.LootBoxSheet.Rank'}}" />
       {{/if}}

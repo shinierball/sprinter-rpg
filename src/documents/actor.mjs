@@ -18,6 +18,7 @@ import { isMigrationWrite } from './migrations/world-migration.mjs';
 import { resolveHpPerBar } from '../utils/damage/hp-per-bar.mjs';
 import { isSameOwnedEntry } from '../utils/character/owned-entry.mjs';
 import { camerasOffered, sanitizeCameraChoice, armedCamera, CAMERA_ARMED_FLAG } from '../utils/roll/cameras.mjs';
+import { confirmCameraPlay } from './actor/sponsor-limits.mjs';
 import { MOB_BOSS_TAG } from '../data/tag-vocabulary.mjs';
 import { tokenDefaultUpdates } from '../data/token-defaults.mjs';
 import * as popularity from './actor/actor-popularity.mjs';
@@ -520,7 +521,9 @@ export class COGActor extends BaseActor {
    * @returns {Promise<string>} the armed id, '' when disarmed
    */
   async armCameras(id = '') {
-    const choice = camerasOffered(this) ? sanitizeCameraChoice(id) : '';
+    let choice = camerasOffered(this) ? sanitizeCameraChoice(id) : '';
+    // Playing to the Sponsors before the Fourth Floor, or a second play in one session, is a Rule Break; a refusal arms nothing
+    if (!(await confirmCameraPlay(this, choice))) choice = '';
     if (choice) await writeFlag(this, CAMERA_ARMED_FLAG, choice);
     else if (armedCamera(this)) await clearFlag(this, CAMERA_ARMED_FLAG);
     return choice;

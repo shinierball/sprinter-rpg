@@ -11,7 +11,7 @@
  */
 
 /**
- * @typedef {'damage'|'target'|'defense'|'derived'|'evade'|'reflect'|'retaliate'|'cap'|'fire'|'effect'|'incoming'|'rollBonus'|'rollAdvantage'|'assist'|'craft'|'boxChoose'|'boxOpen'|'magicItem'|'require'} Stage
+ * @typedef {'damage'|'target'|'forced'|'defense'|'derived'|'evade'|'reflect'|'retaliate'|'cap'|'fire'|'effect'|'incoming'|'rollBonus'|'rollAdvantage'|'assist'|'craft'|'boxChoose'|'boxOpen'|'magicItem'|'require'} Stage
  * @typedef {object} RowKindDef
  * @property {string} id /^[A-Za-z][\w.-]*$/ ; built-ins unprefixed, modules prefixed ('my-module.ward')
  * @property {string} label i18n key (or plain text from a module) for the kind select
@@ -48,7 +48,7 @@ const ROLL_FIELDS = Object.freeze(['value', 'dice', 'stat', 'advantage', 'option
  * rows directly), `numeric` the fields a snapshot checks as numbers.
  */
 export const ROW_ARRAYS = Object.freeze({
-  damageModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'mode', default: 'add', open: true, enforce: true, stages: Object.freeze(['damage', 'target', 'heal']), fields: Object.freeze(['value', 'dice', 'stat', 'multiplier', 'damageType', 'option']) }),
+  damageModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'mode', default: 'add', open: true, enforce: true, stages: Object.freeze(['damage', 'target', 'heal', 'forced']), fields: Object.freeze(['value', 'dice', 'stat', 'multiplier', 'damageType', 'option']) }),
   defenseModifiers: Object.freeze({ roles: Object.freeze(['self', 'attacker']), kindField: 'kind', default: 'resistance', open: true, enforce: true, stages: Object.freeze(['defense', 'derived', 'evade', 'reflect', 'retaliate', 'paid', 'cap', 'effect', 'incoming']), fields: Object.freeze(['damageType', 'value', 'percent', 'flat', 'rounding', 'option', 'dice', 'oncePer']) }),
   attackModifiers: Object.freeze({ roles: Object.freeze(['self', 'subject']), kindField: 'kind', default: 'bonus', open: true, enforce: true, stages: Object.freeze(['rollBonus', 'rollAdvantage', 'waive']), fields: ROLL_FIELDS }),
   // 3.44c: `afterRoll` is offered after the roll (reroll, degree shift); `waive` lifts an engine roll penalty (a `rollPenalties` id).

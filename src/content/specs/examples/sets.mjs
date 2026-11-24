@@ -218,6 +218,31 @@ export const EXAMPLE_SET_META = Object.freeze([
     id: 'prize-shelf', symbol: 'PS', code: 'ps', label: 'Prize Shelf', release: '8.3.0',
     authorship: 'ai',
     premise: 'A contestant whose winnings are still sealed: a stack of plain boxes, a box made from a sponsor template, and one the audience has not finished voting on.'
+  }),
+  Object.freeze({
+    id: 'stage-hands', symbol: 'SH', code: 'sh', label: 'Stage Hands', release: '8.4.0',
+    authorship: 'ai',
+    premise: 'The crew moves things: a shove that pushes, pulls and slides what it hits, a sandbag that stays put, a jousting prop that counts how far the pony ran, and an extra who stands wherever he is told.'
+  }),
+  Object.freeze({
+    id: 'scenic-route', symbol: 'SR', code: 'sr', label: 'Scenic Route', release: '8.4.0',
+    authorship: 'ai',
+    premise: 'A novelty mirror for the long way round: it helps you notice danger or find the way, but only while the party travels at a Fast or a Slow pace.'
+  }),
+  Object.freeze({
+    id: 'terms-apply', symbol: 'TA', code: 'ta', label: 'Terms Apply', release: '8.4.0',
+    authorship: 'ai',
+    premise: 'Every power has a catch, and the catch is printed where you can read it: a spell and a skill that fill in their Limitations, and a scroll with its Rank written on it.'
+  }),
+  Object.freeze({
+    id: 'carry-on', symbol: 'CO', code: 'co', label: 'Carry-On', release: '8.4.0',
+    authorship: 'ai',
+    premise: 'A crawler who arrived with exactly what was in her pockets: a renamed weapon and a full Step 10 list.'
+  }),
+  Object.freeze({
+    id: 'happy-hour', symbol: 'HH', code: 'hh', label: 'Happy Hour', release: '8.4.0',
+    authorship: 'ai',
+    premise: 'The bar crew\'s odds and ends: a cocktail napkin that mixes potions in minutes, a dunk that infuses a consumable, a whetstone that counts your Levels, and a tab box with a book of random Rank.'
   })
 ]);
 

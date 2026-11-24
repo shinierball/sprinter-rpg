@@ -41,7 +41,8 @@ export const ITEM_SUMMARY_BADGES = Object.freeze({
   light: 'LIGHT',
   reward: 'REWARD',
   buff: 'BUFF',
-  debuff: 'DEBUFF'
+  debuff: 'DEBUFF',
+  limit: 'LIMIT'
 });
 
 /** The line kinds (CSS suffixes), in badge-list order. */

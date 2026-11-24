@@ -22,7 +22,7 @@ import { blankPointBuySpec } from '../data/builders/point-buy-payload.mjs';
 import * as specEdits from '../data/builders/point-buy-spec-edits.mjs';
 import { POINT_BUY_FORM, POINT_BUY_PILL_PROPS, rowActions } from './point-builder/form.mjs';
 import * as rowEdits from './point-builder/row-edits.mjs';
-import { pointBuyRowViews, pointBuyContextFields } from './point-builder/row-views.mjs';
+import { pointBuyRowViews, pointBuyContextFields, bookCapNotes } from './point-builder/row-views.mjs';
 import * as output from './point-builder/output.mjs';
 
 export class COGBasePointBuilderApp extends COGToolApp {
@@ -210,7 +210,9 @@ export class COGBasePointBuilderApp extends COGToolApp {
   calculateDetrimentPoints() { return detrimentPoints(this.spec); }
 
   /** The complete point ledger and receipt. */
-  getPointLedger() { return pointLedger(this.spec, this.baseBudget); }
+  getPointLedger() {
+    return pointLedger(this.spec, this.baseBudget);
+  }
 
   /** The crawlers the user owns, for the "Apply to World Crawler" select (only shown when no crawler was handed over). */
   crawlerTargets() {
@@ -256,7 +258,8 @@ export class COGBasePointBuilderApp extends COGToolApp {
    */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    return Object.assign(context, await this._rowViews(), pointBuyContextFields(this, this.getPointLedger()), this.targetContext());
+    const ledger = this.getPointLedger();
+    return Object.assign(context, await this._rowViews(), pointBuyContextFields(this, ledger), bookCapNotes(ledger), this.targetContext());
   }
 
 

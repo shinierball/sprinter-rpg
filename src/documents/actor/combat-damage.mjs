@@ -11,12 +11,14 @@ import { isWeaponGear, DEFAULT_CRIT_MULTIPLIER, configuredCritMultiplier } from 
 import { damageCardDataAttrs, ignoreEvadeButtonHtml } from '../../utils/damage/damage-parts.mjs';
 import { critDiceParts, cardShownParts, critDiceTotal, critDiceNoteHtml, critSubButtonHtml } from '../../utils/damage/crit-dice.mjs';
 import { resolveRollParts, targetRowsDataAttr, perTargetBoxHtml } from '../../utils/damage/per-target-damage.mjs';
+import { forcedMoveCardHtml } from './forced-move-card.mjs';
 import { collectDamageModifiers, applyStatSuppression, applyRetype, multiplierFor } from '../../utils/roll/damage-modifiers.mjs';
 import { applyDamageStatSubstitutions } from '../../utils/roll/narrow-modifiers.mjs';
 import { resolveDamageContext, extendContext, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { workingGear } from '../../utils/effects/gear-suppression.mjs';
 import { escapeAttr, jsonAttr } from '../../utils/escape-attr.mjs';
+import { cardItemNameHtml } from '../../utils/card/item-name.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
 import { attackAsTriggers } from '../../utils/roll/buff-as-triggers.mjs';
@@ -736,6 +738,7 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
       </div>
       ${critDiceNoteHtml(allParts, rollContext.isCrit)}
       ${perTargetBoxHtml(dmod.targetRows, evaluatedParts)}
+      ${forcedMoveCardHtml(actor, rollContext)}
       ${amazingPreviewHtml(amazingMessage, { triggers: asTriggers })}
       ${effectsText ? `<div class="cog-damage-effects" style="font-size: 11px; margin-bottom: 6px;"><em>${escapeAttr(effectsText)}</em></div>` : ''}
       <div class="cog-damage-actions">
@@ -763,7 +766,7 @@ export async function rollAttackDamage(actor, attackItem, options = {}) {
   if (favorBonus > 0) effectFlavorTag += ` [AI Favor rating ${escapeAttr(favorBonus)}]`;
 
   const flavorBreakdown = replacesDamage ? (variantEffect.variant.label || variantEffect.variant.id) : Object.entries(typedDamage).map(([t, val]) => `${val} ${t}`).join(', ');
-  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(attackItem?.name || 'Attack')} (Damage: ${escapeAttr(flavorBreakdown)}${hasMult ? ` [x${globalMult * effectMult}]` : ''})${effectFlavorTag}${effectsText ? ` - <em>${escapeAttr(effectsText)}</em>` : ''}`;
+  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${attackItem ? cardItemNameHtml(attackItem) : escapeAttr('Attack')} (Damage: ${escapeAttr(flavorBreakdown)}${hasMult ? ` [x${globalMult * effectMult}]` : ''})${effectFlavorTag}${effectsText ? ` - <em>${escapeAttr(effectsText)}</em>` : ''}`;
 
   const mainRoll = await new Roll(`${totalRawDamage}`).evaluate();
 

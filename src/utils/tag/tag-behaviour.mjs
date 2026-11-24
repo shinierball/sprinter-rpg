@@ -48,6 +48,9 @@ export const RULE_FLAGS = Object.freeze({
   maneuver: 'maneuver',
   mountedOnly: 'mounted-only',
   extraPet: 'extra-pet',
+  selfDirected: 'self-directed',
+  commandCheck: 'command-check',
+  commandTogether: 'command-together',
   worksInZeroZone: 'works-in-zero-zone',
   noActions: 'no-actions',
   forfeitsAction: 'forfeits-action',
@@ -57,7 +60,12 @@ export const RULE_FLAGS = Object.freeze({
   onlyAttackMove: 'only-attack-move',
   universal: 'universal',
   unseen: 'unseen',
-  mindControl: 'mind-control'
+  mindControl: 'mind-control',
+  immovable: 'immovable',
+  scatter: 'scatter',
+  scatterAimed: 'scatter-aimed',
+  reload: 'reload',
+  extraAttack: 'extra-attack'
 });
 
 /** @type {Record<string, { id: string, label: string, hint: string }>} `CONFIG.COG.ruleFlags` is this same object. */
@@ -111,7 +119,15 @@ function seedFlags() {
   registerRuleFlag({ id: RULE_FLAGS.noCast, label: 'Cannot cast Spells', hint: 'Casting a Spell while carrying this is a Rule Break confirm.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.onlyAttackMove, label: 'Only Attack and Move Actions', hint: 'Any Action other than an Attack or a Move while carrying this is a Rule Break confirm.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.mindControl, label: 'Mind control', hint: 'A spell carrying this takes control of its target; a buff whose immunity row names the tag (Clear Head) refuses it.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.immovable, label: 'Cannot be forcibly moved', hint: 'A push, pull or slide line on a damage card says the bearer cannot be moved that way; nothing is moved for it.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.scatter, label: 'Scatters on a Fail', hint: 'A failed Check or Attack with it lands off target: the card gives a 1d8 direction and the feet missed by (core pp. 200-201).' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.scatterAimed, label: 'Chooses the scatter direction', hint: 'On a reached Rank Upgrade: the direction of a miss is chosen instead of rolled.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.reload, label: 'Needs a reload', hint: 'After a Major Fail or worse the weapon needs one Action to reload; attacking first asks a Rule Break (core pp. 181-182).' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.extraAttack, label: 'Free extra Attack', hint: 'On a reached Rank Upgrade: the Attack card offers one free extra Attack with Disadvantage.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.mountedOnly, label: 'Mounted use only', hint: 'A weapon made for use while mounted or driving; a vehicle\'s driver uses it without Disadvantage.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.selfDirected, label: 'Acts without commands', hint: 'A minion with this needs no command from its controller.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.commandCheck, label: 'Commanded with a check', hint: 'A minion with this takes an Action and an Unopposed handling check for each new command.' }, { priority: 0 });
+  registerRuleFlag({ id: RULE_FLAGS.commandTogether, label: 'Copies follow together', hint: 'A Success commanding one creature with this commands every creature holding a copy from the same cast.' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.extraPet, label: 'Keeps one more pet', hint: 'A crawler with this keeps one more pet than the usual limit (the limit is asked as a Rule Break when bonding past it).' }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.universal, label: 'Applies to everyone', hint: "The tag's rows apply to every creature's rolls, whether or not the creature carries the tag (a stock situation such as cover)." }, { priority: 0 });
   registerRuleFlag({ id: RULE_FLAGS.unseen, label: 'Unseen', hint: "Others cannot see the bearer: its attacks are offered 'Target cannot see you', attacks on it 'You cannot see the target'." }, { priority: 0 });

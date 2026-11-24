@@ -49,15 +49,16 @@ async function refreshRelatedSheets(actor) {
 }
 
 /**
- * Re-render every open actor sheet of one actor type: a world setting the sheet reads changed (the personal space prices).
- * @param {string} type the actor type
+ * Re-render every open actor sheet of one actor type (a world setting the sheet reads changed: the personal space prices),
+ * or of every type when none is given (the catalogs a sheet's selects read were refreshed).
+ * @param {string} [type] the actor type; omitted: every open actor sheet
  * @returns {Promise<number>} how many sheets were re-rendered
  */
-export async function refreshOpenActorSheets(type) {
+export async function refreshOpenActorSheets(type = undefined) {
   let count = 0;
   for (const app of openApplications()) {
     const doc = app?.actor ?? app?.document;
-    if (doc?.documentName !== 'Actor' || doc.type !== type || app.rendered === false) continue;
+    if (doc?.documentName !== 'Actor' || (type !== undefined && doc.type !== type) || app.rendered === false) continue;
     await app.render();
     count++;
   }

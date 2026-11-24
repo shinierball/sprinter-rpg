@@ -20,6 +20,12 @@ import { overlayOf, effectiveRace, storedAttributes, transformationOfItem } from
 import { isRaceClassLocked, raceClassText, raceClassUnlockFloor } from '../../utils/character/race-class-floor.mjs';
 import { LIFETIME_POTION_LIMIT, potionsTakenOf } from '../../data/rules/potion-rules.mjs';
 import { isRaceOrClass } from '../../utils/document-types.mjs';
+import { langText } from '../../utils/lang-text.mjs';
+
+const heldText = langText({
+  'COG.Advancement.StatPointsHeldOne': '{points} Stat point banked until Floor {floor}',
+  'COG.Advancement.StatPointsHeld': '{points} Stat points banked until Floor {floor}'
+});
 
 const FLOOR_OPTIONS = [
   'Floor 1', 'Floor 2', 'Floor 3', 'Floor 4', 'Floor 5', 'Floor 6',
@@ -224,6 +230,11 @@ export function prepareCoreContext(context, actor) {
   context.crawlerCount = COGActor.getCrawlerCount();
   context.formattedCrawlerCount = Number(context.crawlerCount).toLocaleString();
   context.bankedGrindHours = Number(system?.details?.bankedGrindHours ?? system?.bankedGrindHours) || 0;
+  context.statPointsHeld = isRaceClassLocked(actor);
+  const heldPoints = Number(system?.details?.pendingStatPoints) || 0;
+  context.statPointsHeldText = context.statPointsHeld
+    ? heldText(heldPoints === 1 ? 'COG.Advancement.StatPointsHeldOne' : 'COG.Advancement.StatPointsHeld', { points: heldPoints, floor: raceClassUnlockFloor() })
+    : '';
   context.potionLimits = actor.type === 'crawler' ? potionLimitRows(actor) : null;
 
   // Health bar segments: crawlers always have 10 bars; mobs set their own count.

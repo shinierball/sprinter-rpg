@@ -17,8 +17,9 @@ import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import { COG_OUTCOME_CONFIG } from '../session/roll-outcomes.mjs';
 import {
-  planCraft, raiseTemplateBonus, evaluateSalvage, isCraftSuccess, sanitizeCraftRef, craftContextTags, sharesProperty, propertyKeys
+  planCraft, raiseTemplateBonus, evaluateSalvage, isCraftSuccess, sanitizeCraftRef, craftContextTags, sharesProperty, propertyKeys, concoctionResult
 } from '../../utils/crafting/crafting-engine.mjs';
+import { MINUTES_PER_HOUR } from '../../utils/time/day-clock.mjs';
 import { planJunkSpend } from '../../utils/crafting/craft-materials.mjs';
 import { collectCraftModifiers } from '../../utils/roll/damage-modifiers.mjs';
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
@@ -65,7 +66,8 @@ const WARNING_TITLES = Object.freeze({
   notBatchable: 'Not a Batch Recipe',
   overSkillCap: 'Above the Skill Limit',
   clockShort: 'Not Enough Time',
-  recipeLocked: 'Locked Recipe'
+  recipeLocked: 'Locked Recipe',
+  infusionQuantity: 'Too Many Items for One Potion'
 });
 
 /**
@@ -278,7 +280,9 @@ function templatesForStep(templates, step, cursor) {
 function craftResultCardHtml(data) {
   const lines = asArray(data.steps).map((s) => {
     const outcome = COG_OUTCOME_CONFIG[s.outcome]?.label ?? s.outcome ?? 'Not rolled';
-    const salvage = asArray(s.salvage).filter((m) => m.needed > 0)
+    const table48 = s.table48 ? craftText(`COG.Craft.Process.Row.${s.table48}`) : '';
+    const acid = s.acidDice ? craftText('COG.Craft.Process.Acid', { dice: s.acidDice }) : '';
+    const salvage = (s.table48 ? [] : asArray(s.salvage)).filter((m) => m.needed > 0)
       .map((m) => `${escapeAttr(m.label || m.identifier || 'material')} ${m.consumed} used${m.kept ? `, ${m.kept} kept` : ''}`);
     const extras = [
       s.applied ? 'applied' : '',
@@ -288,7 +292,7 @@ function craftResultCardHtml(data) {
       s.bonusRaised ? (s.bonusRaised.raised > 0 ? craftText('COG.Craft.BonusRaised', { n: s.bonusRaised.n, source: s.bonusRaised.source ?? '' }) : craftText('COG.Craft.BonusNothingToRaise')) : ''
     ].filter(Boolean);
     return `<li><strong>${escapeAttr(s.label || s.kind)}</strong>: ${escapeAttr(outcome)}${s.dc !== undefined ? ` (Difficulty ${escapeAttr(s.dc)})` : ''}`
-      + `, ${escapeAttr(s.hours)} h${extras.length ? `; ${escapeAttr(extras.join(', '))}` : ''}`
+      + `, ${s.table48 ? escapeAttr(craftText('COG.Craft.Process.Minutes', { n: Math.round(s.hours * MINUTES_PER_HOUR) })) : `${escapeAttr(s.hours)} h`}${table48 ? `; ${escapeAttr(table48)}` : ''}${acid ? `; ${escapeAttr(acid)}` : ''}${extras.length ? `; ${escapeAttr(extras.join(', '))}` : ''}`
       + `${salvage.length ? `<br><em>${escapeAttr(salvage.join('; '))}</em>` : ''}</li>`;
   }).join('');
   const made = asArray(data.made).map((m) => `<li>${escapeAttr(m)}</li>`).join('');
@@ -443,6 +447,7 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
 
     const message = await actor.rollSkill(skills[i], {
       ...options,
+      ...(plan.process === 'infusion' ? { advantage: true } : {}),
       craft: craftRefOf(step, target, template, blueprint),
       craftSources: craftSpaceSources(furniture, linked, step)
     });
@@ -459,11 +464,16 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
     result.hoursSpent = round6(result.hoursSpent + step.hours);
     record.outcome = info.outcome;
     record.margin = info.margin;
+    if (plan.process) {
+      record.table48 = concoctionResult(info.outcome);
+      if (record.table48 === 'blowUp') record.acidDice = `${step.bonusLevel}d6`;
+    }
     const success = isCraftSuccess(info.outcome);
 
     // Materials and junk are spent whether or not the check succeeds; a miss returns some by margin (Table 47).
+    // A concoction or infusion keeps nothing on any result (core p. 227; Table 48 replaces Table 47).
     const lines = step.materials.map((m) => ({
-      label: m.label, identifier: m.identifier, needed: m.found, salvageable: m.salvageable
+      label: m.label, identifier: m.identifier, needed: m.found, salvageable: plan.process ? false : m.salvageable
     }));
     const salvageSteps = step.modifiers?.salvageSteps ?? 0;
     const salvage = evaluateSalvage({ outcome: info.outcome, margin: info.margin, materials: lines, steps: salvageSteps });
@@ -482,7 +492,7 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
       }
     });
     if (step.junk > 0) {
-      const junk = evaluateSalvage({ outcome: info.outcome, margin: info.margin, materials: [{ label: 'Misc. Junk', needed: step.junk, salvageable: true }], steps: salvageSteps })[0];
+      const junk = evaluateSalvage({ outcome: info.outcome, margin: info.margin, materials: [{ label: 'Misc. Junk', needed: step.junk, salvageable: !plan.process }], steps: salvageSteps })[0];
       record.salvage.push(junk);
     }
     await applyCrawlerTakes(actor, crawlerTakes);
@@ -495,7 +505,7 @@ export async function craft(actor, { blueprint, target = null, space = null, ski
     if (!success) {
       allDone = false;
       const subject = enchantTarget;
-      if (info.outcome === 'critical_failure' && subject) {
+      if (info.outcome === 'critical_failure' && subject && !plan.process) {
         await breakItem(subject);
         record.broke = true;
       }

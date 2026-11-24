@@ -12,6 +12,9 @@ import { COGOfferingDialog } from '../../apps/offering-dialog.mjs';
 import { recordOffense, payPenance } from '../../documents/actor/devotion.mjs';
 import { openDeityGift } from '../../documents/actor/deity-gifts.mjs';
 import { bondOf } from '../../utils/deity/worship-state.mjs';
+import { takeBackGoldUpdate } from '../../utils/loot/looted-gold.mjs';
+import { say } from '../../documents/actor/vehicle-drive-common.mjs';
+import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 const deityRow = (sheet, target) => {
   const item = rowItem(sheet, target);
@@ -68,6 +71,22 @@ export const DEITY_ACTIONS = {
   async deityPenance(event, target) {
     const item = deityRow(this, target);
     if (item && globalThis.game?.user?.isGM) await payPenance(this.actor, item);
+  },
+
+  /** The GM takes gold back (1474 (c)): it comes off the gold and off the loot counted for the tithe. */
+  async takeBackGold() {
+    if (!this.isEditable || !globalThis.game?.user?.isGM) return;
+    const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
+    if (typeof DialogV2?.prompt !== 'function') return;
+    const answer = await DialogV2.prompt({
+      window: { title: say('COG.Deity.Offering.TakeBackTitle', 'Take back gold') },
+      content: `<div class="form-group"><label>${escapeAttr(say('COG.Deity.Offering.TakeBackPrompt', 'How much gold does the GM take back from {actor}? It also comes off the loot counted for the tithe.', { actor: this.actor.name }))}</label><input type="number" name="gold" min="0" step="1" value="0"></div>`,
+      ok: { label: say('COG.Deity.Offering.TakeBackConfirm', 'Take it back'), callback: (event, button) => button.form?.elements?.gold?.value ?? '' },
+      rejectClose: false,
+      modal: true
+    });
+    const n = Math.floor(Number(answer));
+    if (Number.isFinite(n) && n > 0) await this.actor.update(takeBackGoldUpdate(this.actor, n));
   },
 
   /** The gift buttons are the GM's; the gift dialog refuses anyone else. */

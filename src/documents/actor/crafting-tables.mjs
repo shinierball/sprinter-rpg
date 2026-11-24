@@ -4,7 +4,7 @@
  * `effectiveTableTier`), and can be raised by paying `upgradeCostGold` or by spending a coupon. Both ways ask a Rule Break
  * where the rules are exceeded (not enough gold, already tier 10). Having no coupon is not a rule: nothing changes.
  */
-import { confirmRuleBreak, markRuleBreak } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, markRuleBreak, askOptions } from '../../utils/rule-break.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { effectiveTableTier, MAX_TABLE_TIER } from '../../utils/crafting/crafting-engine.mjs';
 import { CRAFT_TAGS } from '../../utils/tag/tag-mechanics.mjs';
@@ -83,9 +83,6 @@ async function writeTableTier(table, payer, field, ruleBreak) {
   );
   if (!reply.ok) throw new Error(`The GM could not add the tier (${reply.reason ?? 'refused'}).`);
 }
-
-/** Pass the caller's `ruleBreak` and `interactive` options on to one confirm. */
-const askOptions = (options) => ({ ruleBreak: options.ruleBreak === true, interactive: options.interactive });
 
 /**
  * Buy one tier for a table with gold from `payer`. Short of gold, or already at tier 10, asks a Rule Break; refused changes

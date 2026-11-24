@@ -12,16 +12,10 @@ import { craftGradeOf } from '../../utils/crafting/craft-flags.mjs';
 import { craftDifficultyLine } from '../../utils/crafting/crafting-engine.mjs';
 import { checkOfferText } from '../../utils/roll/check-offer-text.mjs';
 import { userOwnsActor } from '../../documents/actor/personal-space-links.mjs';
+import { el } from './element.mjs';
 
 const BLOCK_CLASS = 'cog-check-offers';
 const SOURCE_TEXT = Object.freeze({ ai_favor: 'AI Favor', row: 'gear' });
-
-function el(doc, tag, className, text) {
-  const node = doc.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
 
 const degreeLabel = (id) => COG_OUTCOME_CONFIG[id]?.label ?? id;
 

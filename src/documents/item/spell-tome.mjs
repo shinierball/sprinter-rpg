@@ -52,3 +52,19 @@ export function spellByIdentifier(actor, identifier) {
   const entry = findCatalogEntry('spells', id);
   return entry && !isContentOff(entry) ? entry : null;
 }
+
+/**
+ * The cast option that makes a scroll's spell cast at the Rank written on the scroll (core p. 99): an outcome row's own
+ * `spellRank` first, else the `spellRank` of a scroll. `{}` for anything else (the spell then casts at the reader's Rank).
+ * @param {Item|null} item the item being used
+ * @param {{ spellRank?: number }|null} [outcome] the outcome row being resolved, when there is one
+ * @returns {{ castRank?: number }}
+ */
+export function scrollCastOptions(item, outcome = null) {
+  const row = Number(outcome?.spellRank);
+  if (Number.isInteger(row) && row > 0) return { castRank: row };
+  const sys = item?.system;
+  if (item?.type !== 'loot' || sys?.lootType !== 'scroll') return {};
+  const written = Number(sys.spellRank);
+  return Number.isInteger(written) && written > 0 ? { castRank: written } : {};
+}

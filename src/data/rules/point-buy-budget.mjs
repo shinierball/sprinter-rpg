@@ -3,7 +3,7 @@
  * rules and the itemized receipt. Pure functions over a spec; the builder apps only render the result.
  */
 
-import { raceSizeCost, sizeText } from '../sizes.mjs';
+import { raceSizeCost, isUnpricedSize, sizeText } from '../sizes.mjs';
 import { statPoolCounts, rankBonusCounts, statPoolLabel, rankBonusLabel } from '../builders/point-buy-payload.mjs';
 
 /** What a rank bonus costs when its row names no `cost` (a Major benefit's price). */
@@ -120,7 +120,7 @@ export function detrimentPoints(spec) {
 }
 
 /** The itemized receipt lines of a spec. */
-function receiptLines(spec, { statData, grantRowData, sizeCost }) {
+function receiptLines(spec, { statData, grantRowData, sizeCost, sizeUnpriced }) {
   const receiptItems = [];
 
   for (const [stat, val] of Object.entries(spec.stats)) {
@@ -176,12 +176,16 @@ function receiptLines(spec, { statData, grantRowData, sizeCost }) {
 
   if (sizeCost > 0) {
     receiptItems.push({ type: 'size', label: `Size ${sizeText(spec.size)}`, cost: sizeCost, isExtra: false });
+  } else if (sizeUnpriced) {
+    receiptItems.push({ type: 'size_unpriced', label: `Size ${sizeText(spec.size)}`, isNote: true, isExtra: false });
   }
   return receiptItems;
 }
 
 /**
- * The complete point ledger and receipt of a spec against its base budget.
+ * The complete point ledger and receipt of a spec against its base budget, by the book's caps (core pp. 159-161): the
+ * budget counts at most 5 extra BP from detriments, stat penalties included; a Class build holds at most 5 Passive ranks
+ * (a Race holds no such cap); a size above Medium costs 0 BP and the receipt says the GM prices it.
  * @param {object} spec A point-buy spec
  * @param {number} baseBudget The base budget (30 BP class, 25 BP race)
  */
@@ -193,6 +197,7 @@ export function pointLedger(spec, baseBudget) {
   const grantRowData = grantRowPoints(spec);
 
   const sizeCost = sizePoints(spec);
+  const sizeUnpriced = spec.builderType === 'race' && isUnpricedSize(spec.size);
   const pointsSpent =
     statData.positiveCost +
     skillData.skillCost +
@@ -202,13 +207,13 @@ export function pointLedger(spec, baseBudget) {
     grantRowData.rankBonusCost +
     sizeCost;
 
-  const extraPoints = detrimentData.totalExtraPoints;
+  const rawDetrimentPoints = detrimentData.totalExtraPoints;
+  const extraPoints = Math.min(DETRIMENT_EXTRA_CAP, rawDetrimentPoints);
   const effectiveBudget = baseBudget + extraPoints;
   const balance = effectiveBudget - pointsSpent;
   const isOverbudget = pointsSpent > effectiveBudget;
-  const overbudgetAmount = Math.max(0, pointsSpent - effectiveBudget);
-  const receiptItems = receiptLines(spec, { statData, grantRowData, sizeCost });
-  const rawDetrimentPoints = detrimentData.catalogExtra + detrimentData.customExtra + detrimentData.debuffExtra + detrimentData.rankBonusExtra;
+  const isPassiveExceeded = spec.builderType === 'class' && skillData.isPassiveExceeded;
+  const receiptItems = receiptLines(spec, { statData, grantRowData, sizeCost, sizeUnpriced });
 
   return {
     baseBudget,
@@ -219,9 +224,9 @@ export function pointLedger(spec, baseBudget) {
     balance,
     remaining: balance,
     isOverbudget,
-    overbudgetAmount,
-    isLegal: !isOverbudget && !skillData.isPassiveExceeded,
-    hasSkillRankCapWarning: skillData.isPassiveExceeded,
+    overbudgetAmount: Math.max(0, pointsSpent - effectiveBudget),
+    isLegal: !isOverbudget && !isPassiveExceeded,
+    hasSkillRankCapWarning: isPassiveExceeded,
     statCost: statData.positiveCost,
     statPenaltyExtra: statData.extraPointsFromNegatives,
     skillCost: skillData.skillCost,
@@ -231,15 +236,41 @@ export function pointLedger(spec, baseBudget) {
     buffCost: benefitData.buffCost,
     debuffExtra: detrimentData.debuffExtra,
     sizeCost,
+    sizeUnpriced,
     statPoolCost: grantRowData.statPoolCost,
     rankBonusCost: grantRowData.rankBonusCost,
     rankBonusExtra: grantRowData.rankBonusExtra,
-    detrimentExtraPoints: Math.min(DETRIMENT_EXTRA_CAP, rawDetrimentPoints),
+    detrimentExtraPoints: extraPoints,
     rawDetrimentPoints,
+    detrimentCap: DETRIMENT_EXTRA_CAP,
+    isDetrimentCapped: rawDetrimentPoints > DETRIMENT_EXTRA_CAP,
     receiptItems,
     items: receiptItems,
     passiveSkillRanks: skillData.passiveSkillRanks,
-    isPassiveExceeded: skillData.isPassiveExceeded,
-    isDetrimentCapped: detrimentData.isDetrimentCapped
+    passiveCap: PASSIVE_RANK_CAP,
+    isPassiveExceeded,
+    isPassiveCapOnly: isPassiveExceeded && !isOverbudget
   };
+}
+
+/**
+ * Every limit the ledger exceeds, so one Rule Break can name them all. Plain data, no words: the confirm
+ * formats each reason from the lang file.
+ * @param {object} ledger from `pointLedger`
+ * @returns {{ id: 'budget' | 'passive' }[]}
+ */
+export function buildBreakReasons(ledger) {
+  const reasons = [];
+  if (ledger.isOverbudget) {
+    reasons.push({
+      id: 'budget',
+      spent: ledger.pointsSpent,
+      budget: ledger.effectiveBudget,
+      capped: ledger.isDetrimentCapped,
+      earned: ledger.rawDetrimentPoints,
+      cap: ledger.detrimentCap
+    });
+  }
+  if (ledger.isPassiveExceeded) reasons.push({ id: 'passive', ranks: ledger.passiveSkillRanks, cap: ledger.passiveCap });
+  return reasons;
 }

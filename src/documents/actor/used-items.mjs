@@ -114,10 +114,11 @@ async function leavePayload(actor, payload, quantity = 1) {
  * @param {object} actor the owner
  * @param {object} item the item being used up
  * @param {{ light?: boolean }} [params] see {@link resolveUsedFormId}
+ * @param {number} [quantity=1] units to leave (one write, however many)
  * @returns {Promise<object|null>} the junk item, or null
  */
-function leaveUsedForm(actor, item, params = {}) {
-  return leavePayload(actor, usedFormPayload(item, params));
+function leaveUsedForm(actor, item, params = {}, quantity = 1) {
+  return leavePayload(actor, usedFormPayload(item, params), quantity);
 }
 
 /**
@@ -134,16 +135,17 @@ export function leaveUsedFormById(actor, formId, quantity = 1) {
 
 /**
  * Spend one unit of a consumable: its used form is left first (so a failure never loses the junk), then the stack drops by
- * one or the last unit is deleted. A consumed light leaves its junk when the light ends instead (3.76 B3), so it passes
+ * `units` (default 1) or the last units are deleted, the form left once per unit. A consumed light leaves its junk when the light ends instead (3.76 B3), so it passes
  * `leaveForm: false`. `refillCharges` is a multi-dose item whose last dose was just taken: the units left start full.
  * @param {object} item the consumable
  * @param {object|null} actor the owner
- * @param {{ quantity?: number, leaveForm?: boolean, refillCharges?: boolean }} [params]
+ * @param {{ quantity?: number, units?: number, leaveForm?: boolean, refillCharges?: boolean }} [params] `quantity` is the stack's
+ *   current count, `units` how many leave it
  */
-export async function spendConsumableUnit(item, actor, { quantity = 1, leaveForm = true, refillCharges = false } = {}) {
-  if (leaveForm) await leaveUsedForm(actor, item);
-  if (quantity > 1) {
-    const update = { 'system.quantity': quantity - 1 };
+export async function spendConsumableUnit(item, actor, { quantity = 1, units = 1, leaveForm = true, refillCharges = false } = {}) {
+  if (leaveForm) await leaveUsedForm(actor, item, {}, units);
+  if (quantity - units > 0) {
+    const update = { 'system.quantity': quantity - units };
     if (refillCharges) update['system.charges.value'] = Number(item.system?.charges?.max) || 0;
     await item.update(update);
   } else if (typeof item.delete === 'function') {

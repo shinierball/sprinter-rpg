@@ -1,7 +1,7 @@
 /**
  * Descriptive tags the 3.9a perk conversion registers (hand-maintained, not generated).
  * Each stands for a perk the engine cannot run: the label names it and the description paraphrases its rules.
- * 13 descriptions are empty on purpose: they followed the books clause by clause, so a no-import world shows only the label.
+ * 12 descriptions are empty on purpose: they followed the books clause by clause, so a no-import world shows only the label.
  * The bundled content provider registers them; nothing in the engine reads one by id (3.13 descriptive contract).
  */
 export const COG_PERK_TAGS = Object.freeze([
@@ -13,8 +13,6 @@ export const COG_PERK_TAGS = Object.freeze([
   {"id":"access.workshop.demolition","label":"Access: Demolition Workshops","namespace":"access","description":"Free access to all Demolition Workshops.","descriptive":true},
   {"id":"access.cog.impersonation","label":"Access by Impersonation","namespace":"access","description":"Free entry to organizations and producers while impersonating another crawler or a celebrity of the show; only those tied to whoever you are currently posing as.","descriptive":true},
   {"id":"access.agency.employment","label":"Access: Employment Agency","namespace":"access","description":"Access to the Employment Agency.","descriptive":true},
-  {"id":"access.guild.weapon_training","label":"Access: Weapon Training Guild","namespace":"access","description":"Can access any weapon training Guild.","descriptive":true},
-  {"id":"access.saferoom.free_room","label":"Free Room at Saferooms","namespace":"access","description":"Free room at all saferooms.","descriptive":true},
   {"id":"perk.coin_interest","label":"Coin Interest","namespace":"perk","description":"Every coin you hold earns interest when you go down to the next floor (the item description gives the rate).","descriptive":true},
   {"id":"perk.cog.acid_touch","label":"Acid Touch","namespace":"perk","description":"","descriptive":true},
   {"id":"perk.cog.ai_favor_dr","label":"Spend AI Favor for DR","namespace":"perk","description":"Each time you are damaged, you may pay 1 AI Favor for DR equal to your Con. This can be repeated for as long as you have AI Favor to pay with.","descriptive":true},
@@ -56,19 +54,12 @@ export const COG_PERK_TAGS = Object.freeze([
   {"id":"perk.cog.unnoticed_spells","label":"Unnoticed Spells","namespace":"perk","description":"You can put a Spell on a creature without it noticing that anything has been cast on it.","descriptive":true},
   {"id":"perk.cog.untrained_as_rank_2","label":"Untrained as Rank 2","namespace":"perk","description":"","descriptive":true},
   {"id":"perk.cog.winged_reach","label":"Winged Reach","namespace":"perk","description":"","descriptive":true},
-  {"id":"perk.flight_limited","label":"Limited Flight","namespace":"perk","description":"Can fly for a limited time per scene (the item description gives the limit). The Fly movement value is structured; the time limit is adjudicated by the GM.","descriptive":true},
   {"id":"perk.floor_coupon.weapon_training","label":"Weapon Training Coupon","namespace":"perk","description":"Arriving on each floor earns the crawler a coupon for one free session at a weapon training Guild.","descriptive":true},
-  {"id":"perk.immunity_disease","label":"Immune to Disease","namespace":"perk","description":"Immune to all diseases.","descriptive":true},
-  {"id":"perk.kill_bounty","label":"Kill Bounty","namespace":"perk","description":"Extra gold of Floor Number for every Mob killed in the stated way (the item description gives the condition).","descriptive":true},
-  {"id":"perk.limb_regeneration","label":"Limb Regeneration","namespace":"perk","description":"","descriptive":true},
   {"id":"perk.manager_benefit","label":"Manager Benefit","namespace":"perk","description":"The crawler gains the Manager benefit (their guide becomes their Manager).","descriptive":true},
-  {"id":"perk.no_breath","label":"No Need to Breathe","namespace":"perk","description":"No need to breathe.","descriptive":true},
   {"id":"perk.no_fall_damage","label":"No Fall Damage","namespace":"perk","description":"Takes no damage from falling.","descriptive":true},
   {"id":"perk.no_heat_survival","label":"No Heat Survival Checks","namespace":"perk","description":"Harsh heat never calls for a Survival Check.","descriptive":true},
   {"id":"perk.popularity.crit_larger_foe","label":"Popularity: Critical Hit on a Larger Foe","namespace":"perk","description":"+1 popularity on a Critical Hit against a larger foe in combat (the engine does not compare sizes).","descriptive":true},
   {"id":"perk.popularity.performance_after_kill","label":"Popularity: Performance after a Kill","namespace":"perk","description":"","descriptive":true},
   {"id":"perk.popularity.surprise_round_action","label":"Popularity: Surprise Round Action","namespace":"perk","description":"+1 popularity when the crawler acts in the Surprise Round of a combat (the engine does not detect it; the GM awards it).","descriptive":true},
-  {"id":"perk.popularity.troll_lick","label":"Popularity: Troll Lick","namespace":"perk","description":"","descriptive":true},
-  {"id":"perk.store_discount","label":"Store Discount","namespace":"perk","description":"A discount at stores and a bonus to money earned from sales (the item description gives the amounts).","descriptive":true},
-  {"id":"sense.water_breathing","label":"Water Breathing","namespace":"sense","description":"Can breathe underwater.","descriptive":true}
+  {"id":"perk.popularity.troll_lick","label":"Popularity: Troll Lick","namespace":"perk","description":"","descriptive":true}
 ]);

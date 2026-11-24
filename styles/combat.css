@@ -1051,8 +1051,9 @@
   color: var(--cog-warning);
 }
 
-/* Quick Action Picker Popover */
-.cog-action-picker-popover {
+/* Quick Action Picker Popover (also the sheet tables' Columns menu) */
+.cog-action-picker-popover,
+.cog-column-menu {
   position: absolute;
   top: 100%;
   left: 8px;
@@ -2669,3 +2670,11 @@
   color: var(--cog-text-muted);
 }
 
+
+/* The Table 49 band the encounter sits in */
+.cog-adversary-power-current {
+  background: var(--cog-accent-fill);
+  color: var(--cog-on-fill);
+  border-radius: 3px;
+  padding: 0 4px;
+}

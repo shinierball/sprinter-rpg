@@ -72,6 +72,13 @@
 {{#if (eq system.lootType "scroll")}}
 <div class="cog-field-row" style="margin-bottom: 8px;">
   <div class="cog-field-group">
+    <span class="cog-field-label"><i class="fa-solid fa-stairs"></i> {{localize "COG.SpellCast.ScrollRankLabel"}}</span>
+    <input class="cog-field-input" type="number" name="system.spellRank" value="{{system.spellRank}}" min="1" step="1" title="{{localize 'COG.SpellCast.ScrollRankHint'}}" />
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.SpellCast.ScrollRankHint"}}</p>
+  </div>
+</div>
+<div class="cog-field-row" style="margin-bottom: 8px;">
+  <div class="cog-field-group">
     <span class="cog-field-label"><i class="fa-solid fa-hands-praying"></i> {{localize "COG.Loot.Sheet.Deity"}}</span>
     <input class="cog-field-input" type="text" name="system.deity" value="{{system.deity}}" placeholder="{{localize "COG.Loot.Sheet.DeityPlaceholder"}}" title="{{localize 'COG.Loot.Sheet.DeityHint'}}" />
     <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Loot.Sheet.DeityHint"}}</p>

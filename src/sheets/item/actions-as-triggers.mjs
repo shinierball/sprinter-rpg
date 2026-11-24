@@ -4,10 +4,10 @@
  */
 import { asTriggerCount } from '../../utils/roll/amazing-success.mjs';
 import { isWeaponCapable } from '../../utils/document-types.mjs';
+import { localiseKey as loc } from '../../utils/lang-text.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { rowIndex, toArray } from './util.mjs';
 
-const loc = (key, data) => (data ? globalThis.game?.i18n?.format?.(key, data) : globalThis.game?.i18n?.localize?.(key)) ?? key;
 const stored = (item) => toArray(item.system?.asTriggers).map((t) => ({ ...t }));
 
 export const AS_TRIGGER_ACTIONS = {

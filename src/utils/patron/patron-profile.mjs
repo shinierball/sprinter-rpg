@@ -2,7 +2,7 @@
  * What a patron is, read from either item that can be one: a `patron` item (an NPC patron, core rulebook pp. 315-319)
  * or a `deity` item (a god as a patron, p. 146). A leaf: it imports only the sanitiser, so any layer may read it.
  */
-import { firstScalar, toStringList } from '../first-scalar.mjs';
+import { firstScalar, proseText, toStringList } from '../first-scalar.mjs';
 
 /** How a patron's advice reaches the Bard: HUD chat, or a messenger fairy (p. 316). */
 export const PATRON_MESSAGING = Object.freeze(['hud', 'fairy']);
@@ -27,7 +27,7 @@ export function patronProfileOf(item) {
   const type = String(firstScalar(item?.type, ''));
   const base = {
     identifier: String(firstScalar(sys.identifier, '')).trim(),
-    name: String(firstScalar(item?.name, '')),
+    name: proseText(item?.name),
     type,
     tags: identifiers(sys.tags)
   };

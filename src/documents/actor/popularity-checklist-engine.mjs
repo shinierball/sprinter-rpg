@@ -17,11 +17,11 @@ import { addPopularity } from './actor-popularity.mjs';
 import { readChecklistState, updateChecklistState } from './popularity-checklist.mjs';
 import { gatherChecklistFacts } from './popularity-checklist-facts.mjs';
 import { grantFanBox } from './fan-box.mjs';
+import { finiteOrNull as finite } from '../../utils/first-scalar.mjs';
 
 const KEY = 'COG.PopularityChecklist';
 const text = checklistText;
 
-const finite = (value) => (value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null);
 const worldNow = () => Number(globalThis.game?.time?.worldTime) || 0;
 
 function notGm() {

@@ -10,7 +10,7 @@ import { cameraParts, consumeArmedCamera } from '../../utils/roll/cameras.mjs';
 import { newRollId, standingStampFor, noteStandingStamp } from '../../utils/roll/check-difficulty.mjs';
 import { awardAmazingForCheckCard } from './actor-popularity.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
-import { attackTargetEntries, standingFoeShiftFor } from './attack-targets.mjs';
+import { attackTargetEntries, standingFoeEffectFor } from './attack-targets.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
 import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from './action-block.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
@@ -85,7 +85,7 @@ export async function rollStat(actor, statKey, options = {}) {
   const perTarget = await rollCheckTargets(roll, targetRows, rollContext, targetActors);
   // A plain check card with no Difficulty of its own takes the standing one, when the GM put it up.
   const floor = getCurrentFloor();
-  const stamp = standingStampFor({ kind: 'stat', rollerType: actor.type, hasOwnDc: Boolean(vehicle || contest), floor, foeShift: standingFoeShiftFor(actor) });
+  const stamp = standingStampFor({ kind: 'stat', rollerType: actor.type, hasOwnDc: Boolean(vehicle || contest), floor, foeEffect: standingFoeEffectFor(actor) });
   const rerollStamp = checkRerollStamp(rollContext);
   const message = await roll.toMessage(withFlags({
     speaker: ChatMessage.getSpeaker({ actor: actor }),

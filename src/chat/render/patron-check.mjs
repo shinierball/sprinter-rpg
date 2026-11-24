@@ -7,16 +7,10 @@ import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.
 import { gigPaidOf } from '../../documents/actor/patron-gig.mjs';
 import { patronageOf } from '../../utils/patron/patronage-state.mjs';
 import { say } from '../../documents/actor/vehicle-drive-common.mjs';
+import { el } from './element.mjs';
 
 const text = (key, fallback, data) => say(`COG.Patron.Audition.Check.${key}`, fallback, data);
 const attitudeName = (attitude) => say(`COG.Patron.Audition.Attitude.${attitude}`, String(attitude).charAt(0).toUpperCase() + String(attitude).slice(1));
-
-function el(doc, tag, className, content) {
-  const node = doc.createElement(tag);
-  if (className) node.className = className;
-  if (content !== undefined) node.textContent = content;
-  return node;
-}
 
 /** The audition branch: the patron, then [Apply to audition] or the applied line. */
 function auditionBlock(doc, block, message, record, actor, item) {

@@ -3,6 +3,16 @@
  * Shared by the combat tracker (turn order) and interrupt offers (who is an ally).
  */
 
+/** Player-controlled by structured data: a non-GM user owns the actor. */
+export function isPlayerControlled(actor) {
+  return actor?.hasPlayerOwner === true;
+}
+
+/** A crawler that a player owns (not a pet, mount or GM crawler). */
+export function isPlayerCrawler(actor) {
+  return actor?.type === 'crawler' && isPlayerControlled(actor);
+}
+
 /**
  * True when the actor/token pair belongs to the Mob side.
  * @param {{ actor?: object|null, token?: object|null }} p  token is a TokenDocument-like object with `disposition`

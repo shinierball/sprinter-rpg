@@ -22,6 +22,8 @@ export function deityBondField(fields) {
     floorOfferings: new fields.SchemaField({
       floor: new fields.StringField({ initial: '' }),
       count: new fields.NumberField({ integer: true, min: 0, initial: 0 })
-    })
+    }),
+    // `currency.looted` of the actor as it stood at the last tithe, or when worship began: the untithed loot is the count beyond it.
+    titheMark: new fields.NumberField({ integer: true, min: 0, initial: 0 })
   });
 }

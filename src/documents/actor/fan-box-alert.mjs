@@ -8,7 +8,7 @@
  *
  * The crawler carries its own answers in `flags.<system>.fanBoxAlerts` (`{ '50': { state, messageId } }`). With no GM
  * connected a player's own update stamps the new crossings `pending` in the same write, and the next active GM's `ready`
- * posts the card. Behind the live flag `popularity-checklist`: off, nothing is stamped, posted or swept.
+ * posts the card.
  */
 import { isActiveGM, getActiveGM } from '../../utils/gm-relay.mjs';
 import { isMigrationWrite } from '../migrations/world-migration.mjs';

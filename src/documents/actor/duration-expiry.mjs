@@ -10,7 +10,7 @@ import { auraRank } from './aura-effects.mjs';
 import { activeAurasOnScene } from './aura-pulse.mjs';
 import { isDyingDebuff, die, sweepDyingClock, restampDyingClock } from './dying.mjs';
 import { isRankedItem } from '../../utils/document-types.mjs';
-import { readFlag } from '../../utils/flags.mjs';
+import { appliedByOf } from '../../utils/effects/applied-buff.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { appliedInRound, durationsTickedRoundOf, markDurationsTicked } from '../../utils/time/duration-flags.mjs';
 
@@ -130,7 +130,7 @@ async function expireEffect(actor, item, { combatants } = {}) {
     return false;
   }
   // A copy someone else's Skill or spell put here is gone when its time is up; a crawler's own buff is switched off
-  if (item.type === 'debuff' || (item.type === 'buff' && readFlag(item, 'appliedBy'))) {
+  if (item.type === 'debuff' || (item.type === 'buff' && appliedByOf(item))) {
     await item.delete();
     return;
   }

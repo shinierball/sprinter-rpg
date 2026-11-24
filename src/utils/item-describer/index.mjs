@@ -102,7 +102,7 @@ export async function describeWithBlocks(item, { actor, rank } = {}, blocks = IT
     }
     const bucket = buckets.get(block.group) ?? buckets.get('other');
     const group = buckets.has(block.group) ? block.group : 'other';
-    for (const l of Array.isArray(lines) ? lines : []) if (l && typeof l.text === 'string' && l.text) bucket.push({ ...l, group });
+    for (const l of Array.isArray(lines) ? lines : []) if (l && typeof l.text === 'string' && l.text) bucket.push({ ...l, group, block: block.id });
   }
   return ITEM_SUMMARY_GROUPS.flatMap((g) => buckets.get(g));
 }

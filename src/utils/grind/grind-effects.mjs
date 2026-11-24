@@ -8,7 +8,7 @@
  * Formula grammar (parsed, never evaluated as code): an optional `-`, then a whole number (`2`) or one dice term (`1d4`),
  * then optionally `*` and a whole number (`1d4*10`). Anything else is dropped with a warning.
  */
-import { firstScalar } from '../first-scalar.mjs';
+import { firstScalar, proseText } from '../first-scalar.mjs';
 
 /** The effect kinds a row may carry. */
 export const GRIND_EFFECT_KINDS = Object.freeze(['grindHours', 'floorTime', 'seeTable']);
@@ -79,7 +79,7 @@ export function normalizeEffect(raw) {
     console.warn(`Sprinter RPG | grind effect: formula "${String(raw.formula)}" is outside the grammar; dropped`);
     return null;
   }
-  const label = String(firstScalar(raw.label, '') ?? '').trim();
+  const label = proseText(raw.label);
   if (kind === 'grindHours') return { kind, formula, ...(label ? { label } : {}) };
   const per = PER.includes(raw.per) ? raw.per : 'hours';
   return { kind, formula, per, ...(label ? { label } : {}) };

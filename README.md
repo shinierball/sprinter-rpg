@@ -34,7 +34,7 @@ To run on The Forge, see [`docs/hosting-on-the-forge.md`](https://github.com/shi
 4. Optionally, make **Rulebook Content** the **Primary Content Theme** and reload. The imported documents are in the pickers and compendiums either way, each with its book's badge. The primary theme supplies the crawler creator's species, backgrounds and story tables, so this switch makes the creator use the books' tables. The importer offers to switch after an import; if you decline, set it later in Configure Settings.
 5. Optionally, for classic mode, add **Shiny** to **Themes Turned Off** and reload. Its sample skills, spells and items leave the pickers, creators and compendiums, and a Theme Cleanup offers to replace those already on actors.
 
-A world saved on an earlier release (from 8.0.0) is upgraded on load: the system converts its documents once, and a GM can preview the changes with `cog.migrations.run({ dryRun: true })` in the console.
+A world saved on an earlier release (from 8.0.0) is upgraded on load: the system converts its documents once, and a GM can preview the changes with `window.cog.migrations.run({ dryRun: true })` in the console.
 
 Importing again after an update can refresh the world items you already have, matched by their compendium id; the importer asks first and changes nothing if you decline.
 

@@ -3,7 +3,8 @@
  * under each line. Every patronage notice (the class offer, an audition step, a gig) builds its own lines and posts them
  * here; there is no kind table. A GM button carries `data-gm-only="true"` so a player's client hides it.
  */
-import { speakerOf, gmWhisper } from '../documents/actor/vehicle-drive-common.mjs';
+import { speakerOf } from '../documents/actor/vehicle-drive-common.mjs';
+import { gmWhisper } from '../utils/owner-recipients.mjs';
 import { ownerAndGmIds } from '../utils/owner-recipients.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
 import { chatButtonDataHtml } from '../utils/card/chat-button-data.mjs';

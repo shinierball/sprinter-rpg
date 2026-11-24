@@ -5,7 +5,8 @@
  */
 
 import {
-  COG_STANDARD_ARRAY, STAGE_SKILL_PICKS, STAT_METHODS, CHANCE_STAT_ORDER, validateStats, rollChanceStats, starterLoadoutBreaks, generateRandomCrawler
+  COG_STANDARD_ARRAY, STAGE_SKILL_PICKS, STAT_METHODS, CHANCE_STAT_ORDER, validateStats, rollChanceStats, starterLoadoutBreaks, generateRandomCrawler,
+  CRAWLER_NUMBER_RANGE, randomCrawlerNumber, speciesSizeRange, speciesTypicalSize, inductionSizeBreaks, startingGearBreaks, STARTING_GEAR_KINDS, sanitizeStartingGear
 } from '../data/rules/crawler-creation-rules.mjs';
 import {
   STARTER_RANK, STARTER_POTION_COUNT, loadoutOptions, loadoutLabel, findLoadout, defaultLoadout, resolveLoadoutId, getStarterWeaponDefinition,
@@ -13,7 +14,7 @@ import {
 } from '../content/creation-loadouts.mjs';
 import { rollBackgroundTable, storyTableView } from '../data/rules/background-table-rules.mjs';
 import { contentRegistry } from '../content/registry.mjs';
-import { DEFAULT_SIZE, getSizeInfo, sizeOptions as buildSizeOptions } from '../data/sizes.mjs';
+import { DEFAULT_SIZE, getSizeInfo, sizesInOrder, sizeOptions as buildSizeOptions } from '../data/sizes.mjs';
 import { findCatalogEntry } from '../content/catalog-lookup.mjs';
 import { sourceBadge } from '../utils/content-source.mjs';
 import { whenSourceryCatalogsSettled } from '../content/sourcery-content-provider.mjs';
@@ -23,6 +24,7 @@ import { SYSTEM_PATH } from '../constants.mjs';
 import { withFlags } from '../utils/flags.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
 import { langText } from '../utils/lang-text.mjs';
+import { rngPick } from '../utils/rng.mjs';
 import { requestRelay, registerRelayAction } from '../utils/gm-relay.mjs';
 import { confirmRuleBreak } from '../utils/rule-break.mjs';
 import { floorLabel } from '../documents/actor/actor-environment.mjs';
@@ -66,10 +68,25 @@ const methodText = langText({
   'COG.CrawlerCreator.StatMethod.Chance': 'Roll for Stats'
 });
 
+const identityText = langText({
+  'COG.CrawlerCreator.Identity.SizeOutside': '(Rule Break)',
+  'COG.CrawlerCreator.Identity.SizeHint': 'A {species} starts at size {min} to {max} (core p. 112).',
+  'COG.CrawlerCreator.Identity.SizeTypical': 'A {species} is typically size {size} (core p. 112).',
+  'COG.CrawlerCreator.Identity.NumberHint': 'Any number will do. For simplicity the book suggests one from {min} to {max} (core p. 102).'
+});
+
+const gearText = langText({
+  'COG.CrawlerCreator.Gear.Kind.clothing': 'Clothing',
+  'COG.CrawlerCreator.Gear.Kind.item': 'Interesting or useful item',
+  'COG.CrawlerCreator.Gear.Kind.weird': 'Weird stuff',
+  'COG.CrawlerCreator.Gear.Add': 'Add {kind}',
+  'COG.CrawlerCreator.Gear.KitWeaponSkipped': "{kit}'s weapon was not used: this crawler does not start with a weapon."
+});
+
 const TPL = `${SYSTEM_PATH}/templates/apps/crawler-creator`;
 const FLOOR_TPL = `${SYSTEM_PATH}/templates/apps/floor-simulator`;
 /** The Induction parts: the whole page for a Floor 1 or 2 start, the first stage of a floor start. */
-const INDUCTION_PARTS = Object.freeze(['stats', 'matrix', 'loadout', 'story', 'summary']);
+const INDUCTION_PARTS = Object.freeze(['stats', 'matrix', 'loadout', 'story', 'gear', 'summary']);
 /** The floor-start parts: the stage rail, the active stage's panel and the sticky preview. */
 const STAGE_PARTS = Object.freeze(['rail', 'panel', 'preview']);
 
@@ -82,7 +99,7 @@ const STAGE_PARTS = Object.freeze(['rail', 'panel', 'preview']);
 function creatorSpec(options = {}) {
   return {
     name: options.name || 'New Crawler',
-    crawlerNumber: options.crawlerNumber || `#${Math.floor(1000 + Math.random() * 9000)}`,
+    crawlerNumber: options.crawlerNumber || randomCrawlerNumber(),
     species: resolveCreatorSpecies(options.species).id,
     floor: floorLabel(options.floor),
     size: options.size || DEFAULT_SIZE,
@@ -99,6 +116,10 @@ function creatorSpec(options = {}) {
     starterWeapon: resolveLoadoutId('weapon', options.starterWeapon),
     starterSpell: resolveLoadoutId('spell', options.starterSpell),
     starterUnarmed: resolveLoadoutId('unarmed', options.starterUnarmed),
+
+    // Step 10 starting gear (core p. 113): the gear lines and the name the starting weapon takes
+    startingGear: sanitizeStartingGear(options.startingGear),
+    starterWeaponName: typeof options.starterWeaponName === 'string' ? options.starterWeaponName : '',
 
     // Standard array assignments for stats
     stats: {
@@ -147,6 +168,11 @@ export class COGCrawlerCreatorApp extends COGToolApp {
       pickTrait: COGCrawlerCreatorApp.#onPickTrait,
       setTrait: COGCrawlerCreatorApp.#onSetTrait,
       setDescription: COGCrawlerCreatorApp.#onSetDescription,
+      addGearRow: COGCrawlerCreatorApp.#onAddGearRow,
+      removeGearRow: COGCrawlerCreatorApp.#onRemoveGearRow,
+      setGearField: COGCrawlerCreatorApp.#onSetGearField,
+      setStarterWeaponName: COGCrawlerCreatorApp.#onSetStarterWeaponName,
+      applyKit: COGCrawlerCreatorApp.#onApplyKit,
       rollTrait: COGCrawlerCreatorApp.#onRollTrait,
       rollAllTraits: COGCrawlerCreatorApp.#onRollAllTraits,
       randomize: COGCrawlerCreatorApp.#onRandomize,
@@ -180,6 +206,7 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     matrix: { template: `${TPL}/matrix.hbs` },
     loadout: { template: `${TPL}/loadout.hbs` },
     story: { template: `${TPL}/story.hbs` },
+    gear: { template: `${TPL}/gear.hbs` },
     summary: { template: `${TPL}/summary.hbs` },
     panel: { template: `${FLOOR_TPL}/panel.hbs` },
     preview: { template: `${FLOOR_TPL}/preview.hbs` },
@@ -249,6 +276,8 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     const statValidation = validateStats(this.spec);
     if (!statValidation.valid) reasons.push(`${String(statValidation.error || 'Invalid stat array').replace(/\.$/, '')}.`);
     reasons.push(...starterLoadoutBreaks(this.spec));
+    reasons.push(...inductionSizeBreaks(this.spec));
+    reasons.push(...startingGearBreaks(this.spec));
     const matrix = resolveCreatorSpecies(this.spec.species)?.matrices || {};
     const incomplete = [];
     const noBackgrounds = [];
@@ -339,7 +368,18 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     });
 
     const sizeInfo = getSizeInfo(this.spec.size);
-    const sizeOptions = buildSizeOptions(this.spec.size);
+    const sizeRange = speciesSizeRange(this.spec.species);
+    const outside = identityText('COG.CrawlerCreator.Identity.SizeOutside');
+    const sizeOptions = buildSizeOptions(this.spec.size).map(o => (
+      sizeRange && Number.isFinite(o.size) && (o.size < sizeRange.min || o.size > sizeRange.max) ? { ...o, label: `${o.label} ${outside}` } : o
+    ));
+    const speciesLabel = speciesData.label || speciesData.id || this.spec.species;
+    const typicalSize = getSizeInfo(speciesTypicalSize(this.spec.species));
+    const sizeHint = sizeRange
+      ? identityText('COG.CrawlerCreator.Identity.SizeHint', { species: speciesLabel, ...sizeRange })
+      : (speciesTypicalSize(this.spec.species) ? identityText('COG.CrawlerCreator.Identity.SizeTypical', { species: speciesLabel, size: typicalSize.size }) : '');
+    const numberFormat = new Intl.NumberFormat('en-US');
+    const numberHint = identityText('COG.CrawlerCreator.Identity.NumberHint', { min: numberFormat.format(CRAWLER_NUMBER_RANGE[0]), max: numberFormat.format(CRAWLER_NUMBER_RANGE[1]) });
 
     // Starter loadout options (Level 1)
     const starterModeOptions = [
@@ -364,6 +404,15 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     const activeUnarmed = findLoadout('unarmed', this.spec.starterUnarmed) ?? defaultLoadout('unarmed');
     const potionEntry = defaultLoadout('potion');
     const starterPotion = { name: potionEntry?.name ?? '', baseline: Boolean(potionEntry?.baseline), sourceBadge: sourceBadge(findCatalogEntry('items', potionEntry?.itemRef)) };
+    const kits = loadoutOptions('kit');
+    const gearRows = (this.spec.startingGear ?? []).map((row, index) => ({
+      index,
+      name: row.name ?? '',
+      quantity: row.quantity ?? 1,
+      kindOptions: STARTING_GEAR_KINDS.map(kind => ({ value: kind, label: gearText(`COG.CrawlerCreator.Gear.Kind.${kind}`), selected: row.kind === kind }))
+    }));
+    const gearAdd = STARTING_GEAR_KINDS.map(kind => ({ kind, label: gearText('COG.CrawlerCreator.Gear.Add', { kind: gearText(`COG.CrawlerCreator.Gear.Kind.${kind}`) }) }));
+    const gearWeapon = { show: this.spec.starterMode === 'weapon', loadoutName: activeWeapon.name, name: this.spec.starterWeaponName ?? '' };
     const loadoutExampleOnly = this.spec.starterMode === 'spell' ? Boolean(activeSpell?.baseline)
       : this.spec.starterMode === 'unarmed' ? Boolean(activeUnarmed?.baseline) : false;
 
@@ -432,6 +481,8 @@ export class COGCrawlerCreatorApp extends COGToolApp {
       size: this.spec.size,
       sizeInfo,
       sizeOptions,
+      sizeHint,
+      numberHint,
       floor: this.spec.floor,
       floorOptions,
       statList,
@@ -462,6 +513,11 @@ export class COGCrawlerCreatorApp extends COGToolApp {
       starterPotion,
       starterPotionCount: STARTER_POTION_COUNT,
       loadoutExampleOnly,
+      gearRows,
+      gearAdd,
+      gearWeapon,
+      kitOptions: kits.map(kit => ({ id: kit.id, label: kit.name ?? kit.id })),
+      kitExampleOnly: kits.length > 0 && kits.every(kit => kit.baseline),
       starterModeOptions,
       starterWeaponOptions,
       starterSpellOptions,
@@ -526,6 +582,12 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     const newSpecies = target.value;
     if (newSpecies === this.spec.species) return;
     this.spec.species = newSpecies;
+    // A species with a size range pulls a size outside it back inside; one with no range leaves the size alone
+    const range = speciesSizeRange(newSpecies);
+    if (range && inductionSizeBreaks({ species: newSpecies, size: this.spec.size }).length) {
+      const inside = sizesInOrder().filter(s => s.size >= range.min && s.size <= range.max);
+      this.spec.size = (inside.find(s => s.id === DEFAULT_SIZE) ?? inside[0])?.id ?? this.spec.size;
+    }
     this._initializeDefaultSelections();
     await this.render();
   }
@@ -613,12 +675,73 @@ export class COGCrawlerCreatorApp extends COGToolApp {
 
   static #onSetStarterMode(event, target) {
     this.spec.starterMode = target.value;
-    return this.render({ parts: this._withStages(['loadout', 'summary']) });
+    return this.render({ parts: this._withStages(['loadout', 'gear', 'summary']) });
   }
 
   static #onSetStarterWeapon(event, target) {
     this.spec.starterWeapon = target.value;
-    return this.render({ parts: this._withStages(['loadout', 'summary']) });
+    return this.render({ parts: this._withStages(['loadout', 'gear', 'summary']) });
+  }
+
+  // ---------------------------------------------------------------- Step 10: starting gear
+
+  static #onAddGearRow(event, target) {
+    const kind = STARTING_GEAR_KINDS.includes(target.dataset.kind) ? target.dataset.kind : 'weird';
+    this.spec.startingGear = [...(this.spec.startingGear ?? []), { kind, name: '', quantity: 1 }];
+    return this.render({ parts: this._withStages(['gear', 'footer']) });
+  }
+
+  static #onRemoveGearRow(event, target) {
+    const index = Number(target.dataset.index);
+    this.spec.startingGear = (this.spec.startingGear ?? []).filter((_, i) => i !== index);
+    return this.render({ parts: this._withStages(['gear', 'footer']) });
+  }
+
+  /**
+   * One field of a gear row. A kind re-renders (the footer counts the item lines). A name is DOM-only, except that a
+   * row counts only once it is named, so a name going from blank to typed (or back) re-renders the footer alone, which
+   * keeps the focus in the name box. A quantity is DOM-only.
+   */
+  static #onSetGearField(event, target) {
+    const row = (this.spec.startingGear ?? [])[Number(target.dataset.index)];
+    const field = target.dataset.field;
+    if (!row) return undefined;
+    if (field === 'name') {
+      const wasNamed = String(row.name ?? '').trim() !== '';
+      row.name = target.value;
+      if (wasNamed !== (String(row.name).trim() !== '')) return this.render({ parts: ['footer'] });
+    } else if (field === 'quantity') {
+      const quantity = Math.floor(Number(target.value));
+      row.quantity = Number.isFinite(quantity) && quantity >= 1 ? quantity : 1;
+    } else if (field === 'kind') {
+      row.kind = STARTING_GEAR_KINDS.includes(target.value) ? target.value : 'weird';
+      return this.render({ parts: this._withStages(['gear', 'footer']) });
+    }
+    return undefined;
+  }
+
+  /** The name the starting weapon takes; DOM-only. */
+  static #onSetStarterWeaponName(event, target) {
+    this.spec.starterWeaponName = target.value;
+  }
+
+  /**
+   * Fill the gear lines from a kit (a fill-in helper: the rows stay editable and the kit is not remembered). In weapon mode
+   * the kit's weapon becomes the starting weapon, under its own name; any other start brings no weapon (core p. 113), and a
+   * weapon no provider registered is skipped, both with a notice. The starter mode never changes.
+   */
+  static #onApplyKit(event, target) {
+    const kit = target.value ? findLoadout('kit', target.value) : null;
+    if (!kit) return undefined;
+    this.spec.startingGear = sanitizeStartingGear(kit.gear);
+    const weaponLoadout = kit.weapon ? findLoadout('weapon', kit.weapon.loadout) : null;
+    if (this.spec.starterMode === 'weapon' && weaponLoadout) {
+      this.spec.starterWeapon = weaponLoadout.id;
+      this.spec.starterWeaponName = typeof kit.weapon.name === 'string' ? kit.weapon.name : '';
+    } else if (kit.weapon) {
+      ui.notifications?.info(gearText('COG.CrawlerCreator.Gear.KitWeaponSkipped', { kit: kit.name ?? kit.id }));
+    }
+    return this.render({ parts: this._withStages(['gear', 'loadout', 'summary', 'footer']) });
   }
 
   static #onSetStarterSpell(event, target) {
@@ -710,6 +833,12 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     this.spec.pastTrauma = generated.pastTrauma || '';
     this.spec.looseEnds = generated.looseEnds || '';
     this.spec.regrets = generated.regrets || '';
+    // The random crawler takes a random kit's lines in place of any typed ones
+    const kit = rngPick(Math.random, loadoutOptions('kit'));
+    this.spec.startingGear = sanitizeStartingGear(kit?.gear);
+    const weaponLoadout = kit?.weapon ? findLoadout('weapon', kit.weapon.loadout) : null;
+    this.spec.starterWeaponName = this.spec.starterMode === 'weapon' && weaponLoadout && typeof kit.weapon.name === 'string' ? kit.weapon.name : '';
+    if (this.spec.starterMode === 'weapon' && weaponLoadout) this.spec.starterWeapon = weaponLoadout.id;
     // A floor start rolls the rest too: every arrival's choices and dice, and a Race and Class
     if (this.staged) await this.controller.randomize();
     await this.render();
@@ -726,6 +855,8 @@ export class COGCrawlerCreatorApp extends COGToolApp {
     this.spec.looseEnds = '';
     this.spec.regrets = '';
     this.spec.description = '';
+    this.spec.startingGear = [];
+    this.spec.starterWeaponName = '';
     this._initializeDefaultSelections();
     this.controller.reset();
     await this.render();

@@ -32,12 +32,13 @@ export const TARGET_STATUS = Object.freeze({
   EVADED: 'evaded',
   EVADED_HALF: 'evaded-half',
   HIT: 'hit',
+  MISSED: 'missed',
   /** Step 3 ran and the target took the hit with no recorded Evade (nothing is left to wait for). */
   RESOLVED: 'resolved'
 });
 
 /** Why a target got no damage at resolution. */
-export const SKIP_REASONS = Object.freeze({ EVADED: 'evaded', APPLIED_BEFORE: 'applied-before', MISSING: 'missing', UNTRUSTED: 'untrusted' });
+export const SKIP_REASONS = Object.freeze({ EVADED: 'evaded', APPLIED_BEFORE: 'applied-before', MISSING: 'missing', UNTRUSTED: 'untrusted', MISSED: 'missed' });
 
 const MAX_TARGETS = 50;
 const MAX_TEXT = 120;
@@ -48,6 +49,8 @@ const ID_PATTERN = /^[A-Za-z0-9._-]{1,128}$/;
 export const MOB_ATTACK_TEXT = Object.freeze({
   'COG.MobAttack.Header': 'Mob Attack Declared — Hits Automatically',
   'COG.MobAttack.SpellHeader': 'Mob Spell Declared — Hits Automatically',
+  'COG.MobAttack.HeaderCompared': 'Mob Attack Declared',
+  'COG.MobAttack.SpellHeaderCompared': 'Mob Spell Declared',
   'COG.MobAttack.EvadeLabel': 'Target Evade Difficulty:',
   'COG.MobAttack.EvadeDC': 'Evade DC {dc}',
   'COG.MobAttack.EvadeBreakdown': 'Base {base} + Floor {floor}',
@@ -254,6 +257,7 @@ export function targetStatus(target, declaration = null) {
   if (!evade) {
     if (declaration?.status !== DECLARATION_STATUS.RESOLVED) return TARGET_STATUS.PENDING;
     const row = declaration.resolution?.results?.find(r => r.uuid === target?.uuid);
+    if (row?.skipped === SKIP_REASONS.MISSED) return TARGET_STATUS.MISSED;
     return row?.skipped === SKIP_REASONS.EVADED ? TARGET_STATUS.EVADED : TARGET_STATUS.RESOLVED;
   }
   if (evade.outcome === 'avoided' || evade.multiplier === 0) return TARGET_STATUS.EVADED;

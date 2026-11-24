@@ -19,6 +19,7 @@
       <input class="cog-field-input" type="number" min="0" step="1" value="{{tithe}}" data-field="tithe" />
     </div>
   </div>
+  {{#if lootedHint}}<span class="cog-text-muted">{{localize 'COG.Deity.Offering.LootedHint'}}</span>{{/if}}
   <div class="cog-offering-confirm">
     <button type="button" data-action="confirmOffering"><i class="fa-solid fa-coins"></i> {{localize 'COG.Deity.Offering.Confirm'}}</button>
   </div>

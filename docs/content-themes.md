@@ -5,7 +5,7 @@ A content theme is a named body of content: documents in compendiums, catalog en
 - **Shiny** (`shiny`): the system's own original content, in the Shiny Items, Shiny Actors and Shiny Tables compendiums.
 - **Rulebook Content** (`cog`): the few documents bundled with the system, plus whatever a Sourcery import writes from your PDFs.
 
-A module can register its own theme the same way.
+A module can register its own theme the same way. The calls a module may rely on are listed in [module-and-macro-api.md](module-and-macro-api.md).
 
 ## How themes combine
 

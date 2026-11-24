@@ -12,7 +12,7 @@ import {
 import { spellCastCard, spellCastFlags } from './spell-cast-card.mjs';
 import { cardSummary, CARD_PROFILES } from '../../utils/item-describer/card-summary.mjs';
 import { buffApplyBlocks } from './use-card-parts.mjs';
-import { actingRank } from '../../utils/skill/rank-source.mjs';
+import { actingRank, castRankOf } from '../../utils/skill/rank-source.mjs';
 import { castTakesMark } from '../../utils/skill/advancing-items.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import { applyChosenEffectToParts, applyTechniquesToDamageParts } from './combat-damage.mjs';
@@ -27,7 +27,7 @@ export function getSpellDamageData(actor, spellItem, options = {}) {
   const sys = spellItem?.system || {};
   const base = normalizeBaseDamage(sys.baseDamage);
 
-  const rank = Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
+  const rank = castRankOf(spellItem, options);
   const resolvedBreaks = resolveReachedRankBreaks(spellItem, rank);
   const rawMods = Array.isArray(sys.rankDamageParts) ? sys.rankDamageParts : [];
   const activeMods = rawMods.filter(m => m && (m.dice || m.value) && rank >= (Number(m.minRank) || 0));
@@ -206,7 +206,7 @@ export function getSpellDamageParts(actor, spellItem, options = {}) {
   const sys = spellItem?.system || {};
   const base = normalizeBaseDamage(sys.baseDamage);
 
-  const rank = Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
+  const rank = castRankOf(spellItem, options);
   const rawMods = Array.isArray(sys.rankDamageParts) ? sys.rankDamageParts : [];
   const activeMods = rawMods.filter(m => m && (m.dice || m.value) && rank >= (Number(m.minRank) || 0));
 
@@ -370,7 +370,7 @@ export async function rollSpell(actor, spellItem, action = 'cast', options = {})
     await actor.update(updates);
   }
 
-  const effects = await applySpellCastEffects(actor, spellItem, gates);
+  const effects = await applySpellCastEffects(actor, spellItem, gates, opts);
   const conditions = await applySpellCastConditions(actor, spellItem, opts, gates);
   const cast = { ...gates, cost, manaRuleBreak, newMana, healInfo, ...effects, ...conditions };
   // The "What this does" section is read here, before the card, so the card builder stays synchronous (3.71)

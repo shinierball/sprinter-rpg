@@ -73,8 +73,13 @@ import { SPECS as backlotGrindTables } from './tables/backlot-grind.mjs';
 import { SPECS as animalSegmentItems } from './items/animal-segment.mjs';
 import { SPECS as animalSegmentActors } from './actors/animal-segment.mjs';
 import { SPECS as prizeShelfActors } from './actors/prize-shelf.mjs';
+import { SPECS as carryOnActors } from './actors/carry-on.mjs';
 import { SPECS as creatureFeatureItems } from './items/creature-feature.mjs';
 import { SPECS as creatureFeatureMobs } from './mobs/creature-feature.mjs';
+import { SPECS as stageHandsItems } from './items/stage-hands.mjs';
+import { SPECS as scenicRouteItems } from './items/scenic-route.mjs';
+import { SPECS as termsApplyItems } from './items/terms-apply.mjs';
+import { SPECS as happyHourItems } from './items/happy-hour.mjs';
 
 export { COVERAGE_SPECS } from './coverage.mjs';
 export { EXAMPLE_EFFECT_SPECS } from './effects.mjs';
@@ -138,7 +143,12 @@ const RELEASE_FILES = Object.freeze([
   { set: 'group-project', kind: 'items', specs: groupProjectItems },
   { set: 'refill-station', kind: 'items', specs: refillStationItems },
   { set: 'backlot-grind', kind: 'tables', specs: backlotGrindTables },
-  { set: 'prize-shelf', kind: 'actors', specs: prizeShelfActors }
+  { set: 'prize-shelf', kind: 'actors', specs: prizeShelfActors },
+  { set: 'stage-hands', kind: 'items', specs: stageHandsItems },
+  { set: 'scenic-route', kind: 'items', specs: scenicRouteItems },
+  { set: 'terms-apply', kind: 'items', specs: termsApplyItems },
+  { set: 'carry-on', kind: 'actors', specs: carryOnActors },
+  { set: 'happy-hour', kind: 'items', specs: happyHourItems }
 ]);
 
 /** Kind order inside a set's `specs`: referenced documents come first. `mobs` are Actors (the examples-actors pack). */

@@ -186,7 +186,7 @@ function grantedSpell(data, context) {
       modifiedRank: data.rank,
       stat,
       manaCost: sys.manaCost ?? 0,
-      range: sys.range || '30 feet',
+      range: sys.range ?? '',
       duration: sys.duration || 'Instantaneous',
       // The grant row's own cooldown wins over the catalog spell's (3.12 D4: the gear carries the use record).
       cooldown: data.cooldown ?? sys.cooldown ?? { value: 0, unit: '' },

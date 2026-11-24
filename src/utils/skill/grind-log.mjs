@@ -5,11 +5,11 @@
  * day" (the Floor Popularity check on grinding, excess hours per dungeon day) without a second record.
  */
 import { SECONDS_PER_HOUR, DAY_HOURS } from '../time/timing.mjs';
+import { finiteOrNull as finite } from '../first-scalar.mjs';
 
 /** Entries older than this before the newest are dropped on write: two 30-hour days. */
 const GRIND_LOG_KEEP_HOURS = 2 * DAY_HOURS;
 
-const finite = (value) => (value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null);
 
 /** The entries of a stored log that have a finite time and a positive length; anything else is dropped. */
 function cleanLog(log) {

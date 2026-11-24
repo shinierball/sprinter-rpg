@@ -12,6 +12,7 @@ import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.
 import { collectCheckAssistOffers, classifyAttackOutcome } from '../../utils/combat/interrupts.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { damageAlreadyApplied } from '../damage-applications.mjs';
+import { el } from './element.mjs';
 
 /** English fallbacks of the `COG.Assist.*` keys in lang/en.json (the headless test world has no i18n). */
 const TEXT = Object.freeze({
@@ -95,13 +96,6 @@ export function assistText(key, data = {}) {
     // fall through to the fallback
   }
   return Object.entries(data).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), TEXT[key] ?? full);
-}
-
-function el(doc, tag, className, text) {
-  const node = doc.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
 }
 
 const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);

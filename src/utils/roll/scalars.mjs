@@ -4,13 +4,14 @@ import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { matchesTagQuery, normalizeTagList } from '../tag/tag-query.mjs';
 import { isMobSide } from '../combat/combat-sides.mjs';
 import { partyMembers } from '../combat/party.mjs';
-import { identityTags } from './roll-context.mjs';
+import { identityTags, levelOf } from './roll-context.mjs';
 import { getCurrentFloor } from '../floor/current-floor.mjs';
 import { getRowKind, kindOf } from '../row-kinds.mjs';
 import { isMarkerActor } from '../area/marker.mjs';
 import { giftWorshipTier, highestWorshipTier } from '../deity/worship-state.mjs';
 import { actorSizeNumber } from '../../data/sizes.mjs';
 import { PAID_DR_STAT_MODES, paidDrStatMode } from '../character/paid-dr-stat.mjs';
+import { mountOf } from '../pet/pet-lookup.mjs';
 
 /**
  * Scalars: a row's "this much per something". A scalar is a registered
@@ -31,6 +32,17 @@ let moveReader = storedMove;
  */
 export function setMoveScalarReader(reader) {
   if (typeof reader === 'function') moveReader = reader;
+}
+
+const noFeetMoved = () => 0;
+let movedReader = noFeetMoved;
+/**
+ * Where the `moved` scalar reads the feet a creature's token has moved. The reader (it reads the token's movement history)
+ * lives in `documents/actor/actor-move.mjs` and registers itself here when it loads, so this file touches no canvas.
+ * @param {(actor: object, scope: 'self'|'mount') => number} reader
+ */
+export function setMovedScalarReader(reader) {
+  if (typeof reader === 'function') movedReader = reader;
 }
 
 /**
@@ -584,6 +596,13 @@ function registerBuiltIns() {
   }, core);
 
   registerScalar({
+    id: 'level', label: 'COG.Rows.Scalar.level.Label', hint: 'COG.Rows.Scalar.level.Hint',
+    needs: ['actor'],
+    resolve: ({ actor }) => levelOf(actor) ?? 0,
+    describe: () => 'per Level'
+  }, core);
+
+  registerScalar({
     id: 'stat', label: 'COG.Rows.Scalar.stat.Label', hint: 'COG.Rows.Scalar.stat.Hint',
     needs: ['actor'], params: { stat: true },
     resolve: ({ actor }, spec) => Number(actor?.system?.abilities?.[statKeyOf(spec)]?.mod) || 0,
@@ -645,8 +664,27 @@ function registerBuiltIns() {
   registerScalar({
     id: 'size', label: 'COG.Rows.Scalar.size.Label', hint: 'COG.Rows.Scalar.size.Hint',
     needs: ['actor'],
-    resolve: ({ actor }) => actorSizeNumber(actor),
-    describe: () => 'per size value'
+    params: {
+      scope: { choices: ['self', 'mount'], default: 'self', labels: { self: 'COG.Rows.Scalar.size.Scope.self', mount: 'COG.Rows.Scalar.size.Scope.mount' } }
+    },
+    resolve: ({ actor }, spec) => {
+      if (spec.scope !== 'mount') return actorSizeNumber(actor);
+      // The mount's size (core p. 182, Lance Rank 15); no mount reads 0.
+      const mount = mountOf(actor);
+      return mount ? actorSizeNumber(mount) : 0;
+    },
+    describe: (spec) => (spec.scope === 'mount' ? 'per size value of the mount' : 'per size value')
+  }, core);
+
+  // The feet the owner's token, or its mount's, has moved since its movement history was last cleared.
+  registerScalar({
+    id: 'moved', label: 'COG.Rows.Scalar.moved.Label', hint: 'COG.Rows.Scalar.moved.Hint',
+    needs: ['actor', 'combat'],
+    params: {
+      scope: { choices: ['self', 'mount'], default: 'self', labels: { self: 'COG.Rows.Scalar.moved.Scope.self', mount: 'COG.Rows.Scalar.moved.Scope.mount' } }
+    },
+    resolve: ({ actor }, spec) => movedReader(actor, spec.scope === 'mount' ? 'mount' : 'self'),
+    describe: (spec) => (spec.scope === 'mount' ? 'per foot the mount moved' : 'per foot moved')
   }, core);
 
   registerScalar({

@@ -15,7 +15,7 @@ import { emitsLight, igniteLight } from '../actor/light-source.mjs';
 import { cooldownLabel, hasCooldown } from '../../utils/time/cooldowns.mjs';
 import { gateItemCooldown } from '../actor/cooldown-gate.mjs';
 import { lifetimeKindsOf } from '../../data/rules/potion-rules.mjs';
-import { gatePotionUse, askPotionRecipient, POTION_GATE_CLEAR } from './potion-gate.mjs';
+import { gatePotionUse, askPotionRecipient, pourThroughGm, POTION_GATE_CLEAR } from './potion-gate.mjs';
 import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from '../actor/action-block.mjs';
 import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from '../actor/zero-zone-gate.mjs';
 import { isActivatedGearAura, toggleGearAura } from '../actor/gear-aura.mjs';
@@ -24,7 +24,7 @@ import { addKnownDeity } from '../actor/worship.mjs';
 import { deityRecords } from '../../utils/deity/deity-names.mjs';
 import { deityIdOf } from '../../utils/deity/worship-state.mjs';
 import { say } from '../actor/vehicle-drive-common.mjs';
-import { spellByIdentifier } from './spell-tome.mjs';
+import { spellByIdentifier, scrollCastOptions } from './spell-tome.mjs';
 import { spendActivationUses } from '../actor/buff-activation.mjs';
 import { rollSpellCard } from './spell-card.mjs';
 import { isBoxTemplate } from '../actor/gm-only-items.mjs';
@@ -143,6 +143,9 @@ export async function useItem(item, options = {}) {
     ? await gatePotionUse(actor, item, { recipient, options, outcomes: Array.isArray(sys.outcomes) ? sys.outcomes : [] })
     : POTION_GATE_CLEAR;
   if (!potionGate.proceed) return { error: 'potion_cancelled', message: `"${itemName}" was not used.` };
+  // A pour into a crawler this user does not own is run by the GM from the two uuids.
+  const poured = await pourThroughGm(item, recipient);
+  if (poured) return poured;
   // The lifetime kinds the use applied; a random outcome narrows it to the one rolled.
   let potionKinds = lifetimeKindsOf(sys.outcomes);
   // A `recharge` outcome refills one of the user's own items: the user picks it now, before anything is spent. A
@@ -385,6 +388,7 @@ export async function useItem(item, options = {}) {
   // 4. Scrolls, Wands, & Direct Spell Consumables (without explicit outcome array)
   if (sys.spellIdentifier) {
     const match = spellByIdentifier(actor, sys.spellIdentifier);
+    const scrollRank = scrollCastOptions(item);
 
     if (match) {
       await consumeItemUse();
@@ -395,14 +399,16 @@ export async function useItem(item, options = {}) {
           originItem: item,
           isConsumable: true,
           isItemEffect: true,
-          itemRuleBreak: gateFlags.ruleBreak === true
+          itemRuleBreak: gateFlags.ruleBreak === true,
+          ...scrollRank
         });
       }
       return rollSpellCard(match, {
         freeCast: true,
         originItem: item,
         isConsumable: true,
-        isItemEffect: true
+        isItemEffect: true,
+        ...scrollRank
       });
     }
   }

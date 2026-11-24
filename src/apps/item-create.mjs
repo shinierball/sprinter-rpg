@@ -10,11 +10,13 @@
 import { buildPayload } from '../data/builders/item-payload.mjs';
 import { worldSkillResolver } from '../utils/skill/weapon-skill-options.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
+import { localiseKey as t } from '../utils/lang-text.mjs';
 import { COGRaceClassApplier } from '../data/race-class-applier.mjs';
 import { RACE_CLASS_KINDS } from '../data/race-class-grants.mjs';
 import { appliedRecordOf } from '../utils/character/race-class-flags.mjs';
+import { confirmSponsorAdd } from '../documents/actor/sponsor-limits.mjs';
+import { withRuleBreak } from '../utils/rule-break.mjs';
 
-const t = (key, data) => (data ? globalThis.game?.i18n?.format?.(key, data) : globalThis.game?.i18n?.localize?.(key)) ?? key;
 
 /** A finding's sentence: its lang key filled with its data. */
 const findingText = (found) => globalThis.game?.i18n?.format?.(found.messageKey, found.data) ?? found.messageKey;
@@ -94,9 +96,17 @@ export async function createFromSpec(type, spec = {}, { actor = null, options = 
     return (itemId && actor.items?.get(itemId)) || actor.items?.find((i) => i.type === type) || null;
   }
 
+  // A fourth Sponsor, or one before the Fourth Floor, is a Rule Break; the stamp goes on the creation data
+  let data = payload;
+  if (actor && type === 'sponsor') {
+    const added = await confirmSponsorAdd(actor, { name: payload.name });
+    if (!added.ok) return null;
+    if (added.ruleBreak) data = withRuleBreak(payload, added.reason);
+  }
+
   const ItemClass = itemClass();
   const created = actor
-    ? (await actor.createEmbeddedDocuments('Item', [payload], options))?.[0]
+    ? (await actor.createEmbeddedDocuments('Item', [data], options))?.[0]
     : await ItemClass.create(payload, options);
   if (created && typeof created.sheet?.render === 'function') created.sheet.render({ force: true });
 

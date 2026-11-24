@@ -26,6 +26,7 @@ function dataAttrHtml(key, value) {
     case 'vehicle-uuid': return ` data-vehicle-uuid="${v}"`;
     case 'driver-uuid': return ` data-driver-uuid="${v}"`;
     case 'target-dc': return ` data-target-dc="${v}"`;
+    case 'condition-tag': return ` data-condition-tag="${v}"`;
     case 'ram': return ` data-ram="${v}"`;
     default: return '';
   }

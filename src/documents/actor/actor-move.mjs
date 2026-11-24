@@ -11,7 +11,9 @@ import { collectVehicleModifiers, getActiveModifierSources } from '../../utils/r
 import { buildRollContext } from '../../utils/roll/roll-context.mjs';
 import { ratedMove } from '../../data/rules/vehicle-rules.mjs';
 import { MOVE_MODES } from '../../utils/row-kinds/vehicle.mjs';
-import { setMoveScalarReader } from '../../utils/roll/scalars.mjs';
+import { setMoveScalarReader, setMovedScalarReader } from '../../utils/roll/scalars.mjs';
+import { movedFeet } from '../../utils/combat/movement-position.mjs';
+import { mountOf } from '../../utils/pet/pet-lookup.mjs';
 import { PET_TAGS } from '../../data/tag-vocabulary.mjs';
 import { resolveActor } from './actor-constants.mjs';
 
@@ -55,3 +57,10 @@ export function creatureMoveOf(actor) {
 }
 
 setMoveScalarReader((actor) => creatureMoveOf(actor).rated);
+
+/** The feet a creature's token (or its mount's, for the scope `mount`) has moved since its movement history was cleared; no mount or no token reads 0. */
+setMovedScalarReader((actor, scope) => {
+  const creature = scope === 'mount' ? mountOf(actor) : actor;
+  const token = creature?.getActiveTokens?.()[0];
+  return movedFeet(token?.document ?? token ?? null);
+});

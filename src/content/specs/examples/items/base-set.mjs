@@ -307,19 +307,20 @@ const RACES = [
   }
 ];
 
-const LOOT = [
-  {
-    type: 'loot',
-    _id: id(31),
-    name: 'Green Room Mana Spritzer',
-    img: 'icons/svg/pill.svg',
-    system: {
-      identifier: 'green-room-mana-spritzer', quantity: 1, lootType: 'consumable', executionMode: 'all',
-      outcomes: [{ name: 'Refill Mana', type: 'restore_resource', resource: 'mana', mode: 'full', targetType: 'self' }],
-      tags: ['kind.loot', 'action.restore', 'resource.mana'],
-      description: '<p>Complimentary, lukewarm, and somehow it refills your mana completely.</p>'
-    }
+/** The starter mana potion: the example potion loadout embeds it (examples/creation-loadouts.mjs). */
+export const GREEN_ROOM_MANA_SPRITZER = Object.freeze({
+  type: 'loot',
+  _id: id(31),
+  name: 'Green Room Mana Spritzer',
+  img: 'icons/svg/pill.svg',
+  system: {
+    identifier: 'green-room-mana-spritzer', quantity: 1, lootType: 'consumable', executionMode: 'all',
+    outcomes: [{ name: 'Refill Mana', type: 'restore_resource', resource: 'mana', mode: 'full', targetType: 'self' }],
+    tags: ['kind.loot', 'action.restore', 'resource.mana'],
+    description: '<p>Complimentary, lukewarm, and somehow it refills your mana completely.</p>'
   }
-];
+});
+
+const LOOT = [GREEN_ROOM_MANA_SPRITZER];
 
 export const SPECS = Object.freeze([...DEBUFFS, ...SPELLS, ...CLASSES, ...RACES, ...LOOT]);

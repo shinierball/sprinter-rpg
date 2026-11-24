@@ -4,7 +4,8 @@
  * `src/chat/actions/check-difficulty.mjs`.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
-import { DIFFICULTY_MODES, opposedDifficulty, unopposedDifficulty, statCheckDifficulty } from '../../data/rules/difficulty-rules.mjs';
+import { langText } from '../lang-text.mjs';
+import { DIFFICULTY_MODES, wholeOrZero, escalatingTiers, opposedDifficulty, unopposedDifficulty, statCheckDifficulty } from '../../data/rules/difficulty-rules.mjs';
 
 /** English fallbacks of the `COG.Difficulty.*` keys in lang/en.json (the headless test world has no i18n). */
 const TEXT = Object.freeze({
@@ -13,12 +14,21 @@ const TEXT = Object.freeze({
   StatCheck: 'Stat Check',
   Opposed: 'Opposed',
   Typed: 'set by the GM',
+  Escalating: 'Escalating {tiers}',
+  ButtonEscalating: 'Escalating…',
+  Reached: 'Reached {tiers}',
+  ReachedNone: 'Reached none',
+  EscalatingTitle: 'Escalating Difficulty',
+  EscalatingTier: 'Tier {n}',
+  EscalatingOk: 'Set',
   FormulaUnopposed: '10 + 2 × Floor {floor}',
   FormulaStat: '10 + Floor {floor}',
   FormulaOpposed: '10 + {foe} {stat} {mod} + Floor {floor}',
   FormulaOpposedNoFoe: '10 + {mod} + Floor {floor}',
   ShiftAdvantage: '+ {shift} Advantage',
   ShiftDisadvantage: '- {shift} Disadvantage',
+  FlatPenalty: '- {flat} Check penalty',
+  FlatBonus: '+ {flat} Check bonus',
   NotSet: 'Difficulty not set',
   Standing: 'Standing',
   Change: 'Change Difficulty',
@@ -37,17 +47,17 @@ const TEXT = Object.freeze({
   LedgerHint: 'That roll\'s chat card is no longer available to set a Difficulty on.'
 });
 
+const difficultyLang = langText(Object.fromEntries(Object.entries(TEXT).map(([k, v]) => [`COG.Difficulty.${k}`, v])));
+
 /** `COG.Difficulty.<key>` through `game.i18n` when it knows the key, else the English fallback. */
-export function difficultyText(key, data = {}) {
-  const full = `COG.Difficulty.${key}`;
-  const i18n = globalThis.game?.i18n;
-  try {
-    const s = Object.keys(data).length ? i18n?.format?.(full, data) : i18n?.localize?.(full);
-    if (typeof s === 'string' && s && s !== full) return s;
-  } catch {
-    // fall through to the fallback
-  }
-  return Object.entries(data).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), TEXT[key] ?? full);
+export const difficultyText = (key, data = {}) => difficultyLang(`COG.Difficulty.${key}`, data);
+
+/** "Reached 12 and 17", or "Reached none": which tiers of an escalating Difficulty the total reached (numbers only). */
+export function reachedLineText(reached) {
+  if (!reached.length) return difficultyText('ReachedNone');
+  const last = reached[reached.length - 1];
+  const list = reached.length > 1 ? `${reached.slice(0, -1).join(', ')} and ${last}` : String(last);
+  return difficultyText('Reached', { tiers: list });
 }
 
 /** A fresh id that links a ledger entry to its chat card (the same id is stored on both). */
@@ -55,38 +65,40 @@ export function newRollId() {
   return globalThis.foundry?.utils?.randomID?.(16) ?? `roll-${Math.random().toString(36).slice(2, 12)}`;
 }
 
-const whole = (v) => (v !== null && v !== '' && Number.isFinite(Number(v)) ? Math.trunc(Number(v)) : 0);
-
 /**
  * The Difficulty a spec gives on a Floor, with how it was reached; null for an unknown mode or a typed value that is
  * not a number.
- * @param {{ mode?: string, value?: number, foe?: { uuid?: string, name?: string, mod?: number, shift?: number }, stat?: string }|null} spec
+ * @param {{ mode?: string, value?: number, foe?: { uuid?: string, name?: string, mod?: number, shift?: number, flat?: number }, stat?: string }|null} spec
  * @param {{ floor?: number }} [ctx]
- * @returns {{ mode: string, value: number, floor: number, foeUuid: string, foeName: string, stat: string, mod: number, shift: number }|null}
+ * @returns {{ mode: string, value: number, floor: number, foeUuid: string, foeName: string, stat: string, mod: number, shift: number, flat: number, tiers?: number[] }|null}
  */
 export function difficultyFor(spec, { floor = 0 } = {}) {
   const mode = spec?.mode;
   if (!DIFFICULTY_MODES.includes(mode)) return null;
-  const fl = Math.max(0, whole(floor));
-  const base = { mode, floor: fl, foeUuid: '', foeName: '', stat: '', mod: 0, shift: 0 };
+  const fl = Math.max(0, wholeOrZero(floor));
+  const base = { mode, floor: fl, foeUuid: '', foeName: '', stat: '', mod: 0, shift: 0, flat: 0 };
   if (mode === 'typed') {
+    const tiers = escalatingTiers(spec.tiers);
+    if (tiers.length) return { ...base, value: tiers[0], tiers };
     const v = spec.value;
     if (v === null || v === '' || v === undefined || !Number.isFinite(Number(v))) return null;
-    return { ...base, value: Math.max(0, whole(v)) };
+    return { ...base, value: Math.max(0, wholeOrZero(v)) };
   }
   if (mode === 'unopposed') return { ...base, value: unopposedDifficulty({ floor: fl }) };
   if (mode === 'stat') return { ...base, value: statCheckDifficulty({ floor: fl }) };
   const foe = spec.foe ?? {};
-  const mod = whole(foe.mod);
-  const shift = whole(foe.shift);
+  const mod = wholeOrZero(foe.mod);
+  const shift = wholeOrZero(foe.shift);
+  const flat = wholeOrZero(foe.flat);
   return {
     ...base,
     mod,
     shift,
+    flat,
     foeUuid: typeof foe.uuid === 'string' ? foe.uuid : '',
     foeName: typeof foe.name === 'string' ? foe.name : '',
     stat: typeof spec.stat === 'string' ? spec.stat : '',
-    value: opposedDifficulty({ mod, floor: fl, shift })
+    value: opposedDifficulty({ mod, floor: fl, shift, flat })
   };
 }
 
@@ -113,7 +125,10 @@ export function difficultyLineText(difficulty) {
   if (!difficulty) return '';
   const head = difficultyText('Line', { dc: difficulty.value });
   const floor = difficulty.floor;
-  if (difficulty.mode === 'typed') return `${head} · ${difficultyText('Typed')}`;
+  if (difficulty.mode === 'typed') {
+    const tiers = escalatingTiers(difficulty.tiers);
+    return tiers.length ? `${head} · ${difficultyText('Escalating', { tiers: tiers.join(' / ') })}` : `${head} · ${difficultyText('Typed')}`;
+  }
   if (difficulty.mode === 'unopposed') return `${head} · ${difficultyText('Unopposed')} (${difficultyText('FormulaUnopposed', { floor })})`;
   if (difficulty.mode === 'stat') return `${head} · ${difficultyText('StatCheck')} (${difficultyText('FormulaStat', { floor })})`;
   const mod = difficulty.mod >= 0 ? `+${difficulty.mod}` : `${difficulty.mod}`;
@@ -124,6 +139,9 @@ export function difficultyLineText(difficulty) {
   formula = formula.replace('  ', ' ');
   if (difficulty.shift) {
     formula += ` ${difficulty.shift > 0 ? difficultyText('ShiftAdvantage', { shift: difficulty.shift }) : difficultyText('ShiftDisadvantage', { shift: Math.abs(difficulty.shift) })}`;
+  }
+  if (difficulty.flat) {
+    formula += ` ${difficulty.flat > 0 ? difficultyText('FlatBonus', { flat: difficulty.flat }) : difficultyText('FlatPenalty', { flat: Math.abs(difficulty.flat) })}`;
   }
   return `${head} · ${difficultyText('Opposed')} (${formula})`;
 }
@@ -146,14 +164,14 @@ export function readStandingDifficulty() {
   const str = (v) => (typeof v === 'string' ? v : '');
   return {
     mode: raw.mode,
-    value: whole(raw.value),
+    value: wholeOrZero(raw.value),
     foeUuid: str(raw.foeUuid),
     foeName: str(raw.foeName),
     stat: str(raw.stat),
-    mod: whole(raw.mod),
+    mod: wholeOrZero(raw.mod),
     label: str(raw.label).slice(0, LABEL_MAX),
-    setAt: whole(raw.setAt),
-    stamped: Math.max(0, whole(raw.stamped))
+    setAt: wholeOrZero(raw.setAt),
+    stamped: Math.max(0, wholeOrZero(raw.stamped))
   };
 }
 
@@ -165,22 +183,26 @@ function standingDifficultyFor({ kind, rollerType, hasOwnDc = false } = {}) {
 
 /**
  * What a roll born under the standing Difficulty is given: the `difficulty` record (flagged `standing`) and its number,
- * worked out on the Floor of the roll (an Opposed one adds the stored Mod to that Floor, and the foe's Advantage shift as it is
- * now: `foeShift(standing)` reads it, 0 when absent or it throws), or null when none applies.
+ * worked out on the Floor of the roll (an Opposed one adds the stored Mod to that Floor, and the foe's Advantage shift and flat modifier as they are
+ * now: `foeEffect(standing)` reads them as `{ shift, flat }`, 0 when absent or it throws), or null when none applies.
  * @returns {{ difficulty: object, dc: number }|null}
  */
-export function standingStampFor({ kind, rollerType, hasOwnDc = false, floor = 0, foeShift = null } = {}) {
+export function standingStampFor({ kind, rollerType, hasOwnDc = false, floor = 0, foeEffect = null } = {}) {
   const standing = standingDifficultyFor({ kind, rollerType, hasOwnDc });
   if (!standing) return null;
   let shift = 0;
-  if (standing.mode === 'opposed' && typeof foeShift === 'function') {
+  let flat = 0;
+  if (standing.mode === 'opposed' && typeof foeEffect === 'function') {
     try {
-      shift = whole(foeShift(standing));
+      const effect = foeEffect(standing);
+      shift = wholeOrZero(effect?.shift);
+      flat = wholeOrZero(effect?.flat);
     } catch {
       shift = 0;
+      flat = 0;
     }
   }
-  const worked = difficultyFor({ mode: standing.mode, value: standing.value, stat: standing.stat, foe: { uuid: standing.foeUuid, name: standing.foeName, mod: standing.mod, shift } }, { floor });
+  const worked = difficultyFor({ mode: standing.mode, value: standing.value, stat: standing.stat, foe: { uuid: standing.foeUuid, name: standing.foeName, mod: standing.mod, shift, flat } }, { floor });
   if (!worked) return null;
   return { difficulty: { ...worked, standing: true, by: globalThis.game?.user?.id ?? '', at: Date.now() }, dc: worked.value };
 }

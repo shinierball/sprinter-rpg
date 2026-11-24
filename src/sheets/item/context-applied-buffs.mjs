@@ -4,12 +4,12 @@
  * index; labels, option lists and `selected` flags are worked out here.
  */
 import { identifierOptions } from '../../utils/ui/identifier-options.mjs';
+import { localiseKey as loc } from '../../utils/lang-text.mjs';
 import { pickOptions } from '../../utils/ui/field-options.mjs';
 import { buffTargetTags, rowRecipients } from '../../utils/effects/applied-buff.mjs';
 import { effectiveDuration, durationConfigText } from '../../utils/time/durations.mjs';
 import { BUFF_REPEAT_MODES } from '../../models/items/buff-model.mjs';
 
-const loc = (key, data) => (data ? globalThis.game?.i18n?.format?.(key, data) : globalThis.game?.i18n?.localize?.(key)) ?? key;
 
 /** What a blank "Within" means for a target: the item's own Range for one chosen creature, no limit for the rest. */
 const rangeHintKey = (gather) => (gather === 'chosen' ? 'COG.AppliedBuffs.Sheet.WithinHintOne' : 'COG.AppliedBuffs.Sheet.WithinHintOther');

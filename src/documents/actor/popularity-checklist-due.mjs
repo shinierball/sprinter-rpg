@@ -2,7 +2,6 @@
  * The prompts of the Popularity checklist: a whisper card to the GMs when a moment has ended (the card is the to-do; the
  * window opens only when the GM clicks), and the seam through which that click reaches the window. The window is
  * `apps/` code, above this file, so `hooks/ready.mjs` injects its opener (the same seam as `setLootBoxShowPlayer`).
- * Behind the live flag `popularity-checklist`: off, no card is posted.
  */
 import { postDueCard } from '../../chat/popularity-checklist-card.mjs';
 

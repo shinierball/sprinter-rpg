@@ -12,11 +12,17 @@
       <div style="display: flex; align-items: center; gap: 8px;">
         <span class="cog-field-label cog-text-on-fill" style="margin: 0; font-size: 11px;">Popularity:</span>
         <input class="cog-field-input cog-bg-surface" type="number" step="1" name="system.details.popularity" value="{{system.details.popularity}}" placeholder="0" style="width: 120px; height: 22px; font-size: 11px;" />
+        <span class="cog-field-label cog-text-on-fill" style="margin: 0; font-size: 11px;">{{localize 'COG.TopTen.Label'}}</span>
+        <select class="cog-field-input cog-bg-surface" name="system.details.topTen" data-dtype="Number" style="width: 80px; height: 22px; font-size: 11px;">
+          {{#each topTen.options}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
         <span class="cog-achievements-badge cog-bg-surface-muted cog-text-gold" style="border: 1px solid var(--cog-gold); padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: bold; cursor: default;" title="Total Achievements Unlocked">
           <i class="fa-solid fa-trophy"></i> {{achievements.length}}
         </span>
       </div>
     </div>
+    {{#if topTen.line}}<p class="cog-rule-hint" style="margin: 6px 10px 0;"><i class="fa-solid fa-ranking-star"></i> {{topTen.line}}</p>{{/if}}
+    {{#if topTen.hint}}<p class="cog-rule-hint" style="margin: 6px 10px 0;"><i class="fa-solid fa-circle-info"></i> {{topTen.hint}}</p>{{/if}}
     <div style="padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
       {{#each storyTables}}
       <div class="cog-story-box">
@@ -201,9 +207,15 @@
       {{!-- SPONSORS --}}
       <div>
         <div class="cog-banner-header" style="font-size: 11px; padding: 4px 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-          <span>CORPORATE SPONSORS (Max 3)</span>
+          <span>CORPORATE SPONSORS ({{localize 'COG.Sponsor.Limits.Max' limit=sponsorLimit}})</span>
           <a class="cog-text-on-fill" data-action="createItem" data-type="sponsor" data-tooltip="Add Sponsor" style="cursor: pointer;"><i class="fa-solid fa-plus"></i></a>
         </div>
+        {{#if benefactor.lines.length}}
+          <div class="cog-text" style="font-size: 11px; margin-bottom: 6px;">
+            {{#each benefactor.lines as |line|}}<div>{{line}}</div>{{/each}}
+            {{#if benefactor.canClear}}<a class="cog-text-accent" data-action="clearBenefactorState" data-tooltip-text="{{benefactor.clearTip}}" style="cursor: pointer;">[{{benefactor.clearLabel}}]</a>{{/if}}
+          </div>
+        {{/if}}
         {{#each sponsors as |item|}}
           <div class="cog-bg-surface-alt" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px; border: 1px solid var(--cog-divider); border-radius: 3px; margin-bottom: 4px;" data-item-id="{{item.id}}">
             <span style="font-weight: bold; font-size: 12px;">{{item.name}}</span>

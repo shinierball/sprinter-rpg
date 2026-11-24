@@ -187,7 +187,10 @@ async function resolveOne(combat, decl, { ruleBreak }) {
   // The GM checks the stored attack message, not the declaration: it must still be the mob's attack, the listed targets
   // must be the attack's targets (or a redirect of one), and the damage button must be the attacker's own.
   const trust = verifyMobAttackMessage(attackMessage);
-  const attackTargets = new Set((targetResultsOf(attackMessage) ?? []).map(tr => tr?.actorUuid));
+  const cardRows = targetResultsOf(attackMessage) ?? [];
+  const attackTargets = new Set(cardRows.map(tr => tr?.actorUuid));
+  // An NPC target the card's comparison marked a miss (core p. 83) takes nothing; read from the stored card, never the declaration.
+  const missedByCard = new Set(cardRows.filter(tr => tr?.npcVsNpc && tr.isHit === false).map(tr => tr.actorUuid));
   const rollButton = attackMessage?.content
     ? actionButton(parseMessageContent(attackMessage.content), ['crawlerRollItemDamage', 'crawlerRollSpellDamage'])
     : null;
@@ -207,6 +210,10 @@ async function resolveOne(combat, decl, { ruleBreak }) {
     }
     if (!actor) {
       results.push({ ...row, skipped: SKIP_REASONS.MISSING });
+      continue;
+    }
+    if (t.uuid === t.originalUuid && missedByCard.has(t.uuid)) {
+      results.push({ ...row, skipped: SKIP_REASONS.MISSED });
       continue;
     }
     const evade = findEvadeFor(messages, { attackMessageId: decl.messageId, targetUuid: t.uuid, isTrusted: isTrustedEvade });

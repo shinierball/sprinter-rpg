@@ -4,7 +4,7 @@
  */
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { sanitizePetAttitude } from '../../data/rules/pet-rules.mjs';
-import { gmWhisper } from './vehicle-drive-common.mjs';
+import { gmWhisper } from '../../utils/owner-recipients.mjs';
 
 /**
  * Pets owned by a crawler whose attitude is not Bonded.

@@ -16,6 +16,8 @@
  *   rows        [{ range?: [lo, hi], links?: [Link], flags?: { <name>: boolean|number }, asTrigger?: AsTriggerHint,
  *                 nextTable?: '<recipe id>', base?: '<id>', magic?: MagicHint }]
  *   grind       { scope: 'floor'|'neighborhood', floors?: [n, ...] } marks a grinding table (becomes the `grindTable` flag; no floors = any floor)
+ *   formulaHint authoring-time only (the importer ignores it): the table's dice when the book prints them outside the table. The
+ *               compiler writes it as `formula` and closes an open-ended last row (`7+`) at its maximum; a recompile keeps it
  *   layoutHint  { columnsX?: [x, ...], groups?: n, skipRows?: n, continues?: n } for grid and swatch shapes (see tables.mjs)
  * AsTriggerHint: { debuff?: '<debuff identifier>', tags?: [<tag id>, ... up to 4] } marks a row as an Amazing Success upgrade (Scroll of
  *       Upgrade). Ids only: the row's name addition and text are the cells read from the book at import. `{}` is a narrative trigger.

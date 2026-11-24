@@ -23,6 +23,9 @@ export const HERITAGE_TAG_PREFIX = 'heritage.';
 
 /** The note a Silver Earth Box origin appends: a race of Earth heritage, and an Earth class. */
 export const SILVER_EARTH_NOTE = 'Silver Earth Box, with a hobby skill potion inside';
+
+/** The row an Earth Class carries: only crawlers of an Earth-based Race take it (core p. 142). */
+export const EARTH_CLASS_REQUIREMENT = Object.freeze({ kind: 'race', query: Object.freeze({ all: Object.freeze([`${HERITAGE_TAG_PREFIX}earth`]) }) });
 const ALIEN_NOTE = 'Off-World Fanbase Popularity (Home-Planet Audience Appeal)';
 
 const ID_PATTERN = /^[a-z][a-z0-9_.-]*$/;

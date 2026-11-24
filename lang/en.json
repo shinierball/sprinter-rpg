@@ -1,5 +1,110 @@
 {
   "COG": {
+    "SheetTables": {
+      "SettingName": "Sheet table columns",
+      "SettingHint": "Each user's choice of columns for the Spells, Skills and Inventory tables: their own default and one layout per sheet.",
+      "Col": {
+        "spells": {
+          "used": "Used",
+          "name": "Spell",
+          "rank": "Rank",
+          "mana": "Mana",
+          "stat": "Stat & Mod",
+          "range": "Range",
+          "duration": "Duration",
+          "damage": "Damage / Effect",
+          "notes": "Notes",
+          "actions": "Actions"
+        },
+        "skills": {
+          "used": "Used",
+          "name": "Skill",
+          "rank": "Rank",
+          "bonus": "Bonuses",
+          "modRank": "Mod Rank",
+          "stat": "Stat & Mod",
+          "total": "Total",
+          "checkType": "Check Type",
+          "notes": "Notes",
+          "actions": "Actions"
+        },
+        "quickSpells": {
+          "name": "Spell",
+          "mana": "Mana",
+          "damage": "Damage / Effect",
+          "range": "Range",
+          "actions": "Actions"
+        },
+        "inventory": {
+          "item": "Item",
+          "effects": "Effects",
+          "qty": "Qty",
+          "value": "Value",
+          "notes": "Notes",
+          "actions": "Actions"
+        }
+      },
+      "ColTip": {
+        "spells": {
+          "used": "Tick to use this spell in the next Check",
+          "mana": "Mana cost per cast",
+          "stat": "The Stat the cast Check uses",
+          "range": "How far the spell reaches",
+          "duration": "How long the effect lasts",
+          "damage": "Base damage dice or effect",
+          "notes": "Free notes"
+        },
+        "skills": {
+          "used": "Tick to use this skill in the next Check",
+          "bonus": "Rank bonuses from gear, groups and boons",
+          "modRank": "Rank after bonuses",
+          "stat": "The Stat the Check uses",
+          "total": "Rank plus Stat modifier",
+          "checkType": "The kind of Check this skill makes",
+          "notes": "Free notes"
+        },
+        "quickSpells": {
+          "mana": "Mana cost per cast and the Stat the cast Check uses",
+          "damage": "Base damage dice or the spell's role",
+          "range": "How far the spell reaches"
+        },
+        "inventory": {
+          "effects": "What the item does and the bonuses it gives",
+          "qty": "How many you carry",
+          "value": "Gold value",
+          "notes": "Free notes and slot"
+        }
+      },
+      "Table": { "spells": "Spells", "quickSpells": "Spells & Magic", "skills": "Skills" },
+      "Menu": {
+        "Columns": "Columns",
+        "TitleActor": "Columns: {table}, this sheet",
+        "TitleAll": "Columns: {table}, all my sheets",
+        "StateDefault": "Follows your default.",
+        "StateOwn": "This sheet has its own columns.",
+        "Locked": "Always shown",
+        "ResetSheet": "Reset this sheet",
+        "UseDefault": "Use as my default",
+        "ResetDefault": "Reset my default"
+      },
+      "Definition": {
+        "KeyFacts": "Key facts",
+        "Limitations": "Limitations",
+        "WhatItDoes": "What this does",
+        "RankBreaks": "Rank breaks",
+        "Description": "Description",
+        "Notes": "Notes",
+        "OpenSheet": "Open sheet",
+        "Open": "Show the definition",
+        "Close": "Hide the definition"
+      }
+    },
+    "Definition": {
+      "ShowTip": "Show definition",
+      "Gone": "That spell or skill is no longer available.",
+      "TypeSpell": "Spell",
+      "TypeSkill": "Skill"
+    },
     "PotionLimits": {
       "Heading": "Lifetime potion limits",
       "Explanation": "A crawler may take only two Stat-raising and two Skill-raising potions in their whole life. A third of either is a Rule Break.",
@@ -544,6 +649,9 @@
       "TutorialUpgradeBadge": "Upgrades: Floor 3",
       "TutorialUpgradeTip": "Rank {rank} counts for checks; its Rank 10 and 15 Upgrades start on Floor {floor} (Crawlers p. 22).",
       "Sheet": {
+        "Limitations": "Limitations (text only)",
+        "LimitationsHint": "A limit the engine applies is a row (for example a Disadvantage row).",
+        "LimitationsPlaceholder": "None",
         "Rank": "Rank",
         "RankHint": "The Rank this Skill is trained to.",
         "ExtraRanks": "Extra Ranks",
@@ -893,6 +1001,15 @@
         "Message": "{name} is driving a {kind} and needs a hand on the controls. Attack two-handed anyway as a Rule Break?"
       }
     },
+    "Movement": {
+      "Band": {
+        "steps": "Steps",
+        "one": "1 Move Action",
+        "many": "{count} Move Actions",
+        "over": "Over budget"
+      },
+      "OverBudget": "{name} has moved {feet} ft this round; {actions} Actions allow {budget} ft (core p. 69). The GM decides."
+    },
     "VehicleCheck": {
       "Difficulty": "Difficulty {dc}",
       "DifficultyOpen": "Difficulty not set",
@@ -999,7 +1116,10 @@
       "clockShort": "This takes {hours} hours and {left} are left on the floor.",
       "noSteps": "This blueprint has no size and no enchantments, so there is nothing to roll for.",
       "recipeLocked": "{list} marks a locked recipe, and nothing here unlocks it.",
-      "hazard": "This item has 3 or more enchantments: applying another rolls 1d10, and 5 or less breaks it for good."
+      "hazard": "This item has 3 or more enchantments: applying another rolls 1d10, and 5 or less breaks it for good.",
+      "concoctionAim": "Announce the bonus level you aim for before the roll: it cannot exceed the combined bonus levels of the potions mixed (an Amazing Success or Critical Hit may beat it).",
+      "table48": "The result follows Table 48 (core p. 227), and nothing is salvaged.",
+      "infusionQuantity": "{quantity} items are more than one potion infuses at Rank {rank} ({items})."
     },
     "SlotLimit": {
       "SlotFull": "The {slot} slot takes {limit}; it already holds {names}.",
@@ -1017,6 +1137,8 @@
       "Cancel": "Cancel",
       "SamePropertyTitle": "Same Property",
       "SamePropertyMessage": "{name} already has this property ({label}). Add a second one as a Rule Break?",
+      "TattooFullTitle": "One Enchantment per Tattoo",
+      "TattooFullMessage": "{name} already holds an enchantment, and a tattoo holds at most one. Add another as a Rule Break?",
       "SecondAsTitle": "Second Amazing Success Trigger",
       "SecondAsMessage": "{name} already has an Amazing Success trigger. Add a second one as a Rule Break?",
       "BrokenTitle": "Broken Item",
@@ -1111,6 +1233,17 @@
       "BonusNothingToRaise": "No number to raise",
       "TableNoBonus": "Table tier +0 (tables give no bonus)",
       "TableScaled": "tier {base} x{mult}",
+      "Process": {
+        "Minutes": "{n} min",
+        "Acid": "The crafter takes {dice} Acid damage (or the GM picks another disaster).",
+        "Row": {
+          "criticalHit": "Table 48: Critical Hit",
+          "amazing": "Table 48: Amazing Success",
+          "standard": "Table 48: Standard Success",
+          "ruined": "Table 48: Near Miss or Failure, the mixture is ruined",
+          "blowUp": "Table 48: Critical Fail"
+        }
+      },
       "WastedScroll": "{name} read {item} with nothing equipped. The dumbass has wasted a valuable scroll. No reward. We do not encourage this behavior."
     },
     "CraftSheet": {
@@ -1322,6 +1455,7 @@
       "Step": "Step",
       "Difficulty": "Difficulty",
       "HoursColumn": "Hours",
+      "MinutesColumn": "Minutes",
       "Skill": "Skill",
       "NoSkill": "No skill owned",
       "SkillRank": "{name} (rank {rank})",
@@ -1337,6 +1471,7 @@
       "TableScaled": "base tier {base} x{mult}",
       "BonusValue": "+{n} bonus value, no extra Difficulty or time",
       "TotalHours": "Total hours",
+      "TotalTime": "Total",
       "RuleBreak": "[RULE BREAK]",
       "Quantity": "Quantity",
       "QuantityBatch": "How many this batch makes",
@@ -2375,11 +2510,39 @@
       }
     },
     "Sponsor": {
+      "Limits": {
+        "Max": "Max {limit}",
+        "Title": "Sponsor limit",
+        "Add": "Add {name} anyway as a Rule Break?",
+        "Over": "A crawler holds at most {limit} Sponsors.",
+        "Early": "Sponsors bid from the Fourth Floor, and this crawler is on Floor {floor}.",
+        "PlayEarly": "Playing to the Sponsors is available from the Fourth Floor, and this crawler is on Floor {floor}.",
+        "PlayQuestion": "Play to the Sponsors anyway as a Rule Break?",
+        "PlayLabel": "Sponsors (before the Fourth Floor: Rule Break)"
+      },
       "Sheet": {
         "Gifts": "What the sponsor gives and asks (text)",
         "GiftsHint": "Its tags, below, apply to the crawler who holds it.",
         "Notes": "Notes (text)",
         "Description": "Description"
+      },
+      "Benefactor": {
+        "ReduceOne": "The next Sponsor Box is one grade lower.",
+        "ReduceMany": "The next Sponsor Box is {n} grades lower.",
+        "Barred": "Barred from a Sponsor Box until the next Floor.",
+        "Gained": "A Sponsor Box has already come this Floor.",
+        "Clear": "Clear",
+        "ClearTip": "Clear the Sponsor Box state (owed reductions, the bar and this Floor's box)",
+        "BoxName": "{tier} Sponsor Box",
+        "Line": "{reason}: {name} gets a {box}",
+        "LineNoSponsor": "{reason}: {name} has no Sponsor, so nothing changes",
+        "ReasonTitle": "Sponsor Box Limit",
+        "ReasonMessage": "{name}: {reasons}. Award the box anyway as a Rule Break?",
+        "Reason": {
+          "no-sponsor": "there is no Sponsor",
+          "once-per-floor": "a Sponsor Box already came this Floor",
+          "barred": "a Major Fail barred a box this Floor"
+        }
       }
     },
     "SpaceUpgrade": {
@@ -2599,7 +2762,14 @@
         "ShortTitle": "Offering short",
         "ShortGold": "it costs {cost} gold and {actor} has {held}",
         "ShortItems": "{actor} is short {count} of the {need} items it asks for",
-        "ShortReason": "The offering to {deity} is short: {lines}. Make it anyway as a Rule Break?"
+        "ShortReason": "The offering to {deity} is short: {lines}. Make it anyway as a Rule Break?",
+        "LootedHint": "Every gold gain since the last tithe counts; correct the figure here, or take gold back on the sheet (GM).",
+        "TitheShortReason": "The tithe owed to {deity} is {owed} gold ({percent}% of {since} gold looted since the last tithe); {paid} is short. Make the offering anyway as a Rule Break?",
+        "TitheShortStated": "The tithe owed to {deity} is {owed} gold ({percent}% of {since} gold counted since the last tithe; {stated} was entered); {paid} is short. Make the offering anyway as a Rule Break?",
+        "TakeBackButton": "Take back gold",
+        "TakeBackTitle": "Take back gold",
+        "TakeBackPrompt": "How much gold does the GM take back from {actor}? It also comes off the loot counted for the tithe.",
+        "TakeBackConfirm": "Take it back"
       }
     },
     "ItemSummary": {
@@ -2709,7 +2879,9 @@
         "TierLightMode": "Light {mode}",
         "TierLightDouble": "Light can double",
         "TierLightAttach": "Light can attach",
-        "Upgrades": "Upgrades: {text}"
+        "Upgrades": "Upgrades: {text}",
+        "Limitations": "Limitations: {text}",
+        "RangeText": "Range: {text}"
       },
       "GearLoot": {
         "Slot": "{slot} slot (only while equipped)",
@@ -2750,6 +2922,7 @@
         "UsedInto": "Leaves {name} when used up",
         "Cooldown": "Cooldown: {text}",
         "CastsSpell": "Casts {name}",
+        "CastsAtRank": "Casts at Rank {rank}",
         "OptionalEffects": "Can add techniques: {list}",
         "OutcomeChance": "{text} ({percent}%)",
         "OutcomeHeal": "Heals {bars}",
@@ -2814,6 +2987,7 @@
       },
       "Effects": {
         "HealPerRound": "Heals {amount} HP each round",
+        "Ammunition": "Takes ammunition: {tags}, {n} per Attack",
         "DamageType": "Damage type: {type}",
         "DamagePerRound": "{amount} damage each round",
         "DamagePerRoundTyped": "{amount} {type} damage each round",
@@ -2993,7 +3167,12 @@
       "FloorRowTitle": "Once Per Floor",
       "FloorRowPrompt": "Which skill gets \"{label}\" this floor?",
       "FloorRowPick": "Apply",
-      "FloorRowUsed": "{label} was already used this floor. Use it again as a Rule Break?"
+      "FloorRowUsed": "{label} was already used this floor. Use it again as a Rule Break?",
+      "StatPointsHeldTitle": "Stat Points Banked",
+      "StatPointsHeldMessage": "Stat points from Levels are spent from Floor {floor}, and {actor} is on Floor {current}. Spend one on {stat} anyway as a Rule Break?",
+      "StatPointsHeldReason": "Stat points are spent from Floor {floor}; {actor} is on Floor {current}.",
+      "StatPointsHeldOne": "{points} Stat point banked until Floor {floor}",
+      "StatPointsHeld": "{points} Stat points banked until Floor {floor}"
     },
       "Contest": {
         "Tracker": {
@@ -3054,7 +3233,14 @@
           "Ground": "Ground",
           "End": "End contest",
           "Post": "Post contest card",
-          "BadTotal": "That result is not a number."
+          "BadTotal": "That result is not a number.",
+          "Stages": "Stages needed",
+          "Difficulty": "Difficulty",
+          "Roller": "Roller",
+          "SpendNet": "Spend safety net",
+          "TakeBackNet": "Take back",
+          "ChallengeStandings": "{passed} of {stages} stages, {nets} safety net(s) ({spent} spent)",
+          "ChallengeStandingsRuleBreak": "{passed} of {stages} stages, {nets} safety net(s) ({spent} spent, {rule} as a Rule Break)"
         }
       },
     "Content": {
@@ -3123,6 +3309,23 @@
       "Award": "{name}: {value} Popularity ({label})",
       "RuleBreakTitle": "Popularity Limit",
       "RuleBreakMessage": "{label} already gave Popularity this {scope}. Award it again as a Rule Break?"
+    },
+    "TopTen": {
+      "Label": "Top Ten:",
+      "Place": {
+        "1": "1st",
+        "2": "2nd",
+        "3": "3rd",
+        "4": "4th",
+        "5": "5th",
+        "6": "6th",
+        "7": "7th",
+        "8": "8th",
+        "9": "9th",
+        "10": "10th"
+      },
+      "Line": "Top Ten, {place}: bounty {bounty} gold, and {payout} gold in a box for leaving by the stairwell while still listed.",
+      "Hint": "The Top Ten opens on the Fourth Floor; this place carries no bounty until the crawler gets there."
     },
     "PaidDr": {
       "Title": "Spend AI Favor for DR",
@@ -3444,7 +3647,7 @@
         "TierHelp": "A regular mob has base 1 and 3 points a level. A boss has base 5 and its tier's points a level: {tiers}.",
         "Unique": "Unique: a singular named figure",
         "Summoned": "Summoned: called into the fight by another creature",
-        "Minion": "Minion: serves a boss",
+        "Minion": "Minion: under another creature's command",
         "Tags": {
           "Label": "Actor tags",
           "Empty": "No extra tags. The boss tier, unique, summoned and minion add their own.",
@@ -3632,9 +3835,22 @@
         "Chance": "Roll for Stats",
         "Roll": "Roll Stats"
       },
+      "Identity": {
+        "NumberPlaceholder": "#7,654,321",
+        "NumberHint": "Any number will do. For simplicity the book suggests one from {min} to {max} (core p. 102).",
+        "SizeHint": "A {species} starts at size {min} to {max} (core p. 112).",
+        "SizeTypical": "A {species} is typically size {size} (core p. 112).",
+        "SizeOutside": "(Rule Break)",
+        "SizeBreak": "A {species} starts at size {min} to {max}; {size} is outside that."
+      },
       "Description": {
         "Label": "Description (the crawler's Notes)",
         "Placeholder": "Who this crawler is, in a few sentences."
+      },
+      "UnarmedBox": {
+        "Name": "Bronze Weapon Box",
+        "AwardedBy": "Unarmed start (core p. 109)",
+        "Hint": "Starting unarmed also earns a Bronze Weapon Box: the GM fills it with the weapon you left behind, plus a catch (core p. 109)."
       },
       "Footer": {
         "Ready": "Crawler is fully configured and ready to enter the dungeon.",
@@ -3665,6 +3881,24 @@
         "StarterSpellInt": "A Starter Spell needs Intelligence {min} or higher; Intelligence is {int}.",
         "StatsChanged": "Rolled Stats changed after the roll (no swapping or editing a rolled score).",
         "StatsNotRolled": "Stats not rolled yet."
+      },
+      "Gear": {
+        "UsefulItems": "Step 10 gives one interesting or useful item; this crawler has {n} (core p. 113).",
+        "Title": "STEP 10: STARTING GEAR",
+        "Hint": "What was on you when the world ended: clothes, your weapon (none if you start unarmed), one interesting or useful item and some weird stuff. Settle it with your GM (core p. 113).",
+        "Kit": "Fill from a kit",
+        "KitNone": "-- Choose a kit --",
+        "Kind": {
+          "clothing": "Clothing",
+          "item": "Interesting or useful item",
+          "weird": "Weird stuff"
+        },
+        "Weapon": "Weapon",
+        "WeaponName": "Name it (keep the listed weapon in parentheses, core p. 108)",
+        "NoWeapon": "No weapon: a Spell or unarmed start brings none (core p. 113).",
+        "Add": "Add {kind}",
+        "Remove": "Remove",
+        "KitWeaponSkipped": "{kit}'s weapon was not used: this crawler does not start with a weapon."
       }
     },
     "Sex": {
@@ -3759,7 +3993,17 @@
         "skill": "Skill",
         "damageType": "Damage type",
         "label": "Label"
-      }
+      },
+      "DetrimentCap": "+{extra} ({earned} earned, at most {cap})",
+      "PassiveCap": "PASSIVE CAP: {ranks} of {cap}",
+      "SizeUnpriced": "The book does not price a size above Medium, so the GM prices it as a custom benefit or detriment.",
+      "CapBreakTitle": "Build Rules Exceeded",
+      "CapBreakMessage": "This build goes past the book's limits. {action} anyway as a Rule Break?",
+      "CapBreakSave": "Save",
+      "CapBreakApply": "Apply",
+      "CapBreakOverBudget": "Points spent ({spent}) exceed the effective budget ({budget}).",
+      "CapBreakDetriments": "Detriments earn at most {cap} extra BP; this build's {earned} count as {cap}.",
+      "CapBreakPassive": "Passive Skill and Spell ranks ({ranks}) exceed the Class limit of {cap}."
     },
     "AuraPulse": {
       "Title": "Aura Pulses: Round {round}",
@@ -3781,6 +4025,16 @@
       "PlacedMarker": "Marks the area; it clears at the end of the round.",
       "Dismiss": "Dismiss Zone"
     },
+    "ForcedMove": {
+      "Title": "Forced movement",
+      "Push": "Push {target} {feet} ft away from {source}",
+      "Pull": "Pull {target} {feet} ft toward {source}",
+      "Slide": "Slide {target} up to {feet} ft",
+      "PushNoTarget": "Push the target {feet} ft away from {source}",
+      "PullNoTarget": "Pull the target {feet} ft toward {source}",
+      "SlideNoTarget": "Slide the target up to {feet} ft",
+      "Immovable": "(cannot be forcibly moved, core p. 95)"
+    },
     "CombatStrip": {
       "Title": "Damage Effects",
       "Hint": "Pick one in the Attack Options window when you attack."
@@ -3795,25 +4049,37 @@
       "ArmTitle": "Choose who to play to on your next Check or Attack (adds one Disadvantage)",
       "HudTitle": "Play to the Cameras: {label} (click to change)",
       "Awaiting": "Awaiting the result",
-      "Settled": "Settled: {changes} ({row})",
-      "SettledNone": "Settled ({row})",
-      "Line": "{reason}: {name} {changes} ({row})",
-      "LineNone": "{reason}: {name} ({row})",
+      "Settled": "Settled: {changes} ({result})",
+      "SettledNone": "Settled ({result})",
+      "Line": "{reason}: {name} {changes} ({result})",
+      "LineNone": "{reason}: {name} ({result})",
       "LineText": "{text}",
       "Popularity": "{value} Popularity",
       "AiFavor": "{value} AI Favor",
-      "Row1": "Amazing Success",
-      "Row2": "Success",
-      "Row3": "Failure",
-      "Row4": "Critical Failure",
-      "Pick1": "Amazing / Crit (beat by 10+ or Natural 20)",
-      "Pick2": "Success",
-      "Pick3": "Failure",
-      "Pick4": "Crit Fail (Natural 1)",
+      "Result": {
+        "amazing": "Amazing Success",
+        "success": "Standard Success",
+        "near-miss": "Near Miss",
+        "fail": "Standard Fail",
+        "major-fail": "Major Fail",
+        "critical-fail": "Critical Fail"
+      },
+      "Pick": {
+        "amazing": "Amazing Success (beat by 10+) or Critical Hit (Natural 20)",
+        "success": "Standard Success",
+        "near-miss": "Near Miss (missed by 1-2)",
+        "fail": "Standard Fail (missed by 3-9)",
+        "major-fail": "Major Fail (missed by 10+)",
+        "critical-fail": "Critical Fail (Natural 1)"
+      },
       "PickLabel": "GM: what was the result?",
+      "PickTip": "Picking Critical Fail sets the day's AI Favor bar; a mis-pick needs the bar cleared by hand.",
+      "Closed": "Settled on an earlier release; not settled again.",
+      "LeftOpen": "This choice was left open on an earlier release; make it by hand.",
+      "ChoiceGone": "That choice is no longer on the table; nothing was applied.",
       "Award": "Award",
       "Withheld": "Award {n} AI Favor (barred today)",
-      "PromptTitle": "{reason}: {name} ({row}). GM choice:",
+      "PromptTitle": "{reason}: {name} ({result}). GM choice:",
       "Chosen": "Chosen: {choice}",
       "ChoiceLine": "{reason}: {name}, {choice}",
       "AlreadyResolved": "This choice was already made.",
@@ -3823,7 +4089,11 @@
       "Untrusted": "This card does not belong to the crawler, so nothing was awarded.",
       "WithheldTitle": "No AI Favor Today",
       "WithheldMessage": "{name} gets no AI Favor today. Award {n} anyway as a Rule Break?",
-      "SponsorLog": "Sponsors: {choice}"
+      "SponsorLog": "Sponsors: {choice}",
+      "Session": {
+        "Reason": "This crawler already Played to the Cameras in the last {hours} hours; the book allows it once per game session.",
+        "Question": "Play to the Cameras again this session anyway as a Rule Break?"
+      }
     },
     "AiFavor": {
       "BarTitle": "No AI Favor Today",
@@ -3916,6 +4186,11 @@
       }
     },
     "LootBoxSheet": {
+      "RankMode": {
+        "Title": "How the Tome's Rank is set",
+        "Fixed": "Fixed Rank",
+        "Book": "Book random: 1d6 - 1, at least 1"
+      },
       "Title": "Loot Box",
       "Tier": "Box tier",
       "Sealed": "Sealed: the contents are revealed on opening.",
@@ -4140,6 +4415,48 @@
       "RowLine": "{feet}ft away; range {range}ft",
       "NoRoll": "{name} was out of range of this attack, so there is nothing to roll."
     },
+    "Scatter": {
+      "Line": "Missed by {feet} ft: it lands {feet} ft away, direction {direction} (Figure 3, core p. 200).",
+      "LineNoDie": "Missed by {feet} ft: it lands {feet} ft away. Roll the direction (Figure 3, core p. 200).",
+      "LineAimed": "Missed by {feet} ft: it lands {feet} ft away, in a direction you choose (Rank 10).",
+      "NaturalOne": "Natural 1: the GM picks where it lands.",
+      "Hidden": "It lands off target: direction {direction}.",
+      "HiddenNoDie": "It lands off target.",
+      "HiddenAimed": "It lands off target, in a direction you choose.",
+      "Roll": "Roll direction (1d8)",
+      "RollFlavor": "Scatter direction (1d8)"
+    },
+    "Reload": {
+      "Line": "Reload needed: spend one Action to reload (core pp. 181-182).",
+      "Button": "Reload",
+      "Badge": "[RELOAD]",
+      "GateTitle": "Weapon Not Reloaded",
+      "GateMessage": "{name} is not reloaded (core pp. 181-182: one Action after a Major Fail). Attack anyway as a Rule Break?",
+      "ActionLabel": "Reload {name}",
+      "NotOwner": "You do not own {name}."
+    },
+    "ExtraAttack": {
+      "Button": "Extra free Attack (Disadvantage)",
+      "Tip": "Rank {rank} Upgrade: costs no Action",
+      "UsedTitle": "Extra Attack Already Taken",
+      "UsedMessage": "The extra free Attack on this card has already been taken. Take it again as a Rule Break?",
+      "NotOwner": "You do not own {name}."
+    },
+    "Ammunition": {
+      "Line": "Ammunition: {name} ({left} left)",
+      "GateTitle": "No Ammunition",
+      "GateMessage": "No {kind} left for {name} (core pp. 181-182: each Attack requires proper ammunition). Attack anyway as a Rule Break?",
+      "PickTitle": "Ammunition for {name}",
+      "PickLabel": "Ammunition",
+      "PickOk": "Use",
+      "PickNote": "({n} left)",
+      "Readout": "Ammo {n}",
+      "Sheet": {
+        "Title": "Ammunition",
+        "Hint": "The tags of the ammunition this weapon takes. Each Attack spends the units below from an owned stack whose tags match (core pp. 181-182). Empty takes none.",
+        "PerAttack": "Units per Attack"
+      }
+    },
     "AttackSituation": {
       "OpenSettingName": "Stock attack reasons open Attack Options",
       "OpenSettingHint": "On: every attack opens the Attack Options window, because cover, darkness and the other stock reasons can always be ticked. Shift-click rolls at once and applies the suggested ticks. Off: those reasons alone do not open the window. It opens when one of them was detected or the attack has something else to choose; a reason the system cannot detect (cover) then needs the manual Disadvantage.",
@@ -4203,7 +4520,10 @@
       "HudDamage": "Roll Spell Damage: {name} ({formula})",
       "RollAttack": "Roll Spell Attack",
       "DeclareAttack": "Declare Attack",
-      "NotOwner": "You do not own {name}."
+      "NotOwner": "You do not own {name}.",
+      "ScrollRank": "Scroll Rank {rank}",
+      "ScrollRankLabel": "Spell Rank",
+      "ScrollRankHint": "The Rank this scroll's spell is cast at. It is set when the scroll is made and the reader cannot change it."
     },
     "Keybindings": {
       "NextStep": "Next Combat Step",
@@ -4244,6 +4564,57 @@
       "SettingName": "Hide Crawler HUD",
       "SettingHint": "Hides the hotlist bar, actions panel, effects panel and both clocks on this browser. Also on the Token controls and Shift+H."
     },
+    "HarshConditions": {
+      "SettingName": "Exploring hazards",
+      "SettingHint": "Falling, travel pace and long travel days. Off hides the Harsh Conditions button and the travel controls; checks are not affected.",
+      "Button": "Harsh Conditions",
+      "ButtonHint": "Falling and other hazards the GM triggers (core p. 76)",
+      "DialogTitle": "Harsh Conditions",
+      "Hazard": "Hazard",
+      "Fall": "Fall",
+      "Feet": "Feet fallen",
+      "Fallers": "Who",
+      "Apply": "Roll",
+      "GmOnly": "Only the GM can trigger a hazard.",
+      "SelectToken": "Select the token or tokens first.",
+      "FallTitle": "{name} falls {feet} ft",
+      "FallItem": "Falling",
+      "LandProne": "Land prone only",
+      "NoFallDamage": "{name} takes no damage from falling. The GM decides."
+    },
+    "TravelPace": {
+      "SettingName": "Travel pace",
+      "Label": "Travel pace",
+      "None": "Not travelling",
+      "Fast": "Fast",
+      "Normal": "Normal",
+      "Slow": "Slow",
+      "FastEffect": "Disadvantage on Perception and Survival checks to notice danger or navigate; no Hide in Shadows or other concealment.",
+      "NormalEffect": "No change to checks.",
+      "SlowEffect": "Advantage on Perception and Survival checks to notice danger or navigate.",
+      "Hint": "With \"Stock attack reasons open Attack Options\" off, the pace line shows in a Perception or Survival roll window only when the window opens for another reason.",
+      "ConcealTitle": "Fast Pace",
+      "ConcealPrompt": "The party is moving at a Fast pace: no Hide in Shadows or other concealment (core p. 71). Roll anyway as a Rule Break?"
+    },
+    "LongTravel": {
+      "SettingName": "Hours travelled today",
+      "Label": "Travel hours",
+      "Button": "Travel",
+      "Today": "{hours} hours travelled today",
+      "Title": "Travelling",
+      "Summary": "The party travelled {hours} hours; {today} hours today.",
+      "NoCheck": "A day's travel is {free} hours. Every further {every} hours each crawler makes a Fatigue check.",
+      "Check": "{name}: Fatigue check {total} against {dc}: {result}",
+      "Passed": "holds",
+      "Failed": "gains Fatigued"
+    },
+    "FloorCollapse": {
+      "Title": "Floor change: time to collapse",
+      "Line": "Floor {floor}: the book's time to collapse is {days} days ({hours} hours). The clock reads {current} hours.",
+      "Button": "Set the clock to {hours} hours",
+      "Applied": "[APPLIED]",
+      "GmOnly": "Only the GM can set the floor clock."
+    },
     "Combat": {
       "RuleBreakTitle": "Rule Break",
       "SkipStep": "Jumping from {from} to {to} skips a step of the round. Jump ahead as a Rule Break?",
@@ -4265,11 +4636,27 @@
       "BonusActionNoFavor": "{name} does not have enough AI Favor ({favor} available, 1 required).",
       "BonusActionAnyway": "Spend it anyway as a Rule Break?",
       "BonusActionLedger": "Bonus Action ({name})",
+      "AdversaryPower": {
+        "Title": "Adversary Power",
+        "Crawlers": "Crawlers only: {band} ({mobs}, {party} crawlers)",
+        "Allies": "All crawler-side allies: {band} ({mobs}, party of {party})",
+        "Party": "Party of {party}: {band} ({mobs})",
+        "MobCountOne": "{count} Mob",
+        "MobCount": "{count} Mobs",
+        "NoMobs": "No Mobs yet",
+        "Weak": "Weak",
+        "Moderate": "Moderate",
+        "Strong": "Strong",
+        "Overwhelming": "Overwhelming",
+        "OrMore": "{count}+",
+        "Tip": "Table 49: a starting point for the number of Mobs; adjust it to the table. Pets and other allies count toward a boss's actions, so both party counts are shown."
+      },
       "TargetStatus": {
         "declared": "Awaiting Interrupt",
         "evaded": "Evaded",
         "evaded-half": "Evaded (half damage)",
         "hit": "Evade failed",
+        "missed": "Missed",
         "resolved": "Hit"
       }
     },
@@ -4286,6 +4673,8 @@
     "MobAttack": {
       "Header": "Mob Attack Declared \u2014 Hits Automatically",
       "SpellHeader": "Mob Spell Declared \u2014 Hits Automatically",
+      "HeaderCompared": "Mob Attack Declared",
+      "SpellHeaderCompared": "Mob Spell Declared",
       "EvadeLabel": "Target Evade Difficulty:",
       "EvadeDC": "Evade DC {dc}",
       "EvadeBreakdown": "Base {base} + Floor {floor}",
@@ -4319,6 +4708,47 @@
       "ResolvedCount": "Sprinter RPG | Resolved {count} declared attack(s).",
       "TauntName": "Taunt"
     },
+    "TargetRows": {
+      "Pvp": {
+        "Evade": "Evade vs {dc}",
+        "Button": "Roll Evade vs Attack ({dc})",
+        "ButtonFree": "Roll Evade vs Attack ({dc}): free, the attacker was forced"
+      },
+      "NpcVsNpc": {
+        "Hits": "Hits",
+        "Misses": "Misses",
+        "Line": "NPC vs NPC: Attack {attack} vs Evade {evade}: {result}",
+        "Button": "Table 8 (1d12)",
+        "GmOnly": "Sprinter RPG | Only the GM rolls the NPC table.",
+        "Flavor": "NPC vs NPC (d12 {face}): {summary}",
+        "Band": {
+          "major_fail": "the attacker fails badly and is easier to hit until the round ends",
+          "miss": "a miss",
+          "compare": "a hit only if the attacker's Stat is higher",
+          "hit": "a hit",
+          "amazing": "an Amazing Success: the damage plus {bonus} (add it by hand)"
+        }
+      }
+    },
+    "PvpRounds": {
+      "SettingName": "PvP rounds",
+      "SettingHint": "The table has agreed to player-versus-player combat (core p. 87). With it on, the GM can turn on PvP rounds for a combat: each player's crawler rolls d20 + Dex every round for the Crawler phase order and has one Action plus Evade.",
+      "Budget": "PvP combat: one Action a round; the second is Evade (core p. 87)",
+      "Mark": "PvP {total}",
+      "MarkTie": "PvP {total}, simultaneous",
+      "CardTitle": "PvP initiative, round {round}",
+      "CardLine": "{name}: {total}",
+      "CardTie": "{name}: {total} (simultaneous)",
+      "ToggleOn": "PvP ROUNDS: ON",
+      "ToggleOff": "PvP rounds: off",
+      "ToggleTip": "Toggle PvP rounds for this combat (core p. 87)",
+      "GmOnly": "Only the GM can toggle PvP rounds.",
+      "DialogTitle": "Start PvP rounds",
+      "DialogIntro": "Each player's crawler rolls d20 + Dex every round. Tick a crawler that made a sneak Attack: it rolls this round with Advantage.",
+      "DialogSneak": "Made a sneak Attack",
+      "DialogStart": "Start",
+      "DialogCancel": "Cancel"
+    },
     "Difficulty": {
       "NotSet": "Difficulty not set",
       "Line": "Difficulty {dc}",
@@ -4332,6 +4762,8 @@
       "FormulaOpposedNoFoe": "10 + {mod} + Floor {floor}",
       "ShiftAdvantage": "+ {shift} Advantage",
       "ShiftDisadvantage": "- {shift} Disadvantage",
+      "FlatPenalty": "- {flat} Check penalty",
+      "FlatBonus": "+ {flat} Check bonus",
       "Standing": "Standing",
       "Change": "Change Difficulty",
       "Set": "Set",
@@ -4347,6 +4779,13 @@
       "StandingNumber": "Number",
       "StandingCount": "{n} cards",
       "LedgerHint": "That roll's chat card is no longer available to set a Difficulty on.",
+      "Escalating": "Escalating {tiers}",
+      "ButtonEscalating": "Escalating…",
+      "Reached": "Reached {tiers}",
+      "ReachedNone": "Reached none",
+      "EscalatingTitle": "Escalating Difficulty",
+      "EscalatingTier": "Tier {n}",
+      "EscalatingOk": "Set",
       "Dialog": {
         "Title": "Opposed Difficulty",
         "Foe": "Opposed by",
@@ -4498,6 +4937,11 @@
         "combat": "Until the end of combat",
         "permanent": "Until removed"
       }
+    },
+    "RetryGate": {
+      "Title": "No Second Try",
+      "Reason": "{name} rolled a {degree} on {skill} this scene: no second try until the scene changes (a combat starts or ends, or the New Scene button is pressed; core p. 61).",
+      "Question": "Roll it again anyway as a Rule Break?"
     },
     "ThemeCleanup": {
       "Title": "Theme Cleanup",
@@ -5084,6 +5528,17 @@
           "healAdd": {
             "Label": "Heal more",
             "Hint": "Adds slots to a heal (situation.single_target: one creature)."
+          },
+          "forcedMove": {
+            "Label": "Forced movement",
+            "Hint": "A hit moves its target this many feet: the damage card says how far and which way, and the GM moves the token. Two rows of one way: the farthest counts.",
+            "OptionLabel": "Direction",
+            "OptionHint": "Push is away from the attacker, pull is toward them, slide is any way the attacker chooses.",
+            "Option": {
+              "push": "Push (away)",
+              "pull": "Pull (toward)",
+              "slide": "Slide (any way)"
+            }
           }
         },
         "Defense": {
@@ -5420,6 +5875,10 @@
             "subject": "The target"
           }
         },
+        "level": {
+          "Label": "Level",
+          "Hint": "The Level of the row's owner."
+        },
         "rank": {
           "Label": "Rank",
           "Hint": "The Rank of the item carrying the row, the item used, the weapon skill, or an owned item.",
@@ -5463,7 +5922,19 @@
         },
         "size": {
           "Label": "Size",
-          "Hint": "The row owner's size value (1 to 8, as on the size table)."
+          "Hint": "The size value (1 to 8, as on the size table) of the row owner, or of the mount they ride.",
+          "Scope": {
+            "self": "The row owner",
+            "mount": "The mount the owner rides"
+          }
+        },
+        "moved": {
+          "Label": "Feet moved",
+          "Hint": "The feet the row owner's token, or the token of the mount they ride, has moved since its movement history was last cleared (write per: 0.1 for \"per 10ft\").",
+          "Scope": {
+            "self": "The row owner",
+            "mount": "The mount the owner rides"
+          }
         },
         "worshipTier": {
           "Label": "Tier of Devotion",

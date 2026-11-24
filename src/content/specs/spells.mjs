@@ -650,6 +650,26 @@ export const COG_SPELLS = [
         "unit": ""
       },
       "checkType": "passive",
+      "appliedBuffs": [
+        {
+          "buff": "split-three-ways",
+          "target": "target.pet",
+          "range": 5,
+          "minRank": 0,
+          "maxRank": 14,
+          "rank": 0,
+          "rankSkill": ""
+        },
+        {
+          "buff": "split-three-ways-in-step",
+          "target": "target.pet",
+          "range": 5,
+          "minRank": 15,
+          "maxRank": null,
+          "rank": 0,
+          "rankSkill": ""
+        }
+      ],
       "baseDamage": {
         "dice": "",
         "stat": "",
@@ -765,7 +785,6 @@ export const COG_SPELLS = [
         "kind.spell",
         "action.passive",
         "stat.int",
-        "duration.combat",
         "action.summon",
         "delivery.target"
       ],
@@ -1939,6 +1958,7 @@ export const COG_SPELLS = [
       },
       "identifier": "fireball",
       "tags": [
+        "rule.scatter",
         "kind.spell",
         "action.attack",
         "weaponClass.ranged",
@@ -3412,6 +3432,15 @@ export const COG_SPELLS = [
         "damageType": "Ice"
       },
       "aiFavor": 0,
+      "damageModifiers": [
+        {
+          "label": "Blast away",
+          "mode": "forcedMove",
+          "option": "push",
+          "value": 10,
+          "minRank": 10
+        }
+      ],
       "limitations": "",
       "quote": "",
       "description": "",
@@ -7561,6 +7590,23 @@ export const COG_SPELLS = [
         "damageType": "Force"
       },
       "aiFavor": 0,
+      "damageModifiers": [
+        {
+          "label": "Shove",
+          "mode": "forcedMove",
+          "option": "push",
+          "value": 10,
+          "minRank": 10,
+          "maxRank": 14
+        },
+        {
+          "label": "Shove",
+          "mode": "forcedMove",
+          "option": "push",
+          "value": 15,
+          "minRank": 15
+        }
+      ],
       "limitations": "",
       "quote": "",
       "description": "",

@@ -80,13 +80,14 @@ export function runningCombatId(actor = null) {
  */
 export function currentTimeContext(actor = null) {
   const floor = getCurrentFloor();
-  return {
+  const now = {
     time: Number(globalThis.game?.time?.worldTime) || 0,
     floor,
     sceneToken: `scene:${getSceneEpoch()}`,
     floorToken: popularityTokens({ floor }).floor,
     combat: activeCombatFor(actor)
   };
+  return now;
 }
 
 let epochHooks = null;

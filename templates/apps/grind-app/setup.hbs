@@ -23,22 +23,13 @@
         <input type="number" name="floorNumber" data-change-action="setFloor" class="grind-floor-input cog-bg-window cog-text-strong" min="1" max="18" value="{{floorNumber}}" style="width: 100%; border: 1px solid var(--cog-panel-border); text-align: center; border-radius: 3px; font-weight: bold; padding: 4px;" />
       </div>
 
-      {{!-- Guide Bonus --}}
-      <div style="display: flex; flex-direction: column; gap: 4px;">
-        <label class="cog-text-secondary" style="font-size: 12px; text-transform: uppercase;">Guide Insight</label>
-        <label class="cog-text cog-bg-surface-muted" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; padding: 5px 8px; border-radius: 4px; border: 1px solid var(--cog-panel-border); height: 32px; box-sizing: border-box;">
-          <input type="checkbox" name="guideBonus" data-change-action="setGuideBonus" class="guide-bonus-toggle" {{#if hasGuideBonus}}checked{{/if}} />
-          <span>+1 Safe Hr (Guide)</span>
-        </label>
-      </div>
-
       {{!-- Area Map Bonus --}}
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <label class="cog-text-secondary" style="font-size: 12px; text-transform: uppercase;">Area Map</label>
         <select name="mapType" data-change-action="setMapType" class="grind-map-select cog-bg-surface-muted cog-text-strong" style="border: 1px solid var(--cog-panel-border); border-radius: 4px; padding: 5px 8px; font-size: 12px; font-family: 'Oswald', sans-serif; cursor: pointer; height: 32px; box-sizing: border-box;">
           <option value="none" {{#if isMapNone}}selected{{/if}}>No Map (+0 hrs)</option>
-          <option value="neighborhood" {{#if isMapNeighborhood}}selected{{/if}}>Neighborhood Map (+1 Safe Hr)</option>
-          <option value="borough" {{#if isMapBorough}}selected{{/if}}>Borough Map (+2 Safe Hrs)</option>
+          <option value="neighborhood" {{#if isMapNeighborhood}}selected{{/if}}>{{neighborhoodMapLabel}}</option>
+          <option value="borough" {{#if isMapBorough}}selected{{/if}}>{{boroughMapLabel}}</option>
         </select>
       </div>
 
@@ -49,7 +40,7 @@
       <div>
         <i class="fa-solid {{#if (gt excessHours 0)}}fa-triangle-exclamation{{else}}fa-shield-halved{{/if}} {{#if (gt excessHours 0)}}cog-text-danger{{else}}cog-text-success{{/if}}" style="margin-right: 6px;"></i>
         <span>Safe Limit: <strong>{{safeThreshold}} Hours</strong>
-          <span style="font-size: 11px; opacity: 0.85; margin-left: 4px;">(Base 5h{{#if hasGuideBonus}} + 1h Guide{{/if}}{{#if (gt mapBonus 0)}} + {{mapBonus}}h Map{{/if}})</span>
+          <span style="font-size: 11px; opacity: 0.85; margin-left: 4px;">(Base 5h{{#if (gt mapBonus 0)}} + {{mapBonus}}h Map{{/if}})</span>
         </span>
         {{#if (gt excessHours 0)}}
           <span class="cog-text-danger" style="margin-left: 8px;">

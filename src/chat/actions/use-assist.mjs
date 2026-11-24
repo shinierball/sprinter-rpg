@@ -18,11 +18,13 @@ import { readCheckRecord, getAssistSpec, checkRecordPath, MAX_RECORD_ASSISTS } f
 import { rollAssistDice } from '../../utils/roll/assist-roll.mjs';
 import { isFreeInterruptItem } from '../../utils/tag/tag-mechanics.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
+import { cardItemNameHtml } from '../../utils/card/item-name.mjs';
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
 import { canModifyMessage } from '../damage-applications.mjs';
 import { messageAuthorId } from '../chat-relay.mjs';
 import { assistText } from '../render/check-assists.mjs';
 import { findCombatant, combatantOfActor } from '../../documents/combat/combatants.mjs';
+import { messageById } from '../../utils/card/recent-cards.mjs';
 
 /** Relay action for check-card amends; `payload.op` names the write (`apply`; B3 adds `resolve`). */
 const ASSIST_APPLY_RELAY = 'checkAssist';
@@ -32,11 +34,6 @@ const ENTRY_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 const str = (v) => (typeof v === 'string' ? v : '');
 const notify = (level, text) => globalThis.ui?.notifications?.[level]?.(text);
-
-function messageById(id) {
-  if (typeof id !== 'string' || !id) return null;
-  return globalThis.game?.messages?.get?.(id) ?? null;
-}
 
 function userById(id) {
   if (!id) return null;
@@ -193,7 +190,7 @@ async function postAssistCard({ assister, skill, roll, formula, lines, checkMess
   `;
   return roll.toMessage(withAssistRoll({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor: assister }) ?? { alias: assister.name },
-    flavor: `<strong>${escapeAttr(assister.name)}</strong>: ${escapeAttr(skill.name)} (${escapeAttr(formula)})`,
+    flavor: `<strong>${escapeAttr(assister.name)}</strong>: ${cardItemNameHtml(skill)} (${escapeAttr(formula)})`,
     content
   }, {
     source: ASSIST_SOURCE.INTERRUPT,

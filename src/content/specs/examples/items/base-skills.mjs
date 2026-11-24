@@ -14,6 +14,7 @@ import { exampleId } from '../ids.mjs';
 import { SAMPLE_SKILL_SPECS } from '../../../../data/creation-sample-skills.mjs';
 import { STARTER_WEAPON_LOADOUTS } from '../../../../data/creation-loadouts.mjs';
 import { starterWeaponSkillFields } from '../../../../utils/skill/starter-weapon-skill.mjs';
+import { baseDamageText } from '../../../../utils/damage/base-damage.mjs';
 
 const GROUP = {
   social: ['haggling', 'small-talk', 'crowd-work', 'stage-presence', 'persuasion', 'deception', 'negotiation', 'heckler-management', 'intimidate', 'read-people'],
@@ -77,8 +78,6 @@ const WEAPON_SKILL_NAME = {
   warhammer: 'Warhammer Training'
 };
 
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-
 const weaponSkills = STARTER_WEAPON_LOADOUTS.map((w, i) => ({
   type: 'skill',
   _id: exampleId('bk', 'i', 45 + i),
@@ -88,7 +87,7 @@ const weaponSkills = STARTER_WEAPON_LOADOUTS.map((w, i) => ({
     identifier: w.skillIdentifier,
     stat: w.toHitStat,
     rank: 0,
-    description: `<p>${WEAPON_TEXT[w.skillIdentifier]} Base Damage: ${w.damageDice} + ${cap(w.damageStat)} ${w.damageType}.</p>`,
+    description: `<p>${WEAPON_TEXT[w.skillIdentifier]} Base Damage: ${baseDamageText({ dice: w.damageDice, stat: w.damageStat, damageType: w.damageType })}.</p>`,
     // The loadout's `tags` are the weapon's type (`weapon.*`, `weaponClass.*`); its Skill carries the same.
     ...starterWeaponSkillFields(w, ['skillGroup.weapon', ...w.tags])
   }

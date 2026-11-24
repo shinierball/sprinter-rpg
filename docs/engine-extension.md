@@ -1,12 +1,12 @@
 # Extending the modifier engine from a module
 
+What a module may rely on, and what is internal, is listed in [module-and-macro-api.md](module-and-macro-api.md).
+
 A module adds mechanics without touching the system: a **scalar** (a number a row scales by), a **row kind** (what a row does), a **rule tag** (a tag that carries rows and flags) and a **rule flag** (a yes/no gate a tag can carry). All four register from the `sprinter-rpg.registerContent` hook, which the system fires during `init` with the content registry. Everything registered shows up in the item sheet's row editor and the Tag Manager with no further wiring.
 
 The calls below are the ones a module makes to register a scalar, a row kind, a rule flag and a rule tag. Module ids are prefixed (`studio-props.`) so they never collide with core ones.
 
 ```js
-import { damagePartOf } from '/systems/sprinter-rpg/src/utils/row-kinds.mjs';
-
 Hooks.on('sprinter-rpg.registerContent', (registry) => {
   // 1. Scalar: a number a row's `scaleBy: { source: 'studio-props.applause' }` multiplies by.
   //    `needs` says what resolve() reads ('actor' = the row owner); resolve is synchronous and never writes.
@@ -27,7 +27,7 @@ Hooks.on('sprinter-rpg.registerContent', (registry) => {
     scaled: { value: 'whole' },
     apply: {
       damage(acc, row, ctx) {
-        const part = damagePartOf({ ...row, value: (Number(row.value) || 0) * 2 }, { ...ctx, serial: ctx.serial ?? acc.addParts.length });
+        const part = game.cog.damagePartOf({ ...row, value: (Number(row.value) || 0) * 2 }, { ...ctx, serial: ctx.serial ?? acc.addParts.length });
         if (part) acc.addParts.push(part);
       },
       target() {} // a roll-time kind: nothing is left to do per target
@@ -38,7 +38,7 @@ Hooks.on('sprinter-rpg.registerContent', (registry) => {
   registry.registerRuleFlag({ id: 'studio-props.hush', label: 'Hushed', hint: 'The carrier cannot be heckled.' });
 
   // 4. Rule tag: rows behave as rows on whatever carries the tag (equipped gear, an active buff, a skill, the actor);
-  //    flags are the gates above. The core flags (`no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`, `mounted-only`, `extra-pet`, `works-in-zero-zone`, `no-actions`, `forfeits-action`, `no-healing`, `no-move`, `no-cast`, `only-attack-move`, `mind-control`, `universal`, `unseen`; see `RULE_FLAGS` in `src/utils/tag/tag-behaviour.mjs`) work the same way.
+  //    flags are the gates above. The core flags (`no-damage-effects`, `requires-weapon`, `no-standalone-attack`, `no-redirect`, `area`, `ignores-dr`, `anti-piercing`, `no-hands`, `uncounted-ally`, `no-ranks`, `emits-light`, `zone`, `maneuver`, `mount`, `mounted-only`, `extra-pet`, `self-directed`, `command-check`, `command-together`, `works-in-zero-zone`, `no-actions`, `forfeits-action`, `no-healing`, `no-move`, `no-cast`, `only-attack-move`, `mind-control`, `universal`, `unseen`; see `RULE_FLAGS` in `src/utils/tag/tag-behaviour.mjs`) work the same way.
   registry.registerTag({
     id: 'studio-props.spotlit',
     label: 'Spotlit',

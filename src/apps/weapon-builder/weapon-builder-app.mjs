@@ -8,6 +8,7 @@
  */
 import { COGToolApp } from '../tool-app.mjs';
 import { SYSTEM_PATH } from '../../constants.mjs';
+import { localiseKey as t } from '../../utils/lang-text.mjs';
 import { createFromSpec, ensureCanCreateItems } from '../item-create.mjs';
 import { WeaponDraftHost } from './draft-host.mjs';
 import { WEAPON_BUILDER_STEPS } from '../../data/builders/weapon-spec.mjs';
@@ -28,7 +29,6 @@ import { ROW_ACTIONS } from '../../sheets/item/actions-rows.mjs';
 import { TAG_ACTIONS } from '../../sheets/item/actions-tags.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/weapon-builder`;
-const t = (key, data) => (data ? globalThis.game?.i18n?.format?.(key, data) : globalThis.game?.i18n?.localize?.(key)) ?? key;
 
 /** The row arrays the damage and extras pages edit, by the page that shows them. */
 const DAMAGE_ARRAY = 'damageModifiers';

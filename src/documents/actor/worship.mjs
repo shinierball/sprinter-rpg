@@ -8,6 +8,7 @@
  */
 import { confirmRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
 import { firstScalar } from '../../utils/first-scalar.mjs';
+import { lootedGoldOf } from '../../utils/loot/looted-gold.mjs';
 import { itemIdentifier } from '../../utils/identifier.mjs';
 import { CLERGY_ARCHETYPE_TAGS, WORSHIP_TAGS } from '../../data/tag-vocabulary.mjs';
 import {
@@ -48,7 +49,8 @@ const BOND_WRITERS = Object.freeze({
   missedDays: (v) => clampInt(v, 0, BIG),
   streak: (v) => clampInt(v, 0, BIG),
   offenses: (v) => clampInt(v, 0, BIG),
-  shunned: (v) => clampInt(v, 0, SHUNNED_MAX)
+  shunned: (v) => clampInt(v, 0, SHUNNED_MAX),
+  titheMark: (v) => clampInt(v, 0, BIG)
 });
 
 /** The dotted update for a partial bond: sanitised, unknown keys dropped, `floorOfferings` as a nested partial. */
@@ -234,7 +236,8 @@ export async function startWorship(actor, deityItem, { options } = {}) {
 
   const update = bondUpdate({
     status: 'worshipper', tier: WORSHIP_TIERS.acolyte, since: now(), lastOfferingDay: null,
-    missedDays: 0, streak: 0, offenses: 0, shunned: 0, zealotSkill: '', floorOfferings: { floor: '', count: 0 }
+    missedDays: 0, streak: 0, offenses: 0, shunned: 0, zealotSkill: '', floorOfferings: { floor: '', count: 0 },
+    titheMark: lootedGoldOf(actor)
   });
   if (ruleBreak) Object.assign(update, ruleBreakUpdate());
   await deityItem.update(update);

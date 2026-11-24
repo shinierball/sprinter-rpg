@@ -12,7 +12,9 @@
  */
 import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
-import { planCraft } from '../utils/crafting/crafting-engine.mjs';
+import { planCraft, craftProcessOf } from '../utils/crafting/crafting-engine.mjs';
+import { craftText } from '../utils/crafting/craft-text.mjs';
+import { MINUTES_PER_HOUR } from '../utils/time/day-clock.mjs';
 import { getEnchantmentCategory } from '../data/rules/crafting-rules.mjs';
 import { matchesTagQuery } from '../utils/tag/tag-query.mjs';
 import { getItemAllTags } from '../documents/active-tags.mjs';
@@ -186,10 +188,12 @@ export class COGCraftingApp extends COGToolApp {
    * Gear on the crawler (equipped or carried) that the blueprint's `target` query accepts, then the gear on the vehicles the
    * crafter owns or drives (3.44i; the label names the vehicle).
    */
-  targetCandidates(bp) {
+  targetCandidates(bp, blueprintItem = null) {
     const query = bp?.target;
     const empty = !query || !['all', 'any', 'none'].some((k) => asArray(query[k]).length);
-    const fits = (i) => i.type === 'gear' && (empty || matchesTagQuery(getItemAllTags(i), query));
+    // An infusion (core p. 227) dunks a potion onto a consumable, so loot with units fits too
+    const infusion = craftProcessOf(blueprintItem) === 'infusion';
+    const fits = (i) => (i.type === 'gear' || (infusion && i.type === 'loot' && Number(i.system?.quantity) > 0)) && (empty || matchesTagQuery(getItemAllTags(i), query));
     const own = [...(this.crawler?.items ?? [])].filter(fits);
     return [...own, ...vehicleGearFor(this.crawler).filter(fits)];
   }
@@ -279,7 +283,7 @@ export class COGCraftingApp extends COGToolApp {
 
     let target = null;
     if (enchantMode) {
-      const candidates = this.targetCandidates(bp);
+      const candidates = this.targetCandidates(bp, choice.item);
       target = candidates.find((i) => i.id === this.targetId) ?? null;
       context.targetOptions = pickOptions(
         candidates.map((i) => ({ id: i.id, label: targetLabel(i) })),
@@ -292,6 +296,9 @@ export class COGCraftingApp extends COGToolApp {
     const plan = this.#plan(choice, target, enchantMode ? null : await resolveOutputTemplate(bp));
     const skills = new Map([...(crawler.items ?? [])].filter((i) => i.type === 'skill').map((s) => [s.id, s]));
     const chosen = this.#skillIdsFor(plan);
+    // A Concoction or Infusion (core p. 227) takes minutes, as its craft card says; anything else takes hours
+    const minutes = plan.process !== '';
+    const timeText = (hours) => (minutes ? craftText('COG.Craft.Process.Minutes', { n: Math.round(hours * MINUTES_PER_HOUR) }) : String(hours));
     context.plan = {
       steps: plan.steps.map((step, i) => {
         const { category: enchantCategory } = step;
@@ -304,6 +311,7 @@ export class COGCraftingApp extends COGToolApp {
           bonusLevel: step.bonusLevel,
           dc: step.dc,
           hours: step.hours,
+          time: timeText(step.hours),
           skillOptions: pickOptions(
             asArray(step.skillOptions).map((id) => ({ id, label: loc('COG.CraftApp.SkillRank', { name: skills.get(id)?.name ?? id, rank: skills.get(id)?.system?.rank ?? 0 }) })),
             chosen[i]
@@ -321,6 +329,9 @@ export class COGCraftingApp extends COGToolApp {
         };
       }),
       totalHours: plan.totalHours,
+      totalTime: timeText(plan.totalHours),
+      timeHeader: loc(minutes ? 'COG.CraftApp.MinutesColumn' : 'COG.CraftApp.HoursColumn'),
+      totalLabel: loc(minutes ? 'COG.CraftApp.TotalTime' : 'COG.CraftApp.TotalHours'),
       warnings: plan.warnings.map((w) => ({ code: w.code, message: w.message, ruleBreak: w.ruleBreak === true })),
       notices: plan.notices.map((n) => ({ code: n.code, message: n.message })),
       hasWarnings: plan.warnings.length > 0,
@@ -391,7 +402,7 @@ export class COGCraftingApp extends COGToolApp {
     const choice = this.blueprintChoice;
     if (!choice || !this.crawler) return;
     const bp = choice.item.system?.blueprint ?? {};
-    const target = bp.mode === 'item' ? null : (this.targetCandidates(bp).find((i) => i.id === this.targetId) ?? null);
+    const target = bp.mode === 'item' ? null : (this.targetCandidates(bp, choice.item).find((i) => i.id === this.targetId) ?? null);
     const plan = this.#plan(choice, target, bp.mode === 'item' ? await resolveOutputTemplate(bp) : null);
     const result = await this.crawler.craft({
       blueprint: choice.item,

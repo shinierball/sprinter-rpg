@@ -2,6 +2,7 @@
 import { registerCoreKind } from './registry.mjs';
 import { INVENTORY_ITEM_TYPES, RANKED_ITEM_TYPES } from '../document-types.mjs';
 import { magicItemOf } from '../loot/loot-flags.mjs';
+import { SPELLBOOK_MIN_RANK } from '../loot/outcome-defaults.mjs';
 
 // --- boxContents (discriminator `kind`; 7.3a descriptors, 7.3c handlers) ---------------------------------------------
 
@@ -155,13 +156,20 @@ registerCoreKind('boxContents', {
   id: 'spell',
   label: 'COG.Rows.Kind.BoxContents.spell.Label',
   hint: 'COG.Rows.Kind.BoxContents.spell.Hint',
-  fields: ['uuid', 'identifier', 'name', 'rank', 'label'],
+  fields: ['uuid', 'identifier', 'name', 'rank', 'formula', 'label'],
   apply: {
-    // A Tome of the spell at the row's Rank (537 a), read later through its learn_spell outcome
+    // A Tome of the spell at the row's Rank (537 a), read later through its learn_spell outcome. A Rank formula
+    // (the book's 1d6 - 1) is rolled at open time and floored at the spellbook minimum; blank = the fixed Rank.
     async boxOpen(acc, row, ctx) {
       const doc = await svc(ctx).resolveDocument({ uuid: row.uuid, identifier: row.identifier }, 'spell');
       if (!doc) return missingPrize(acc, ctx, 'COG.LootBoxOpen.PrizeMissing', { name: row.name || row.identifier || row.uuid });
-      acc.prizes.push(withLabel(svc(ctx).tomePrize(doc, row.rank ?? 1), row.label));
+      let rank = row.rank ?? 1;
+      if (row.formula) {
+        const rolled = await svc(ctx).rollGold(row.formula);
+        if (rolled === null) acc.warnings.push(say(ctx, 'COG.LootBoxOpen.BadFormula', { formula: row.formula }));
+        else rank = Math.max(SPELLBOOK_MIN_RANK, rolled);
+      }
+      acc.prizes.push(withLabel(svc(ctx).tomePrize(doc, rank), row.label));
     }
   }
 });

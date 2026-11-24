@@ -9,18 +9,20 @@ import { escapeAttr } from '../../utils/escape-attr.mjs';
  * option's text and a `disabled` one is listed but cannot be chosen. Null when nothing can be chosen, when the user
  * cancels, or when no dialog can be shown. Without a dialog API the only choosable candidate is returned.
  * @param {Actor} actor
- * @param {{ candidates: Array<{ item: Item, note?: string, disabled?: boolean }>, title: string, label: string, okLabel: string }} params
- * `title` is the window title, `label` the select's label, `okLabel` the confirm button
+ * @param {{ candidates: Array<{ item: Item, note?: string, disabled?: boolean }>, title: string, label: string, okLabel: string, selectedId?: string|null }} params
+ * `title` is the window title, `label` the select's label, `okLabel` the confirm button, `selectedId` the candidate preselected
+ * (only when it is in the list and choosable; any other id preselects nothing)
  * @returns {Promise<Item|null>}
  */
-export async function pickOwnedItem(actor, { candidates, title, label, okLabel }) {
+export async function pickOwnedItem(actor, { candidates, title, label, okLabel, selectedId = null }) {
   const choosable = (Array.isArray(candidates) ? candidates : []).filter((c) => c?.item && !c.disabled);
   if (!choosable.length) return null;
   const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
   if (typeof DialogV2?.prompt !== 'function') return choosable.length === 1 ? choosable[0].item : null;
   const options = candidates.map((c) => {
     const text = c.note ? `${c.item.name} ${c.note}` : c.item.name;
-    return `<option value="${escapeAttr(c.item.id)}"${c.disabled ? ' disabled' : ''}>${escapeAttr(text)}</option>`;
+    const selected = !c.disabled && selectedId !== null && c.item.id === selectedId ? ' selected' : '';
+    return `<option value="${escapeAttr(c.item.id)}"${c.disabled ? ' disabled' : ''}${selected}>${escapeAttr(text)}</option>`;
   }).join('');
   const chosen = await DialogV2.prompt({
     window: { title },

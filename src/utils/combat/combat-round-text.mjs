@@ -28,6 +28,19 @@ export const COMBAT_ROUND_TEXT = Object.freeze({
   'COG.Combat.BonusActionNoFavor': '{name} does not have enough AI Favor ({favor} available, 1 required).',
   'COG.Combat.BonusActionAnyway': 'Spend it anyway as a Rule Break?',
   'COG.Combat.BonusActionLedger': 'Bonus Action ({name})',
+  'COG.Combat.AdversaryPower.Title': 'Adversary Power',
+  'COG.Combat.AdversaryPower.Crawlers': 'Crawlers only: {band} ({mobs}, {party} crawlers)',
+  'COG.Combat.AdversaryPower.Allies': 'All crawler-side allies: {band} ({mobs}, party of {party})',
+  'COG.Combat.AdversaryPower.Party': 'Party of {party}: {band} ({mobs})',
+  'COG.Combat.AdversaryPower.MobCountOne': '{count} Mob',
+  'COG.Combat.AdversaryPower.MobCount': '{count} Mobs',
+  'COG.Combat.AdversaryPower.NoMobs': 'No Mobs yet',
+  'COG.Combat.AdversaryPower.Weak': 'Weak',
+  'COG.Combat.AdversaryPower.Moderate': 'Moderate',
+  'COG.Combat.AdversaryPower.Strong': 'Strong',
+  'COG.Combat.AdversaryPower.Overwhelming': 'Overwhelming',
+  'COG.Combat.AdversaryPower.OrMore': '{count}+',
+  'COG.Combat.AdversaryPower.Tip': "Table 49: a starting point for the number of Mobs; adjust it to the table. Pets and other allies count toward a boss's actions, so both party counts are shown.",
   'COG.Combat.EndRoundOpenDeclarations': '{count} declared mob attack(s) are still unresolved. End the round anyway as a Rule Break?',
   'COG.Combat.Declarations': 'Declared Attacks',
   'COG.Combat.NoDeclarations': 'No mob attacks declared this round.',
@@ -46,6 +59,7 @@ export const COMBAT_ROUND_TEXT = Object.freeze({
   'COG.Combat.TargetStatus.evaded': 'Evaded',
   'COG.Combat.TargetStatus.evaded-half': 'Evaded (half damage)',
   'COG.Combat.TargetStatus.hit': 'Evade failed',
+  'COG.Combat.TargetStatus.missed': 'Missed',
   'COG.Combat.TargetStatus.resolved': 'Hit'
 });
 

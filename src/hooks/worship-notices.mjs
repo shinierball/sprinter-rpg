@@ -9,7 +9,9 @@ import { collectActorTags } from '../documents/active-tags.mjs';
 import { godsFromTags, rivalNoticeLines, rivalsLookup } from '../utils/deity/rivals.mjs';
 import { deityLabel, deityRecords } from '../utils/deity/deity-names.mjs';
 import { isWorshipBond } from '../utils/deity/worship-state.mjs';
-import { gmWhisper, say } from '../documents/actor/vehicle-drive-common.mjs';
+import { say } from '../documents/actor/vehicle-drive-common.mjs';
+import { gmWhisper } from '../utils/owner-recipients.mjs';
+import { isPlayerCrawler } from '../utils/combat/combat-sides.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
 
 const LINE = ['COG.Deity.Rivals.Line', '{token} worships {god}, a rival of {rival} (worshipped by {crawler})'];
@@ -17,7 +19,7 @@ const TITLE = ['COG.Deity.Rivals.Title', 'Rival worshippers'];
 
 const godsOf = (actor) => godsFromTags(collectActorTags(actor));
 const playerCrawlers = () => Array.from(globalThis.game?.actors ?? [])
-  .filter((a) => a?.type === 'crawler' && a.hasPlayerOwner === true)
+  .filter((a) => isPlayerCrawler(a))
   .map((a) => ({ actor: a, name: a.name, gods: godsOf(a) }))
   .filter((c) => c.gods.length);
 
@@ -52,7 +54,7 @@ const startedWorship = (changes) => (changes?.system?.bond?.status ?? changes?.[
 async function onDeityUpdated(item, changes) {
   if (!isActiveGM() || item?.type !== 'deity' || !startedWorship(changes) || !isWorshipBond(item)) return;
   const actor = item.parent;
-  if (actor?.type !== 'crawler' || actor.hasPlayerOwner !== true) return;
+  if (!isPlayerCrawler(actor)) return;
   const tokens = Array.from(globalThis.canvas?.scene?.tokens ?? [])
     .filter((t) => t?.actor && t.actor.type !== 'crawler')
     .map((t) => ({ name: t.name || t.actor.name, actor: t.actor }));

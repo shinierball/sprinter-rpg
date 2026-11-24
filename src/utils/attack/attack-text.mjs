@@ -21,6 +21,7 @@ const TEXT = Object.freeze({
   'COG.SpellCast.RollAttack': 'Roll Spell Attack',
   'COG.SpellCast.DeclareAttack': 'Declare Attack',
   'COG.SpellCast.NotOwner': 'You do not own {name}.',
+  'COG.SpellCast.ScrollRank': 'Scroll Rank {rank}',
   'COG.AttackChoices.Confirm.Title': 'Rule Break Confirmation',
   'COG.AttackChoices.Confirm.Question': 'Proceed as a Rule Break?',
   'COG.Attack.Skill.Label': 'Skill used',

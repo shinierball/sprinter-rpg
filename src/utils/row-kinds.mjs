@@ -5,9 +5,10 @@
  */
 export {
   MAX_SNAPSHOT_TEXT, ROW_ARRAYS, ROW_KINDS, warnRowKindOnce, _resetRowKindWarnings, registerRowKind, getRowKind, kindOf, rowKindOf,
-  listRowKinds, rowKindErrors, applyRowKind, isNumericRowField, SNAPSHOT_TEXT_LIMIT
+  listRowKinds, rowKindErrors, applyRowKind, isNumericRowField, SNAPSHOT_TEXT_LIMIT, damagePartOf
 } from './row-kinds/registry.mjs';
 import './row-kinds/damage.mjs';
+import './row-kinds/forced-move.mjs';
 import './row-kinds/defense.mjs';
 import './row-kinds/trigger.mjs';
 export { addWaivableRollPenalty } from './row-kinds/check.mjs';

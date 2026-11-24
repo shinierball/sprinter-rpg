@@ -21,6 +21,8 @@ import { registerPopularityChecklistHooks } from '../documents/actor/popularity-
 import { registerFanBoxAlertHooks } from '../documents/actor/fan-box-alert.mjs';
 import { setPopularityChecklistOpener } from '../documents/actor/popularity-checklist-due.mjs';
 import { COGPopularityChecklistApp } from '../apps/popularity-checklist-app.mjs';
+import { COGItemDefinitionApp } from '../apps/item-definition-app.mjs';
+import { setItemDefinitionOpener } from '../utils/ui/item-definition-opener.mjs';
 import { registerLightExpiry } from '../documents/actor/light-source.mjs';
 import { registerActivationHooks } from '../documents/actor/buff-activation.mjs';
 import { registerCameraHooks } from '../chat/actions/cameras.mjs';
@@ -95,6 +97,8 @@ export async function onReady() {
   registerFanBoxAlertHooks();
   // The due card's button reaches the checklist window (apps/ code) through this opener.
   setPopularityChecklistOpener((moment) => COGPopularityChecklistApp.open({ moment }));
+  // A chat card's spell or skill name reaches the definition window (apps/ code) through this opener.
+  setItemDefinitionOpener((item, access) => COGItemDefinitionApp.open(item, access));
   registerLightExpiry();
   // An activated buff's combat window closes when the combat ends (the active GM only).
   registerActivationHooks();

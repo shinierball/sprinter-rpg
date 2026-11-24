@@ -250,3 +250,14 @@
 .cog-party-card .cog-party-success { background: var(--cog-success-fill); }
 .cog-party-card .cog-party-failure { background: var(--cog-accent-fill); }
 
+/* A spell or skill name on a card that opens its definition (the render turns the inert .cog-card-item-name span into this button) */
+button.cog-card-definition { display: inline; width: auto; height: auto; min-height: 0; padding: 0; border: 0; background: none; line-height: inherit; font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+button.cog-card-definition:hover { text-decoration: underline; color: var(--cog-accent); }
+
+/* The definition window */
+.cog-item-definition-window .cog-item-definition-body { display: flex; flex-direction: column; gap: 8px; padding: 6px 8px; font-family: 'Oswald', sans-serif; color: var(--cog-text); }
+.cog-item-definition-window .cog-item-definition-header { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--cog-divider); padding-bottom: 6px; }
+.cog-item-definition-window .cog-item-definition-img { border: 0; border-radius: 3px; flex: 0 0 auto; }
+.cog-item-definition-window .cog-item-definition-name { font-size: 16px; font-weight: bold; color: var(--cog-text-strong); overflow-wrap: anywhere; }
+.cog-item-definition-window .cog-item-definition-type { font-size: 11px; text-transform: uppercase; color: var(--cog-text-secondary); }
+

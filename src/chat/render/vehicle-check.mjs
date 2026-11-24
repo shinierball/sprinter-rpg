@@ -13,6 +13,7 @@ import { vehicleResultOf } from '../../documents/actor/vehicle-drive-common.mjs'
 import { ramRolledOf } from '../../documents/actor/vehicle-ram.mjs';
 import { vehicleCardInfo } from '../../documents/actor/vehicle-after-roll.mjs';
 import { userOwnsActor } from '../../documents/actor/personal-space-links.mjs';
+import { el } from './element.mjs';
 
 /** English fallbacks of the `COG.VehicleCheck.*` keys in lang/en.json (the headless test world has no i18n). */
 const TEXT = Object.freeze({
@@ -54,13 +55,6 @@ function langText(key, fallback) {
     // fall through
   }
   return fallback;
-}
-
-function el(doc, tag, className, text) {
-  const node = doc.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
 }
 
 function button(doc, label, action, data) {

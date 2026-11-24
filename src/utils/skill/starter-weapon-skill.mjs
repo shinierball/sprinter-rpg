@@ -18,7 +18,8 @@ function upgradeRankBreaks(upgrades) {
 /**
  * The Skill fields a starter weapon's Skill carries: attack flags, the weapon's type tags, its Base Damage (dice, stat
  * and type from the loadout) and its Rank upgrade dice as rank-break rows. The Base Skills example set and the crawler
- * builder's fallback Skill both build from this.
+ * builder's fallback Skill both build from this. A weapon whose loadout names an `ammunition` tag gets the matching
+ * `ammunition` query too.
  * @param {object} weapon A starter weapon loadout (or the generic definition)
  * @param {string[]} [tags] The weapon type tags; the loadout's own `tags` by default
  * @returns {object} Fields to spread into a Skill's `system`
@@ -29,6 +30,8 @@ export function starterWeaponSkillFields(weapon, tags = weapon.tags ?? []) {
     isAttack: true,
     hasDamage: true,
     baseDamage: { dice: weapon.damageDice, stat: weapon.damageStat, damageType: weapon.damageType },
-    rankBreaks: upgradeRankBreaks(weapon.upgrades)
+    rankBreaks: upgradeRankBreaks(weapon.upgrades),
+    // A weapon that takes ammunition names its kind by a tag; the Skill carries the query (a gear weapon may add its own)
+    ...(weapon.ammunition ? { ammunition: { query: { all: [weapon.ammunition] }, perAttack: 1 } } : {})
   };
 }

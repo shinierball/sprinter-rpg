@@ -17,7 +17,8 @@ import { restoredValue } from '../../utils/damage/resource-restore.mjs';
 import { heldCureHtml } from '../actor/transform-cues.mjs';
 import { effectCardName } from '../../utils/character/transform-text.mjs';
 import { resolveOutcomeTarget } from './outcome-target.mjs';
-import { spellByIdentifier, learnSpellFromTome } from './spell-tome.mjs';
+import { spellByIdentifier, learnSpellFromTome, scrollCastOptions } from './spell-tome.mjs';
+import { castRankDataAttr } from '../../utils/skill/rank-source.mjs';
 
 /** The card line for what a spell tome did (`learnSpellFromTome`'s status); '' for a status it does not know. */
 function tomeStatusLine(learned) {
@@ -469,6 +470,7 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
   } else if (outType === 'spell') {
     // The row names its spell by identifier; without one, the row's own damage data is the spell.
     const linkedSpell = spellByIdentifier(actor, outcome.spellIdentifier);
+    const castRank = scrollCastOptions(originItem, outcome);
 
     const spellName = linkedSpell?.name || outcome.name || 'Spell Effect';
     const spellImg = linkedSpell?.img || outcome.img || 'icons/svg/aura.svg';
@@ -521,7 +523,8 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
         freeCast: true,
         originItem,
         isConsumable: true,
-        isItemEffect: true
+        isItemEffect: true,
+        ...castRank
       });
     }
 
@@ -547,7 +550,7 @@ export async function resolveSingleOutcome(outcome, actor, originItem, isMultiMo
         ${outcome.description ? `<p class="cog-text-secondary" style="margin: 4px 0; font-size: 12px;">${escapeAttr(outcome.description)}</p>` : ''}
         ${debuffNote}
         <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
-          <button type="button" class="cog-cast-spell-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerCastSpell" data-spell-id="${escapeAttr(linkedSpell?.id || linkedSpell?._id || '')}" data-spell-identifier="${escapeAttr(linkedSpell?.system?.identifier || outcome.spellIdentifier || '')}" data-free-cast="true" data-actor-uuid="${escapeAttr(actor?.uuid || '')}" style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
+          <button type="button" class="cog-cast-spell-btn cog-bg-magic-fill cog-text-on-fill" data-action="crawlerCastSpell" data-spell-id="${escapeAttr(linkedSpell?.id || linkedSpell?._id || '')}" data-spell-identifier="${escapeAttr(linkedSpell?.system?.identifier || outcome.spellIdentifier || '')}" data-free-cast="true" data-actor-uuid="${escapeAttr(actor?.uuid || '')}"${castRankDataAttr(castRank)} style="border: none; padding: 4px 10px; border-radius: 3px; font-weight: bold; cursor: pointer; font-size: 11px; text-transform: uppercase; font-family: 'Oswald', sans-serif;">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Cast Spell (0 Mana)
           </button>
           ${evaluatedDmg > 0 ? `

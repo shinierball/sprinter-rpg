@@ -27,6 +27,7 @@ import { combatantOfActor } from '../combat/combatants.mjs';
 import { guidanceApplies, guidanceRecordOf, saveGuidance } from './pet-guidance.mjs';
 import { postRolePrompt } from './pet-roles.mjs';
 import { currentTimeContext } from './dungeon-time.mjs';
+import { minionControllerOf, minionState, settleCommandCheck } from './minion-orders.mjs';
 
 /** The card flag the GM writes on a pet check card: what the check settled (read by the card's render block). */
 export const PET_RESULT_FLAG = 'petResult';
@@ -105,6 +106,23 @@ export async function rollPetCheck(pet, actor, { kind = 'tame', dc, interactive,
     dc: dc === undefined ? petCheckDifficulty(kind, { intMod: intModOf(pet), floor: getCurrentFloor() }) : dc
   };
   return actor.rollSkill(skill, { pet: ref, ...(actionBlockChecked === true ? { actionBlockChecked: true } : {}) });
+}
+
+/**
+ * Roll the command check of a split creature (core p. 203): its controller's handling skill, Unopposed, with a `pet` reference
+ * naming the minion so the card reaches the GM's ingest. The caller has recorded the controller's Action.
+ * @param {Actor} minion
+ * @param {Actor} controller
+ * @param {{ ruleBreak?: boolean, actionBlockChecked?: boolean }} [options]
+ * @returns {Promise<ChatMessage|null|undefined>} undefined when nothing can be rolled
+ */
+export async function rollCommandCheck(minion, controller, { ruleBreak, actionBlockChecked } = {}) {
+  const def = PET_CHECK_KINDS.command;
+  if (!def || !controller || !minion || !minionState(globalThis.game?.combat, minion)) return undefined;
+  const skill = handlingSkillFor(controller);
+  if (!skill) return undefined;
+  const ref = { petUuid: minion.uuid, kind: 'command', ruleBreak: ruleBreak === true, minutes: 0, dc: petCheckDifficulty('command', { floor: getCurrentFloor() }) };
+  return controller.rollSkill(skill, { pet: ref, ...(actionBlockChecked === true ? { actionBlockChecked: true } : {}) });
 }
 
 /**
@@ -272,6 +290,37 @@ async function ingestPetCheckNow(message) {
 }
 
 /**
+ * Settle a command check card (a split creature, core p. 203) into its controller's commanded list. Runs on the GM; the caller
+ * holds the controller's command queue.
+ * @param {object} message the roll card
+ */
+async function ingestCommandCheckNow(message) {
+  const record = readCheckRecord(message);
+  const ref = record?.pet;
+  const creature = ref ? resolveActorByUuid(ref.petUuid) : null;
+  if (!creature) return { skipped: 'no-pet' };
+  const roller = resolveActorByUuid(record.rollerUuid);
+  if (!roller) return { skipped: 'no-roller' };
+  if (!isTrustedAssist(message, roller)) return { skipped: 'untrusted' };
+  // Only the minion's controller commands it: a card naming another controller's minion changes nothing
+  if (minionControllerOf(creature)?.uuid !== roller.uuid) return { skipped: 'not-controller' };
+  const outcome = petCardOutcome(record);
+  if (!outcome) return { skipped: 'pending' };
+  const settled = await settleCommandCheck(creature, { outcome, prior: readFlag(message, PET_RESULT_FLAG) });
+  if (settled.skipped) return { skipped: settled.skipped };
+  await syncPetCard(message, { outcome, command: { commanded: settled.commanded.includes(creature.uuid), added: settled.added, count: settled.group.length } });
+  return { ingested: true, changed: settled.changed, outcome };
+}
+
+/** The queue a command card runs on: its controller's combatant, whose whole list the settle rewrites. */
+function commandQueueKey(ref) {
+  const combat = globalThis.game?.combat;
+  const controller = minionState(combat, resolveActorByUuid(ref.petUuid))?.controller;
+  const combatant = controller ? combatantOfActor(combat, controller) : null;
+  return combatant ? `minion-commands:${combatant.uuid}` : `pet:${ref.petUuid}`;
+}
+
+/**
  * Take a pet check card into the pet (active GM only), one card at a time per pet.
  * @param {object} message
  */
@@ -279,6 +328,7 @@ function ingestPetCheck(message) {
   const ref = readCheckRecord(message)?.pet;
   if (!ref) return Promise.resolve({ skipped: 'no-reference' });
   if (!isActiveGM()) return Promise.resolve({ skipped: 'not-active-gm' });
+  if (PET_CHECK_KINDS[ref.kind]?.resolve === 'command') return runKeyed(commandQueueKey(ref), () => ingestCommandCheckNow(message));
   return runKeyed(`pet:${ref.petUuid}`, () => ingestPetCheckNow(message));
 }
 

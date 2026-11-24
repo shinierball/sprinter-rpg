@@ -24,6 +24,7 @@ import {
 } from '../utils/loot/loot-box-timeline.mjs';
 import { describeItem, summaryText } from '../utils/item-describer/index.mjs';
 import { ruleBreakBadgeHtml } from '../utils/rule-break-visibility.mjs';
+import { readSetting } from '../utils/ui/read-setting.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/loot-box-show`;
 
@@ -69,14 +70,6 @@ export function registerLootBoxShowSettings(settings = globalThis.game?.settings
     type: Boolean,
     default: true
   });
-}
-
-function readSetting(key) {
-  try {
-    return globalThis.game?.settings?.get?.(SYSTEM_ID, key);
-  } catch {
-    return undefined;
-  }
 }
 
 /** Whether the OS asks for reduced motion. */

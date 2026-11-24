@@ -2,7 +2,8 @@
  * GM-only chat notices about worship. Each is a whisper to the GMs in the `cog-chat-card` markup; the GM decides what,
  * if anything, follows (the system never applies a penalty by itself).
  */
-import { say, speakerOf, gmWhisper } from '../documents/actor/vehicle-drive-common.mjs';
+import { say, speakerOf } from '../documents/actor/vehicle-drive-common.mjs';
+import { gmWhisper } from '../utils/owner-recipients.mjs';
 import { WORSHIP_TAGS } from '../data/tag-vocabulary.mjs';
 import { WORSHIP_TABLE_RECIPES } from '../utils/deity/worship-tables.mjs';
 import { findBookTable } from '../sourcery/book-tables.mjs';

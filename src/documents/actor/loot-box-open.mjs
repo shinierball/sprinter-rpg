@@ -125,6 +125,16 @@ export function defaultBoxContents(tierDef, { houseTableFound = false } = {}) {
 }
 
 /**
+ * Pure: the gold an unfilled box also gives, the tier's usual gold (core pp. 216-218): one gold row, or nothing when the
+ * tier names no formula.
+ * @param {object} tierDef `lootBoxTierDef(tier)`
+ * @returns {object[]} box rows
+ */
+function defaultBoxGold(tierDef) {
+  return tierDef?.goldFormula ? [{ kind: 'gold', formula: tierDef.goldFormula }] : [];
+}
+
+/**
  * Pure: fold resolved units into one write: the item creates (each with the `lootBox` provenance flag), one gold delta,
  * and the reveal list (each item prize points at its create by `createIndex`).
  * @param {object[]} resolved units `{ itemId, name, tier, unit, empty, prizes }`
@@ -412,6 +422,10 @@ async function resolveUnit(actor, view, entry, { services, houseTables, answers,
   if (empty) {
     acc.warnings.push(boxText(kept ? 'COG.LootBoxOpen.KeptWarn' : 'COG.LootBoxOpen.EmptyWarn', where));
     acc.prizes = [{ type: 'line', text: boxText('COG.LootBoxOpen.EmptyReveal'), notice: true }];
+  } else if (defaulted && !kept && !fromHouseTable) {
+    const gold = await runRows(defaultBoxGold(tierDef), ctx, new Map());
+    acc.prizes.push(...gold.prizes);
+    acc.warnings.push(...gold.warnings);
   }
   return { itemId: view.id, name: entry.name, tier: tierDef.id, unit: entry.unit, empty, prizes: acc.prizes, warnings: acc.warnings };
 }

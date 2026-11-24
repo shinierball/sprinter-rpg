@@ -97,6 +97,11 @@ export function penanceMultiplier(bond) {
   return PENANCE_TITHE_MULTIPLIERS[Math.min(count(bond.offenses), PENANCE_TITHE_MULTIPLIERS.length - 1)];
 }
 
+/** The tithe's share of looted gold, in percent: the tier's share times the penance multiplier (pp. 163-164, 312). */
+export function tithePercent(bond) {
+  return (TITHE_PERCENT_BY_TIER[bond?.tier] ?? 0) * penanceMultiplier(bond);
+}
+
 /**
  * The tithe on gold looted since the last tithe. The book gives no rounding; rounding up to whole gold is this
  * design's rule, and the offering dialog lets the payer edit the figure.
@@ -104,9 +109,18 @@ export function penanceMultiplier(bond) {
  * @param {object} bond
  */
 export function titheOwed(looted, bond) {
-  const percent = TITHE_PERCENT_BY_TIER[bond?.tier] ?? 0;
   const gold = Math.max(0, Number(firstScalar(looted, 0)) || 0);
-  return Math.ceil((gold * percent * penanceMultiplier(bond)) / 100);
+  return Math.ceil((gold * tithePercent(bond)) / 100);
+}
+
+/**
+ * Gold looted since the last tithe: the actor's lifetime count less the bond's mark, never below 0 (a GM taking gold
+ * back can leave the count under the mark).
+ * @param {number} looted `system.currency.looted`
+ * @param {object} bond
+ */
+export function lootedSinceTithe(looted, bond) {
+  return Math.max(0, count(looted) - count(bond?.titheMark));
 }
 
 /**

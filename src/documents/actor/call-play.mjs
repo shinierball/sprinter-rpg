@@ -12,6 +12,7 @@ import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
 import { ASSIST_SOURCE, withAssistRoll } from '../../utils/roll/assist-flags.mjs';
 import { sameSideCombatants } from '../../utils/combat/interrupts.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
+import { cardItemNameHtml } from '../../utils/card/item-name.mjs';
 import { getAssistSpec, calledPlayDestination, rollerTokenIdOf } from '../../utils/roll/check-assists.mjs';
 import { rollAssistDice } from '../../utils/roll/assist-roll.mjs';
 import { CHECK_TAGS, isOutcomeTag, isFreeInterruptItem } from '../../utils/tag/tag-mechanics.mjs';
@@ -176,7 +177,7 @@ async function postCallCard({ actor, skill, roll, formula, lines, allyName, comb
   const spec = getAssistSpec(skill);
   return roll.toMessage(withFlags({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }) ?? { alias: actor.name },
-    flavor: `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)} (${escapeAttr(formula)})`,
+    flavor: `<strong>${escapeAttr(actor.name)}</strong>: ${cardItemNameHtml(skill)} (${escapeAttr(formula)})`,
     content
   }, {
     isCalledPlay: true,
@@ -219,7 +220,7 @@ export async function postSheetAssistRoll(actor, skill, spec, options = {}) {
   `;
   return rolled.roll.toMessage(withAssistRoll({
     speaker: globalThis.ChatMessage?.getSpeaker?.({ actor }) ?? { alias: actor.name },
-    flavor: `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)} (${escapeAttr(rolled.formula)})`,
+    flavor: `<strong>${escapeAttr(actor.name)}</strong>: ${cardItemNameHtml(skill)} (${escapeAttr(rolled.formula)})`,
     content
   }, { source: ASSIST_SOURCE.SHEET, assisterUuid: actor.uuid, itemId: skill.id, skillName: skill.name, formula: rolled.formula }));
 }

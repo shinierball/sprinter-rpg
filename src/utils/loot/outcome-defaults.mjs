@@ -22,9 +22,13 @@ export function outcomeRankBonus(out) {
   return Math.floor(Number(out?.rankBonus)) || 1;
 }
 
-/** Rank a learn_spell outcome teaches the spell at; at least 1. */
+/** A spellbook's random Rank roll (core p. 99) and the lowest Rank it can teach. */
+export const SPELLBOOK_RANK_FORMULA = '1d6-1';
+export const SPELLBOOK_MIN_RANK = 1;
+
+/** Rank a learn_spell outcome teaches the spell at; at least the spellbook minimum. */
 export function outcomeLearnRank(out) {
-  return Math.max(1, Math.floor(Number(out?.rank)) || 1);
+  return Math.max(SPELLBOOK_MIN_RANK, Math.floor(Number(out?.rank)) || 1);
 }
 
 /** Points a stat_permanent outcome adds (negative values allowed); 1 when blank. */

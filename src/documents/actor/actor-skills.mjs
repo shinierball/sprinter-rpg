@@ -1,5 +1,7 @@
 import { COGCombatMetrics, getHpPerBar } from '../combat-metrics.mjs';
-import { getRequiredGrindingHours, getAdvancementTarget, getEnduranceDC, getSafeGrindingThreshold } from '../../data/rules/grinding-rules.mjs';
+import { getRequiredGrindingHours, getAdvancementTarget, planGrindHours } from '../../data/rules/grinding-rules.mjs';
+import { DAY_HOURS, SECONDS_PER_HOUR } from '../../utils/time/timing.mjs';
+import { grindHoursWithin } from '../../utils/skill/grind-log.mjs';
 import { getCurrentFloor, getFloorTimer, decrementFloorTimer } from './actor-environment.mjs';
 import { withFlags } from '../../utils/flags.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
@@ -28,7 +30,7 @@ import {
 } from './skill-roll.mjs';
 import { applyCondition } from './actor-conditions.mjs';
 import { postRestCues } from './transform-cue-events.mjs';
-import { recordGrind } from './grind-log.mjs';
+import { recordGrind, grindLogOf } from './grind-log.mjs';
 import { getRollAdvantageState } from './combat-rolls.mjs';
 import { runGrindAdvancement, postAdvancementCard, creditGrindLevelHours } from './actor-advancement.mjs';
 import { buildPetLevelLines } from '../../chat/advancement-card.mjs';
@@ -561,95 +563,84 @@ export function getSkillRank(actor, ref) {
 }
 
 /**
- * Execute a grinding session for an entire party of crawlers.
+ * Execute a grinding session for an entire party of crawlers (core pp. 59, 170).
  *
  * Rules:
- * 1. Floor timer decrements once by non-bonus hours accrued.
- * 2. Complication table roll applies once to the session.
- * 3. Unallocated hours in each crawler's pool are reset to zero at the start of a new grind (use it or lose it).
- * 4. Each crawler runs their own Endurance checks individually, with Fatigued debuff applied only to those who fail.
- * 5. Each participating crawler accrues the session's earned hours (base + bonus) into their personal pool.
+ * 1. The floor timer and the grind log take every clock hour of the session.
+ * 2. Per crawler, the hours past 5 in the 30 hours before the grind starts each need an Unopposed Endurance check
+ *    (Difficulty 10 + 2 x Floor). A failed check gives Fatigued and makes its hour unproductive.
+ * 3. A Neighborhood or Borough Map adds its bonus hours only to a grind of 5 or more hours.
+ * 4. The unspent pool persists: each crawler's earned hours are added to it (nothing is forfeited).
+ * 5. The Complication table roll applies once to the session.
  *
  * @param {Actor[]} [partyActors] Array of Crawler actors (defaults to all world crawlers).
  * @param {object} [options={}]
  * @returns {Promise<object>}
  */
 export async function executePartyGrindSession(partyActors, options = {}) {
-  let crawlers = Array.isArray(partyActors) && partyActors.length > 0
+  const crawlers = Array.isArray(partyActors) && partyActors.length > 0
     ? partyActors
     : (globalThis.game?.actors ? Array.from(globalThis.game.actors.values()).filter(a => a.type === 'crawler') : []);
 
   const hours = Math.max(1, parseInt(options.hours, 10) || 5);
-  const hasGuideBonus = Boolean(options.hasGuideBonus);
   let mapType = (options.mapType || 'none').toLowerCase().trim();
   if (options.hasBoroughMap || options.hasBurroughMap || options.mapBonus === 2) mapType = 'borough';
   else if (options.hasNeighborhoodMap || options.mapBonus === 1) mapType = 'neighborhood';
 
-  const { safeThreshold, excessHours, mapBonus } = getSafeGrindingThreshold({
-    hours,
-    hasGuideBonus,
-    mapType,
-    mapBonus: options.mapBonus
-  });
-
   const floorNumber = Number(options.floor) || (getCurrentFloor());
+  // The map bonus depends on the grind's length only, so every crawler has the same one.
+  const { safeHours, mapBonus } = planGrindHours({ hours, mapType, floor: floorNumber });
 
-  // 1. Roll Complications once for the party
   const complication = await rollGrindTables({ ...options, floor: floorNumber });
   const eventBonusHours = complication?.bonusHours ?? 0;
-
-  const mapBonusHours = mapBonus > 0 ? mapBonus : 0;
-  const totalBonusHours = eventBonusHours + mapBonusHours;
-  const totalEarnedHours = Math.max(0, hours + totalBonusHours);
+  const totalBonusHours = eventBonusHours + mapBonus;
   const nonBonusHours = hours;
 
-  // 2. Decrement global Floor timer clock once by non-bonus hours accrued
+  // The day before the grind is read at its start: the clock moves by the grind's hours below.
+  const start = Number(globalThis.game?.time?.worldTime) || 0;
+  const earlierHours = new Map(crawlers.filter(Boolean).map((crawler) => [
+    crawler, grindHoursWithin(grindLogOf(crawler), start - DAY_HOURS * SECONDS_PER_HOUR, start)
+  ]));
+
   const previousFloorTimer = getFloorTimer();
   let newFloorTimer = previousFloorTimer;
   if (options.decrementFloorTimer !== false) {
-    // The relay authorizes the time against a crawler the requester owns.
     const timerActor = crawlers.find(a => a?.isOwner) || crawlers[0];
     newFloorTimer = await decrementFloorTimer(nonBonusHours, { actorUuid: timerActor?.uuid });
     for (const crawler of crawlers) await recordGrind(crawler, nonBonusHours);
   }
 
-  // 3. Process each participating crawler individually
   const crawlerResults = [];
+  let excessHours = 0;
   for (const crawler of crawlers) {
     if (!crawler) continue;
 
-    // Use it or lose it: unspent pool hours reset to 0 at start of new grind
     const prevBanked = Number(crawler.system?.details?.bankedGrindHours ?? crawler.system?.bankedGrindHours) || 0;
-    const forfeitedHours = (options.resetPool !== false) ? prevBanked : 0;
+    // Hours not spent stay in the pool for another Skill (core p. 170): nothing is forfeited.
+    const forfeitedHours = 0;
 
-    // Individual Endurance Checks
+    const plan = planGrindHours({ hours, priorHours: earlierHours.get(crawler), mapType, floor: floorNumber });
+    excessHours = Math.max(excessHours, plan.checkHours);
     const enduranceChecks = [];
     let fatigueGained = 0;
-
-    if (excessHours > 0) {
-      for (let h = 1; h <= excessHours; h++) {
-        const dc = getEnduranceDC(floorNumber, h);
-        const { roll, total, passed, formula } = await rollFatigueCheck(crawler, dc);
-
-        if (!passed) {
-          fatigueGained++;
-          await applyCondition(crawler, 'fatigued');
-        }
-
-        enduranceChecks.push({
-          hour: safeThreshold + h,
-          dc,
-          rollTotal: total,
-          diceRoll: extractD20Result(roll) ?? roll.total,
-          formula,
-          passed
-        });
+    for (let h = 1; h <= plan.checkHours; h++) {
+      const { roll, total, passed, formula } = await rollFatigueCheck(crawler, plan.difficulty);
+      if (!passed) {
+        fatigueGained++;
+        await applyCondition(crawler, 'fatigued');
       }
+      enduranceChecks.push({
+        hour: plan.firstCheckHour + h - 1,
+        dc: plan.difficulty,
+        rollTotal: total,
+        diceRoll: extractD20Result(roll) ?? roll.total,
+        formula,
+        passed
+      });
     }
 
-    // Credit totalEarnedHours
-    // With resetPool: false the unspent pool stays and this session's hours add to it
-    const newBanked = (options.resetPool !== false) ? totalEarnedHours : prevBanked + totalEarnedHours;
+    const totalEarnedHours = Math.max(0, hours - fatigueGained + plan.mapBonus + eventBonusHours);
+    const newBanked = prevBanked + totalEarnedHours;
     if (crawler.system?.details) {
       crawler.system.details.bankedGrindHours = newBanked;
     } else if (crawler.system) {
@@ -657,7 +648,6 @@ export async function executePartyGrindSession(partyActors, options = {}) {
     }
     await crawler.update({ 'system.details.bankedGrindHours': newBanked });
 
-    // Hours also count toward a Level; the GM ticks the lowest-Level box per crawler.
     const levelProgress = await creditGrindLevelHours(crawler, totalEarnedHours, {
       lowestLevelBonus: (options.lowestLevelBonusIds ?? []).includes(crawler.id),
       d2: options.d2,
@@ -674,6 +664,7 @@ export async function executePartyGrindSession(partyActors, options = {}) {
       forfeitedHours,
       enduranceChecks,
       fatigueGained,
+      failedHours: fatigueGained,
       totalEarnedHours,
       bankedHours: newBanked,
       mapFind: mapFindOf(crawler)
@@ -681,23 +672,24 @@ export async function executePartyGrindSession(partyActors, options = {}) {
   }
   const mapFinds = mapFindOffers(crawlerResults);
 
-  // 4. Generate unified Party Chat Card
+  // The session's own figure is the most a crawler can earn: every check passed.
+  const totalEarnedHours = Math.max(0, hours + totalBonusHours);
   if (!options.silent) {
     await postPartyGrindChatCard({
       hours,
       nonBonusHours,
       totalBonusHours,
       eventBonusHours,
-      mapBonusHours,
+      mapBonusHours: mapBonus,
       totalEarnedHours,
       previousFloorTimer,
       newFloorTimer,
       floorNumber,
-      safeThreshold,
+      safeThreshold: safeHours,
       excessHours,
-      hasGuideBonus,
       mapType,
       mapBonus,
+      mapNote: mapBonus > 0 ? `+${mapBonus} bonus hour${mapBonus === 1 ? '' : 's'} (${mapType === 'neighborhood' ? 'Neighborhood' : 'Borough'} Map, 5+ hour grind)` : (mapType !== 'none' ? 'Map needs a 5-hour grind' : ''),
       complication,
       crawlerResults,
       mapFinds
@@ -709,15 +701,14 @@ export async function executePartyGrindSession(partyActors, options = {}) {
     nonBonusHours,
     bonusHours: totalBonusHours,
     complicationBonusHours: eventBonusHours,
-    mapBonusHours,
+    mapBonusHours: mapBonus,
     totalEarnedHours,
     previousFloorTimer,
     floorTimer: newFloorTimer,
     newFloorTimer,
     floorNumber,
-    safeThreshold,
+    safeThreshold: safeHours,
     excessHours,
-    hasGuideBonus,
     mapType,
     mapBonus,
     complication,
@@ -752,7 +743,7 @@ async function postPartyGrindChatCard(data) {
         <div style="margin-top: 3px; font-size: 10px;">
           ${cr.enduranceChecks.map(c => `
             <span class="cog-bg-dyn ${c.passed ? 'cog-text-success' : 'cog-text-danger'}" style="--cog-bg-dyn: ${c.passed ? 'var(--cog-success-tint)' : 'var(--cog-danger-tint)'}; display: inline-block; padding: 1px 4px; border-radius: 2px; margin-right: 4px; border: 1px solid ${c.passed ? 'var(--cog-success)' : 'var(--cog-accent)'};">
-              H${escapeAttr(c.hour)} (${escapeAttr(c.rollTotal)} vs DC${escapeAttr(c.dc)}): ${c.passed ? 'PASS' : 'FAIL (+1 Fatigue)'}
+              H${escapeAttr(c.hour)} (${escapeAttr(c.rollTotal)} vs ${escapeAttr(c.dc)}): ${c.passed ? 'PASS' : 'FAIL, hour not productive (+1 Fatigued)'}
             </span>
           `).join('')}
         </div>
@@ -761,10 +752,6 @@ async function postPartyGrindChatCard(data) {
       checksStr = `<div class="cog-text-success" style="font-size: 10px;">Safe Grind (No checks)</div>`;
     }
 
-    const forfeitNotice = cr.forfeitedHours > 0
-      ? `<span class="cog-text-muted" style="font-size: 10px; margin-left: 4px;">(${escapeAttr(cr.forfeitedHours)} unspent hrs forfeited)</span>`
-      : '';
-
     return `
       <div class="cog-bg-sheen-03" style="display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; border: 1px solid var(--cog-panel-border); border-radius: 4px; margin-top: 4px;">
         <img class="cog-bg-icon-box" src="${escapeAttr(cr.img)}" width="32" height="32" style="border-radius: 3px; object-fit: cover; border: 1px solid var(--cog-border-muted);" />
@@ -772,7 +759,7 @@ async function postPartyGrindChatCard(data) {
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <strong class="cog-text-strong" style="font-size: 12px;">${escapeAttr(cr.name)}</strong>
             <span class="cog-text-gold" style="font-size: 11px; font-weight: bold;">
-              <i class="fa-solid fa-vault"></i> +${escapeAttr(cr.totalEarnedHours)}h (Pool: ${escapeAttr(cr.bankedHours)}h) ${forfeitNotice}
+              <i class="fa-solid fa-vault"></i> +${escapeAttr(cr.totalEarnedHours)}h (Pool: ${escapeAttr(cr.bankedHours)}h)
             </span>
           </div>
           ${checksStr}
@@ -790,13 +777,13 @@ async function postPartyGrindChatCard(data) {
       <div class="cog-text-secondary" style="display: flex; justify-content: space-between; font-size: 11px; border-bottom: 1px solid var(--cog-panel-border); padding-bottom: 6px;">
         <span>Floor: <strong class="cog-text-gold">${escapeAttr(data.floorNumber)}</strong></span>
         <span>Participants: <strong class="cog-text-strong">${data.crawlerResults.length} Crawlers</strong></span>
-        <span>Safe Limit: <strong class="cog-text-success">${escapeAttr(data.safeThreshold)} hrs${data.hasGuideBonus ? ' (+1 Guide)' : ''}${data.mapBonus === 1 ? ' (+1 Neighborhood Map)' : data.mapBonus === 2 ? ' (+2 Borough Map)' : data.mapBonus > 0 ? ` (+${escapeAttr(data.mapBonus)} Map)` : ''}</strong></span>
+        <span>Safe Limit: <strong class="cog-text-success">${escapeAttr(data.safeThreshold)} hrs${data.mapNote ? ` (${escapeAttr(data.mapNote)})` : ''}</strong></span>
       </div>
       <div class="cog-text" style="margin-top: 6px; font-size: 12px;">
         <i class="fa-solid fa-hourglass-half cog-text-warning"></i> <strong>Floor Timer Clock:</strong> Decremented by <strong>-${escapeAttr(data.nonBonusHours)} Hours</strong> (${escapeAttr(data.previousFloorTimer)} &rarr; <strong class="cog-text-warning">${escapeAttr(data.newFloorTimer)} hrs remaining</strong>).
       </div>
       <div class="cog-text-secondary" style="margin-top: 4px; font-size: 11px;">
-        <i class="fa-solid fa-circle-info cog-text-info"></i> Hours in pool reset at start of grind (use it or lose it). Earned hours added to each crawler's pool.
+        <i class="fa-solid fa-circle-info cog-text-info"></i> Unspent hours stay in the pool for another Skill. Earned hours are added to each crawler's pool.
       </div>
       ${compHtml}
       <div style="margin-top: 8px;">

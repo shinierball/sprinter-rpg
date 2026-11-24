@@ -7,6 +7,7 @@
  * latest trusted E for (attack, target).
  */
 import { readFlags } from '../flags.mjs';
+import { messageList } from '../card/recent-cards.mjs';
 import { readCheckRecord, effectiveCheck, evadeAftermath } from '../roll/check-assists.mjs';
 import { attackerUuidOf, sourceMessageIdOf } from '../combat/card-flags.mjs';
 
@@ -17,13 +18,6 @@ const LINKABLE_OUTCOMES = new Set(['hit', 'avoided', 'area_half', 'area_none']);
 const MAX_LINE_TEXT = 120;
 
 const nonEmpty = (v) => typeof v === 'string' && v !== '';
-
-/** The messages as an oldest-first array, from an array or a Foundry collection. */
-export function messageList(messages) {
-  if (Array.isArray(messages)) return messages;
-  if (Array.isArray(messages?.contents)) return messages.contents;
-  return messages ? Array.from(messages.values?.() ?? messages) : [];
-}
 
 /** What an Evade roll message stores about itself; null for no message. */
 const flagsOf = (message) => (message

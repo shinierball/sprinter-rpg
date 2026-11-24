@@ -7,7 +7,9 @@
  * appliedConditionTargets, buffBlocks }`, where `cost` is the `resolveSpellCost` result.
  */
 import { attackText } from '../../utils/attack/attack-text.mjs';
+import { castRangeText } from '../../utils/attack/cast-range-text.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
+import { cardItemNameHtml } from '../../utils/card/item-name.mjs';
 import { conditionRefName } from '../../utils/item-describer/shared.mjs';
 import { normalizeBaseDamage, baseDamageText } from '../../utils/damage/base-damage.mjs';
 import { schoolLineHtml } from '../../utils/card/school-line.mjs';
@@ -16,6 +18,7 @@ import { castLinkFlags } from '../../utils/attack/spell-cast-link.mjs';
 import { spellConditionActionsHtml, targetFilterLabel } from './spell-card-parts.mjs';
 import { getItemAllTags } from '../active-tags.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
+import { castRankOf, castRankDataAttr } from '../../utils/skill/rank-source.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { outOfRangeLineHtml } from '../../utils/attack/attack-range.mjs';
 import { cooldownLabel, hasCooldown } from '../../utils/time/cooldowns.mjs';
@@ -29,24 +32,6 @@ import {
 import { getAttackDifficulty } from './attack-targets.mjs';
 import { getContestData, renderContestChallengeBlock } from './contest-blocks.mjs';
 import { withFlags } from '../../utils/flags.mjs';
-
-/** The spell's rank for display and rank breaks. */
-const rankOf = (sys) => Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
-
-/**
- * The Range line of a spell card: the aura's Self, else the range (feet or text) with the reached rank breaks' bonus.
- * @param {object} sys the spell's system data
- * @param {{ rangeBonus: number }} breaks from `resolveReachedRankBreaks`
- * @param {boolean} [isAura]
- * @returns {string}
- */
-export function castRangeText(sys, breaks, isAura = false) {
-  if (isAura) return 'Self';
-  if (breaks.rangeBonus > 0) {
-    return sys.rangeFeet ? `${sys.rangeFeet + breaks.rangeBonus} feet` : `${sys.range || '30 feet'} (+${breaks.rangeBonus}ft)`;
-  }
-  return sys.rangeFeet ? `${sys.rangeFeet} feet` : (sys.range || '30 feet');
-}
 
 /**
  * The Target line of a spell card: Self for an aura, the heal's target, else the area's target filter. A spell with
@@ -76,7 +61,7 @@ export function spellFailedCardHtml(actor, spell, cost) {
           <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-danger); padding-bottom: 4px; margin-bottom: 6px;">
             <img class="cog-bg-icon-box" src="${escapeAttr(spell.img || 'icons/svg/aura.svg')}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px; filter: grayscale(100%);" />
             <div>
-              <h3 class="cog-text-accent" style="margin: 0; font-size: 16px; font-weight: bold;">${escapeAttr(spell.name)} — FAILED</h3>
+              <h3 class="cog-text-accent" style="margin: 0; font-size: 16px; font-weight: bold;">${cardItemNameHtml(spell)} — FAILED</h3>
               <span class="cog-text-muted" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Insufficient Mana (${escapeAttr(currentMana)} / ${escapeAttr(manaCost)} MP)</span>
             </div>
           </div>
@@ -94,7 +79,7 @@ function castHeaderHtml(spell, sys, isFreeCast, itemRuleBreak = false) {
         <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-danger); padding-bottom: 4px; margin-bottom: 6px;">
           <img class="cog-bg-icon-box" src="${escapeAttr(spell.img || 'icons/svg/aura.svg')}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
           <div>
-            <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${escapeAttr(spell.name)}${itemRuleBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</h3>
+            <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${cardItemNameHtml(spell)}${itemRuleBreak ? ` ${ruleBreakBadgeHtml()}` : ''}</h3>
             <span class="cog-text-danger" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">${escapeAttr(spellRoleLabel(spellRole(spell)))}${sys.baseDamage?.damageType ? ` • ${escapeAttr(sys.baseDamage.damageType)}` : ''}${isFreeCast ? ' • FREE CAST' : ''}</span>
           </div>
         </div>
@@ -119,10 +104,10 @@ function castInfoRowHtml(spell, sys, opts, cast) {
     ? `<div><strong>Source:</strong> <span class="cog-text-magic" style="font-weight: bold;"><i class="fa-solid fa-wand-magic-sparkles"></i> ${escapeAttr(opts.originItem?.name || 'Item / Consumable Effect')}</span></div>`
     : '';
 
-  const resolvedSpellBreaks = resolveReachedRankBreaks(spell, rankOf(sys));
+  const resolvedSpellBreaks = resolveReachedRankBreaks(spell, castRankOf(spell, opts));
   const rangeDisplay = castRangeText(sys, resolvedSpellBreaks, isAura);
   const targetDisplay = castTargetText(sys, { isAura, healInfo });
-  const spellRank = rankOf(sys);
+  const spellRank = castRankOf(spell, opts);
   const bonusUnit = TIME_UNITS[effectiveDuration(spell, { rank: spellRank }).type]?.label ?? 'rounds';
   const durationDisplay = resolvedSpellBreaks.durationBonus > 0
     ? `${spellCardDuration(spell, { rank: spellRank })} (+${resolvedSpellBreaks.durationBonus} ${bonusUnit})`
@@ -134,7 +119,8 @@ function castInfoRowHtml(spell, sys, opts, cast) {
       <div class="cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; margin-bottom: 8px; border: 1px solid var(--cog-divider); padding: 4px 6px; border-radius: 3px;">
         <div><strong>Mana:</strong> ${manaDisplay}</div>
         ${sourceBadge}
-        <div><strong>Range:</strong> ${escapeAttr(rangeDisplay)}</div>
+        ${opts.castRank ? `<div><strong>${escapeAttr(attackText('COG.SpellCast.ScrollRank', { rank: spellRank }))}</strong></div>` : ''}
+        ${rangeDisplay ? `<div><strong>Range:</strong> ${escapeAttr(rangeDisplay)}</div>` : ''}
         ${targetDisplay ? `<div><strong>Target:</strong> ${escapeAttr(targetDisplay)}</div>` : ''}
         <div><strong>Duration:</strong> ${escapeAttr(durationDisplay)}</div>
         ${hasCooldown(spell, { rank: spellRank }) ? `<div><strong>Cooldown:</strong> ${escapeAttr(cooldownLabel(spell, { rank: spellRank }))}</div>` : ''}
@@ -211,16 +197,16 @@ function castTextHtml(spell, sys) {
 }
 
 /** The Roll Spell Damage button with its damage-source preview, when the spell discusses damage. */
-function castDamageHtml(actor, spell, dmgData) {
+function castDamageHtml(actor, spell, dmgData, opts = {}) {
   if (!dmgData.hasDamage) return '';
-  const previewHtml = damageSourcesPreviewHtml(actor.getSpellDamageParts(spell), { wrapperStyle: 'margin: 8px 0 6px 0;' });
+  const previewHtml = damageSourcesPreviewHtml(actor.getSpellDamageParts(spell, opts),{ wrapperStyle: 'margin: 8px 0 6px 0;' });
 
   // A cast has no d20 (never a crit); the damage roll inherits the subject recorded when the spell was cast.
   const castContext = buildRollContext({ actor, phase: 'toHit', item: spell, check: 'spell' });
   return `
         <div style="margin-top: 10px; padding-top: 6px; border-top: 1px dashed var(--cog-accent);">
           ${previewHtml}
-          <button type="button" class="cog-btn roll-spell-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollSpellDamage" data-spell-id="${escapeAttr(spell.id || spell._id || '')}" data-actor-uuid="${escapeAttr(actor.uuid)}"${rollContextDataAttr(castContext)} style="width: 100%; border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
+          <button type="button" class="cog-btn roll-spell-dmg-from-card cog-bg-accent-fill cog-text-on-fill" data-action="crawlerRollSpellDamage" data-spell-id="${escapeAttr(spell.id || spell._id || '')}" data-actor-uuid="${escapeAttr(actor.uuid)}"${castRankDataAttr(opts)}${rollContextDataAttr(castContext)} style="width: 100%; border: 1px solid var(--cog-accent-strong-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
             <i class="fa-solid fa-burst"></i> Roll Spell Damage (${escapeAttr(dmgData.formula)})
           </button>
         </div>
@@ -228,8 +214,8 @@ function castDamageHtml(actor, spell, dmgData) {
 }
 
 /** The Roll Spell Attack (or a mob's Declare Attack) button of an attack spell. */
-function castAttackHtml(actor, spell, sys) {
-  const rank = rankOf(sys);
+function castAttackHtml(actor, spell, sys, opts = {}) {
+  const rank = castRankOf(spell, opts);
   const statKey = (sys.stat || 'int').toLowerCase();
   const statMod = actor.system?.abilities?.[statKey]?.mod ?? 0;
   const label = actor.type === 'mob'
@@ -237,7 +223,7 @@ function castAttackHtml(actor, spell, sys) {
     : `${attackText('COG.SpellCast.RollAttack')} (1d20 + Rank ${rank} + ${statKey.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod})`;
   return `
         <div style="margin-top: 8px;">
-          <button type="button" class="cog-btn roll-spell-attack-from-card cog-bg-info-fill cog-text-on-fill" data-action="crawlerRollSpellAttack" data-spell-id="${escapeAttr(spell.id || spell._id || '')}" data-spell-identifier="${escapeAttr(sys.identifier || '')}" data-actor-uuid="${escapeAttr(actor.uuid)}" style="width: 100%; border: 1px solid var(--cog-info-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
+          <button type="button" class="cog-btn roll-spell-attack-from-card cog-bg-info-fill cog-text-on-fill" data-action="crawlerRollSpellAttack" data-spell-id="${escapeAttr(spell.id || spell._id || '')}" data-spell-identifier="${escapeAttr(sys.identifier || '')}" data-actor-uuid="${escapeAttr(actor.uuid)}"${castRankDataAttr(opts)} style="width: 100%; border: 1px solid var(--cog-info-fill); border-radius: 4px; padding: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--font-primary, sans-serif); font-size: 12px;">
             <i class="fa-solid fa-crosshairs"></i> ${escapeAttr(label)}
           </button>
         </div>
@@ -257,7 +243,7 @@ export function spellCastCard(actor, spell, opts, cast, summaryHtml = '') {
   const sys = spell.system || {};
   const spellTags = spell.allTags || getItemAllTags(spell);
   const { cost, isAura, healInfo, auraData, nonAuraTempBars, offersAttack } = cast;
-  const dmgData = actor.getSpellDamageData(spell);
+  const dmgData = actor.getSpellDamageData(spell, opts);
 
   let content = castHeaderHtml(spell, sys, cost.isFreeCast, opts.itemRuleBreak === true);
   content += castInfoRowHtml(spell, sys, opts, cast);
@@ -265,14 +251,14 @@ export function spellCastCard(actor, spell, opts, cast, summaryHtml = '') {
   if (healInfo) content += castHealHtml(actor, spell, healInfo);
   content += castTextHtml(spell, sys);
   content += summaryHtml;
-  content += castDamageHtml(actor, spell, dmgData);
-  if (offersAttack) content += castAttackHtml(actor, spell, sys);
+  content += castDamageHtml(actor, spell, dmgData, opts);
+  if (offersAttack) content += castAttackHtml(actor, spell, sys, opts);
   if (auraData) content += auraActiveBlockHtml(actor, spell, auraData);
 
   // Only offer "Place Area of Effect" template button if the spell actually has an area of effect
   if (!isAura && offersAreaTemplate(sys, spellTags)) {
     content += areaTemplateButtonHtml(actor, spell, {
-      rank: rankOf(sys),
+      rank: castRankOf(spell, opts),
       idKind: 'spell',
       wrapperStyle: 'margin-top: 10px; padding-top: 6px; border-top: 1px dashed var(--cog-danger);'
     });

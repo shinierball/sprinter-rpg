@@ -1,3 +1,4 @@
+import { TOP_TEN_PLACES } from '../../data/rules/top-ten.mjs';
 import { getStatCaps } from '../../utils/character/stat-caps.mjs';
 import { percentStatMode } from '../../utils/character/stat-percent.mjs';
 import { DEFAULT_SIZE, getSizeInfo, sizeLabel } from '../../data/sizes.mjs';
@@ -133,7 +134,9 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
   static defineCurrencyField() {
     const fields = globalThis.foundry.data.fields;
     return new fields.SchemaField({
-      gold: new fields.NumberField({ initial: 0, integer: true, min: 0 })
+      gold: new fields.NumberField({ initial: 0, integer: true, min: 0 }),
+      // The lifetime count of gold received (every rise of `gold`, core p. 215), written by the looted-gold hook; never an input.
+      looted: new fields.NumberField({ initial: 0, integer: true, min: 0 })
     });
   }
 
@@ -155,6 +158,8 @@ export class BaseActorDataModel extends (globalThis.foundry?.abstract?.TypeDataM
         pct: new fields.NumberField({ initial: 0, integer: true })
       }),
       popularity: new fields.NumberField({ initial: 0, integer: true }),
+      /** The place on the Top Ten (core p. 282), set by the GM on the Story tab; null = not listed. */
+      topTen: new fields.NumberField({ integer: true, min: 1, max: TOP_TEN_PLACES, nullable: true, initial: null }),
       pastTrauma: new fields.StringField({ initial: '' }),
       looseEnds: new fields.StringField({ initial: '' }),
       regrets: new fields.StringField({ initial: '' }),

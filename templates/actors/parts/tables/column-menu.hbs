@@ -1,0 +1,24 @@
+{{!-- The Columns button of a lean table's banner and its menu. Params: table (a tableView). --}}
+<span class="cog-column-menu-wrap">
+  <a class="cog-column-menu-button" role="button" data-action="toggleColumnMenu" data-table="{{table.id}}" aria-expanded="{{#if table.menu.open}}true{{else}}false{{/if}}" style="cursor: pointer; font-size: 13px; font-weight: normal; text-transform: none;">
+    <i class="fa-solid fa-table-columns"></i> {{table.menu.buttonLabel}} <i class="fa-solid {{#if table.menu.open}}fa-caret-up{{else}}fa-caret-down{{/if}}"></i>
+  </a>
+  {{#if table.menu.open}}
+    <div class="cog-column-menu" role="menu">
+      <div class="cog-popover-header">{{table.menu.title}}</div>
+      <div class="cog-column-menu-entries">
+        {{#each table.menu.entries as |entry|}}
+          <button type="button" class="cog-column-menu-entry{{#if entry.shown}} is-shown{{/if}}{{#if entry.locked}} is-locked{{/if}}" data-action="toggleTableColumn" data-table="{{../table.id}}" data-column="{{entry.id}}" aria-pressed="{{#if entry.shown}}true{{else}}false{{/if}}" {{#if entry.locked}}disabled data-tooltip-text="{{../table.menu.lockedTip}}"{{/if}}>
+            <i class="fa-solid {{#if entry.locked}}fa-lock{{else if entry.shown}}fa-square-check{{else}}fa-square{{/if}}"></i> {{entry.label}}
+          </button>
+        {{/each}}
+      </div>
+      {{#if table.menu.state}}<div class="cog-column-menu-state">{{table.menu.state}}</div>{{/if}}
+      <div class="cog-column-menu-buttons">
+        {{#if table.menu.showResetSheet}}<button type="button" data-action="resetTableColumns" data-table="{{table.id}}">{{table.menu.resetSheetLabel}}</button>{{/if}}
+        {{#if table.menu.showUseDefault}}<button type="button" data-action="useColumnsAsDefault" data-table="{{table.id}}">{{table.menu.useDefaultLabel}}</button>{{/if}}
+        {{#if table.menu.showResetDefault}}<button type="button" data-action="resetDefaultColumns" data-table="{{table.id}}">{{table.menu.resetDefaultLabel}}</button>{{/if}}
+      </div>
+    </div>
+  {{/if}}
+</span>

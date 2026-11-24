@@ -5,8 +5,19 @@
  */
 import { withCompendiumLink } from '../utils/compendium/link-flags.mjs';
 import { unifiedCatalog } from '../content/unified-catalog.mjs';
-import { resolveFullItemData, resolveManagerSource } from '../content/catalog-source.mjs';
+import { resolveCompendiumPacks, resolveFullItemData, resolveManagerSource } from '../content/catalog-source.mjs';
 import { carrySourceStamp } from '../utils/content-source.mjs';
+
+/**
+ * Whether the user may see an item catalog row: a world item at Limited or better, or a compendium row listed in a pack
+ * the user can see.
+ * @param {{ id: string, isWorld?: boolean, source?: string }} row
+ * @returns {boolean}
+ */
+export function itemRowVisible(row) {
+  if (row.isWorld) return globalThis.game?.items?.get(row.id)?.testUserPermission?.(globalThis.game.user, 'LIMITED') === true;
+  return row.source === 'compendium' && resolveCompendiumPacks('items').some((pack) => pack?.visible !== false && pack?.index?.has?.(row.id));
+}
 
 /**
  * Open the item setup window at `data`'s kind, seeded with `data` (its folder and starting values) and set to embed on

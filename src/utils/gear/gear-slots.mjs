@@ -23,6 +23,9 @@ const BELT_LIMIT = 1;
 /** @type {Record<string, GearSlotDef>} The registry. Order is the select's order. */
 export const GEAR_SLOTS = {};
 
+/** The slot of a tattoo (a body-art item; at most one enchantment each, core p. 228). */
+export const TATTOO_SLOT = 'tattoo';
+
 const SLOT_ID = /^[A-Za-z][\w.-]*$/;
 
 function limitOf(id, limit) {
@@ -64,7 +67,7 @@ for (const [id, label, extra] of [
   ['legs', 'Legs'], ['feet', 'Feet'], ['accessory', 'Accessory', { limit: ACCESSORY_LIMIT }],
   // A belt is an accessory with a limit of its own (core p.99); registered after `accessory` so the pool resolves
   ['belt', 'Belt (Accessory)', { limit: BELT_LIMIT, pool: 'accessory' }],
-  ['tattoo', 'Tattoo', { limit: null }], ['patch', 'Patch', { limit: null }],
+  [TATTOO_SLOT, 'Tattoo', { limit: null }], ['patch', 'Patch', { limit: null }],
   // A pet's or mount's gear (the pet sheet's slots; canon saddles and barding store these)
   ['collar', 'Collar'], ['barding', 'Barding'], ['saddle', 'Saddle'], ['pack', 'Pack']
 ]) registerGearSlot({ id, label, ...extra });

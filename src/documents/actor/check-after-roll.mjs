@@ -16,7 +16,7 @@ import { readFlag, flagPath, withFlags } from '../../utils/flags.mjs';
 import { craftGradeOf, craftRegradeUpdate } from '../../utils/crafting/craft-flags.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { ruleBreakBadgeHtml } from '../../utils/rule-break-visibility.mjs';
-import { messageList } from '../../utils/card/recent-cards.mjs';
+import { messageById, messageList } from '../../utils/card/recent-cards.mjs';
 import { buildRollContext, extendContext, parseRollContext } from '../../utils/roll/roll-context.mjs';
 import { readCheckRecord, effectiveCheck, isSuccessOutcome, checkRecordPath, MAX_RECORD_REROLLS } from '../../utils/roll/check-assists.mjs';
 import { afterRollOffers, offerByKey } from '../../utils/roll/after-roll.mjs';
@@ -50,7 +50,6 @@ const ENTRY_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 const str = (v) => (typeof v === 'string' ? v.trim().slice(0, 200) : '');
 const notify = (level, text) => globalThis.ui?.notifications?.[level]?.(text);
-const messageById = (id) => (typeof id === 'string' && id ? globalThis.game?.messages?.get?.(id) ?? null : null);
 
 /** The context a vehicle check's rows are matched against, rebuilt from its reference (a card with no stored context). */
 function vehicleAfterRollContext({ roller, ref, setup, outcomeTag }) {

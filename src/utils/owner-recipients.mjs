@@ -1,7 +1,10 @@
 /**
- * Whisper recipients for a card about one or more actors: every GM plus each user who owns one of them.
+ * Whisper recipients: every GM (`gmWhisper`), or for a card about one or more actors every GM plus each user who owns one of them.
  * Imports nothing, so chat cards and hooks may use it without joining an import cycle.
  */
+
+/** The ids of every GM user: the `whisper` list of a card only the GMs read. */
+export const gmWhisper = () => (globalThis.ChatMessage?.getWhisperRecipients?.('GM') ?? []).map((u) => u.id).filter(Boolean);
 
 /**
  * @param {Actor|Actor[]} actors the actor (or actors) the card is about

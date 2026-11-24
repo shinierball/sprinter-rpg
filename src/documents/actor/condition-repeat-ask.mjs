@@ -7,16 +7,23 @@ import { registerRelayAction, requestRelay, isNoGmReason } from '../../utils/gm-
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { REPEAT_RULINGS } from './condition-repeat.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 
 /** Relay action: ask a GM what a further injury does. Payload: ids and plain text only. */
 const REPEAT_RULING_RELAY = 'conditionRepeatRuling';
 
 const KEY = 'COG.Effects.RepeatRuling.';
 
-function text(name, data, fallback) {
-  const i18n = globalThis.game?.i18n;
-  return i18n?.has?.(`${KEY}${name}`) && typeof i18n.format === 'function' ? i18n.format(`${KEY}${name}`, data) : fallback;
-}
+const lang = langText({
+  [`${KEY}Title`]: 'Another injury',
+  [`${KEY}Message`]: '{actor} already has {existing}, and {incoming} would land again. The rulebook does not say what happens. What does?',
+  [`${KEY}None`]: 'Nothing more',
+  [`${KEY}Beside`]: 'Add {incoming}',
+  [`${KEY}Cancel`]: 'Cancel',
+  [`${KEY}Asking`]: 'Asking the GM what happens to {actor}...',
+  [`${KEY}NotAsked`]: 'The GM could not be asked about {actor}. Nothing was applied.'
+});
+const text = (name, data) => lang(`${KEY}${name}`, data);
 
 
 function notify(level, message) {
@@ -30,12 +37,12 @@ async function askOnThisClient(actorName, existingName, incomingName) {
   // The title and button labels are plain text in Foundry; only the message is HTML, so only it is escaped (the whole sentence).
   const data = { actor: actorName, existing: existingName, incoming: incomingName };
   const answer = await DialogV2.wait({
-    window: { title: text('Title', data, 'Another injury') },
-    content: `<p>${escapeAttr(text('Message', data, `${actorName} already has ${existingName}. ${incomingName} would land again. What happens?`))}</p>`,
+    window: { title: text('Title', data) },
+    content: `<p>${escapeAttr(text('Message', data))}</p>`,
     buttons: [
-      { action: REPEAT_RULINGS.NONE, label: text('None', data, 'Nothing more'), default: true },
-      { action: REPEAT_RULINGS.BESIDE, label: text('Beside', data, `Add ${data.incoming}`) },
-      { action: 'cancel', label: text('Cancel', data, 'Cancel') }
+      { action: REPEAT_RULINGS.NONE, label: text('None', data), default: true },
+      { action: REPEAT_RULINGS.BESIDE, label: text('Beside', data) },
+      { action: 'cancel', label: text('Cancel', data) }
     ],
     rejectClose: false
   });
@@ -66,9 +73,9 @@ export async function askRepeatRuling(actor, { existing, incoming, options = {} 
   const given = options?.repeatRuling;
   if (Object.values(REPEAT_RULINGS).includes(given)) return given;
   if (options?.interactive === false) return null;
-  if (!globalThis.game?.user?.isGM) notify('info', text('Asking', { actor: actor.name }, `Asking the GM about ${actor.name}'s injury...`));
+  if (!globalThis.game?.user?.isGM) notify('info', text('Asking', { actor: actor.name }));
   const res = await requestRelay(REPEAT_RULING_RELAY, { actorUuid: actor.uuid, existingId: existing.id, incomingName: incoming?.name ?? '' });
   if (res.ok) return Object.values(REPEAT_RULINGS).includes(res.result) ? res.result : null;
-  if (!isNoGmReason(res.reason)) notify('warn', text('NotAsked', { actor: actor.name }, `The GM could not be asked about ${actor.name}'s injury. Nothing was applied.`));
+  if (!isNoGmReason(res.reason)) notify('warn', text('NotAsked', { actor: actor.name }));
   return null;
 }

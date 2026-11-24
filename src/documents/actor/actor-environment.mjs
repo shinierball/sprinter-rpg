@@ -7,6 +7,8 @@ import { floorLabel } from '../../utils/floor/floor-number.mjs';
 import { SECONDS_PER_HOUR } from '../../utils/time/timing.mjs';
 import { captureFloorExit } from './popularity-checklist.mjs';
 import { postFloorPetReminder } from './pet-floor-reminder.mjs';
+import { postCollapseOffer } from './floor-collapse-offer.mjs';
+import { bookCollapseHours } from '../../utils/floor/collapse-time.mjs';
 import { postChecklistDue } from './popularity-checklist-due.mjs';
 import { onFloorChanged } from './transform-cue-events.mjs';
 
@@ -109,7 +111,10 @@ export async function setCurrentFloor(floor) {
   } catch (_) {}
   const left = await exit;
   if (left) await postChecklistDue('floor', { floor: left.floor });
-  if (val > previousFloor) await postFloorPetReminder();
+  if (val > previousFloor) {
+    await postFloorPetReminder();
+    await postCollapseOffer(val, { clockHours: getFloorTimer() });
+  }
   return val;
 }
 
@@ -117,9 +122,9 @@ export function getFloorTimer() {
   try {
     const val = globalThis.game?.settings?.get?.(SYSTEM_ID, FLOOR_TIMER_SETTING);
     const parsed = parseFloat(val);
-    return Number.isFinite(parsed) ? parsed : 100;
+    return Number.isFinite(parsed) ? parsed : bookCollapseHours(1);
   } catch (_) {
-    return 100;
+    return bookCollapseHours(1);
   }
 }
 

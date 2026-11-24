@@ -3,6 +3,7 @@ import { buildOutcomesContext, executionModeOptions } from './context-outcomes.m
 import { gearGrantRows } from './gear-grants.mjs';
 import { buildAsTriggerContext } from './context-as-triggers.mjs';
 import { buildOnHitContext } from './context-on-hit.mjs';
+import { buildAmmunitionContext } from './context-ammunition.mjs';
 import { buildEnchantmentLedgerContext } from './context-blueprint.mjs';
 import { brokenStateOf } from '../../documents/item/enchantments.mjs';
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
@@ -61,6 +62,7 @@ export function buildGearContext(context, item) {
   buildBaseDamageContext(context, { ownStatLabel: "Skill's stat" });
   buildAsTriggerContext(context);
   buildOnHitContext(context);
+  buildAmmunitionContext(context);
   buildEnchantmentLedgerContext(context, context.item);
 
   context.hasGearGrantsConfigured = context.gearGrantRows.length > 0;

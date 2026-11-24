@@ -4,7 +4,7 @@
  * createElement and textContent, so a pet's name or attitude never goes through innerHTML.
  */
 import { readFlag } from '../../utils/flags.mjs';
-import { readCheckRecord } from '../../utils/roll/check-assists.mjs';
+import { readCheckRecord, isSuccessOutcome } from '../../utils/roll/check-assists.mjs';
 import { PET_ATTITUDES, PET_CHECK_KINDS, PET_GUIDANCE } from '../../data/rules/pet-rules.mjs';
 import { PET_RESULT_FLAG } from '../../documents/actor/pet-checks.mjs';
 import { PET_THROWN_FLAG, ridingCardInfo } from '../../documents/actor/pet-thrown.mjs';
@@ -60,6 +60,9 @@ export function renderPetCheck(root, message) {
   const result = readFlag(message, PET_RESULT_FLAG);
   if (result && typeof result.guidance === 'string') {
     block.append(el(doc, 'p', 'cog-pet-check__guidance', `${PET_GUIDANCE[result.guidance]?.badge ?? ''} ${GUIDANCE_LINES[result.guidance] ?? ''}`.trim()));
+  } else if (result?.command) {
+    const together = Number(result.command.count) > 1 ? `It and ${Number(result.command.count) - 1} ${Number(result.command.count) === 2 ? 'copy' : 'copies'} follow the new command.` : 'It follows the new command.';
+    block.append(el(doc, 'p', 'cog-pet-check__command', isSuccessOutcome(result.outcome) ? `[COMMANDED] ${together}` : 'No new command: it keeps its last one.'));
   } else if (result?.stale === true) {
     block.append(el(doc, 'p', 'cog-pet-check__result', 'Not counted: a later attempt had already settled.'));
   } else if (result) {

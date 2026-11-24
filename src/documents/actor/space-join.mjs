@@ -5,29 +5,21 @@
  * the group past the ranks in the book, asks a Rule Break and then works. Either owner, or the GM, detaches. Detaching
  * deletes nothing. A player who cannot write the space asks the GM through the `spaceLink` relay.
  */
-import { confirmRuleBreak, ruleBreakUpdate } from '../../utils/rule-break.mjs';
+import { confirmRuleBreak, ruleBreakUpdate, askOptions } from '../../utils/rule-break.mjs';
 import { registerRelayAction, requestRelay } from '../../utils/gm-relay.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { sameParty } from '../../utils/combat/party.mjs';
 import { rankFromPoints, spaceRules } from '../../data/rules/space-rank-rules.mjs';
-import { canWriteSpace, crawlerDoc, crawlerRef, resolveSpace, spaceListsRef, userOwnsActor } from './personal-space-links.mjs';
-import { joinedLinks, spaceGroup } from './space-group.mjs';
-import { payForSpace } from './space-purchases.mjs';
+import { canWriteSpace, crawlerDoc, crawlerRef, resolveSpace, spaceLinksCrawler, spaceListsRef, userOwnsActor } from './personal-space-links.mjs';
+import { joinedLinks, joinText, pastBookText, spaceGroup } from './space-group.mjs';
+import { confirmShortfall, payForSpace } from './space-purchases.mjs';
 
 /** The relay action a player's join or detach goes through when they cannot write the space. */
 const RELAY_ACTION_SPACE_LINK = 'spaceLink';
 
 const OPS = Object.freeze({ join: 'join', detach: 'detach' });
 
-/** A `COG.SpaceJoin` string (the English fallback serves a Node run with no catalogue). */
-const joinText = (key, data, fallback) => {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(`COG.SpaceJoin.${key}`) && typeof i18n.format === 'function') return i18n.format(`COG.SpaceJoin.${key}`, data);
-  return fallback;
-};
-
 const ownerOf = (space) => crawlerDoc(resolveActorByUuid(space?.system?.ownerUuid));
-const askOptions = (options) => ({ ruleBreak: options.ruleBreak === true, interactive: options.interactive });
 const inGroup = (group, space) => group.members.some(member => member === space || (member.uuid && member.uuid === space.uuid));
 
 /** Whether this user may join `space` to another space: the GM, or the player who owns the space's owner crawler. */
@@ -108,15 +100,86 @@ function relayRefusal(payload, requester) {
   return mayDetachSpaces(space, target, requester) ? '' : 'owner';
 }
 
+/**
+ * What joining `space` to `target` breaks, worked out here from the documents: the party and occupant rule, and a group
+ * taken past the ranks in the book. `reason` is the sentences the stamp records.
+ * @returns {{ broken: boolean, reason: string }}
+ */
+function joinBreaks(space, target) {
+  const found = joinProblems(space, target);
+  const sentences = [];
+  if (found.notParty || found.notOccupant) sentences.push(problemText(space, target, found));
+  const mine = spaceGroup(space);
+  const theirs = spaceGroup(target);
+  const rank = rankFromPoints(mine.points + theirs.points);
+  const { bookMaxRank } = spaceRules();
+  if (rank > bookMaxRank && rank > mine.rank && rank > theirs.rank) {
+    sentences.push(pastBookText(rank, bookMaxRank));
+  }
+  return { broken: sentences.length > 0, reason: sentences.join(' ') };
+}
+
+/**
+ * Run a relayed join on the GM: the GM recomputes what the join breaks and records that, never the payload's `ruleBreak`
+ * and `reason`. The payload's `ruleBreak` only says the requester confirmed a break; a join that breaks a rule they did
+ * not confirm is refused (`unconfirmed`), and a confirmation for a join that breaks nothing stamps nothing.
+ */
+async function applyJoinOnGM(payload, requester) {
+  const reason = relayRefusal(payload, requester);
+  if (reason) return { ok: false, reason };
+  const space = resolveSpace(payload.spaceUuid);
+  const target = resolveSpace(payload.targetUuid);
+  const found = joinBreaks(space, target);
+  const confirmed = payload.ruleBreak === true;
+  if (found.broken && !confirmed) return { ok: false, reason: 'unconfirmed' };
+  // The connector: the GM takes it from the payer (a GM may join with no payer: a grant)
+  const payer = crawlerDoc(resolveActorByUuid(payload.payerUuid));
+  if (!requester?.isGM && !(payer?.type === 'crawler' && spaceLinksCrawler(space, payer) && userOwnsActor(payer, requester))) {
+    return { ok: false, reason: 'payer' };
+  }
+  let pay = { ok: true, ruleBreak: false, paid: 0 };
+  if (payer) {
+    pay = await payForSpace(space, payer, spaceRules().connectorPrice, 'The join connector', { ruleBreak: confirmed, interactive: false });
+    if (!pay.ok) return { ok: false, reason: 'unconfirmed' };
+  }
+  const ruleBreak = found.broken || pay.ruleBreak;
+  try {
+    await writeJoin(space, target, ruleBreak, found.reason || 'Joined as a Rule Break');
+  } catch (err) {
+    if (pay.paid > 0) await payer.update({ 'system.currency.gold': Number(payer.system?.currency?.gold || 0) + pay.paid });
+    throw err;
+  }
+  return { ok: true, ruleBreak, paid: pay.paid };
+}
+
+/**
+ * A join from a client that cannot write the space: the shortfall question is asked here and nothing is taken; the GM
+ * takes the connector price from the payer and records the break (`applyJoinOnGM`).
+ * @returns {Promise<{ ok: boolean, ruleBreak: boolean, paid: number, rank: number, reason?: string }>}
+ */
+async function joinPaidOnGM(space, target, payer, ruleBreak, options) {
+  const none = (reason) => ({ ok: false, ruleBreak: false, paid: 0, rank: spaceGroup(space).rank, reason });
+  const doc = crawlerDoc(payer);
+  if (!(doc?.type === 'crawler' && spaceLinksCrawler(space, doc) && userOwnsActor(doc, globalThis.game?.user))) return none('payer');
+  const short = await confirmShortfall(doc, spaceRules().connectorPrice, 'The join connector', askOptions(options));
+  if (short === 'gold') return none('gold');
+  const confirmed = ruleBreak || short === 'break';
+  const reply = await requestRelay(
+    RELAY_ACTION_SPACE_LINK,
+    { op: OPS.join, spaceUuid: space.uuid, targetUuid: target.uuid, payerUuid: crawlerRef(doc), ruleBreak: confirmed },
+    { direct: false }
+  );
+  if (!reply.ok || reply.result?.ok === false) return none(String(reply.result?.reason ?? reply.reason ?? 'refused'));
+  return { ok: true, ruleBreak: reply.result?.ruleBreak === true, paid: Number(reply.result?.paid) || 0, rank: spaceGroup(space).rank };
+}
+
 registerRelayAction(RELAY_ACTION_SPACE_LINK, {
   authorize: (payload, requester) => !!requester && relayRefusal(payload, requester) === '',
   apply: async (payload, requester) => {
+    if (payload?.op === OPS.join) return applyJoinOnGM(payload, requester);
     const reason = relayRefusal(payload, requester);
     if (reason) return { ok: false, reason };
-    const space = resolveSpace(payload.spaceUuid);
-    const target = resolveSpace(payload.targetUuid);
-    if (payload.op === OPS.join) await writeJoin(space, target, payload.ruleBreak === true, String(payload.reason ?? ''));
-    else await writeDetach(space, target);
+    await writeDetach(resolveSpace(payload.spaceUuid), resolveSpace(payload.targetUuid));
     return { ok: true };
   }
 });
@@ -185,7 +248,7 @@ export async function joinSpace(space, target, payer, options = {}) {
   const rank = rankFromPoints(mine.points + theirs.points);
   const { bookMaxRank } = spaceRules();
   if (rank > bookMaxRank && rank > mine.rank && rank > theirs.rank) {
-    const past = joinText('PastBook', { rank, max: bookMaxRank }, `Rank ${rank} is past the ranks in the book (they stop at ${bookMaxRank}).`);
+    const past = pastBookText(rank, bookMaxRank);
     const res = await confirmRuleBreak({
       title: 'Rank Past the Book',
       message: `${past} ${joinText('JoinAnyway', {}, 'Join anyway as a Rule Break?')}`,
@@ -197,6 +260,9 @@ export async function joinSpace(space, target, payer, options = {}) {
     reasons.push(past);
   }
 
+  if (!canWriteSpace(space)) {
+    return payer ? joinPaidOnGM(space, target, payer, ruleBreak, options) : none('notGM');
+  }
   const pay = await payForSpace(space, payer, spaceRules().connectorPrice, 'The join connector', options);
   if (!pay.ok) return none(pay.reason);
   ruleBreak ||= pay.ruleBreak;

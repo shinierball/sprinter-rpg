@@ -121,7 +121,7 @@ export function parseUpgradeTextToRankBreak(text, knownDebuffs = []) {
     const name = escapeRegExp(dName);
     const regex = new RegExp(`(?<![\\w])${name}(?![\\w])(?:\\s+Debuff)?`, 'i');
     if (regex.test(t)) {
-      const isHealing = new RegExp(`(?:heal|mend|remove|cure|end|avoid)\\w*\\s+(?:an?\\s+)?(?:Long-Term\\s+)?(?:Minor\\s+Injury|Major\\s+Injury|${name})`, 'i').test(t);
+      const isHealing = new RegExp(`(?:(?:heal|mend|remove|cure|end|avoid)\\w*|instead\\s+of)\\s+(?:an?\\s+)?(?:Long-Term\\s+)?(?:Minor\\s+Injury|Major\\s+Injury|${name})`, 'i').test(t);
       const isHeldItems = dName.toLowerCase() === 'held' && /held\s+items?/i.test(t);
       if (!isHealing && !isHeldItems) {
         result.debuff = ref;
@@ -183,6 +183,17 @@ export function withParsedRankBreaks(system, knownDebuffs = []) {
 }
 
 /**
+ * One parsed field of a merged tier. A field the tier lists in `noParse` is the authored value, or `''` when it has none:
+ * the upgrade text never fills it (it names a condition on the user, not one inflicted). `noParse` stays on the tier so
+ * the pack build's second pass over the redacted spec honours it too.
+ */
+function authoredField(existing, field, parsedValue) {
+  const authored = existing[field];
+  if (authored !== undefined && authored !== null && authored !== '') return String(authored).trim();
+  return Array.isArray(existing.noParse) && existing.noParse.includes(field) ? '' : parsedValue;
+}
+
+/**
  * Rank breaks with the structured fields the upgrade text yields, where the authored break leaves them empty
  * (the pack build pass; nothing calls this at runtime).
  * @param {object} [existingRankBreaks={}]
@@ -212,7 +223,7 @@ function mergeParsedRankBreaks(existingRankBreaks = {}, rawUpgrades = {}, knownD
       baseDiceCountMod: existing.baseDiceCountMod !== undefined && existing.baseDiceCountMod !== '' ? String(existing.baseDiceCountMod).trim() : parsed.baseDiceCountMod,
       rankDamageDice: existing.rankDamageDice !== undefined && existing.rankDamageDice !== null && existing.rankDamageDice !== '' && Number.isFinite(Number(existing.rankDamageDice)) ? Number(existing.rankDamageDice) : parsed.rankDamageDice,
       buffsResistances: existing.buffsResistances !== undefined && existing.buffsResistances !== '' ? String(existing.buffsResistances).trim() : parsed.buffsResistances,
-      debuff: existing.debuff !== undefined && existing.debuff !== '' ? String(existing.debuff).trim() : parsed.debuff,
+      debuff: authoredField(existing, 'debuff', parsed.debuff),
       notes: existing.notes !== undefined && existing.notes !== '' ? String(existing.notes).trim() : (parsed.notes || ''),
       contest: {
         dcBonus: existing.contest?.dcBonus !== undefined ? Number(existing.contest.dcBonus) || 0 : 0,

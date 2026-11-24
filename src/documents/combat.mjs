@@ -32,9 +32,10 @@ import {
   currentStep, currentStepDefinition, isSurpriseRound, saveSurpriseRound, interruptWindowOpen,
   toggleSurpriseRound, setCombatStep, nextStep, goToStep, previousStep, stepFiveCleanUp
 } from './combat/steps.mjs';
-import { assignPhaseInitiative, rollInitiative, sortCombatants } from './combat/initiative.mjs';
+import { assignPhaseInitiative, enterCombatant, rollInitiative, sortCombatants } from './combat/initiative.mjs';
+import { pvpRoundsActive, rollPvpInitiative } from './combat/pvp-rounds.mjs';
 import {
-  getCombatantActions, snapshotRoundActions, recordCombatantAction, clearCombatantAction,
+  getCombatantActions, hasEvadeAction, snapshotRoundActions, recordCombatantAction, clearCombatantAction,
   spendAIFavorBonusAction, resetRoundActions, countCrawlerSideAllies, getMaxCrawlerAlliesSeen
 } from './combat/action-ledger.mjs';
 import { getCalledPlays, discardCalledPlay, storeCalledPlay, consumeCalledPlay } from './combat/called-plays.mjs';
@@ -207,14 +208,13 @@ export class COGCombat extends BaseCombat {
     this._sortCombatants = this._sortCombatants.bind(this);
   }
 
-  /** @override */
-  async _onCreateDescendantDocuments(parent, collection, documents, data, options, userId) {
-    if (typeof super._onCreateDescendantDocuments === 'function') {
-      await super._onCreateDescendantDocuments(parent, collection, documents, data, options, userId);
-    }
-    if (collection === 'Combatant') {
-      await this.assignPhaseInitiative();
-    }
+  /**
+   * Foundry calls this once per added combatant, on one designated GM (`Combat#_onEnter`).
+   * @override
+   * @param {object} combatant
+   */
+  async _onEnter(combatant) {
+    return enterCombatant(this, combatant);
   }
 
   /** @override */
@@ -258,6 +258,11 @@ export class COGCombat extends BaseCombat {
    */
   getCombatantActions(combatantOrId, round = null) {
     return getCombatantActions(combatantOrId, this, round);
+  }
+
+  /** True when the combatant has spent the round's Evade Action (core pp. 81, 90). @returns {boolean} */
+  hasEvadeAction(combatant, round = null) {
+    return hasEvadeAction(this, combatant, round);
   }
 
   /** Snapshot current combatant actions for a round into the roundHistory flag. @returns {Promise<object>} */
@@ -349,6 +354,7 @@ export class COGCombat extends BaseCombat {
       await super.startCombat();
     }
     await this.assignPhaseInitiative();
+    if (pvpRoundsActive(this)) await rollPvpInitiative(this);
     return this;
   }
 
@@ -451,6 +457,7 @@ export class COGCombat extends BaseCombat {
     await this.setCombatStep(1);
     await this.resetRoundActions();
     await this.assignPhaseInitiative();
+    if (pvpRoundsActive(this)) await rollPvpInitiative(this);
     return this;
   }
 

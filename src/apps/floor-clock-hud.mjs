@@ -17,7 +17,26 @@ import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { getSingleton } from './singleton.mjs';
 import { advanceDungeonTime, bumpSceneEpoch, getSceneEpoch, SCENE_EPOCH_REASONS } from '../documents/actor/dungeon-time.mjs';
-import { formatSeconds, SECONDS_PER_HOUR } from '../utils/time/timing.mjs';
+import { dayIndex, formatSeconds, SECONDS_PER_HOUR } from '../utils/time/timing.mjs';
+import { exploringHazardsOn, travelPace, travelHoursOn, TRAVEL_PACE_SETTING } from '../utils/exploring/exploring-settings.mjs';
+import { TRAVEL_PACES, travelPaceLine } from '../data/rules/travel-pace.mjs';
+import { langText } from '../utils/lang-text.mjs';
+import { SYSTEM_ID } from '../constants.mjs';
+import { openHarshConditionsDialog } from './harsh-conditions.mjs';
+import { travelHours, longTravelText } from '../documents/actor/travel.mjs';
+
+const PACE_TEXT = Object.freeze({
+  'COG.TravelPace.Label': 'Travel pace',
+  'COG.TravelPace.None': 'Not travelling',
+  'COG.TravelPace.Fast': 'Fast',
+  'COG.TravelPace.Normal': 'Normal',
+  'COG.TravelPace.Slow': 'Slow',
+  'COG.TravelPace.FastEffect': 'Disadvantage on Perception and Survival checks to notice danger or navigate; no Hide in Shadows or other concealment.',
+  'COG.TravelPace.NormalEffect': 'No change to checks.',
+  'COG.TravelPace.SlowEffect': 'Advantage on Perception and Survival checks to notice danger or navigate.',
+  'COG.TravelPace.Hint': 'With "Stock attack reasons open Attack Options" off, the pace line shows in a Perception or Survival roll window only when the window opens for another reason.'
+});
+const paceText = langText(PACE_TEXT);
 
 /** "5" for whole hours, "5h 30m" with a fraction. The timer is the hours left; world time moves it down. */
 function hoursText(hours) {
@@ -38,7 +57,10 @@ export class COGFloorClockHUD extends COGToolApp {
       adjustTimer: COGFloorClockHUD.#onAdjustTimer,
       setTimer: COGFloorClockHUD.#onSetTimer,
       newScene: COGFloorClockHUD.#onNewScene,
-      toggleZeroZone: COGFloorClockHUD.#onToggleZeroZone
+      toggleZeroZone: COGFloorClockHUD.#onToggleZeroZone,
+      harshConditions: COGFloorClockHUD.#onHarshConditions,
+      setTravelPace: COGFloorClockHUD.#onSetTravelPace,
+      travelHours: COGFloorClockHUD.#onTravelHours
     }
   };
 
@@ -72,7 +94,48 @@ export class COGFloorClockHUD extends COGToolApp {
     // The pill is GM-only: crawlers never see the words (617).
     context.zeroZone = Boolean(context.isGM) && worldZeroZone();
     context.zeroZoneLabel = globalThis.game?.i18n?.localize?.('COG.Hud.ZeroZonePill') ?? 'ZERO ZONE';
+    context.showHarshConditions = Boolean(context.isGM) && exploringHazardsOn();
+    context.harshConditionsLabel = globalThis.game?.i18n?.localize?.('COG.HarshConditions.Button') ?? 'Harsh Conditions';
+    context.harshConditionsHint = globalThis.game?.i18n?.localize?.('COG.HarshConditions.ButtonHint') ?? 'Falling and other hazards the GM triggers';
+    Object.assign(context, this.#travelPaceContext(Boolean(context.isGM)));
+    Object.assign(context, this.#longTravelContext(Boolean(context.isGM)));
     return context;
+  }
+
+  /**
+   * The travel pace row (core p. 71): GM only, with its labels and options precomputed.
+   * @param {boolean} isGM
+   */
+  #travelPaceContext(isGM) {
+    if (!isGM || !exploringHazardsOn()) return { showTravelPace: false };
+    const pace = travelPace();
+    const paceOption = (value, label) => ({ value, label, selected: pace === value });
+    return {
+      showTravelPace: true,
+      travelPaceLabel: paceText('COG.TravelPace.Label'),
+      travelPaceOptions: [
+        paceOption('', paceText('COG.TravelPace.None')),
+        ...Object.keys(TRAVEL_PACES).map((id) => paceOption(id, paceText(`COG.TravelPace.${TRAVEL_PACES[id].label}`)))
+      ],
+      travelPaceLine: travelPaceLine(pace),
+      travelPaceEffect: pace ? paceText(`COG.TravelPace.${TRAVEL_PACES[pace].label}Effect`) : '',
+      travelPaceHint: paceText('COG.TravelPace.Hint')
+    };
+  }
+
+  /**
+   * The Travel hours control (core p. 71): GM only.
+   * @param {boolean} isGM
+   */
+  #longTravelContext(isGM) {
+    if (!isGM || !exploringHazardsOn()) return { showLongTravel: false };
+    const today = travelHoursOn(dayIndex(globalThis.game?.time?.worldTime));
+    return {
+      showLongTravel: true,
+      longTravelLabel: longTravelText('COG.LongTravel.Label'),
+      longTravelButton: longTravelText('COG.LongTravel.Button'),
+      longTravelToday: longTravelText('COG.LongTravel.Today', { hours: today })
+    };
   }
 
   /** Mount into the top interface host instead of the document body. @override */
@@ -138,6 +201,22 @@ export class COGFloorClockHUD extends COGToolApp {
     }
   }
 
+  static async #onSetTravelPace(event, target) {
+    if (!globalThis.game?.user?.isGM) return;
+    const value = String(target.value ?? '');
+    if (value && !Object.hasOwn(TRAVEL_PACES, value)) return;
+    await globalThis.game.settings.set(SYSTEM_ID, TRAVEL_PACE_SETTING, value);
+    await this.render();
+  }
+
+  static async #onTravelHours(event, target) {
+    const input = target.parentElement?.querySelector?.('input[data-travel-hours]');
+    const hours = Number(input?.value);
+    if (!Number.isFinite(hours) || hours <= 0) return;
+    await travelHours(hours);
+    await this.render();
+  }
+
   static async #onAdjustTimer(event, target) {
     const delta = parseFloat(target.dataset.delta);
     if (!Number.isFinite(delta)) return;
@@ -154,6 +233,10 @@ export class COGFloorClockHUD extends COGToolApp {
 
   static async #onToggleZeroZone() {
     await toggleWorldZeroZone();
+  }
+
+  static async #onHarshConditions() {
+    await openHarshConditionsDialog();
   }
 
   static async #onNewScene() {

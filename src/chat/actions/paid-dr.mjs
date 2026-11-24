@@ -8,6 +8,7 @@ import { collectPaidDr } from '../../utils/roll/damage-modifiers.mjs';
 import { actionTagsOf, buildRollContext, parseRollContext } from '../../utils/roll/roll-context.mjs';
 import { addAiFavor } from './ai-favor-tally.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 
 /** The most spend buttons the dialog shows (a button per point, 0 to this). */
 const PAID_DR_MAX_BUTTONS = 5;
@@ -20,11 +21,7 @@ const TEMPLATES = {
   'COG.PaidDr.Spend': 'Spend {n}'
 };
 
-function t(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return TEMPLATES[key].replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+const t = langText(TEMPLATES);
 
 /**
  * Ask how many points to spend. Returns 0 on "none", Cancel or a closed window.

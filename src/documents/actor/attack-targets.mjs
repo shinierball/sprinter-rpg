@@ -7,7 +7,7 @@ import { getCurrentFloor } from './actor-environment.mjs';
 import { getCOGStatModifier } from './actor-constants.mjs';
 import { STAT_KEYS } from '../../models/actors/actor-derivation.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { OFFER_ROLES } from '../../utils/tag/tag-mechanics.mjs';
+import { OFFER_ROLES, CHARMED_TAG } from '../../utils/tag/tag-mechanics.mjs';
 import { collectRollAdvantage, collectCheckModifiers, collectToHitModifiers, collectIncomingAdvantage } from '../../utils/roll/damage-modifiers.mjs';
 import { buildRollContext, resolveRowAdvantage, rollContextDataAttr, actionTagsOf } from '../../utils/roll/roll-context.mjs';
 import { classifyAttackOutcome, collectInterruptOffers, interruptEffectsText } from '../../utils/combat/interrupts.mjs';
@@ -20,8 +20,15 @@ import { clickTargetsOf } from '../../utils/roll/scalars.mjs';
 import { findOutOfRange, rangeText } from '../../utils/attack/attack-range.mjs';
 import { isHeadOn, occupantEvadeLine, vehicleEvadeDifficulty, vehicleTargetOf } from '../../utils/vehicle/vehicle-combat.mjs';
 import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
+import { isPlayerControlled, isPlayerCrawler } from '../../utils/combat/combat-sides.mjs';
+import { npcComparison, targetRowText } from '../../utils/combat/npc-vs-npc.mjs';
+import { collectActorTags } from '../active-tags.mjs';
 import { driverOf } from './vehicle-crew.mjs';
 import { COG_ROLL_OUTCOMES } from '../session/roll-outcomes.mjs';
+import { opposedDifficulty } from '../../data/rules/difficulty-rules.mjs';
+
+/** The outcome id of an Opposed Attack row: the target's Evade is still to be rolled. */
+const PVP_EVADE_OUTCOME = 'pvp_evade';
 
 const vehicleText = (key, fallback) => {
   const text = globalThis.game?.i18n?.localize?.(key);
@@ -198,6 +205,26 @@ export function attackTargetEntries(actor, options = {}) {
 }
 
 /**
+ * Whether the Opposed Attack rule applies (core p. 87): a crawler or mercenary attacking a player's crawler.
+ * @param {object} attacker
+ * @param {object} target
+ * @returns {boolean}
+ */
+function isPvpTarget(attacker, target) {
+  return (attacker?.type === 'crawler' || attacker?.type === 'mercenary') && isPlayerCrawler(target);
+}
+
+/**
+ * A Mob forced this attack when its attacker is charmed (core p. 87): the target's Evade then costs no Action. No structured
+ * data says "a Mob forced it", so the tag is the approximation; any other forced attack is the GM's to clear from the tracker.
+ * @param {object|null} attacker
+ * @returns {boolean}
+ */
+export function isForcedAttacker(attacker) {
+  return collectActorTags(attacker).has(CHARMED_TAG);
+}
+
+/**
  * Determine and evaluate attack hits against active targets
  * @param {Roll} roll
  * @param {object} [options={}]
@@ -250,6 +277,25 @@ export function resolveAttackTargets(actor, roll, options = {}) {
       // 545: a mob's attack on a vehicle hits unless the driver chooses to evade with a Driving check.
       const driver = target.type === 'mount_vehicle' ? driverOf(target) : null;
       const own = options.mobDifficulty ? mobTargetDifficulty(options.mobDifficulty, target, actor, attackTags) : null;
+      // Core p. 83: an NPC on both sides compares the Attack with the Evade instead of hitting automatically.
+      if (!driver && target.type !== 'mount_vehicle' && !isPlayerControlled(target)) {
+        const attack = own?.dc ?? mobEvadeDC;
+        const evade = typeof target.getEvadeTargetDC === 'function'
+          ? target.getEvadeTargetDC(currentFloor, { attacker: actor, headOn })
+          : opposedDifficulty({ mod: target.system?.abilities?.dex?.mod, floor: currentFloor });
+        const { isHit } = npcComparison({ attack, evade });
+        return {
+          actor: target,
+          actorId: target.id,
+          actorName: target.name,
+          tokenId: token?.id ?? token?.document?.id ?? null,
+          targetDC: attack,
+          isHit,
+          diff: attack - evade,
+          outcome: targetRowText(isHit ? 'COG.TargetRows.NpcVsNpc.Hits' : 'COG.TargetRows.NpcVsNpc.Misses'),
+          npcVsNpc: { attack, evade }
+        };
+      }
       return {
         actor: target,
         actorId: target.id,
@@ -265,9 +311,28 @@ export function resolveAttackTargets(actor, roll, options = {}) {
 
     const targetDC = typeof target.getEvadeTargetDC === 'function'
       ? target.getEvadeTargetDC(currentFloor, { attacker: actor, headOn })
-      : (10 + (target.system?.abilities?.dex?.mod ?? 0) + currentFloor);
+      : opposedDifficulty({ mod: target.system?.abilities?.dex?.mod, floor: currentFloor });
     // Rows that depend on this target add to its comparison only; the d20 was rolled once.
     const rowHit = toHitRows.length > 0 ? toHitForTarget(toHitRows, options.toHitContext, target, { targets: batch }) : { bonus: 0, lines: [] };
+    // Core p. 87: a player's crawler's Evade is rolled against the attack total (this row's bonus included). A Natural 1 stays
+    // a Critical Miss (p. 80) and an area Attack keeps the half-damage Evade (pp. 83-84): neither is Opposed.
+    if (options.isArea !== true && d20Face !== 1 && isPvpTarget(actor, target)) {
+      const opposedDC = (roll?.total ?? 0) + rowHit.bonus;
+      return {
+        toHitBonus: rowHit.bonus,
+        toHitLines: rowHit.lines,
+        actor: target,
+        actorId: target.id,
+        actorName: target.name,
+        tokenId: token?.id ?? token?.document?.id ?? null,
+        targetDC: opposedDC,
+        isHit: true,
+        diff: 0,
+        outcome: targetRowText('COG.TargetRows.Pvp.Evade', { dc: opposedDC }),
+        outcomeId: PVP_EVADE_OUTCOME,
+        pvp: true
+      };
+    }
     const { isHit, diff, outcome, outcomeId } = classifyAttackOutcome((roll?.total ?? 0) + rowHit.bonus, targetDC, d20Face);
     // A Near Miss on someone aboard a vehicle hits the vehicle (3.44e): the card offers a button that targets it.
     const aboard = target.type === 'mount_vehicle' ? null : vehicleTargetOf(target);
@@ -300,15 +365,18 @@ export function resolveAttackTargets(actor, roll, options = {}) {
       const diffStr = tr.diff >= 0 ? `+${tr.diff}` : `${tr.diff}`;
       const lines = (tr.toHitLines ?? []).map(toHitLineText);
       if (tr.outcome === 'Critical Miss') lines.push('Natural 1: automatic miss');
+      if (tr.npcVsNpc) lines.push(targetRowText('COG.TargetRows.NpcVsNpc.Line', { attack: tr.npcVsNpc.attack, evade: tr.npcVsNpc.evade, result: tr.outcome.toLowerCase() }));
       if (tr.outOfRange) lines.push(rangeText('COG.AttackRange.RowLine', { feet: tr.rangeFeet, range: tr.rangeLimit }));
       const isAmazing = isAmazingOutcome(tr.outcomeId);
       if (isAmazing) lines.push(...asLines);
       const linesHtml = lines.length > 0
         ? `<div class="cog-target-tohit-lines cog-text-secondary" style="flex-basis: 100%; font-size: 9px;">${escapeAttr(lines.join(', '))}</div>`
         : '';
-      let outcomeBadge = tr.outOfRange ? rangeText('COG.AttackRange.Badge') : (tr.outcome === 'Auto-Hit' ? 'AUTO-HIT' : `${tr.outcome.toUpperCase()} (${diffStr})`);
+      const plainBadge = tr.outcome === 'Auto-Hit' || tr.pvp || tr.npcVsNpc;
+      let outcomeBadge = tr.outOfRange ? rangeText('COG.AttackRange.Badge') : (tr.outcome === 'Auto-Hit' ? 'AUTO-HIT' : (plainBadge ? tr.outcome.toUpperCase() : `${tr.outcome.toUpperCase()} (${diffStr})`));
       if (isAmazing) outcomeBadge += ` ${amazingCardText('COG.AmazingSuccess.Card.FloorBadge', { floor: currentFloor })}`;
       const vehicleButtons = `${tr.hitsVehicle ? `<button type="button" class="cog-vehicle-near-miss-btn" data-action="crawlerHitVehicle" data-vehicle-uuid="${escapeAttr(tr.hitsVehicle)}" style="flex-basis: 100%; cursor: pointer;"><i class="fa-solid fa-car-burst"></i> ${escapeAttr(vehicleText('COG.Vehicle.NearMiss.Button', 'Hits the vehicle'))}</button>` : ''}`
+        + `${tr.npcVsNpc ? `<button type="button" class="cog-npc-table-btn" data-action="crawlerNpcTable" style="flex-basis: 100%; cursor: pointer;"><i class="fa-solid fa-dice-d20"></i> ${escapeAttr(targetRowText('COG.TargetRows.NpcVsNpc.Button'))}</button>` : ''}`
         + `${tr.vehicleEvade ? `<button type="button" class="cog-vehicle-evade-btn" data-action="crawlerVehicleEvade" data-vehicle-uuid="${escapeAttr(tr.vehicleEvade.vehicleUuid)}" data-driver-uuid="${escapeAttr(tr.vehicleEvade.driverUuid)}" data-target-dc="${escapeAttr(tr.targetDC)}" data-attacker-name="${escapeAttr(actor.name)}" style="flex-basis: 100%; cursor: pointer;"><i class="fa-solid fa-car-side"></i> ${escapeAttr(vehicleText('COG.Vehicle.Evade.Button', 'Driver: evade with a Driving check'))} (${escapeAttr(tr.targetDC)})</button>` : ''}`;
       return `
         <div class="cog-target-eval-row ${hit ? 'hit' : 'miss'} cog-bg-dyn" data-target-id="${escapeAttr(tr.actorId)}" style="--cog-bg-dyn: ${hit ? 'var(--cog-success-tint)' : 'var(--cog-danger-tint)'}; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 6px; border: 1px solid ${hit ? 'var(--cog-success)' : 'var(--cog-accent)'}; border-radius: 3px; margin-top: 3px;">
@@ -436,9 +504,12 @@ export function interruptPromptsHtml(actor, targetResults, options = {}) {
 export function evadeButtonHtml(actor, roll, currentFloor, options = {}) {
   // A crawler's single-target attack has no Evade (the target's DC is its own); an Area Attack lets the crawlers
   // caught in it Evade for half damage (book p. 85), against the attack total.
-  if ((actor.type === 'crawler' || actor.type === 'mercenary') && options.isArea !== true) return '';
+  const pvpDC = typeof options.pvpDC === 'number' ? options.pvpDC : null;
+  if ((actor.type === 'crawler' || actor.type === 'mercenary') && options.isArea !== true && !Number.isFinite(pvpDC)) return '';
   const isMob = actor.type === 'mob';
-  const targetDC = options.targetDC !== undefined && options.targetDC !== null
+  const targetDC = Number.isFinite(pvpDC)
+    ? pvpDC
+    : options.targetDC !== undefined && options.targetDC !== null
     ? Number(options.targetDC)
     : (isMob
         ? getAttackDifficulty(actor, options.item ?? null, currentFloor)
@@ -451,7 +522,7 @@ export function evadeButtonHtml(actor, roll, currentFloor, options = {}) {
   // A disadvantaged mob attack gives each target one free Evade (the handler reads the card, never this label).
   const displayLabel = isMob
     ? mobAttackText(options.freeEvade === true ? 'COG.MobAttack.EvadeButtonFree' : 'COG.MobAttack.EvadeButton', { dc: targetDC })
-    : `Roll Evade vs Attack (${targetDC})`;
+    : (Number.isFinite(pvpDC) ? targetRowText(isForcedAttacker(actor) ? 'COG.TargetRows.Pvp.ButtonFree' : 'COG.TargetRows.Pvp.Button', { dc: targetDC }) : `Roll Evade vs Attack (${targetDC})`);
   return `
     <div class="cog-evade-btn-container" style="margin-top: 6px;">
       <button type="button" class="cog-evade-roll-btn cog-bg-info-fill cog-text-on-fill" data-action="crawlerRollEvade" data-attacker-id="${escapeAttr(actor.id)}" data-attacker-name="${escapeAttr(actor.name)}" data-target-dc="${escapeAttr(targetDC)}" data-attack-total="${escapeAttr(targetDC)}" data-floor="${escapeAttr(currentFloor)}"${areaAttr} style="width: 100%; padding: 4px 8px; font-size: 11px; cursor: pointer; border: 1px solid var(--cog-info-fill); border-radius: 3px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-family: var(--font-primary, 'Oswald', sans-serif); text-transform: uppercase;">
@@ -462,21 +533,23 @@ export function evadeButtonHtml(actor, roll, currentFloor, options = {}) {
 }
 
 /**
- * The Advantage shift a foe brings to an Opposed Difficulty set against `roller`, as it is now: a mob's check quality in the
- * context of a check of `statKey` (0 for any other foe, or none).
+ * What a foe brings to an Opposed Difficulty set against `roller`, as it is now: a mob's check quality in the context of a
+ * check of `statKey`, its Advantage `shift` and its `flat` check modifier (a penalty lowers the Difficulty, core p. 96);
+ * both 0 for any other foe, or none.
  * @param {object|null} foe
  * @param {string} statKey a Stat key; anything else is judged with no Stat
  * @param {object|null} [roller]
- * @returns {number}
+ * @returns {{ shift: number, flat: number }}
  */
-export function foeShiftFor(foe, statKey, roller = null) {
-  if (foe?.type !== 'mob') return 0;
+export function foeCheckEffectFor(foe, statKey, roller = null) {
+  if (foe?.type !== 'mob') return { shift: 0, flat: 0 };
   const stat = STAT_KEYS.includes(statKey) ? statKey : undefined;
   const context = buildRollContext({ actor: foe, phase: 'check', check: 'stat', stat, other: roller ?? undefined });
-  return mobDifficultyShift(foe, MOB_QUALITIES.check, { context }).shift;
+  const { shift, flat } = mobDifficultyShift(foe, MOB_QUALITIES.check, { context });
+  return { shift, flat };
 }
 
-/** For `standingStampFor`: reads the shift of the foe a standing Opposed Difficulty names, as it is when `roller` rolls (0 when the foe cannot be found). */
-export function standingFoeShiftFor(roller) {
-  return (standing) => foeShiftFor(resolveActorByUuid(standing?.foeUuid), standing?.stat, roller);
+/** For `standingStampFor`: reads the shift and flat modifier of the foe a standing Opposed Difficulty names, as it is when `roller` rolls (both 0 when the foe cannot be found). */
+export function standingFoeEffectFor(roller) {
+  return (standing) => foeCheckEffectFor(resolveActorByUuid(standing?.foeUuid), standing?.stat, roller);
 }

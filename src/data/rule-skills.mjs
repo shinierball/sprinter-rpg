@@ -5,5 +5,7 @@
  */
 export const RULE_SKILLS = Object.freeze({
   fatigueCheck: Object.freeze({ id: 'fatigueCheck', identifier: 'endurance', label: 'Fatigue check (grinding past the safe hours, long marches)' }),
-  appraisal: Object.freeze({ id: 'appraisal', identifier: 'determine-value', label: 'Item appraisal (inventory values)' })
+  fastPaceHide: Object.freeze({ id: 'fastPaceHide', identifier: 'hide-in-shadows', label: 'Hide in Shadows (shut out at a Fast travel pace)' }),
+  fastPaceSneak: Object.freeze({ id: 'fastPaceSneak', identifier: 'stealth', label: 'Stealth (shut out at a Fast travel pace)' }),
+  appraisal:Object.freeze({ id: 'appraisal', identifier: 'determine-value', label: 'Item appraisal (inventory values)' })
 });

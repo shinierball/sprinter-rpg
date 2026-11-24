@@ -11,7 +11,7 @@
  * a spec overrides), `move`, `dr`, `attacks` (`{ name, stat, damageDice, damageType }`), `tags`, `notes`,
  * `prototypeToken`, `flags`.
  */
-import { firstScalar, toStringList } from '../utils/first-scalar.mjs';
+import { firstScalar, proseText, toStringList } from '../utils/first-scalar.mjs';
 import { getCOGStatModifier } from '../documents/actor/actor-constants.mjs';
 import { registerPayloadDelegate } from './builders/item-payload.mjs';
 import { normalizeBaseDamage } from '../utils/damage/base-damage.mjs';
@@ -31,7 +31,7 @@ function wholeNumber(raw, fallback) {
 
 /** The embedded natural-attack Skill of an `attacks` entry. A pet's Ranks follow the Floor, so the stored Rank is 1. */
 function attackItem(raw) {
-  const name = String(firstScalar(raw?.name, '')).trim() || 'Natural Attack';
+  const name = proseText(raw?.name) || 'Natural Attack';
   const stat = STATS.includes(firstScalar(raw?.stat, '')) ? firstScalar(raw.stat) : 'str';
   const damageType = String(firstScalar(raw?.damageType, '')).trim() || 'Physical';
   const element = normalizeElementTag(damageType);
@@ -79,7 +79,7 @@ export function buildPetPayload(spec = {}) {
 
   const payload = {
     ...(input._id ? { _id: String(input._id) } : {}),
-    name: String(firstScalar(input.name, '')).trim() || 'New Pet Companion',
+    name: proseText(input.name) || 'New Pet Companion',
     type: 'pet',
     ...(input.img ? { img: String(firstScalar(input.img, '')) } : {}),
     system: {
@@ -99,7 +99,7 @@ export function buildPetPayload(spec = {}) {
         origin: sanitizePetOrigin(input.origin),
         ownerId: String(firstScalar(input.ownerId, '')).trim(),
         riderId: String(firstScalar(input.riderId, '')).trim(),
-        notes: String(firstScalar(input.notes, ''))
+        notes: proseText(input.notes)
       }
     }
   };

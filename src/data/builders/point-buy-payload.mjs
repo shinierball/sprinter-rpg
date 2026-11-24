@@ -13,7 +13,7 @@ import { findPointBuildEntry } from '../../content/point-build.mjs';
 import { getTagDefinition } from '../tag-definitions.mjs';
 import { DEFAULT_SIZE, sanitizeSizeId } from '../sizes.mjs';
 import { FORM_RACE_TAG, ARCHETYPE_TO_TAG } from '../tag-vocabulary.mjs';
-import { SILVER_EARTH_NOTE, getHeritage, sanitizeHeritageId } from '../rules/heritages.mjs';
+import { EARTH_CLASS_REQUIREMENT, SILVER_EARTH_NOTE, getHeritage, sanitizeHeritageId } from '../rules/heritages.mjs';
 import { validateGrantRow, validateStartingItem } from '../../models/items/grant-validation.mjs';
 import { requirementRowErrors } from '../../models/items/requirement-validation.mjs';
 import { normalizeBaseDamage } from '../../utils/damage/base-damage.mjs';
@@ -383,6 +383,11 @@ export function buildPointBuyPayload(spec = {}) {
   // Requirement rows cost no points. A row the validator rejects is left out and listed, never a hard block.
   const requirementRows = [];
   (Array.isArray(spec.requirements) ? spec.requirements : []).forEach((row, i) => { if (keepRequirement(row, `Requirement ${i + 1}`)) requirementRows.push(withoutEmptyOptions(structuredClone(row))); });
+  // An Earth Class is only for an Earth-based Race (core p. 142); a preset that carries the row keeps its one.
+  if (builderType === 'class' && spec.isEarthClass === true
+    && !requirementRows.some(row => JSON.stringify(row) === JSON.stringify(EARTH_CLASS_REQUIREMENT))) {
+    requirementRows.unshift(structuredClone(EARTH_CLASS_REQUIREMENT));
+  }
   for (const pool of Array.isArray(spec.statPools) ? spec.statPools : []) {
     if (statPoolCounts(pool)) perkRows.push({ path: 'system.grants', row: statPoolGrantRow(pool) });
   }

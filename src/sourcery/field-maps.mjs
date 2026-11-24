@@ -28,6 +28,7 @@ export const FIELD_MAPS = Object.freeze({
     NAME,
     // `as: 'text'` is the book's text; the hydrator renders it by the field's schema kind (an `HTMLField` gets paragraphs).
     { path: 'system.description', from: 'body', as: 'text' },
+    { path: 'system.limitations', from: 'fields.limitations', as: 'text' },
     ...RANK_NOTES,
     {
       path: 'system.upgrades',
@@ -41,7 +42,6 @@ export const FIELD_MAPS = Object.freeze({
         sep: ' ',
         parts: [
           { from: 'body', ifNoPath: 'system.description' },
-          { label: 'Limitations: ', from: 'fields.limitations' },
           { gen: 'range' }, { gen: 'cooldown' }, { gen: 'aiFavor' }, { gen: 'baseDamage' }
         ]
       },
@@ -154,7 +154,7 @@ const REQUIREMENT_TEXT = { 'system.requirements.*.label': N, 'system.requirement
 
 /** The embedded items of a pet or a mercenary (skills, spells, gear): hand-written and public, listed so the short-line gate reads them. */
 const EMBEDDED_ROWS = {
-  'items.skill.name': N, 'items.skill.system.notes': R, 'items.skill.system.checkNote': R, 'items.skill.system.upgrades': R, 'items.skill.system.range': R,
+  'items.skill.name': N, 'items.skill.system.notes': R, 'items.skill.system.limitations': R, 'items.skill.system.checkNote': R, 'items.skill.system.upgrades': R, 'items.skill.system.range': R,
   ...Object.fromEntries(RANKS.map(n => [`items.skill.system.rankBreaks.rank${n}.notes`, R])),
   'items.spell.name': N, 'items.spell.system.description': R, 'items.spell.system.notes': R, 'items.spell.system.effects': R,
   'items.spell.system.duration': R, 'items.spell.system.range': R, 'items.spell.system.limitations': R,
@@ -168,7 +168,7 @@ const EMBEDDED_ROWS = {
  */
 export const FIELD_CLASSES = Object.freeze({
   skill: {
-    name: N, 'system.description': S, 'system.notes': R, 'system.upgrades': R,
+    name: N, 'system.description': S, 'system.notes': R, 'system.limitations': R, 'system.upgrades': R,
     ...Object.fromEntries(RANKS.map(n => [`system.rankBreaks.rank${n}.notes`, R])),
     'system.checkNote': R, 'system.range': R, 'system.techniqueConfig.description': R, 'system.techniqueConfig.notes': R,
     'system.techniqueConfig.summaryBands.*.text': R, 'system.techniqueConfig.variants.*.label': N, ...Object.fromEntries(LABELS)

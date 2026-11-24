@@ -186,10 +186,24 @@ export function openLeg(contestId, legId) {
     state.status = 'leg';
     const row = state.results[leg.id] ?? (state.results[leg.id] = {});
     for (const p of state.participants) {
+      if (state.kind === 'challenge') break; // a stage takes no fixed rows: a mob's result is typed by the GM
       if (p.mode !== 'fixed' || p.out || row[p.id]?.source === 'gm') continue;
       const fixed = computeFixedResult(state, p, leg, resolve);
       if (fixed) row[p.id] = { total: fixed.total, d20: null, source: 'fixed', messageId: null, ruleBreak: false, note: fixed.text };
     }
+  });
+}
+
+/**
+ * Spend (or take back) a safety net on a closed stage of a skill challenge. `ruleBreak` records that the GM spent one
+ * with none left; taking the spend back clears it.
+ */
+export function setNetSpent(contestId, legId, spent, { ruleBreak = false } = {}) {
+  return updateContest(contestId, (state) => {
+    const leg = state.legs.find((l) => l.id === legId);
+    if (state.kind !== 'challenge' || !leg || leg.status !== 'closed') return false;
+    leg.netSpent = spent === true;
+    leg.netRuleBreak = leg.netSpent && ruleBreak === true;
   });
 }
 

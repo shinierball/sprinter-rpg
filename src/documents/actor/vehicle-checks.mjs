@@ -17,7 +17,8 @@ import { isTrustedAssist } from '../../chat/actions/use-assist.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { availableMove, operateQueryFor, resultEffect, resultDelta, VEHICLE_CHECK_KINDS } from '../../data/rules/vehicle-rules.mjs';
 import { vehicleNow, vehicleMoveOf } from './vehicle-move.mjs';
-import { wholeFeet, str, say, messageById, VEHICLE_CARD_FLAGS, vehicleResultOf } from './vehicle-drive-common.mjs';
+import { wholeFeet, str, say, VEHICLE_CARD_FLAGS, vehicleResultOf } from './vehicle-drive-common.mjs';
+import { messageById } from '../../utils/card/recent-cards.mjs';
 
 /**
  * The skill `actor` rolls to operate `vehicle`: among the actor's skills whose tags match the vehicle's query (its own

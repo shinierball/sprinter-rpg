@@ -87,7 +87,8 @@ async function ingestNow(rollMessage, record) {
     if (old?.source === 'gm') { outcome = { skipped: 'pinned' }; return false; }
     const oldMessage = old?.messageId && old.messageId !== rollMessage.id ? globalThis.game?.messages?.get?.(old.messageId) : null;
     if (oldMessage && Number(oldMessage.timestamp) > Number(rollMessage.timestamp)) { outcome = { skipped: 'stale' }; return false; }
-    const ruleBreak = leg.status !== 'open' || participantIsOut(state, p.id, resolve) || readFlag(rollMessage, CONTEST_RULE_BREAK_FLAG) === true;
+    const ruleBreak = leg.status !== 'open' || participantIsOut(state, p.id, resolve) || readFlag(rollMessage, CONTEST_RULE_BREAK_FLAG) === true
+      || (state.kind === 'challenge' && leg.rollerId !== p.id);
     const next = { total: eff.total, d20: record.d20, source: 'roll', messageId: rollMessage.id ?? null, ruleBreak, note: '' };
     if (old && old.source === 'roll' && old.total === next.total && old.d20 === next.d20 && old.messageId === next.messageId && old.ruleBreak === next.ruleBreak) {
       outcome = { skipped: 'unchanged' };
@@ -178,6 +179,10 @@ export async function rollContestLeg({ message, legId, participantId, skillId = 
   if (participantIsOut(state, participant.id, resolveActorByUuid)) {
     if (!(await ask(`${participant.name} is out of this contest. Roll again anyway as a Rule Break?`))) return { ok: false, reason: 'cancelled' };
   }
+  if (state.kind === 'challenge' && leg.rollerId !== participant.id) {
+    const roller = state.participants.find((p) => p.id === leg.rollerId)?.name ?? 'nobody';
+    if (!(await ask(`${leg.label} is ${roller}'s roll. Roll it anyway as a Rule Break?`))) return { ok: false, reason: 'cancelled' };
+  }
   const wantSkill = str(skillId) || null;
   const assigned = participantLegSkill(participant, leg).skill; // the accepted override, else the leg's skill (D3)
   const differs = Boolean(wantSkill) && wantSkill !== assigned;
@@ -185,10 +190,11 @@ export async function rollContestLeg({ message, legId, participantId, skillId = 
     return { ok: false, reason: 'cancelled' };
   }
 
-  const move = contestMoveOf(participant, leg, resolveActorByUuid, contestMoveOptions);
+  // A stage of a skill challenge is the check alone: Move Rate belongs to races and chases (p. 258 against pp. 74-75).
+  const move = state.kind === 'challenge' ? null : contestMoveOf(participant, leg, resolveActorByUuid, contestMoveOptions);
   const contest = {
     kind: state.kind, messageId: wrapper.id, legId: leg.id, participantId: participant.id,
-    moveMod: moveRateMod(move.move), moveNote: `Move ${move.move}`
+    ...(move ? { moveMod: moveRateMod(move.move), moveNote: `Move ${move.move}` } : { moveMod: 0 })
   };
   const useSkill = wantSkill ?? assigned;
   // A driver rolls the leg as a vehicle check too (3.44i): the vehicle's upgrades apply, the driver Disadvantage does not.

@@ -30,7 +30,7 @@ const PASSIVE_SKILL = Object.freeze(['system.stat', 'system.rank', 'system.boonB
 export const CARD_PROFILES = Object.freeze({
   cast: Object.freeze([
     'system.stat', 'system.rank', 'system.checkType', 'system.aiFavor', 'system.manaCost',
-    'system.baseDamage', 'system.durationConfig', 'system.cooldown', 'system.tags'
+    'system.baseDamage', 'system.durationConfig', 'system.cooldown', 'system.range', 'system.tags'
   ]),
   castHeal: Object.freeze(['system.healing', 'system.healing.*']),
   castTempBars: Object.freeze(['system.tempBars']),

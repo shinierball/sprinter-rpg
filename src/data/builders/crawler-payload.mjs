@@ -18,14 +18,60 @@ import { DEFAULT_SIZE, sanitizeSizeId } from '../sizes.mjs';
 import { parseFloorNumber, floorLabel } from '../../utils/floor/floor-number.mjs';
 import { runForStartFloor, startLevelForFloor } from '../floor-arrivals.mjs';
 import { coreSkillPayloads } from '../../utils/skill/core-skills.mjs';
-import { registerPayloadDelegate } from './item-payload.mjs';
+import { registerPayloadDelegate, buildPayload } from './item-payload.mjs';
 import { compileFloorStart } from '../floor-simulator/pipeline.mjs';
 import { contentIds } from '../../utils/stable-id.mjs';
+import { topTenPlace } from '../rules/top-ten.mjs';
 import { withRuleBreak } from '../../utils/rule-break.mjs';
 import { readFlag, withFlags } from '../../utils/flags.mjs';
 import { bodySizedPrototype } from '../../documents/actor/token-size.mjs';
 import { starterRoleOf, withStarterRole } from '../../utils/character/starter-role.mjs';
 import { sanitizeLootBoxEntries } from '../loot-box-rows.mjs';
+import { sanitizeStartingGear, STARTER_AMMUNITION_COUNT } from '../rules/crawler-creation-rules.mjs';
+import { entryFromRow } from '../../documents/actor/loot-box-entries.mjs';
+import { stableId } from '../../utils/stable-id.mjs';
+import { langText } from '../../utils/lang-text.mjs';
+import { getTagDefinition } from '../tag-definitions.mjs';
+
+/** The tag namespace of ammunition: a weapon loadout whose `ammunition` tag is registered here gets a starter stack named by the tag's label. */
+const AMMUNITION_NAMESPACE = 'ammo';
+
+/** The identifier of the Bronze Weapon Box an unarmed start earns (core p. 109); it never stacks with an ordinary Bronze box. */
+const UNARMED_START_BOX_ID = 'unarmed-start-weapon-box';
+
+const unarmedBoxText = langText({
+  'COG.CrawlerCreator.UnarmedBox.Name': 'Bronze Weapon Box',
+  'COG.CrawlerCreator.UnarmedBox.AwardedBy': 'Unarmed start (core p. 109)'
+});
+
+/**
+ * The gear stack of ammunition for a starter weapon that takes some (`STARTER_AMMUNITION_COUNT` units tagged with its kind, named by the registered tag's label),
+ * or null for a weapon that takes none. A spent unit leaves nothing.
+ */
+function starterAmmunitionPayload(weapon) {
+  const tag = typeof weapon?.ammunition === 'string' ? weapon.ammunition : '';
+  const definition = getTagDefinition(tag);
+  if (definition?.namespace !== AMMUNITION_NAMESPACE) return null;
+  return buildPayload('gear', {
+    name: definition.label,
+    system: { quantity: STARTER_AMMUNITION_COUNT, equipped: false, isWeapon: false, usedInto: 'none', tags: [tag] }
+  }, { warnings: [] });
+}
+
+/**
+ * The held box an unarmed start earns (core p. 109): Bronze, waiting empty for the GM to put in the weapon the crawler left
+ * behind, with a drawback. Its id is stable, so a build repeats the same entry.
+ */
+function unarmedStartBox(crawlerName) {
+  return {
+    ...entryFromRow({ tier: 'bronze', quantity: 1, whenEmpty: 'keep' }, null, {
+      id: stableId(`${crawlerName}|${UNARMED_START_BOX_ID}`),
+      sourceName: unarmedBoxText('COG.CrawlerCreator.UnarmedBox.AwardedBy')
+    }),
+    name: unarmedBoxText('COG.CrawlerCreator.UnarmedBox.Name'),
+    identifier: UNARMED_START_BOX_ID
+  };
+}
 
 /** The flag on a background skill whose catalog entry was missing: the reference it asked for. */
 const MISSING_CATALOG_REF = 'missingCatalogRef';
@@ -96,6 +142,7 @@ function starterSkillCopy(identifier) {
  * @param {Function} [options.lookup] sync grant document lookup for Race and Class
  * @param {object} [options.tables] floor table snapshots by key
  * @param {{ race?: Function, class?: Function }} [options.definitions] finds a Race or Class definition by reference before the catalog and world items are asked (a build with no registry, such as build:packs)
+ * @param {Array} [options.warnings] receives the loadout warnings (a pack build collects them and fails on any); without it they are printed
  * @param {object} [options.out] receives `{ results, raceClass, raceClassBase, ruleBreaks, choicesNeeded, warnings }` of a floor start
  * @returns {object} Actor creation payload for a Crawler
  */
@@ -183,6 +230,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
   // The starter skills (weapon skill, or unarmed skill and Damage Effect) at Rank 3. A skill the background already
   // gave is raised instead of duplicated (same identifier, else same name).
   const starterSkills = [];
+  let unarmedBox = false;
   if (starterMode === 'weapon') {
     const copy = starterSkillCopy(wDef.skillIdentifier);
     // An imported book name replaces the example Skill's name; identifier, tags and rules stay the system's.
@@ -206,6 +254,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
       }
     });
   } else if (starterMode === 'unarmed') {
+    unarmedBox = true;
     const pkg = starterUnarmedPayloads(unarmedEntry, loadoutWarnings);
     if (pkg.skill) starterSkills.push({ primary: true, payload: pkg.skill });
     if (pkg.effect) starterSkills.push({ primary: false, payload: pkg.effect });
@@ -262,8 +311,10 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
   // separate attack item, which would take the weapon's hands a second time and stay equipped when the weapon is stowed.
   if (starterMode === 'weapon') {
     const weaponTags = weaponTagsForSkill(wDef.skillIdentifier);
+    // Step 10 (core p. 108): a unique weapon is written as its own name with the listed weapon in parentheses
+    const weaponName = typeof spec.starterWeaponName === 'string' && spec.starterWeaponName.trim() ? spec.starterWeaponName.trim() : wDef.name;
     itemPayloads.push(withStarterRole({
-      name: wDef.name,
+      name: weaponName,
       type: 'gear',
       img: wDef.img || 'icons/svg/sword.svg',
       system: {
@@ -279,6 +330,8 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         notes: wDef.effects || `Equipped weapon: ${wDef.name}`
       }
     }, 'starterAttack'));
+    const ammunition = starterAmmunitionPayload(wDef);
+    if (ammunition) itemPayloads.push(ammunition);
   } else if (starterMode === 'spell') {
     const spellItem = starterSpellPayload(spellEntry, loadoutWarnings);
     if (spellItem) {
@@ -295,7 +348,19 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
     }
   }
 
-  for (const message of loadoutWarnings) console.warn(`Sprinter RPG | Crawler creation: ${message}`);
+  // Step 10 (core p. 113): clothes are gear worn on the torso (not equipped here, so the sheet's own slot checks run when
+  // they are); an interesting or useful item and weird stuff are plain loot. Stamped, so starting gear is found by flag, never by name.
+  for (const { kind, name: gearName, quantity } of sanitizeStartingGear(spec.startingGear)) {
+    itemPayloads.push(withStarterRole(kind === 'clothing'
+      ? { name: gearName, type: 'gear', system: { slot: 'torso', quantity, equipped: false, isWeapon: false } }
+      : { name: gearName, type: 'loot', system: { quantity, lootType: 'consumable' } }, 'startingGear'));
+  }
+
+  // A caller that collects warnings (the pack build, which fails on any) gets them; a world prints them.
+  for (const message of loadoutWarnings) {
+    if (Array.isArray(options.warnings)) options.warnings.push({ path: 'Crawler creation', message, code: 'spec' });
+    else console.warn(`Sprinter RPG | Crawler creation: ${message}`);
+  }
 
   // Append any extra items passed in spec
   if (Array.isArray(spec.items)) {
@@ -316,6 +381,8 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
 
   const isRuleBreak = Boolean(spec.ruleBreak || spec.isRuleBreak);
   const name = (spec.name || '').trim() || 'New Crawler';
+
+  const heldBoxes = [...(Array.isArray(spec.lootBoxes) ? spec.lootBoxes : []), ...(unarmedBox ? [unarmedStartBox(name)] : [])];
 
   const payload = {
     name,
@@ -356,6 +423,8 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         floor,
         level: hasRun ? 1 : startLevelForFloor(floorNumber),
         crawlerNumber: spec.crawlerNumber || '',
+        // The Top Ten place (core p. 282): one of the ten places, else left unset (not listed)
+        ...(topTenPlace(spec.topTen) ? { topTen: topTenPlace(spec.topTen) } : {}),
         // Free prose (commas are text, never a list): the sheet's Notes field
         notes: typeof spec.description === 'string' ? spec.description : '',
         pastTrauma: spec.pastTrauma || '',
@@ -365,7 +434,7 @@ export function buildCrawlerPayload(spec = {}, options = {}) {
         ...(typeof spec.party === 'string' && spec.party.trim() ? { party: spec.party.trim() } : {})
       },
       // Unopened boxes the crawler holds (`system.lootBoxes[]`), sanitised; the schema default when the spec has none
-      ...(Array.isArray(spec.lootBoxes) && spec.lootBoxes.length ? { lootBoxes: sanitizeLootBoxEntries(spec.lootBoxes) } : {})
+      ...(heldBoxes.length ? { lootBoxes: sanitizeLootBoxEntries(heldBoxes) } : {})
     },
     flags: isRuleBreak ? withRuleBreak({ flags: spec.flags }).flags : { ...(spec.flags || {}) },
     items: itemPayloads

@@ -1,0 +1,6 @@
+{{!-- The read-only definition under an open row of a lean table. Params: row, span (the shown column count). Not draggable, no data-item-id. --}}
+<tr class="cog-definition-row" data-definition-for="{{row.id}}">
+  <td colspan="{{span}}">
+    {{> "systems/sprinter-rpg/templates/shared/item-definition.hbs" def=row.definition}}
+  </td>
+</tr>

@@ -251,7 +251,7 @@ export function registerBossTier(reg, def, opts) {
  * `magicItem` block is dropped with a warning, so the tier reads as Bronze's. `reset()` restores the registry.
  * @param {object} reg
  * @param {{ id: string, label: string, rank?: number, color?: string, icon?: string, img?: string, fx?: string, sound?: string,
- *   houseTableKey?: string, generator?: string, magicItem?: object }} def
+ *   houseTableKey?: string, generator?: string, magicItem?: object, goldFormula?: string }} def
  * @param {{ priority?: number }} [opts]
  * @returns {boolean} whether the tier was registered
  */

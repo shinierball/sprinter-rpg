@@ -1,6 +1,6 @@
 /**
  * src/utils/contest/contest-engine.mjs
- * Pure rules for racing and chasing contests (Core Rulebook pp. 74-75). No Foundry
+ * Pure rules for racing, chasing and skill-challenge contests (Core Rulebook pp. 74-75, 258). No Foundry
  * globals, no I/O. The app, the chat card and the tests share these functions.
  *
  * State (v1) is a plain object stored on the contest's chat message; `sanitizeContest` rebuilds a valid one from
@@ -14,7 +14,8 @@
  * - G5 the p. 60 degree bands are used everywhere (a chase example's "Near Miss" 4 short is a Failure).
  */
 import { evaluateRollOutcome, COG_ROLL_OUTCOMES } from '../../documents/session/roll-outcomes.mjs';
-import { CHASE_GROUND, CONTEST_KINDS, contestKindInfo, sanitizeContestKind } from '../../data/rules/contest-rules.mjs';
+import { CHALLENGE_DEGREES, CHASE_GROUND, CONTEST_KINDS, contestKindInfo, sanitizeContestKind } from '../../data/rules/contest-rules.mjs';
+import { unopposedDifficulty } from '../../data/rules/difficulty-rules.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 
 const CONTEST_STATE_VERSION = 1;
@@ -108,20 +109,28 @@ export function contestMoveOf(participant, leg, resolve, options = {}) {
 // ---------------------------------------------------------------------------------------------------------------
 // State sanitiser
 
-function sanitizeLeg(raw, index, usedIds) {
+/** `ctx` is `{ kind, floor }`: a skill-challenge stage also carries its Difficulty, its roller and its safety-net spend. */
+function sanitizeLeg(raw, index, usedIds, ctx = {}) {
   const src = isObject(raw) ? raw : {};
   let id = text(typeof src.id === 'string' ? src.id : '') || `leg-${index + 1}`;
   while (usedIds.has(id)) id = `${id}-${index + 1}`;
   usedIds.add(id);
   const check = isObject(src.check) ? src.check : {};
   const skill = trimmedScalar(check.skill);
-  return {
+  const leg = {
     id,
     label: text(src.label) || `Leg ${index + 1}`,
     check: { skill: skill || null, stat: oneOf(check.stat, STATS, 'str') },
     moveMode: oneOf(src.moveMode, MOVE_MODES, 'move'),
     status: oneOf(src.status, LEG_STATUSES, 'pending')
   };
+  if (ctx.kind === 'challenge') {
+    leg.dc = Math.trunc(finite(src.dc, unopposedDifficulty({ floor: ctx.floor })));
+    leg.rollerId = trimmedScalar(src.rollerId);
+    leg.netSpent = src.netSpent === true;
+    leg.netRuleBreak = src.netRuleBreak === true;
+  }
+  return leg;
 }
 
 function sanitizeParticipant(raw, index, usedIds, kindRoles, legIds) {
@@ -195,12 +204,18 @@ export function sanitizeContest(raw) {
   const src = isObject(raw) ? raw : {};
   const kind = sanitizeContestKind(src.kind);
   const kindRoles = contestKindInfo(kind).roles;
+  const floor = Math.max(0, Math.trunc(finite(src.floor, 0)));
   const legIds = new Set();
-  const legs = (Array.isArray(src.legs) ? src.legs : []).map((l, i) => sanitizeLeg(l, i, legIds));
+  const legs = (Array.isArray(src.legs) ? src.legs : []).map((l, i) => sanitizeLeg(l, i, legIds, { kind, floor }));
   const pIds = new Set();
   const legIdSet = new Set(legs.map((l) => l.id));
   const participants = (Array.isArray(src.participants) ? src.participants : [])
     .map((p, i) => sanitizeParticipant(p, i, pIds, kindRoles, legIdSet));
+  if (kind === 'challenge') {
+    // The roller is the participant the stage names, else the first who rolls; none when nobody does (a null roller is allowed).
+    const firstRoller = participants.find((p) => p.mode === 'roll')?.id ?? null;
+    for (const leg of legs) leg.rollerId = participants.some((p) => p.id === leg.rollerId) ? leg.rollerId : firstRoller;
+  }
   const thr = isObject(src.thresholds) ? src.thresholds : {};
   const catchAt = Math.trunc(finite(thr.catch, DEFAULT_CATCH_THRESHOLD));
   const loseAt = Math.trunc(finite(thr.lose, DEFAULT_LOSE_THRESHOLD));
@@ -217,16 +232,21 @@ export function sanitizeContest(raw) {
       if (Object.keys(clean).length) results[legId] = clean;
     }
   }
-  return {
+  const state = {
     v: CONTEST_STATE_VERSION,
     kind,
     status: oneOf(src.status, STATUSES, 'setup'),
-    floor: Math.max(0, Math.trunc(finite(src.floor, 0))),
+    floor,
     thresholds: { catch: catchAt >= 1 ? catchAt : DEFAULT_CATCH_THRESHOLD, lose: loseAt <= -1 ? loseAt : DEFAULT_LOSE_THRESHOLD },
     legs,
     participants,
     results
   };
+  if (kind === 'challenge') {
+    const stages = Math.trunc(finite(firstScalar(isObject(src.challenge) ? src.challenge.stages : null), 1));
+    state.challenge = { stages: Math.max(1, stages) };
+  }
+  return state;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -390,4 +410,43 @@ export function chaseStatus(rawState, resolve) {
     .sort((a, b) => b.ground - a.ground || b.baseMove - a.baseMove)
     .map((r) => r.id);
   return { quarryId: quarry?.id ?? null, chasers: rows, finished, order };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Skill challenge (p. 258)
+
+/**
+ * Skill-challenge status from the closed stages, in order. One roll decides a stage: the stage's roller's result alone
+ * counts (another participant's stays on the card), and a `fixed` result counts as none. The degree is graded against
+ * the stage's Difficulty (p. 60 bands, a Natural 20 or 1 the single highest degree; a typed result has no die face).
+ * Each degree's `pass` and `net` come from `CONFIG.COG.challengeDegrees`; the safety-net count never drops below 0, and a
+ * spent net comes off after its stage (a spend with none to take is `overspent`).
+ * @param {object} rawState
+ * @returns {{ stages: number, passed: number, nets: number, spent: number, legs: Array<object>, solved: boolean, finished: boolean }}
+ */
+export function challengeStatus(rawState) {
+  const state = sanitizeContest(rawState);
+  const stages = state.challenge?.stages ?? 1;
+  let passed = 0;
+  let nets = 0;
+  let spent = 0;
+  const legs = [];
+  for (const leg of state.legs) {
+    if (leg.status !== 'closed') continue;
+    const result = leg.rollerId ? state.results[leg.id]?.[leg.rollerId] : null;
+    const row = { id: leg.id, rollerId: leg.rollerId ?? null, degree: null, pass: false, net: 0, spent: false, overspent: false, missing: !result || result.source === 'fixed' };
+    if (!row.missing) {
+      row.degree = evaluateRollOutcome({ total: result.total, d20Result: result.d20, targetDC: leg.dc });
+      const def = CHALLENGE_DEGREES[row.degree];
+      row.pass = def?.pass === true;
+      row.net = def?.net ?? 0;
+      if (row.pass) passed++;
+      nets = Math.max(0, nets + row.net);
+    }
+    if (leg.netSpent) {
+      if (nets > 0) { nets--; spent++; row.spent = true; } else row.overspent = true;
+    }
+    legs.push(row);
+  }
+  return { stages, passed, nets, spent, legs, solved: passed >= stages, finished: state.status === 'done' };
 }

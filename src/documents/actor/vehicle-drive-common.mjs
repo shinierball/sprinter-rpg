@@ -26,8 +26,6 @@ export const vehicleResultOf = (message) => readFlag(message, VEHICLE_CARD_FLAGS
 
 export const str = (v) => (typeof v === 'string' ? v.trim().slice(0, 200) : '');
 
-export const messageById = (id) => (typeof id === 'string' && id ? globalThis.game?.messages?.get?.(id) ?? null : null);
-
 export const say = (key, fallback, data = {}) => {
   const i18n = globalThis.game?.i18n;
   try {
@@ -39,7 +37,6 @@ export const say = (key, fallback, data = {}) => {
   return Object.entries(data).reduce((acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)), fallback);
 };
 export const speakerOf = (actor) => globalThis.ChatMessage?.getSpeaker?.({ actor }) ?? {};
-export const gmWhisper = () => (globalThis.ChatMessage?.getWhisperRecipients?.('GM') ?? []).map((u) => u.id).filter(Boolean);
 
 /**
  * Ask for one vehicle-drive write: a GM writes at once, anyone else asks the GM.

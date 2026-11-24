@@ -15,6 +15,7 @@ import { postPatronCard } from '../../chat/patron-card.mjs';
 import { writePatronage } from './patronage.mjs';
 import { decrementFloorTimer } from './actor-environment.mjs';
 import { say, notify } from './vehicle-drive-common.mjs';
+import { canWriteActor } from './aura-relay.mjs';
 
 /** The message flag set once a gig card has been paid. */
 const GIG_PAID_FLAG = 'patronGigPaid';
@@ -24,7 +25,6 @@ export function gigPaidOf(message) {
   return readFlag(message, GIG_PAID_FLAG) || null;
 }
 
-const canWrite = (actor) => Boolean(globalThis.game?.user?.isGM || actor?.testUserPermission?.(globalThis.game?.user, 'OWNER'));
 
 /**
  * Perform a gig (the owner or the GM): roll the Skill with the gig reference, then take the hour off the Floor clock. A
@@ -36,7 +36,7 @@ const canWrite = (actor) => Boolean(globalThis.game?.user?.isGM || actor?.testUs
  * @returns {Promise<{ ok: boolean, ruleBreak?: boolean, reason?: string }>}
  */
 export async function performGig(actor, item, skill, { options } = {}) {
-  if (!item || !skill || !canWrite(actor)) return { ok: false, reason: 'no-access' };
+  if (!item || !skill || !canWriteActor(actor)) return { ok: false, reason: 'no-access' };
   let ruleBreak = false;
   if (patronageOf(item).status !== 'patron') {
     const answer = await confirmRuleBreak({

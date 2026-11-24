@@ -9,6 +9,8 @@ export const COG_SPECIES_DATA = {
     id: 'human',
     label: 'Human',
     aiFavor: 1,
+    // Humans are typically Medium (core p. 112): a hint, never a limit
+    typicalSize: 4,
     inherentSkill: {
       name: 'Unarmed Combat',
       ref: 'unarmed-combat',
@@ -33,6 +35,8 @@ export const COG_SPECIES_DATA = {
     id: 'animal',
     label: 'Animal',
     aiFavor: 0,
+    // An animal starts between Tiny (1) and Large (5): Table 21 (core p. 112)
+    sizeRange: { min: 1, max: 5 },
     inherentSkill: {
       name: 'Slice Attack',
       ref: 'slice-attack',

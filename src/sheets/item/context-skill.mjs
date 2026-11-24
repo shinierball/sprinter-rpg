@@ -2,6 +2,7 @@
 import { RANK_BREAK_THRESHOLDS } from '../../data/tag-vocabulary.mjs';
 import { hasOnHitDebuff } from '../../utils/attack/on-hit.mjs';
 import { buildOnHitContext } from './context-on-hit.mjs';
+import { buildAmmunitionContext } from './context-ammunition.mjs';
 import { buildAppliedBuffsContext } from './context-applied-buffs.mjs';
 import { buildBaseDamageContext, buildHealingContext, buildRankBreakTagText, buildRankBreakViews } from './context-common.mjs';
 import { buildRankBreakCards } from './context-rank-breaks.mjs';
@@ -16,6 +17,7 @@ import { deliveryModes, pickOptions, RANK_SOURCES, statOptions } from '../../uti
 export function buildSkillContext(context, item) {
   const sys = context.system;
   buildOnHitContext(context);
+  buildAmmunitionContext(context);
   buildAppliedBuffsContext(context, item);
   buildRankBreakTagText(context, RANK_BREAK_THRESHOLDS);
   buildRankBreakViews(context, RANK_BREAK_THRESHOLDS);

@@ -53,7 +53,7 @@ export function freshBond(knownVia = 'seen') {
   return {
     status: 'known', knownVia: oneOf(knownVia, BOND_KNOWN_VIA, 'seen'), tier: 0, zealotSkill: '',
     since: null, lastOfferingDay: null, missedDays: 0, streak: 0, offenses: 0, shunned: 0,
-    floorOfferings: { floor: '', count: 0 }, patronage: freshPatronage('none')
+    floorOfferings: { floor: '', count: 0 }, titheMark: 0, patronage: freshPatronage('none')
   };
 }
 
@@ -76,7 +76,8 @@ export function bondOf(item) {
     streak: whole(b.streak, 0, Number.MAX_SAFE_INTEGER, 0),
     offenses: whole(b.offenses, 0, Number.MAX_SAFE_INTEGER, 0),
     shunned: whole(b.shunned, 0, SHUNNED_MAX, 0),
-    floorOfferings: { floor: text(floor.floor), count: whole(floor.count, 0, Number.MAX_SAFE_INTEGER, 0) }
+    floorOfferings: { floor: text(floor.floor), count: whole(floor.count, 0, Number.MAX_SAFE_INTEGER, 0) },
+    titheMark: whole(b.titheMark, 0, Number.MAX_SAFE_INTEGER, 0)
   };
 }
 

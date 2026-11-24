@@ -288,7 +288,7 @@ export function riderMayBeThrown(outcome) {
 }
 
 /** The engine flows that settle a pet check card. */
-const PET_RESOLVE_FLOWS = Object.freeze(['attitude', 'guidance', 'thrown', 'none']);
+const PET_RESOLVE_FLOWS = Object.freeze(['attitude', 'guidance', 'thrown', 'command', 'none']);
 
 /**
  * @typedef {object} PetCheckKindDef
@@ -320,7 +320,7 @@ function registerPetCheckKind(def) {
 registerPetCheckKind({ id: 'tame', label: 'Tame', skill: 'handling', opposed: true, resolve: 'attitude' });
 registerPetCheckKind({ id: 'guide', label: 'Guide', skill: 'handling', opposed: true, resolve: 'guidance' });
 registerPetCheckKind({ id: 'ride', label: 'Ride', skill: 'riding', opposed: false, resolve: 'thrown' });
-registerPetCheckKind({ id: 'command', label: 'Command', skill: 'handling', opposed: false, resolve: 'none' });
+registerPetCheckKind({ id: 'command', label: 'Command', skill: 'handling', opposed: false, resolve: 'command' });
 
 /**
  * The Difficulty of a pet check by its kind: Int-Opposed kinds 10 + the pet's Int Mod + Floor, the rest Unopposed (10 + 2 x Floor).

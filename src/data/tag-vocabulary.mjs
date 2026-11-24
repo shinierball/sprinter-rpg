@@ -25,6 +25,7 @@ export const TAG_NAMESPACES = {
   weaponGroup:  { label: 'Weapon Group', description: 'Weapon group category (power, edge, bashing, reach, ranged, hand to hand, utility, exotic)' },
   weaponProp:   { label: 'Weapon Property', description: 'Weapon handling properties (two-handed, reach, etc.)' },
   wield:        { label: 'Wielding', description: 'Weapon wielding mode (one_handed, two_handed)' },
+  ammo:         { label: 'Ammunition', description: 'Ammunition kinds a weapon spends from an owned stack (arrow, bolt, bullet, shell)' },
   skillGroup:   { label: 'Skill Discipline', description: 'Discipline grouping for skills' },
   technique:    { label: 'Combat Technique Target', description: 'Skill targeted by combat techniques' },
   contest:      { label: 'Contest / Opposed Check', description: 'Contested check against target stat or skill' },
@@ -134,7 +135,7 @@ export const ENGINE_SITUATIONS = Object.freeze({
  * Context tags a roll made inside a racing or chasing contest carries (3.45, `options.contest`). Engine tags: rows may
  * test them (`checkModifiers` "+1 on chase checks"); a roll dialog never offers them.
  */
-export const CONTEST_TAGS = Object.freeze({ race: 'contest.race', chase: 'contest.chase' });
+export const CONTEST_TAGS = Object.freeze({ race: 'contest.race', chase: 'contest.chase', challenge: 'contest.challenge' });
 
 /**
  * Tags the vehicle rules (3.44, `src/data/rules/vehicle-rules.mjs`) read or set. `kindPrefix`, `upgradePrefix` and
@@ -233,6 +234,17 @@ export const RANGED_ANY = Object.freeze(['weaponClass.ranged', 'weaponGroup.rang
 
 /** Aiming's rows fire on a ranged attack whose roll ticked the Aiming toggle (ranged gear derives `weaponGroup.ranged`). */
 export const AIMING_CONDITION = Object.freeze({ all: ['situation.aiming'], any: [...RANGED_ANY] });
+
+/**
+ * Travel pace tags (core p. 71). `fast` and `slow` are engine situations: `buildRollContext` sets one while the party
+ * travels at that pace. `watch` is the one universal reason a Perception or Survival roll offers: noticing danger or
+ * navigating on the move.
+ */
+export const TRAVEL_SITUATIONS = Object.freeze({
+  fast: 'situation.travel_fast',
+  slow: 'situation.travel_slow',
+  watch: 'situation.travel_watch'
+});
 
 /**
  * The stock attack reasons of the rulebook (pp. 83-85): `situation.*` tags a roll window offers on every attack, each
@@ -469,6 +481,7 @@ export function identityTag(type, identifier) {
 
 /** The `target.*` tag a buff an item applies has until the author picks another: the caster alone. */
 export const SELF_TARGET_TAG = 'target.self';
+
 
 /** The loot type of a potion (9.8): a potion carries the derived tag `item.potion` and is limited by Potion Sickness and the lifetime Stat and Skill counts. */
 export const POTION_LOOT_TYPE = 'potion';

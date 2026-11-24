@@ -14,11 +14,12 @@ import { readFlag, withFlags, flagPath } from '../../utils/flags.mjs';
 import { landItems } from '../../utils/content-source.mjs';
 import { findConditionEntry } from '../../content/catalog-lookup.mjs';
 import { buffCardText } from '../../utils/card/buff-card-text.mjs';
-import { appliedBuffRowsAt, buildAppliedBuff, recipientReasons, rowRecipients, stackCapOf } from '../../utils/effects/applied-buff.mjs';
+import { appliedBuffRowsAt, appliedByOf, buildAppliedBuff, recipientReasons, rowRecipients, stackCapOf } from '../../utils/effects/applied-buff.mjs';
 import { incomingEffectTags } from '../../utils/effects/incoming-effect.mjs';
 import { effectImmunityFor } from '../../utils/effects/effect-immunity.mjs';
 import { findActorToken } from '../../utils/combat/interrupts.mjs';
 import { partyMembers } from '../../utils/combat/party.mjs';
+import { actingRank } from '../../utils/skill/rank-source.mjs';
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { collectActorTags } from '../active-tags.mjs';
 import { repeatVerdict } from './condition-repeat.mjs';
@@ -33,7 +34,6 @@ const warn = (text) => globalThis.ui?.notifications?.warn?.(text);
 const inform = (text) => globalThis.ui?.notifications?.info?.(text);
 const listOf = (value) => (Array.isArray(value) ? value : []);
 const identifierOf = (data) => String(data?.system?.identifier ?? '').trim();
-const appliedStamp = (item) => readFlag(item, 'appliedBy');
 
 /** The embedded items of an actor as an array. */
 const itemsOf = (actor) => Array.from(actor?.items ?? []);
@@ -49,13 +49,13 @@ const itemsOf = (actor) => Array.from(actor?.items ?? []);
 export function hasUnappliedBuff(actor, identifier) {
   const id = typeof identifier === 'string' ? identifier.trim() : '';
   if (!id) return false;
-  if (itemsOf(actor).some((i) => i.type === 'buff' && i.system?.identifier === id && !appliedStamp(i))) return true;
+  if (itemsOf(actor).some((i) => i.type === 'buff' && i.system?.identifier === id && !appliedByOf(i))) return true;
   const catalogId = findConditionEntry('buffs', id)?._id;
   return Object.values(actor?.system?.attributes?.externalBuffs ?? {}).some((v) => v && (v === id || v === catalogId));
 }
 
 /** The test `repeatVerdict` uses to find an applied copy of a buff. */
-const appliedCopyOf = (identifier) => (i) => Boolean(identifier) && i?.type === 'buff' && Boolean(appliedStamp(i)) && i.system?.identifier === identifier;
+const appliedCopyOf = (identifier) => (i) => Boolean(identifier) && i?.type === 'buff' && Boolean(appliedByOf(i)) && i.system?.identifier === identifier;
 
 /**
  * Where a stacking buff stands on an actor: how many applied copies it holds and its cap. Null for a buff that does not stack or one with no cap.
@@ -142,6 +142,7 @@ function uniqueActors(list) {
   for (const a of list) if (a && !out.some((o) => sameActor(o, a))) out.push(a);
   return out;
 }
+
 
 /**
  * Who a row reaches now, each with the reasons they are doubtful (none = fine). `measured` is false when the caster has
@@ -328,7 +329,7 @@ export async function applyItemBuffs(message, rowIndex, { options = {} } = {}) {
 
 /** The copies a card's block created on an actor. */
 const copiesOf = (actor, messageId, rowIndex) => itemsOf(actor).filter((i) => {
-  const stamp = appliedStamp(i);
+  const stamp = appliedByOf(i);
   return i.type === 'buff' && stamp?.messageId === messageId && stamp?.row === rowIndex;
 });
 
@@ -371,8 +372,11 @@ function relayedUse(p, user) {
   const author = authorId ? globalThis.game?.users?.get?.(authorId) : null;
   if (!(user?.isGM || (authorId && authorId === user?.id) || author?.isGM)) return null;
   const item = globalThis.fromUuidSync?.(card.itemUuid);
-  const entry = item ? appliedBuffRowsAt(item, card.rank).find((e) => e.index === p.rowIndex) : null;
-  return entry ? { message, card, item, holder: item.parent, entry } : null;
+  if (!item) return null;
+  // A card a player wrote carries a Rank of their choosing: the GM never reads more than the item acts at (a spell's card Rank is at least 1)
+  const rank = author?.isGM ? card.rank : Math.min(Number(card.rank) || 0, Math.max(actingRank(item), 1));
+  const entry = appliedBuffRowsAt(item, rank).find((e) => e.index === p.rowIndex);
+  return entry ? { message, card, item, holder: item.parent, entry, rank } : null;
 }
 
 const uuidList = (value) => Array.isArray(value) && value.length <= MAX_RELAY_TARGETS && value.every((u) => typeof u === 'string' && resolveActorByUuid(u));
@@ -389,8 +393,8 @@ registerRelayAction(ITEM_BUFF_RELAY, {
   async apply(p, user) {
     const use = relayedUse(p, user);
     if (!use) throw new Error('Item buff relay: the card no longer resolves.');
-    const { message, card, item, holder, entry } = use;
-    const buffData = buildAppliedBuff(holder, item, entry, { rank: card.rank, messageId: p.messageId });
+    const { message, item, holder, entry, rank } = use;
+    const buffData = buildAppliedBuff(holder, item, entry, { rank, messageId: p.messageId });
     const { spec } = rowRecipients(entry.row, 0);
     const party = spec.gather === 'party' ? partyMembers(holder) : null;
     const incoming = incomingEffectTags({ item, buff: buffData });

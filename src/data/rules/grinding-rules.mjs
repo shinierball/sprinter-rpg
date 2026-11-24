@@ -1,4 +1,5 @@
 /** Grinding rules: hours, advancement target, safe threshold, endurance DC, map tags (code). The complications table is content (`src/content/grind-complications.mjs`). */
+import { unopposedDifficulty } from './difficulty-rules.mjs';
 
 /**
  * Calculate grinding hours required to attempt advancing a skill.
@@ -49,50 +50,35 @@ export function grindMapFindFor(tagSets) {
   return GRIND_MAP_FINDS.find((row) => owned.some((tags) => tags.has(row.tag))) ?? null;
 }
 
-/**
- * Calculate the safe grinding threshold in hours based on guide insight and map bonuses.
- * Base safe limit = 5 hours.
- * Guide bonus (a helpful guide) = +1 hour.
- * Neighborhood map = +1 hour.
- * Borough / Burrough map = +2 hours.
- * @param {object} [options={}]
- * @param {boolean} [options.hasGuideBonus=false]
- * @param {string} [options.mapType='none'] 'none', 'neighborhood', 'borough', 'burrough'
- * @param {boolean} [options.hasNeighborhoodMap=false]
- * @param {boolean} [options.hasBoroughMap=false]
- * @param {boolean} [options.hasBurroughMap=false]
- * @param {number} [options.mapBonus=0]
- * @returns {{ safeThreshold: number, guideBonus: number, mapBonus: number }}
- */
-export function getSafeGrindingThreshold(options = {}) {
-  const base = 5;
-  const guideBonus = options.hasGuideBonus ? 1 : 0;
+/** Hours of grinding a crawler can do in one day without a check (core p. 170). */
+const SAFE_GRIND_HOURS = 5;
+/** The shortest grind a Neighborhood or Borough Map adds its bonus hours to (core p. 170). */
+const MAP_BONUS_MIN_HOURS = 5;
 
-  let mapBonus = Number(options.mapBonus) || 0;
-  const mapType = String(options.mapType || '').toLowerCase().trim();
-  if (mapType === 'neighborhood' || options.hasNeighborhoodMap) {
-    mapBonus = Math.max(mapBonus, 1);
-  }
-  if (mapType === 'borough' || mapType === 'burrough' || options.hasBoroughMap || options.hasBurroughMap) {
-    mapBonus = Math.max(mapBonus, 2);
-  }
-
-  const safeThreshold = base + guideBonus + mapBonus;
-  const hours = Number(options.hours) || 0;
-  const excessHours = Math.max(0, hours - safeThreshold);
-  return { safeThreshold, guideBonus, mapBonus, excessHours };
-}
+/** A fraction this small over a whole hour is clock noise, not a part-hour. */
+const HOUR_EPSILON = 1e-9;
 
 /**
- * Calculate DC for an extended grinding Endurance check.
- * DC = 10 + Floor Number + Hours Past Safe Limit.
- * @param {number} floor
- * @param {number} hoursPastSafe
- * @returns {number}
+ * The hour maths of one crawler's grind, as the book has it (core pp. 59, 170): hours past 5 in a single day each need
+ * an Unopposed Endurance check at Difficulty 10 + 2 x Floor, a map adds its bonus hours only to a grind of 5 or more.
+ * @param {object} args
+ * @param {number} args.hours the session's clock hours
+ * @param {number} [args.priorHours] hours this crawler ground in the day before the session starts (may be a fraction)
+ * @param {string} [args.mapType] 'none', 'neighborhood', 'borough' or 'burrough'
+ * @param {number} [args.floor]
+ * @returns {{ safeHours: number, checkHours: number, firstCheckHour: number, mapBonus: number, difficulty: number }}
  */
-export function getEnduranceDC(floor = 1, hoursPastSafe = 1) {
-  const f = Math.max(1, Number(floor) || 1);
-  const h = Math.max(1, Number(hoursPastSafe) || 1);
-  return 10 + f + h;
+export function planGrindHours({ hours = 0, priorHours = 0, mapType = 'none', floor = 0 } = {}) {
+  const session = Math.max(0, Number(hours) || 0);
+  const prior = Math.max(0, Number(priorHours) || 0);
+  // The hours of this session that fall past the safe limit in the day; a part-hour past it is an hour that needs its check.
+  const past = Math.max(0, Math.min(session, prior + session - SAFE_GRIND_HOURS));
+  const checkHours = Math.max(0, Math.ceil(past - HOUR_EPSILON));
+  const type = String(mapType || '').toLowerCase().trim();
+  const bonus = type === 'borough' || type === 'burrough' ? 2 : type === 'neighborhood' ? 1 : 0;
+  const mapBonus = session >= MAP_BONUS_MIN_HOURS ? bonus : 0;
+  // The checks are the last hours of the day's total, so the first is the day's hour count less the checks, plus one.
+  const firstCheckHour = Math.ceil(prior + session - HOUR_EPSILON) - checkHours + 1;
+  return { safeHours: SAFE_GRIND_HOURS, checkHours, firstCheckHour, mapBonus, difficulty: unopposedDifficulty({ floor }) };
 }
 

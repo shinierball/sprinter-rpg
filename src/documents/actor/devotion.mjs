@@ -14,8 +14,9 @@ import { dayIndex } from '../../utils/time/timing.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { bondOf } from '../../utils/deity/worship-state.mjs';
 import {
-  WORSHIP_TRACKING, trackingMode, offeringPatch, floorOfferingPatch, titheOwed, offensePatch
+  WORSHIP_TRACKING, trackingMode, offeringPatch, floorOfferingPatch, titheOwed, offensePatch, lootedSinceTithe, tithePercent
 } from '../../utils/deity/devotion.mjs';
+import { lootedGoldOf } from '../../utils/loot/looted-gold.mjs';
 import { postWorshipNotice } from '../../chat/worship-card.mjs';
 import { writeBond, leaveWorship } from './worship.mjs';
 import { openDeityGift } from './deity-gifts.mjs';
@@ -82,7 +83,7 @@ async function spendUnits(actor, stacks, count) {
  * @param {{ looted?: number, tithe?: number, options?: object }} [params] `tithe` defaults to the tithe owed on `looted`
  * @returns {Promise<{ ok: boolean, ruleBreak: boolean, paid?: number, boonDue?: boolean, reason?: string }>}
  */
-export async function makeOffering(actor, deityItem, { looted = 0, tithe, options } = {}) {
+async function makeOffering(actor, deityItem, { looted = 0, tithe, options } = {}) {
   const bond = bondOf(deityItem);
   if (bond.status !== 'worshipper') return { ok: false, ruleBreak: false, reason: 'not-worshipping' };
   const owed = tithe === undefined ? titheOwed(looted, bond) : whole(tithe);
@@ -113,6 +114,42 @@ export async function makeOffering(actor, deityItem, { looted = 0, tithe, option
   if (ruleBreak) await markRuleBreak(deityItem);
   if (boonDue) await postWorshipNotice('boonDue', { actor, deity: deityItem });
   return { ok: true, ruleBreak, paid, boonDue };
+}
+
+/**
+ * The Offering with its tithe worked out from the loot (core pp. 163-164, 312): the tithe owed is the tier's share (times
+ * penance) of the gold looted since the last tithe. Paying less asks one Rule Break; the mark then moves to the count read
+ * at the start, so loot that lands meanwhile stays untithed. `makeOffering` does the paying.
+ * @param {object} actor
+ * @param {object} deityItem
+ * @param {{ tithe?: number, looted?: number, options?: object }} [params] `tithe` undefined when the field was left blank;
+ *   `looted` is the figure typed in the dialog (undefined: the tracked figure)
+ * @returns {Promise<{ ok: boolean, ruleBreak: boolean, owed?: number, since?: number, reason?: string }>}
+ */
+export async function offerTithe(actor, deityItem, { tithe, looted: typed, options } = {}) {
+  const bond = bondOf(deityItem);
+  if (bond.status !== 'worshipper') return { ok: false, ruleBreak: false, reason: 'not-worshipping' };
+  const looted = lootedGoldOf(actor);
+  const since = lootedSinceTithe(looted, bond);
+  const owed = titheOwed(since, bond);
+  const stated = typed === undefined ? since : whole(typed);
+  const paid = tithe === undefined ? Math.max(owed, titheOwed(stated, bond)) : whole(tithe);
+
+  const short = paid < owed;
+  if (short) {
+    const params = { deity: deityItem.name, owed, percent: tithePercent(bond), since, paid, stated };
+    const message = stated === since
+      ? say('COG.Deity.Offering.TitheShortReason', 'The tithe owed to {deity} is {owed} gold ({percent}% of {since} gold looted since the last tithe); {paid} is short. Make the offering anyway as a Rule Break?', params)
+      : say('COG.Deity.Offering.TitheShortStated', 'The tithe owed to {deity} is {owed} gold ({percent}% of {since} gold counted since the last tithe; {stated} was entered); {paid} is short. Make the offering anyway as a Rule Break?', params);
+    const answer = await confirmRuleBreak({ title: say('COG.Deity.Offering.ShortTitle', 'Offering short'), message, reason: message, options });
+    if (!answer.confirmed) return { ok: false, ruleBreak: false, reason: answer.refusal ?? 'cancelled' };
+  }
+
+  const result = await makeOffering(actor, deityItem, { tithe: paid, options });
+  if (!result.ok) return result;
+  await writeBond(deityItem, { titheMark: looted });
+  if (short) await markRuleBreak(deityItem);
+  return { ...result, ruleBreak: result.ruleBreak || short, owed, since };
 }
 
 const gmOnly = () => Boolean(globalThis.game?.user?.isGM);

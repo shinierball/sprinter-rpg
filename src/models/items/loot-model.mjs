@@ -116,6 +116,8 @@ export class LootDataModel extends BaseItemDataModel {
       // The spell this item casts, by identifier; spellName is its display label.
       spellIdentifier: new fields.StringField({ initial: '' }),
       spellName: new fields.StringField({ initial: '' }),
+      // The Rank a scroll's spell is cast at: set when the scroll is made, the reader cannot change it (core p. 99).
+      spellRank: new fields.NumberField({ integer: true, min: 1, initial: 1 }),
       // The god a scroll of prayer names, by deity identifier: reading it adds that god to the reader's known gods (p. 163).
       deity: new fields.StringField({ initial: '' }),
       outcomes: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),

@@ -1,0 +1,48 @@
+<section class="cog-creator-section cog-gear-section">
+  <div class="cog-section-header flexrow">
+    <h3><i class="fa-solid fa-suitcase"></i> {{localize "COG.CrawlerCreator.Gear.Title"}}</h3>
+  </div>
+  <span class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.CrawlerCreator.Gear.Hint"}}</span>
+
+  {{#if kitOptions.length}}
+  <div class="cog-trait-card flexcol">
+    <label><small>{{localize "COG.CrawlerCreator.Gear.Kit"}}</small></label>
+    <select class="cog-creator-select" name="creator-kit" data-change-action="applyKit">
+      <option value="">{{localize "COG.CrawlerCreator.Gear.KitNone"}}</option>
+      {{#each kitOptions}}
+        <option value="{{this.id}}">{{this.label}}</option>
+      {{/each}}
+    </select>
+    {{#if kitExampleOnly}}{{> "systems/sprinter-rpg/templates/shared/content-hint.hbs" key="COG.Content.LoadoutExample"}}{{/if}}
+  </div>
+  {{/if}}
+
+  <div class="cog-trait-card flexcol">
+    {{#if gearWeapon.show}}
+    <label><small>{{localize "COG.CrawlerCreator.Gear.Weapon"}}: {{gearWeapon.loadoutName}}</small></label>
+    <label><small>{{localize "COG.CrawlerCreator.Gear.WeaponName"}}</small></label>
+    <input type="text" name="creator-gear-weapon-name" data-input-action="setStarterWeaponName" data-prop="starterWeaponName" value="{{gearWeapon.name}}" placeholder="{{gearWeapon.loadoutName}}" />
+    {{else}}
+    <span class="cog-rule-hint"><i class="fa-solid fa-hand-fist"></i> {{localize "COG.CrawlerCreator.Gear.NoWeapon"}}</span>
+    {{/if}}
+  </div>
+
+  {{#each gearRows}}
+  <div class="cog-trait-card cog-gear-row flexrow" data-index="{{this.index}}">
+    <select class="cog-creator-select" name="creator-gear-{{this.index}}-kind" data-change-action="setGearField" data-index="{{this.index}}" data-field="kind">
+      {{#each this.kindOptions}}
+        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+      {{/each}}
+    </select>
+    <input type="text" name="creator-gear-{{this.index}}-name" data-input-action="setGearField" data-index="{{this.index}}" data-field="name" value="{{this.name}}" />
+    <input type="number" min="1" step="1" name="creator-gear-{{this.index}}-quantity" data-input-action="setGearField" data-index="{{this.index}}" data-field="quantity" value="{{this.quantity}}" />
+    <button type="button" data-action="removeGearRow" data-index="{{this.index}}"><i class="fa-solid fa-trash"></i> {{localize "COG.CrawlerCreator.Gear.Remove"}}</button>
+  </div>
+  {{/each}}
+
+  <div class="cog-section-actions flexrow">
+    {{#each gearAdd}}
+    <button type="button" data-action="addGearRow" data-kind="{{this.kind}}"><i class="fa-solid fa-plus"></i> {{this.label}}</button>
+    {{/each}}
+  </div>
+</section>

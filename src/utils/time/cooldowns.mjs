@@ -31,11 +31,14 @@ import { resolveReachedRankBreaks } from '../skill/rank-breaks.mjs';
  * @property {{ seconds?: number, rounds?: number, until?: string }} remaining
  */
 
+/** Time units whose cooldown also ends on arrival at a new floor (core p. 63: "Once per X Days"). */
+const FLOOR_RESET_UNITS = new Set(['day']);
+
 const READY = (unit, usesLeft = null) => ({ ready: true, unit, usesLeft, remaining: {} });
 
 /**
  * Whether a use is allowed now, and what is left.
- * - time units (minutes, hours, day): ready at `record.readyAt`; a clock rewound past the use shows the full length, never more.
+ * - time units (minutes, hours, day): ready at `record.readyAt` (a day record also ends when the floor changed from the floor of use); a clock rewound past the use shows the full length, never more.
  * - rounds: ready out of combat, in another combat, or from `record.readyRound`.
  * - period (scene, floor): ready when the token changed or fewer than `amount` uses are recorded.
  * - rest: ready while fewer than `amount` uses are recorded; `rest()` clears the records.
@@ -55,6 +58,8 @@ export function cooldownState(spec, record, now, { amount } = {}) {
     case 'time': {
       const readyAt = record?.readyAt;
       if (!Number.isFinite(readyAt)) return READY(unit);
+      // The record's token is the floor of use; an empty one (written before the stamp) runs out its timer.
+      if (FLOOR_RESET_UNITS.has(unit) && record.token && record.token !== now?.floorToken) return READY(unit);
       const t = Number(now?.time) || 0;
       if (t >= readyAt) return READY(unit);
       const length = Number.isFinite(record.at) ? readyAt - record.at : Infinity;
@@ -101,6 +106,7 @@ export function nextUseRecord(spec, record, now, { amount, ruleBreak = false, ke
   switch (def.kind) {
     case 'time':
       next.readyAt = next.at + amountSeconds(unit, n);
+      if (FLOOR_RESET_UNITS.has(unit)) next.token = now?.floorToken ?? '';
       return next;
     case 'rounds':
       if (!now?.combat) return null;

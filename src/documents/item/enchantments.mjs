@@ -26,7 +26,11 @@ import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { bodyLimbsOf } from '../../utils/gear/body-fit.mjs';
 import { equipProblems, isSlotLimitProblem } from '../../utils/gear/equip-rules.mjs';
 import { takenOffByOf, takenOffByUpdate } from '../../utils/character/overlay-state.mjs';
+import { TATTOO_SLOT } from '../../utils/gear/gear-slots.mjs';
 import { registerGearEquipper } from '../actor/transform-fit.mjs';
+
+/** Enchantments one tattoo holds (core p. 228). */
+const TATTOO_MAX_ENCHANTMENTS = 1;
 
 /** Hours a Repair takes (the book: 2 hours). */
 export const REPAIR_HOURS = 2;
@@ -63,6 +67,22 @@ async function askHazard(item, count, interactive) {
     modal: true
   });
   return answer === 'roll' || answer === 'skip' ? answer : 'cancel';
+}
+
+/**
+ * A tattoo that already holds its one enchantment asks a Rule Break before a second (core p. 228). Nothing is asked of
+ * any other item. The count of Stat and Skill tattoo bonuses stays with the GM.
+ * @returns {Promise<{ confirmed: boolean, asked: boolean, refusal?: string }>}
+ */
+async function askTattooLimit(item, ask) {
+  const isTattoo = item?.type === 'gear' && String(item.system?.slot ?? '').toLowerCase().trim() === TATTOO_SLOT;
+  if (!isTattoo || enchantmentCount(item.system) < TATTOO_MAX_ENCHANTMENTS) return { confirmed: true, asked: false };
+  const res = await confirmRuleBreak({
+    title: craftText('COG.Enchanting.TattooFullTitle'),
+    message: craftText('COG.Enchanting.TattooFullMessage', { name: item.name }),
+    options: ask
+  });
+  return res.confirmed ? { confirmed: true, asked: true } : { confirmed: false, asked: true, refusal: res.refusal ?? 'cancelled' };
 }
 
 /**
@@ -113,6 +133,10 @@ export async function applyEnchantment(item, template, { method = 'craft', ruleB
     result.ruleBreak = true;
     asBreak = true;
   }
+
+  const tattoo = await askTattooLimit(item, ask);
+  if (!tattoo.confirmed) return { ...result, refusal: tattoo.refusal };
+  if (tattoo.asked) result.ruleBreak = true;
 
   const count = enchantmentCount(sys);
   if (count >= HAZARD_ENCHANTMENTS) {

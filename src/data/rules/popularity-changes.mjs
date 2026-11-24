@@ -26,6 +26,7 @@
  * Pure module: imports only the clock constants (`day-clock.mjs`, a leaf, so this file adds no import cycle).
  */
 import { DAY_HOURS } from '../../utils/time/day-clock.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 
 /** The moments the checklist is checked at, in the order the book lists them (core p. 280). */
 export const POPULARITY_MOMENTS = Object.freeze(['session', 'day', 'floor']);
@@ -46,8 +47,8 @@ export const GRIND_FINAL_WINDOW_HOURS = DAY_HOURS;
 const GRIND_FINAL_LIMIT_HOURS = 15;
 /** From this party size on, only the crawlers the recap featured gain its point (core p. 281). */
 const RECAP_FEATURED_PARTY_SIZE = 4;
-/** One Session check covers two hours of play (core p. 280); a Session change counts again after this many real hours. */
-export const POPULARITY_SESSION_HOURS = 2;
+/** A game session is two hours of play: one Session Popularity check covers it (core p. 280) and a crawler Plays to the Cameras once in it (core p. 281). */
+export const PLAY_SESSION_HOURS = 2;
 /** A gain of this many Popularity in one dungeon day can earn a Fan Box (core p. 280). */
 export const FAN_BOX_DAY_JUMP = 10;
 /** The audience votes on a Fan Box's contents for one dungeon day (core p. 280). */
@@ -78,11 +79,7 @@ const TEXT = {
   [`${KEY}.NoPet`]: 'No pet'
 };
 
-function hint(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return TEXT[key].replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+const hint = langText(TEXT);
 
 const num = (value) => (Number.isFinite(Number(value)) && value !== null && value !== '' ? Number(value) : null);
 

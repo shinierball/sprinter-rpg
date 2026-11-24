@@ -225,6 +225,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -430,6 +440,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -760,6 +780,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 1,
       "movement": {
@@ -874,6 +904,14 @@ export const COG_CLASSES = [
     "system": {
       "prerequisites": "",
       "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
         {
           "kind": "race",
           "options": [
@@ -995,6 +1033,14 @@ export const COG_CLASSES = [
     "system": {
       "prerequisites": "",
       "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
         {
           "kind": "tags",
           "query": {
@@ -1252,6 +1298,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -1347,6 +1403,14 @@ export const COG_CLASSES = [
     "system": {
       "prerequisites": "",
       "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
         {
           "kind": "popularity",
           "value": 3
@@ -1536,6 +1600,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -1639,6 +1713,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -2505,6 +2589,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -2706,6 +2800,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 2,
       "movement": {
@@ -2796,6 +2900,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -2898,6 +3012,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 1,
       "movement": {
@@ -3095,6 +3219,14 @@ export const COG_CLASSES = [
       "prerequisites": "",
       "requirements": [
         {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
+        {
           "kind": "skillRank",
           "identifier": "driving",
           "value": 5
@@ -3240,6 +3372,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 1,
       "movement": {
@@ -4189,6 +4331,14 @@ export const COG_CLASSES = [
       "prerequisites": "",
       "requirements": [
         {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
+        {
           "kind": "skillRank",
           "identifier": "pugilism",
           "value": 5
@@ -4318,6 +4468,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 0,
       "movement": {
@@ -4429,6 +4589,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 3,
       "movement": {
@@ -4978,6 +5148,14 @@ export const COG_CLASSES = [
       "prerequisites": "",
       "requirements": [
         {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
+        {
           "kind": "note"
         }
       ],
@@ -5065,6 +5243,14 @@ export const COG_CLASSES = [
     "system": {
       "prerequisites": "",
       "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
         {
           "kind": "popularity",
           "value": 3
@@ -5323,6 +5509,14 @@ export const COG_CLASSES = [
       ],
       "requirements": [
         {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
+        {
           "kind": "tags",
           "query": {
             "none": [
@@ -5427,6 +5621,14 @@ export const COG_CLASSES = [
         }
       ],
       "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        },
         {
           "kind": "tags",
           "query": {
@@ -5598,6 +5800,16 @@ export const COG_CLASSES = [
     "img": "icons/svg/book.svg",
     "system": {
       "prerequisites": "",
+      "requirements": [
+        {
+          "kind": "race",
+          "query": {
+            "all": [
+              "heritage.earth"
+            ]
+          }
+        }
+      ],
       "description": "",
       "drBonus": 2,
       "movement": {

@@ -9,17 +9,16 @@ import { craftGradeOf } from '../../utils/crafting/craft-flags.mjs';
 import { readCheckRecord, effectiveCheck } from '../../utils/roll/check-assists.mjs';
 import { COG_OUTCOME_CONFIG } from '../../documents/session/roll-outcomes.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
-import { difficultyFor, defaultModeFor, canSetDifficulty, offersFormulas, difficultyLineText, difficultyText } from '../../utils/roll/check-difficulty.mjs';
+import { difficultyFor, defaultModeFor, canSetDifficulty, offersFormulas, difficultyLineText, difficultyText, reachedLineText } from '../../utils/roll/check-difficulty.mjs';
 import { foeEntryFor, knownFoes } from '../actions/check-difficulty.mjs';
+import { escalatingReached } from '../../data/rules/difficulty-rules.mjs';
+import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { scatterLine, scatterText } from '../../utils/area/area-scatter.mjs';
+import { reachedTierTags } from '../../utils/tag/tag-mechanics.mjs';
+import { getItemAllTags } from '../../documents/active-tags.mjs';
+import { el } from './element.mjs';
 
 const BLOCK_CLASS = 'cog-check-difficulty';
-
-function el(doc, tag, className, text) {
-  const node = doc.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
 
 function button(doc, { label, action, mode = null, isDefault = false, title = '' }) {
   const b = el(doc, 'button', `cog-assist-offer-btn${isDefault ? ' is-default' : ''}`, label);
@@ -81,9 +80,37 @@ function gmControls(doc, message, record, pending) {
   box.step = '1';
   box.setAttribute('aria-label', difficultyText('NumberLabel'));
   typed.append(box, button(doc, { label: difficultyText('Set'), action: 'crawlerSetDifficulty', mode: 'typed' }));
+  if (offersFormulas(record)) typed.append(button(doc, { label: difficultyText('ButtonEscalating'), action: 'crawlerAskEscalating' }));
   if (record.difficulty || record.dc !== null) typed.append(button(doc, { label: difficultyText('Clear'), action: 'crawlerClearDifficulty' }));
   details.append(typed);
   return details;
+}
+
+/**
+ * The scatter line of a plain check card whose item tags `rule.scatter` (core pp. 200-201), once its degree is a fail, and the
+ * button that rolls the direction die (the roller's owner and the GM). The GM sees the distance; everyone else sees the direction only (core p. 60).
+ * @returns {HTMLElement[]}
+ */
+function scatterNodes(doc, message, record, eff) {
+  const item = record.itemUuid ? globalThis.fromUuidSync?.(record.itemUuid) ?? null : null;
+  const first = eff.targets[0] ?? null;
+  const dc = first ? first.dc : record.dc;
+  if (dc === null || dc === undefined) return [];
+  const gm = globalThis.game?.user?.isGM === true;
+  const line = scatterLine({
+    tags: [...(record.contextTags ?? record.tags), ...getItemAllTags(item)],
+    reachedTierTags: item ? reachedTierTags(item) : [],
+    outcomeId: eff.outcome,
+    diff: (first ? first.total : eff.total) - dc,
+    d8: record.scatterD8 ?? null,
+    gm
+  });
+  if (!line) return [];
+  const nodes = [el(doc, 'p', 'cog-scatter-line', line.text)];
+  // Core p. 200: the thrower rolls the direction. The roller's owner and the GM both get the button.
+  const mine = gm || Boolean(resolveActorByUuid(record.rollerUuid)?.isOwner);
+  if (mine && !line.aimed && line.feet > 0 && line.direction === null) nodes.push(button(doc, { label: scatterText('COG.Scatter.Roll'), action: 'crawlerScatterDie' }));
+  return nodes;
 }
 
 /**
@@ -103,6 +130,7 @@ export function renderCheckDifficulty(root, message) {
   const doc = root.ownerDocument;
   const block = el(doc, 'div', BLOCK_CLASS);
   const plain = offersFormulas(record);
+  const tiers = record.difficulty?.mode === 'typed' ? record.difficulty.tiers ?? [] : [];
 
   // An attack or spell card shows its targets' Evade, so its line appears only when the GM set a number.
   if (plain || record.difficulty) {
@@ -125,6 +153,10 @@ export function renderCheckDifficulty(root, message) {
       if (b) block.append(b);
     }
   }
+
+  if (plain && !eff.pending && tiers.length) block.append(el(doc, 'p', 'cog-check-difficulty-reached', reachedLineText(escalatingReached(eff.total, record.d20, tiers))));
+
+  if (plain && !eff.pending) block.append(...scatterNodes(doc, message, record, eff));
 
   if (globalThis.game?.user?.isGM) block.append(gmControls(doc, message, record, eff.pending));
   if (block.childNodes.length) card.append(block);

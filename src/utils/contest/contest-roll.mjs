@@ -1,8 +1,8 @@
 /**
  * src/utils/contest/contest-roll.mjs
  * `options.contest` on `rollSkill` / `rollStat`: a check made for one
- * leg of a race or chase. The reference is sanitised here; the roll adds a labelled Move Rate line, tags its context
- * `contest.race` / `contest.chase`, and stamps the check record with `{ messageId, legId, participantId }`.
+ * leg of a race or chase, or a stage of a skill challenge (no Move Rate for a stage). The reference is sanitised here; the
+ * roll adds a labelled Move Rate line, tags its context `contest.race` / `contest.chase` / `contest.challenge`, and stamps the check record with `{ messageId, legId, participantId }`.
  * Pure: no Foundry globals.
  */
 import { CONTEST_TAGS } from '../../data/tag-vocabulary.mjs';
@@ -18,7 +18,7 @@ const text = (raw) => {
  * The contest reference of a roll's options, or null when the roll is not a contest leg (no/invalid `kind`).
  * `moveMod` is trusted only as a finite non-negative whole number; otherwise it is derived from `move` when given.
  * @param {unknown} raw `options.contest`
- * @returns {{ kind: 'race'|'chase', messageId: string, legId: string, participantId: string, moveMod: number, moveNote: string, tag: string }|null}
+ * @returns {{ kind: 'race'|'chase'|'challenge', messageId: string, legId: string, participantId: string, moveMod: number, moveNote: string, tag: string }|null}
  */
 export function sanitizeContestRef(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;

@@ -1,5 +1,6 @@
 /**
- * Developer hot-reload and window.cog helper API.
+ * Developer hot-reload and window.cog: launchers and console helpers. The supported entries are listed in
+ * src/hooks/public-api.mjs.
  */
 import {
   getCurrentFloor,

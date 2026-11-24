@@ -12,6 +12,7 @@ import { helpLineKey } from '../../utils/roll/help-dice.mjs';
 import { assistText } from '../../chat/render/check-assists.mjs';
 import { isOutcomeTag, skillGroupTags, skillGroupLabel } from '../../utils/tag/tag-mechanics.mjs';
 import { matchesTagQueryIgnoring } from '../../utils/tag/tag-query.mjs';
+import { isPlayerCrawler } from '../../utils/combat/combat-sides.mjs';
 import { partyMembers, sameParty } from '../../utils/combat/party.mjs';
 import { coreSkillPayloads } from '../../utils/skill/core-skills.mjs';
 import { skillStandIn } from '../../utils/skill/skill-stand-in.mjs';
@@ -55,7 +56,7 @@ function helperCandidates(roller, { actors } = {}) {
   const world = worldActors(actors);
   const found = partyMembers(roller, { actors: world });
   if (!sameParty(roller, roller)) {
-    for (const a of world) if (a?.type === 'crawler' && a.hasPlayerOwner === true) found.push(a);
+    for (const a of world) if (isPlayerCrawler(a)) found.push(a);
   }
   const seen = new Set([idOf(roller)]);
   return found.filter((a) => {

@@ -29,6 +29,7 @@ import { restoredValue } from '../../utils/damage/resource-restore.mjs';
 import { attackTargetEntries } from './attack-targets.mjs';
 import { spendActivationUses } from './buff-activation.mjs';
 import { getItemInflictedConditions } from './inflicted-conditions.mjs';
+import { castRankOf } from '../../utils/skill/rank-source.mjs';
 
 /**
  * Casting an active aura dismisses it, and recasting a lit self light puts it out without spending Mana (3.16c).
@@ -248,7 +249,7 @@ export async function applySpellHealing(actor, spell, opts, updates) {
   const sys = spell.system || {};
   const cleansedDebuffs = [];
   const hpPerBar = getHpPerBar(actor);
-  const effectiveRank = Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
+  const effectiveRank = castRankOf(spell, opts);
 
   // Calculate bars to heal from barsFormula, with the cumulative healing bonuses from rank breaks
   const resolvedBreaks = resolveReachedRankBreaks(spell, effectiveRank);
@@ -320,7 +321,7 @@ export async function applySpellHealing(actor, spell, opts, updates) {
  * @param {{ isAura: boolean, isSelfLight: boolean }} gates
  * @returns {Promise<{ auraData: object|null, nonAuraTempBars: object|null }>}
  */
-export async function applySpellCastEffects(actor, spell, { isAura, isSelfLight }) {
+export async function applySpellCastEffects(actor, spell, { isAura, isSelfLight }, opts = {}) {
   const sys = spell.system || {};
   if (isSelfLight) await igniteLight(actor, spell);
 
@@ -332,7 +333,7 @@ export async function applySpellCastEffects(actor, spell, { isAura, isSelfLight 
   let nonAuraTempBars = null;
   const hasTempBars = Boolean(sys.tempBars?.hasTempBars);
   if (hasTempBars && !isAura) {
-    const spellRank = Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
+    const spellRank = castRankOf(spell, opts);
     const resolvedBreaks = resolveReachedRankBreaks(spell, spellRank);
     nonAuraTempBars = await grantItemTempBars(actor, spell, resolvedBreaks);
   }

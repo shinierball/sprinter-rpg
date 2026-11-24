@@ -313,7 +313,8 @@ export function collectDamageModifiers(actor, context, { primaryType: primary, s
   for (const { source, row, scale, key: rowKey, matched, reason } of evaluated) {
     const kindId = kindOf('damageModifiers', row);
     const def = getRowKind('damageModifiers', kindId);
-    if (!def) continue;
+    // A kind with no stage of the damage roll (`healAdd`, `forcedMove`) is read by its own collector, never here.
+    if (!def || (!def.apply.damage && !def.apply.target)) continue;
     const ctx = { actor, source, rowKey, context, tags: context.tags, primaryType, scale, label: row.label || source.name || '' };
     let asTarget = split && (queryReferences(row.condition, isTargetSensitiveTag) || Boolean(scale?.deferred));
     if (asTarget && !def.apply.target) {
@@ -623,6 +624,40 @@ export function collectVehicleModifiers(vehicle, context, { extraSources = [] } 
     applyRowKind('vehicleModifiers', def, 'move', acc, row, { actor: vehicle, source, scale, context, label: row.label || source.name || 'Vehicle Move' });
   }
   return acc;
+}
+
+/**
+ * The forced movement (`forcedMove` rows of the actor's `damageModifiers`) a hit carries, judged against one context: the
+ * damage context re-aimed at one target, so a size condition reads that target. Of two rows of one way the farthest wins;
+ * the damage total never sees them.
+ *
+ * @param {object} actor the row owner (the attacker)
+ * @param {object} context a `damage` RollContext
+ * @returns {Array<{ kind: 'push'|'pull'|'slide', feet: number, label: string }>}
+ */
+export function collectForcedMoves(actor, context) {
+  const acc = { moves: {} };
+  for (const { source, row, key } of evaluateRows(actor, 'damageModifiers', context)) {
+    const def = getRowKind('damageModifiers', kindOf('damageModifiers', row));
+    if (!def?.apply?.forced) continue;
+    applyRowKind('damageModifiers', def, 'forced', acc, row, { actor, source, rowKey: key, context, tags: context.tags, label: row.label || source?.name || '' });
+  }
+  return Object.values(acc.moves);
+}
+
+/**
+ * Whether the actor carries a `forcedMove` row that could apply to this roll, whatever its condition says of a target not yet
+ * read: a row rejected only by its condition counts, since the target may meet it. Lets the damage card skip reading the
+ * user's targets when there is nothing to judge against them.
+ * @param {object} actor the row owner (the attacker)
+ * @param {object} context a `damage` RollContext
+ * @returns {boolean}
+ */
+export function hasForcedMoveRows(actor, context) {
+  return evaluateRows(actor, 'damageModifiers', context, { explain: true }).some(({ row, matched, reason }) => {
+    if (!matched && reason !== 'condition') return false;
+    return Boolean(getRowKind('damageModifiers', kindOf('damageModifiers', row))?.apply?.forced);
+  });
 }
 
 /**

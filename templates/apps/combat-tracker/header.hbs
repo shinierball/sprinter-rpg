@@ -97,12 +97,30 @@
           NORMAL (MOBS FIRST)
         {{/if}}
       </button>
+      {{#if pvpRounds.offered}}
+      <button type="button" class="cog-surprise-toggle {{#if pvpRounds.active}}active{{/if}}" data-action="togglePvpRounds" data-tooltip="{{localize 'COG.PvpRounds.ToggleTip'}}">
+        <i class="fa-solid fa-swords"></i>
+        {{#if pvpRounds.active}}{{localize 'COG.PvpRounds.ToggleOn'}}{{else}}{{localize 'COG.PvpRounds.ToggleOff'}}{{/if}}
+      </button>
+      {{/if}}
       {{#if isGM}}
       <button type="button" class="cog-reset-round-actions-btn" data-action="resetRoundActions" data-tooltip="Reset Action Budgets for Current Round">
         <i class="fa-solid fa-rotate-left"></i> RESET ACTIONS
       </button>
       {{/if}}
     </div>
+
+    {{#if adversaryPower}}
+    <div class="cog-adversary-power" data-tooltip="{{localize 'COG.Combat.AdversaryPower.Tip'}}">
+      <strong>{{localize 'COG.Combat.AdversaryPower.Title'}}</strong>
+      {{#each adversaryPower.lines}}
+      <div class="cog-adversary-power-line">
+        <span>{{this.summary}}</span>
+        <span class="cog-adversary-power-rows">{{#each this.rows}}<span class="{{#if this.current}}cog-state-badge cog-adversary-power-current{{/if}}">{{this.label}}</span> {{/each}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
 
     <div class="cog-combat-stepper flexcol {{#unless isGM}}read-only{{/unless}}">
       <div class="cog-stepper-header flexrow">

@@ -33,6 +33,9 @@ import { extractD20Result } from '../session/roll-outcomes.mjs';
 import { newRollId, standingStampFor, requestedStampFor, noteStandingStamp } from '../../utils/roll/check-difficulty.mjs';
 import { getCurrentFloor } from './actor-environment.mjs';
 import { gateItemCooldown } from './cooldown-gate.mjs';
+import { gateRetryAfterMajorFail } from './retry-gate.mjs';
+import { gateFastPaceConcealment } from './travel-gates.mjs';
+import { getSceneEpoch } from './dungeon-time.mjs';
 import { spendActivationUses } from './buff-activation.mjs';
 import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from './action-block.mjs';
 import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from './zero-zone-gate.mjs';
@@ -50,7 +53,7 @@ import {
   auraDismissedMessage, auraActiveBlockHtml, tempBarsLineHtml, grantItemTempBars, areaTemplateButtonHtml, healingBarsFor, healBonusSlots, isSingleTargetHeal, cleanseListFor,
   buffApplyBlocks
 } from './use-card-parts.mjs';
-import { attackTargetEntries, standingFoeShiftFor } from './attack-targets.mjs';
+import { attackTargetEntries, standingFoeEffectFor } from './attack-targets.mjs';
 import { getContestData, renderContestChallengeBlock } from './contest-blocks.mjs';
 import { rollsStatOnly } from '../../data/rules/check-types.mjs';
 import { awardAmazingForCheckCard } from './actor-popularity.mjs';
@@ -73,13 +76,30 @@ export async function dismissSkillAura(actor, skill) {
   }), cardMessageOptions(actor));
 }
 
+/** What `gateSkillUse` reports for a use that makes no check, so no retry was asked. */
+const RETRY_GATE_NONE = Object.freeze({ proceed: true, ruleBreak: false, flags: Object.freeze({}) });
+
+/**
+ * What a use of the skill makes, by the tests `earlySkillMessage` ends on: an `aura` activation card, a `passive` card, an
+ * `assist` roll (a skill with a valid assist formula), else a `check`.
+ * @param {Item} skill
+ * @returns {'aura'|'passive'|'assist'|'check'}
+ */
+function skillUseKind(skill) {
+  const sys = skill.system || {};
+  if (isAuraItem(skill) && (!sys.isAttack && !sys.hasDamage && !sys.baseDamage?.dice)) return 'aura';
+  if (isPassiveSkill(skill)) return 'passive';
+  const assist = getAssistSpec(skill);
+  return assist.formula && assist.valid ? 'assist' : 'check';
+}
+
 /**
  * The three gates, in order: an unusable animal skill, the range, the cooldown (each a Rule Break the roller may
  * decline). The cooldown timer starts here, hit or miss (3.12c).
  * @param {Actor} actor
  * @param {Item} skill
  * @param {object} options
- * @returns {Promise<null | { unusableGate: object, rangeGate: object, rangeFlags: object, cooldownGate: object, zeroZoneGate: object, actionBlockGate: object }>}
+ * @returns {Promise<null | { unusableGate: object, rangeGate: object, rangeFlags: object, retryGate: object, travelGate: object, cooldownGate: object, zeroZoneGate: object, actionBlockGate: object }>}
  *   null when the roller declined a gate
  */
 export async function gateSkillUse(actor, skill, options) {
@@ -109,12 +129,21 @@ export async function gateSkillUse(actor, skill, options) {
   if (!rangeGate.proceed) return null;
   const rangeFlags = { ...(rangeGate.flags.ruleBreak ? { ruleBreak: true } : {}), ...(rangeGate.flags.rangeRuleBreak ? { rangeRuleBreak: true } : {}), ...(rangeGate.flags.outOfRange ? { outOfRange: rangeGate.flags.outOfRange } : {}) };
 
+  // No second try after a Major Fail in the scene (core p. 61): asked before the cooldown starts, so a declined retry
+  // spends no use. Only a use that makes a check asks (an aura activation, a passive or an assist skill rolls none).
+  const retryGate = skillUseKind(skill) === 'check' ? await gateRetryAfterMajorFail(actor, skill, options) : RETRY_GATE_NONE;
+  if (!retryGate.proceed) return null;
+
+  // Fast travel pace shuts out Hide in Shadows and Stealth (core p. 71): asked before the cooldown starts, so a declined roll spends nothing.
+  const travelGate = skillUseKind(skill) === 'check' ? await gateFastPaceConcealment(actor, skill, options) : RETRY_GATE_NONE;
+  if (!travelGate.proceed) return null;
+
   // The skill's own cooldown: on cooldown asks for a Rule Break; the timer starts now, hit or miss (3.12c)
   const cooldownGate = await gateItemCooldown(actor, skill, { options });
   if (!cooldownGate.proceed) return null;
   await cooldownGate.commit();
   await spendActivationUses(actor, [skill]);
-  return { unusableGate, rangeGate, rangeFlags, cooldownGate, zeroZoneGate, actionBlockGate };
+  return { unusableGate, rangeGate, rangeFlags, retryGate, travelGate, cooldownGate, zeroZoneGate, actionBlockGate };
 }
 
 /**
@@ -154,9 +183,9 @@ export function skillRankParts(actor, skill) {
  * @returns {Promise<{ message: ChatMessage|null } | null>} the wrapper when the use ends here (its message may be null), else null
  */
 export async function earlySkillMessage(actor, skill, options, { auraData, rank, gates }) {
-  const sys = skill.system || {};
+  const kind = skillUseKind(skill);
   // If this is an aura skill without attack action/damage, present activation card directly
-  if (isAuraItem(skill) && (!sys.isAttack && !sys.hasDamage && !sys.baseDamage?.dice)) {
+  if (kind === 'aura') {
     const buffs = await buffApplyBlocks(actor, skill, { rank: actingRank(skill) });
     const message = await ChatMessage.create(withFlags({
       speaker: ChatMessage.getSpeaker({ actor }),
@@ -172,7 +201,7 @@ export async function earlySkillMessage(actor, skill, options, { auraData, rank,
   }
 
   // Passive skill handling
-  if (isPassiveSkill(skill)) {
+  if (kind === 'passive') {
     const buffs = await buffApplyBlocks(actor, skill, { rank: actingRank(skill) });
     const card = {
       speaker: ChatMessage.getSpeaker({ actor }),
@@ -492,7 +521,7 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
   const ownDc = Boolean(check.craft || check.vehicle || check.patron || check.pet || check.contest || check.party);
   // A roll asked to be born with a Difficulty (an after-kill check: Unopposed) takes it before the standing one
   const stamp = (ownDc && !check.party ? null : requestedStampFor(options.difficulty, { floor }))
-    ?? standingStampFor({ kind: check.statOnly ? 'stat' : 'skill', rollerType: actor.type, hasOwnDc: ownDc, floor, foeShift: standingFoeShiftFor(actor) });
+    ?? standingStampFor({ kind: check.statOnly ? 'stat' : 'skill', rollerType: actor.type, hasOwnDc: ownDc, floor, foeEffect: standingFoeEffectFor(actor) });
   const targetRecords = perTarget.results.map((r, i) => ({ actorId: r.actorId, actorUuid: targetActors[i]?.uuid, name: r.actorName, dc: stamp?.dc ?? null, bonus: r.bonus }));
   // Called Plays this roll uses: with no Difficulty on the card they wait for the GM unless the face decides (D14).
   const { assists } = rollCalledPlays({
@@ -515,6 +544,8 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
     ...cooldownGate.flags,
     ...gates.zeroZoneGate.flags,
     ...gates.actionBlockGate.flags,
+    ...gates.retryGate.flags,
+    ...gates.travelGate.flags,
     ...floorRuleBreak.flags,
     contest: contestData || null,
     ...(craftResult ? craftGradePatch({ dc: check.craft.dc, tableTier: check.craft.tableTier, outcome: craftResult.outcome, margin: craftResult.margin }) : {}),
@@ -524,6 +555,8 @@ export async function postSkillCheckMessage(actor, skill, options, { check, gate
     [CHECK_RECORD_FLAG]: buildCheckRecord({
       kind: 'skill',
       itemUuid: rerollStamp.itemUuid,
+      scene: getSceneEpoch(),
+      skillIdentifier: String(skill.system?.identifier ?? ''),
       roller: actor,
       rollerTokenId: rollerTokenIdOf(actor),
       roll,

@@ -6,6 +6,7 @@ import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { resolveActorByUuid, findTokenByActorUuid, isSameActor } from '../../utils/actor-uuid.mjs';
 import { applyCardEffect, registerChatApplier, canWriteTarget } from '../chat-relay.mjs';
 import { tokensInCardArea } from './area-membership.mjs';
+import { boundTargetActors } from './targets.mjs';
 import { spellCardFlagKey, recordSpellApplied, relaySpellInflict } from '../../documents/actor/spell-card-parts.mjs';
 
 /** The spell an Inflict button on a spell card belongs to (from the button's holder and item id), or null. */
@@ -72,7 +73,8 @@ export async function handleApplyCondition(event, button, message) {
   }
 
   if (!targetTokens.length) {
-    targetTokens = Array.from(game.user?.targets || []);
+    const bound = boundTargetActors(card);
+    targetTokens = bound ? bound.map((actor) => ({ actor })) : Array.from(game.user?.targets || []);
   }
   if (!targetTokens.length) targetTokens = tokensInCardArea(message, card);
   if (!targetTokens.length && targetUuid && canvas?.tokens?.placeables) {

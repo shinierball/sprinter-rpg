@@ -13,14 +13,16 @@ import { registerCombatHooks } from './hooks/combat.mjs';
 import { registerTokenHooks } from './hooks/tokens.mjs';
 import { registerAuraMovementHooks } from './hooks/aura-movement.mjs';
 import { registerMovementOffersHooks } from './hooks/movement-offers.mjs';
+import { registerMovementBandHooks } from './hooks/token-ruler.mjs';
 import { registerAreaZoneHooks } from './hooks/area-zones.mjs';
 import { registerLightFollowHooks } from './hooks/light-follow.mjs';
 import { registerVehicleCrewHooks } from './hooks/vehicle-crew.mjs';
 import { registerVehicleDriveExplosionHooks } from './hooks/vehicle-drive.mjs';
+import { registerLootedGoldHooks } from './hooks/looted-gold.mjs';
 import { registerPageZeroHooks } from './hooks/page-zero.mjs';
 import { registerPauseHooks } from './hooks/pause.mjs';
 import { registerSceneConfigHooks } from './hooks/scene-config.mjs';
-import { installEnvironmentGlobals, syncRegistryConfig } from './hooks/system-api.mjs';
+import { installEnvironmentGlobals, afterSourceryCatalogs } from './hooks/system-api.mjs';
 import { registerChatMessageHook } from './chat/register-chat-hook.mjs';
 import { registerChatCommands } from './commands/chat-commands.mjs';
 import { chatCommandApps } from './hooks/chat-command-apps.mjs';
@@ -31,7 +33,7 @@ import { initGMRelay } from './utils/gm-relay.mjs';
 
 installBundledContentHook(); // must be listening before onInit fires sprinter-rpg.registerContent
 installShinyContentHook(); // the shiny theme: the example documents, the sample species, backgrounds and story tables
-installSourceryContentHook({ onCatalogsRefreshed: syncRegistryConfig }); // after the bundled provider: imported packs register at a higher priority; their text joins the catalogs at ready
+installSourceryContentHook({ onCatalogsRefreshed: afterSourceryCatalogs }); // after the bundled provider: imported packs register at a higher priority; their text joins the catalogs at ready
 Hooks.once('init', onInit);
 initGMRelay(); // socketlib fires `socketlib.ready` during its own init, before ours
 registerDirectoryHooks();
@@ -46,10 +48,12 @@ registerChatCommands(chatCommandApps);
 registerTokenHooks();
 registerAuraMovementHooks();
 registerMovementOffersHooks();
+registerMovementBandHooks();
 registerAreaZoneHooks();
 registerLightFollowHooks();
 registerVehicleCrewHooks();
 registerVehicleDriveExplosionHooks();
+registerLootedGoldHooks();
 registerPageZeroHooks();
 registerPauseHooks();
 registerSceneConfigHooks();

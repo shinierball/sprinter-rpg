@@ -6,14 +6,17 @@
  * `effectiveCheck` (degree, assists, camera award) follows with no further change. The buttons on the card
  * (`crawlerSetDifficulty`, `crawlerAskOpposed`, `crawlerClearDifficulty`) are GM only.
  */
+import { langText } from '../../utils/lang-text.mjs';
 import { damageCardAnswers } from '../damage-applications.mjs';
 import { craftGradeOf } from '../../utils/crafting/craft-flags.mjs';
 import { readCheckRecord, effectiveCheck, calledPlayDestination, checkRecordPath } from '../../utils/roll/check-assists.mjs';
-import { difficultyFor, canSetDifficulty } from '../../utils/roll/check-difficulty.mjs';
+import { difficultyFor, canSetDifficulty, difficultyText } from '../../utils/roll/check-difficulty.mjs';
 import { getCurrentFloor } from '../../utils/floor/current-floor.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
-import { foeShiftFor } from '../../documents/actor/attack-targets.mjs';
+import { foeCheckEffectFor } from '../../documents/actor/attack-targets.mjs';
 import { COGSessionEngine } from '../../documents/session/session-engine.mjs';
+import { MAX_ESCALATING_TIERS } from '../../data/rules/difficulty-rules.mjs';
+import { messageList } from '../../utils/card/recent-cards.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { awardAmazingForCheckCard } from '../../documents/actor/actor-popularity.mjs';
 
@@ -31,28 +34,20 @@ const DIALOG_TEXT = Object.freeze({
   Ok: 'Set'
 });
 
-function dialogText(key) {
-  const full = `COG.Difficulty.Dialog.${key}`;
-  try {
-    const s = globalThis.game?.i18n?.localize?.(full);
-    if (typeof s === 'string' && s && s !== full) return s;
-  } catch {
-    // fall through to the fallback
-  }
-  return DIALOG_TEXT[key] ?? full;
-}
+const dialogLang = langText(Object.fromEntries(Object.entries(DIALOG_TEXT).map(([k, v]) => [`COG.Difficulty.Dialog.${k}`, v])));
+const dialogText = (key) => dialogLang(`COG.Difficulty.Dialog.${key}`);
 
 const notify = (level, text) => globalThis.ui?.notifications?.[level]?.(text);
 const modOf = (actor, stat) => Number(actor?.system?.abilities?.[stat]?.mod) || 0;
 
 /**
- * What one foe adds to an Opposed Difficulty: its Mod in the Stat and, for a mob, the Advantage shift of its check.
- * @returns {{ uuid: string, name: string, mod: number, shift: number }}
+ * What one foe adds to an Opposed Difficulty: its Mod in the Stat and, for a mob, the Advantage shift and flat modifier of its check.
+ * @returns {{ uuid: string, name: string, mod: number, shift: number, flat: number }}
  */
 export function foeEntryFor(foe, statKey, roller = null) {
   const stat = STATS.includes(statKey) ? statKey : '';
   const mod = stat ? modOf(foe, stat) : 0;
-  return { uuid: foe?.uuid ?? '', name: foe?.name ?? '', mod, shift: foeShiftFor(foe, stat, roller) };
+  return { uuid: foe?.uuid ?? '', name: foe?.name ?? '', mod, ...foeCheckEffectFor(foe, stat, roller) };
 }
 
 /** The actors that can oppose this check: the card's recorded targets, else the GM's own targets; never the roller. */
@@ -64,15 +59,10 @@ export function knownFoes(message, record = readCheckRecord(message)) {
   return pool.filter((a) => a.uuid !== record.rollerUuid && !seen.has(a.uuid) && seen.add(a.uuid));
 }
 
-function messageList() {
-  const m = globalThis.game?.messages;
-  return m ? [...m] : [];
-}
-
 /** The check card that carries this roll id (the newest first), or null. The ledger entry stores the same id. */
 export function findCheckMessageByRollId(rollId) {
   if (!rollId) return null;
-  return messageList().reverse().find((m) => readCheckRecord(m)?.rollId === rollId) ?? null;
+  return [...messageList(globalThis.game?.messages)].reverse().find((m) => readCheckRecord(m)?.rollId === rollId) ?? null;
 }
 
 /**
@@ -139,6 +129,22 @@ export async function setCheckDifficulty(message, spec, { syncLedger = true, par
   return { ok: true, difficulty };
 }
 
+/**
+ * Store the scatter direction rolled for a plain check card (`rule.scatter`) on its record, once: a card that already has
+ * one keeps it.
+ * @param {ChatMessage} message the check card
+ * @param {number} d8 the 1d8 result
+ * @returns {Promise<{ ok: boolean, reason?: string }>}
+ */
+export async function setScatterD8(message, d8) {
+  const record = readCheckRecord(message);
+  if (!record) return { ok: false, reason: 'no-record' };
+  if (record.scatterD8 !== undefined) return { ok: false, reason: 'already-rolled' };
+  if (!Number.isInteger(d8) || d8 < 1 || d8 > 8) return { ok: false, reason: 'bad-die' };
+  await message.update({ [checkRecordPath('scatterD8')]: d8 });
+  return { ok: true };
+}
+
 /** Keep the ledger entry that shares this card's `rollId` in step: its Difficulty, outcome and mode. */
 async function syncLedgerEntry(message, difficulty) {
   const record = readCheckRecord(message);
@@ -188,9 +194,34 @@ export async function askOpposed(message, record = readCheckRecord(message)) {
   const roller = resolveActorByUuid(record.rollerUuid);
   if (statChoice === OTHER) {
     const mod = Number(answer.value);
-    return { mode: 'opposed', stat: OTHER, foe: { uuid: foe?.uuid ?? '', name: foe?.name ?? '', mod: Number.isFinite(mod) ? Math.trunc(mod) : 0, shift: foe ? foeEntryFor(foe, '', roller).shift : 0 } };
+    const effect = foe ? foeEntryFor(foe, '', roller) : { shift: 0, flat: 0 };
+    return { mode: 'opposed', stat: OTHER, foe: { uuid: foe?.uuid ?? '', name: foe?.name ?? '', mod: Number.isFinite(mod) ? Math.trunc(mod) : 0, shift: effect.shift, flat: effect.flat } };
   }
   return { mode: 'opposed', stat: statChoice, foe: foe ? foeEntryFor(foe, statChoice, roller) : { mod: 0 } };
+}
+
+/** The indexes of the Escalating dialog's number boxes. */
+const TIER_BOXES = Array.from({ length: MAX_ESCALATING_TIERS }, (_, i) => i);
+
+/**
+ * The Escalating dialog: up to `MAX_ESCALATING_TIERS` numbers, blank ones left out. Resolves to a typed spec with `tiers`
+ * for `setCheckDifficulty`, or null when cancelled.
+ */
+async function askEscalating(record) {
+  const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
+  if (typeof DialogV2?.prompt !== 'function' || !record) return null;
+  const rows = TIER_BOXES.map((i) => `<div class="form-group"><label>${escapeAttr(difficultyText('EscalatingTier', { n: Number(i) + 1 }))}<input type="number" name="tier${Number(i)}" min="0" step="1" /></label></div>`).join('');
+  const answer = await DialogV2.prompt({
+    window: { title: difficultyText('EscalatingTitle') },
+    content: rows,
+    ok: {
+      label: difficultyText('EscalatingOk'),
+      callback: (event, button) => TIER_BOXES.map((i) => button.form.elements[`tier${i}`]?.value ?? '')
+    },
+    rejectClose: false
+  });
+  if (!Array.isArray(answer)) return null;
+  return { mode: 'typed', tiers: answer.filter((v) => v !== '') };
 }
 
 async function run(message, fn) {
@@ -237,4 +268,12 @@ export async function handleAskOpposed(event, button, message) {
 /** `crawlerClearDifficulty`. */
 export async function handleClearDifficulty(event, button, message) {
   return run(message, () => setCheckDifficulty(message, { mode: '' }));
+}
+
+/** `crawlerAskEscalating`: the Escalating button beside the number box. */
+export async function handleAskEscalating(event, button, message) {
+  return run(message, async () => {
+    const asked = await askEscalating(readCheckRecord(message));
+    return asked ? setCheckDifficulty(message, asked) : { ok: false, reason: 'cancelled' };
+  });
 }

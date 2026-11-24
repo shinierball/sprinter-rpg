@@ -18,6 +18,8 @@ import { ENGINE_SITUATIONS } from '../../data/tag-vocabulary.mjs';
 import { confirmUnusableSkill } from '../../utils/skill/animal-skills.mjs';
 import { confirmFellowWorshipperAttack } from './worship-obligations.mjs';
 import { gateItemCooldown } from './cooldown-gate.mjs';
+import { retryReasonFor } from './retry-gate.mjs';
+import { getSceneEpoch } from './dungeon-time.mjs';
 import { gateActionBlock, actionBlockApplies, ACTION_BLOCK_CLEAR } from './action-block.mjs';
 import { gateZeroZone, zeroZoneApplies, ZERO_ZONE_CLEAR } from './zero-zone-gate.mjs';
 import { isAttackSkill } from '../../utils/tag/tag-mechanics.mjs';
@@ -41,6 +43,7 @@ import {
 import { attackOptionsLineHtml, damageButtonLabel } from '../../utils/attack/attack-options-line.mjs';
 import { attackText } from '../../utils/attack/attack-text.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
+import { cardItemNameHtml } from '../../utils/card/item-name.mjs';
 import { resolveWeaponSkills } from './weapon-skills.mjs';
 import { weaponSystemFor } from '../../utils/skill/weapon-skill-options.mjs';
 import { spendActivationUses } from './buff-activation.mjs';
@@ -51,6 +54,11 @@ import { renderAttackContestBlock } from './contest-blocks.mjs';
 import { withFlags } from '../../utils/flags.mjs';
 import { fireUseTriggers } from './event-triggers.mjs';
 import { evadeAdvantageReason, evadeAdvantageLine, evadeLineUnticked } from './evade-aftermath.mjs';
+import { postRollWithExtras } from '../../utils/roll/extra-rolls.mjs';
+import { gateWeaponReload, needsReloadAfter, reloadLineHtml, markReload } from '../item/weapon-reload.mjs';
+import { gateAmmunition, ammunitionLineHtml } from '../item/ammunition.mjs';
+import { scatterRider } from './attack-scatter.mjs';
+import { extraAttackRider } from './extra-attack.mjs';
 
 /**
  * Evaluate Advantage and Disadvantage state for a given roll.
@@ -213,13 +221,13 @@ async function rollMobAttackAutoHit(actor, attackItem, options = {}, picked = nu
     `;
   }
 
-  const autoHitBannerHtml = mobDeclarationBannerHtml({ variant: 'attack', evadeDC, floor: currentFloor, isArea, base: diff.base, shift: diff.shift, flat: diff.flat, label: diff.label });
+  const autoHitBannerHtml = mobDeclarationBannerHtml({ variant: 'attack', evadeDC, floor: currentFloor, isArea, base: diff.base, shift: diff.shift, flat: diff.flat, label: diff.label, compared: targetResults.some(r => r.npcVsNpc) });
   const controlsHtml = mobDeclarationControlsHtml({ isArea, targetCount: targetResults.length, inCombat: Boolean(activeCombatFor(actor)) });
 
   const optionsLineHtml = await attackOptionsLineHtml(attackChoicesFlag);
   const contestHtml = attackItem.type === 'attack' && !allOutOfRange(targetResults) ? renderAttackContestBlock(actor, attackItem, inRangeRows(targetResults), evadeDC, { shift: diff.shift + diff.flat, label: diff.label }) : '';
   const content = [autoHitBannerHtml, optionsLineHtml, targetResultsHtml, dmgBtnHtml, evadeBtnHtml, contestHtml, interruptPromptsHtml, controlsHtml].filter(Boolean).join('');
-  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(attackItem.name)} (Auto-Hit vs Target Evade DC ${escapeAttr(evadeDC)})${effectTag}`;
+  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${cardItemNameHtml(attackItem)} (Auto-Hit vs Target Evade DC ${escapeAttr(evadeDC)})${effectTag}`;
 
   COGSessionEngine.recordRoll({
     actor: actor,
@@ -369,9 +377,13 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   // Every choice that breaks a rule is listed in one confirmation (never a block, CONTRIBUTING rule 2).
   // The window lists the default Skill's Damage Effects; one the Skill actually used does not allow is a Rule Break reason too (Q1087)
   const reasons = ruleBreakReasons(model, choices, usedSkill ? { offered: actor.getSelectableDamageEffects(attackItem, { chosen: usedSkill }) } : {});
+  // No second try after a Major Fail on the Skill in the scene (core p. 61): listed in the same one confirmation. A mob never rolls to hit.
+  const retrySkillId = usedSkill || (attackItem.type === 'skill' ? String(attackItem.system?.identifier ?? '') : '');
+  const retryReason = isMob ? null : retryReasonFor(actor, retrySkillId, hitSkill?.name || attackItem.name);
+  if (retryReason) reasons.push(retryReason);
   const choiceRuleBreak = await confirmChoiceRuleBreaks(reasons, options);
   if (!choiceRuleBreak.proceed) return null;
-  const choiceFlags = choiceRuleBreak.ruleBreak ? { ruleBreak: true } : {};
+  const choiceFlags = choiceRuleBreak.ruleBreak ? { ruleBreak: true, ...(retryReason ? { retryRuleBreak: true } : {}) } : {};
 
   const chosenEffect = choices.effects[0] ?? 'none';
   const effectActive = choices.effects.length > 0;
@@ -407,13 +419,19 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   // A mounted-only weapon used by someone neither riding nor aboard a vehicle asks a Rule Break (never a block).
   const mountedGate = isMob ? { proceed: true, flags: {} } : await gateMountedOnly(actor, attackItem, { options });
   if (!mountedGate.proceed) return null;
+  // A weapon still waiting for its reload after a Major Fail asks a Rule Break (core pp. 181-182; never a block).
+  const reloadGate = isMob ? { proceed: true, flags: {} } : await gateWeaponReload(actor, attackItem, { options });
+  if (!reloadGate.proceed) return null;
+  // A weapon that takes ammunition asks which stack (several match) or a Rule Break (none left); the unit is spent after the card posts.
+  const ammunitionGate = isMob ? { proceed: true, flags: {}, spent: null, commit: async () => {} } : await gateAmmunition(actor, attackItem, hitSkill, { options });
+  if (!ammunitionGate.proceed) return null;
   await commitPick(actor, attackItem, resolved);
   await attackGate?.commit();
   await spendActivationUses(actor, [attackItem, hitSkill]);
   for (const gate of effectGates) await gate.commit();
   // A passenger who fired a mounted weapon after the Rule Break confirm is recorded on the card.
   const mountedFlags = options.vehicle?.ruleBreak === true ? { ruleBreak: true } : {};
-  const cooldownFlags = { ...attackGate?.flags, ...Object.assign({}, ...effectGates.map(g => g.flags)), ...rangeGate.flags, ...handsGate.flags, ...mountedGate.flags, ...mountedFlags };
+  const cooldownFlags = { ...attackGate?.flags, ...Object.assign({}, ...effectGates.map(g => g.flags)), ...rangeGate.flags, ...handsGate.flags, ...mountedGate.flags, ...reloadGate.flags, ...ammunitionGate.flags, ...mountedFlags, ...(options.extraAttack?.ruleBreak === true ? { ruleBreak: true } : {}) };
 
   if (isMob) {
     // Mobs earn no AI Favor, make no check and mark nothing, but they respect cooldowns (3.22-8, Q225 (a)).
@@ -469,7 +487,7 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
   const bonusStr = toHit.breakdown.length > 0 ? ` + ${toHit.breakdown.join(', ')}` : '';
   const rankText = isUntrained ? '' : (rank > 0 ? `Rank ${rank} + ` : '');
   const modText = `${toHitStat.toUpperCase()} Mod ${statMod >= 0 ? `+${statMod}` : statMod}${bonusStr}`;
-  const who = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(attackItem.name)}`;
+  const who = `<strong>${escapeAttr(actor.name)}</strong>: ${cardItemNameHtml(attackItem)}`;
   let flavorText;
   if (advState.mode === 'disadvantage') {
     const reason = isOneHandedPenalty ? 'One-Handed Disadvantage' : (isUntrained ? 'Untrained Attack Check with Disadvantage' : (advState.label || 'Disadvantage'));
@@ -533,11 +551,13 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
     }
   }
 
+  const attackIsArea = isAreaAttack(attackItem, options);
   const { targetResults, targetResultsHtml, currentFloor, interruptPromptsHtml } = resolveAttackTargets(actor, roll, {
     ...options,
     sourceItem: attackItem,
     toHitRows: await rollTargetToHitDice(targetRows, rollContext, targetEntries.map(e => e.actor)),
     toHitContext: rollContext,
+    isArea: attackIsArea,
     outOfRange: rangeGate.outOfRange
   });
   // An Amazing Success on the first target pays an `amazing` Popularity row, once per roll
@@ -560,13 +580,18 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
     `;
   }
 
-  const attackIsArea = isAreaAttack(attackItem, options);
-  const evadeBtnHtml = evadeButtonHtml(actor, roll, currentFloor, { rollContext, isArea: attackIsArea });
+  const evadeBtnHtml = evadeButtonHtml(actor, roll, currentFloor, { rollContext, isArea: attackIsArea, pvpDC: targetResults.find(tr => tr.pvp)?.targetDC });
 
   const rollHtml = typeof roll.render === 'function' ? trustedHtml(await roll.render()) : '';
   const optionsLineHtml = await attackOptionsLineHtml(attackChoicesFlag);
   const contestHtml = attackItem.type === 'attack' && !allOutOfRange(targetResults) ? renderAttackContestBlock(actor, attackItem, inRangeRows(targetResults), roll.total) : '';
-  const content = [rollHtml, floorRuleBreak.html, optionsLineHtml, fumbleTag, targetResultsHtml, dmgBtnHtml, evadeBtnHtml, contestHtml, interruptPromptsHtml].filter(Boolean).join('');
+  // The riders of the first target's degree: where a Throw lands, the weapon that needs a reload, the free extra Attack.
+  const riderTags = [...rollContext.tags];
+  const riderSkill = hitSkill ?? (attackItem.type === 'skill' ? attackItem : null);
+  const scatter = await scatterRider({ tags: riderTags, skill: riderSkill, row: targetResults[0] });
+  const needsReload = needsReloadAfter({ tags: riderTags, row: targetResults[0] });
+  const extraAttackHtml = extraAttackRider({ actor, item: attackItem, skill: hitSkill, extraAttack: options.extraAttack });
+  const content = [rollHtml, floorRuleBreak.html, optionsLineHtml, fumbleTag, targetResultsHtml, scatter?.html, needsReload ? reloadLineHtml(actor, attackItem) : '', ammunitionGate.spent ? ammunitionLineHtml(ammunitionGate.spent) : '', dmgBtnHtml, evadeBtnHtml, extraAttackHtml, contestHtml, interruptPromptsHtml].filter(Boolean).join('');
 
   // The Called Plays this roll uses are judged on the unassisted result against the first target (D6.2).
   const { assists } = rollCalledPlays({
@@ -576,7 +601,7 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
     hasDamage: Boolean(dmgFormula)
   });
   const rerollStamp = checkRerollStamp(rollContext, attackItem);
-  const message = await roll.toMessage(withFlags({
+  const message = await postRollWithExtras(roll, scatter?.rolls ?? [], withFlags({
     speaker: ChatMessage.getSpeaker({ actor: actor }),
     flavor: `${flavorText}${camera.noteHtml}`,
     content
@@ -597,6 +622,8 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
     [CHECK_RECORD_FLAG]: buildCheckRecord({
       kind: 'attack',
       itemUuid: rerollStamp.itemUuid,
+      scene: getSceneEpoch(),
+      skillIdentifier: retrySkillId,
       roller: actor,
       rollerTokenId: rollerTokenIdOf(actor),
       roll,
@@ -621,9 +648,12 @@ export async function rollAttack(actor, attackItem, type = 'hit', options = {}) 
       isHit: tr.isHit,
       diff: tr.diff,
       toHitBonus: tr.toHitBonus ?? 0,
-      outcome: tr.outcome
+      outcome: tr.outcome,
+      ...(tr.pvp ? { pvp: true } : {})
     }))
   }));
+  if (needsReload) await markReload(attackItem, message.id);
+  await ammunitionGate.commit();
   await consumeCalledPlays(actor, message, assists);
   await consumeArmedCamera(actor);
   await fireUseTriggers(actor, attackItem, { context: rollContext, roll, options });

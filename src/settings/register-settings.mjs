@@ -5,7 +5,9 @@ import { refreshEnvironmentDisplays, onCurrentFloorChange, CRAWLER_COUNT_SETTING
 import { SYSTEM_ID } from '../constants.mjs';
 import { HUD_HIDDEN_SETTING, refreshHudVisibility } from '../utils/effects/hud-visibility.mjs';
 import { STOCK_SITUATIONS_OPEN_SETTING } from '../utils/attack/stock-situations.mjs';
+import { EXPLORING_HAZARDS_SETTING, TRAVEL_PACE_SETTING, TRAVEL_LOG_SETTING } from '../utils/exploring/exploring-settings.mjs';
 import { ZERO_ZONE_SETTING, onZeroZoneChange } from '../utils/effects/zero-zone.mjs';
+import { PVP_COMBAT_SETTING } from '../documents/combat/pvp-rounds.mjs';
 import { RULE_BREAK_MODES, RULE_BREAK_MODE_SETTING } from '../utils/rule-break.mjs';
 import { WORSHIP_TRACKING, WORSHIP_TRACKING_SETTING } from '../utils/deity/devotion.mjs';
 import { contentRegistry } from '../content/registry.mjs';
@@ -31,9 +33,11 @@ import { STANDING_DIFFICULTY_SETTING } from '../utils/roll/check-difficulty.mjs'
 import { DELIBERATE_PAUSE_SETTING, UNPAUSE_BY_DEFAULT_SETTING } from '../utils/time/pause-settings.mjs';
 import { XP_CONFIG_SETTING, DEFAULT_XP_WEIGHTS } from '../utils/combat/xp-config.mjs';
 import { SHEET_PDF_SETTING } from '../utils/ui/sheet-pdf-setting.mjs';
+import { SHEET_COLUMNS_SETTING } from '../utils/ui/sheet-columns.mjs';
 import { HELP_PROMPT_SETTING } from '../utils/roll/help-dice.mjs';
 import { GRIND_TABLES_SETTING } from '../content/grind-tables.mjs';
 import { LIVE_FLAGS, registerLiveFlags } from '../utils/live-flags.mjs';
+import { bookCollapseHours } from '../utils/floor/collapse-time.mjs';
 import { POPULARITY_CHECKLIST_SETTING, emptyChecklistState } from '../documents/actor/popularity-checklist.mjs';
 import { MIGRATED_VERSION_SETTING, isMigrationWrite } from '../documents/migrations/world-migration.mjs';
 
@@ -141,6 +145,15 @@ export function registerSettings({ launchers, onAiContentChange }) {
     onChange: (_value, options) => onZeroZoneChange({ reconcile: !isMigrationWrite(options) })
   });
 
+  game.settings.register(SYSTEM_ID, PVP_COMBAT_SETTING, {
+    name: 'COG.PvpRounds.SettingName',
+    hint: 'COG.PvpRounds.SettingHint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
   game.settings.register(SYSTEM_ID, STOCK_SITUATIONS_OPEN_SETTING, {
     name: 'COG.AttackSituation.OpenSettingName',
     hint: 'COG.AttackSituation.OpenSettingHint',
@@ -148,6 +161,33 @@ export function registerSettings({ launchers, onAiContentChange }) {
     config: true,
     type: Boolean,
     default: true
+  });
+
+  game.settings.register(SYSTEM_ID, EXPLORING_HAZARDS_SETTING, {
+    // The floor clock HUD shows its Harsh Conditions button only while hazards are on: redraw it on a change.
+    onChange: refreshEnvironmentDisplays,
+    name: 'COG.HarshConditions.SettingName',
+    hint: 'COG.HarshConditions.SettingHint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(SYSTEM_ID, TRAVEL_PACE_SETTING, {
+    name: 'COG.TravelPace.SettingName',
+    scope: 'world',
+    config: false,
+    type: String,
+    default: ''
+  });
+
+  game.settings.register(SYSTEM_ID, TRAVEL_LOG_SETTING, {
+    name: 'COG.LongTravel.SettingName',
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: { day: -1, hours: 0 }
   });
 
   game.settings.register(SYSTEM_ID, ACTIVE_SESSION_SETTING, {
@@ -191,7 +231,7 @@ export function registerSettings({ launchers, onAiContentChange }) {
     scope: 'world',
     config: true,
     type: Number,
-    default: 100
+    default: bookCollapseHours(1)
   });
 
   // How many scene (combat) boundaries have passed; "once per scene" cooldowns compare it. Bumped by the GM on combat
@@ -223,6 +263,16 @@ export function registerSettings({ launchers, onAiContentChange }) {
     type: String,
     default: '',
     filePicker: 'any'
+  });
+
+  // Each user's column choices for the sheet tables: their own default plus one layout per actor (src/utils/ui/sheet-columns.mjs).
+  game.settings.register(SYSTEM_ID, SHEET_COLUMNS_SETTING, {
+    name: 'COG.SheetTables.SettingName',
+    hint: 'COG.SheetTables.SettingHint',
+    scope: 'user',
+    config: false,
+    type: Object,
+    default: {}
   });
 
   // A tag definition changed (rows or flags): rebuild the behaviour index and re-prepare actors. Fires on every client.

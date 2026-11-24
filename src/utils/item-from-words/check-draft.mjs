@@ -11,7 +11,8 @@ import { paragraphsHtml, stripControls } from '../../sourcery/text.mjs';
 import {
   DRAFT_TYPES, DRAFT_FIELDS, MODIFIER_ARRAYS, LIST_REFERENCES, SCALAR_REFERENCES, fieldChoices, fieldSpec
 } from './draft-fields.mjs';
-import { isPlainObject, newCheck, readScalar, resolveInto, setPath, systemPath } from './check-reading.mjs';
+import { setPath } from '../set-path.mjs';
+import { isPlainObject, newCheck, readScalar, resolveInto, systemPath } from './check-reading.mjs';
 import { cleanGrants, cleanModifierRows, cleanOutcomes, cleanStringList } from './check-rows.mjs';
 
 /** Longest item name a draft keeps. */

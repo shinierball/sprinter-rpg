@@ -17,11 +17,14 @@
 
 import { COGCombat } from '../documents/combat.mjs';
 import { COMBAT_STEPS, COMBAT_STEP_DEFINITIONS } from '../documents/combat/steps.mjs';
-import { COG_ACTION_TYPES } from '../documents/combat/action-ledger.mjs';
+import { COG_ACTION_TYPES, hasEvadeAction } from '../documents/combat/action-ledger.mjs';
 import { getCalledPlays, mayDiscardCalledPlay } from '../documents/combat/called-plays.mjs';
 import { combatantOfActor, findCombatant } from '../documents/combat/combatants.mjs';
 import { guidanceOfCombatant } from '../documents/actor/pet-guidance.mjs';
 import { guidePet } from '../documents/actor/pet-checks.mjs';
+import { minionState } from '../documents/actor/minion-orders.mjs';
+import { commandMinion } from '../documents/actor/minion-command.mjs';
+import { MINION_STATES } from '../data/rules/minion-rules.mjs';
 import { PET_GUIDANCE } from '../data/rules/pet-rules.mjs';
 import { COGCombatMetricsApp } from './combat-metrics.mjs';
 import { COGCombatArchiveApp } from './combat-archive.mjs';
@@ -31,8 +34,54 @@ import { combatText } from '../utils/combat/combat-round-text.mjs';
 import { DECLARATION_STATUS, TARGET_STATUS, TARGET_VIA, findDeclarationTarget, targetStatus } from '../utils/combat/declared-attacks.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { zeroHealthBadge } from '../documents/actor/zero-health-state.mjs';
+import { adversaryPower } from '../data/rules/adversary-power.mjs';
+import { escapeAttr } from '../utils/escape-attr.mjs';
+import { isPvpCombatant, pvpRoundsActive, pvpRoundsOffered, pvpText, pvpTurnLabel, startPvpRounds, endPvpRounds } from '../documents/combat/pvp-rounds.mjs';
+import { RULE_FLAGS, hasRuleFlag } from '../utils/tag/tag-behaviour.mjs';
 
 const BaseCombatTracker = globalThis.foundry?.applications?.sidebar?.tabs?.CombatTracker ?? class {};
+
+const ADVERSARY_KEY = 'COG.Combat.AdversaryPower';
+
+/**
+ * The GM's Table 49 readout (core p. 268) from the encounter's own combatants: Mobs against the crawlers alone and
+ * against every crawler-side ally (`countCrawlerSideAllies`), defeated combatants counted on both sides. A boss in the
+ * combat hides it (every boss battle is lethal). Null when there is nothing to show.
+ * @param {Combat} combat
+ * @returns {{ lines: { kind: string, summary: string, rows: { label: string, current: boolean }[] }[] } | null}
+ */
+function adversaryPowerView(combat) {
+  const combatants = Array.from(combat.combatants?.values?.() ?? combat.combatants ?? []);
+  if (combatants.some((c) => c.actor?.isBoss)) return null;
+  const mobs = combatants.filter((c) => COGCombat.isMobCombatant(c)).length;
+  const crawlers = combatants.filter((c) => !COGCombat.isMobCombatant(c) && c.actor?.type === 'crawler').length;
+  const allies = combat.countCrawlerSideAllies();
+  const bandLabel = (power) => (power.band ? combatText(`${ADVERSARY_KEY}.${power.band[0].toUpperCase()}${power.band.slice(1)}`) : combatText(`${ADVERSARY_KEY}.NoMobs`));
+  const line = (kind, partySize) => {
+    const power = adversaryPower({ partySize, mobCount: mobs });
+    if (!power) return null;
+    return {
+      kind,
+      summary: combatText(`${ADVERSARY_KEY}.${kind[0].toUpperCase()}${kind.slice(1)}`, { band: bandLabel(power), mobs: combatText(`${ADVERSARY_KEY}.${mobs === 1 ? 'MobCountOne' : 'MobCount'}`, { count: mobs }), party: partySize }),
+      rows: power.rows.map((r) => ({
+        label: `${combatText(`${ADVERSARY_KEY}.${r.id[0].toUpperCase()}${r.id.slice(1)}`)} ${r.orMore ? combatText(`${ADVERSARY_KEY}.OrMore`, { count: r.count }) : r.count}`,
+        current: r.current
+      }))
+    };
+  };
+  const lines = (crawlers === allies ? [line('party', allies)] : [line('crawlers', crawlers), line('allies', allies)]).filter(Boolean);
+  return lines.length ? { lines } : null;
+}
+
+/**
+ * The GM's PvP rounds toggle: offered when the table agreed (the world setting) or the combat already runs them.
+ * @returns {{ offered: boolean, active: boolean }}
+ */
+function pvpToggleView(combat, isGM) {
+  if (!isGM) return { offered: false, active: false };
+  const active = pvpRoundsActive(combat);
+  return { offered: pvpRoundsOffered() || active, active };
+}
 
 const TARGET_TIP_ON = 'Untarget (Hold Alt/Shift to Solo-Target)';
 const TARGET_TIP_OFF = 'Target (Adds to targets)';
@@ -124,6 +173,7 @@ export class COGCombatTracker extends BaseCombatTracker {
     classes: ['cog-combat-tracker', 'cog-combat-tracker-app'],
     actions: {
       toggleSurprise: COGCombatTracker.#onToggleSurprise,
+      togglePvpRounds: COGCombatTracker.#onTogglePvpRounds,
       setStep: COGCombatTracker.#onSetStep,
       stepPrev: COGCombatTracker.#onStepPrev,
       stepNext: COGCombatTracker.#onStepNext,
@@ -147,7 +197,8 @@ export class COGCombatTracker extends BaseCombatTracker {
       closeInterruptDrawer: COGCombatTracker.#onCloseInterruptDrawer,
       triggerInterrupt: COGCombatTracker.#onTriggerInterrupt,
       discardCalledPlay: COGCombatTracker.#onDiscardCalledPlay,
-      guidePet: COGCombatTracker.#onGuidePet
+      guidePet: COGCombatTracker.#onGuidePet,
+      commandMinion: COGCombatTracker.#onCommandMinion
     }
   };
 
@@ -363,6 +414,9 @@ export class COGCombatTracker extends BaseCombatTracker {
       actionTypes: Object.values(COG_ACTION_TYPES),
       isGM: Boolean(globalThis.game?.user?.isGM)
     });
+    context.pvpRounds = pvpToggleView(combat, context.isGM);
+    const power = context.isGM ? adversaryPowerView(combat) : null;
+    if (power) context.adversaryPower = power;
   }
 
   /**
@@ -492,8 +546,9 @@ export class COGCombatTracker extends BaseCombatTracker {
     const tempHp = Number(hp?.temp) || 0;
 
     // Interrupt evaluation
+    const evadeCovered = hasEvadeAction(combat, combatant, viewedRound);
     const availableInterrupts = typeof actor?.getAvailableInterrupts === 'function'
-      ? actor.getAvailableInterrupts({ actionsSpent: actions.spent, actionsMax: actions.max })
+      ? actor.getAvailableInterrupts({ actionsSpent: actions.spent, actionsMax: actions.max, evadeCovered })
       : [];
     const interruptReady = (actions.spent < actions.max) || availableInterrupts.some(i => i.isFree);
 
@@ -516,8 +571,10 @@ export class COGCombatTracker extends BaseCombatTracker {
 
     return {
       ...turn,
+      pvpLabel: pvpTurnLabel(combat, combatant),
       actor,
       guidance: COGCombatTracker.#guidanceContext(combat, combatant, isLiveRound),
+      minion: COGCombatTracker.#minionContext(combat, combatant, isLiveRound),
       calledPlays,
       isTargeted,
       zeroHealth,
@@ -581,6 +638,39 @@ export class COGCombatTracker extends BaseCombatTracker {
     if (!combat) return;
     if (!COGCombatTracker.#requireGM('Only the GM can toggle Surprise Rounds.')) return;
     await combat.toggleSurpriseRound();
+    this.render();
+  }
+
+  /** The sneak-Attack picker: resolves the ticked combatant ids, or null when cancelled. */
+  static async #askPvpSneak(combat) {
+    const rows = (combat.combatants || []).filter(isPvpCombatant).map((c) => (
+      `<label class="cog-pvp-sneak"><input type="checkbox" name="sneak" value="${escapeAttr(c.id)}" /> ${escapeAttr(c.name)}: ${escapeAttr(pvpText('COG.PvpRounds.DialogSneak'))}</label>`
+    ));
+    return foundry.applications.api.DialogV2.wait({
+      window: { title: pvpText('COG.PvpRounds.DialogTitle') },
+      content: `<p>${escapeAttr(pvpText('COG.PvpRounds.DialogIntro'))}</p>${rows.join('')}`,
+      buttons: [
+        {
+          action: 'start', icon: 'fa-solid fa-dice-d20', label: pvpText('COG.PvpRounds.DialogStart'), default: true,
+          callback: (event, button) => [...button.form.querySelectorAll('[name="sneak"]')].filter((el) => el.checked).map((el) => el.value)
+        },
+        { action: 'cancel', icon: 'fa-solid fa-xmark', label: pvpText('COG.PvpRounds.DialogCancel') }
+      ],
+      rejectClose: false
+    });
+  }
+
+  static async #onTogglePvpRounds() {
+    const combat = this.activeCombat;
+    if (!combat) return;
+    if (!COGCombatTracker.#requireGM(pvpText('COG.PvpRounds.GmOnly'))) return;
+    if (pvpRoundsActive(combat)) {
+      await endPvpRounds(combat);
+    } else {
+      const sneak = await COGCombatTracker.#askPvpSneak(combat);
+      if (!Array.isArray(sneak)) return;
+      await startPvpRounds(combat, { sneak });
+    }
     this.render();
   }
 
@@ -854,6 +944,34 @@ export class COGCombatTracker extends BaseCombatTracker {
     const owner = COGCombatTracker.#ownerCombatantOf(combat, c);
     if (!c || !owner || !canEditCombatantActions(owner)) return;
     await guidePet(combat, c, { round: this._getViewedRound(combat) });
+    this.render();
+  }
+
+  /** A minion's state badge and whether this user may command it (the controller's combatant is theirs, in the live round). */
+  static #minionContext(combat, combatant, isLiveRound) {
+    if (!combatant?.actor) return null;
+    const here = minionState(combat, combatant.actor);
+    if (!here) return null;
+    const def = MINION_STATES[here.state];
+    const controllerCombatant = combatantOfActor(combat, here.controller);
+    const commandable = here.state === 'uncommanded' || here.state === 'commanded';
+    return {
+      state: here.state,
+      label: def.label,
+      badge: def.badge,
+      check: hasRuleFlag(here.buff, RULE_FLAGS.commandCheck),
+      canCommand: commandable && isLiveRound && Boolean(controllerCombatant) && canEditCombatantActions(controllerCombatant)
+    };
+  }
+
+  /** Command a minion: its controller's Action (see `commandMinion`). */
+  static async #onCommandMinion(event, target) {
+    const combat = this.activeCombat;
+    if (!combat) return;
+    const c = findCombatant(combat, combatantIdOf(target));
+    const controllerCombatant = combatantOfActor(combat, c?.actor ? minionState(combat, c.actor)?.controller : null);
+    if (!c || !controllerCombatant || !canEditCombatantActions(controllerCombatant)) return;
+    await commandMinion(combat, c, { round: this._getViewedRound(combat) });
     this.render();
   }
 

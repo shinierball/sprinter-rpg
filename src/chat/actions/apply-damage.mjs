@@ -16,6 +16,7 @@ import { findEvadeFor } from '../../utils/attack/evade-link.mjs';
 import { isTrustedEvade } from '../../documents/actor/evade-aftermath.mjs';
 import { findInterceptionFor } from '../../utils/combat/interrupts.mjs';
 import { tokensInCardArea } from './area-membership.mjs';
+import { boundTargetActors } from './targets.mjs';
 import { postReflectOffers } from './apply-reflect.mjs';
 import { offerPaidDr } from './paid-dr.mjs';
 import { newApplicationId, setDamageUndoInflictedItems } from '../../utils/damage/damage-undo.mjs';
@@ -422,7 +423,9 @@ export async function handleApplyDamage(event, button, message) {
 
   const attacker = resolveActorByUuid(params.attackerUuid);
 
-  let targetTokens = Array.from(game.user?.targets || []);
+  // A card bound to one actor (a fall) applies to that actor only, whatever the user has targeted or selected.
+  const bound = boundTargetActors(card);
+  let targetTokens = bound ? bound.map((actor) => ({ actor })) : Array.from(game.user?.targets || []);
   // No targets of the user's own: whoever stands in the area this card placed, read now (E2.2).
   if (!targetTokens.length) targetTokens = tokensInCardArea(message, card);
   if (!targetTokens.length && canvas?.tokens) {

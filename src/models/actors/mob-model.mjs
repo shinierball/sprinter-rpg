@@ -184,12 +184,9 @@ export class MobDataModel extends BaseActorDataModel {
     this.attributes.statOverBudget = spent > budget.points;
 
     // 4. Floor Damage Resistance (R2, §5.2)
-    // Base model computes dr.total = armor + buffs + gear without floor.
+    // The base model's dr.total is armor + buffs + modifier rows + gear + transformation, without the Floor.
     // MobDataModel adds F and exposes dr.floor = F.
-    const baseDr = (Number(this.attributes.dr.armor) || 0) +
-                   (Number(this.attributes.dr.buffs) || 0) +
-                   (Number(this.attributes.dr.items) || 0);
     this.attributes.dr.floor = F;
-    this.attributes.dr.total = mobTotalDr(baseDr, F);
+    this.attributes.dr.total = mobTotalDr(this.attributes.dr.total, F);
   }
 }

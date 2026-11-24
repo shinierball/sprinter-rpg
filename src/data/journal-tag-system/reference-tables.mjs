@@ -30,6 +30,7 @@ export const NAMESPACE_GUIDE = Object.freeze({
   weaponGroup: { group: 'item' },
   weaponProp: { group: 'item' },
   wield: { group: 'item' },
+  ammo: { group: 'item' },
   skillGroup: { group: 'item' },
   technique: { group: 'item' },
   rule: { group: 'item' },
@@ -94,6 +95,7 @@ function guideReader(ns) {
     case 'weaponGroup': return 'A weapon family group, typed on a weapon and on its Skill (never derived); technique queries and row conditions test it.';
     case 'weaponProp': return 'Handling traits such as reach and thrown; range checks.';
     case 'wield': return 'One-handed or two-handed. Derived for weapons; a flexible two-hander is rewritten at roll time.';
+    case 'ammo': return 'Typed on an ammunition stack; a weapon or Skill names the kinds it takes in its ammunition query, and each Attack spends units from an owned stack that matches.';
     case 'skillGroup': return 'Skill pickers and lists (the contest tracker lists movement skills first); the animal-skill lockout.';
     case 'technique': return 'Names the skill a combat technique targets.';
     case 'rule': return 'Rule tags carry rows and flags the engine reads, or a named engine rule reads them.';
@@ -127,7 +129,7 @@ function guideReader(ns) {
     case 'id': return 'The identity tag of an item, <code>id.&lt;type&gt;.&lt;identifier&gt;</code>. Grants, queries and rows use it to name one item.';
     case 'condition': return 'Comes from a debuff\'s identifier, and from the debuffs an attack can inflict. Rows test <code>self.condition.&lt;x&gt;</code>.';
     case 'resource': return 'Mana, Health Bars and temporary bars on healing and restoring items; <code>resource.health_N</code> on an actor that is hurt (page 14).';
-    case 'contest': return 'From an item\'s contest settings, plus the race and chase tags the engine sets on a leg\'s roll (page 14).';
+    case 'contest': return 'From an item\'s contest settings, plus the race, chase and skill-challenge tags the engine sets on a leg or stage\'s roll (page 14).';
     case 'check': return 'What kind of roll this is. Only a roll\'s context carries it (page 14).';
     case 'outcome': return 'The degree of a finished check. Only cards carry it (page 14).';
     case 'situation': return 'A circumstance the engine cannot see; offered as a roll-dialog toggle, or set by the engine (page 8).';
@@ -230,7 +232,7 @@ export function checkOutcomeHtml() {
 
   <h3>Contest Tags (<code>contest.*</code>)</h3>
   <p>
-    A skill or attack with contest settings derives <code>contest.dc</code> or <code>contest.opposed</code>, and <code>contest.&lt;stat&gt;</code> for the stat it is rolled against. The engine adds <code>contest.race</code> or <code>contest.chase</code> to a roll made for a leg of a race or chase.
+    A skill or attack with contest settings derives <code>contest.dc</code> or <code>contest.opposed</code>, and <code>contest.&lt;stat&gt;</code> for the stat it is rolled against. The engine adds <code>contest.race</code>, <code>contest.chase</code> or <code>contest.challenge</code> to a roll made for a leg of a race or chase, or a stage of a skill challenge.
   </p>
   <ul>
     ${idList(contest)}
@@ -371,7 +373,10 @@ ${tiers}
   <h3>Other Mob Tags</h3>
   <ul>
     <li><code>mob.unique</code>: a named, one-of-a-kind boss.</li>
-    <li><code>mob.minion</code>: a minion.</li>
+    <li><code>mob.minion</code>: a minion, under another creature's command. On a buff, the buff's caster is its controller; a buff aimed at a pet reaches a creature holding it. Its Actions in a fight wait for its controller's command.</li>
+    <li><code>rule.self-directed</code>: on a minion buff, the minion needs no command from its controller.</li>
+    <li><code>rule.command-check</code>: on a minion buff, each new command costs its controller an Action and an Unopposed handling check, and reaches only that minion (the split spell's copies).</li>
+    <li><code>rule.command-together</code>: with <code>rule.command-check</code>, a Success commanding one creature commands every creature holding a copy from the same cast.</li>
     <li><code>mob.summoned</code>: a summoned mob. It carries the <code>uncounted-ally</code> flag (page 10), so it does not count as a crawler for a Boss's actions.</li>
   </ul>
 

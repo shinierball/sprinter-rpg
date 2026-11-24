@@ -243,7 +243,8 @@ export const USAGE_KINDS = Object.freeze({
  * Crafting (3.15). The mode tags say which step of a craft is rolled (a check's context); `table`/`attachment` are the
  * prefixes of a crafting table's type (`crafting.table.<type>`, on `craftingTable.tableTypeTag`) and of an attachment
  * item (`crafting.attachment.<id>`) that a blueprint's `tables` query may require; `recipe` is the prefix of a locked recipe on a blueprint
- * (`crafting.recipe.<id>`, unlocked by an `unlockRecipes` craft row); `coupon` marks the loot that adds a table tier.
+ * (`crafting.recipe.<id>`, unlocked by an `unlockRecipes` craft row); `coupon` marks the loot that adds a table tier;
+ * `processConcoction` / `processInfusion` on a blueprint make it a concoction or an infusion (core p. 227).
  */
 export const CRAFT_TAGS = Object.freeze({
   modeMundane: 'crafting.mode.mundane',
@@ -252,7 +253,9 @@ export const CRAFT_TAGS = Object.freeze({
   tablePrefix: 'crafting.table.',
   attachmentPrefix: 'crafting.attachment.',
   recipePrefix: 'crafting.recipe.',
-  coupon: 'crafting.coupon.table'
+  coupon: 'crafting.coupon.table',
+  processConcoction: 'crafting.process.concoction',
+  processInfusion: 'crafting.process.infusion'
 });
 /** Personal spaces: `couponRank` marks the loot spent for one Rank Up. */
 export const SPACE_TAGS = Object.freeze({
@@ -265,6 +268,12 @@ export const MATERIAL_UNSALVAGEABLE_TAG = 'material.unsalvageable';
 
 /** The tag that makes an item's junk remember what it was, so a recharge can restore it. */
 export const USAGE_RESTORABLE_TAG ='usage.restorable';
+
+/** The condition a forced attack's attacker bears (core p. 87: a Mob forces a crawler to attack a party member). */
+export const CHARMED_TAG = 'condition.charmed';
+
+/** A perk that takes no damage from falling (core p. 76): the fall card notes it and the GM decides. */
+export const NO_FALL_DAMAGE_TAG = 'perk.no_fall_damage';
 
 /** The tag a scene carries in `flags.sprinter-rpg.tags` when it is a safe room (where loot boxes open). Not the `space.safe_room` personal space type. */
 export const SAFE_ROOM_TAG = 'scene.safe_room';
@@ -485,4 +494,22 @@ export function getFreeInterruptRankBreak(item) {
     if (tags.includes(FREE_INTERRUPT_TAG)) return reached[i];
   }
   return null;
+}
+
+/** The tags carried by the tiers of an item's reached Rank Upgrades (a tier's own `tags`, never the item's). */
+export function reachedTierTags(item) {
+  const out = new Set();
+  for (const rb of getReachedRankBreaks(item)) {
+    for (const tag of Array.isArray(rb.data?.tags) ? rb.data.tags : []) if (typeof tag === 'string' && tag) out.add(tag);
+  }
+  return out;
+}
+
+/** How many free extra Attacks an item's reached Rank Upgrades give: one per reached tier whose own `tags` carry the rule flag `extra-attack` (`action.extra_attack`). */
+export function extraAttacksOf(item) {
+  let n = 0;
+  for (const rb of getReachedRankBreaks(item)) {
+    if (hasRuleFlag(Array.isArray(rb.data?.tags) ? rb.data.tags : [], RULE_FLAGS.extraAttack)) n += 1;
+  }
+  return n;
 }

@@ -35,6 +35,7 @@ import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { ruleBreakBadgeHtml, ruleBreakMessageData } from '../../utils/rule-break-visibility.mjs';
 import { ownerAndGmIds } from '../../utils/owner-recipients.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 import { runKeyed } from '../../utils/keyed-queue.mjs';
 import { findDamageUndoRecord, markDamageUndoTriggersFired } from '../../utils/damage/damage-undo.mjs';
 import { currentTokens, killApplicationPayable, killContextOf, readApplication } from './actor-popularity.mjs';
@@ -69,11 +70,7 @@ const TEMPLATES = {
   'COG.EventTrigger.Slots': 'slots'
 };
 
-function t(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return TEMPLATES[key].replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+const t = langText(TEMPLATES);
 
 /**
  * The rows of `event` on the actor that match `context`, split by their limit. A row with no `oncePer` always fires; one with

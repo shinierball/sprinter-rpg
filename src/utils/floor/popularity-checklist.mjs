@@ -7,9 +7,11 @@
  * (`changeId` ''). A record is `{ id, moment, period: { sessionId, day, floor }, at, worldTime, by, entries, boxes,
  * undoneAt }`.
  */
-import { popularityChangesFor, milestonesCrossed, FAN_BOX_DAY_JUMP, POPULARITY_SESSION_HOURS } from '../../data/rules/popularity-changes.mjs';
+import { popularityChangesFor, milestonesCrossed, FAN_BOX_DAY_JUMP, PLAY_SESSION_HOURS } from '../../data/rules/popularity-changes.mjs';
 import { popularityActive } from './popularity.mjs';
 import { SECONDS_PER_HOUR } from '../time/timing.mjs';
+import { finiteOrNull as finite } from '../first-scalar.mjs';
+import { langText } from '../lang-text.mjs';
 
 /** The most Apply records the setting keeps; the oldest are dropped. */
 const POPULARITY_CHECK_HISTORY = 60;
@@ -20,18 +22,13 @@ const TEXT = {
   [`${KEY}.BoxThisFloor`]: 'Already had a Fan Box on this floor'
 };
 
-function text(key, data = {}) {
-  const i18n = globalThis.game?.i18n;
-  if (i18n?.has?.(key) && typeof i18n.format === 'function') return i18n.format(key, data);
-  return TEXT[key].replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
-}
+const text = langText(TEXT);
 
-const finite = (value) => (value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null);
 const live = (records) => (Array.isArray(records) ? records : []).filter((r) => r && !r.undoneAt);
 
 /** Whether a not-undone record already paid `changeId` to `actorId` for this definition's period. */
 function usedThisPeriod(def, actorId, { floor, now, applied }) {
-  const window = POPULARITY_SESSION_HOURS * SECONDS_PER_HOUR * 1000;
+  const window = PLAY_SESSION_HOURS * SECONDS_PER_HOUR * 1000;
   return live(applied).some((record) => {
     if (!(record.entries ?? []).some((e) => e.actorId === actorId && e.changeId === def.id)) return false;
     if (def.oncePer === 'floor') return finite(record.period?.floor) === floor;
@@ -202,7 +199,7 @@ export function appendApplied(state, record) {
 /**
  * Which moments the GM should be offered a checklist for (the badges on the Session Manager buttons and the due card):
  * a floor was left and has no applied Floor record; a dungeon day ended and has no applied Day record; the active session
- * has run `POPULARITY_SESSION_HOURS` of real time since its last applied Session record (or since it was created).
+ * has run `PLAY_SESSION_HOURS` of real time since its last applied Session record (or since it was created).
  * @param {object} p
  * @param {object[]} p.applied the applied records (undone ones are ignored)
  * @param {{ createdAt?: number }|null} p.activeSession
@@ -219,7 +216,7 @@ export function dueMoments({ applied, activeSession, real, endedDay, floorExit }
   if (activeSession) {
     const last = records.filter((r) => r.moment === 'session' && r.period?.sessionId === activeSession.id).reduce((m, r) => Math.max(m, finite(r.at) ?? 0), 0);
     const since = Math.max(last, finite(activeSession.createdAt) ?? 0);
-    session = finite(real) !== null && real - since >= POPULARITY_SESSION_HOURS * SECONDS_PER_HOUR * 1000;
+    session = finite(real) !== null && real - since >= PLAY_SESSION_HOURS * SECONDS_PER_HOUR * 1000;
   }
   return {
     session,

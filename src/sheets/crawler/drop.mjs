@@ -15,6 +15,11 @@ import { addPatronProspect } from '../../documents/actor/patronage.mjs';
 import { landBuff } from '../../documents/actor/item-buffs.mjs';
 import { withFlags } from '../../utils/flags.mjs';
 import { withLandingRank } from '../../utils/effects/buff-rank-prompt.mjs';
+import { confirmSponsorAdd } from '../../documents/actor/sponsor-limits.mjs';
+import { withRuleBreak } from '../../utils/rule-break.mjs';
+import { getItemAllTags } from '../../documents/active-tags.mjs';
+import { MOB_SPEC_TAGS } from '../../data/mob-creation-rules.mjs';
+import { promptChoicePicks } from '../../utils/ui/choice-picker.mjs';
 
 /** Drop target attribute values (`data-drop-target`) and the actor field each slot writes. */
 const SLOT_DROP_TARGETS = Object.freeze({
@@ -132,19 +137,48 @@ export async function dropItem(sheet, event, item) {
     }
   }
 
-  if (item.type === 'buff') return dropBuffOnBody(actor, item);
+  if (item.type === 'buff') return dropMinionAwareBuff(actor, item);
+
+  if (item.type === 'sponsor') {
+    const added = await confirmSponsorAdd(actor, { name: item.name });
+    if (!added.ok) return null;
+    const data = dropCreateData(item);
+    return createDropped(sheet, item, event, added.ruleBreak ? withRuleBreak(data, added.reason) : data);
+  }
 
   return createDropped(sheet, item, event);
 }
 
 /** A buff dropped on the sheet body lands in force and timed, through the one landing rule. Returns the copy, or null when declined. */
-async function dropBuffOnBody(actor, item) {
-  const data = withFlags(dropCreateData(item), { appliedBy: { messageId: '', sourceName: item.name } });
+async function dropBuffOnBody(actor, item, casterUuid = '') {
+  const data = withFlags(dropCreateData(item), { appliedBy: { messageId: '', sourceName: item.name, ...(casterUuid ? { casterUuid } : {}) } });
   data.system = { ...data.system, active: true };
   const ranked = await withLandingRank(data);
   if (!ranked) return null;
   const { item: copy } = await landBuff(actor, ranked, { options: { interactive: typeof document !== 'undefined' } });
   return copy;
+}
+
+/**
+ * A buff dropped on the sheet body, with a minion buff (`mob.minion`) asking who controls the minion (core book p. 233: the
+ * buff's caster is its controller). A player with one crawler of their own to name is not asked; with no crawler to name the
+ * buff lands with no controller (it is then never gated); Cancel lands nothing.
+ * @returns {Promise<Item|null>}
+ */
+async function dropMinionAwareBuff(actor, item) {
+  if (!getItemAllTags(item).has(MOB_SPEC_TAGS.minion)) return dropBuffOnBody(actor, item);
+  const world = Array.from(globalThis.game?.actors ?? []).filter((a) => a.type === 'crawler' && a.uuid !== actor.uuid);
+  if (!world.length) return dropBuffOnBody(actor, item);
+  const mine = world.filter((a) => a.isOwner);
+  if (!globalThis.game.user?.isGM && mine.length === 1) return dropBuffOnBody(actor, item, mine[0].uuid);
+  const own = globalThis.game.user?.character?.uuid;
+  const ordered = [...world.filter((a) => a.uuid === own), ...world.filter((a) => a.uuid !== own)];
+  const picks = await promptChoicePicks({
+    title: 'Who controls this minion?',
+    entries: [{ key: 'controller', label: `Controller of ${item.name}`, candidates: ordered.map((a) => ({ value: a.uuid, label: a.name })) }]
+  });
+  if (!picks?.controller) return null;
+  return dropBuffOnBody(actor, item, picks.controller);
 }
 
 /**

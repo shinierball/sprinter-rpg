@@ -1,5 +1,5 @@
 import { BaseItemDataModel } from './base-item-model.mjs';
-import { onHitField, areaSchemaField, baseDamageField, interruptSchemaField, lightSchemaField, auraStateField, itemTempBarsField } from '../fields/effect-fields.mjs';
+import { onHitField, areaSchemaField, ammunitionField, baseDamageField, interruptSchemaField, lightSchemaField, auraStateField, itemTempBarsField } from '../fields/effect-fields.mjs';
 import { cooldownField, useRecordsField, chargeRechargeField } from '../fields/timing-fields.mjs';
 import { damageModifiersField, asTriggersField, defenseModifiersField, rollModifiersField, craftModifiersField, vehicleModifiersField, manaCostModifiersField, recoveryModifiersField, statSubstitutionsField, popularityTriggersField, eventTriggersField, aiFavorRatingsField, sensesField } from '../fields/modifier-fields.mjs';
 import { grantsField } from '../fields/grant-fields.mjs';
@@ -73,6 +73,8 @@ export class GearDataModel extends BaseItemDataModel {
       }),
       outcomes: new fields.ArrayField(new fields.ObjectField(), { initial: [] }),
       area: areaSchemaField(fields),
+      // The ammunition this weapon takes (see ammunitionField); empty takes none.
+      ammunition: ammunitionField(fields),
       // Gear aura (3.17-6): set by the aura helpers while the item emits one, never by hand
       active: new fields.BooleanField({ initial: false }),
       appliedAllyUuids: new fields.ArrayField(new fields.StringField(), { initial: [] }),

@@ -10,10 +10,11 @@ import { areRivals, rivalsLookup } from '../../utils/deity/rivals.mjs';
 import { deityIdOf } from '../../utils/deity/worship-state.mjs';
 import { deityRecords } from '../../utils/deity/deity-names.mjs';
 import { postPatronCard } from '../../chat/patron-card.mjs';
+import { isPlayerCrawler } from '../../utils/combat/combat-sides.mjs';
 import { say } from './vehicle-drive-common.mjs';
 import { baseActorOf } from './token-base-actor.mjs';
 
-const playerCrawlers = () => Array.from(globalThis.game?.actors ?? []).filter((a) => a?.type === 'crawler' && a.hasPlayerOwner === true);
+const playerCrawlers = () => Array.from(globalThis.game?.actors ?? []).filter((a) => isPlayerCrawler(a));
 
 /**
  * A lethal hit on an actor who is a crawler's active patron (a patron item whose `actorUuid` is the victim's) tells the GM

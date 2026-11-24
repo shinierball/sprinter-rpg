@@ -6,7 +6,7 @@
  */
 import { escapeAttr } from '../utils/escape-attr.mjs';
 import { withFlags, flagPath, readFlag } from '../utils/flags.mjs';
-import { messageList } from '../utils/attack/evade-link.mjs';
+import { messageList } from '../utils/card/recent-cards.mjs';
 import { evadeAftermathText, evadeInjuryLines } from '../documents/actor/evade-aftermath.mjs';
 
 /** The flag on the Injury card: `{ combatId, lines, applied }`. */

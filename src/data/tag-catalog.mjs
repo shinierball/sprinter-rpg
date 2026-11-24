@@ -1,6 +1,6 @@
 import { COG_OUTCOME_CONFIG } from '../documents/session/roll-outcomes.mjs';
 import {
-  AIMING_CONDITION, CONTEST_TAGS, ENGINE_SITUATIONS, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS, PET_TAGS, RANGED_ANY, SAME_SIZE_SITUATION, LARGER_FOE_SITUATION, SMALLER_FOE_SITUATION, AFTER_KILL_SITUATION, FOE_HALF_LEVEL_SITUATION, STOCK_SITUATIONS, VEHICLE_TAGS,
+  AIMING_CONDITION, CONTEST_TAGS, ENGINE_SITUATIONS, HEALTH_FRACTION_STEPS, healthFractionTag, OUTCOME_TAGS, PET_TAGS, RANGED_ANY, SAME_SIZE_SITUATION, LARGER_FOE_SITUATION, SMALLER_FOE_SITUATION, AFTER_KILL_SITUATION, FOE_HALF_LEVEL_SITUATION, STOCK_SITUATIONS, TRAVEL_SITUATIONS, VEHICLE_TAGS,
   PATRON_ACCESS_TAGS, PATRON_TAGS, WORSHIP_TAGS, WORSHIP_TIER_TAG_PREFIX, selfTag
 } from './tag-vocabulary.mjs';
 import { MELEE_ATTACK_ANY } from './rules/melee-attack.mjs';
@@ -47,6 +47,14 @@ const STOCK_SITUATION_ENTRIES = [
   { id: STOCK_SITUATIONS.unseenAttacker, label: 'Target Cannot See You', rows: stockRows(STOCK_SITUATIONS.unseenAttacker, 'advantage') },
   { id: STOCK_SITUATIONS.unseenTarget, label: 'You Cannot See the Target', rows: stockRows(STOCK_SITUATIONS.unseenTarget, 'disadvantage') }
 ].map((entry) => ({ namespace: 'situation', flags: ['universal'], ...entry }));
+
+/** The Perception and Survival checks the travel pace changes (core p. 71): noticing danger and finding the way. */
+const TRAVEL_WATCH_SKILLS = Object.freeze(['id.skill.perception', 'id.skill.survival']);
+
+/** One pace's `checkModifiers` row on the universal reason: the pace tag, the reason ticked, and one of the two skills. */
+function travelWatchRow(paceTag, advantage) {
+  return { kind: 'advantage', advantage, condition: { all: [TRAVEL_SITUATIONS.watch, paceTag], any: [...TRAVEL_WATCH_SKILLS], none: [] } };
+}
 
 /** Spell schools (3.58 D6b), id suffix and label. Descriptive: the GM adjudicates, no mechanic reads them. */
 const SPELL_SCHOOLS = Object.freeze([
@@ -219,6 +227,8 @@ export const COG_TAGS = [
   { id: 'crafting.table.makeup', label: 'Makeup Table', namespace: 'crafting', description: 'A crafting table for makeup and cosmetics.' },
   { id: 'crafting.table.tinkerer', label: 'Workbench', namespace: 'crafting', description: 'A crafting table for gadgets and mechanisms.' },
   { id: 'crafting.table.props', label: 'Prop Shop Table', namespace: 'crafting', description: 'A crafting table for props and costumes.' },
+  { id: 'crafting.process.concoction', label: 'Concoction', namespace: 'crafting', description: 'A blueprint that mixes potions into one: timed in minutes, nothing salvaged, and the result follows Table 48.' },
+  { id: 'crafting.process.infusion', label: 'Infusion', namespace: 'crafting', description: 'A blueprint that dunks a potion onto a consumable: timed in minutes, with Advantage, nothing salvaged, and the result follows Table 48.' },
   { id: 'crafting.coupon.table', label: 'Table Upgrade Coupon', namespace: 'crafting', description: 'Loot that adds one tier to a crafting table when applied.' },
   { id: 'crafting.mode.mundane', label: 'Crafting a Plain Item', namespace: 'crafting', engine: true, description: 'Set by the engine on the check that builds the base item.' },
   { id: 'crafting.mode.enchant', label: 'Crafting an Enchantment', namespace: 'crafting', engine: true, description: 'Set by the engine on a check that applies an enchantment to an item.' },
@@ -257,6 +267,9 @@ export const COG_TAGS = [
   { id: `${PET_TAGS.checkPrefix}tame`, label: 'Taming Check', namespace: 'pet', engine: true, description: 'Set by the engine on an Int-Opposed check made to change a pet\'s attitude.' },
   { id: `${PET_TAGS.checkPrefix}guide`, label: 'Guiding Check', namespace: 'pet', engine: true, description: 'Set by the engine on an Int-Opposed check made to guide a pet in combat.' },
   { id: `${PET_TAGS.checkPrefix}command`, label: 'Command Check', namespace: 'pet', engine: true, description: 'Set by the engine on an Unopposed check made to command a pet or a minion.' },
+  { id: 'rule.self-directed', label: 'Acts Without Commands', namespace: 'rule', flags: ['self-directed'], description: 'A minion carrying this fights for its controller without being commanded.' },
+  { id: 'rule.command-check', label: 'Commanded With a Check', namespace: 'rule', flags: ['command-check'], description: 'Each new command for this minion costs its controller an Action and an Unopposed handling check; one command reaches only it.' },
+  { id: 'rule.command-together', label: 'Copies Follow Together', namespace: 'rule', flags: ['command-together'], description: 'A Success commanding one creature holding this commands all that hold a copy from the same cast.' },
   { id: PET_TAGS.extraPet, label: 'Keeps One More Pet', namespace: 'rule', flags: ['extra-pet'], description: 'A class, gear or buff carrying this lets its bearer keep one more pet than the limit.' },
   { id: `${PET_TAGS.attitudePrefix}hostile`, label: 'Hostile Pet', namespace: 'pet', engine: true, description: 'Derived on a pet whose attitude is Hostile.' },
   { id: `${PET_TAGS.attitudePrefix}calm`, label: 'Calm Pet', namespace: 'pet', engine: true, description: 'Derived on a pet whose attitude is Calm.' },
@@ -277,6 +290,7 @@ export const COG_TAGS = [
   // --- Contests ---
   { id: CONTEST_TAGS.race, label: 'Race Check', namespace: 'contest', engine: true, description: 'Set by the engine on a check made for a leg of a race.' },
   { id: CONTEST_TAGS.chase, label: 'Chase Check', namespace: 'contest', engine: true, description: 'Set by the engine on a check made for a leg of a chase.' },
+  { id: CONTEST_TAGS.challenge, label: 'Skill Challenge Check', namespace: 'contest', engine: true, description: 'Set by the engine on a check made for a stage of a skill challenge.' },
   { id: 'contest.dc', label: 'DC Challenge', namespace: 'contest' },
   { id: 'contest.opposed', label: 'Opposed Roll', namespace: 'contest' },
   { id: 'contest.str', label: 'vs Strength', namespace: 'contest' },
@@ -353,7 +367,7 @@ export const COG_TAGS = [
   { id: 'target.self', label: 'Self Only', namespace: 'target', recipients: { gather: 'self' } },
   { id: 'target.one', label: 'One Creature', namespace: 'target', recipients: { gather: 'chosen' } },
   { id: 'target.party', label: 'Party', namespace: 'target', recipients: { gather: 'party' } },
-  { id: 'target.pet', label: 'Pet Target', namespace: 'target', recipients: { gather: 'chosen', where: { any: ['kind.pet'] } } },
+  { id: 'target.pet', label: 'Pet or Minion Target', namespace: 'target', recipients: { gather: 'chosen', where: { any: ['kind.pet', 'mob.minion'] } } },
   { id: 'target.mount', label: 'Mount Target', namespace: 'target' },
   { id: 'target.vehicle', label: 'Vehicle Target', namespace: 'target' },
 
@@ -535,6 +549,13 @@ export const COG_TAGS = [
   { id: 'situation.unwashed_company', label: 'Smelly or Dirty Company', namespace: 'situation', description: 'Ticked when the other party is smelly or dirty. The GM judges who is.' },
   { id: STOCK_SITUATIONS.higherGround, label: 'From Higher Ground', namespace: 'situation', flags: ['universal'], rows: stockRows(STOCK_SITUATIONS.higherGround, 'advantage') },
   ...STOCK_SITUATION_ENTRIES,
+  { id: TRAVEL_SITUATIONS.fast, label: 'Travelling at a Fast Pace', namespace: 'situation', engine: true, description: 'Set by the engine on every roll while the party\'s travel pace is Fast.' },
+  { id: TRAVEL_SITUATIONS.slow, label: 'Travelling at a Slow Pace', namespace: 'situation', engine: true, description: 'Set by the engine on every roll while the party\'s travel pace is Slow.' },
+  {
+    id: TRAVEL_SITUATIONS.watch, label: 'Noticing Danger or Navigating on the Move', namespace: 'situation', flags: ['universal'],
+    description: 'A Perception or Survival roll to notice danger or find the way while the party travels: Disadvantage at a Fast pace, Advantage at a Slow one. The Game Master judges what the roll is for.',
+    rows: { checkModifiers: [travelWatchRow(TRAVEL_SITUATIONS.fast, 'disadvantage'), travelWatchRow(TRAVEL_SITUATIONS.slow, 'advantage')] }
+  },
   { id: 'situation.hostile', label: 'Hostile Situation', namespace: 'situation' },
   { id: 'situation.earth_involved', label: 'Earth Involved', namespace: 'situation' },
   { id: 'situation.physically_menacing', label: 'Physically Menacing', namespace: 'situation' },
@@ -581,6 +602,7 @@ export const COG_TAGS = [
   { id: 'rule.no-standalone-attack', label: 'No Standalone Attack', namespace: 'rule', flags: ['no-standalone-attack'] },
   { id: 'action.mind_control', label: 'Mind Control', namespace: 'action', description: 'Descriptive: the GM adjudicates control of the target.', descriptive: true },
   { id: 'rule.mind-control-effect', label: 'Mind Control Effect', namespace: 'rule', flags: ['mind-control'], description: 'A spell that takes control of its target. A bearer immune to mind control (a Clear Head buff) is not affected by it; the GM adjudicates the control itself.' },
+  { id: 'rule.immovable', label: 'Cannot Be Forcibly Moved', namespace: 'rule', flags: ['immovable'], description: 'The bearer cannot be pushed, pulled or slid (core p. 95: Rooted in Place). A forced-movement line on a damage card says so for it; nothing is asked.' },
   { id: 'rule.temp-health-bars', label: 'Special Rule Flag: Temporary Health Bars', namespace: 'rule' },
   { id: 'rule.emits-light', label: 'Emits Light', namespace: 'rule', flags: ['emits-light'] },
   { id: 'perk.causes_darkness', label: 'Causes Darkness', namespace: 'perk', description: 'Descriptive: the GM adjudicates the darkness it causes.', descriptive: true },
@@ -591,7 +613,14 @@ export const COG_TAGS = [
   { id: 'perk.climb', label: 'Climbing / Vertical Surface Movement', namespace: 'perk', descriptive: true, description: 'Descriptive: the creature or effect climbs vertical surfaces. Movement comes from the Climb speed; the tag is a label for filters.' },
   { id: 'rule.lifesteal', label: 'Life Steal (Heals Caster on Damage)', namespace: 'rule' },
   { id: 'action.latch', label: 'Latch onto Target to Move When Target Moves', namespace: 'action', description: 'Descriptive: the GM adjudicates latching on and moving with the target.', descriptive: true },
-  { id: 'action.extra_attack', label: 'Grants Free Extra Attack', namespace: 'action', description: 'Descriptive: the GM grants the free extra attack.', descriptive: true },
+  { id: 'action.extra_attack', label: 'Grants Free Extra Attack', namespace: 'action', flags: ['extra-attack'], description: 'On a reached Rank Upgrade of a skill, the attack card offers one free extra Attack with Disadvantage per tier that carries it, costing no Action. On the skill itself it is descriptive.' },
+  { id: 'rule.scatter', label: 'Scatters on a Fail', namespace: 'rule', flags: ['scatter'], description: 'A failed Check or Attack with it lands off target: the card gives a 1d8 direction (core p. 200, Figure 3) and the feet the roll missed by as the distance.' },
+  { id: 'rule.scatter-aimed', label: 'Chooses the Scatter Direction', namespace: 'rule', flags: ['scatter-aimed'], description: 'On a reached Rank Upgrade of a scattering skill: you choose the direction of a miss instead of rolling the die.' },
+  { id: 'rule.reload', label: 'Needs a Reload After a Major Fail', namespace: 'rule', flags: ['reload'], description: 'After a Major Fail or worse with it, the weapon needs one Action to reload; attacking before that asks a Rule Break (core pp. 181-182).' },
+  { id: 'ammo.arrow', label: 'Arrows', namespace: 'ammo', description: 'Ammunition for a Bow. A weapon names the ammunition it takes by a tag query; each Attack spends units from an owned stack that matches (core pp. 181-182).' },
+  { id: 'ammo.bolt', label: 'Bolts', namespace: 'ammo', description: 'Ammunition for a Crossbow. A weapon names the ammunition it takes by a tag query; each Attack spends units from an owned stack that matches (core pp. 181-182).' },
+  { id: 'ammo.bullet', label: 'Bullets', namespace: 'ammo', description: 'Ammunition for a Handgun. A weapon names the ammunition it takes by a tag query; each Attack spends units from an owned stack that matches (core pp. 181-182).' },
+  { id: 'ammo.shell', label: 'Shells', namespace: 'ammo', description: 'Ammunition for a Shotgun. A weapon names the ammunition it takes by a tag query; each Attack spends units from an owned stack that matches (core pp. 181-182).' },
   { id: 'action.disadvantage', label: 'Imposes Disadvantage', namespace: 'action', description: 'Descriptive: the GM applies the disadvantage it imposes.', descriptive: true },
   {
     id: 'rule.aiming-offset', label: 'Aiming Offset (ticked Aiming: Disadvantage, adds rank to hit and 1d4 damage per tier)', namespace: 'rule',
@@ -642,7 +671,7 @@ export const COG_TAGS = [
   { id: 'mob.boss', label: 'Boss', namespace: 'mob' },
   { id: 'mob.unique', label: 'Unique Boss', namespace: 'mob' },
   { id: 'mob.summoned', label: 'Summoned Mob', namespace: 'mob', flags: ['uncounted-ally'] },
-  { id: 'mob.minion', label: 'Minion', namespace: 'mob' },
+  { id: 'mob.minion', label: 'Minion', namespace: 'mob', description: "A minion: under another creature's command. On a buff, the buff's caster is its controller." },
   { id: 'mob.tier.neighborhood', label: 'Neighborhood Boss', namespace: 'mob' },
   { id: 'mob.tier.borough', label: 'Borough Boss', namespace: 'mob' },
   { id: 'mob.tier.city', label: 'City Boss', namespace: 'mob' },

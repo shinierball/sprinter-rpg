@@ -376,7 +376,7 @@ function compileConsumable(option, state, choice, ctx, out, label) {
     out.creates.push(build(out, 'loot', {
       name: `Scroll of ${name}`,
       system: {
-        quantity: 1, lootType: 'scroll', executionMode: 'all', spellIdentifier: identifier, spellName: name,
+        quantity: 1, lootType: 'scroll', executionMode: 'all', spellIdentifier: identifier, spellName: name, spellRank: option.rank,
         outcomes: [{ name: `Cast ${name}`, type: 'spell', spellIdentifier: identifier, spellRank: option.rank, targetType: 'self' }],
         notes: `Casts ${name} at Rank ${option.rank}.`
       }

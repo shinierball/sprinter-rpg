@@ -1,5 +1,5 @@
 /**
- * Contest Tracker (GM): set up, run and end a race or chase.
+ * Contest Tracker (GM): set up, run and end a race, a chase or a skill challenge.
  *
  * Two modes in one window. With no contest chosen it edits a local draft (kind, participants from selected tokens or
  * the active combat, legs with their check, per-participant skill overrides) and "Post contest card" creates the
@@ -16,15 +16,18 @@ import { COGToolApp } from './tool-app.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { resolveActorByUuid } from '../utils/actor-uuid.mjs';
 import { getCurrentFloor } from '../utils/floor/current-floor.mjs';
+import { confirmRuleBreak } from '../utils/rule-break.mjs';
+import { unopposedDifficulty } from '../data/rules/difficulty-rules.mjs';
+import { COG_OUTCOME_CONFIG } from '../documents/session/roll-outcomes.mjs';
 import { MOVEMENT_SKILL_TAG } from '../data/tag-vocabulary.mjs';
-import { sanitizeContest, raceStandings, chaseStatus, participantLegSkill } from '../utils/contest/contest-engine.mjs';
+import { sanitizeContest, raceStandings, chaseStatus, challengeStatus, participantLegSkill } from '../utils/contest/contest-engine.mjs';
 import { CONTEST_KINDS, contestKindInfo } from '../data/rules/contest-rules.mjs';
 import { drawLegFromTable, applyLegDraw } from '../utils/contest/contest-leg-draw.mjs';
 import { getAvailableRollTables } from '../sheets/item/catalogs.mjs';
 import { contestIdOf, participantIsOut } from '../chat/contest-card.mjs';
 import {
   postContestCard, repostContestCard, getContest, listContests, updateContest, openLeg, closeLeg, endContest,
-  setGmResult, markParticipantOut, setSkillOverride, acceptSkillProposal, dismissSkillProposal, governingStat
+  setGmResult, setNetSpent, markParticipantOut, setSkillOverride, acceptSkillProposal, dismissSkillProposal, governingStat
 } from '../chat/contest-service.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/contest-tracker`;
@@ -35,6 +38,9 @@ const t = (key, data) => globalThis.game?.i18n?.format?.(key, data) ?? globalThi
 const notify = (level, message) => globalThis.ui?.notifications?.[level]?.(`Sprinter RPG | ${message}`);
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const signed = (n) => (n > 0 ? `+${n}` : `${n}`);
+
+/** The Floor a stage's Difficulty is drawn from: the contest's own once it is posted, else the world's current Floor. */
+const trackerFloor = (state, running) => (running ? state.floor : getCurrentFloor());
 
 /** The id `${prefix}${n}` that is not taken in `list`. */
 function freshId(prefix, list) {
@@ -95,7 +101,8 @@ export class COGContestTrackerApp extends COGToolApp {
       selectTable: COGContestTrackerApp.#onSelectTable,
       drawLeg: COGContestTrackerApp.#onDrawLeg,
       acceptProposal: COGContestTrackerApp.#onAcceptProposal,
-      dismissProposal: COGContestTrackerApp.#onDismissProposal
+      dismissProposal: COGContestTrackerApp.#onDismissProposal,
+      toggleNet: COGContestTrackerApp.#onToggleNet
     }
   };
 
@@ -194,6 +201,15 @@ export class COGContestTrackerApp extends COGToolApp {
     return groups.filter((g) => g.options.length);
   }
 
+  /** A closed stage's degree and net, for the leg head. */
+  #stageText(row) {
+    if (!row) return '';
+    if (row.missing) return '-';
+    const bits = [COG_OUTCOME_CONFIG[row.degree]?.label ?? row.degree];
+    if (row.net) bits.push(`${signed(row.net)}`);
+    return bits.join(' ');
+  }
+
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
@@ -202,6 +218,8 @@ export class COGContestTrackerApp extends COGToolApp {
     const resolve = resolveActorByUuid;
     const running = Boolean(this.contestId);
     const kindInfo = contestKindInfo(state.kind);
+    const isChallenge = state.kind === 'challenge';
+    const challenge = isChallenge ? challengeStatus(state) : null;
 
     const participants = state.participants.map((p) => {
       const actor = resolve(p.actorUuid);
@@ -227,6 +245,12 @@ export class COGContestTrackerApp extends COGToolApp {
         canClose: running && leg.status === 'open',
         // Hint only (D7): every participant who rolls has a result, so the GM can close.
         allIn: leg.status === 'open' && rolling.length > 0 && rolling.every((p) => row[p.id]),
+        isChallenge,
+        dc: leg.dc,
+        rollers: isChallenge ? state.participants.filter((p) => p.mode === 'roll').map((p) => ({ value: p.id, label: p.name, selected: p.id === leg.rollerId })) : [],
+        stageText: challenge ? this.#stageText(challenge.legs.find((l) => l.id === leg.id)) : '',
+        canNet: running && isChallenge && leg.status === 'closed',
+        netSpent: leg.netSpent === true,
         skillBlank: !leg.check.skill,
         skillGroups: this.#skillGroups(leg.check.skill),
         stats: STATS.map((s) => ({ value: s, label: s.toUpperCase(), selected: s === leg.check.stat })),
@@ -251,7 +275,17 @@ export class COGContestTrackerApp extends COGToolApp {
 
     let standings = [];
     if (state.legs.length && state.participants.length) {
-      if (state.kind === 'chase') {
+      if (isChallenge) {
+        standings = [{
+          name: t('COG.Contest.Tracker.Stages'),
+          // A net spent with none left is a Rule Break spend: counted beside the valid ones, as the card's summary does
+          text: (() => {
+            const rule = challenge.legs.filter((l) => l.overspent).length;
+            const data = { passed: challenge.passed, stages: challenge.stages, nets: challenge.nets, spent: challenge.spent + rule, rule };
+            return t(rule ? 'COG.Contest.Tracker.ChallengeStandingsRuleBreak' : 'COG.Contest.Tracker.ChallengeStandings', data);
+          })()
+        }];
+      } else if (state.kind === 'chase') {
         const st = chaseStatus(state, resolve);
         standings = st.chasers.map((c) => ({
           name: state.participants.find((p) => p.id === c.id)?.name ?? c.id,
@@ -277,8 +311,9 @@ export class COGContestTrackerApp extends COGToolApp {
       kinds: Object.values(CONTEST_KINDS).map((k) => ({ value: k.id, label: k.label, selected: k.id === state.kind })),
       kindHint: kindInfo.hint ?? '',
       isChase: state.kind === 'chase',
+      isChallenge, stages: state.challenge?.stages ?? 1,
       thresholds: state.thresholds,
-      floor: running ? state.floor : getCurrentFloor(),
+      floor: trackerFloor(state, running),
       status: state.status,
       done: state.status === 'done',
       participants, hasParticipants: participants.length > 0,
@@ -342,7 +377,18 @@ export class COGContestTrackerApp extends COGToolApp {
   static async #onAddLeg() {
     const skills = catalogSkills();
     const skill = skills.find((s) => s.identifier === 'running')?.identifier ?? null;
+    const running = Boolean(this.contestId);
     return this.#mutate((state) => {
+      if (state.kind === 'challenge') {
+        // A stage: the Skill starts blank for the GM to pick, the Difficulty is the Floor's Unopposed (p. 59), the roller the first who rolls.
+        state.legs.push({
+          id: freshId('leg-', state.legs), label: `Stage ${state.legs.length + 1}`,
+          check: { skill: null, stat: 'dex' }, moveMode: 'move', status: 'pending',
+          dc: unopposedDifficulty({ floor: trackerFloor(state, running) }), rollerId: state.participants.find((p) => p.mode === 'roll')?.id ?? null
+        });
+        if (state.status === 'done') state.status = 'leg';
+        return undefined;
+      }
       state.legs.push({
         id: freshId('leg-', state.legs), label: `Leg ${state.legs.length + 1}`,
         check: { skill, stat: skill ? governingStat(null, skill) : 'dex' }, moveMode: 'move', status: 'pending'
@@ -367,9 +413,17 @@ export class COGContestTrackerApp extends COGToolApp {
   static async #onEditField(event, target) {
     const { scope, id, field } = target?.dataset ?? {};
     const raw = target?.value;
+    const running = Boolean(this.contestId);
     return this.#mutate((state, ctx) => {
       if (scope === 'meta') {
-        if (field === 'kind') state.kind = raw;
+        if (field === 'kind') {
+          state.kind = raw;
+          if (raw === 'challenge') {
+            // The draft's own floor is 0 until it is posted, so a leg's Difficulty is stamped from the Floor the window shows.
+            for (const leg of state.legs) if (!Number.isFinite(leg.dc)) leg.dc = unopposedDifficulty({ floor: trackerFloor(state, running) });
+          }
+        }
+        else if (field === 'stages') state.challenge = { stages: Number(raw) };
         else if (field === 'catch') state.thresholds.catch = Number(raw);
         else if (field === 'lose') state.thresholds.lose = Number(raw);
         else return false;
@@ -384,6 +438,8 @@ export class COGContestTrackerApp extends COGToolApp {
           if (raw) leg.check.stat = governingStat(null, raw);
         } else if (field === 'stat') leg.check.stat = raw;
         else if (field === 'moveMode') leg.moveMode = raw;
+        else if (field === 'dc') leg.dc = raw === '' ? null : Number(raw);
+        else if (field === 'rollerId') leg.rollerId = raw;
         else return false;
         return undefined;
       }
@@ -443,6 +499,32 @@ export class COGContestTrackerApp extends COGToolApp {
   static async #onCloseLeg(event, target) {
     if (!this.contestId) return undefined;
     await closeLeg(this.contestId, target?.dataset?.legId);
+    return this.render();
+  }
+
+  /**
+   * Spend a safety net on a closed stage, or take the spend back. With none left it asks the Rule Break first; declined,
+   * nothing is written.
+   */
+  static async #onToggleNet(event, target) {
+    if (!this.contestId) return undefined;
+    const legId = target?.dataset?.legId;
+    const state = getContest(this.contestId)?.state;
+    const leg = state?.legs.find((l) => l.id === legId);
+    if (!leg || state.kind !== 'challenge') return undefined;
+    if (leg.netSpent) {
+      await setNetSpent(this.contestId, legId, false);
+      return this.render();
+    }
+    const trial = clone(state);
+    trial.legs.find((l) => l.id === legId).netSpent = true;
+    let ruleBreak = false;
+    if (challengeStatus(trial).legs.find((l) => l.id === legId)?.overspent) {
+      const res = await confirmRuleBreak({ title: 'Safety Net Rule Break', message: 'No safety net left. Spend one anyway as a Rule Break?' });
+      if (!res.confirmed) return undefined;
+      ruleBreak = true;
+    }
+    await setNetSpent(this.contestId, legId, true, { ruleBreak });
     return this.render();
   }
 

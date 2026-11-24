@@ -5,7 +5,7 @@ import { findConditionEntry } from '../../content/catalog-lookup.mjs';
 import { carrySourceStamp } from '../content-source.mjs';
 import { matchesTagQuery } from '../tag/tag-query.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
-import { withFlags } from '../flags.mjs';
+import { readFlag, withFlags } from '../flags.mjs';
 import { tagCatalog } from '../tag/tag-list.mjs';
 
 /**
@@ -63,6 +63,7 @@ export function rowRecipients(row, itemReach = 0) {
   const own = Math.max(0, Number(row?.range) || 0);
   return { spec, reach: own > 0 ? own : (spec.gather === 'chosen' ? Math.max(0, Number(itemReach) || 0) : 0) };
 }
+
 
 /**
  * The rows of an item's `appliedBuffs` in force at a Rank: a buff named, and the Rank between `minRank` and `maxRank`
@@ -155,6 +156,16 @@ export function buffCopyData(identifier, { fallbackName = 'Buff', description = 
     // An item applied to someone is in force: a buff model defaults to inactive, which would skip its modifiers and its duration stamp
     system: { ...structuredClone(match.system || {}), active: true }
   }, match);
+}
+
+/**
+ * The stamp a buff copy carries about who applied it (`appliedBy`), or null when the buff is the holder's own. The one
+ * reader: the card's Remove button, the duration engine and the minion rules all ask here.
+ * @param {object} item the buff
+ * @returns {{ messageId?: string, row?: number, sourceUuid?: string, sourceName?: string, casterUuid?: string }|null}
+ */
+export function appliedByOf(item) {
+  return readFlag(item, 'appliedBy') ?? null;
 }
 
 /**

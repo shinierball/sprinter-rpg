@@ -19,6 +19,7 @@ import { prepareItemLists, prepareItemSummaries, prepareGrantedSummaries } from 
 import { prepareCoreContext } from './crawler/context-core.mjs';
 import { prepareSkillsAndSpells } from './crawler/context-skills.mjs';
 import { prepareInventory } from './crawler/context-inventory.mjs';
+import { prepareSheetTables } from './crawler/context-tables.mjs';
 import { prepareCombat } from './crawler/context-combat.mjs';
 import { prepareHotlist, prepareExternalBuffs } from './crawler/context-slots.mjs';
 import { preparePageZero, pageZeroOffered, PAGE_ZERO_PART_ID, PAGE_ZERO_TAB, PAGE_ZERO_TEMPLATE } from './crawler/context-page-zero.mjs';
@@ -29,6 +30,7 @@ import { coreActions, GM_ONLY_LIMB_FIELDS } from './crawler/actions-core.mjs';
 import { combatActions } from './crawler/actions-combat.mjs';
 import { pageZeroActions } from './crawler/actions-page-zero.mjs';
 import { itemActions } from './crawler/actions-items.mjs';
+import { tableActions, bindColumnMenuDismiss, unbindColumnMenuDismiss } from './crawler/actions-tables.mjs';
 import { lootBoxActions, lootBoxDragData, dropLootBoxEntry, dropBoxTemplate, isLootBoxDragData } from './crawler/actions-loot-boxes.mjs';
 import { transformationActions } from './crawler/actions-transformation.mjs';
 import { slotActions } from './crawler/actions-slots.mjs';
@@ -101,6 +103,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
       ...combatActions,
       ...pageZeroActions,
       ...itemActions,
+      ...tableActions,
       ...lootBoxActions,
       ...transformationActions,
       ...slotActions,
@@ -139,12 +142,24 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
         `${PARTS_PATH}/identity-pet.hbs`,
         `${PARTS_PATH}/identity-mercenary.hbs`,
         `${PARTS_PATH}/hotlist.hbs`,
-        `${PARTS_PATH}/sex-select.hbs`
+        `${PARTS_PATH}/sex-select.hbs`,
+        `${PARTS_PATH}/tables/quick-spells-table.hbs`,
+        `${PARTS_PATH}/tables/column-menu.hbs`,
+        `${PARTS_PATH}/tables/definition-row.hbs`,
+        `${SYSTEM_PATH}/templates/shared/item-definition.hbs`
       ],
       scrollable: ['']
     },
-    page4: { template: `${PARTS_PATH}/page4-inventory.hbs`, scrollable: [''] },
-    page3: { template: `${PARTS_PATH}/page3-skills.hbs`, templates: [`${PARTS_PATH}/spells.hbs`], scrollable: [''] },
+    page4: {
+      template: `${PARTS_PATH}/page4-inventory.hbs`,
+      templates: [`${PARTS_PATH}/tables/inventory-table.hbs`, `${PARTS_PATH}/tables/column-menu.hbs`, `${PARTS_PATH}/tables/definition-row.hbs`, `${SYSTEM_PATH}/templates/shared/item-definition.hbs`],
+      scrollable: ['']
+    },
+    page3: {
+      template: `${PARTS_PATH}/page3-skills.hbs`,
+      templates: [`${PARTS_PATH}/spells.hbs`, `${PARTS_PATH}/tables/skills-table.hbs`, `${PARTS_PATH}/tables/spells-table.hbs`, `${PARTS_PATH}/tables/column-menu.hbs`, `${PARTS_PATH}/tables/definition-row.hbs`, `${SYSTEM_PATH}/templates/shared/item-definition.hbs`],
+      scrollable: ['']
+    },
     conditions: { template: `${PARTS_PATH}/conditions.hbs`, scrollable: [''] },
     story: { template: `${PARTS_PATH}/story-extras.hbs`, templates: [`${PARTS_PATH}/companions.hbs`, `${PARTS_PATH}/vehicle-role-select.hbs`, `${SYSTEM_PATH}/templates/actors/vehicle/drive-controls.hbs`], scrollable: [''] },
     achievements: { template: `${PARTS_PATH}/achievements.hbs`, scrollable: [''] }
@@ -153,6 +168,10 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
   /** Gear-granted skills and spells from the last context build, by synthetic id (roll actions read these). */
   _grantedSkills = new Map();
   _grantedSpells = new Map();
+  /** The table whose Columns menu is open, or null. */
+  _columnMenu = null;
+  /** The ids of the rows whose definition is open; kept only while the sheet lives. */
+  _openDefinitions = new Set();
 
   /* -------------------------------------------- */
   /*  Context                                     */
@@ -174,6 +193,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
     this._grantedSpells = grantedSpells;
     await prepareGrantedSummaries([...grantedSkills.values(), ...grantedSpells.values()], actor);
     prepareInventory(context, actor, this._inventorySort);
+    await prepareSheetTables(context, this);
     prepareCombat(context, actor, { showStowedAttacks: this._showStowedAttacks, showImprovisedAttacks: this._showImprovisedAttacks });
     prepareHotlist(context, actor);
     if (context.tabs?.[PAGE_ZERO_PART_ID]) preparePageZero(context, actor, this);
@@ -230,6 +250,7 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
   async _onRender(context, options) {
     await super._onRender(context, options);
     syncPageZeroWindowClass(this);
+    bindColumnMenuDismiss(this);
     this.element.querySelector?.('.cog-actor-tags-section [data-tag-entry] input')?.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter') return;
       event.preventDefault();
@@ -242,6 +263,12 @@ export class COGCrawlerSheet extends COGActorSheetV2 {
       this._scrollToAttacks = false;
       this._scrollToAttacksSection();
     }
+  }
+
+  /** @override */
+  async _onClose(options) {
+    unbindColumnMenuDismiss(this);
+    return super._onClose?.(options);
   }
 
   /** Show page 1 and scroll its attacks section to the top of the tab. */

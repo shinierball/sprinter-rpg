@@ -125,7 +125,7 @@ When an actor casts a spell (`actor.rollSpell(item)`):
 
 ## 7. Tag Manager UI (`COGTagManager`)
 
-GMs and players can open the Tag Manager from the Items Directory sidebar via the **Tag Taxonomy** button or in code via `cog.openTagManager()`.
+GMs and players can open the Tag Manager from the Items Directory sidebar via the **Tag Taxonomy** button or in code via `window.cog.openTagManager()`.
 
 Features:
 - Filter tags across the built-in namespaces (`kind`, `action`, `element`, `archetype`, etc.).

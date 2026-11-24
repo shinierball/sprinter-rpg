@@ -18,12 +18,12 @@ import { postPatronCard } from '../../chat/patron-card.mjs';
 import { becomePatron, becomeReasons, writePatronage } from './patronage.mjs';
 import { say, notify } from './vehicle-drive-common.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { canWriteActor } from './aura-relay.mjs';
 
 const now = () => Number(globalThis.game?.time?.worldTime) || 0;
 const label = (key, fallback) => say(`COG.Patron.Audition.${key}`, fallback);
 const attitudeName = (attitude) => label(`Attitude.${attitude}`, attitude.charAt(0).toUpperCase() + attitude.slice(1));
 const outcomeName = (outcome) => COG_OUTCOME_CONFIG[outcome]?.label ?? outcome;
-const canWrite = (actor) => Boolean(globalThis.game?.user?.isGM || actor?.testUserPermission?.(globalThis.game?.user, 'OWNER'));
 
 /** The Skill's name on the Bard by identifier, else the identifier. */
 function skillName(actor, identifier) {
@@ -86,7 +86,7 @@ export async function startAudition(actor, item, { attitude = 'willing', dc = nu
  */
 export async function rollAuditionCheck(actor, item, skill, { options } = {}) {
   const audition = patronageOf(item);
-  if (audition.status !== 'auditioning' || !skill || !canWrite(actor)) return { ok: false, reason: 'not-auditioning' };
+  if (audition.status !== 'auditioning' || !skill || !canWriteActor(actor)) return { ok: false, reason: 'not-auditioning' };
   const identifier = itemIdentifier(skill);
   if (audition.audition.checks.some((c) => c.skill === identifier)) {
     const answer = await confirmRuleBreak({
@@ -147,7 +147,7 @@ export async function applyAuditionCheck(message) {
   if (!record || ref?.kind !== 'audition') return { ok: false, reason: 'not-audition' };
   const actor = globalThis.fromUuidSync?.(record.rollerUuid) ?? null;
   const item = actor?.items.get(ref.itemId) ?? null;
-  if (!actor || !item || !canWrite(actor)) return { ok: false, reason: 'no-access' };
+  if (!actor || !item || !canWriteActor(actor)) return { ok: false, reason: 'no-access' };
   const patronage = patronageOf(item);
   if (patronage.status !== 'auditioning') {
     notify('warn', label('NotAuditioning', 'That audition is not under way.'));

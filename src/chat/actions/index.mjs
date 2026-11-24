@@ -27,6 +27,7 @@ import { handleRollMobLoot, handleHandOutBossLoot } from './fight-loot.mjs';
 import { handleApplyEvadeInjury } from './evade-injuries.mjs';
 import { handleGrindMapFind } from './grind-map-find.mjs';
 import { handleGrindFloorTime } from './grind-floor-time.mjs';
+import { handleFloorCollapseOffer } from './floor-collapse-offer.mjs';
 import { handleUseAssist, handleApplyAssist, handleResolveCalledPlay } from './use-assist.mjs';
 import { handleCameraPickRow, handleCameraAward, handleCameraChoice, handleCameraWithheld } from './cameras.mjs';
 import { handleContestRoll, handleContestDrop, handleContestPropose } from './contest.mjs';
@@ -45,14 +46,23 @@ import { handlePatronGig } from './patron-gig.mjs';
 import { handlePatronAudition, handlePatronPopularity, handlePatronSteady } from './patron-audition.mjs';
 import { handleCheckOffer, handleApplyCheckReroll } from './check-offers.mjs';
 import { handleAfterKillCheck } from './after-kill-check.mjs';
-import { handleSetDifficulty, handleAskOpposed, handleClearDifficulty } from './check-difficulty.mjs';
+import { handleSetDifficulty, handleAskOpposed, handleAskEscalating, handleClearDifficulty } from './check-difficulty.mjs';
+import { handleScatterDie } from './scatter-die.mjs';
+import { handleReloadWeapon } from './reload-weapon.mjs';
+import { handleExtraAttack } from './extra-attack.mjs';
 import { handlePopularityChecklistUndo } from './popularity-checklist.mjs';
 import { handlePopularityChecklistOpen } from './popularity-checklist-open.mjs';
 import { handleFanBoxAlertAward, handleFanBoxAlertDismiss } from './fan-box-alert.mjs';
 import { handleHitVehicle, handleVehicleEvade } from './vehicle-combat.mjs';
 import { handlePetThrown } from './pet-thrown.mjs';
+import { handleGiveBackControl } from './give-back-control.mjs';
+import { handleNpcTable } from './npc-table.mjs';
+import { handleShowDefinition } from './show-definition.mjs';
 
 export const CHAT_ACTIONS = Object.freeze({
+  crawlerShowDefinition: handleShowDefinition,
+  crawlerNpcTable: handleNpcTable,
+  crawlerGiveBackControl: handleGiveBackControl,
   crawlerPetThrown: handlePetThrown,
   crawlerChoosePetRole: handleChoosePetRole,
   crawlerPatronOffer: handlePatronOffer,
@@ -114,13 +124,18 @@ export const CHAT_ACTIONS = Object.freeze({
   crawlerAfterKillCheck: handleAfterKillCheck,
   crawlerSetDifficulty: handleSetDifficulty,
   crawlerAskOpposed: handleAskOpposed,
+  crawlerAskEscalating: handleAskEscalating,
   crawlerClearDifficulty: handleClearDifficulty,
+  crawlerScatterDie: handleScatterDie,
+  crawlerReloadWeapon: handleReloadWeapon,
+  crawlerExtraAttack: handleExtraAttack,
   crawlerApplyAiFavorTally: handleApplyAiFavorTally,
   crawlerRollMobLoot: handleRollMobLoot,
   crawlerApplyEvadeInjury: handleApplyEvadeInjury,
   crawlerHandOutBossLoot: handleHandOutBossLoot,
   crawlerGrindMapFind: handleGrindMapFind,
   crawlerGrindFloorTime: handleGrindFloorTime,
+  crawlerFloorCollapseOffer: handleFloorCollapseOffer,
   crawlerPopularityChecklistUndo: handlePopularityChecklistUndo,
   crawlerPopularityChecklistOpen: handlePopularityChecklistOpen,
   crawlerFanBoxAlertAward: handleFanBoxAlertAward,

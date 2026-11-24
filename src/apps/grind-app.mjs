@@ -3,17 +3,19 @@
  *
  * Provides a dedicated, interactive party hub for:
  * - Setting grinding hours (1 to 12 hrs, default 5 hrs)
- * - Toggling Guide / Companion Insight (+1 safe hour, e.g. a helpful guide)
  * - Party Roster Selection (checkboxes for all party crawlers)
  * - Party sub-tabs to inspect each crawler, allocate banked hours, and trigger individual advancement checks
  * - Individual Endurance Checks per participant & Fatigued debuff applied only to failures
- * - Resetting unallocated pool hours to 0 at the start of a new grind (use it or lose it)
+ * - Keeping unspent pool hours for another Skill (core p. 170)
  * - Decrementing the global Floor Timer Clock once by non-bonus hours accrued
  */
 
 import { COGToolApp } from './tool-app.mjs';
 import { COGActor } from '../documents/actor.mjs';
-import { GRIND_MAP_TAGS, getRequiredGrindingHours, getAdvancementTarget, getSafeGrindingThreshold } from '../data/rules/grinding-rules.mjs';
+import { GRIND_MAP_TAGS, getRequiredGrindingHours, getAdvancementTarget, planGrindHours } from '../data/rules/grinding-rules.mjs';
+import { grindLogOf } from '../documents/actor/grind-log.mjs';
+import { grindHoursWithin } from '../utils/skill/grind-log.mjs';
+import { DAY_HOURS, SECONDS_PER_HOUR } from '../utils/time/timing.mjs';
 import { GRIND_TABLES_SETTING, honouredGrindPick, listGrindTables } from '../content/grind-tables.mjs';
 import { SYSTEM_ID, SYSTEM_PATH } from '../constants.mjs';
 import { getItemAllTags } from '../documents/active-tags.mjs';
@@ -29,6 +31,14 @@ import { advancingItemsOf } from '../utils/skill/advancing-items.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/grind-app`;
 
+/** The setup panel's hour figures (core p. 170) for one crawler: its earlier hours in the 30 hours before now count. */
+function hourPreview(app, crawler) {
+  const now = Number(globalThis.game?.time?.worldTime) || 0;
+  const priorHours = crawler ? grindHoursWithin(grindLogOf(crawler), now - DAY_HOURS * SECONDS_PER_HOUR, now) : 0;
+  const plan = planGrindHours({ hours: app.hours, priorHours, mapType: app.mapType, floor: app.floorNumber });
+  return { safeThreshold: plan.safeHours, mapBonus: plan.mapBonus, excessHours: plan.checkHours };
+}
+
 /** The GM's stored table picks (`{ floor, neighborhood }`); an unreadable setting reads as no picks. */
 function storedGrindPicks() {
   try { return game.settings.get(SYSTEM_ID, GRIND_TABLES_SETTING) ?? {}; } catch { return {}; }
@@ -43,7 +53,6 @@ export class COGGrindApp extends COGToolApp {
     actions: {
       setHours: COGGrindApp.#onSetHours,
       setFloor: COGGrindApp.#onSetFloor,
-      setGuideBonus: COGGrindApp.#onSetGuideBonus,
       setMapType: COGGrindApp.#onSetMapType,
       setComplication: COGGrindApp.#onSetComplication,
       setGrindFloorTable: COGGrindApp.#onSetGrindFloorTable,
@@ -92,7 +101,6 @@ export class COGGrindApp extends COGToolApp {
     this.actor = options.actor || null;
     this.selectedSkillId = options.selectedSkillId || options.skillId || null;
     this.hours = Number(options.hours) || 5;
-    this.hasGuideBonus = Boolean(options.hasGuideBonus);
     this.rollComplication = options.rollComplication !== false;
 
     // Party selection state: every crawler starts unticked, so each grind needs a deliberate pick
@@ -158,19 +166,17 @@ export class COGGrindApp extends COGToolApp {
     context.actor = activeCrawler;
 
     context.hours = this.hours;
-    context.hasGuideBonus = this.hasGuideBonus;
     context.floorNumber = this.floorNumber;
     context.rollComplication = this.rollComplication;
 
-    const { safeThreshold, mapBonus } = getSafeGrindingThreshold({
-      hasGuideBonus: this.hasGuideBonus,
-      mapType: this.mapType
-    });
-    const excessHours = Math.max(0, this.hours - safeThreshold);
+    // The safe limit is 5, the excess counts this crawler's earlier hours in the day, and a map needs a 5-hour grind (core p. 170).
+    const { safeThreshold, mapBonus, excessHours } = hourPreview(this, activeCrawler);
     context.mapType = this.mapType;
     context.mapBonus = mapBonus;
     context.safeThreshold = safeThreshold;
     context.excessHours = excessHours;
+    context.neighborhoodMapLabel = 'Neighborhood Map (+1 hr on a 5+ hour grind)';
+    context.boroughMapLabel = 'Borough Map (+2 hrs on a 5+ hour grind)';
     context.isMapNone = this.mapType === 'none';
     context.isMapNeighborhood = this.mapType === 'neighborhood';
     context.isMapBorough = this.mapType === 'borough' || this.mapType === 'burrough';
@@ -339,11 +345,6 @@ export class COGGrindApp extends COGToolApp {
     }
   }
 
-  static async #onSetGuideBonus(event, target) {
-    this.hasGuideBonus = target.checked;
-    await this.render();
-  }
-
   static async #onSetMapType(event, target) {
     this.mapType = target.value;
     await this.render();
@@ -485,18 +486,14 @@ export class COGGrindApp extends COGToolApp {
       return;
     }
 
-    const { mapBonus } = getSafeGrindingThreshold({ mapType: this.mapType });
     const options = {
       hours: this.hours,
-      hasGuideBonus: this.hasGuideBonus,
       mapType: this.mapType,
-      mapBonus,
       hasNeighborhoodMap: this.mapType === 'neighborhood',
       hasBoroughMap: this.mapType === 'borough' || this.mapType === 'burrough',
       hasBurroughMap: this.mapType === 'borough' || this.mapType === 'burrough',
       floor: this.floorNumber,
       rollComplication: this.rollComplication,
-      resetPool: true, // Use it or lose it
       lowestLevelBonusIds: [...this._lowestLevelBonusIds()]
     };
 

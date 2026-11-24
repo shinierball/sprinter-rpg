@@ -37,6 +37,31 @@
             <button type="button" class="cog-hud-scene-btn" data-action="newScene" title="Start a new scene: once-per-scene cooldowns come back">New Scene</button>
           {{/if}}
         </div>
+        {{#if showHarshConditions}}
+          <div class="cog-floor-hud-time-row cog-hud-scene-row">
+            <button type="button" class="cog-hud-scene-btn" data-action="harshConditions" title="{{harshConditionsHint}}">{{harshConditionsLabel}}</button>
+          </div>
+        {{/if}}
+        {{#if showTravelPace}}
+          <div class="cog-floor-hud-time-row cog-hud-scene-row">
+            <span class="cog-hud-label">{{travelPaceLabel}}</span>
+            <select class="cog-hud-time-input" data-change-action="setTravelPace" title="{{travelPaceHint}}">
+              {{#each travelPaceOptions}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+            </select>
+          </div>
+          {{#if travelPaceLine}}
+            <div class="cog-floor-hud-time-row cog-hud-scene-row"><span class="cog-hud-label">{{travelPaceLine}}. {{travelPaceEffect}}</span></div>
+          {{/if}}
+          <div class="cog-floor-hud-time-row cog-hud-scene-row"><span class="cog-hud-label">{{travelPaceHint}}</span></div>
+        {{/if}}
+        {{#if showLongTravel}}
+          <div class="cog-floor-hud-time-row cog-hud-scene-row">
+            <span class="cog-hud-label">{{longTravelLabel}}</span>
+            <input type="number" data-travel-hours class="cog-hud-time-input" value="1" min="0" step="0.5" />
+            <button type="button" class="cog-hud-scene-btn" data-action="travelHours">{{longTravelButton}}</button>
+            <span class="cog-hud-label">{{longTravelToday}}</span>
+          </div>
+        {{/if}}
       </div>
       <div class="cog-floor-hud-actions">
         <button type="button" data-action="toggleCollapsed" class="cog-floor-hud-collapse-btn" title="Minimize Clock HUD">

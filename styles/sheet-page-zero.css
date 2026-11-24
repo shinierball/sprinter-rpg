@@ -160,7 +160,7 @@
   margin-bottom: 3px;
 }
 
-/* temporary Health bars: drawn only while the crawler has some (live flag page-zero-temp-guard) */
+/* temporary Health bars: drawn only while the crawler has some */
 .cog-p0-temp {
   display: grid;
   gap: 3px;

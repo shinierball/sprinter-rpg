@@ -23,6 +23,7 @@ import { prepareAttackDisplay } from './attack-display.mjs';
 import { classifyBuff } from '../../utils/effects/buff-classify.mjs';
 import { isBuffSuppressed } from '../../utils/effects/dispel.mjs';
 import { canSwitchDebuff } from '../../documents/actor/debuff-switch.mjs';
+import { SPONSOR_LIMIT } from '../../data/rules/sponsor-rules.mjs';
 import { itemDisplayName } from '../../utils/tag/display-name.mjs';
 import { raceInForce } from '../../utils/character/overlay-state.mjs';
 import { afflictionView } from './context-transformation.mjs';
@@ -64,6 +65,7 @@ export function prepareItemLists(context, actor) {
     classes: [],
     deities: [],
     sponsors: [],
+    sponsorLimit: SPONSOR_LIMIT,
     loot: [],
     buffs: [],
     debuffs: [],
@@ -175,7 +177,7 @@ const TOOLTIP_TYPES = new Set(['spell', 'skill', 'gear', 'attack', 'loot', 'buff
 
 /**
  * Describe the actor's items once (`describeItem`, owner = the actor) and attach the results:
- * `featureLines` on races and classes, `summaryTip` (tooltip text, lines joined by newlines) on every spell, skill, gear, attack, loot, buff and
+ * `featureLines` on races and classes, `summaryTip` (tooltip text, lines joined by newlines) and `summaryLines` (the lines, for a sheet's definition row) on every spell, skill, gear, attack, loot, buff and
  * debuff row, and `summary` (the " • " line; a debuff's is its effect and stat groups) on buffs and debuffs. Nothing is stored on a document and nothing is
  * cached; the lines are rebuilt on every render. Also sets `context.summaryEmptyText`, the muted line for an item
  * with no structured effects.
@@ -192,6 +194,7 @@ export async function prepareItemSummaries(context, actor) {
     if (isRaceOrClass(item)) item.featureLines = lines;
     if (!TOOLTIP_TYPES.has(item.type)) return;
     item.summaryTip = summaryTooltip(lines);
+    item.summaryLines = lines;
     // The short gear badge text (equipped-slot tooltips, inventory row): what the item changes on its owner
     if (item.type === 'gear') item.bonusesSummary = summaryText(linesInGroups(lines, GEAR_BONUS_GROUPS));
     if (item.type === 'buff') item.summary = summaryText(lines);
@@ -213,6 +216,9 @@ export async function prepareGrantedSummaries(rows, actor) {
     const identifier = row.system?.identifier;
     const official = identifier ? catalogEntries(kind).find((entry) => entry.system?.identifier === identifier) : null;
     const rank = Number(row.system?.modifiedRank ?? row.system?.rank ?? row.rank) || undefined;
-    row.summaryTip = summaryTooltip(await describeItem(official ?? row, { actor, rank }));
+    const lines = await describeItem(official ?? row, { actor, rank });
+    row.summaryTip = summaryTooltip(lines);
+    row.summaryLines = lines;
+    row.definitionSource = official ?? row;
   }));
 }

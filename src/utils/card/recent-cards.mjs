@@ -15,6 +15,9 @@ export function messageList(messages) {
   return messages ? Array.from(messages.values?.() ?? messages) : [];
 }
 
+/** The chat message with this id (a non-empty string), or null. */
+export const messageById = (id) => (typeof id === 'string' && id ? globalThis.game?.messages?.get?.(id) ?? null : null);
+
 /** The started combat's id, or null. An idle active combat has no cards of its own, so it does not scope. */
 export function scopeCombatId() {
   const combat = globalThis.game?.combat;

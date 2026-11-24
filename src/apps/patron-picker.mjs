@@ -8,10 +8,10 @@
  *   any other count is a Rule Break the GM may confirm.
  */
 import { COGToolApp } from './tool-app.mjs';
-import { CatalogBrowserMixin } from './catalog-browser.mjs';
+import { CatalogBrowserMixin, itemRowVisible } from './catalog-browser.mjs';
 import { SYSTEM_PATH } from '../constants.mjs';
 import { searchRows } from '../content/unified-catalog.mjs';
-import { resolveCompendiumPacks, resolveFullItemData } from '../content/catalog-source.mjs';
+import { resolveFullItemData } from '../content/catalog-source.mjs';
 import { addPatronProspect, setPatronOfferOpener } from '../documents/actor/patronage.mjs';
 import { setPatronTransferOpener, transferPatronage } from '../documents/actor/patron-endings.mjs';
 import { postPatronCard } from '../chat/patron-card.mjs';
@@ -23,12 +23,6 @@ import { offerCountOk } from '../utils/patron/patron-offer.mjs';
 const TPL = `${SYSTEM_PATH}/templates/apps/patron-picker`;
 
 const isGM = () => Boolean(globalThis.game?.user?.isGM);
-
-/** A world patron the user may see (Limited or better). */
-const worldVisible = (row) => globalThis.game?.items?.get(row.id)?.testUserPermission?.(globalThis.game.user, 'LIMITED') === true;
-
-/** A pack patron listed in a pack the user can see. */
-const packVisible = (row) => resolveCompendiumPacks('items').some((pack) => pack?.visible !== false && pack?.index?.has?.(row.id));
 
 /** The source document of a row: the world item, else the full pack or catalog data. */
 const sourceOf = (row) => (row.isWorld ? globalThis.game.items.get(row.id) : resolveFullItemData(row, 'items'));
@@ -72,7 +66,7 @@ export class COGPatronPicker extends CatalogBrowserMixin(COGToolApp) {
   async catalogRows() {
     const rows = (await super.catalogRows()).filter((row) => this.mode === 'offer' || row.type === 'patron');
     if (isGM()) return rows;
-    return rows.filter((row) => (row.isWorld ? worldVisible(row) : row.source === 'compendium' && packVisible(row)));
+    return rows.filter(itemRowVisible);
   }
 
   /** @override */

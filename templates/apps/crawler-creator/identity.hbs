@@ -22,7 +22,8 @@
 
     <div class="cog-form-group">
       <label><i class="fa-solid fa-hashtag"></i> Crawler #</label>
-      <input type="text" name="creator-number" data-input-action="setNumber" data-prop="crawlerNumber" value="{{crawlerNumber}}" placeholder="#1001" />
+      <input type="text" name="creator-number" data-input-action="setNumber" data-prop="crawlerNumber" value="{{crawlerNumber}}" placeholder="{{localize "COG.CrawlerCreator.Identity.NumberPlaceholder"}}" />
+      <span class="cog-rule-hint">{{numberHint}}</span>
     </div>
 
     <div class="cog-form-group">
@@ -44,6 +45,7 @@
           <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
         {{/each}}
       </select>
+      {{#if sizeHint}}<span class="cog-rule-hint">{{sizeHint}}</span>{{/if}}
     </div>
 
     <div class="cog-form-group">

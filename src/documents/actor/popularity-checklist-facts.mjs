@@ -3,7 +3,7 @@
  * Natural 20s and 1s, the floor-exit snapshot or the live floor and timer, the grind log and the ended day's gain.
  * Read only: nothing here writes.
  */
-import { readFlag } from '../../utils/flags.mjs';
+import { grindLogOf } from './grind-log.mjs';
 import { dayIndex, SECONDS_PER_HOUR } from '../../utils/time/timing.mjs';
 import { grindHoursWithin } from '../../utils/skill/grind-log.mjs';
 import { GRIND_FINAL_WINDOW_HOURS } from '../../data/rules/popularity-changes.mjs';
@@ -11,8 +11,8 @@ import { dueMoments } from '../../utils/floor/popularity-checklist.mjs';
 import { COGSessionEngine } from '../session/session-engine.mjs';
 import { getCurrentFloor, getFloorTimer } from './actor-environment.mjs';
 import { readChecklistState, readPopularityDay } from './popularity-checklist.mjs';
+import { finiteOrNull as finite } from '../../utils/first-scalar.mjs';
 
-const finite = (value) => (value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null);
 const liveRecords = (state) => (Array.isArray(state?.applied) ? state.applied : []).filter((r) => r && !r.undoneAt);
 const worldNow = () => Number(globalThis.game?.time?.worldTime) || 0;
 const timestampMs = (t) => (typeof t === 'number' ? t : Date.parse(t));
@@ -70,7 +70,7 @@ export function gatherChecklistFacts(moment, { sessionId = '' } = {}) {
       partySize: crawlers.length,
       crits: moment === 'session' ? ledgerCrits(session, actor.id, applied) : [],
       exit,
-      grindHours: exit ? grindHoursWithin(readFlag(actor, 'grindLog'), exit.time - GRIND_FINAL_WINDOW_HOURS * SECONDS_PER_HOUR, exit.time) : null,
+      grindHours: exit ? grindHoursWithin(grindLogOf(actor), exit.time - GRIND_FINAL_WINDOW_HOURS * SECONDS_PER_HOUR, exit.time) : null,
       dayGain: moment === 'day' && prev && prev.day === day ? prev.end - prev.start : null
     };
   });

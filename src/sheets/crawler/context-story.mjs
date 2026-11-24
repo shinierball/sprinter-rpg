@@ -12,6 +12,27 @@ import { vehicleKindInfo } from '../../data/rules/vehicle-rules.mjs';
 import { driveContext } from '../vehicle/drive-context.mjs';
 import { PET_ATTITUDES, sanitizePetAttitude } from '../../data/rules/pet-rules.mjs';
 import { petLimitFor, tamingReadout } from '../../documents/actor/pet-checks.mjs';
+import { TOP_TEN_PLACES, topTenBounty, topTenOf, topTenStairwellPayout } from '../../data/rules/top-ten.mjs';
+import { benefactorText, benefactorView } from '../../documents/actor/sponsor-box.mjs';
+import { effectiveFloor } from '../../utils/character/race-class-floor.mjs';
+
+const NUMBER_FORMAT = new Intl.NumberFormat('en-US');
+
+/** The Top Ten select, and the bounty line (or the "opens on the Fourth Floor" hint) for the crawler's place. */
+function topTenContext(actor) {
+  const i18n = globalThis.game?.i18n;
+  const t = (key, data) => (data ? i18n?.format?.(key, data) : i18n?.localize?.(key)) ?? key;
+  const place = topTenOf(actor);
+  const options = [{ value: '', label: '—', selected: place === null }];
+  for (let n = 1; n <= TOP_TEN_PLACES; n++) options.push({ value: n, label: t(`COG.TopTen.Place.${n}`), selected: n === place });
+  const floor = effectiveFloor(actor);
+  const bounty = topTenBounty(place, floor);
+  const payout = topTenStairwellPayout(place, floor);
+  const line = bounty === null ? '' : t('COG.TopTen.Line', {
+    place: t(`COG.TopTen.Place.${place}`), bounty: NUMBER_FORMAT.format(bounty), payout: NUMBER_FORMAT.format(payout)
+  });
+  return { options, line, hint: place !== null && bounty === null ? t('COG.TopTen.Hint') : '' };
+}
 
 /** A vehicle kind's label, localized when the i18n service is up. */
 const vehicleKindLabel = (id) => {
@@ -41,6 +62,9 @@ function seatsLabel(vehicle) {
  * @param {Actor} actor
  */
 export function prepareStory(context, actor) {
+  context.topTen = topTenContext(actor);
+  const benefactorLines = benefactorView(actor, effectiveFloor(actor));
+  context.benefactor = { lines: benefactorLines, canClear: Boolean(globalThis.game?.user?.isGM) && Boolean(benefactorLines.length), clearLabel: benefactorText('COG.Sponsor.Benefactor.Clear'), clearTip: benefactorText('COG.Sponsor.Benefactor.ClearTip') };
   // Past Trauma / Loose Ends / Regrets boxes: the roll button names the registered table and its die. No table, no button.
   context.storyTables = STORY_TRAITS.map(key => {
     const box = STORY_BOXES[key];

@@ -9,6 +9,7 @@
  *  - an unowned item is described at its own `rank` and lists every Rank break;
  *  - `ctx.rank` overrides the Rank in both cases.
  * The describer does no Rank math of its own: which breaks are reached comes from `resolveReachedRankBreaks`.
+ * An author text field (`limitations`, a text `range`, the legacy `upgrades`) is shown as written, never read to decide anything.
  * Text lives under `COG.ItemSummary.SpellSkill` in lang/en.json (identical defaults are registered below).
  */
 import { normalizeBaseDamage, baseDamageText } from '../damage/base-damage.mjs';
@@ -20,6 +21,7 @@ import { hotRoundsOf } from '../time/hot-rounds.mjs';
 import { ADVANCEMENT_ROUTE_DEFS, routeLimit } from '../skill/advancement-routes.mjs';
 import { specialtyLabel } from '../skill/skill-specialty-options.mjs';
 import { rankBreakLine } from './rank-break-text.mjs';
+import { castRangeText } from '../attack/cast-range-text.mjs';
 import { getItemAllTags } from '../../documents/active-tags.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { RANK_BREAK_THRESHOLDS } from '../../data/tag-vocabulary.mjs';
@@ -33,7 +35,7 @@ import { techniqueBandSummary, effectIdentifiers } from '../../documents/actor/a
 import { resolveSpellCost } from '../../documents/actor/spell-cast.mjs';
 import { healingBarsFor, cleanseListFor } from '../../documents/actor/use-card-parts.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../tag/tag-behaviour.mjs';
-import { skillGroupLabel, spellRole, spellRoleLabel, PRIMARY_ATTACK_TAGS } from '../tag/tag-mechanics.mjs';
+import { skillGroupLabel, spellRole, spellRoleLabel, PRIMARY_ATTACK_TAGS, isAuraItem } from '../tag/tag-mechanics.mjs';
 
 const KEY = 'COG.ItemSummary.SpellSkill';
 
@@ -116,7 +118,9 @@ defineItemSummaryTemplates({
   [`${KEY}.QueryAny`]: 'any of {tags}',
   [`${KEY}.QueryNone`]: 'none of {tags}',
   [`${KEY}.AtRankBand`]: 'At Rank {rank}: {text}',
-  [`${KEY}.Upgrades`]: 'Upgrades: {text}'
+  [`${KEY}.Upgrades`]: 'Upgrades: {text}',
+  [`${KEY}.Limitations`]: 'Limitations: {text}',
+  [`${KEY}.RangeText`]: 'Range: {text}'
 });
 
 // ---- small, defensive readers (CONTRIBUTING §4) ----------------------------------------------------------------
@@ -592,6 +596,28 @@ function describeRankBreaks(item, ctx) {
   return out;
 }
 
+// ---- author text: limitations, text range ----------------------------------------------------------------------
+
+/**
+ * A spell's or skill's Limitations, as the author wrote them. Reads `system.limitations` only, never the notes. The line's
+ * `bareText` is the text alone, for a reader that prints its own "Limitations" heading.
+ */
+function describeLimitations(item) {
+  const text = str(sysOf(item).limitations);
+  return text ? [{ ...itemLine('limit', L('Limitations', { text }), 'system.limitations'), bareText: text }] : [];
+}
+
+/**
+ * A spell whose range is text ("Line of sight"): the Range line the cast card prints, with a reached break's bonus.
+ * A positive `rangeFeet` is already in the attack sentences.
+ */
+function describeRangeText(item, ctx) {
+  const sys = sysOf(item);
+  if (Number(sys.rangeFeet) > 0) return [];
+  const text = castRangeText(sys, resolveReachedRankBreaks(item, rankOf(item, ctx)), isAuraItem(item));
+  return text ? [itemLine('attack', L('RangeText', { text }), 'system.range')] : [];
+}
+
 // ---- registry ---------------------------------------------------------------------------------------------------
 
 const appliesTo = (pred) => (item) => spellOrSkill(item) && pred(item);
@@ -612,5 +638,7 @@ export const BLOCKS = Object.freeze([
   { id: 'spell-skill-applied-buffs', group: 'effect', applies: appliesTo(() => true), describe: describeAppliedBuffs },
   { id: 'spell-skill-duration', group: 'timing', applies: appliesTo(() => true), describe: describeDuration },
   { id: 'spell-skill-cooldown', group: 'timing', applies: appliesTo(() => true), describe: describeCooldown },
-  { id: 'spell-skill-rank-breaks', group: 'effect', applies: appliesTo(() => true), describe: describeRankBreaks }
+  { id: 'spell-skill-rank-breaks', group: 'effect', applies: appliesTo(() => true), describe: describeRankBreaks },
+  { id: 'spell-skill-limitations', group: 'cast', applies: spellOrSkill, describe: describeLimitations },
+  { id: 'spell-range-text', group: 'effect', applies: isSpell, describe: describeRangeText }
 ]);

@@ -1096,6 +1096,41 @@ export const COG_BUFFS = [
         "value": 0
       }
     }
+  },
+  {
+    "_id": "dccbuf1000000011",
+    "name": "Split Three Ways",
+    "type": "buff",
+    "img": "icons/svg/clockwork.svg",
+    "system": {
+      "identifier": "split-three-ways",
+      "tags": [
+        "mob.minion",
+        "rule.command-check"
+      ],
+      "durationConfig": {
+        "type": "minutes",
+        "value": 1
+      }
+    }
+  },
+  {
+    "_id": "dccbuf1000000012",
+    "name": "Split Three Ways, In Step",
+    "type": "buff",
+    "img": "icons/svg/clockwork.svg",
+    "system": {
+      "identifier": "split-three-ways-in-step",
+      "tags": [
+        "mob.minion",
+        "rule.command-check",
+        "rule.command-together"
+      ],
+      "durationConfig": {
+        "type": "minutes",
+        "value": 1
+      }
+    }
   }
 ];
 

@@ -3,6 +3,7 @@
  * Rank equal the current Floor number (the skill's Rank is simply the Floor number), so it never advances.
  * An owner whose Ranks all follow the Floor (a pet) makes every one of its skills floor-ranked.
  */
+import { escapeAttr } from '../escape-attr.mjs';
 import { getCurrentFloor } from '../floor/current-floor.mjs';
 import { SKILL_SOFT_CAP, highRankActive } from './rank-limits.mjs';
 import { isAdvancingType } from './spells-advance.mjs';
@@ -49,4 +50,46 @@ export function actingRank(item) {
   let stored = ranksFollowFloorOf(owner) ? 0 : asRank(sys.rank ?? item?.rank);
   if (isAdvancingType(item) && stored > SKILL_SOFT_CAP && owner && !highRankActive(owner)) stored = SKILL_SOFT_CAP;
   return Math.max(asRank(item?.modifiedRank), asRank(sys.modifiedRank), asRank(item?.effectiveRank), asRank(sys.effectiveRank), stored);
+}
+
+/** A Rank a cast names: a positive whole number (a string from a button's dataset counts), else 0. */
+function namedCastRank(value) {
+  const n = Number(value);
+  return Number.isInteger(n) && n > 0 ? n : 0;
+}
+
+/**
+ * The Rank a spell is cast, rolled and displayed at: a Rank the cast names (`opts.castRank`, a scroll's written Rank,
+ * core p. 99) when it is a positive whole number, else the highest of the spell's Modified Rank, its stored Rank and 1.
+ * The fallback is deliberately not `actingRank` (no soft cap, no floor-ranked rule): every spell read of a Rank goes here.
+ * @param {object} spell a spell item or an item-like object
+ * @param {{ castRank?: number|string }} [opts] the cast's options
+ * @returns {number}
+ */
+export function castRankOf(spell, opts = {}) {
+  const named = namedCastRank(opts?.castRank);
+  if (named) return named;
+  const sys = spell?.system ?? {};
+  return Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
+}
+
+/**
+ * The Rank a card button names, as a cast option: `{ castRank }` from its `data-cast-rank`, or `{}` when it has none.
+ * @param {{ dataset?: { castRank?: string } }} button
+ * @returns {{ castRank?: number }}
+ */
+export function castRankOption(button) {
+  const named = namedCastRank(button?.dataset?.castRank);
+  return named ? { castRank: named } : {};
+}
+
+/**
+ * The `data-cast-rank` attribute (with its leading space) a card's follow-up button carries so the damage and attack
+ * rolls use the Rank the cast named; '' when the cast named none.
+ * @param {{ castRank?: number|string }} [opts]
+ * @returns {string}
+ */
+export function castRankDataAttr(opts = {}) {
+  const named = namedCastRank(opts?.castRank);
+  return named ? ` data-cast-rank="${escapeAttr(named)}"` : '';
 }

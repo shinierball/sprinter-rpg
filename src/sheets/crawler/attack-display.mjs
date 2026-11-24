@@ -8,6 +8,9 @@ import { currentTimeContext } from '../../documents/actor/dungeon-time.mjs';
 import { attackEffectsText } from '../../utils/attack/attack-mechanics.mjs';
 import { conditionLabel } from '../../documents/actor/condition-data.mjs';
 import { attackDamageDisplay } from '../../utils/damage/damage-parts.mjs';
+import { reloadText, showsReloadBadge } from '../../documents/item/weapon-reload.mjs';
+import { ammunitionReadout } from '../../documents/item/ammunition.mjs';
+import { resolveWeaponSkills } from '../../documents/actor/weapon-skills.mjs';
 
 /**
  * Prepares consistent display properties for attack table rows
@@ -41,6 +44,11 @@ export function prepareAttackDisplay(item, actor) {
   item.displayEffects = attackEffectsText(item, { labelOf: conditionLabel });
   item.isWeaponGear = isGear;
   item.isAttackEquipped = sys.equipped !== false;
+  // A weapon marked as needing its reload shows the badge (derived readout of the item flag)
+  item.reloadBadge = showsReloadBadge(item) ? reloadText('COG.Reload.Badge') : '';
+
+  // What the weapon's matching ammunition stacks add up to (derived readout)
+  item.ammunitionReadout = actor ? ammunitionReadout(actor, item, isGear ? resolveWeaponSkills(actor, item).matchingSkill : null) : '';
 
   const favor = typeof actor?.getAiFavorRating === 'function' ? actor.getAiFavorRating(item) : null;
   item.favorConditional = favor?.conditional ?? [];

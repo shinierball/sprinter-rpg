@@ -1,0 +1,14 @@
+{{!-- AMMUNITION: the ammunition tag query this weapon takes and the units one Attack spends. Context: `ammunition` from src/sheets/item/context-ammunition.mjs --}}
+<details class="cog-collapsible-block cog-ammunition-block">
+  <summary class="cog-collapsible-summary">
+    <span class="cog-collapsible-title"><i class="fa-solid fa-chevron-right cog-chevron"></i> <i class="fa-solid fa-arrow-up-long"></i> {{localize "COG.Ammunition.Sheet.Title"}}</span>
+  </summary>
+  <div class="cog-collapsible-content">
+    <p class="cog-rule-hint"><i class="fa-solid fa-circle-info"></i> {{localize "COG.Ammunition.Sheet.Hint"}}</p>
+    {{> "systems/sprinter-rpg/templates/items/parts/tag-query-editor.hbs" query=ammunition.query tagOptions=techniqueTagOptions}}
+    <div class="cog-field-group small">
+      <span class="cog-field-label">{{localize "COG.Ammunition.Sheet.PerAttack"}}</span>
+      <input class="cog-field-input" type="number" min="1" step="1" name="system.ammunition.perAttack" value="{{ammunition.perAttack}}" />
+    </div>
+  </div>
+</details>

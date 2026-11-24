@@ -2,7 +2,7 @@
  * Loot box tiers: the registry behind `CONFIG.COG.lootBoxTiers` (keyed by tier id).
  * Its own registry (not the boss tiers) so homebrew can add box tiers without touching boss tiers.
  *
- * An entry is `{ id, label, rank, color, icon, img, fx, sound, houseTableKey, generator, magicItem }`:
+ * An entry is `{ id, label, rank, color, icon, img, fx, sound, houseTableKey, generator, magicItem, goldFormula }`:
  * - `rank` orders the tiers (ties by registry order); the seeded ranks are spaced by 10 so a homebrew tier fits between.
  * - `color` reaches CSS only as a custom property on the element; `icon` is a Font Awesome class, `img` the box image.
  * - `fx` names the CSS class `cog-lootbox-fx-<fx>` of the opening show (an unknown one reads as `pop`); `sound` is a path ('' = silent).
@@ -12,6 +12,7 @@
  *   the item type's table, `skill` an inclusive `[min, max]` Skill Rank range (null = the tier rolls no property),
  *   `stat` a flat `{ range: [min, max] }` or a `{ percent }` of the opener's stat, `enchantedName` whether the item's name
  *   gets the Enchanted prefix. A bad block reads as Bronze's.
+ * - `goldFormula` is a Foundry roll formula for the gold an unfilled box also gives ('' = none; the book's usual gold of the tier).
  */
 
 import { firstScalar } from '../utils/first-scalar.mjs';
@@ -31,18 +32,18 @@ const MAGIC_ROLLS_MAX = 10;
 const range = (min, max) => Object.freeze([min, max]);
 const magic = (rolls, skill, stat, enchantedName) => Object.freeze({ rolls, skill, stat, enchantedName });
 
-const seeded = (id, label, rank, color, icon, fx, magicItem) => Object.freeze({
+const seeded = (id, label, rank, color, icon, fx, magicItem, goldFormula) => Object.freeze({
   id, label, rank, color, icon, fx, sound: 'sounds/drums.wav',
-  houseTableKey: `lootbox.default.${id}`, generator: 'magic-item', magicItem
+  houseTableKey: `lootbox.default.${id}`, generator: 'magic-item', magicItem, goldFormula
 });
 
 export const LOOT_BOX_TIERS = Object.freeze({
-  bronze: seeded('bronze', 'Bronze', 10, '#cd7f32', 'fa-solid fa-box-open', 'pop', magic(0, null, null, false)),
-  silver: seeded('silver', 'Silver', 20, '#bdc3c7', 'fa-solid fa-box-archive', 'shine', magic(1, range(1, 1), Object.freeze({ range: range(2, 2) }), false)),
-  gold: seeded('gold', 'Gold', 30, '#f1c40f', 'fa-solid fa-gem', 'sparkle', magic(2, range(1, 3), Object.freeze({ range: range(3, 5) }), true)),
-  platinum: seeded('platinum', 'Platinum', 40, '#00d2d3', 'fa-solid fa-ring', 'beam', magic(3, range(2, 4), Object.freeze({ percent: 5 }), true)),
-  legendary: seeded('legendary', 'Legendary', 50, '#e67e22', 'fa-solid fa-dragon', 'flare', magic(4, range(5, 5), Object.freeze({ percent: 10 }), true)),
-  celestial: seeded('celestial', 'Celestial', 60, '#9b59b6', 'fa-solid fa-crown', 'nova', magic(5, range(6, 6), Object.freeze({ percent: 20 }), false))
+  bronze: seeded('bronze', 'Bronze', 10, '#cd7f32', 'fa-solid fa-box-open', 'pop', magic(0, null, null, false), '1d10'),
+  silver: seeded('silver', 'Silver', 20, '#bdc3c7', 'fa-solid fa-box-archive', 'shine', magic(1, range(1, 1), Object.freeze({ range: range(2, 2) }), false), '1d10*100'),
+  gold: seeded('gold', 'Gold', 30, '#f1c40f', 'fa-solid fa-gem', 'sparkle', magic(2, range(1, 3), Object.freeze({ range: range(3, 5) }), true), '1d6*1000'),
+  platinum: seeded('platinum', 'Platinum', 40, '#00d2d3', 'fa-solid fa-ring', 'beam', magic(3, range(2, 4), Object.freeze({ percent: 5 }), true), '2d6*1000'),
+  legendary: seeded('legendary', 'Legendary', 50, '#e67e22', 'fa-solid fa-dragon', 'flare', magic(4, range(5, 5), Object.freeze({ percent: 10 }), true), '1d10*10000'),
+  celestial: seeded('celestial', 'Celestial', 60, '#9b59b6', 'fa-solid fa-crown', 'nova', magic(5, range(6, 6), Object.freeze({ percent: 20 }), false), '')
 });
 
 /** The live registry (`CONFIG.COG.lootBoxTiers`), falling back to the bundled one. */
@@ -116,7 +117,7 @@ export function lootBoxTierDefProblem(def) {
   if (typeof def.id !== 'string' || !LOOT_BOX_TIER_ID_PATTERN.test(def.id)) return 'the id must be lower case letters, digits, _ or -, starting with a letter';
   if (typeof def.label !== 'string' || !def.label.trim()) return 'a label is required';
   if (def.rank !== undefined && !Number.isFinite(def.rank)) return 'rank must be a number';
-  for (const key of ['color', 'icon', 'img', 'fx', 'sound', 'houseTableKey', 'generator']) {
+  for (const key of ['color', 'icon', 'img', 'fx', 'sound', 'houseTableKey', 'generator', 'goldFormula']) {
     if (def[key] !== undefined && typeof def[key] !== 'string') return `${key} must be text`;
   }
   return '';
@@ -159,6 +160,7 @@ function withDefaults(entry, id) {
     sound: typeof entry.sound === 'string' ? entry.sound.trim() : '',
     houseTableKey: text(entry.houseTableKey, `lootbox.default.${id}`),
     generator: text(entry.generator, ''),
+    goldFormula: typeof entry.goldFormula === 'string' ? entry.goldFormula.trim() : '',
     magicItem
   };
 }

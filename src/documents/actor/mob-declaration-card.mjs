@@ -7,18 +7,18 @@ import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
 
 const VARIANTS = Object.freeze({
-  attack: { header: 'COG.MobAttack.Header', icon: 'fa-crosshairs', fill: 'cog-bg-accent-fill cog-text-on-fill', text: 'cog-text-accent' },
-  spell: { header: 'COG.MobAttack.SpellHeader', icon: 'fa-wand-magic-sparkles', fill: 'cog-bg-magic-fill cog-text-on-fill', text: 'cog-text-magic' }
+  attack: { header: 'COG.MobAttack.Header', comparedHeader: 'COG.MobAttack.HeaderCompared', icon: 'fa-crosshairs', fill: 'cog-bg-accent-fill cog-text-on-fill', text: 'cog-text-accent' },
+  spell: { header: 'COG.MobAttack.SpellHeader', comparedHeader: 'COG.MobAttack.SpellHeaderCompared', icon: 'fa-wand-magic-sparkles', fill: 'cog-bg-magic-fill cog-text-on-fill', text: 'cog-text-magic' }
 });
 
 /**
  * The card's banner: header, Floor badge, Evade DC with its breakdown, and the area note.
  * @param {{ variant?: 'attack'|'spell', evadeDC: number, floor: number, isArea?: boolean, base?: number,
- *   shift?: number, flat?: number, label?: string|null }} p `base` is the stat-block number, `shift` the mob's +/-5 (E6.10) and `flat` its Check rows; the
+ *   shift?: number, flat?: number, label?: string|null, compared?: boolean }} p `compared`: a row is an NPC against NPC comparison, so the header does not claim a hit; `base` is the stat-block number, `shift` the mob's +/-5 (E6.10) and `flat` its Check rows; the
  *   breakdown never derives the base from the DC once a shift exists
  * @returns {string}
  */
-export function mobDeclarationBannerHtml({ variant = 'attack', evadeDC, floor, isArea = false, base, shift = 0, flat = 0, label = null }) {
+export function mobDeclarationBannerHtml({ variant = 'attack', evadeDC, floor, isArea = false, base, shift = 0, flat = 0, label = null, compared = false }) {
   const v = VARIANTS[variant] ?? VARIANTS.attack;
   const shiftNum = Number(shift) || 0;
   const flatNum = Number(flat) || 0;
@@ -32,7 +32,7 @@ export function mobDeclarationBannerHtml({ variant = 'attack', evadeDC, floor, i
   return `
       <div class="cog-mob-autohit-card cog-mob-declaration-card" style="font-family: var(--font-primary, 'Oswald', sans-serif); margin-bottom: 6px;">
         <div class="${escapeAttr(v.fill)}" style="padding: 6px 10px; border-radius: 4px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between;">
-          <span><i class="fa-solid ${escapeAttr(v.icon)}"></i> ${escapeAttr(mobAttackText(v.header))}</span>
+          <span><i class="fa-solid ${escapeAttr(v.icon)}"></i> ${escapeAttr(mobAttackText(compared ? v.comparedHeader : v.header))}</span>
         </div>
         <div class="cog-bg-surface-alt" style="border: 1px solid var(--cog-divider); border-radius: 4px; padding: 6px 8px; margin-top: 4px; font-size: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -85,9 +85,8 @@ export function mobDeclarationFlags(attacker, item, targetResults) {
       tokenId: tr.tokenId ?? null,
       actorName: tr.actorName,
       targetDC: tr.targetDC,
-      isHit: true,
-      diff: 0,
-      outcome: 'Auto-Hit'
+      // An NPC against NPC row (core p. 83) keeps its comparison: a miss is not a hit.
+      ...(tr.npcVsNpc ? { isHit: tr.isHit === true, diff: tr.diff, outcome: tr.outcome, npcVsNpc: tr.npcVsNpc } : { isHit: true, diff: 0, outcome: 'Auto-Hit' })
     }))
   };
 }

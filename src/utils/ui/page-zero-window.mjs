@@ -3,6 +3,7 @@
  * on, and the size the user last gave the play page. Pure of any sheet; `src/sheets/crawler/page-zero-window.mjs` uses it.
  */
 import { SYSTEM_ID } from '../../constants.mjs';
+import { readSetting } from './read-setting.mjs';
 
 /** Client setting: where a character sheet opens. */
 export const PAGE_ZERO_OPENING_SETTING = 'pageZeroOpening';
@@ -14,14 +15,6 @@ export const PAGE_ZERO_OPENING = Object.freeze({ DEFAULT: 'default', PLAY: 'play
 
 /** The size page 0 opens at the first time. */
 const PAGE_ZERO_DEFAULT_SIZE = Object.freeze({ width: 400, height: 720 });
-
-function readSetting(key) {
-  try {
-    return globalThis.game?.settings?.get?.(SYSTEM_ID, key);
-  } catch {
-    return undefined;
-  }
-}
 
 /**
  * Whether a user's sheets open on page 0 (before any check that the actor is offered page 0).

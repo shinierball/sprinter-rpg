@@ -9,9 +9,9 @@ import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { gateActionBlock, actionBlockApplies } from '../../documents/actor/action-block.mjs';
-import { mobTargetDifficulty } from '../../documents/actor/attack-targets.mjs';
+import { mobTargetDifficulty, isForcedAttacker } from '../../documents/actor/attack-targets.mjs';
 import { mobAttackText } from '../../utils/combat/declared-attacks.mjs';
-import { attackerIdOf, mobAdvantageOf } from '../../utils/combat/card-flags.mjs';
+import { attackerIdOf, mobAdvantageOf, targetResultsOf } from '../../utils/combat/card-flags.mjs';
 import { recordEvade, evadeCoveredFor } from '../../documents/combat-declarations.mjs';
 import { COG_ACTION_TYPES } from '../../documents/combat/action-ledger.mjs';
 import { isOutOfRangeOnMessage, rangeText } from '../../utils/attack/attack-range.mjs';
@@ -74,6 +74,19 @@ function attackCardRollContext(attackCard) {
   return own ? parseRollContext(own.dataset.rollContext) : null;
 }
 
+/**
+ * The Opposed row an attack card stored for this evader (`pvp: true`, core p. 87): its `targetDC` is the attack total plus
+ * that target's own row bonus. Null when the card has none.
+ * @param {ChatMessage|null} attackCard
+ * @param {Actor} evader
+ * @returns {object|null}
+ */
+function opposedRowFor(attackCard, evader) {
+  const rows = targetResultsOf(attackCard);
+  if (!Array.isArray(rows)) return null;
+  return rows.find((r) => r?.pvp === true && r.actorId === evader?.id) ?? null;
+}
+
 /** The Evade interrupt entry an Evade roll on a declared attack records as the evader's Action. */
 const EVADE_INTERRUPT = Object.freeze({ ...COG_ACTION_TYPES.evade, name: COG_ACTION_TYPES.evade.label, type: 'action', isFree: false, actionCost: 1 });
 /** The free Evade a disadvantaged mob attack gives (E6.10): recorded, but no Action is spent. */
@@ -114,7 +127,7 @@ export async function handleRollEvade(event, button, message) {
     : (button.dataset?.attackTotal !== undefined && button.dataset?.attackTotal !== '' ? Number(button.dataset.attackTotal) : undefined);
   let attackTotal = targetDC;
   const floor = Number(button.dataset?.floor) || getCurrentFloor();
-  const isArea = button.dataset?.isArea === 'true' || button.dataset?.isArea === true;
+  let isArea = button.dataset?.isArea === 'true' || button.dataset?.isArea === true;
 
   const crawler = namedEvader(button) ?? await resolveEvadingCrawler();
   if (!crawler) return;
@@ -133,14 +146,22 @@ export async function handleRollEvade(event, button, message) {
     const rollContext = parseRollContext(button.dataset?.rollContext) ?? attackCardRollContext(attackCard);
     // The card's net Advantage plus what this crawler's own rows give attackers (Held, Take Down): this crawler's Difficulty.
     const cardState = mobAdvantageOf(attackCard);
-    const own = mobTargetDifficulty(cardState, crawler, game.actors?.get?.(attackerIdOf(attackCard)) ?? null, rollContext ?? []);
-    if (own) { targetDC = own.dc; attackTotal = own.dc; }
+    const attacker = game.actors?.get?.(attackerIdOf(attackCard)) ?? null;
+    const own = mobTargetDifficulty(cardState, crawler, attacker, rollContext ?? []);
+    const opposed = opposedRowFor(attackCard, crawler);
+    if (opposed) {
+      // The evader's own row: the card's current total (a reroll or an assist moved it) with this target's bonus, else the stored DC.
+      const current = recordAttackTotal(attackCard, crawler.uuid);
+      targetDC = current ?? Number(opposed.targetDC);
+      attackTotal = targetDC;
+      isArea = false;
+    } else if (own) { targetDC = own.dc; attackTotal = own.dc; }
     else if (attackCard) {
       // A crawler's attack: the card's record holds the current total (a reroll or an assist moved it), not the button's.
       const current = recordAttackTotal(attackCard, crawler.uuid);
       if (current !== null) { targetDC = current; attackTotal = current; }
     }
-    const disadvantaged = own ? own.disadvantaged : cardState?.mode === 'disadvantage';
+    const disadvantaged = opposed ? isForcedAttacker(attacker) : (own ? own.disadvantaged : cardState?.mode === 'disadvantage');
     const prior = attackMessageId ? listEvadesFor(game.messages, { attackMessageId, targetUuid: crawler.uuid }) : [];
     const kind = classifyNextEvade({ disadvantaged, prior });
     // One Evade per attack (3.18): any other roll by the same crawler is a Rule Break (the latest one counts).

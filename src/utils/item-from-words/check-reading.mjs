@@ -123,13 +123,5 @@ export function holdRow(check, since, row) {
   for (const entry of check.unresolved.slice(since)) entry.row = structuredClone(row);
 }
 
-/** Set `value` at a dotted `path` in `target`, making the objects on the way. */
-export function setPath(target, path, value) {
-  const keys = path.split('.');
-  let node = target;
-  for (const key of keys.slice(0, -1)) node = node[key] ??= {};
-  node[keys.at(-1)] = value;
-}
-
 /** Whether a value is a plain object (not null, not an array). */
 export const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);

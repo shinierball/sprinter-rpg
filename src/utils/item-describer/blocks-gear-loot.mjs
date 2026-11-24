@@ -73,6 +73,7 @@ defineItemSummaryTemplates({
   [`${K}UsedInto`]: 'Leaves {name} when used up',
   [`${K}Cooldown`]: 'Cooldown: {text}',
   [`${K}CastsSpell`]: 'Casts {name}',
+  [`${K}CastsAtRank`]: 'Casts at Rank {rank}',
   [`${K}OptionalEffects`]: 'Can add techniques: {list}',
   [`${K}OutcomeChance`]: '{text} ({percent}%)',
   [`${K}OutcomeHeal`]: 'Heals {bars}',
@@ -434,7 +435,10 @@ const linkedSpell = {
   describe: async (item) => {
     const sys = sysOf(item);
     const name = (await resolveGrantName({ identifier: str(sys.spellIdentifier) }, 'spell')) || str(sys.spellName) || humanizeId(str(sys.spellIdentifier));
-    return [itemLine('spell', t(`${K}CastsSpell`, { name }), 'system.spellIdentifier')];
+    const lines = [itemLine('spell', t(`${K}CastsSpell`, { name }), 'system.spellIdentifier')];
+    // A scroll's spell has a set Rank, written when the scroll is made (core p. 99).
+    if (isLoot(item) && str(sys.lootType) === 'scroll') lines.push(itemLine('spell', t(`${K}CastsAtRank`, { rank: Math.max(1, num(sys.spellRank)) }), 'system.spellRank'));
+    return lines;
   }
 };
 

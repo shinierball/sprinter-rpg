@@ -258,7 +258,11 @@
 
   {{#if system.details.pendingStatPoints}}
   <div class="cog-pending-stat-points" data-tooltip="Earned with Levels (3 each). Spend them in a saferoom.">
+    {{#if statPointsHeld}}
+    <i class="fa-solid fa-circle-plus"></i> {{statPointsHeldText}}
+    {{else}}
     <i class="fa-solid fa-circle-plus"></i> <strong>{{system.details.pendingStatPoints}}</strong> Stat point{{#unless (eq system.details.pendingStatPoints 1)}}s{{/unless}} to spend (saferoom)
+    {{/if}}
   </div>
   {{/if}}
 
@@ -698,6 +702,12 @@
                   {{#if attack.isSkillAttack}}
                     <span class="cog-stat-sublabel cog-bg-success-fill cog-text-on-fill" style="display: inline-block; margin-left: 2px; font-size: 9px; text-transform: uppercase; padding: 1px 3px; border-radius: 2px;">[SKILL]</span>
                   {{/if}}
+                  {{#if attack.reloadBadge}}
+                    <span class="cog-stat-sublabel cog-bg-warning-fill cog-text-on-fill" style="display: inline-block; margin-left: 2px; font-size: 9px; text-transform: uppercase; padding: 1px 3px; border-radius: 2px;">{{attack.reloadBadge}}</span>
+                  {{/if}}
+                  {{#if attack.ammunitionReadout}}
+                    <span class="cog-stat-sublabel" style="display: inline-block; margin-left: 2px; font-size: 9px; text-transform: uppercase;">{{attack.ammunitionReadout}}</span>
+                  {{/if}}
                   {{#if attack.cooldownBadge}}{{> "systems/sprinter-rpg/templates/apps/partials/cooldown-badge.hbs" badge=attack.cooldownBadge}}{{/if}}
                   {{#if attack.displayEffects}}<div class="cog-text cog-attack-effects" style="font-size: 10px; margin-top: 2px;">{{attack.displayEffects}}</div>{{/if}}
                 </div>
@@ -794,61 +804,19 @@
   </div>
 
   {{#if spells.length}}
-  {{!-- SPELLS & MAGIC SECTION (PAGE 1 QUICK-ACCESS) --}}
+  {{!-- SPELLS & MAGIC SECTION (PAGE 1 QUICK-ACCESS): the lean quick table, columns from @root.tables.quickSpells --}}
   <div class="cog-attacks-section mob-spells-section" style="margin-top: 8px;">
     <div class="cog-banner-header cog-bg-grad-info" style="display: flex; justify-content: space-between; align-items: center;">
       <span><i class="fa-solid fa-wand-magic-sparkles"></i> SPELLS &amp; MAGIC</span>
-      <a class="cog-text-on-fill" data-action="createItem" data-type="spell" data-tooltip="Add Spell" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none;">
-        <i class="fa-solid fa-plus"></i> Add Spell
-      </a>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <a class="cog-text-on-fill" data-action="createItem" data-type="spell" data-tooltip="Add Spell" style="cursor: pointer; font-size: 11px; font-weight: normal; text-transform: none;">
+          <i class="fa-solid fa-plus"></i> Add Spell
+        </a>
+        {{> "systems/sprinter-rpg/templates/actors/parts/tables/column-menu.hbs" table=@root.tables.quickSpells}}
+      </div>
     </div>
-    <table class="cog-attacks-table">
-      <thead>
-        <tr>
-          <th style="width: 25%;">Spell</th>
-          <th style="width: 14%;">Cost / Stat</th>
-          <th style="width: 20%;">Damage / Effect</th>
-          <th style="width: 26%;">Range &amp; Details</th>
-          <th style="width: 15%; text-align: center;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each spells as |spell|}}
-          <tr class="draggable" data-item-id="{{spell.id}}" draggable="true">
-            <td>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <img class="cog-bg-icon-box" src="{{spell.img}}" width="20" height="20" style="border: none; border-radius: 2px;" />
-                <a class="roll-spell cog-text-info" data-action="rollSpell" data-tooltip-text="Cast {{spell.name}}{{#if spell.summaryTip}}
-{{spell.summaryTip}}{{/if}}" data-tooltip-class="cog-tooltip-lines" style="font-weight: bold; cursor: pointer;">{{spell.name}}</a> {{#if spell.isOffline}}<span class="cog-state-badge cog-badge-undone" data-tooltip-text="{{spell.offlineTip}}">[OFFLINE]</span>{{/if}}
-              </div>
-            </td>
-            <td>
-              <span class="cog-text-info" style="font-size: 11px; font-weight: bold;">{{spell.system.manaCost}} MP</span>
-              <small class="cog-text">({{upper spell.system.stat}} {{spell.statModStr}})</small>
-            </td>
-            <td>
-              {{#if spell.hasDamage}}
-                <button type="button" class="cog-attack-roll-btn roll-spell-dmg cog-bg-accent-fill cog-text-on-fill" data-action="rollSpellDamage" data-tooltip-text="Roll Damage ({{spell.damageFormula}})" style="font-size: 10px; padding: 2px 6px;">
-                  {{spell.damageDice}} {{spell.damageType}}
-                </button>
-              {{else}}
-                <span style="font-size: 11px;">{{spell.roleLabel}}</span>
-              {{/if}}
-            </td>
-            <td>
-              <span style="font-size: 11px;">{{#if spell.system.range}}{{spell.system.range}} &bull; {{/if}}{{plainText spell.system.description}}</span>
-            </td>
-            <td style="text-align: center; white-space: nowrap;">
-              <button type="button" class="cog-attack-roll-btn roll-spell" data-action="rollSpell" data-tooltip-text="Cast {{spell.name}}" style="font-size: 10px; padding: 2px 6px;">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Cast
-              </button>
-              <a class="item-edit" data-action="editItem" data-tooltip="Edit Spell" style="margin-left: 3px; cursor: pointer;"><i class="fa-solid fa-edit"></i></a>
-              <a class="item-delete cog-text-accent" data-action="deleteItem" data-tooltip="Delete Spell" style="margin-left: 3px; cursor: pointer;"><i class="fa-solid fa-trash"></i></a>
-            </td>
-          </tr>
-        {{/each}}
-      </tbody>
-    </table>
+{{!-- Flush left on purpose: Handlebars indents every line of a partial's output by the call's indent, which would indent a multi-line tooltip. --}}
+{{> "systems/sprinter-rpg/templates/actors/parts/tables/quick-spells-table.hbs"}}
   </div>
   {{/if}}
 

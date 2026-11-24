@@ -130,7 +130,7 @@ export const ENGINE_PAGES = [
   </ul>
 
   <div class="cog-journal-callout cog-journal-callout-info">
-    <strong>Situations.</strong> The engine sets <code>situation.in_combat</code>, <code>situation.disadvantaged</code>, <code>situation.critical_hit</code>, <code>situation.amazing_success</code>, <code>situation.damage_effect</code>, <code>situation.specialty</code> (the item you make, or your target, carries the rolling skill's chosen specialty) <code>situation.same_size</code> and (on a defence row) <code>situation.intercepting</code>, a hit the holder caught for an ally, itself, and (on a heal row) <code>situation.single_target</code>, a heal that goes to one creature; rolls in a race or chase also carry <code>contest.race</code> or <code>contest.chase</code>. Any other situation a row mentions (such as <code>situation.aiming</code>) appears as a toggle in the roll dialog. Press <strong>+ New situation</strong> in a condition editor to invent one for your table.
+    <strong>Situations.</strong> The engine sets <code>situation.in_combat</code>, <code>situation.disadvantaged</code>, <code>situation.critical_hit</code>, <code>situation.amazing_success</code>, <code>situation.damage_effect</code>, <code>situation.specialty</code> (the item you make, or your target, carries the rolling skill's chosen specialty) <code>situation.same_size</code> and (on a defence row) <code>situation.intercepting</code>, a hit the holder caught for an ally, itself, and (on a heal row) <code>situation.single_target</code>, a heal that goes to one creature; rolls in a race, a chase or a skill challenge also carry <code>contest.race</code>, <code>contest.chase</code> or <code>contest.challenge</code>. Any other situation a row mentions (such as <code>situation.aiming</code>) appears as a toggle in the roll dialog. Press <strong>+ New situation</strong> in a condition editor to invent one for your table.
   </div>
 
   <h3>Once per Floor</h3>
@@ -175,11 +175,13 @@ scaled = number &times; (base + per &times; n), kept between min and max
       <tr><td><code>hpSlotsLost</code></td><td>Empty Health Bar slots</td><td>You, or the target (worked out per target)</td></tr>
       <tr><td><code>rank</code></td><td>A Rank</td><td>This item, the item used, the weapon skill, an owned item</td></tr>
       <tr><td><code>floor</code></td><td>The current Floor</td><td></td></tr>
+      <tr><td><code>level</code></td><td>Your Level (per: 0.1 for "per 10 Levels")</td><td></td></tr>
       <tr><td><code>stat</code> / <code>statValue</code></td><td>Your modifier / score for a chosen stat</td><td></td></tr>
       <tr><td><code>paidDrStat</code></td><td>Your modifier or score for a chosen stat, as the world setting AI Favor Spent for DR says</td><td></td></tr>
       <tr><td><code>count</code></td><td>Creatures or items matching a tag query</td><td>Party, allies, enemies, owned items, targets hit at once (per target)</td></tr>
       <tr><td><code>move</code></td><td>Your Move in feet (per 0.1 = &ldquo;per 10 ft&rdquo;)</td><td></td></tr>
-      <tr><td><code>size</code></td><td>Your size value (1 to 8)</td><td></td></tr>
+      <tr><td><code>size</code></td><td>Your size value (1 to 8), or the size of the mount you ride</td><td><code>self</code> (default), <code>mount</code></td></tr>
+      <tr><td><code>moved</code></td><td>The feet your token, or your mount's, has moved since its movement history was cleared (per: 0.1 for "per 10 ft")</td><td><code>self</code> (default), <code>mount</code></td></tr>
       <tr><td><code>worshipTier</code></td><td>Your Tier of Devotion (1-3); 0 for a god you do not worship</td><td>The god of this gift, or the highest god you worship</td></tr>
     </tbody>
   </table>
@@ -211,6 +213,7 @@ scaled = number &times; (base + per &times; n), kept between min and max
       <tr><td><code>multiply</code></td><td>Each matching hit's damage is multiplied, for one damage type or all of it; &times;0 is a real zero.</td></tr>
       <tr><td><code>suppress_stat</code></td><td>The matching hits add no stat bonus to their damage, for one damage type or all of it.</td></tr>
       <tr><td><code>retype</code></td><td>Every part of the damage the row matches takes the row's damage type, so Resistance and Vulnerability see it.</td></tr>
+      <tr><td><code>forcedMove</code></td><td>A hit moves its target that many feet: the damage card says how far and which way (push away, pull toward, slide any way) and the Game Master moves the token. Two rows of one way: the farthest counts.</td></tr>
       <tr><td><code>healAdd</code></td><td>A heal of the holder's Skill or Spell restores that many more Health Bar slots; a condition on <code>situation.single_target</code> limits it to a heal that goes to one creature.</td></tr>
     </tbody>
   </table>

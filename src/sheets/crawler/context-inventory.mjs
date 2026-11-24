@@ -46,6 +46,7 @@ export function prepareInventory(context, actor, sheetSort = null) {
   context.inventorySort = inventorySort;
 
   const viewer = { gm: Boolean(globalThis.game?.user?.isGM), originVisible: actor.canSeeItemOrigin() };
+  context.canTakeBackGold = viewer.gm;
   const now = currentTimeContext(actor);
   for (const item of [...context.gear, ...context.loot]) {
     item.cooldownBadge = cooldownBadge(actor, item, now);

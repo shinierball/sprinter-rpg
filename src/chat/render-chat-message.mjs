@@ -5,7 +5,7 @@
 import { bindChatActions } from './dispatch.mjs';
 import { hideForeignInterruptButtons, hideGmOnlyButtons } from './render/interrupt-visibility.mjs';
 import { addSenderBadges } from './render/sender-badges.mjs';
-import { renderCameraAward } from './render/cameras.mjs';
+import { renderCameraAward, renderCameraPrompt } from './render/cameras.mjs';
 import { renderDamageApplications } from './render/damage-applications.mjs';
 import { renderCheckAssists } from './render/check-assists.mjs';
 import { renderCheckDifficulty } from './render/check-difficulty.mjs';
@@ -18,6 +18,7 @@ import { hideForeignContestButtons } from './render/contest.mjs';
 import { hideForeignPartyCheckButtons } from './render/party-check.mjs';
 import { hideSpentInflictButtons } from './render/spell-condition-buttons.mjs';
 import { hideForeignItemBuffButtons, renderItemBuffApplied } from './render/item-buff-buttons.mjs';
+import { renderDefinitionLinks } from './render/definition-links.mjs';
 import { hideGmRuleBreakBadges } from '../utils/rule-break-visibility.mjs';
 
 /**
@@ -29,6 +30,7 @@ import { hideGmRuleBreakBadges } from '../utils/rule-break-visibility.mjs';
 export function onRenderChatMessage(message, root, data) {
   if (!root) return;
   bindChatActions(root, message);
+  renderDefinitionLinks(root, message);
   renderCheckAssists(root, message);
   renderCheckDifficulty(root, message);
   renderCheckOffers(root, message);
@@ -38,6 +40,7 @@ export function onRenderChatMessage(message, root, data) {
   renderPetCheck(root, message);
   renderPatronCheck(root, message);
   renderCameraAward(root, message);
+  renderCameraPrompt(root, message);
   renderDamageApplications(root, message);
   hideForeignInterruptButtons(root);
   hideForeignContestButtons(root);

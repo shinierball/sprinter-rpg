@@ -60,6 +60,7 @@ import { buildDevApi } from './dev-tools.mjs';
 import { onUpdateActorRefreshRelated, onItemChangeRefreshRelated } from '../utils/ui/related-sheets.mjs';
 import { onItemChangeSyncVision, onItemUpdateSyncVision } from '../documents/actor/actor-vision.mjs';
 import { onActorSizeChange } from '../documents/actor/token-size.mjs';
+import { onDeadDebuffCreated } from '../documents/actor/minion-bereft.mjs';
 import { onLightItemCreate, onLightItemUpdate, onLightItemDelete } from '../documents/actor/light-source.mjs';
 import { ZeroZoneBehaviorType } from '../models/region-behaviors/zero-zone-behavior.mjs';
 import { registerZeroZoneRegionHooks } from './zero-zone-regions.mjs';
@@ -67,6 +68,7 @@ import { onGearAuraItemCreate, onGearAuraItemUpdate, onGearAuraItemDelete } from
 import { onRaceClassItemDelete } from '../data/race-class-applier.mjs';
 import { onTransformItemDelete } from '../documents/actor/transformations.mjs';
 import { onRenderTokenHUD } from './light-hud.mjs';
+import { installMovementBandRuler } from './token-ruler.mjs';
 import { contentRegistry } from '../content/registry.mjs';
 import { seedLevelAwardPresets } from '../data/level-awards.mjs';
 import { setIdentityNameResolver } from '../data/tag-definitions.mjs';
@@ -95,6 +97,9 @@ export async function onInit() {
 
   // Register document classes
   registerDocumentClasses();
+
+  // The token ruler shows the movement bands, unless another module already replaced Foundry's ruler
+  installMovementBandRuler();
 
   // Register sheet & UI classes
   registerSheets();
@@ -138,6 +143,8 @@ export async function onInit() {
 
   // Light sources (3.16c): buffs and equipped gear light a marker token; the HUD puts it out
   Hooks.on('createItem', onLightItemCreate);
+  // A Dead debuff (from `die()` or the GM's hand) leaves its controller's minions Bereft
+  Hooks.on('createItem', onDeadDebuffCreated);
   Hooks.on('updateItem', onLightItemUpdate);
   Hooks.on('deleteItem', onLightItemDelete);
   Hooks.on('renderTokenHUD', onRenderTokenHUD);
@@ -159,7 +166,7 @@ export async function onInit() {
     await onRaceClassItemDelete(item, options, userId);
   });
 
-  // Global Developer Helper
+  // window.cog: launchers and console helpers; the supported entries are listed in src/hooks/public-api.mjs
   window.cog = buildDevApi();
 
   // Register or re-verify chat message hook on Foundry init

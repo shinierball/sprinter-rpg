@@ -2,7 +2,9 @@ import { getItemAllTags } from '../active-tags.mjs';
 import { cardSummary, CARD_PROFILES } from '../../utils/item-describer/card-summary.mjs';
 import { cardMessageOptions } from '../../utils/card/chat-mode.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
-import { castRangeText, castTargetText } from '../actor/spell-cast-card.mjs';
+import { cardItemNameHtml } from '../../utils/card/item-name.mjs';
+import { castTargetText } from '../actor/spell-cast-card.mjs';
+import { castRangeText } from '../../utils/attack/cast-range-text.mjs';
 import { damageSourcesPreviewHtml } from '../actor/use-card-parts.mjs';
 import { normalizeBaseDamage, baseDamageText } from '../../utils/damage/base-damage.mjs';
 import { schoolLineHtml } from '../../utils/card/school-line.mjs';
@@ -54,7 +56,7 @@ export async function rollSpellCard(spellItem, options = {}) {
       <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-danger); padding-bottom: 4px; margin-bottom: 6px;">
         <img class="cog-bg-icon-box" src="${escapeAttr(spellItem.img || 'icons/svg/aura.svg')}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
         <div>
-          <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${escapeAttr(spellItem.name)}</h3>
+          <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${cardItemNameHtml(spellItem)}</h3>
           <span class="cog-text-danger" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">${escapeAttr(spellRoleLabel(spellRole(spellItem)))}${sys.baseDamage?.damageType ? ` • ${escapeAttr(sys.baseDamage.damageType)}` : ''}${isFreeCast ? ' • FREE CAST' : ''}</span>
         </div>
       </div>
@@ -62,7 +64,7 @@ export async function rollSpellCard(spellItem, options = {}) {
       <div class="cog-bg-surface-alt" style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; margin-bottom: 8px; border: 1px solid var(--cog-divider); padding: 4px 6px; border-radius: 3px;">
         <div><strong>Mana:</strong> ${manaDisplay}</div>
         ${sourceBadge}
-        <div><strong>Range:</strong> ${escapeAttr(rangeDisplay)}</div>
+        ${rangeDisplay ? `<div><strong>Range:</strong> ${escapeAttr(rangeDisplay)}</div>` : ''}
         ${targetDisplay ? `<div><strong>Target:</strong> ${escapeAttr(targetDisplay)}</div>` : ''}
         <div><strong>Duration:</strong> ${escapeAttr(spellCardDuration(spellItem))}</div>
         ${hasCooldown(spellItem) ? `<div><strong>Cooldown:</strong> ${escapeAttr(cooldownLabel(spellItem))}</div>` : ''}

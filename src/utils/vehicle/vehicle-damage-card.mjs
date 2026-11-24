@@ -8,9 +8,9 @@
  * `vehicle.check.ram` (a Ram bumper row, the ram Evade rows), the explosion `vehicle.explosion` (the vehicle's DR does
  * not protect, `vehicleDrFor`). Pure: strings in, strings out.
  */
-import { cardPartOf, damageCardDataAttrs } from '../damage/damage-parts.mjs';
+import { damageCardDataAttrs } from '../damage/damage-parts.mjs';
 import { rollContextDataAttr } from '../roll/roll-context.mjs';
-import { escapeAttr } from '../escape-attr.mjs';
+import { escapeAttr, jsonAttr } from '../escape-attr.mjs';
 import { chatButtonDataHtml } from '../card/chat-button-data.mjs';
 
 
@@ -24,14 +24,18 @@ import { chatButtonDataHtml } from '../card/chat-button-data.mjs';
  * @param {object} p.rollContext the damage roll's RollContext (its tags decide which defenses apply)
  * @param {string[]} [p.notes] extra lines under the total (the occupants an explosion targets, for example)
  * @param {{ label: string, action: string, data?: object, className?: string }[]} [p.extraButtons] more buttons (the ram's "Apply collision"), built by `vehicleButtonHtml`
+ * @param {string[]} [p.debuffs] condition tags the Apply inflicts with the damage (`data-debuffs`; a fall's prone)
+ * @param {string} [p.boundTargetUuid] the one actor every button of this card applies to (`data-bound-target-uuid`), read before any target
  * @returns {string}
  */
-export function vehicleDamageCardHtml({ attackerUuid, itemName, title, parts, rollContext, notes = [], extraButtons = [] }) {
+export function vehicleDamageCardHtml({ attackerUuid, itemName, title, parts, rollContext, notes = [], extraButtons = [], debuffs = [], boundTargetUuid = '' }) {
   const list = Array.isArray(parts) ? parts : [];
   const typed = {};
   for (const p of list) typed[p.type] = (typed[p.type] || 0) + (Number(p.finalDamage) || 0);
   const total = Object.values(typed).reduce((a, b) => a + b, 0);
-  const cardParts = list.map((p) => cardPartOf({ ...p, multiplier: 1 }));
+  // `damageCardDataAttrs` turns each evaluated part into its card form itself (`cardPartOf`); a part passed in card form
+  // would lose its amount there (it reads `finalDamage`).
+  const evaluatedParts = list.map((p) => ({ ...p, multiplier: 1 }));
   const rows = list.map((p) => `<div class="cog-damage-part-row"><strong class="cog-text-accent">${escapeAttr(p.finalDamage)}</strong>`
     + ` <span class="cog-damage-type">${escapeAttr(p.type)}</span>${p.formula ? ` <span class="cog-text-muted">(${escapeAttr(p.formula)})</span>` : ''}</div>`).join('');
   const noteHtml = notes.map((n) => `<div class="cog-damage-effects"><em>${escapeAttr(n)}</em></div>`).join('');
@@ -40,8 +44,8 @@ export function vehicleDamageCardHtml({ attackerUuid, itemName, title, parts, ro
       data-attacker-uuid="${escapeAttr(attackerUuid)}"
       data-item-name="${escapeAttr(itemName)}"
       data-damage-value="${escapeAttr(total)}"
-      data-typed-damage='${escapeAttr(JSON.stringify(typed))}'${damageCardDataAttrs(cardParts, rollContextDataAttr(rollContext))}
-      data-attack-type="vehicle"
+      data-typed-damage='${escapeAttr(JSON.stringify(typed))}'${damageCardDataAttrs(evaluatedParts, rollContextDataAttr(rollContext))}
+      data-attack-type="vehicle"${debuffs.length ? ` data-debuffs='${jsonAttr(debuffs)}'` : ''}${boundTargetUuid ? ` data-bound-target-uuid="${escapeAttr(boundTargetUuid)}"` : ''}
       data-is-armor-piercing="false">
       <div class="cog-damage-card-header"><strong>${escapeAttr(title)}</strong></div>
       <div class="cog-damage-card-result"><span class="cog-damage-value cog-text-accent">${escapeAttr(total)}</span> <span class="cog-damage-formula">Total Damage</span></div>

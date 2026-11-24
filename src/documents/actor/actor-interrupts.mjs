@@ -96,6 +96,8 @@ function potionInterrupt(actor, item, { hasBudgetRemaining }) {
  * @param {object} [options={}]
  * @param {number|null} [options.actionsSpent=null]
  * @param {number|null} [options.actionsMax=null]
+ * @param {boolean} [options.evadeCovered] the round's Evade Action is already spent, so Evade is free (core pp. 81, 90);
+ *   left out, it is read from the active combat
  * @returns {Array<object>}
  */
 export function getAvailableInterrupts(actor, options = {}) {
@@ -105,15 +107,20 @@ export function getAvailableInterrupts(actor, options = {}) {
   // Evaluate action budget if passed or fallback
   let actionsSpent = Number(options.actionsSpent);
   let actionsMax = Number(options.actionsMax);
-  if (isNaN(actionsSpent) || isNaN(actionsMax)) {
+  let evadeCovered = options.evadeCovered === true;
+  const deriveEvade = options.evadeCovered === undefined;
+  if (isNaN(actionsSpent) || isNaN(actionsMax) || deriveEvade) {
     // Check active combat
     const combat = globalThis.game?.combat;
     if (combat && typeof combat.getCombatantActions === 'function') {
       const c = combatantOfActor(combat, actor);
       if (c) {
-        const ca = combat.getCombatantActions(c);
-        actionsSpent = ca.spent ?? 0;
-        actionsMax = ca.max ?? 2;
+        if (isNaN(actionsSpent) || isNaN(actionsMax)) {
+          const ca = combat.getCombatantActions(c);
+          actionsSpent = ca.spent ?? 0;
+          actionsMax = ca.max ?? 2;
+        }
+        if (deriveEvade) evadeCovered = combat.hasEvadeAction?.(c) === true;
       }
     }
   }
@@ -187,19 +194,21 @@ export function getAvailableInterrupts(actor, options = {}) {
   // 2. Built-in core interrupts (data in core-interrupts.mjs)
   const budgetReason = hasBudgetRemaining ? null : 'Action budget depleted';
   for (const core of CORE_INTERRUPTS) {
+    // Evade is free once the round's Evade Action is spent (core pp. 81, 90); every other entry costs an Action
+    const free = core.id === 'evade' && evadeCovered;
     list.push({
       id: core.id,
       name: core.name,
       type: 'action',
       category: core.category,
       icon: core.icon,
-      isFree: false,
-      actionCost: 1,
-      costDesc: '1 Action',
+      isFree: free,
+      actionCost: free ? 0 : 1,
+      costDesc: free ? 'Free (0 Actions)' : '1 Action',
       ...describeInterrupt(new Set(core.tags), getRangeOf(core.interrupt)),
       description: core.description,
-      canUse: hasBudgetRemaining,
-      reasonCannotUse: budgetReason
+      canUse: free || hasBudgetRemaining,
+      reasonCannotUse: free ? null : budgetReason
     });
   }
 

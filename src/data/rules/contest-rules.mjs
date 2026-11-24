@@ -1,8 +1,9 @@
 /**
  * src/data/rules/contest-rules.mjs
- * Registries for racing and chasing contests (Core Rulebook pp. 74-75). No Foundry
- * globals. `CONFIG.COG.contestKinds === CONTEST_KINDS` and `CONFIG.COG.chaseGround === CHASE_GROUND`; a module adds a
- * kind or changes the Ground a degree is worth with the register functions (or by writing the record directly).
+ * Registries for racing, chasing and skill-challenge contests (Core Rulebook pp. 74-75, 258). No Foundry
+ * globals. `CONFIG.COG.contestKinds === CONTEST_KINDS`, `CONFIG.COG.chaseGround === CHASE_GROUND` and
+ * `CONFIG.COG.challengeDegrees === CHALLENGE_DEGREES`; a module adds a kind or changes the Ground a degree is worth with
+ * the register functions, and changes what a degree is worth on a challenge stage by writing the record directly.
  */
 import { COG_ROLL_OUTCOMES } from '../../documents/session/roll-outcomes.mjs';
 import { CONTEST_TAGS } from '../tag-vocabulary.mjs';
@@ -30,6 +31,14 @@ export const CONTEST_KINDS = {};
  */
 /** @type {Record<string, ChaseGroundDef>} Keyed by `COG_ROLL_OUTCOMES` id. `CONFIG.COG.chaseGround === CHASE_GROUND`. */
 export const CHASE_GROUND = {};
+
+/**
+ * @typedef {object} ChallengeDegreeDef
+ * @property {boolean} pass the stage is passed
+ * @property {-1|0|1} net safety nets earned (negative: lost) on a stage that ends in this degree
+ */
+/** @type {Record<string, ChallengeDegreeDef>} Keyed by `COG_ROLL_OUTCOMES` id. `CONFIG.COG.challengeDegrees === CHALLENGE_DEGREES`. */
+export const CHALLENGE_DEGREES = {};
 
 /**
  * Add a contest kind. A bad id, a missing label or an empty role list is refused with a warning.
@@ -65,6 +74,22 @@ export function registerChaseGround(degree, def) {
   return true;
 }
 
+/**
+ * Set what a degree is worth on a skill-challenge stage: whether it passes, and the safety net it earns or loses.
+ * @param {string} degree a COG_ROLL_OUTCOMES id
+ * @param {ChallengeDegreeDef} def
+ * @returns {boolean} whether it was registered
+ */
+function registerChallengeDegree(degree, def) {
+  const net = Number(def?.net);
+  if (typeof degree !== 'string' || !ID_PATTERN.test(degree) || ![-1, 0, 1].includes(net)) {
+    console.warn(`Sprinter RPG | Challenge degree ${String(degree)} was not registered: it needs a degree id and a net of -1, 0 or 1.`);
+    return false;
+  }
+  CHALLENGE_DEGREES[degree] = { pass: def?.pass === true, net };
+  return true;
+}
+
 /** A single trimmed id from user input (CONTRIBUTING §4). */
 function trimmedScalar(raw) {
   const val = firstScalar(raw);
@@ -91,6 +116,11 @@ registerContestKind({
   roles: ['chaser', 'quarry'], tag: CONTEST_TAGS.chase
 });
 
+registerContestKind({
+  id: 'challenge', label: 'Skill Challenge', hint: 'One roll decides each stage. A success by 10 or more earns a safety net; a fail by 10 or more loses one.',
+  roles: ['solver'], tag: CONTEST_TAGS.challenge
+});
+
 const O = COG_ROLL_OUTCOMES;
 registerChaseGround(O.CRITICAL_SUCCESS, { ground: 2 });
 registerChaseGround(O.AMAZING_SUCCESS, { ground: 2 });
@@ -99,3 +129,11 @@ registerChaseGround(O.NEAR_MISS, { ground: 0 });
 registerChaseGround(O.FAILURE, { ground: -1 });
 registerChaseGround(O.MAJOR_FAILURE, { ground: -2 });
 registerChaseGround(O.CRITICAL_FAILURE, { ground: 0, out: true });
+
+registerChallengeDegree(O.CRITICAL_SUCCESS, { pass: true, net: 1 });
+registerChallengeDegree(O.AMAZING_SUCCESS, { pass: true, net: 1 });
+registerChallengeDegree(O.SUCCESS, { pass: true, net: 0 });
+registerChallengeDegree(O.NEAR_MISS, { pass: false, net: 0 });
+registerChallengeDegree(O.FAILURE, { pass: false, net: 0 });
+registerChallengeDegree(O.MAJOR_FAILURE, { pass: false, net: -1 });
+registerChallengeDegree(O.CRITICAL_FAILURE, { pass: false, net: -1 });

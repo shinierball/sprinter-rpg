@@ -19,7 +19,7 @@ import { cleanTagQuery, normalizeTagList } from '../tag/tag-query.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
 import { COG_ACHIEVEMENT_TIERS } from '../../data/rules/achievement-tiers.mjs';
 import { BONUS_NUMBERS } from './space-upgrade-fields.mjs';
-import { tableTierParts, tableTierText } from './blocks-crafting.mjs';
+import { tableTierParts, tableTierText, queryText } from './blocks-crafting.mjs';
 import { deityName, skillOrSpellName } from '../deity/deity-names.mjs';
 import { patronProfileOf } from '../patron/patron-profile.mjs';
 import { activationOf } from '../effects/activation-window.mjs';
@@ -30,6 +30,7 @@ const K = 'COG.ItemSummary.Effects.';
 
 defineItemSummaryTemplates({
   [`${K}HealPerRound`]: 'Heals {amount} HP each round',
+  [`${K}Ammunition`]: 'Takes ammunition: {tags}, {n} per Attack',
   [`${K}DamageType`]: 'Damage type: {type}',
   [`${K}DamagePerRound`]: '{amount} damage each round',
   [`${K}DamagePerRoundTyped`]: '{amount} {type} damage each round',
@@ -334,6 +335,20 @@ const light = {
   }
 };
 
+/** The ammunition a skill or gear weapon takes (`system.ammunition`); nothing when its query names none. */
+const ammunition = {
+  id: 'ammunition',
+  group: 'effect',
+  applies(item) {
+    const a = sysOf(item).ammunition;
+    return Boolean(a && typeof a === 'object' && queryText(a.query));
+  },
+  describe(item) {
+    const a = sysOf(item).ammunition;
+    return [itemLine('use', t(`${K}Ammunition`, { tags: queryText(a.query), n: Math.max(1, Math.floor(num(a.perAttack)) || 1) }), 'system.ammunition')];
+  }
+};
+
 const achievementReward = {
   id: 'achievement-reward',
   group: 'reward',
@@ -522,6 +537,6 @@ const patronFields = {
 
 /** @type {ReadonlyArray<import('./shared.mjs').ItemSummaryBlock>} */
 export const BLOCKS = Object.freeze([
-  buffHeal, buffActivation, buffRepeat, debuffDamage, debuffSeverity, debuffRepeat, debuffTransform, debuffSuppresses, limbModifiers, effectDuration, interrupt, light,
+  buffHeal, buffActivation, buffRepeat, debuffDamage, debuffSeverity, debuffRepeat, debuffTransform, debuffSuppresses, limbModifiers, effectDuration, interrupt, light, ammunition,
   achievementReward, spaceCost, spaceBonuses, spaceTraining, spaceCrafting, spaceStudio, deityFields, patronFields
 ]);

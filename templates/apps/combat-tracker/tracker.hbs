@@ -57,6 +57,7 @@
                     <span class="cog-type-badge {{#if turn.isMob}}badge-mob{{else}}badge-crawler{{/if}}">
                         {{turn.actorTypeLabel}}
                       </span>
+                    {{#if turn.pvpLabel}}<span class="cog-type-badge badge-crawler cog-pvp-mark">{{turn.pvpLabel}}</span>{{/if}}
                     </div>
 
                     <!-- Health Threshold Indicator (Cheat Sheet: Green / Yellow / Red) -->
@@ -112,6 +113,17 @@
                     {{#if turn.guidance.canGuide}}
                       <button type="button" class="cog-pet-guide-btn" data-action="guidePet" data-combatant-id="{{turn.id}}" data-tooltip="Guide this pet: your Action, an Int-Opposed Animal Handling check">
                         <i class="fa-solid fa-paw"></i> Guide
+                      </button>
+                    {{/if}}
+                  </div>
+                {{/if}}
+
+                {{#if turn.minion}}
+                  <div class="cog-pet-guidance flexrow">
+                    <span class="cog-pet-guidance-badge guidance-{{turn.minion.state}}" data-tooltip-text="{{turn.minion.label}}">{{turn.minion.badge}}</span>
+                    {{#if turn.minion.canCommand}}
+                      <button type="button" class="cog-pet-guide-btn" data-action="commandMinion" data-combatant-id="{{turn.id}}" data-tooltip="{{#if turn.minion.check}}Command this minion: an Action and a handling check{{else}}Command this minion: one of its controller's Actions{{/if}}">
+                        <i class="fa-solid fa-bullhorn"></i> Command
                       </button>
                     {{/if}}
                   </div>

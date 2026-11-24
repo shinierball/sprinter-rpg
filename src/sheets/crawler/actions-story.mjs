@@ -14,6 +14,7 @@ import { resolveSpace } from '../../documents/actor/personal-space-links.mjs';
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { driveActions } from '../vehicle/drive-actions.mjs';
 import { rollPetCheck } from '../../documents/actor/pet-checks.mjs';
+import { clearBenefactorState } from '../../documents/actor/sponsor-box.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
 
 const worldActor = (id) => (id ? globalThis.game?.actors?.get?.(id) ?? null : null);
@@ -70,6 +71,13 @@ export const storyActions = {
     } catch (err) {
       console.error('Sprinter RPG | Error rolling story table:', err);
     }
+  },
+
+  /** The GM's [Clear] on the Sponsors block: empty the Sponsor Box state. */
+  async clearBenefactorState() {
+    if (!this.isEditable || !globalThis.game?.user?.isGM) return;
+    await clearBenefactorState(this.actor);
+    return this.render();
   },
 
   async addPet() {

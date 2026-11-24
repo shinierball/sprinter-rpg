@@ -5,6 +5,7 @@
  */
 import { rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
 import { escapeAttr, trustedHtml } from '../../utils/escape-attr.mjs';
+import { cardItemNameHtml } from '../../utils/card/item-name.mjs';
 import { checkTypeLabel } from '../../data/rules/check-types.mjs';
 import { auraActiveBlockHtml, damageSourcesPreviewHtml } from './use-card-parts.mjs';
 
@@ -31,7 +32,7 @@ export function skillAuraActivationCardHtml(actor, skill, auraData, summaryHtml 
           <div class="cog-chat-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--cog-gold); padding-bottom: 4px; margin-bottom: 6px;">
             <img class="cog-bg-icon-box" src="${escapeAttr(skill.img || 'icons/svg/aura.svg')}" style="width: 36px; height: 36px; border: 1px solid var(--cog-border-strong); border-radius: 4px;" />
             <div>
-              <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${escapeAttr(skill.name)}</h3>
+              <h3 class="cog-text-strong" style="margin: 0; font-size: 16px; font-weight: bold;">${cardItemNameHtml(skill)}</h3>
               <span class="cog-text-gold" style="font-size: 11px; text-transform: uppercase; font-weight: bold;">Skill Aura Activated</span>
             </div>
           </div>
@@ -54,7 +55,7 @@ export function skillAuraActivationCardHtml(actor, skill, auraData, summaryHtml 
 export function passiveSkillCardHtml(actor, skill, { modifiedRank, baseRank, itemBonus, boonBonus }, summaryHtml = '') {
   const sys = skill.system || {};
   return `<div class="cog-chat-card">
-          <h4><strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)}</h4>
+          <h4><strong>${escapeAttr(actor.name)}</strong>: ${cardItemNameHtml(skill)}</h4>
           <p><em>Passive Skill (No roll required)</em></p>
           <p><strong>Modified Rank:</strong> ${escapeAttr(modifiedRank)} (Base ${escapeAttr(baseRank)}${itemBonus ? `, Items +${escapeAttr(itemBonus)}` : ''}${boonBonus ? `, Boons +${escapeAttr(boonBonus)}` : ''})</p>
           <p>${escapeAttr(sys.notes) || 'Static bonus active.'}</p>
@@ -70,7 +71,7 @@ export function passiveSkillCardHtml(actor, skill, { modifiedRank, baseRank, ite
  * @returns {string}
  */
 export function untrainedSkillFlavor(actor, skill, { advState, statName, untMod, modDesc }) {
-  return `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)} (<strong>${escapeAttr(advState.label || 'Disadvantage (Untrained Check)')}</strong>: ${escapeAttr(advState.formula)} + ${escapeAttr(statName)} Mod ${escapeAttr(untMod >= 0 ? `+${untMod}` : untMod)}${escapeAttr(modDesc)})`;
+  return `<strong>${escapeAttr(actor.name)}</strong>: ${cardItemNameHtml(skill)} (<strong>${escapeAttr(advState.label || 'Disadvantage (Untrained Check)')}</strong>: ${escapeAttr(advState.formula)} + ${escapeAttr(statName)} Mod ${escapeAttr(untMod >= 0 ? `+${untMod}` : untMod)}${escapeAttr(modDesc)})`;
 }
 
 /**
@@ -83,7 +84,7 @@ export function untrainedSkillFlavor(actor, skill, { advState, statName, untMod,
 export function skillCheckFlavor(actor, skill, { advState, statName: stat, breakdown, effectiveTotal, statOnly = false }) {
   const statName = escapeAttr(statOnly ? `${stat} ${checkTypeLabel('statOnly')}` : `${stat} Check`);
   const total = `<strong>Total ${escapeAttr(effectiveTotal >= 0 ? `+${effectiveTotal}` : effectiveTotal)}</strong>`;
-  const who = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(skill.name)}`;
+  const who = `<strong>${escapeAttr(actor.name)}</strong>: ${cardItemNameHtml(skill)}`;
   const sum = breakdown.map(escapeAttr).join(' + ');
   if (advState.mode === 'disadvantage') {
     return `${who} (${statName} [<strong>${escapeAttr(advState.label || 'Disadvantage')}</strong>]: ${escapeAttr(advState.formula)} + ${sum} = ${total})`;

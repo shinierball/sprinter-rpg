@@ -11,7 +11,8 @@ import { DEFAULT_SIZE, sizesInOrder } from '../sizes.mjs';
 import { loadoutOptions } from '../../content/creation-loadouts.mjs';
 import { findCatalogEntry } from '../../content/catalog-lookup.mjs';
 import { skillSelectionKey } from '../../content/registry/species.mjs';
-import { rngIndex } from '../../utils/rng.mjs';
+import { rngIndex, rngInt, rngPick } from '../../utils/rng.mjs';
+import { firstScalar } from '../../utils/first-scalar.mjs';
 import { langText } from '../../utils/lang-text.mjs';
 
 export const COG_STANDARD_ARRAY = [2, 3, 4, 5, 6];
@@ -38,6 +39,96 @@ export function starterLoadoutBreaks({ starterMode, stats } = {}) {
   }
   return reasons;
 }
+
+/** The crawler numbers the book suggests "for simplicity" (core p. 102); a convenience, never a limit. */
+export const CRAWLER_NUMBER_RANGE = Object.freeze([500000, 12900000]);
+
+/** A crawler number drawn from {@link CRAWLER_NUMBER_RANGE}, written with thousands separators and a leading `#`. */
+export function randomCrawlerNumber(rng = Math.random) {
+  return `#${new Intl.NumberFormat('en-US').format(rngInt(rng, CRAWLER_NUMBER_RANGE))}`;
+}
+
+const SIZE_TEXT = {
+  'COG.CrawlerCreator.Identity.SizeBreak': 'A {species} starts at size {min} to {max}; {size} is outside that.'
+};
+const sizeText = langText(SIZE_TEXT);
+
+/** The species' Induction size range `{ min, max }` (size numbers, inclusive), or null when it has none or it is malformed. */
+export function speciesSizeRange(species) {
+  const raw = contentRegistry.getSpecies(species)?.sizeRange;
+  const min = Number(firstScalar(raw?.min, NaN));
+  const max = Number(firstScalar(raw?.max, NaN));
+  return Number.isFinite(min) && Number.isFinite(max) && min <= max ? { min, max } : null;
+}
+
+/** The registered size id whose number is the species' `typicalSize` (a hint, core p. 112), else ''. */
+export function speciesTypicalSize(species) {
+  const typical = Number(firstScalar(contentRegistry.getSpecies(species)?.typicalSize, NaN));
+  return sizesInOrder().find(s => s.size === typical)?.id ?? '';
+}
+
+/**
+ * Rule Break reasons for the Induction size, as plain text: a species with a size range (an animal starts at 1 to 5,
+ * core p. 112) whose chosen size lies outside it. A species with no range, and a size id the registry lacks, are never asked about.
+ * @param {{ species?: string, size?: string }} draft
+ * @returns {string[]}
+ */
+export function inductionSizeBreaks({ species, size } = {}) {
+  const range = speciesSizeRange(species);
+  const info = sizesInOrder().find(s => s.id === size);
+  if (!range || !info || (info.size >= range.min && info.size <= range.max)) return [];
+  return [sizeText('COG.CrawlerCreator.Identity.SizeBreak', { species: contentRegistry.getSpecies(species)?.label ?? species, ...range, size: info.size })];
+}
+
+/** The lines of Step 10 besides the weapon (core p. 113): clothes worn, one interesting or useful item, weird stuff. */
+export const STARTING_GEAR_KINDS = Object.freeze(['clothing', 'item', 'weird']);
+/** Step 10 gives one interesting or useful item (core p. 113). */
+const STARTING_USEFUL_ITEMS = 1;
+
+const GEAR_TEXT = {
+  'COG.CrawlerCreator.Gear.UsefulItems': 'Step 10 gives one interesting or useful item; this crawler has {n} (core p. 113).'
+};
+const gearText = langText(GEAR_TEXT);
+
+/**
+ * The starting gear lines of a draft, sanitised: `{ kind, name, quantity }` each. Anything but an array gives none; a row
+ * that is not an object or has a blank name is dropped; an unknown kind reads as the open `weird` line; a quantity is a
+ * whole number of at least 1.
+ * @param {unknown} raw
+ * @returns {Array<{ kind: string, name: string, quantity: number }>}
+ */
+export function sanitizeStartingGear(raw) {
+  if (!Array.isArray(raw)) return [];
+  const rows = [];
+  for (const row of raw) {
+    if (!row || typeof row !== 'object') continue;
+    const typed = Array.isArray(row.name) ? row.name[0] : row.name;
+    const name = typeof typed === 'string' ? typed.trim() : '';
+    if (!name) continue;
+    const kind = String(firstScalar(row.kind, '')).trim().toLowerCase();
+    const quantity = Math.floor(Number(firstScalar(row.quantity, 1)));
+    rows.push({
+      kind: STARTING_GEAR_KINDS.includes(kind) ? kind : 'weird',
+      name,
+      quantity: Number.isFinite(quantity) && quantity >= 1 ? quantity : 1
+    });
+  }
+  return rows;
+}
+
+/**
+ * Rule Break reasons for the starting gear, as plain text: more than one line of the interesting-or-useful kind (core p. 113).
+ * Rows are counted, not units: one line of quantity 2 is one item. Clothing and weird stuff have no number in the book.
+ * @param {{ startingGear?: unknown }} draft
+ * @returns {string[]}
+ */
+export function startingGearBreaks({ startingGear } = {}) {
+  const items = sanitizeStartingGear(startingGear).filter(row => row.kind === 'item').length;
+  return items > STARTING_USEFUL_ITEMS ? [gearText('COG.CrawlerCreator.Gear.UsefulItems', { n: items })] : [];
+}
+
+/** Units in the stack of ammunition a starter bow, crossbow, handgun or shotgun comes with. */
+export const STARTER_AMMUNITION_COUNT = 20;
 
 /** Skills a crawler picks in each of its four life stages. */
 export const STAGE_SKILL_PICKS = 2;
@@ -286,12 +377,11 @@ export function generateRandomCrawler(chosenSpecies = null, floor = 'Floor 1', r
 
   const randomNames = species === 'human' ? RANDOM_HUMAN_NAMES : RANDOM_ANIMAL_NAMES;
 
-  const randomNum = Math.floor(1000 + Math.random() * 9000);
   const name = randomNames[Math.floor(Math.random() * randomNames.length)] || RANDOM_NAME_FALLBACK;
-  const randomAnimalSizes = sizesInOrder().filter(s => s.size <= 5).map(s => s.id);
-  const size = species === 'animal'
-    ? randomAnimalSizes[Math.floor(Math.random() * randomAnimalSizes.length)]
-    : DEFAULT_SIZE;
+  const range = speciesSizeRange(species);
+  const size = range
+    ? rngPick(rng, sizesInOrder().filter(s => s.size >= range.min && s.size <= range.max))?.id ?? DEFAULT_SIZE
+    : speciesTypicalSize(species) || DEFAULT_SIZE;
 
   const bgTables = contentRegistry.getBackgroundTables();
   let pastTrauma = '';
@@ -313,7 +403,7 @@ export function generateRandomCrawler(chosenSpecies = null, floor = 'Floor 1', r
 
   return {
     name,
-    crawlerNumber: `#${randomNum}`,
+    crawlerNumber: randomCrawlerNumber(rng),
     species,
     size,
     aiFavor: spec.aiFavor || 0,

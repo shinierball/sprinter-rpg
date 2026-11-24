@@ -10,7 +10,7 @@ import { flagPath, readFlag, withFlags, forcedReplacement } from '../utils/flags
 import { isGmAuthored } from './chat-relay.mjs';
 import { partyCheckTally, MAX_PARTY_PARTICIPANTS } from '../data/rules/party-check-rules.mjs';
 import { COG_ROLL_OUTCOMES, COG_OUTCOME_CONFIG } from '../documents/session/roll-outcomes.mjs';
-import { DIFFICULTY_MODES } from '../data/rules/difficulty-rules.mjs';
+import { DIFFICULTY_MODES, wholeOrZero } from '../data/rules/difficulty-rules.mjs';
 import { difficultyLineText, difficultyText } from '../utils/roll/check-difficulty.mjs';
 import { ruleBreakBadgeHtml } from '../utils/rule-break-visibility.mjs';
 import { escapeAttr } from '../utils/escape-attr.mjs';
@@ -73,14 +73,13 @@ const text = (raw, max = 120) => {
   if (Array.isArray(val)) val = val[0] ?? '';
   return typeof val === 'string' ? val.trim().slice(0, max) : '';
 };
-const whole = (v) => (v !== null && v !== '' && Number.isFinite(Number(v)) ? Math.trunc(Number(v)) : 0);
 
 /** The Difficulty a card holds: the `difficulty` record of 9.2 (mode, value, floor, foe, stat, mod, shift) or null. */
 function sanitizeDifficulty(raw) {
   if (!isPlain(raw) || !DIFFICULTY_MODES.includes(raw.mode) || raw.value === null || raw.value === '' || !Number.isFinite(Number(raw.value))) return null;
   return {
-    mode: raw.mode, value: Math.max(0, whole(raw.value)), floor: Math.max(0, whole(raw.floor)),
-    foeUuid: text(raw.foeUuid), foeName: text(raw.foeName), stat: text(raw.stat, 8), mod: whole(raw.mod), shift: whole(raw.shift)
+    mode: raw.mode, value: Math.max(0, wholeOrZero(raw.value)), floor: Math.max(0, wholeOrZero(raw.floor)),
+    foeUuid: text(raw.foeUuid), foeName: text(raw.foeName), stat: text(raw.stat, 8), mod: wholeOrZero(raw.mod), shift: wholeOrZero(raw.shift), flat: wholeOrZero(raw.flat)
   };
 }
 
@@ -92,7 +91,7 @@ function sanitizeParticipant(raw, index) {
   const total = typeof raw.total === 'number' && Number.isFinite(raw.total) ? raw.total : null;
   return {
     id: text(raw.id, 64) || `p${index + 1}`, actorUuid, name: text(raw.name) || actorUuid, removed: raw.removed === true,
-    messageId: text(raw.messageId, 64), outcome, total, at: Math.max(0, whole(raw.at)), ruleBreak: raw.ruleBreak === true
+    messageId: text(raw.messageId, 64), outcome, total, at: Math.max(0, wholeOrZero(raw.at)), ruleBreak: raw.ruleBreak === true
   };
 }
 
@@ -118,7 +117,7 @@ function sanitizePartyCheck(raw) {
     difficulty,
     dc: difficulty ? difficulty.value : null,
     participants,
-    createdAt: Math.max(0, whole(src.createdAt))
+    createdAt: Math.max(0, wholeOrZero(src.createdAt))
   };
 }
 

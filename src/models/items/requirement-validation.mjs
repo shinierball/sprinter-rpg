@@ -1,12 +1,7 @@
+import { isFiniteNumeric } from './grant-validation.mjs';
+
 /** The Stat keys a `stat` requirement row may name. */
 const REQUIREMENT_STATS = ['str', 'dex', 'con', 'int', 'cha'];
-
-/** A finite number, or a non-blank string that parses to one (form input arrives as strings). */
-function isFiniteNumeric(v) {
-  if (typeof v === 'number') return Number.isFinite(v);
-  if (typeof v === 'string' && v.trim() !== '') return Number.isFinite(Number(v));
-  return false;
-}
 
 /**
  * Everything wrong with one requirement row's shape (empty array = valid). Shape only: `kind` is a non-empty id, `value`

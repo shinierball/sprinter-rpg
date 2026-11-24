@@ -66,3 +66,13 @@ export function spaceGroupFurniture(space) {
 export function groupLinksCrawler(space, crawler) {
   return spaceGroup(space).members.some(member => spaceLinksCrawler(member, crawler));
 }
+
+/** A `COG.SpaceJoin` string (the English fallback serves a Node run with no catalogue). */
+export const joinText = (key, data, fallback) => {
+  const i18n = globalThis.game?.i18n;
+  if (i18n?.has?.(`COG.SpaceJoin.${key}`) && typeof i18n.format === 'function') return i18n.format(`COG.SpaceJoin.${key}`, data);
+  return fallback;
+};
+
+/** The sentence naming a rank past the book's last: a join's and a Rank Up's prompt and recorded reason both use it. */
+export const pastBookText = (rank, max) => joinText('PastBook', { rank, max }, `Rank ${rank} is past the ranks in the book (they stop at ${max}).`);

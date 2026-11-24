@@ -9,7 +9,7 @@
             <th>#</th>
             <th>{{localize "COG.CraftApp.Step"}}</th>
             <th>{{localize "COG.CraftApp.Difficulty"}}</th>
-            <th>{{localize "COG.CraftApp.HoursColumn"}}</th>
+            <th>{{plan.timeHeader}}</th>
             <th>{{localize "COG.CraftApp.Skill"}}</th>
             <th>{{localize "COG.CraftApp.Materials"}}</th>
           </tr>
@@ -29,7 +29,7 @@
                 {{/if}}
               </td>
               <td class="cog-crafting-dc">{{step.dc}}</td>
-              <td class="cog-crafting-hours">{{step.hours}}</td>
+              <td class="cog-crafting-hours">{{step.time}}</td>
               <td>
                 {{#if step.hasSkillOptions}}
                   <select class="cog-field-input cog-crafting-skill" data-change-action="setSkill" data-step="{{step.index}}">
@@ -51,7 +51,7 @@
           {{/each}}
         </tbody>
       </table>
-      <div class="cog-crafting-total cog-text-secondary">{{localize "COG.CraftApp.TotalHours"}}: <strong class="cog-text-strong">{{plan.totalHours}}</strong></div>
+      <div class="cog-crafting-total cog-text-secondary">{{plan.totalLabel}}: <strong class="cog-text-strong">{{plan.totalTime}}</strong></div>
     {{/if}}
     {{#if plan.hasWarnings}}
       <ul class="cog-crafting-warnings">

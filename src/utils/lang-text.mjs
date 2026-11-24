@@ -12,3 +12,12 @@ export function langText(table) {
     return String(table[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(data[k] ?? ''));
   };
 }
+
+/**
+ * A lang key through `game.i18n` with no English table: formatted with `data` when given, else localised; the key itself
+ * when there is no catalogue (a Node run) or no answer. For a module with no fallback strings of its own.
+ * @param {string} key full lang key
+ * @param {Record<string, unknown>} [data] `{name}` values
+ * @returns {string}
+ */
+export const localiseKey = (key, data) => (data ? globalThis.game?.i18n?.format?.(key, data) : globalThis.game?.i18n?.localize?.(key)) ?? key;

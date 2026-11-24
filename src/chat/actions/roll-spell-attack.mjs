@@ -5,6 +5,7 @@ import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
 import { skipOptions } from '../../utils/attack/attack-options.mjs';
 import { attackText } from '../../utils/attack/attack-text.mjs';
 import { resolveCardSpell } from './cast-spell.mjs';
+import { castRankOption } from '../../utils/skill/rank-source.mjs';
 
 /**
  * @param {Event} event
@@ -24,5 +25,5 @@ export async function handleRollSpellAttack(event, button, message) {
     ui.notifications?.warn?.(attackText('COG.SpellCast.NotOwner', { name: actor.name }));
     return null;
   }
-  return actor.rollSpellAttack(spell, { ...skipOptions(event), castMessageId: message?.id });
+  return actor.rollSpellAttack(spell, { ...skipOptions(event), castMessageId: message?.id, ...castRankOption(button) });
 }

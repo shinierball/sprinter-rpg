@@ -13,6 +13,9 @@ import { describeHealing } from '../utils/item-describer/blocks-spell-skill.mjs'
 import { getTagDefinition } from '../data/tag-definitions.mjs';
 import { spellRole, spellRoleLabel } from '../utils/tag/tag-mechanics.mjs';
 import { htmlSnippet } from '../utils/ui/html-snippet.mjs';
+import { itemDefinitionContext } from '../utils/item-describer/definition-context.mjs';
+import { emptyLine } from '../utils/item-describer/index.mjs';
+import { resolveFullItemData } from '../content/catalog-source.mjs';
 
 const TPL = `${SYSTEM_PATH}/templates/apps/spell-manager`;
 
@@ -26,7 +29,7 @@ export function spellRoleFilter(role) {
  * the stat, spell type and damage type filters. A pack index returns only what is requested.
  */
 const SPELL_MANAGER_INDEX_FIELDS = Object.freeze([
-  'system.identifier', 'system.manaCost', 'system.range', 'system.duration', 'system.checkType',
+  'system.identifier', 'system.manaCost', 'system.checkType',
   'system.stat', 'system.baseDamage', 'system.healing', 'system.tags', 'system.description',
   'system.limitations', 'system.quote', 'system.aiFavor', 'img', SOURCE_INDEX_FIELD
 ]);
@@ -54,8 +57,6 @@ function spellColumns(row) {
     isAttack: role === 'attack',
     system: {
       manaCost: row.system?.manaCost ?? 0,
-      range: row.system?.range || '30 feet',
-      duration: row.system?.duration || 'Instantaneous',
       checkType: row.system?.checkType || 'attack',
       stat,
       baseDamage,
@@ -90,7 +91,8 @@ export class COGSpellManager extends CatalogBrowserMixin(COGToolApp) {
       setDamageType: COGSpellManager.#onSetDamageType,
       learnSpell: COGSpellManager.#onLearnSpell,
       castSpell: COGSpellManager.#onCastSpell,
-      createCustomSpell: COGSpellManager.#onCreateCustomSpell
+      createCustomSpell: COGSpellManager.#onCreateCustomSpell,
+      toggleSpellDefinition: COGSpellManager.#onToggleSpellDefinition
     }
   };
 
@@ -105,6 +107,8 @@ export class COGSpellManager extends CatalogBrowserMixin(COGToolApp) {
     this.activeSpellType = 'all';
     this.activeStat = 'all';
     this.activeDamageType = 'all';
+    /** Ids of the spell cards whose definition is open. */
+    this._openDefinitions = new Set();
   }
 
   /** @override */
@@ -180,7 +184,10 @@ export class COGSpellManager extends CatalogBrowserMixin(COGToolApp) {
       'Psychic', 'Slashing', 'Sonic'
     ];
 
+    await this.#attachDefinitions(filteredSpells);
+
     return Object.assign(context, {
+      summaryEmptyText: emptyLine().text,
       spells: filteredSpells,
       counts,
       activeSpellType: this.activeSpellType,
@@ -188,6 +195,29 @@ export class COGSpellManager extends CatalogBrowserMixin(COGToolApp) {
       activeDamageType: this.activeDamageType,
       damageTypes
     });
+  }
+
+  /**
+   * Mark each listed spell's open state and build the open ones' definition from the full spell (the index row lacks rank
+   * breaks and notes). Open ids that are no longer listed are dropped.
+   */
+  async #attachDefinitions(spells) {
+    const listed = new Set(spells.map((s) => s.id));
+    for (const id of [...this._openDefinitions]) if (!listed.has(id)) this._openDefinitions.delete(id);
+    for (const spell of spells) {
+      spell.definitionOpen = this._openDefinitions.has(spell.id);
+      if (!spell.definitionOpen) continue;
+      const full = spell.isWorld ? globalThis.game.items.get(spell.id) : await resolveFullItemData(spell, 'spells');
+      spell.definition = await itemDefinitionContext(full ?? spell, { itemId: spell.id, canEdit: false });
+    }
+  }
+
+  /** Open or close one card's definition. */
+  static async #onToggleSpellDefinition(event, target) {
+    const id = String(target?.dataset?.spellId ?? '').trim();
+    if (!id) return;
+    if (!this._openDefinitions.delete(id)) this._openDefinitions.add(id);
+    await this.render({ parts: ['list'] });
   }
 
   /**

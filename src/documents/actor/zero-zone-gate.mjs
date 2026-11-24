@@ -7,6 +7,8 @@
  * player-owned crawler is, with wording that may name the zone. Players never see the words "zero zone".
  */
 import { confirmRuleBreak, RULE_BREAK_REFUSALS } from '../../utils/rule-break.mjs';
+import { isPlayerControlled } from '../../utils/combat/combat-sides.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 import { isZeroZoneSubject, zeroZoneFor } from '../../utils/effects/zero-zone.mjs';
 
 const NO_FLAGS = Object.freeze({});
@@ -14,18 +16,14 @@ const NO_FLAGS = Object.freeze({});
 /** What a gate that does not ask returns. */
 export const ZERO_ZONE_CLEAR = Object.freeze({ proceed: true, ruleBreak: false, flags: NO_FLAGS });
 
-/** Localized text with an English fallback for a client that has not loaded the language file. */
-function text(key, data, fallback) {
-  const i18n = globalThis.game?.i18n;
-  const out = data ? i18n?.format?.(key, data) : i18n?.localize?.(key);
-  if (typeof out === 'string' && out && out !== key) return out;
-  return Object.entries(data ?? {}).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, String(v)), fallback);
-}
-
-/** Player-controlled by structured data: a non-GM user owns the actor. */
-export function isPlayerControlled(actor) {
-  return actor?.hasPlayerOwner === true;
-}
+/** English fallbacks for a client that has not loaded the language file. */
+const text = langText({
+  'COG.Hud.ZoneNotice': 'Your interface isn\'t responding.',
+  'COG.ZeroZoneGate.GMPrompt': '{name}: zero zone, enhancements are offline. {verb} it anyway as a Rule Break?',
+  'COG.ZeroZoneGate.PlayerPrompt': '{notice} {verb} {name} anyway as a Rule Break?',
+  'COG.ZeroZoneGate.GMTitle': 'Zero Zone',
+  'COG.ZeroZoneGate.PlayerTitle': 'Interface'
+});
 
 /**
  * The tokens that decide an actor's zone. Never `actor.getActiveTokens()`: it follows the scene each client views, so two
@@ -68,12 +66,12 @@ export async function gateZeroZone(actor, item, { verb = 'Use', options = {} } =
 
   const name = item?.name || 'Item';
   const asGM = globalThis.game?.user?.isGM === true;
-  const notice = text('COG.Hud.ZoneNotice', null, 'Your interface isn\'t responding.');
+  const notice = text('COG.Hud.ZoneNotice');
   const message = asGM
-    ? text('COG.ZeroZoneGate.GMPrompt', { name, verb }, `${name}: zero zone, enhancements are offline. ${verb} it anyway as a Rule Break?`)
-    : text('COG.ZeroZoneGate.PlayerPrompt', { notice, verb, name }, `${notice} ${verb} ${name} anyway as a Rule Break?`);
+    ? text('COG.ZeroZoneGate.GMPrompt', { name, verb })
+    : text('COG.ZeroZoneGate.PlayerPrompt', { notice, verb, name });
   const res = await confirmRuleBreak({
-    title: asGM ? text('COG.ZeroZoneGate.GMTitle', null, 'Zero Zone') : text('COG.ZeroZoneGate.PlayerTitle', null, 'Interface'),
+    title: asGM ? text('COG.ZeroZoneGate.GMTitle') : text('COG.ZeroZoneGate.PlayerTitle'),
     message,
     reason: asGM ? message : notice,
     options

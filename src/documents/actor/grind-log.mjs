@@ -4,6 +4,11 @@ import { appendGrindLog } from '../../utils/skill/grind-log.mjs';
 /** Crawler flag: the grind log (`utils/skill/grind-log.mjs`). */
 const GRIND_LOG_FLAG = 'grindLog';
 
+/** A crawler's grind log as stored (any shape; `utils/skill/grind-log.mjs` cleans it). */
+export function grindLogOf(actor) {
+  return readFlag(actor, GRIND_LOG_FLAG);
+}
+
 /**
  * Record `hours` of grinding that ended at world time `at` on a crawler's grind log.
  * @param {Actor} actor

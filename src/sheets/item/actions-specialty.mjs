@@ -3,11 +3,11 @@
  * Break confirm (never a block) and, once confirmed, flags the skill. Every handler runs with `this` = the item sheet.
  */
 import { writeFlag } from '../../utils/flags.mjs';
+import { localiseKey as loc } from '../../utils/lang-text.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { sanitizeSpecialty } from '../../utils/skill/skill-specialty.mjs';
 import { specialtyLabel } from '../../utils/skill/skill-specialty-options.mjs';
 
-const loc = (key, data) => (data ? globalThis.game?.i18n?.format?.(key, data) : globalThis.game?.i18n?.localize?.(key)) ?? key;
 
 /** The flag a confirmed change or clear sets on the skill. */
 const SPECIALTY_RULE_BREAK_FLAG = 'specialtyRuleBreak';

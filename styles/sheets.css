@@ -1202,6 +1202,232 @@ select.cog-box-input.cog-size-select,
   background: var(--cog-input-bg) !important;
 }
 
+/* Spell name cell: the icon and name fill line one, so the badges after them wrap to a line under the name. */
+.cog-spell-name-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 6px;
+}
+
+/* Lean sheet tables. Fixed-content columns take a set width, the name takes the rest. */
+.cog-lean-table-wrap {
+  overflow-x: auto;
+}
+
+.cog-lean-table {
+  table-layout: auto;
+}
+
+.cog-lean-table .cog-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.cog-lean-table .cog-col-name,
+.cog-lean-table .cog-col-item,
+.cog-lean-table .cog-col-effects,
+.cog-lean-table .cog-col-notes {
+  width: auto;
+  white-space: normal;
+}
+
+.cog-lean-table .cog-col-name,
+.cog-lean-table .cog-col-item {
+  min-width: 200px;
+  text-align: left;
+}
+
+.cog-lean-table .cog-col-used { width: 34px; }
+.cog-lean-table .cog-col-rank { width: 76px; }
+.cog-lean-table .cog-col-mana { width: 70px; }
+.cog-lean-table .cog-col-actions { width: 168px; }
+.cog-lean-table .cog-col-qty { width: 60px; }
+.cog-lean-table .cog-col-value { width: 80px; }
+.cog-inventory-table .cog-col-actions { width: 100px; }
+
+.cog-lean-table .cog-col-effects {
+  min-width: 14ch;
+}
+
+.cog-lean-table .cog-col-duration input,
+.cog-lean-table .cog-col-damage input {
+  width: 13ch;
+}
+
+/* Range sizes to its text, so a long range reads in full up to 26ch; the room comes from the name column's slack. */
+.cog-lean-table .cog-col-range input {
+  field-sizing: content;
+  min-width: 13ch;
+  max-width: 26ch;
+}
+
+.cog-lean-table .cog-col-notes input {
+  min-width: 12ch;
+}
+
+.cog-lean-table .cog-col-stat select {
+  min-width: 6ch;
+}
+
+.cog-spell-name-cell {
+  /* Room kept beside the name for the icon or toggle before it and the flex gap: any leading element up to 34px wide shares line one with the name. */
+  --cog-name-lead: 40px;
+}
+
+.cog-spell-name-cell > .cog-row-name {
+  flex: 1 0 calc(100% - var(--cog-name-lead));
+  min-width: 0;
+}
+
+.cog-row-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: left;
+  color: var(--cog-text-strong);
+  background: none;
+  border: none;
+  padding: 0;
+  overflow-wrap: anywhere;
+}
+
+button.cog-row-name {
+  cursor: pointer;
+  /* Foundry's core button centres its content; the chevron and the name start at the left. */
+  display: flex;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 4px;
+  width: auto;
+  height: auto;
+  line-height: 1.3;
+  text-align: left;
+}
+
+button.cog-row-name:hover {
+  color: var(--cog-accent);
+}
+
+.cog-row-chevron {
+  flex: none;
+  display: inline-block;
+  width: 12px;
+  font-size: 10px;
+  color: var(--cog-text-secondary);
+}
+
+/* The definition row under an open lean-table row */
+.cog-definition-row > td {
+  padding: 8px 12px 12px;
+  background: var(--cog-surface-alt);
+  border-bottom: 1px solid var(--cog-panel-border);
+  white-space: normal;
+}
+
+.cog-item-definition {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.cog-definition-quote {
+  margin: 0;
+  font-style: italic;
+  color: var(--cog-text-secondary);
+}
+
+.cog-definition-limitations {
+  padding-left: 8px;
+  border-left: 3px solid var(--cog-accent);
+}
+
+.cog-definition-facts .cog-feature-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.cog-definition-heading {
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--cog-text-secondary);
+}
+
+.cog-definition-notes p {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+}
+
+.cog-definition-actions {
+  text-align: right;
+}
+
+.cog-column-menu-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.cog-column-menu-button {
+  color: inherit;
+  white-space: nowrap;
+}
+
+.cog-column-menu-wrap .cog-column-menu {
+  left: auto;
+  right: 0;
+  width: 240px;
+  text-align: left;
+  font-weight: normal;
+  text-transform: none;
+}
+
+.cog-column-menu-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+}
+
+.cog-column-menu-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  text-align: left;
+  color: var(--cog-text-strong);
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.cog-column-menu-entry:hover:not(:disabled) {
+  background: var(--cog-surface-alt);
+}
+
+.cog-column-menu-entry:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.cog-column-menu-state {
+  font-size: 11px;
+  color: var(--cog-text-muted);
+  padding-bottom: 4px;
+}
+
+.cog-column-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .cog-attacks-table tbody tr:hover,
 .cog-skills-table tbody tr:hover,
 .cog-spells-table tbody tr:hover {
@@ -1521,6 +1747,7 @@ select.cog-box-input.cog-size-select,
 .cog-feature-badge-reward { background: var(--cog-success-fill); }
 .cog-feature-badge-buff { background: var(--cog-info-fill); }
 .cog-feature-badge-debuff { background: var(--cog-magic-fill); }
+.cog-feature-badge-limit { background: var(--cog-warning-fill); }
 
 /* Item with no structured effects: one muted line, no badge */
 .cog-feature-empty {

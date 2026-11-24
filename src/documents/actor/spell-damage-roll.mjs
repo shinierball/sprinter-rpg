@@ -10,6 +10,7 @@ import { DEFAULT_CRIT_MULTIPLIER, configuredCritMultiplier } from './actor-const
 import { resolveReachedRankBreaks } from '../../utils/skill/rank-breaks.mjs';
 import { rankBreakConditionRounds } from '../../utils/time/durations.mjs';
 import { escapeAttr } from '../../utils/escape-attr.mjs';
+import { cardItemNameHtml } from '../../utils/card/item-name.mjs';
 import { extendContext, resolveDamageContext, rollContextDataAttr } from '../../utils/roll/roll-context.mjs';
 import {
   buildAttackOptions, resolveAttackChoices, ruleBreakReasons, confirmChoiceRuleBreaks, commitPick, settleChoiceToggles, readChoiceOptions, choicesFromMessage, attackChoicesFlagOf, choicesFlag, emptyChoices, choicesToDamageOptions
@@ -19,6 +20,7 @@ import { collectDamageModifiers, multiplierFor } from '../../utils/roll/damage-m
 import { damageCardDataAttrs, ignoreEvadeButtonHtml, spellBaseDataAttr } from '../../utils/damage/damage-parts.mjs';
 import { critDiceParts, cardShownParts, critDiceTotal, critDiceNoteHtml, critSubButtonHtml } from '../../utils/damage/crit-dice.mjs';
 import { resolveRollParts, targetRowsDataAttr, perTargetBoxHtml } from '../../utils/damage/per-target-damage.mjs';
+import { forcedMoveCardHtml } from './forced-move-card.mjs';
 import { collectOnHitEffects, hasOnHitDebuff, onHitCardAttrs } from '../../utils/attack/on-hit.mjs';
 import { hasRuleFlag, RULE_FLAGS } from '../../utils/tag/tag-behaviour.mjs';
 import { cardSummary, OMIT_ALL } from '../../utils/item-describer/card-summary.mjs';
@@ -28,6 +30,7 @@ import { getItemInflictedConditions } from './inflicted-conditions.mjs';
 import { getSpellDamageData, spellRank1BaseFormula } from './actor-spells.mjs';
 import { withFlags } from '../../utils/flags.mjs';
 import { jsonAttr } from '../../utils/escape-attr.mjs';
+import { castRankOf } from '../../utils/skill/rank-source.mjs';
 
 /** A formula that is only dice (`2d6`): the spell fallback part counts as base dice then. */
 const PLAIN_DICE = /^\d+d\d+$/i;
@@ -46,7 +49,7 @@ function spellHitAppliedConditions(message) {
  */
 export async function rollSpellDamage(actor, spellItem, options = {}) {
   const sys = spellItem.system || {};
-  const rank = Math.max(Number(sys.modifiedRank) || 0, Number(sys.rank) || 0, 1);
+  const rank = castRankOf(spellItem, options);
   const dmgData = getSpellDamageData(actor, spellItem, options);
   // One damage context per roll (see rollAttackDamage): inherited from the attack/cast card, or built from the live
   // targets with the damageModifiers situations offered.
@@ -304,6 +307,7 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
       </div>
       ${critDiceNoteHtml(allParts, isCrit)}
       ${perTargetBoxHtml(dmod.targetRows, evaluatedParts)}
+      ${forcedMoveCardHtml(actor, rollContext)}
       ${amazingPreviewHtml(amazingMessage, { triggers: asTriggers })}
       ${effectsStr ? `<div class="cog-damage-effects"><em>${effectsStr}</em></div>` : ''}
       <div class="cog-damage-actions">
@@ -324,7 +328,7 @@ export async function rollSpellDamage(actor, spellItem, options = {}) {
   `;
 
   const flavorBreakdown = Object.entries(typedDamage).map(([t, val]) => `${escapeAttr(val)} ${escapeAttr(t)}`).join(', ');
-  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${escapeAttr(spellItem.name)} (Spell Damage: ${flavorBreakdown}${hasMult ? ` [x${escapeAttr(globalMult)}]` : ''})${effectsStr ? ` - <em>${effectsStr}</em>` : ''}`;
+  const flavorText = `<strong>${escapeAttr(actor.name)}</strong>: ${cardItemNameHtml(spellItem)} (Spell Damage: ${flavorBreakdown}${hasMult ? ` [x${escapeAttr(globalMult)}]` : ''})${effectsStr ? ` - <em>${effectsStr}</em>` : ''}`;
 
   const mainRoll = await new Roll(`${totalRawDamage}`).evaluate();
 

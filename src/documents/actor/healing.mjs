@@ -9,18 +9,17 @@ import { RULE_FLAGS, hasRuleFlag } from '../../utils/tag/tag-behaviour.mjs';
 import { confirmRuleBreak } from '../../utils/rule-break.mjs';
 import { durationSpec } from '../../utils/time/durations.mjs';
 import { debuffInForce } from '../../utils/effects/debuff-force.mjs';
+import { langText } from '../../utils/lang-text.mjs';
 import { getHpPerBar } from '../combat-metrics.mjs';
 
 /** The duration unit id of a debuff that lasts until its bearer is healed. */
 const UNTIL_HEALED = 'until_healed';
 
-/** Localized text with an English fallback for a client that has not loaded the language file. */
-function text(key, data, fallback) {
-  const i18n = globalThis.game?.i18n;
-  const out = data ? i18n?.format?.(key, data) : i18n?.localize?.(key);
-  if (typeof out === 'string' && out && out !== key) return out;
-  return Object.entries(data ?? {}).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, String(v)), fallback);
-}
+/** English fallbacks for a client that has not loaded the language file. */
+const text = langText({
+  'COG.HealingGate.Title': 'Cannot Be Healed',
+  'COG.HealingGate.Prompt': '{name} cannot be healed. Heal anyway as a Rule Break?'
+});
 
 /**
  * "Cannot be healed": ask the Rule Break before Health is restored. `options.interactive === false` refuses without a
@@ -35,8 +34,8 @@ export async function confirmHealing(actor, options = {}) {
   }
   const name = actor.name || 'This actor';
   const res = await confirmRuleBreak({
-    title: text('COG.HealingGate.Title', null, 'Cannot Be Healed'),
-    message: text('COG.HealingGate.Prompt', { name }, `${name} cannot be healed. Heal anyway as a Rule Break?`),
+    title: text('COG.HealingGate.Title'),
+    message: text('COG.HealingGate.Prompt', { name }),
     reason: `${name} cannot be healed.`,
     options
   });

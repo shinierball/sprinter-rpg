@@ -73,6 +73,9 @@ function ruleBreakDetailHtml(lines) {
   return `<ul>${lines.map((line) => `<li>${escapeAttr(line)}</li>`).join('')}</ul>`;
 }
 
+/** The `options` of one `confirmRuleBreak` from a caller's own options: its `ruleBreak: true` pre-confirms, its `interactive` passes on. */
+export const askOptions = (options) => ({ ruleBreak: options.ruleBreak === true, interactive: options.interactive });
+
 /**
  * Prompt or adjudicate a permissive Rule Break when a player or GM action exceeds
  * a rulebook limit (action budget, mana, grind hours, crafting workstation/materials,

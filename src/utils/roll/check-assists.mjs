@@ -14,7 +14,7 @@ import { COG_ROLL_OUTCOMES, attackHits, evaluateRollOutcome, extractD20Result, s
 import { maxOfDiceFormula } from './dice-max.mjs';
 import { sanitizePatronCheckRef } from '../patron/patron-check-ref.mjs';
 import { sanitizePetCheckRef } from '../pet/pet-check-ref.mjs';
-import { DIFFICULTY_MODES } from '../../data/rules/difficulty-rules.mjs';
+import { DIFFICULTY_MODES, escalatingTiers } from '../../data/rules/difficulty-rules.mjs';
 import { sanitizePartyCheckRef } from './party-ref.mjs';
 
 export const CHECK_RECORD_FLAG = 'check';
@@ -167,15 +167,18 @@ function sanitizeDifficulty(raw) {
   if (!isPlain(raw) || !DIFFICULTY_MODES.includes(raw.mode)) return null;
   const value = numOrNull(raw.value);
   if (value === null) return null;
+  const tiers = raw.mode === 'typed' ? escalatingTiers(raw.tiers) : [];
   return {
     mode: raw.mode,
     value: Math.max(0, value),
+    ...(tiers.length ? { tiers } : {}),
     floor: Math.max(0, num(raw.floor)),
     foeUuid: str(raw.foeUuid),
     foeName: str(raw.foeName),
     stat: str(raw.stat),
     mod: num(raw.mod),
     shift: num(raw.shift),
+    flat: num(raw.flat),
     standing: raw.standing === true,
     by: str(raw.by),
     at: num(raw.at)
@@ -238,6 +241,8 @@ function sanitizeRecord(raw) {
     d20: current ? current.d20 : rolledD20,
     rolled: { total: rolledTotal, d20: rolledD20 },
     itemUuid: str(raw.itemUuid),
+    scene: numOrNull(raw.scene),
+    skillIdentifier: str(raw.skillIdentifier),
     rerolls,
     shifts: sanitizeShifts(raw.shifts),
     offersUsed: (Array.isArray(raw.offersUsed) ? raw.offersUsed : []).filter((k) => typeof k === 'string' && k).slice(0, MAX_RECORD_OFFERS_USED),
@@ -255,7 +260,9 @@ function sanitizeRecord(raw) {
     vehicle: sanitizeVehicleRefRecord(raw.vehicle),
     patron: sanitizePatronCheckRef(raw.patron),
     pet: sanitizePetCheckRef(raw.pet),
-    ...(raw.statOnly === true ? { statOnly: true } : {})
+    ...(raw.statOnly === true ? { statOnly: true } : {}),
+    // The scatter direction rolled on this card (`rule.scatter`, 1d8), once
+    ...(Number.isInteger(raw.scatterD8) && raw.scatterD8 >= 1 && raw.scatterD8 <= 8 ? { scatterD8: raw.scatterD8 } : {})
   };
 }
 
@@ -281,6 +288,8 @@ function sanitizeRecord(raw) {
  * @param {{ vehicleUuid?: string, kind?: string, dc?: number|null, skill?: string, stat?: string, advantage?: boolean, rerollOf?: string, rerollKey?: string }|null} [p.vehicle] the vehicle this check was rolled for (3.44d)
  * @param {{ kind?: string, itemId?: string, skill?: string, rank?: number, dc?: number|null }|null} [p.patron] the patron item this check was rolled for, an audition or a gig (pp. 315-316)
  * @param {string} [p.itemUuid] the skill, weapon or spell rolled; '' for a stat check or an Evade
+ * @param {number|null} [p.scene] the scene epoch when the check was rolled (the retry gate reads it)
+ * @param {string} [p.skillIdentifier] the Skill rolled (`system.identifier`), '' when none: a weapon attack names the Skill it used
  * @param {string} [p.rollId] links the ledger entry to this card
  * @param {string} [p.stat] the Stat rolled (`str` ...), '' when none
  * @param {number|null} [p.floor] the Floor when the check was rolled
@@ -288,7 +297,7 @@ function sanitizeRecord(raw) {
  * @param {boolean} [p.statOnly] a skill card rolled as a Stat Check (no Rank): the kind stays `skill`, this marks it
  * @param {Iterable<string>} [p.contextTags] the roll's whole context tags (kept on a skill or Stat card only)
  */
-export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, combat = null, tags = [], targets = [], dc = null, hasDamage = false, evade = null, assists = [], contest = null, party = null, vehicle = null, patron = null, pet = null, itemUuid = '', rollId = '', stat = '', floor = null, difficulty = null, statOnly = false, contextTags = [] } = {}) {
+export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, combat = null, tags = [], targets = [], dc = null, hasDamage = false, evade = null, assists = [], contest = null, party = null, vehicle = null, patron = null, pet = null, itemUuid = '', scene = null, skillIdentifier = '', rollId = '', stat = '', floor = null, difficulty = null, statOnly = false, contextTags = [] } = {}) {
   const contextTagsKept = kind === 'skill' || kind === 'stat' ? sanitizeContextTags([...(contextTags ?? [])]) : [];
   const record = {
     v: CHECK_RECORD_VERSION,
@@ -304,6 +313,8 @@ export function buildCheckRecord({ kind, roller, rollerTokenId = null, roll, com
     total: num(roll?.total),
     d20: extractD20Result(roll),
     itemUuid: str(itemUuid),
+    scene: numOrNull(scene),
+    skillIdentifier: str(skillIdentifier),
     rerolls: {},
     shifts: [],
     offersUsed: [],

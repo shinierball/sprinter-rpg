@@ -28,10 +28,10 @@ const SEEDED_SIZES = [
   { id: 'small', size: 2, label: 'COG.Size.small', token: 1, raceCost: 3, junk: 4 },
   { id: 'petite', size: 3, label: 'COG.Size.petite', token: 1, raceCost: 0, junk: 16 },
   { id: 'medium', size: 4, label: 'COG.Size.medium', token: 1, raceCost: 0, junk: 32 },
-  { id: 'large', size: 5, label: 'COG.Size.large', token: 2, raceCost: 3, junk: 64 },
-  { id: 'huge', size: 6, label: 'COG.Size.huge', token: 3, raceCost: 3, junk: 128 },
-  { id: 'colossal', size: 7, label: 'COG.Size.colossal', token: 3, raceCost: 3, junk: 256, racePill: false },
-  { id: 'gargantuan', size: 8, label: 'COG.Size.gargantuan', token: 3, raceCost: 3, junk: 512, racePill: false }
+  { id: 'large', size: 5, label: 'COG.Size.large', token: 2, raceCost: 0, junk: 64 },
+  { id: 'huge', size: 6, label: 'COG.Size.huge', token: 3, raceCost: 0, junk: 128 },
+  { id: 'colossal', size: 7, label: 'COG.Size.colossal', token: 3, raceCost: 0, junk: 256, racePill: false },
+  { id: 'gargantuan', size: 8, label: 'COG.Size.gargantuan', token: 3, raceCost: 0, junk: 512, racePill: false }
 ];
 
 /** The registry in use: the one on `CONFIG.COG.sizes` when set, else the module's own. */
@@ -197,6 +197,20 @@ export function raceSizeCost(id) {
   const registry = liveRegistry();
   if (!key || !Object.hasOwn(registry, key)) return 0;
   return Number(registry[key].raceCost) || 0;
+}
+
+/**
+ * Whether the book leaves a size's price to the GM: a registered size above Medium whose Race Creator cost is 0 (core
+ * p. 160 prices only "Size 2 (Small) or less"). Blank, unknown, Medium and smaller sizes never are.
+ * @param {*} id
+ * @returns {boolean}
+ */
+export function isUnpricedSize(id) {
+  const key = sanitizeSizeId(id);
+  const registry = liveRegistry();
+  if (!key || !Object.hasOwn(registry, key)) return false;
+  const medium = (Object.hasOwn(registry, DEFAULT_SIZE) ? registry[DEFAULT_SIZE] : FALLBACK_SIZE).size;
+  return registry[key].size > medium && raceSizeCost(key) === 0;
 }
 
 /**

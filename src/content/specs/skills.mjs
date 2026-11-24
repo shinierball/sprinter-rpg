@@ -16,6 +16,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "Base Damage: 1d8 + Str Piercing.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -136,11 +137,9 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "generated": [
-            "system.notes"
-          ],
           "redacted": true,
           "emptied": [
+            "system.limitations",
             "system.upgrades",
             "system.rankBreaks.rank10.notes"
           ]
@@ -159,6 +158,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "Base Damage: 1d6 + Str Slashing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d6 base damage\nRank 10: +1d6 base damage\nRank 15: +1d6 base damage, and the target gains the Blood Trail Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -294,6 +294,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "AI Favor: 1. Base Damage: 1d4 + Str Slashing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d4 base damage\nRank 10: +1d4 base damage\nRank 15: +2d4 base damage",
       "checked": false,
       "damageModifiers": [],
@@ -442,6 +443,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "Base Damage: 1d6 + Str Bludgeoning.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -583,6 +585,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "AI Favor: 1. Base Damage: 1d4 + Str Bludgeoning.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -740,10 +743,26 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "Limitations: Requires two hands to wield. Base Damage: 1d10 + Str Bludgeoning.",
+      "notes": "Base Damage: 1d10 + Str Bludgeoning.",
+      "limitations": "Requires two hands to wield.",
       "upgrades": "",
       "checked": false,
-      "damageModifiers": [],
+      "damageModifiers": [
+        {
+          "label": "Shove",
+          "mode": "forcedMove",
+          "option": "push",
+          "value": 15,
+          "minRank": 15,
+          "condition": {
+            "all": [],
+            "any": [],
+            "none": [
+              "situation.larger_foe"
+            ]
+          }
+        }
+      ],
       "isAttack": true,
       "isTechnique": false,
       "hasDamage": true,
@@ -882,6 +901,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "Base Damage: 1d6 + Str Slashing.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -915,6 +935,9 @@ export const COG_SKILLS = [
           }
         },
         "rank10": {
+          "tags": [
+            "action.extra_attack"
+          ],
           "damageDice": "1d6",
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
@@ -1024,6 +1047,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "AI Favor: 1. Base Damage: 1d4 + Str Piercing.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -1180,6 +1204,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "Base Damage: 1d8 + Str Slashing.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -1321,6 +1346,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "Base Damage: 1d6 + Dex Piercing.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -1463,6 +1489,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "AI Favor: 1 (only if no Damage Effect is used). Base Damage: 1d4 + Str Bludgeoning.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d4 base damage\nRank 10: +1d4 base damage\nRank 15: +1d4 base damage, and the target gains the Sore as Shit Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -1618,7 +1645,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "AI Favor: 1 (only if no Damage Effect is used). Base Damage: 1d4 + Con Bludgeoning.",
+      "notes": "Choose Skullcracker or Powerful Strike. AI Favor: 1 (only if no Damage Effect is used). Base Damage: 1d4 + Con Bludgeoning.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -1756,11 +1784,9 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "generated": [
-            "system.notes"
-          ],
           "redacted": true,
           "emptied": [
+            "system.limitations",
             "system.upgrades",
             "system.rankBreaks.rank5.notes",
             "system.rankBreaks.rank10.notes"
@@ -1780,6 +1806,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "AI Favor: 2 (only if no Damage Effect is used). Base Damage: 1d2 + Str Bludgeoning.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -1853,6 +1880,9 @@ export const COG_SKILLS = [
           }
         },
         "rank15": {
+          "tags": [
+            "action.extra_attack"
+          ],
           "damageDice": "1d2",
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
@@ -1898,7 +1928,6 @@ export const COG_SKILLS = [
         "action.attack",
         "element.bludgeoning",
         "kind.skill",
-        "action.extra_attack",
         "skillGroup.combat",
         "stat.dex",
         "weaponClass.unarmed",
@@ -1939,7 +1968,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "AI Favor: 1. Limitations: Cannot choose a Damage Effect. Mixture of all strikes. Base Damage: 1d4 + Str Bludgeoning.",
+      "notes": "AI Favor: 1. Mixture of all strikes. Base Damage: 1d4 + Str Bludgeoning.",
+      "limitations": "Cannot choose a Damage Effect.",
       "upgrades": "Rank 5: +1d4 base damage\nRank 10: +1d4 base damage\nRank 15: +2d4 base damage",
       "checked": false,
       "damageModifiers": [],
@@ -2088,7 +2118,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "AI Favor: 1 (only if no Damage Effect is used). Limitations: Requires two hands. Choose Choke Out, Dirty Fighting, or Toss. On Success, target gains Held Debuff. Base Damage: 1d4 + Str Bludgeoning.",
+      "notes": "AI Favor: 1 (only if no Damage Effect is used). Choose Choke Out, Dirty Fighting, or Toss. On Success, target gains Held Debuff. Base Damage: 1d4 + Str Bludgeoning.",
+      "limitations": "Requires two hands to wield.",
       "upgrades": "Rank 5: Maintain Held at no Action cost, but check to prevent escape is at Disadvantage.\nRank 10: +1d4 base damage\nRank 15: +1d4 base damage.",
       "checked": false,
       "damageModifiers": [],
@@ -2243,6 +2274,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Wrestling Damage Effect, Passive",
       "notes": "",
+      "limitations": "",
       "upgrades": "Rank 5: Activates at 20% Health Bar or less.\nRank 10: Activates at 40% Health Bar or less, deals ×4 total damage.\nRank 15: Activates at 80% Health Bar or less, deals ×8 total damage.",
       "checked": false,
       "damageModifiers": [],
@@ -2427,6 +2459,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Pugilism / Wrestling Damage Effect, Passive",
       "notes": "Pugilism or Wrestling Damage Effect, Passive. If Attack is Critical Fail, lose 1 Popularity. Apply Woozy Debuff to target.",
+      "limitations": "",
       "upgrades": "Rank 10: Also apply Blinded Debuff. No longer lose Popularity on Critical Fails.\nRank 15: Apply an immediate Minor Injury Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -2611,6 +2644,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Pugilism Damage Effect, Passive",
       "notes": "Pugilism Damage Effect, Passive. Deal +1d2 base damage.",
+      "limitations": "",
       "upgrades": "Rank 5: Add 1 Rank damage die.\nRank 10: Choose to have target gain Stunned Debuff instead of rolling damage.\nRank 15: Add 1 Rank damage die, and target gains Stunned Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -2769,6 +2803,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Damage Effect, Passive",
       "notes": "Cooldown: 30 hours.",
+      "limitations": "",
       "upgrades": "Rank 5: Cooldown is 10 hours.\nRank 10: Cooldown is 5 hours.\nRank 15: Cooldown is 2 hours.",
       "checked": false,
       "damageModifiers": [],
@@ -2939,6 +2974,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Damage Effect, Passive",
       "notes": "",
+      "limitations": "",
       "upgrades": "Rank 5: +1d4 base damage if target is same size.\nRank 10: If same size, add 1 Rank damage die and target gains Stunned Debuff.\nRank 15: Add 1 Rank damage die and target gains Blood Trail Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -3114,7 +3150,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "passive",
       "checkNote": "Foot Soldier Damage Effect, Passive",
-      "notes": "Foot Soldier Damage Effect, Passive. Target must have 20% Health Bar or less. Cooldown: Once per round. Deal ×2 total damage.",
+      "notes": "Foot Soldier Damage Effect, Passive. Cooldown: Once per round. Deal ×2 total damage.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -3266,6 +3303,7 @@ export const COG_SKILLS = [
         "sourcery": {
           "redacted": true,
           "emptied": [
+            "system.limitations",
             "system.upgrades",
             "system.rankBreaks.rank5.notes",
             "system.rankBreaks.rank15.notes"
@@ -3285,6 +3323,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Wrestling Damage Effect, Passive",
       "notes": "Wrestling Damage Effect, Passive. Deal +1d8 base damage + Str Bludgeoning, end Held Debuff, and throw target 5 ft per 5 Ranks (min 5 ft). Only foes smaller than you.",
+      "limitations": "",
       "upgrades": "Rank 5: Toss foes up to own size.\nRank 10: Toss foes one size larger.\nRank 15: +1d8 base damage, toss foes two sizes larger.",
       "checked": false,
       "damageModifiers": [],
@@ -3436,7 +3475,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "attack",
       "checkNote": "Ranged Attack, Dex",
-      "notes": "Range: 100 feet. Requires two hands and ammunition. Base Damage: 1d6 + Str Piercing.",
+      "notes": "Range: 100 feet. Base Damage: 1d6 + Str Piercing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d6 base damage\nRank 10: +1d6 base damage, add 1 Rank damage die.\nRank 15: +1d6 base damage, and target gains Blood Trail Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -3530,6 +3570,16 @@ export const COG_SKILLS = [
           }
         }
       },
+      "ammunition": {
+        "query": {
+          "all": [
+            "ammo.arrow"
+          ],
+          "any": [],
+          "none": []
+        },
+        "perAttack": 1
+      },
       "identifier": "bow",
       "tags": [
         "action.attack",
@@ -3558,7 +3608,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -3577,7 +3630,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "attack",
       "checkNote": "Ranged Attack, Dex",
-      "notes": "Range: 50 feet. Requires two hands and ammunition. Cooldown: Once per round. Base Damage: 1d8 Piercing.",
+      "notes": "Range: 50 feet. Cooldown: Once per round. Base Damage: 1d8 Piercing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d8 base damage\nRank 10: +1d8 base damage, target gains Blood Trail Debuff.\nRank 15: +1d8 base damage, range is 100 feet.",
       "checked": false,
       "damageModifiers": [],
@@ -3671,6 +3725,16 @@ export const COG_SKILLS = [
           }
         }
       },
+      "ammunition": {
+        "query": {
+          "all": [
+            "ammo.bolt"
+          ],
+          "any": [],
+          "none": []
+        },
+        "perAttack": 1
+      },
       "identifier": "crossbow",
       "tags": [
         "action.attack",
@@ -3699,7 +3763,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -3714,7 +3781,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "attack",
       "checkNote": "Ranged Attack, Dex",
-      "notes": "Range: 150 feet. Requires ammunition. Spend one Action to reload after Major Fail or worse. Base Damage: 1d8 Piercing.",
+      "notes": "Range: 150 feet. Base Damage: 1d8 Piercing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d8 base damage\nRank 10: +1d8 base damage\nRank 15: +1d8 base damage, target gains Staggered Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -3808,8 +3876,19 @@ export const COG_SKILLS = [
           }
         }
       },
+      "ammunition": {
+        "query": {
+          "all": [
+            "ammo.bullet"
+          ],
+          "any": [],
+          "none": []
+        },
+        "perAttack": 1
+      },
       "identifier": "handgun",
       "tags": [
+        "rule.reload",
         "action.attack",
         "element.piercing",
         "kind.skill",
@@ -3836,7 +3915,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -3852,6 +3934,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Ranged Attack, Dex",
       "notes": "Range: 40 feet. Base Damage: 1d8 + Str Piercing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d8 base damage\nRank 10: +1d8 base damage, deals Armor-Piercing damage (ignores DR).\nRank 15: +1d8 base damage, range increases by Str in feet.",
       "checked": false,
       "damageModifiers": [],
@@ -3988,7 +4071,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "attack",
       "checkNote": "Ranged Attack, Dex",
-      "notes": "Range: 30 feet. Requires two hands and ammunition. Spend one Action to reload after Major Fail or worse. Base Damage: 1d10 Piercing.",
+      "notes": "Range: 30 feet. Base Damage: 1d10 Piercing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d10 base damage\nRank 10: +1d10 base damage\nRank 15: +1d10 base damage, +5ft Splash.",
       "checked": false,
       "damageModifiers": [],
@@ -4082,8 +4166,19 @@ export const COG_SKILLS = [
           }
         }
       },
+      "ammunition": {
+        "query": {
+          "all": [
+            "ammo.shell"
+          ],
+          "any": [],
+          "none": []
+        },
+        "perAttack": 1
+      },
       "identifier": "shotgun",
       "tags": [
+        "rule.reload",
         "action.attack",
         "element.piercing",
         "kind.skill",
@@ -4110,7 +4205,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -4126,6 +4224,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Ranged Attack, Dex",
       "notes": "Range: 30 feet. AI Favor: 1. Base Damage: 1d4 + Str Piercing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d4 base damage, range is 40 feet.\nRank 10: +1d4 base damage, make an extra free attack with Disadvantage.\nRank 15: +1d4 base damage, make an extra free attack with Disadvantage.",
       "checked": false,
       "damageModifiers": [],
@@ -4172,6 +4271,9 @@ export const COG_SKILLS = [
           }
         },
         "rank10": {
+          "tags": [
+            "action.extra_attack"
+          ],
           "damageDice": "1d4",
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
@@ -4192,6 +4294,9 @@ export const COG_SKILLS = [
           }
         },
         "rank15": {
+          "tags": [
+            "action.extra_attack"
+          ],
           "damageDice": "1d4",
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
@@ -4275,7 +4380,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "attack",
       "checkNote": "Ranged Attack, Dex",
-      "notes": "Range: 30 feet. AI Favor: 2. Requires two hands. Base Damage: 1d2 + Str Bludgeoning.",
+      "notes": "Range: 30 feet. AI Favor: 2. Base Damage: 1d2 + Str Bludgeoning.",
+      "limitations": "Requires two hands to wield.",
       "upgrades": "Rank 5: +1d2 base damage, range increases by Str in feet.\nRank 10: +1d2 base damage, add 1 Rank damage die.\nRank 15: +1d2 base damage, add 1 Rank damage die.",
       "checked": false,
       "damageModifiers": [],
@@ -4425,10 +4531,19 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "Range: 10 feet. AI Favor: 1. Requires two hands. Base Damage: 1d4 + Str Bludgeoning.",
+      "notes": "Range: 10 feet. AI Favor: 1. Base Damage: 1d4 + Str Bludgeoning.",
+      "limitations": "Requires two hands to wield.",
       "upgrades": "Rank 5: +1d4 base damage, slide target 5 feet.\nRank 10: +1d4 base damage, can make a Sling attack with range 50 ft using Dex to hit.\nRank 15: +1d4 base damage, target gains Take Down Debuff.",
       "checked": false,
-      "damageModifiers": [],
+      "damageModifiers": [
+        {
+          "label": "Herd",
+          "mode": "forcedMove",
+          "option": "slide",
+          "value": 5,
+          "minRank": 5
+        }
+      ],
       "isAttack": true,
       "isTechnique": false,
       "hasDamage": true,
@@ -4575,10 +4690,33 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "Base Damage: 1d12 + Str Piercing.",
+      "notes": "Range: 10 feet. Base Damage: 1d12 + Str Piercing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d12 base damage\nRank 10: +1d12 base damage, +1 damage per 10 ft mount moved this turn.\nRank 15: +1d12 base damage, +X damage (X = size of mount).",
       "checked": false,
-      "damageModifiers": [],
+      "damageModifiers": [
+        {
+          "label": "Charge",
+          "mode": "add",
+          "value": 1,
+          "minRank": 10,
+          "scaleBy": {
+            "source": "moved",
+            "scope": "mount",
+            "per": 0.1
+          }
+        },
+        {
+          "label": "Mount size",
+          "mode": "add",
+          "value": 1,
+          "minRank": 15,
+          "scaleBy": {
+            "source": "size",
+            "scope": "mount"
+          }
+        }
+      ],
       "isAttack": true,
       "isTechnique": false,
       "hasDamage": true,
@@ -4697,10 +4835,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "generated": [
-            "system.notes"
-          ],
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -4715,7 +4853,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "Range: 10 feet. Requires two hands. Base Damage: 1d8 + Str Piercing.",
+      "notes": "Range: 10 feet. Base Damage: 1d8 + Str Piercing.",
+      "limitations": "Requires two hands to wield.",
       "upgrades": "Rank 5: +1d8 base damage\nRank 10: +1d8 base damage, and +1 Rank in Zone of Control Skill.\nRank 15: +1d8 base damage, and +1 Rank in Zone of Control Skill.",
       "checked": false,
       "damageModifiers": [],
@@ -4852,7 +4991,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
-      "notes": "Range: 10 feet. Requires two hands. Base Damage: 1d6 + Str Bludgeoning.",
+      "notes": "Range: 10 feet. Base Damage: 1d6 + Str Bludgeoning.",
+      "limitations": "Requires two hands to wield.",
       "upgrades": "Rank 5: +1d6 base damage\nRank 10: +1d6 base damage, and gain a +1 Evade Buff.\nRank 15: +1d6 base damage, and gain a +1 Evade Buff.",
       "checked": false,
       "damageModifiers": [],
@@ -4990,6 +5130,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Passive",
       "notes": "Improves hearing and allows crawler to see more Mobs on minimap in HUD.",
+      "limitations": "",
       "upgrades": "Rank 5: Mob size and encounter history added to red dot.\nRank 10: Lower level Mobs cannot Ambush your party.\nRank 15: Mobs cannot Ambush your party.",
       "checked": false,
       "damageModifiers": [],
@@ -5112,7 +5253,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "passive",
       "checkNote": "Passive",
-      "notes": "Used only with Ranged Attacks. Add Ranks to Attack check if made with Disadvantage. On Success, add 1d4 to damage.",
+      "notes": "Add Ranks to Attack check if made with Disadvantage. On Success, add 1d4 to damage.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d4 damage\nRank 10: +1d4 base damage\nRank 15: +1d4 base damage.",
       "checked": false,
       "damageModifiers": [],
@@ -5222,7 +5364,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -5238,6 +5383,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Used for crafting potions and poisons up to +5 bonus level.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "craftModifiers": [
@@ -5385,6 +5531,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check when Mob is approaching. On Success, gain a surprise Action before combat and attack with Advantage.",
+      "limitations": "",
       "upgrades": "Rank 5: Add Ambush Rank damage die to Surprise Attack damage.\nRank 10: Party members roll this skill untrained normally.\nRank 15: Gain a second bonus surprise Action (non-Attack).",
       "checked": false,
       "damageModifiers": [],
@@ -5507,6 +5654,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check to calm, befriend, or guide animals.",
+      "limitations": "",
       "upgrades": "Rank 5: Specialize in animal type (Advantage). Gain bonus surprise Action.\nRank 10: Pet bonding takes half time.\nRank 15: Can have up to two pets.",
       "checked": false,
       "damageModifiers": [],
@@ -5630,6 +5778,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "General knowledge of magic; identify whether items are magical.",
+      "limitations": "",
       "upgrades": "Rank 5: Determine Rank and bonus level of magical items.\nRank 10: Imbue items with inherent spells at Arcanist Table.\nRank 15: Default cooldown of imbued spells is 3 hours.",
       "checked": false,
       "damageModifiers": [],
@@ -5752,7 +5901,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "passive",
       "checkNote": "Passive, Interrupt",
-      "notes": "Requires single-handed melee weapon (range <= 5 ft). When foe leaves adjacent space (except Step), spend Action to make Attack as Interrupt.",
+      "notes": "When foe leaves adjacent space (except Step), spend Action to make Attack as Interrupt.",
+      "limitations": "",
       "upgrades": "Rank 5: If foe moves into adjacent space, they must stop.\nRank 10: Foe Step no longer prevents this ability.\nRank 15: Roll Attack check with Advantage.",
       "checked": false,
       "damageModifiers": [],
@@ -5866,7 +6016,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -5881,7 +6034,8 @@ export const COG_SKILLS = [
       "stat": "int",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Class only. Neutralize (10 min) and deconstruct (1 hr) traps without a demolitions table.",
+      "notes": "Neutralize (10 min) and deconstruct (1 hr) traps without a demolitions table.",
+      "limitations": "",
       "upgrades": "Rank 5: Identify placement time; neutralize takes 5 min.\nRank 10: Identify creation time; deconstruct takes 30 min.\nRank 15: Identify trap designer; deconstruct takes 15 min.",
       "checked": false,
       "damageModifiers": [],
@@ -5991,7 +6145,8 @@ export const COG_SKILLS = [
         "sourcery": {
           "redacted": true,
           "emptied": [
-            "system.notes"
+            "system.notes",
+            "system.limitations"
           ]
         }
       }
@@ -6008,6 +6163,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "",
+      "limitations": "",
       "upgrades": "Rank 5: Move Actions in difficult terrain without penalty.\nRank 10: Avoid Take Down or involuntary Move as free Interrupt.\nRank 15: Step on vertical surfaces.",
       "checked": false,
       "damageModifiers": [],
@@ -6142,6 +6298,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Conduct experiments involving chemistry, physics, or biology (takes 2 hours).",
+      "limitations": "",
       "upgrades": "Rank 5: Experiments take 1 hour.\nRank 10: Choose specialty; roll with Advantage.\nRank 15: Experiments take 30 minutes.",
       "checked": false,
       "damageModifiers": [],
@@ -6264,6 +6421,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Deconstruct explosive and smoke bombs (takes 1 hour).",
+      "limitations": "",
       "upgrades": "Rank 5: Takes 30 minutes.\nRank 10: Never make Explosives Handling check when using this skill.\nRank 15: Round dice up when cutting dynamite; takes 15 minutes.",
       "checked": false,
       "damageModifiers": [],
@@ -6387,6 +6545,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Make documents look super elegant and official.",
+      "limitations": "",
       "upgrades": "Rank 5: Advantage on next Cha check vs recipient.\nRank 10: Craft scrolls as if a crafting skill.\nRank 15: Once per floor, craft scroll for spell seen within 2 hours.",
       "checked": false,
       "damageModifiers": [],
@@ -6510,6 +6669,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Map dungeon and figure out locations in relation to landmarks.",
+      "limitations": "",
       "upgrades": "Rank 10: Provide Advantage die to Tracking or spatial relation checks.\nRank 15: Navigate point A to point B via most direct path.",
       "checked": false,
       "damageModifiers": [],
@@ -6635,7 +6795,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "skill",
       "checkNote": "Stat Check",
-      "notes": "Cat-based Races only. Gain +10ft Move. Use this check when making Dexterity Stat Checks.",
+      "notes": "Gain +10ft Move. Use this check when making Dexterity Stat Checks.",
+      "limitations": "",
       "upgrades": "Rank 5: Reduce Surprise Attack damage taken by Rank.\nRank 10: Reduce all Area damage by 50%.\nRank 15: +10ft Move, +1 Evade Buff, Advantage to Evade Held effects.",
       "checked": false,
       "damageModifiers": [],
@@ -6742,7 +6903,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -6765,6 +6929,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "When non-Area Attack damages an adjacent ally, leap in and take damage instead. Can take 10ft Step before.",
+      "limitations": "",
       "upgrades": "Rank 5: Gain +5 DR when using this Skill.\nRank 10: Gain +5 DR when using this Skill.\nRank 15: Gain +5 DR and ignore attached Debuffs.",
       "checked": false,
       "damageModifiers": [],
@@ -6906,7 +7071,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "skill",
       "checkNote": "Stat Check",
-      "notes": "Acquired via Random Origin Potion.",
+      "notes": "",
+      "limitations": "",
       "upgrades": "Rank 5: Throw range Str × 20 feet.\nRank 10: Add 1 Rank damage die to thrown Attacks.\nRank 15: Throw range Str × 30 feet.",
       "checked": false,
       "damageModifiers": [],
@@ -7016,7 +7182,8 @@ export const COG_SKILLS = [
         "sourcery": {
           "redacted": true,
           "emptied": [
-            "system.notes"
+            "system.notes",
+            "system.limitations"
           ]
         }
       }
@@ -7032,7 +7199,8 @@ export const COG_SKILLS = [
       "stat": "cha",
       "checkType": "passive",
       "checkNote": "Passive, Charisma",
-      "notes": "Former Child Actor only. Choose new Class randomly each floor and gain listed abilities on 1d2 = 2.",
+      "notes": "Choose new Class randomly each floor and gain listed abilities on 1d2 = 2.",
+      "limitations": "",
       "upgrades": "Rank 5: Random Classes increase in rarity and power.\nRank 10: Skill Ranks in granted skills persist across floors.\nRank 15: Choose Class from any available.",
       "checked": false,
       "damageModifiers": [],
@@ -7141,7 +7309,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -7156,7 +7327,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Piloting motorcycles. Disadvantage on Attacks while piloting; cannot use two-handed weapons.",
+      "notes": "Piloting motorcycles.",
+      "limitations": "",
       "upgrades": "Rank 5: Chopper has +5ft Move.\nRank 10: Attacking while piloting no longer suffers Disadvantage.\nRank 15: Chopper has +5ft Move; Advantage on crazy stunts.",
       "checked": false,
       "attackModifiers": [
@@ -7312,7 +7484,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -7327,7 +7502,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Make check every minute during dangerous climbs. Attacking while climbing suffers Disadvantage.",
+      "notes": "Make check every minute during dangerous climbs.",
+      "limitations": "",
       "upgrades": "Rank 5: Check every 5 minutes.\nRank 10: Check every 10 minutes; no Disadvantage on Attacks.\nRank 15: Check every 15 minutes; party rolls untrained normally.",
       "checked": false,
       "damageModifiers": [],
@@ -7435,7 +7611,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -7455,6 +7634,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "When Attack drops you to 0% Health Bar, roll Unopposed. On Success, drop to 10% instead. Cooldown: Once per scene.",
+      "limitations": "",
       "upgrades": "Rank 5: No check required.\nRank 10: Health Bar unaffected by damage that would drop to 0%.\nRank 15: Cooldown twice per scene. Heal to 100% and gain +Rank DR for 1 round.",
       "checked": false,
       "damageModifiers": [],
@@ -7575,7 +7755,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -7591,6 +7774,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Prepare edible food for party in 1 hour.",
+      "limitations": "",
       "upgrades": "Rank 5: Takes 30 minutes with makeshift ingredients.\nRank 10: Diners gain Well Fed Buff (heal 2 HB slots/hr).\nRank 15: Well Fed Buff ends Debuffs if dropping to 10% HB.",
       "checked": false,
       "damageModifiers": [],
@@ -7718,6 +7902,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check to obscure truth and lie. Disadvantage if target has Detect Lies.",
+      "limitations": "",
       "upgrades": "Rank 5: Usable while gambling.\nRank 10: Usable to forge documents.\nRank 15: If failed, perform one Action before foes react.",
       "checked": false,
       "damageModifiers": [],
@@ -7840,6 +8025,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Cha-Opposed check to sense bullshit and lies. Disadvantage if target has Deception.",
+      "limitations": "",
       "upgrades": "Rank 5: Ignore effects of Major Fail.\nRank 10: Ignore effects of Critical Fail.\nRank 15: Detect lies in text and audio without seeing speaker.",
       "checked": false,
       "damageModifiers": [],
@@ -7962,6 +8148,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Detect active non-magic traps. Disadvantage when scanning entire room or while moving.",
+      "limitations": "",
       "upgrades": "Rank 5: Detect magical traps.\nRank 10: No Disadvantage when scanning broadly or moving.\nRank 15: Party gains Advantage on first check to avoid detected trap.",
       "checked": false,
       "damageModifiers": [],
@@ -8084,7 +8271,8 @@ export const COG_SKILLS = [
       "stat": "int",
       "checkType": "passive",
       "checkNote": "Passive",
-      "notes": "Sort inventory by item value and appraise items and gear. Advances only by magical means.",
+      "notes": "Sort inventory by item value and appraise items and gear.",
+      "limitations": "",
       "upgrades": "Rank 5: Sort inventory and gear by value (without revealing exact value).\nRank 10: View exact gold values of all items and gear.\nRank 15: Gold value of new items displayed on pickup.",
       "checked": false,
       "damageModifiers": [],
@@ -8206,7 +8394,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -8222,6 +8413,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check for mediation between opposing parties.",
+      "limitations": "",
       "upgrades": "Rank 5: Advantage if not a member of either party.\nRank 10: Parties accept consequences for breaking deal.\nRank 15: Hostilities cease for remainder of the day.",
       "checked": false,
       "damageModifiers": [],
@@ -8344,6 +8536,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Passive",
       "notes": "Gain +1 Evade Buff.",
+      "limitations": "",
       "upgrades": "Rank 5: +1 Evade Buff, Step additional 5 ft when Evading.\nRank 10: +2 Evade Buff, Advantage to Evade Spells and Ranged Attacks.\nRank 15: +2 Evade Buff, Evade Action costs no Action in combat.",
       "checked": false,
       "damageModifiers": [],
@@ -8461,7 +8654,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -8476,7 +8672,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "passive",
       "checkNote": "Passive",
-      "notes": "Declare at start of round; use all Actions to Attack single target. If 1st Attack is Amazing Success+, 2nd is upgraded to Critical Hit.",
+      "notes": "If 1st Attack is Amazing Success+, 2nd is upgraded to Critical Hit.",
+      "limitations": "",
       "upgrades": "Rank 5: First Attack made with Advantage.\nRank 10: 2nd Attack upgrades to Crit on Standard Success+.\nRank 15: 2nd Attack with Advantage; deals ×3 damage on Crit.",
       "checked": false,
       "damageModifiers": [],
@@ -8584,7 +8781,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -8600,6 +8800,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Operate four-wheeled vehicles in extreme circumstances.",
+      "limitations": "",
       "upgrades": "Rank 5: No Disadvantage when attacking while driving.\nRank 10: Vehicle has +5ft Move; Advantage to Evade vehicle attacks.\nRank 15: Vehicle has +5ft Move; Advantage on extreme stunts.",
       "checked": false,
       "attackModifiers": [
@@ -8758,7 +8959,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -8774,6 +8978,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Scrounge clutter and junk piles (takes 1 hour per 50ft area).",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -8900,6 +9105,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Prevent fatigue and avoid Fatigued Debuff during long-distance travel and grinding.",
+      "limitations": "",
       "upgrades": "Rank 5: Ignore effects of Major Fail.\nRank 10: Advantage if not Fatigued or in extreme conditions.\nRank 15: Critical Fail converted to Standard Fail.",
       "checked": false,
       "checkModifiers": [
@@ -8946,7 +9152,10 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "fatigued",
+          "debuff": "",
+          "noParse": [
+            "debuff"
+          ],
           "notes": "Advantage if not Fatigued or in extreme conditions.",
           "isArmorPiercing": false,
           "healing": {
@@ -9039,6 +9248,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Design and build mechanisms with moving parts, fluids, or chemicals out of Misc Junk.",
+      "limitations": "",
       "upgrades": "Rank 5: Specialize in mundane item type with Advantage.\nRank 10: Craft specialty item with +1 bonus level enchantment.\nRank 15: Craft up to +2 bonus level enchantment; takes half time.",
       "checked": false,
       "checkModifiers": [
@@ -9202,7 +9412,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -9217,7 +9430,8 @@ export const COG_SKILLS = [
       "stat": "int",
       "checkType": "passive",
       "checkNote": "Passive",
-      "notes": "HUD reveals hidden doors and passages. Advances only by magical means.",
+      "notes": "HUD reveals hidden doors and passages.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -9341,6 +9555,7 @@ export const COG_SKILLS = [
         "sourcery": {
           "redacted": true,
           "emptied": [
+            "system.limitations",
             "system.upgrades",
             "system.rankBreaks.rank15.notes"
           ]
@@ -9359,6 +9574,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Unopposed / Opposed",
       "notes": "Escape bonds (Unopposed) or escape being Held (Str-Opposed).",
+      "limitations": "",
       "upgrades": "Rank 5: Escape unseen and take unseen Step.\nRank 10: Party rolls untrained normally.\nRank 15: Immediately take an Action with Advantage upon slipping out.",
       "checked": false,
       "damageModifiers": [],
@@ -9481,6 +9697,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Safely prime, disarm, or manage explosive devices.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "craftModifiers": [
@@ -9618,6 +9835,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Craft generic mundane items with no moving parts wholly out of Misc Junk.",
+      "limitations": "",
       "upgrades": "Rank 5: Specialize in mundane item with Advantage.\nRank 10: Craft specialty item with +1 bonus level enchantment.\nRank 15: Craft with up to +2 bonus level enchantment; takes half time.",
       "checked": false,
       "checkModifiers": [
@@ -9781,7 +9999,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -9797,6 +10018,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Passive",
       "notes": "HUD displays other crawlers within 1,000 ft with a blue dot.",
+      "limitations": "",
       "upgrades": "Rank 5: Detection range increases to 5 miles.\nRank 10: Detection range increases to 10 miles.\nRank 15: Input crawler's name to learn exact location anywhere in dungeon.",
       "checked": false,
       "damageModifiers": [],
@@ -9918,7 +10140,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -9934,6 +10159,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Passive",
       "notes": "Traps within 5 feet appear on HUD 1 second prior to triggering.",
+      "limitations": "",
       "upgrades": "Rank 5: Traps appear on HUD up to 5 seconds before triggering.\nRank 10: Traps within 10 ft appear as you approach.\nRank 15: Traps within 15 ft appear as you approach.",
       "checked": false,
       "damageModifiers": [],
@@ -10052,7 +10278,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -10067,7 +10296,8 @@ export const COG_SKILLS = [
       "stat": "int",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Provide medical aid. Patient regains 1 HB slot (+1 per higher degree of success). Once per rest.",
+      "notes": "Provide medical aid. Patient regains 1 HB slot (+1 per higher degree of success).",
+      "limitations": "",
       "upgrades": "Rank 5: Spend 5 min to heal Minor Injury Debuff.\nRank 10: Spend 10 min to heal Long-Term Minor Injury Debuff.\nRank 15: Regain +1 HB slot; spend 15 min to heal Major Injury Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -10177,7 +10407,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -10193,6 +10426,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Build high-performance vehicle engines with Engine Stand attachment to Engineering Table.",
+      "limitations": "",
       "upgrades": "Rank 5: Build custom vehicles with no bonus level limits.\nRank 10: +10ft Move per +1 Bonus Level; use as Repair for engines.\nRank 15: Cut engine/vehicle crafting time in half.",
       "checked": false,
       "craftModifiers": [
@@ -10308,7 +10542,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -10324,6 +10561,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Critical Fails occur on Natural 1–4.",
+      "limitations": "",
       "upgrades": "Rank 5: Critical Fail on Nat 3-; determine type and status.\nRank 10: Critical Fail on Nat 2-; craft explosives with a demolitions table.\nRank 15: Critical Fail on Nat 1 as usual; create raw materials.",
       "checked": false,
       "craftModifiers": [
@@ -10461,6 +10699,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check when encountering neutral NPC/Mob.",
+      "limitations": "",
       "upgrades": "Rank 5: Lower level Mob won't attack party unless attacked.\nRank 10: Up to double level won't attack unless provoked.\nRank 15: Group of Mobs up to double level won't attack unless provoked.",
       "checked": false,
       "damageModifiers": [],
@@ -10569,7 +10808,8 @@ export const COG_SKILLS = [
         "sourcery": {
           "redacted": true,
           "emptied": [
-            "system.notes"
+            "system.notes",
+            "system.limitations"
           ]
         }
       }
@@ -10586,6 +10826,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "craftModifiers": [
@@ -10727,6 +10968,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check to become invisible to Mobs and HUDs while stationary in shadows or behind cover.",
+      "limitations": "",
       "upgrades": "Rank 5: Usable in dim light without cover.\nRank 10: Party rolls untrained normally.\nRank 15: Usable in lightly shaded area; can Step without breaking stealth.",
       "checked": false,
       "damageModifiers": [],
@@ -10833,7 +11075,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -10849,6 +11094,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Safely handle and deploy incendiary devices.",
+      "limitations": "",
       "upgrades": "Rank 5: Determine type, status, and raw materials.\nRank 10: Craft incendiary devices with a demolitions table.\nRank 15: Add +5 Splash at no added Difficulty; takes half time.",
       "checked": false,
       "craftModifiers": [
@@ -10985,6 +11231,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Infuse potion bonuses onto consumable items (e.g. Invisibility smoke bomb).",
+      "limitations": "",
       "upgrades": "Rank 5: One potion infuses 2 items at once.\nRank 10: One potion infuses 5 items at once.\nRank 15: One potion infuses 10 items at once.",
       "checked": false,
       "damageModifiers": [],
@@ -11092,7 +11339,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -11108,6 +11358,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Cha-Opposed check to scare foe. On Success, target gains Staggered Debuff.",
+      "limitations": "",
       "upgrades": "Rank 5: Target can only move away until end of next round.\nRank 10: Target also gains Woozy Debuff.\nRank 15: Target drops held items and gains Paralyzed Debuff.",
       "checked": false,
       "damageModifiers": [],
@@ -11230,6 +11481,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Analyze environmental puzzle or clue area (takes 10 min, or 1 Action with Look for Clues).",
+      "limitations": "",
       "upgrades": "Rank 5: Advantage if familiar with area.\nRank 10: Each attempt takes 5 minutes.\nRank 15: Advantage if you know the parties involved.",
       "checked": false,
       "damageModifiers": [],
@@ -11352,6 +11604,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "On Amazing Success+, gain 1 permanent Intelligence.",
+      "limitations": "",
       "upgrades": "Rank 5: On Crit, gain +1 additional permanent Int.\nRank 10: Standard Success+ grants +1 permanent Int; eat cursed items safely.\nRank 15: Choose which Stat is permanently increased.",
       "checked": false,
       "damageModifiers": [],
@@ -11477,6 +11730,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "With running start of 10 ft, leap distance up to Rank + Str ft with height 1 ft.",
+      "limitations": "",
       "upgrades": "Rank 5: Add Dex to height of Jump.\nRank 10: Gain +1 Evade Buff.\nRank 15: Leap distance is Rank + (Str × 2).",
       "checked": false,
       "damageModifiers": [],
@@ -11600,6 +11854,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check to coordinate multiple parties against Bosses. Advantage on first Attack.",
+      "limitations": "",
       "upgrades": "Rank 5: Extend free Call a Play to group Quest members.\nRank 10: Party members may perform a free Move Action.\nRank 15: Party members may perform a free Evade Action.",
       "checked": false,
       "damageModifiers": [],
@@ -11721,7 +11976,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Animals only. Leap distance up to Rank × 2 with height Dex × 2 ft.",
+      "notes": "Leap distance up to Rank × 2 with height Dex × 2 ft.",
+      "limitations": "Usable only by animals",
       "upgrades": "Rank 5: Distance Rank × 3, height Dex × 3.\nRank 10: Leap straight up without arcing trajectory.\nRank 15: Leap may last Rank in seconds (gliding).",
       "checked": false,
       "damageModifiers": [],
@@ -11844,7 +12100,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Pick mechanical locks (takes Floor number in minutes). Disadvantage without proper tools.",
+      "notes": "Pick mechanical locks (takes Floor number in minutes).",
+      "limitations": "",
       "upgrades": "Rank 10: Takes half time; alter lock so key no longer works.\nRank 15: No Disadvantage when lacking tools.",
       "checked": false,
       "damageModifiers": [],
@@ -11953,6 +12210,7 @@ export const COG_SKILLS = [
         "sourcery": {
           "redacted": true,
           "emptied": [
+            "system.limitations",
             "system.upgrades",
             "system.rankBreaks.rank5.notes"
           ]
@@ -11971,6 +12229,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Know neighborhood lore, Mob quirks, and local factions.",
+      "limitations": "",
       "upgrades": "Rank 5: Identify major factions in the area.\nRank 10: Aware of important local NPCs.\nRank 15: Advantage on first Cha check when encountering organized group.",
       "checked": false,
       "damageModifiers": [],
@@ -12093,6 +12352,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Spend 5 min haggling price 10% in favor with merchant. Disadvantage with non-merchants.",
+      "limitations": "",
       "upgrades": "Rank 5: Party members also buy/sell at negotiated price.\nRank 10: Price adjusted an additional 10% in favor.\nRank 15: Price adjusted an additional 15% in favor.",
       "checked": false,
       "damageModifiers": [],
@@ -12199,7 +12459,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -12215,6 +12478,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Passive",
       "notes": "HUD map zooms out with thought by multiplier equal to Rank.",
+      "limitations": "",
       "upgrades": "Rank 5: Notified when near saferoom or stairwell.\nRank 10: See through HUD map while open.\nRank 15: Mobs appear as red dots on HUD map.",
       "checked": false,
       "damageModifiers": [],
@@ -12322,7 +12586,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -12338,6 +12605,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Concentrate senses to notice hidden details and environmental cues. Used with Look for Clues.",
+      "limitations": "",
       "upgrades": "Rank 5: Halve penalty for cluttered areas.\nRank 10: Halve penalty for short notice window.\nRank 15: Halve penalty for distance range.",
       "checked": false,
       "damageModifiers": [],
@@ -12460,6 +12728,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Electrify an audience through acting, dancing, singing, or comedy.",
+      "limitations": "",
       "upgrades": "Rank 5: Choose additional performance specialty.\nRank 10: Coach others so they roll unskilled without Disadvantage.\nRank 15: Mimic another's performance after seeing it once.",
       "checked": false,
       "damageModifiers": [],
@@ -12582,6 +12851,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check after 10 min schmoozing to convince target to follow suggestion.",
+      "limitations": "",
       "upgrades": "Rank 5: Follow suggestion even if costly.\nRank 10: Follow suggestion even if dangerous.\nRank 15: Follow suggestion even if against their nature.",
       "checked": false,
       "damageModifiers": [],
@@ -12704,6 +12974,7 @@ export const COG_SKILLS = [
       "checkType": "passive",
       "checkNote": "Passive",
       "notes": "Heal 1 Health Bar slot at start of each round (if Rank >= Con) or every other round.",
+      "limitations": "",
       "upgrades": "Rank 5: Minor Injury ends after 5 min; Major Injury ends after 10 min.\nRank 10: Long-Term Minor ends after 20 min; Long-Term Major ends after 1 hr.\nRank 15: Time required to end injury debuffs halved.",
       "checked": false,
       "damageModifiers": [],
@@ -12827,6 +13098,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Understand gods, rituals, boons, and followers.",
+      "limitations": "",
       "upgrades": "Rank 5: Identify followers on sight even when concealed.\nRank 15: Know specific strengths and weaknesses of gods.",
       "checked": false,
       "damageModifiers": [],
@@ -12953,6 +13225,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Spend 2 hours to repair simple broken or damaged items.",
+      "limitations": "",
       "upgrades": "Rank 5: Repair things with moving parts.\nRank 10: Repairs take 1 hour.\nRank 15: Rebuild destroyed items.",
       "checked": false,
       "craftModifiers": [
@@ -13087,7 +13360,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -13103,6 +13379,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Tie secure knots, bind prisoners, and manage ropes.",
+      "limitations": "",
       "upgrades": "Rank 5: Use as Attack (range 10 ft vs Evade); target gains Held Debuff.\nRank 10: Whip line to untie knot from distance and recover rope.\nRank 15: Attack range increases to Strength score (min 15 ft).",
       "checked": false,
       "damageModifiers": [],
@@ -13224,7 +13501,8 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Control living mounts during action and combat scenes. Rider attacks with Disadvantage.",
+      "notes": "Control living mounts during action and combat scenes.",
+      "limitations": "",
       "upgrades": "Rank 5: Mount has +5ft Move; no Disadvantage on Attacks while riding.\nRank 10: Mount has +10ft Move; party rolls untrained normally.\nRank 15: Mount has +15ft Move; Advantage on extreme stunts.",
       "checked": false,
       "damageModifiers": [],
@@ -13391,7 +13669,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -13407,6 +13688,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Short bursts of running and emergency sprints. Check every minute; +1 per 10ft Move.",
+      "limitations": "",
       "upgrades": "Rank 5: Permanent +5ft Move Buff; check every 2 minutes.\nRank 10: Additional permanent +10ft Move Buff; check every 4 minutes.\nRank 15: Additional permanent +15ft Move Buff; check every 6 minutes.",
       "checked": false,
       "damageModifiers": [],
@@ -13530,7 +13812,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -13546,6 +13831,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Collect useful materials from deconstructed or failed craft items (takes 1 hour).",
+      "limitations": "",
       "upgrades": "Rank 5: Salvage checks take 30 minutes.\nRank 10: Recover 100% of important raw materials on Success.\nRank 15: On crafting Fail or Near Miss, reroll with Advantage (extra 15 min).",
       "checked": false,
       "damageModifiers": [],
@@ -13652,7 +13938,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -13668,6 +13957,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Collect, identify, sew, and iron patches onto clothing.",
+      "limitations": "",
       "upgrades": "Rank 5: Sew and iron patches onto clothing.\nRank 10: Craft enchanted patches (1 per gear slot, no accessory slot cost).\nRank 15: Takes half time; bonus value of patch enchantments increased by +1.",
       "checked": false,
       "craftModifiers": [
@@ -13802,7 +14092,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -13817,7 +14110,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "opposed",
       "checkNote": "Opposed, Interrupt",
-      "notes": "Requires shield. Spend 1 Action to make Shield Block check vs Mob to-hit. On Success, take half damage before DR.",
+      "notes": "Spend 1 Action to make Shield Block check vs Mob to-hit. On Success, take half damage before DR.",
+      "limitations": "",
       "upgrades": "Rank 5: Usable against Spells and magical damage.\nRank 10: On Crit, make free Shield Bash Interrupt Attack (3d6 + Str Bludgeoning).\nRank 15: +1d6 Shield Bash damage; further reduce incoming damage by Str Mod.",
       "checked": false,
       "damageModifiers": [],
@@ -13930,7 +14224,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -13946,6 +14243,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check to manipulate small objects without being spotted.",
+      "limitations": "",
       "upgrades": "Rank 5: Pick pockets of NPCs and Mobs.\nRank 10: Plant items on targets.\nRank 15: Manipulate items up to half own size.",
       "checked": false,
       "damageModifiers": [],
@@ -14052,7 +14350,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -14068,6 +14369,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Forge mundane metal items, weapons, and armor.",
+      "limitations": "",
       "upgrades": "Rank 5: Craft items up to +5 bonus level.\nRank 10: Craft items up to +10 bonus level.\nRank 15: Smithing takes half time.",
       "checked": false,
       "craftModifiers": [
@@ -14217,6 +14519,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Opposed",
       "notes": "Int-Opposed check to move undetected. Success before combat grants 1 non-Attack Action.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "damageModifiers": [],
@@ -14325,6 +14628,7 @@ export const COG_SKILLS = [
         "sourcery": {
           "redacted": true,
           "emptied": [
+            "system.limitations",
             "system.upgrades",
             "system.rankBreaks.rank5.notes"
           ]
@@ -14343,6 +14647,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Navigate towns without attracting attention, contact criminal networks, and learn rumors.",
+      "limitations": "",
       "upgrades": "Rank 5: Hear or spread an additional rumor.\nRank 10: Quickly locate a hiding place in town.\nRank 15: Uncover leverage on important person in town.",
       "checked": false,
       "damageModifiers": [],
@@ -14465,6 +14770,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Survive dangerous wilderness and harsh conditions unscathed.",
+      "limitations": "",
       "upgrades": "Rank 5: No extra damage from Critical Fails.\nRank 10: Party rolls untrained normally.\nRank 15: No extra damage from Major Fails.",
       "checked": false,
       "damageModifiers": [],
@@ -14586,7 +14892,8 @@ export const COG_SKILLS = [
       "stat": "str",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Swim in dangerous waters. Check every 30 seconds. Gain Fatigued Debuff after 1 min.",
+      "notes": "Swim in dangerous waters. Check every 30 seconds.",
+      "limitations": "",
       "upgrades": "Rank 5: Fatigued Debuff delayed to 2 minutes.\nRank 10: Swim at full Move speed as Action.\nRank 15: Check every 5 minutes; Fatigued Debuff only on Critical Fail.",
       "checked": false,
       "damageModifiers": [],
@@ -14596,7 +14903,10 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "fatigued",
+          "debuff": "",
+          "noParse": [
+            "debuff"
+          ],
           "notes": "Fatigued Debuff delayed to 2 minutes.",
           "isArmorPiercing": false,
           "healing": {
@@ -14636,7 +14946,10 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "fatigued",
+          "debuff": "",
+          "noParse": [
+            "debuff"
+          ],
           "notes": "Check every 5 minutes; Fatigued Debuff only on Critical Fail.",
           "isArmorPiercing": false,
           "healing": {
@@ -14694,7 +15007,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -14709,7 +15025,8 @@ export const COG_SKILLS = [
       "stat": "int",
       "checkType": "skill",
       "checkNote": "Unopposed",
-      "notes": "Limit once per combat. Grant self and party members +1 bonus to Attack, Damage, or Evade.",
+      "notes": "Grant self and party members +1 bonus to Attack, Damage, or Evade.",
+      "limitations": "",
       "upgrades": "Rank 5: Advantage if observing battlefield 5 min prior to combat.\nRank 10: Roll 2d10 when you Call a Play (choose one).\nRank 15: Bonus applies to all three disciplines simultaneously.",
       "checked": false,
       "damageModifiers": [],
@@ -14832,7 +15149,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -14848,6 +15168,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Create mundane and magical tattoos.",
+      "limitations": "",
       "upgrades": "Rank 5: Craft tattoos with up to +5 bonus level.\nRank 10: Craft tattoos with up to +10 bonus level.\nRank 15: Crafting tattoos takes half time.",
       "checked": false,
       "craftModifiers": [
@@ -15004,6 +15325,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "Int-Opposed check to redirect Mob Attack within 30 ft away from ally onto yourself.",
+      "limitations": "",
       "upgrades": "Rank 5: Free Evade check against each taunted Attack.\nRank 10: Affect Mobs within 60 feet.\nRank 15: Free Evade checks against taunted Attacks rolled with Advantage.",
       "checked": false,
       "damageModifiers": [],
@@ -15137,6 +15459,7 @@ export const COG_SKILLS = [
       "checkType": "evade",
       "checkNote": "Unopposed / Evade",
       "notes": "Throw items up to Str × 10 ft. Area targeting is Unopposed; targeting foes is vs Evade.",
+      "limitations": "",
       "upgrades": "Rank 5: Advantage when throwing to ally who wants to catch.\nRank 10: Choose direction on miss instead of rolling 1d8.\nRank 15: Throw range increases to Str × 20 feet.",
       "checked": false,
       "damageModifiers": [],
@@ -15162,6 +15485,9 @@ export const COG_SKILLS = [
           }
         },
         "rank10": {
+          "tags": [
+            "rule.scatter-aimed"
+          ],
           "damageDice": "",
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
@@ -15224,6 +15550,7 @@ export const COG_SKILLS = [
       },
       "identifier": "throwing",
       "tags": [
+        "rule.scatter",
         "kind.skill",
         "skillGroup.utility",
         "stat.str"
@@ -15259,6 +15586,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Locate and follow footprints or trails. Renew check every 15 minutes.",
+      "limitations": "",
       "upgrades": "Rank 5: Follow for 30 min per check; gain 1 target info.\nRank 10: Follow for 1 hr per check; gain 2 target info.\nRank 15: Follow for 2 hrs per check; gain 4 target info.",
       "checked": false,
       "damageModifiers": [],
@@ -15381,6 +15709,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Unopposed",
       "notes": "Craft traps using a demolitions table with Trap Module.",
+      "limitations": "",
       "upgrades": "",
       "checked": false,
       "checkModifiers": [
@@ -15535,10 +15864,19 @@ export const COG_SKILLS = [
       "stat": "dex",
       "checkType": "passive",
       "checkNote": "Passive, Interrupt",
-      "notes": "Requires Reach weapon. When enemy enters adjacent space for first time in round, spend 1 Action to make Interrupt Attack with Disadvantage.",
+      "notes": "When enemy enters adjacent space for first time in round, spend 1 Action to make Interrupt Attack with Disadvantage.",
+      "limitations": "",
       "upgrades": "Rank 5: Attack no longer made with Disadvantage.\nRank 10: Target is pushed 5 feet.\nRank 15: Attack check made with Advantage.",
       "checked": false,
-      "damageModifiers": [],
+      "damageModifiers": [
+        {
+          "label": "Shove",
+          "mode": "forcedMove",
+          "option": "push",
+          "value": 5,
+          "minRank": 10
+        }
+      ],
       "rankBreaks": {
         "rank5": {
           "damageDice": "",
@@ -15649,7 +15987,10 @@ export const COG_SKILLS = [
     "flags": {
       "sprinter-rpg": {
         "sourcery": {
-          "redacted": true
+          "redacted": true,
+          "emptied": [
+            "system.limitations"
+          ]
         }
       }
     }
@@ -15673,6 +16014,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "Spend an Action and pick an ally. With the ally's next skill or attack roll this round, roll 2d6 and keep the higher: the Called Play bonus. If the check fails, add it to the total; if it succeeds without it, add it to the damage.",
+      "limitations": "",
       "upgrades": "Tactical combat maneuver.",
       "checked": false,
       "damageModifiers": [],
@@ -15830,6 +16172,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "Interrupt Action. Assist an ally's roll. Roll 1d6 and add result directly to party member's d20 roll.",
+      "limitations": "",
       "upgrades": "Tactical combat maneuver.",
       "checked": false,
       "damageModifiers": [],
@@ -15986,6 +16329,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "Leap from stealth or range to dig razor claws into the target. Base Damage: 1d8 + Dex Slashing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d8 base damage\nRank 10: +1d8 base damage and the target takes a Squib Malfunction\nRank 15: +1d8 base damage and critical hits ignore armor DR.",
       "checked": false,
       "damageModifiers": [],
@@ -16115,6 +16459,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Cha Check",
       "notes": "Innate feline supernatural luck and danger sense. Grants passive +2 bonus to Evade and Stealth checks.",
+      "limitations": "",
       "upgrades": "Rank 5: +1 to Evade\nRank 10: Offsets Disadvantage against surprise traps\nRank 15: Once per floor, surviving a lethal blow leaves you at 1 HP instead of dying.",
       "checked": false,
       "damageModifiers": [],
@@ -16172,7 +16517,7 @@ export const COG_SKILLS = [
           "baseDiceCountMod": "",
           "rankDamageDice": 0,
           "buffsResistances": "",
-          "debuff": "dying",
+          "debuff": "",
           "notes": "Once per floor, surviving a lethal blow leaves you at 1 HP instead of dying.",
           "isArmorPiercing": false,
           "healing": {
@@ -16241,6 +16586,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Extraordinary balance and flexibility. Always lands on feet, eliminating falling damage from up to 30ft.",
+      "limitations": "",
       "upgrades": "Rank 5: Jump distance tripled\nRank 10: Can leap off vertical dungeon walls to gain +10ft horizontal reach\nRank 15: Interrupt: Halve all area-effect blast damage by flipping out of the blast zone.",
       "checked": false,
       "damageModifiers": [],
@@ -16367,6 +16713,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "Clamps powerful jaws onto the enemy. Base Damage: 1d8 + Str Piercing. On hit, latches onto the target.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d8 base damage\nRank 10: +1d8 base damage. Latched target cannot disengage or step without dragging you\nRank 15: +1d8 base damage and crushes target's armor DR by 1 point.",
       "checked": false,
       "damageModifiers": [],
@@ -16497,6 +16844,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Int Check",
       "notes": "Good dog! Keen senses keep the entire bonded party vigilant.",
+      "limitations": "",
       "upgrades": "Rank 5: +2 bonus to detecting hidden doors and mechanical traps\nRank 10: Barks to alert party, giving everyone advantage on Ambush checks\nRank 15: Scent tracking detects invisible and stealth foes within 60ft.",
       "checked": false,
       "damageModifiers": [],
@@ -16623,6 +16971,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Sprints with enthusiastic speed to retrieve stowed or dropped items, weapons, or aid downed party members.",
+      "limitations": "",
       "upgrades": "Rank 5: +10ft sprint speed when moving toward dropped loot or an ally\nRank 10: Can retrieve items from combat ground without provoking opportunity attacks\nRank 15: Drag fallen ally up to 20ft as part of your movement action.",
       "checked": false,
       "damageModifiers": [],
@@ -16749,6 +17098,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "Swoop down at terminal velocity to rend foes with razor talons. Base Damage: 1d10 + Dex Slashing.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d10 base damage\nRank 10: Deals +1d6 extra damage for every 10ft descended from above\nRank 15: Critical hit knocks the target prone and disarms held weapons.",
       "checked": false,
       "damageModifiers": [],
@@ -16878,6 +17228,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Int Check",
       "notes": "Telescopic raptor vision that pierces camouflage, fog, darkness, and cover up to 500ft away.",
+      "limitations": "",
       "upgrades": "Rank 5: +5 to passive perception checks\nRank 10: Spots hidden enemy structural weaknesses, increasing allied crit range by 1\nRank 15: Reveals invisible enemies and magical auras within line of sight.",
       "checked": false,
       "damageModifiers": [],
@@ -17004,6 +17355,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Grants innate Fly speed of 40ft. Can ride thermal updrafts to glide indefinitely across huge floor caverns.",
+      "limitations": "",
       "upgrades": "Rank 5: Fly speed increases to 50ft\nRank 10: Can carry a rider once size is Large or higher without speed reduction\nRank 15: Aerial barrel roll offsets all opportunity attacks when flying past enemies.",
       "checked": false,
       "damageModifiers": [],
@@ -17131,6 +17483,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "Ensnare and constrict the foe with powerful suction tentacles. Base Damage: 1d8 + Str Bludgeoning.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d8 base damage\nRank 10: Grappled target takes automatic bludgeoning damage each turn\nRank 15: +1d8 base damage. You can grapple up to two targets simultaneously.",
       "checked": false,
       "damageModifiers": [],
@@ -17260,6 +17613,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Rapidly adjusts skin color and texture to blend seamlessly into walls, floors, and water. Grants +4 to Stealth.",
+      "limitations": "",
       "upgrades": "Rank 5: Completely invisible while staying motionless\nRank 10: Can hide allies in adjacent squares under protective camouflage mantle\nRank 15: First strike from camouflage is an automatic critical hit.",
       "checked": false,
       "damageModifiers": [],
@@ -17386,6 +17740,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Eject a siphon jet of pressurized water or mucus to slide or swim with tremendous burst speed. Can slip through narrow slits.",
+      "limitations": "",
       "upgrades": "Rank 5: +20ft swim and crawl speed\nRank 10: Interrupt: Emit ink cloud (15ft burst) that blinds attackers when struck\nRank 15: Squeeze through any opening large enough to fit a coin.",
       "checked": false,
       "damageModifiers": [],
@@ -17512,6 +17867,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "Sink venom-dripping chelicerae into the target. Base Damage: 1d6 + Dex Piercing plus 1d4 Poison DoT.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d6 base damage\nRank 10: Poison DoT increases to 1d8 per round for 3 rounds\nRank 15: Critical hit inflicts Paralyzed debuff for 1 round.",
       "checked": false,
       "damageModifiers": [],
@@ -17642,6 +17998,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Int Check",
       "notes": "Weaves high-tensile silk tripwires and snare nests across doorways or passages up to 20ft wide.",
+      "limitations": "",
       "upgrades": "Rank 5: Detects any creature touching webs within 60ft via tremor sense\nRank 10: Enemies entering web area gain the Webbed debuff\nRank 15: Silk can be woven into durable armor plating giving +1 DR.",
       "checked": false,
       "damageModifiers": [],
@@ -17768,6 +18125,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Traverse vertical walls and ceilings with zero movement penalty. Fire silk anchor strands to swing across 30ft gaps.",
+      "limitations": "",
       "upgrades": "Rank 5: Can pull yourself or small allies across chasms on silk lines\nRank 10: Can act as a combat mount along ceilings and walls while carrying a rider\nRank 15: Web grapple can yank distant enemies towards you.",
       "checked": false,
       "damageModifiers": [],
@@ -17896,6 +18254,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Dex",
       "notes": "Unleash a flurry of wild scratching and pummeling while screaming in the foe's face. Base Damage: 1d6 + Dex Bludgeoning.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d6 base damage\nRank 10: +1d6 base damage\nRank 15: +1d6 base damage and delivers a secondary kick that pushes the target back 10ft.",
       "checked": false,
       "damageModifiers": [],
@@ -18025,6 +18384,7 @@ export const COG_SKILLS = [
       "checkType": "opposed",
       "checkNote": "Dex vs Dex Check",
       "notes": "Opposed check against an enemy in melee to snatch a potion, key, scroll, or pouch straight from their belt during combat.",
+      "limitations": "",
       "upgrades": "Rank 5: +2 bonus on all pilfer contests\nRank 10: Can pilfer sidearms or daggers directly from target's sheath\nRank 15: Automatic pilfer success on any critical hit scored against the target.",
       "checked": false,
       "damageModifiers": [],
@@ -18151,6 +18511,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Uses limbs and strong prehensile tail to scramble across scaffolds, light fixtures, and ceiling rafters at full Move speed.",
+      "limitations": "",
       "upgrades": "Rank 5: +10ft climbing speed\nRank 10: Can hang by tail while firing bows or casting spells with hands\nRank 15: Swing-kick from rafters deals double damage to grounded enemies.",
       "checked": false,
       "damageModifiers": [],
@@ -18277,6 +18638,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Melee Attack, Str",
       "notes": "Slam massive raptor talons into the stone floor, fracturing the ground beneath your prey. Base Damage: 2d6 + Str Bludgeoning. At Rank 15+, has a 25% chance on hit to trigger the Earthquake spell!",
+      "limitations": "",
       "upgrades": "Rank 5: +1d6 base damage\nRank 10: Knocks target prone on hit\nRank 15: +1d6 base damage (4d6). 25% chance on hit to trigger the Earthquake spell centered on the target!",
       "checked": false,
       "damageModifiers": [],
@@ -18406,6 +18768,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Cha Check",
       "notes": "Release a bone-shattering primordial velociraptor shriek that echoes down dungeon corridors, inspiring allies and demoralizing foes.",
+      "limitations": "",
       "upgrades": "Rank 5: Allies gain +1 to their next attack roll\nRank 15: Roar disorients mob spellcasters, interrupting channeled abilities.",
       "checked": false,
       "damageModifiers": [],
@@ -18532,6 +18895,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Str Check",
       "notes": "Enables this pet to be mounted and ridden into combat smoothly. Adds +20ft Move speed and ignores rough terrain.",
+      "limitations": "",
       "upgrades": "Rank 5: +10ft additional sprint speed\nRank 10: Mounted rider gains +1 Evade while riding\nRank 15: Charge through enemy ranks knocking medium and smaller foes prone.",
       "checked": false,
       "damageModifiers": [],
@@ -18661,6 +19025,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Ranged Attack, Con",
       "notes": "Project a pressurized torrent of bubbling gastric bile across a 15ft line or spray. Base Damage: 2d8 + Con Acid.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d8 base damage\nRank 10: Melts enemy armor DR by 1 on hit\nRank 15: +1d8 base damage (4d8) and creates a 10ft pool of burning acid on the ground.",
       "checked": false,
       "damageModifiers": [],
@@ -18790,6 +19155,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Con Check",
       "notes": "Devour any organic, mineral, or metal trash, monster corpses, or debris to restore 1 health bar and cleanse poison debuffs.",
+      "limitations": "",
       "upgrades": "Rank 5: Restores 2 health bars per rest\nRank 10: Complete immunity to ingested toxins and disease\nRank 15: Regurgitate refined metal nuggets or salvaged components from digested junk.",
       "checked": false,
       "damageModifiers": [],
@@ -18918,6 +19284,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Str Check",
       "notes": "Heads down, bulk forward! Tramples through doors, wooden barricades, and lesser mobs, acting as a massive living siege mount.",
+      "limitations": "",
       "upgrades": "Rank 5: +10ft trample Move speed\nRank 10: Smashes through stone barricades and locks on a successful check\nRank 15: Provides full cover to up to 2 riders mounted upon its back.",
       "checked": false,
       "damageModifiers": [],
@@ -19047,6 +19414,7 @@ export const COG_SKILLS = [
       "checkType": "attack",
       "checkNote": "Ranged Attack, Con",
       "notes": "Exhale an apocalyptic torrent of draconic fire across a 20ft cone. Base Damage: 2d10 + Con Fire.",
+      "limitations": "",
       "upgrades": "Rank 5: +1d10 base damage\nRank 10: Target gains the Burned debuff\nRank 15: +1d10 base damage (4d10) and melts stone to slag, ignoring 3 points of enemy DR.",
       "checked": false,
       "damageModifiers": [],
@@ -19176,6 +19544,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Int Check",
       "notes": "An ancient instinct for riches. Smells out hidden gold, platinum, gemstone caches, and secret vaults within 100ft.",
+      "limitations": "",
       "upgrades": "Rank 5: +3 to appraising treasure values and spotting counterfeit coin\nRank 10: Can detect enchanted weapons and artifacts through 5ft of solid stone\nRank 15: Loot found by the dragon or party yields +20% bonus coin payout.",
       "checked": false,
       "damageModifiers": [],
@@ -19302,6 +19671,7 @@ export const COG_SKILLS = [
       "checkType": "skill",
       "checkNote": "Dex Check",
       "notes": "Grants 50ft Fly speed with hover capability. Serves as a terrifying aerial mount capable of carrying crawlers.",
+      "limitations": "",
       "upgrades": "Rank 5: Fly speed increases to 60ft\nRank 10: Wing buffet deals 1d6 Bludgeoning to all adjacent foes when taking off\nRank 15: Aerial dogfighting: Can make a full breath attack in mid-flight without landing.",
       "checked": false,
       "damageModifiers": [],
@@ -19453,6 +19823,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],
@@ -19747,6 +20118,7 @@ export const COG_SKILLS = [
         "damageType": "Bludgeoning"
       },
       "notes": "Base Damage: 1d6 + Str Bludgeoning.",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],
@@ -20049,6 +20421,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],
@@ -20353,6 +20726,7 @@ export const COG_SKILLS = [
         "damageType": "Fire"
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [
@@ -20653,6 +21027,7 @@ export const COG_SKILLS = [
         "damageType": "Bludgeoning"
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],
@@ -20960,6 +21335,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],
@@ -21259,6 +21635,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],
@@ -21550,6 +21927,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "Int-Opposed check to redirect Mob Attack within 30 ft away from ally onto yourself.",
+      "limitations": "",
       "description": "",
       "upgrades": "Rank 5: Free Evade check against each taunted Attack.\nRank 10: Affect Mobs within 60 feet.\nRank 15: Free Evade checks against taunted Attacks rolled with Advantage.",
       "damageModifiers": [],
@@ -21841,6 +22219,7 @@ export const COG_SKILLS = [
         "damageType": "Bludgeoning"
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],
@@ -22129,6 +22508,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],
@@ -22430,6 +22810,7 @@ export const COG_SKILLS = [
         "damageType": ""
       },
       "notes": "",
+      "limitations": "",
       "description": "",
       "upgrades": "",
       "damageModifiers": [],

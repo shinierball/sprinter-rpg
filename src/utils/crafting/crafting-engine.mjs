@@ -24,6 +24,7 @@ import { VEHICLE_TAGS } from '../../data/tag-vocabulary.mjs';
 import { CHECK_TAGS, CRAFT_TAGS, ITEM_STATE_TAGS, MATERIAL_UNSALVAGEABLE_TAG } from '../tag/tag-mechanics.mjs';
 import { firstScalar } from '../first-scalar.mjs';
 import { getTagDefinition } from '../../data/tag-definitions.mjs';
+import { MINUTES_PER_HOUR } from '../time/day-clock.mjs';
 import { queryParts, isEmptyQuery, matchMaterials, planJunkSpend } from './craft-materials.mjs';
 
 /** The highest table tier. */
@@ -183,8 +184,55 @@ export function stepHours({ bonusLevel = 0, size = '', extraUnits = 0, timeMulti
     const n = getSizeInfo(size).size;
     base = n * n;
   }
-  const batch = (nonNeg(extraUnits) * level / 60) * num(batchMultiplier, 1);
+  const batch = (nonNeg(extraUnits) * level / MINUTES_PER_HOUR) * num(batchMultiplier, 1);
   return round6((base + batch) * num(timeMultiplier, 1));
+}
+
+/**
+ * What a blueprint is, by its tag (core p. 227): a concoction mixes potions, an infusion dunks a potion onto a consumable.
+ * The concoction tag wins when both are set.
+ * @param {object} blueprintItem the blueprint item (or `{ tags }`)
+ * @returns {'concoction'|'infusion'|''}
+ */
+export function craftProcessOf(blueprintItem) {
+  const tags = itemTags(blueprintItem ?? {});
+  if (tags.has(CRAFT_TAGS.processConcoction)) return 'concoction';
+  if (tags.has(CRAFT_TAGS.processInfusion)) return 'infusion';
+  return '';
+}
+
+/** Table 48 (core p. 227) by the system's outcome id; a Major Fail reads as the Near Miss or Failure row (the mixture is ruined). */
+const TABLE_48_ROWS = Object.freeze({
+  critical_success: 'criticalHit',
+  amazing_success: 'amazing',
+  success: 'standard',
+  near_miss: 'ruined',
+  failure: 'ruined',
+  major_failure: 'ruined',
+  critical_failure: 'blowUp'
+});
+
+/**
+ * The Table 48 row a concoction or infusion check lands on.
+ * @param {string} outcome a roll outcome id
+ * @returns {'criticalHit'|'amazing'|'standard'|'ruined'|'blowUp'|''}
+ */
+export function concoctionResult(outcome) {
+  return TABLE_48_ROWS[outcome] ?? '';
+}
+
+/** Items one infused potion covers, by the infusion Skill's Rank (core p. 194): 1, then 2 at Rank 5, 5 at 10, 10 at 15. */
+const INFUSION_ITEMS_PER_POTION = Object.freeze([
+  { rank: 15, items: 10 }, { rank: 10, items: 5 }, { rank: 5, items: 2 }, { rank: 0, items: 1 }
+]);
+
+/**
+ * @param {number} rank the infusion Skill's Rank
+ * @returns {number} how many items one potion infuses
+ */
+function infusionItemsPerPotion(rank) {
+  const r = num(rank);
+  return INFUSION_ITEMS_PER_POTION.find((e) => r >= e.rank).items;
 }
 
 const warnedJunkSizes = new Set();
@@ -582,6 +630,8 @@ export function planCraft(input = {}) {
   const inSpace = !!space && space.linked !== false;
   const floor = num(input.floor ?? crawler.floor);
   const quantity = Math.max(1, Math.floor(num(input.quantity, 1)));
+  // A concoction or infusion (core p. 227) is timed in minutes
+  const craftKind = craftProcessOf(input.blueprint);
   const mods = input.modifiers ?? {};
   const resolve = typeof mods.resolve === 'function' ? mods.resolve : null;
   const timeMultiplier = num(mods.timeMultiplier, 1);
@@ -634,6 +684,7 @@ export function planCraft(input = {}) {
     const levels = group.reduce((s, t) => s + nonNeg(t.bonusLevel), 0);
     const factorOf = (t) => enchantmentFactor(t.category);
     const top = group.reduce((a, t) => (factorOf(t) > factorOf(a) ? t : a), first);
+    const inProcessTime = (hours) => (craftKind ? round6(hours / MINUTES_PER_HOUR) : hours);
     const hoursFor = (m) => round6(group.reduce((s, t) => s + stepHours({ bonusLevel: t.bonusLevel, extraUnits: extraUnitsOf(m), timeMultiplier: m.timeMultiplier, batchMultiplier: m.batchMultiplier }), 0) * unitHoursOf(m));
     const step = {
       kind: 'enchant',
@@ -644,13 +695,13 @@ export function planCraft(input = {}) {
       dc: group.length > 1 ? combinedDifficulty(group) : enchantmentDifficulty(first),
       category: getEnchantmentCategory(top.category).id,
       bonusLevel: levels,
-      hours: hoursFor({ timeMultiplier, batchMultiplier }),
+      hours: inProcessTime(hoursFor({ timeMultiplier, batchMultiplier })),
       materialLines: group.flatMap((t) => asArray(t.materials)),
       junkBase: 0,
       skillQuery: queryOr(first.skills, blueprintSkills),
       tables: queryOr(first.tables, bp.tables)
     };
-    hoursOf.set(step, hoursFor);
+    hoursOf.set(step, (m) => inProcessTime(hoursFor(m)));
     return step;
   };
   if (bp.oneRoll === true && templates.length > 1) steps.push(enchantStep(templates));
@@ -713,7 +764,7 @@ export function planCraft(input = {}) {
 
   if (mode === 'enchant' && enchantSteps.length) {
     const queryOk = !target ? false
-      : (isEmptyQuery(bp.target) ? (!target.type || target.type === 'gear') : matchesTagQuery(itemTags(target), bp.target));
+      : (isEmptyQuery(bp.target) ? (!target.type || target.type === 'gear' || (craftKind === 'infusion' && target.type === 'loot')) : matchesTagQuery(itemTags(target), bp.target));
     if (!queryOk) warn('targetMismatch', { name: target?.name ?? craftText('COG.CraftWarn.ThatItem') }, target ? 'targetMismatch' : 'needsTarget');
   }
 
@@ -759,9 +810,20 @@ export function planCraft(input = {}) {
     warn('clockShort', { hours: totalHours, left: Number(clock) });
   }
 
+  if (craftKind) {
+    if (craftKind === 'concoction') notices.push({ code: 'concoctionAim', message: craftText('COG.CraftWarn.concoctionAim') });
+    notices.push({ code: 'table48', message: craftText('COG.CraftWarn.table48') });
+  }
+  if (craftKind === 'infusion' && target) {
+    const best = enchantSteps.reduce((top, s) => Math.max(top, ...asArray(crawler.skills).filter((k) => s.skillOptions.includes(idOf(k))).map((k) => num(k.system?.modifiedRank ?? k.system?.rank))), 0);
+    const items = infusionItemsPerPotion(best);
+    const held = Math.max(1, Math.floor(num(target.system?.quantity, 1)));
+    if (held > items) warn('infusionQuantity', { quantity: held, items, rank: best });
+  }
+
   if (mode === 'enchant' && target && enchantmentCount(target.system) >= HAZARD_ENCHANTMENTS) {
     notices.push({ code: 'hazard', message: craftText('COG.CraftWarn.hazard') });
   }
 
-  return { steps, totalHours, quantity, warnings, notices };
+  return { steps, totalHours, quantity, warnings, notices, process: craftKind };
 }

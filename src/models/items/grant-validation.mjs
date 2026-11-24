@@ -13,7 +13,7 @@ export const GRANT_MODES = ['fixed', 'choice', 'pool'];
 const nonEmptyString = (v) => typeof v === 'string' && v.trim() !== '';
 
 /** A finite number, or a non-blank string that parses to one (form input arrives as strings). */
-function isFiniteNumeric(v) {
+export function isFiniteNumeric(v) {
   if (typeof v === 'number') return Number.isFinite(v);
   if (typeof v === 'string' && v.trim() !== '') return Number.isFinite(Number(v));
   return false;

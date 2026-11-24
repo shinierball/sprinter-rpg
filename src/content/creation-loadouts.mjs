@@ -3,7 +3,7 @@
  * Reader for the Level 1 starter loadout options.
  *
  * - weapon: the 18 system weapons, with registered `weapon` entries merged in (a registered id replaces, a new id is appended).
- * - spell / unarmed / potion: the registered entries of that slot; when no provider registered anything for the slot,
+ * - spell / unarmed / potion / kit: the registered entries of that slot (a kit fills the Step 10 gear lines); when no provider registered anything for the slot,
  *   the system example for that slot (each copy marked `baseline: true`).
  *
  * References resolve by id (never by name): a spell, unarmed skill or potion is a copy of the catalog document with that
@@ -38,7 +38,7 @@ function loadoutResolves(slot, entry) {
 }
 
 /**
- * @param {'weapon'|'spell'|'unarmed'|'potion'} slot
+ * @param {'weapon'|'spell'|'unarmed'|'potion'|'kit'} slot
  * @returns {object[]} Options for the slot; examples carry `baseline: true`
  */
 export function loadoutOptions(slot) {

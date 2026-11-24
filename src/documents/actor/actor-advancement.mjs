@@ -24,10 +24,19 @@ import { levelGainDelta } from '../../utils/character/advancement-delta.mjs';
 import { buildAdvancementCard } from '../../chat/advancement-card.mjs';
 import { DAY_HOURS } from '../../utils/time/timing.mjs';
 import { fireLevelUpTriggers } from './event-triggers.mjs';
+import { langText } from '../../utils/lang-text.mjs';
+import { effectiveFloor, isRaceClassLocked, raceClassUnlockFloor } from '../../utils/character/race-class-floor.mjs';
 
 /** Highest Level the book allows; going past it is a Rule Break. */
 const MAX_LEVEL = 250;
 const STAT_KEYS = ['str', 'int', 'con', 'dex', 'cha'];
+
+const ADVANCEMENT_TEXT = {
+  'COG.Advancement.StatPointsHeldTitle': 'Stat Points Banked',
+  'COG.Advancement.StatPointsHeldMessage': 'Stat points from Levels are spent from Floor {floor}, and {actor} is on Floor {current}. Spend one on {stat} anyway as a Rule Break?',
+  'COG.Advancement.StatPointsHeldReason': 'Stat points are spent from Floor {floor}; {actor} is on Floor {current}.'
+};
+const advancementText = langText(ADVANCEMENT_TEXT);
 
 const signed = (n) => (n > 0 ? ` + ${n}` : n < 0 ? ` - ${Math.abs(n)}` : '');
 
@@ -379,6 +388,17 @@ export async function spendStatPoint(actor, stat, options = {}) {
   const pending = Math.max(0, Math.trunc(Number(actor.system?.details?.pendingStatPoints)) || 0);
   if (!STAT_KEYS.includes(s) || pending <= 0) return { spent: false, remaining: pending };
   let ruleBreak = false;
+  if (isRaceClassLocked(actor)) {
+    const floorData = { floor: raceClassUnlockFloor(), current: effectiveFloor(actor), actor: actor.name, stat: s.toUpperCase() };
+    const confirm = await confirmRuleBreak({
+      title: advancementText('COG.Advancement.StatPointsHeldTitle'),
+      message: advancementText('COG.Advancement.StatPointsHeldMessage', floorData),
+      reason: advancementText('COG.Advancement.StatPointsHeldReason', floorData),
+      options
+    });
+    if (!confirm.confirmed) return { spent: false, stat: s, remaining: pending };
+    ruleBreak = true;
+  }
   if (actor.type === 'pet' && s === 'int') {
     const confirm = await confirmRuleBreak({
       title: 'Pet Intelligence',

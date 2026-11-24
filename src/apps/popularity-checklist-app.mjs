@@ -15,11 +15,11 @@ import { readChecklistState } from '../documents/actor/popularity-checklist.mjs'
 import { applyChecklist, changeLabel } from '../documents/actor/popularity-checklist-engine.mjs';
 import { COGSessionEngine } from '../documents/session/session-engine.mjs';
 import { checklistText } from '../chat/popularity-checklist-card.mjs';
+import { finiteOrNull as finite } from '../utils/first-scalar.mjs';
 
 const KEY = 'COG.PopularityChecklist';
 const text = checklistText;
 
-const finite = (value) => (value !== null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null);
 const int = (value) => { const n = finite(value); return n === null ? null : Math.trunc(n); };
 const signed = (n) => (n > 0 ? `+${n}` : String(n));
 const cellKey = (actorId, changeId) => `${actorId}:${changeId}`;

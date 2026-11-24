@@ -3,21 +3,29 @@
  * roll) and by the Action ledger (when an Action is recorded). The state is a flag on the combatant, so it lasts the combat
  * and is gone in the next one. Nothing here blocks anything (Directive 2): a pet that is not guided asks a Rule Break.
  *
- * Applies to a pet with an owner that is not a dedicated mount. Imports neither the
- * Action ledger nor the gate (the gate imports this).
+ * Applies to a pet with an owner that is not a dedicated mount, unless it is a split copy commanded with checks (its minion
+ * buff carries `command-check`). Imports neither the Action ledger, the gate (the gate imports this) nor `minion-orders.mjs`
+ * (which imports this).
  */
 import { readFlag, writeFlag } from '../../utils/flags.mjs';
+import { RULE_FLAGS, hasRuleFlag } from '../../utils/tag/tag-behaviour.mjs';
+import { minionBuffOf } from './minion-buff.mjs';
 import { combatantOfActor } from '../combat/combatants.mjs';
 import { guidanceCauses, sanitizePetGuidance } from '../../data/rules/pet-rules.mjs';
 
 /** The combatant flag that holds `{ state, byUuid, messageId }`. */
 const GUIDANCE_FLAG = 'guidance';
 
-/** Does the guidance rule govern this actor? An owned pet that is not a dedicated mount; an ownerless pet is the GM's. */
-export function guidanceApplies(actor) {
+/** An owned pet that is not a dedicated mount; an ownerless pet is the GM's. */
+function ownedPetGuided(actor) {
   if (actor?.type !== 'pet') return false;
   const details = actor.system?.details ?? {};
   return Boolean(details.ownerId) && details.isMount !== true;
+}
+
+/** Does the guidance rule govern this actor? Not a pet whose minion buff carries `command-check` (a split copy): it is commanded, not guided (core p. 203). */
+export function guidanceApplies(actor) {
+  return ownedPetGuided(actor) && !hasRuleFlag(minionBuffOf(actor), RULE_FLAGS.commandCheck);
 }
 
 /** The stored guidance record of a combatant: `{ state, byUuid, messageId }`, state always registered. */

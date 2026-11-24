@@ -24,13 +24,11 @@ Open Configure Settings, System Settings, and set **Character sheet PDF** to you
 ### Programmatic API
 Developers and macros can also export character sheets directly:
 ```javascript
-const { exportCrawlerToPdf, saveCrawlerPdf } = await import('/systems/sprinter-rpg/src/apps/pdf-exporter.mjs');
-
 // Get PDF bytes as Uint8Array
-const pdfBytes = await exportCrawlerToPdf(actor);
+const pdfBytes = await game.cog.exportCrawlerToPdf(actor);
 
 // Or trigger direct browser download
-await saveCrawlerPdf(actor);
+await game.cog.saveCrawlerPdf(actor);
 ```
 
 ---

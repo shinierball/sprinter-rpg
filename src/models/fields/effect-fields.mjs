@@ -254,6 +254,19 @@ export function areaSchemaField(fields) {
 }
 
 /**
+ * The ammunition a weapon takes, shared by skill and gear: `query` selects the owned stacks that count as its ammunition by
+ * their tags (`ammo.arrow`, a module's own, ...), `perAttack` is the units one Attack spends. An empty query (the default)
+ * takes none. The gear item's own non-empty query wins over the Skill it is rolled with.
+ * @param {object} fields foundry.data.fields
+ */
+export function ammunitionField(fields) {
+  return new fields.SchemaField({
+    query: tagQueryField(fields),
+    perAttack: new fields.NumberField({ integer: true, min: 1, initial: 1 })
+  });
+}
+
+/**
  * The buffs a Skill or spell puts on people when its card's Apply button is clicked: one row per buff, each in force
  * from `minRank` to `maxRank` of the item. `buff` is a catalog buff identifier, never a name; `target` is a `target.*`
  * tag id whose definition carries a `recipients` block (an unknown tag behaves as `target.self`); `range` is feet

@@ -2,6 +2,7 @@
  * "Roll Spell Damage" / "Roll Attack Damage" / "Roll Skill Damage" chat buttons.
  */
 import { resolveActorByUuid } from '../../utils/actor-uuid.mjs';
+import { castRankOption } from '../../utils/skill/rank-source.mjs';
 import { parseRollContext, setContextCrit } from '../../utils/roll/roll-context.mjs';
 import { attackRecordOf } from '../../utils/roll/check-assists.mjs';
 import { gateFailedCheckDamage } from '../../documents/actor/check-damage-gate.mjs';
@@ -55,7 +56,7 @@ export async function handleRollSpellDamage(event, button, message) {
   const spell = actor.items?.get(spellId)
     || (CONFIG.COG?.spells || []).find(s => s._id === spellId || s.id === spellId);
   if (spell && typeof actor.rollSpellDamage === 'function') {
-    return actor.rollSpellDamage(spell, rollContextOptions(button, message));
+    return actor.rollSpellDamage(spell, { ...rollContextOptions(button, message), ...castRankOption(button) });
   }
   return null;
 }

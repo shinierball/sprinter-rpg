@@ -8,6 +8,7 @@ import { identifierOptions, pickedBadge } from '../../utils/ui/identifier-option
 import { getAvailableBuffs, getAvailableDebuffs, getAvailableSpells, getCompendiumSkills } from '../../sheets/item/catalogs.mjs';
 import { buildPerkMechanics, buildSpecGrantViews, buildSpecRequirements } from '../perk-rows-host.mjs';
 import { statPoolCounts, rankBonusCounts } from '../../data/builders/point-buy-payload.mjs';
+import { localiseKey } from '../../utils/lang-text.mjs';
 
 /** A rank select's options, 1 to 5, at 2 BP per rank (a stored rank outside that range stays selectable). */
 function rankOptions(rank) {
@@ -107,6 +108,19 @@ export async function pointBuyRowViews(app) {
       unfilled: unfilled(row),
       costOptions: withStoredValue(detrimentTierOptions(row.extraPoints, { by: 'cost' }), row.extraPoints)
     }))
+  };
+}
+
+/** The receipt's words for the caps (`pointLedger`): what the Detriments cell, the Passive badge and the size line read. */
+export function bookCapNotes(ledger) {
+  return {
+    detrimentCapNote: ledger.isDetrimentCapped
+      ? localiseKey('COG.PointBuilder.DetrimentCap', { extra: ledger.extraPoints, earned: ledger.rawDetrimentPoints, cap: ledger.detrimentCap })
+      : '',
+    passiveCapNote: ledger.isPassiveExceeded
+      ? localiseKey('COG.PointBuilder.PassiveCap', { ranks: ledger.passiveSkillRanks, cap: ledger.passiveCap })
+      : '',
+    sizeUnpricedNote: ledger.sizeUnpriced ? localiseKey('COG.PointBuilder.SizeUnpriced') : ''
   };
 }
 
